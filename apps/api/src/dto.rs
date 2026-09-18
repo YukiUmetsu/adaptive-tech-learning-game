@@ -6,7 +6,9 @@
 use std::collections::BTreeMap;
 
 use adaptive_learn_content::{CanonicalAnswer, Interaction, PlacementPoint};
-use adaptive_learn_domain::{AssessmentMode, ConceptWeight, InteractionType, MissionStatus};
+use adaptive_learn_domain::{
+    AssessmentMode, ConceptWeight, InteractionType, MissionStatus, QuizMode,
+};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -77,7 +79,7 @@ pub struct TaskDto {
     pub question_count: usize,
 }
 
-/// Request to issue a mission for a task.
+/// Request to issue a mission for a quiz mode.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct IssueMissionRequest {
     /// Client device identifier.
@@ -86,8 +88,12 @@ pub struct IssueMissionRequest {
     pub certification_id: String,
     /// Certification version identifier.
     pub certification_version: String,
-    /// Task to study.
-    pub task_id: String,
+    /// Quiz mode deciding how the server selects questions.
+    pub mode: QuizMode,
+    /// Domain to scope a domain quiz to. Ignored for other modes.
+    pub domain_id: Option<String>,
+    /// Task to scope a task practice to. Required for `task_practice`.
+    pub task_id: Option<String>,
 }
 
 /// A server-issued mission with its questions.
@@ -103,10 +109,12 @@ pub struct MissionResponse {
     pub certification_version: String,
     /// Immutable content version.
     pub content_version: String,
-    /// Domain covered.
-    pub domain_id: String,
-    /// Task covered.
-    pub task_id: String,
+    /// Quiz mode.
+    pub mode: QuizMode,
+    /// Domain covered, for domain quizzes.
+    pub domain_id: Option<String>,
+    /// Task covered, for task practice.
+    pub task_id: Option<String>,
     /// Issue time.
     pub issued_at: DateTime<Utc>,
     /// Expiry time.
@@ -115,11 +123,24 @@ pub struct MissionResponse {
     pub questions: Vec<QuestionView>,
 }
 
+/// A device's settled Bits balance.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct WalletResponse {
+    /// Device the wallet belongs to.
+    pub device_id: Uuid,
+    /// Settled Bits balance.
+    pub bits_balance: i64,
+}
+
 /// A question shown to the learner. Contains no answer key.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct QuestionView {
     /// Question identifier.
     pub id: String,
+    /// Owning domain.
+    pub domain_id: String,
+    /// Owning task.
+    pub task_id: String,
     /// Learner-facing prompt.
     pub prompt: String,
     /// Interaction family.
@@ -209,6 +230,10 @@ pub struct FeedbackResponse {
     pub score: f64,
     /// Structured error codes.
     pub error_codes: Vec<String>,
+    /// Bits the learner is expected to earn when this attempt is settled.
+    ///
+    /// A preview only: the authoritative balance is settled during sync.
+    pub bits_preview: i64,
     /// Short explanation.
     pub explanation: String,
     /// Canonical answer, revealed after scoring.
@@ -254,6 +279,8 @@ pub struct SyncEventRequest {
 pub struct SyncResponse {
     /// Per-event results.
     pub results: Vec<SyncEventResult>,
+    /// Authoritative settled Bits balance after this batch.
+    pub bits_balance: i64,
 }
 
 /// Result for one synced event.
@@ -265,6 +292,8 @@ pub struct SyncEventResult {
     pub accepted: bool,
     /// Error code when not accepted.
     pub error_code: Option<String>,
+    /// Bits settled for this event (0 when rejected or already settled).
+    pub bits_settled: i64,
 }
 
 /// Request to complete a mission.

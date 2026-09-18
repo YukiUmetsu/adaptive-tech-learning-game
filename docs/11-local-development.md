@@ -124,11 +124,19 @@ Key API endpoints:
 
 ```text
 GET  /v1/certifications
-POST /v1/missions/issue
+POST /v1/missions/issue          # mode: quick_adaptive | domain_quiz | full_practice | task_practice
 POST /v1/missions/{mission_id}/answers
 POST /v1/missions/{mission_id}/complete
 POST /v1/sync
+GET  /v1/wallet?device_id=...
 ```
+
+Learners see three quiz modes (Quick Quiz, Domain Quiz, Full Practice) from the
+certification dashboard; the server selects questions per mode and settles Bits
+on sync. The web routes are `/certifications` (category catalog) and
+`/certifications/:certificationId` (dashboard). `task_practice` and the
+`/certifications/:certificationId/tasks/:taskId` route remain for the demo and
+internal debugging.
 
 Learning progress is stored locally (device id, active mission, per-question
 attempts, and pending events) so a refresh resumes the mission. Evaluated

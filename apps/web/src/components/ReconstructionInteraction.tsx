@@ -14,6 +14,7 @@ import type {
   ReconstructionSlot,
 } from "../api/types";
 import { edgeGeometry as lineGeometry, type NodeSize } from "../lib/connection";
+import { stableShuffle } from "../lib/shuffle";
 
 interface ReconstructionInteractionProps {
   layout: ReconstructionLayout;
@@ -626,22 +627,4 @@ export default function ReconstructionInteraction({
       </p>
     </div>
   );
-}
-
-/** Deterministic Fisher-Yates shuffle so palette order is stable per question. */
-function stableShuffle<T>(items: T[], seed: string): T[] {
-  const result = [...items];
-  let hash = 2166136261;
-  for (let index = 0; index < seed.length; index += 1) {
-    hash ^= seed.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    hash ^= hash << 13;
-    hash ^= hash >>> 17;
-    hash ^= hash << 5;
-    const swap = Math.abs(hash) % (index + 1);
-    [result[index], result[swap]] = [result[swap], result[index]];
-  }
-  return result;
 }

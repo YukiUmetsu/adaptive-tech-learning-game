@@ -11,7 +11,7 @@ Selected providers and their role are defined in `docs/04-platform-costs.md` and
 |---|---|---|
 | API container | Google Cloud Run | Dockerfile at `apps/api/Dockerfile`; not deployed |
 | PostgreSQL | Neon | local Docker Postgres only |
-| Object storage | Cloudflare R2 | not used; documented for raw telemetry/models |
+| Object storage | Cloudflare R2 | not used; documented for game media (`app-assets`), raw telemetry, training data, models |
 | Web assets | Cloudflare static assets | `apps/web` builds to `dist/`; not deployed |
 
 ## API container

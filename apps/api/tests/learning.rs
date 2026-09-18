@@ -71,6 +71,7 @@ async fn issue(app: &Router, device: Uuid) -> Value {
             "device_id": device,
             "certification_id": "aws-soa-c03",
             "certification_version": "soa-c03",
+            "mode": "task_practice",
             "task_id": "1.1"
         })),
     )
@@ -120,11 +121,11 @@ async fn mission_contains_questions_without_answer_keys() {
         );
     }
 
-    // The mission is issued against the content version that owns the task.
-    let first = expected.first().expect("task has questions");
+    // The mission is issued against the certification version's content version.
+    let bundle = registry.bundle_for_version("soa-c03").expect("bundle");
     assert_eq!(
         mission["content_version"],
-        Value::from(first.content_version.clone())
+        Value::from(bundle.version.content_version.clone())
     );
 }
 
@@ -646,6 +647,7 @@ async fn issue_task(
             "device_id": device,
             "certification_id": certification_id,
             "certification_version": certification_version,
+            "mode": "task_practice",
             "task_id": task_id
         })),
     )
@@ -998,4 +1000,270 @@ async fn reconstruction_payloads_hide_placements_until_scoring() {
     assert_eq!(body["correct"], true);
     assert_eq!(body["score"], 1.0);
     assert!(body["canonical_answer"].is_object());
+}
+
+async fn issue_mode(
+    app: &Router,
+    device: Uuid,
+    mode: &str,
+    domain_id: Option<&str>,
+    task_id: Option<&str>,
+) -> (StatusCode, Value) {
+    common::send(
+        app.clone(),
+        "POST",
+        "/v1/missions/issue",
+        Some(json!({
+            "device_id": device,
+            "certification_id": "aws-soa-c03",
+            "certification_version": "soa-c03",
+            "mode": mode,
+            "domain_id": domain_id,
+            "task_id": task_id
+        })),
+    )
+    .await
+}
+
+fn wrong_classification_answer(question: &Question) -> Value {
+    let CanonicalAnswer::Classification { placements } = &question.canonical_answer else {
+        panic!("expected classification canonical answer");
+    };
+    let Interaction::Classification { categories, .. } = &question.interaction else {
+        panic!("expected classification interaction");
+    };
+    let (item, correct) = placements.iter().next().expect("placement");
+    let other = categories
+        .iter()
+        .find(|category| &category.id != correct)
+        .expect("another category")
+        .id
+        .clone();
+    let mut wrong = placements.clone();
+    wrong.insert(item.clone(), other);
+    json!({ "placements": wrong })
+}
+
+#[tokio::test]
+async fn quick_quiz_selects_ten_across_domains() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let registry = registry();
+    let (status, body) = issue_mode(&app, Uuid::new_v4(), "quick_adaptive", None, None).await;
+    assert_eq!(status, StatusCode::OK, "quick failed: {body}");
+    assert_eq!(body["mode"], "quick_adaptive");
+
+    let questions = body["questions"].as_array().expect("questions");
+    assert_eq!(questions.len(), 10);
+    let mut domains: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut ids: std::collections::HashSet<&str> = std::collections::HashSet::new();
+    for question in questions {
+        assert!(question.get("canonical_answer").is_none());
+        let id = question["id"].as_str().expect("id");
+        ids.insert(id);
+        let resolved = registry.question("soa-c03", id).expect("question");
+        domains.insert(resolved.domain_id.clone());
+    }
+    assert_eq!(ids.len(), 10, "quick quiz must not repeat questions");
+    assert!(
+        domains.len() >= 3,
+        "quick quiz should cover several domains: {domains:?}"
+    );
+}
+
+#[tokio::test]
+async fn domain_quiz_scopes_to_a_domain_and_requires_one() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let registry = registry();
+
+    let (status, body) =
+        issue_mode(&app, Uuid::new_v4(), "domain_quiz", Some("domain-2"), None).await;
+    assert_eq!(status, StatusCode::OK, "domain failed: {body}");
+    assert_eq!(body["mode"], "domain_quiz");
+    assert_eq!(body["domain_id"], "domain-2");
+    let questions = body["questions"].as_array().expect("questions");
+    assert_eq!(questions.len(), 20);
+    for question in questions {
+        let id = question["id"].as_str().expect("id");
+        let resolved = registry.question("soa-c03", id).expect("question");
+        assert_eq!(resolved.domain_id, "domain-2");
+    }
+
+    let (status, _) = issue_mode(&app, Uuid::new_v4(), "domain_quiz", None, None).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn full_practice_produces_a_full_unique_set() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let (status, body) = issue_mode(&app, Uuid::new_v4(), "full_practice", None, None).await;
+    assert_eq!(status, StatusCode::OK, "full failed: {body}");
+    assert_eq!(body["mode"], "full_practice");
+    assert!(body["domain_id"].is_null());
+
+    let questions = body["questions"].as_array().expect("questions");
+    assert_eq!(questions.len(), 65);
+    let ids: std::collections::HashSet<&str> = questions
+        .iter()
+        .map(|question| question["id"].as_str().expect("id"))
+        .collect();
+    assert_eq!(ids.len(), 65, "no duplicate question ids");
+}
+
+#[tokio::test]
+async fn task_practice_requires_a_task() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let (status, _) = issue_mode(&app, Uuid::new_v4(), "task_practice", None, None).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn mixed_mission_events_use_question_scope_and_settle_once() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool.clone());
+    let registry = registry();
+    let device = Uuid::new_v4();
+    let (status, mission) = issue_mode(&app, device, "quick_adaptive", None, None).await;
+    assert_eq!(status, StatusCode::OK, "quick failed: {mission}");
+    let mission_uuid: Uuid = mission["id"]
+        .as_str()
+        .expect("mission id")
+        .parse()
+        .expect("uuid");
+    let content_version = mission["content_version"].as_str().expect("version");
+    let question_id = mission["questions"][0]["id"].as_str().expect("question id");
+    let question = registry.question("soa-c03", question_id).expect("question");
+
+    let event_id = Uuid::new_v4();
+    let batch = json!({
+        "device_id": device,
+        "events": [{
+            "event_id": event_id,
+            "mission_instance_id": mission_uuid,
+            "question_id": question.id,
+            "content_version": content_version,
+            "attempt_number": 1,
+            "hint_count": 0,
+            "response_ms": 1200,
+            "occurred_at": "2026-09-19T10:00:00Z",
+            "answer": correct_answer(question)
+        }]
+    });
+
+    let (status, body) = common::send(app.clone(), "POST", "/v1/sync", Some(batch.clone())).await;
+    assert_eq!(status, StatusCode::OK, "sync failed: {body}");
+    let settled = body["results"][0]["bits_settled"].as_i64().expect("bits");
+    assert!(settled > 0, "first correct attempt should earn Bits");
+    assert_eq!(body["bits_balance"], settled);
+
+    let events = db::learning_events::list_for_mission(&pool, mission_uuid)
+        .await
+        .expect("list events");
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].domain_id, question.domain_id);
+    assert_eq!(events[0].task_id, question.task_id);
+
+    // Replaying the event is idempotent and settles nothing further.
+    let (status, body) = common::send(app.clone(), "POST", "/v1/sync", Some(batch)).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["results"][0]["accepted"], true);
+    assert_eq!(body["results"][0]["bits_settled"], 0);
+    assert_eq!(body["bits_balance"], settled);
+}
+
+#[tokio::test]
+async fn wrong_attempt_earns_nothing_and_recovery_earns_less() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let registry = registry();
+    let device = Uuid::new_v4();
+    let mission = issue(&app, device).await;
+    let mission_id = mission["id"].as_str().expect("mission id");
+    let mission_uuid: Uuid = mission_id.parse().expect("uuid");
+    let content_version = mission["content_version"].as_str().expect("version");
+    let question = question(&registry, "monitoring-classification-001");
+
+    // Attempt 1: wrong, no Bits.
+    let (status, body) = common::send(
+        app.clone(),
+        "POST",
+        "/v1/sync",
+        Some(json!({ "device_id": device, "events": [{
+            "event_id": Uuid::new_v4(),
+            "mission_instance_id": mission_uuid,
+            "question_id": question.id,
+            "content_version": content_version,
+            "attempt_number": 1,
+            "hint_count": 0,
+            "response_ms": 1000,
+            "occurred_at": "2026-09-19T10:00:00Z",
+            "answer": wrong_classification_answer(&question)
+        }]})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["results"][0]["bits_settled"], 0);
+    assert_eq!(body["bits_balance"], 0);
+
+    // Attempt 2: correct recovery, earns Bits but less than a first attempt.
+    let (status, body) = common::send(
+        app.clone(),
+        "POST",
+        "/v1/sync",
+        Some(json!({ "device_id": device, "events": [{
+            "event_id": Uuid::new_v4(),
+            "mission_instance_id": mission_uuid,
+            "question_id": question.id,
+            "content_version": content_version,
+            "attempt_number": 2,
+            "hint_count": 0,
+            "response_ms": 1000,
+            "occurred_at": "2026-09-19T10:01:00Z",
+            "answer": correct_answer(&question)
+        }]})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let recovery = body["results"][0]["bits_settled"].as_i64().expect("bits");
+    assert!(recovery > 0, "recovery must still earn Bits");
+    assert!(
+        recovery < 10,
+        "recovery should be less than the base first-attempt reward: {recovery}"
+    );
+    assert_eq!(body["bits_balance"], recovery);
+}
+
+#[tokio::test]
+async fn wallet_endpoint_returns_the_settled_balance() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let device = Uuid::new_v4();
+
+    let (status, body) = common::send(
+        app.clone(),
+        "GET",
+        &format!("/v1/wallet?device_id={device}"),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["bits_balance"], 0);
+    assert_eq!(body["device_id"], device.to_string());
 }

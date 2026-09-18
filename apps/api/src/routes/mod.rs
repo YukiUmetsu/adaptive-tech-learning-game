@@ -3,6 +3,7 @@ pub mod health;
 pub mod missions;
 pub mod openapi;
 pub mod sync;
+pub mod wallet;
 
 use axum::Json;
 use axum::extract::Path;

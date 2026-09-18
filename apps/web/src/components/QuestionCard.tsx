@@ -6,6 +6,7 @@ import type {
   QuestionView,
   ReconstructionAnswerPayload,
 } from "../api/types";
+import { shuffledOrder } from "../lib/shuffle";
 import BranchingScenarioInteraction from "./BranchingScenarioInteraction";
 import ClassificationInteraction from "./ClassificationInteraction";
 import EvidenceSelectionInteraction from "./EvidenceSelectionInteraction";
@@ -32,7 +33,12 @@ export default function QuestionCard({
   );
   const [ordering, setOrdering] = useState<string[]>(() =>
     question.interaction.type === "ordering"
-      ? question.interaction.items.map((item) => item.id)
+      ? // Authored items are in answer order; shuffle so the puzzle is not
+        // pre-solved. Seeded by the question id for stable rendering.
+        shuffledOrder(
+          question.interaction.items.map((item) => item.id),
+          question.id,
+        )
       : [],
   );
   const [edges, setEdges] = useState<string[][]>([]);

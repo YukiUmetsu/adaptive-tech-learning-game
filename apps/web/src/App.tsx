@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 
 import AppShell from "./layout/AppShell";
+import CertificationDashboardPage from "./pages/CertificationDashboardPage";
 import CertificationsPage from "./pages/CertificationsPage";
 import DemoPage from "./pages/DemoPage";
 import HomePage from "./pages/HomePage";
@@ -14,6 +15,10 @@ export default function App() {
       <Route element={<AppShell />}>
         <Route index element={<HomePage />} />
         <Route path="certifications" element={<CertificationsPage />} />
+        <Route
+          path="certifications/:certificationId"
+          element={<CertificationDashboardPage />}
+        />
         <Route
           path="certifications/:certificationId/tasks/:taskId"
           element={<TaskPage />}

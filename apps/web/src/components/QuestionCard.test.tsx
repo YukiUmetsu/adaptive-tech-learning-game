@@ -8,6 +8,8 @@ import QuestionCard from "./QuestionCard";
 function base(overrides: Partial<QuestionView>): QuestionView {
   return {
     id: "q",
+    domain_id: "domain-1",
+    task_id: "1.1",
     prompt: "Prompt",
     interaction_type: "classification",
     assessment_mode: "application",
@@ -130,6 +132,38 @@ describe("QuestionCard", () => {
         edges: [],
       },
     });
+  });
+
+  it("shuffles ordering items so the authored order is not pre-filled", () => {
+    const onSubmit = vi.fn();
+    const items = [
+      { id: "a", label: "First" },
+      { id: "b", label: "Second" },
+      { id: "c", label: "Third" },
+      { id: "d", label: "Fourth" },
+    ];
+    const question = base({
+      interaction_type: "ordering",
+      assessment_mode: "procedural_recall",
+      interaction: { type: "ordering", items },
+    });
+
+    render(<QuestionCard question={question} onSubmit={onSubmit} />);
+
+    const list = screen.getByRole("list", { name: "Ordered steps" });
+    const labels = Array.from(list.querySelectorAll(".ordering-label")).map(
+      (element) => element.textContent,
+    );
+
+    // All items are present exactly once...
+    expect([...labels].sort()).toEqual([
+      "First",
+      "Fourth",
+      "Second",
+      "Third",
+    ]);
+    // ...and the authored (answer) order is not shown as-is.
+    expect(labels).not.toEqual(["First", "Second", "Third", "Fourth"]);
   });
 
   it("submits a troubleshooting choice path", async () => {

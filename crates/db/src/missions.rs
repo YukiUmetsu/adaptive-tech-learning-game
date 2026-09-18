@@ -1,4 +1,4 @@
-use adaptive_learn_domain::{MissionInstance, MissionStatus};
+use adaptive_learn_domain::{MissionInstance, MissionStatus, QuizMode};
 use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use sqlx::types::Json;
@@ -13,8 +13,9 @@ struct MissionRow {
     certification_id: String,
     certification_version: String,
     content_version: String,
-    domain_id: String,
-    task_id: String,
+    mode: String,
+    domain_id: Option<String>,
+    task_id: Option<String>,
     question_ids: Json<Vec<String>>,
     status: String,
     issued_at: DateTime<Utc>,
@@ -32,6 +33,7 @@ impl TryFrom<MissionRow> for MissionInstance {
             certification_id: row.certification_id,
             certification_version: row.certification_version,
             content_version: row.content_version,
+            mode: QuizMode::try_from(row.mode.as_str())?,
             domain_id: row.domain_id,
             task_id: row.task_id,
             question_ids: row.question_ids.0,
@@ -48,18 +50,19 @@ pub async fn insert(pool: &PgPool, mission: &MissionInstance) -> Result<MissionI
     let row = sqlx::query_as::<_, MissionRow>(
         "INSERT INTO mission_instances
             (id, device_id, certification_id, certification_version, content_version,
-             domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+             mode, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
          RETURNING id, device_id, certification_id, certification_version, content_version,
-                   domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at",
+                   mode, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at",
     )
     .bind(mission.id)
     .bind(mission.device_id)
     .bind(&mission.certification_id)
     .bind(&mission.certification_version)
     .bind(&mission.content_version)
-    .bind(&mission.domain_id)
-    .bind(&mission.task_id)
+    .bind(mission.mode.as_str())
+    .bind(mission.domain_id.as_deref())
+    .bind(mission.task_id.as_deref())
     .bind(Json(&mission.question_ids))
     .bind(mission.status.as_str())
     .bind(mission.issued_at)
@@ -75,7 +78,7 @@ pub async fn insert(pool: &PgPool, mission: &MissionInstance) -> Result<MissionI
 pub async fn find_by_id(pool: &PgPool, id: Uuid) -> Result<Option<MissionInstance>, DbError> {
     let row = sqlx::query_as::<_, MissionRow>(
         "SELECT id, device_id, certification_id, certification_version, content_version,
-                domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at
+                mode, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at
          FROM mission_instances
          WHERE id = $1",
     )
@@ -113,7 +116,7 @@ pub async fn mark_completed(
          SET status = 'completed', completed_at = now()
          WHERE id = $1 AND device_id = $2
          RETURNING id, device_id, certification_id, certification_version, content_version,
-                   domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at",
+                   mode, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at",
     )
     .bind(id)
     .bind(device_id)

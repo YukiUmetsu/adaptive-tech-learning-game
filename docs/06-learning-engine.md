@@ -162,6 +162,25 @@ User can:
 - replace one activity
 - keep original plan
 
+## Learner quiz modes
+
+The learner sees three quiz modes. Tactile interaction types are implementation
+and scoring primitives underneath them, not learner-facing choices.
+
+| Mode | Questions | Purpose |
+|---|---:|---|
+| Quick Quiz | 10 | adaptive cross-domain practice |
+| Domain Quiz | ~20 | one exam domain, spread across tasks |
+| Full Practice | 65 | weighted full-certification coverage |
+
+V1 selection is an explainable heuristic (`apps/api/src/selection.rs`), not a
+trained student model. Cold start covers domains by official weight; with
+accepted history it ranks candidates by concept weakness, recency, domain
+weight, novelty, and an immediate-repeat penalty, with a deterministic
+question-id tie-break. Full Practice allocates seats by domain weight using a
+deterministic largest-remainder method and redistributes any deficit when a
+domain is short. Question counts are server policy and are never client input.
+
 ## References
 
 See [REFERENCES.md](REFERENCES.md).

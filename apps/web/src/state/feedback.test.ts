@@ -5,6 +5,8 @@ import { reviewDetails } from "./feedback";
 
 const base: QuestionView = {
   id: "q",
+  domain_id: "domain-1",
+  task_id: "1.1",
   prompt: "Prompt",
   interaction_type: "classification",
   assessment_mode: "recognition",

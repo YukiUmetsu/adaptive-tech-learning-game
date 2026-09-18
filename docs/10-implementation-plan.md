@@ -94,7 +94,7 @@ Exit: scheduler selects plausible sessions and is evaluated separately from the 
 Deliver:
 
 - append-only wallet ledger
-- Credits + Energy
+- Bits + Energy
 - first-attempt/recovery reward invariant
 - anti-farming multiplier frozen pre-attempt
 - authoritative settlement

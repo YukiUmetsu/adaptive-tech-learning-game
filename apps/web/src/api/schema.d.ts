@@ -132,6 +132,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns a device's settled Bits balance. */
+        get: operations["get_wallet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -418,6 +435,13 @@ export interface components {
         };
         /** @description Feedback for one scored attempt. */
         FeedbackResponse: {
+            /**
+             * Format: int64
+             * @description Bits the learner is expected to earn when this attempt is settled.
+             *
+             *     A preview only: the authoritative balance is settled during sync.
+             */
+            bits_preview: number;
             /** @description Canonical answer, revealed after scoring. */
             canonical_answer: components["schemas"]["CanonicalAnswer"];
             /** @description Concept mappings with weights. */
@@ -590,7 +614,7 @@ export interface components {
          * @enum {string}
          */
         InteractionType: "classification" | "ordering" | "node_connection" | "reconstruction" | "evidence_selection" | "spot_the_fault" | "fill_slots" | "troubleshooting" | "scenario_choice_chain" | "configuration_builder" | "two_dimensional_placement" | "command_assembly";
-        /** @description Request to issue a mission for a task. */
+        /** @description Request to issue a mission for a quiz mode. */
         IssueMissionRequest: {
             /** @description Certification identifier. */
             certification_id: string;
@@ -601,8 +625,12 @@ export interface components {
              * @description Client device identifier.
              */
             device_id: string;
-            /** @description Task to study. */
-            task_id: string;
+            /** @description Domain to scope a domain quiz to. Ignored for other modes. */
+            domain_id?: string | null;
+            /** @description Quiz mode deciding how the server selects questions. */
+            mode: components["schemas"]["QuizMode"];
+            /** @description Task to scope a task practice to. Required for `task_practice`. */
+            task_id?: string | null;
         };
         /** @description A server-issued mission with its questions. */
         MissionResponse: {
@@ -617,8 +645,8 @@ export interface components {
              * @description Device the mission belongs to.
              */
             device_id: string;
-            /** @description Domain covered. */
-            domain_id: string;
+            /** @description Domain covered, for domain quizzes. */
+            domain_id?: string | null;
             /**
              * Format: date-time
              * @description Expiry time.
@@ -634,10 +662,12 @@ export interface components {
              * @description Issue time.
              */
             issued_at: string;
+            /** @description Quiz mode. */
+            mode: components["schemas"]["QuizMode"];
             /** @description Questions in presentation order. */
             questions: components["schemas"]["QuestionView"][];
-            /** @description Task covered. */
-            task_id: string;
+            /** @description Task covered, for task practice. */
+            task_id?: string | null;
         };
         /**
          * @description Lifecycle of a server-issued mission.
@@ -703,6 +733,8 @@ export interface components {
              * @description Prior difficulty.
              */
             difficulty_prior: number;
+            /** @description Owning domain. */
+            domain_id: string;
             /** @description Optional hints. */
             hints: string[];
             /** @description Question identifier. */
@@ -713,7 +745,17 @@ export interface components {
             interaction_type: components["schemas"]["InteractionType"];
             /** @description Learner-facing prompt. */
             prompt: string;
+            /** @description Owning task. */
+            task_id: string;
         };
+        /**
+         * @description The quiz mode a mission was issued for.
+         *
+         *     `task_practice` is kept for the demo/task flow and internal debugging; the
+         *     three learner-facing modes are quick, domain, and full practice.
+         * @enum {string}
+         */
+        QuizMode: "quick_adaptive" | "domain_quiz" | "full_practice" | "task_practice";
         /** @description Reconstruction answer primitives. */
         ReconstructionAnswerPayload: {
             /** @description Directed `[from, to]` relationships the learner drew. */
@@ -809,6 +851,11 @@ export interface components {
         SyncEventResult: {
             /** @description Whether the event is now accepted server-side. */
             accepted: boolean;
+            /**
+             * Format: int64
+             * @description Bits settled for this event (0 when rejected or already settled).
+             */
+            bits_settled: number;
             /** @description Error code when not accepted. */
             error_code?: string | null;
             /**
@@ -829,6 +876,11 @@ export interface components {
         };
         /** @description Result of a sync batch. */
         SyncResponse: {
+            /**
+             * Format: int64
+             * @description Authoritative settled Bits balance after this batch.
+             */
+            bits_balance: number;
             /** @description Per-event results. */
             results: components["schemas"]["SyncEventResult"][];
         };
@@ -840,6 +892,19 @@ export interface components {
             name: string;
             /** @description Number of authored questions available. */
             question_count: number;
+        };
+        /** @description A device's settled Bits balance. */
+        WalletResponse: {
+            /**
+             * Format: int64
+             * @description Settled Bits balance.
+             */
+            bits_balance: number;
+            /**
+             * Format: uuid
+             * @description Device the wallet belongs to.
+             */
+            device_id: string;
         };
     };
     responses: never;
@@ -1096,6 +1161,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_wallet: {
+        parameters: {
+            query: {
+                /** @description Client device identifier. */
+                device_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Settled Bits balance */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletResponse"];
                 };
             };
         };

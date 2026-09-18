@@ -6,6 +6,8 @@ import FeedbackPanel from "./FeedbackPanel";
 
 const question: QuestionView = {
   id: "q1",
+  domain_id: "domain-1",
+  task_id: "1.1",
   prompt: "Classify the signals.",
   interaction_type: "classification",
   assessment_mode: "recognition",
@@ -25,6 +27,7 @@ const base: FeedbackResponse = {
   correct: false,
   score: 0.5,
   error_codes: ["classification_misplaced"],
+  bits_preview: 0,
   explanation: "Metrics are numeric time series.",
   canonical_answer: { type: "classification", placements: { a: "x" } },
   concepts: [],
@@ -115,5 +118,41 @@ describe("FeedbackPanel", () => {
     expect(
       screen.getByText("Not a valid connection: SNS topic → Operator"),
     ).toBeInTheDocument();
+  });
+
+  it("renders a Bits reward for a correct answer", () => {
+    render(
+      <FeedbackPanel
+        feedback={{
+          ...base,
+          correct: true,
+          score: 1,
+          error_codes: [],
+          bits_preview: 12,
+        }}
+        question={question}
+        submitted={null}
+        isLast={false}
+        onRetry={vi.fn()}
+        onNext={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("bits-reward")).toHaveTextContent("+12 Bits");
+  });
+
+  it("shows no Bits reward for an incorrect answer", () => {
+    render(
+      <FeedbackPanel
+        feedback={base}
+        question={question}
+        submitted={null}
+        isLast={false}
+        onRetry={vi.fn()}
+        onNext={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByTestId("bits-reward")).toBeNull();
   });
 });

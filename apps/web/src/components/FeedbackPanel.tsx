@@ -1,9 +1,12 @@
+import { useEffect } from "react";
+
 import type {
   AnswerPayload,
   FeedbackResponse,
   QuestionView,
 } from "../api/types";
 import { reviewDetails } from "../state/feedback";
+import { playCorrect, playWrong } from "../state/sound";
 
 interface FeedbackPanelProps {
   feedback: FeedbackResponse;
@@ -26,21 +29,45 @@ export default function FeedbackPanel({
   onRetry,
   onNext,
 }: FeedbackPanelProps) {
+  // Partial answers get the same gentle treatment as a wrong answer, tuned only
+  // slightly by the score. Never a harsh failure state.
+  const partial = !feedback.correct && feedback.score > 0;
+  const state = feedback.correct ? "correct" : partial ? "partial" : "incorrect";
+
+  useEffect(() => {
+    if (feedback.correct) {
+      playCorrect();
+    } else {
+      playWrong();
+    }
+  }, [feedback.event_id, feedback.correct]);
+
   const details = feedback.correct
     ? []
     : reviewDetails(question, submitted, feedback.canonical_answer);
 
   return (
     <section
-      className={feedback.correct ? "feedback correct" : "feedback incorrect"}
+      className={`feedback ${state}`}
       aria-live="polite"
       data-testid="feedback"
     >
+      {feedback.correct ? (
+        <span className="feedback-sparkles" aria-hidden="true">
+          ✦ ✧ ✦
+        </span>
+      ) : null}
+
       <div className="feedback-heading">
         <span className="feedback-badge" aria-hidden="true">
-          {feedback.correct ? "✓" : "!"}
+          {feedback.correct ? "✓" : partial ? "≈" : "!"}
         </span>
         <h3>{feedback.correct ? "Correct" : "Not quite"}</h3>
+        {feedback.bits_preview > 0 ? (
+          <span className="bits-reward" data-testid="bits-reward">
+            +{feedback.bits_preview} Bits
+          </span>
+        ) : null}
         <span className="feedback-score">
           {Math.round(feedback.score * 100)}%
         </span>

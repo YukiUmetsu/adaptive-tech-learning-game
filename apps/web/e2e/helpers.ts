@@ -33,7 +33,13 @@ interface Question {
 }
 
 interface ContentBundle {
-  version: { domains: Array<{ tasks: Array<{ question_ids: string[] }> }> };
+  certification: { id: string };
+  version: {
+    domains: Array<{
+      id: string;
+      tasks: Array<{ id: string; question_ids: string[] }>;
+    }>;
+  };
   questions: Question[];
 }
 
@@ -63,15 +69,62 @@ const contentRoot = resolve(
 );
 
 function loadAuthoredBundle(): ContentBundle {
-  const found = collectBundles(contentRoot).find((bundle) =>
+  const bundles = collectBundles(contentRoot);
+  const first = bundles.find((bundle) =>
     bundle.version.domains.some((domain) =>
       domain.tasks.some((task) => task.question_ids.length > 0),
     ),
   );
-  if (!found) {
+  if (!first) {
     throw new Error(`no authored content bundle found under ${contentRoot}`);
   }
-  return found;
+
+  // Mirror the API registry: bundles sharing a certification id are merged, with
+  // later files overriding duplicate questions and task definitions.
+  const certificationId = first.certification.id;
+  const merged: ContentBundle = {
+    certification: first.certification,
+    version: {
+      domains: first.version.domains.map((domain) => ({
+        ...domain,
+        tasks: domain.tasks.map((task) => ({ ...task })),
+      })),
+    },
+    questions: [...first.questions],
+  };
+
+  for (const bundle of bundles) {
+    if (bundle === first || bundle.certification.id !== certificationId) {
+      continue;
+    }
+    for (const question of bundle.questions) {
+      const index = merged.questions.findIndex((entry) => entry.id === question.id);
+      if (index >= 0) {
+        merged.questions[index] = question;
+      } else {
+        merged.questions.push(question);
+      }
+    }
+    for (const domain of bundle.version.domains) {
+      const target = merged.version.domains.find((entry) => entry.id === domain.id);
+      if (!target) {
+        merged.version.domains.push(domain);
+        continue;
+      }
+      for (const task of domain.tasks) {
+        const taskIndex = target.tasks.findIndex((entry) => entry.id === task.id);
+        if (taskIndex >= 0) {
+          if (task.question_ids.length > 0) {
+            target.tasks[taskIndex] = task;
+          }
+        } else {
+          target.tasks.push(task);
+        }
+      }
+    }
+  }
+
+  return merged;
 }
 
 const content = loadAuthoredBundle();
@@ -117,19 +170,30 @@ function nodeLabel(nodes: GraphNode[], id: string): string {
 }
 
 export async function startMission(page: Page): Promise<void> {
-  await page.goto("/");
-  await page.getByRole("link", { name: "Browse certifications" }).click();
+  // Task Practice remains available for the demo/internal flow, so the E2E
+  // suite drives it directly rather than through the new dashboard modes.
+  const certificationId = content.certification.id;
+  const taskId = firstAuthoredTaskId(content);
+
+  await page.goto(`/certifications/${certificationId}/tasks/${taskId}`);
   await expect(
-    page.getByRole("heading", { name: "Certifications" }),
-  ).toBeVisible();
-  await page.getByRole("link", { name: /Task 1\.1/ }).click();
-  await expect(
-    page.getByRole("heading", { name: /Task 1\.1/ }),
+    page.getByRole("heading", { name: new RegExp(`Task ${taskId}`) }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Start mission" }).click();
   await expect(
     page.getByText(new RegExp(`Question 1 of ${TOTAL_QUESTIONS}`)),
   ).toBeVisible();
+}
+
+function firstAuthoredTaskId(bundle: ContentBundle): string {
+  for (const domain of bundle.version.domains) {
+    for (const task of domain.tasks) {
+      if (task.question_ids.length > 0) {
+        return task.id;
+      }
+    }
+  }
+  throw new Error("no authored task found");
 }
 
 async function placeItems(

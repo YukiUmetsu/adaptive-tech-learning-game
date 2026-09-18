@@ -16,7 +16,7 @@ Use storage by access pattern.
 | compacted Parquet/Iceberg | R2 | training/analytics |
 | models | R2 | immutable artifacts |
 | certification bundles | R2/static CDN | cacheable/versioned |
-| game media | Cloudflare static/R2 | cheap delivery |
+| game media (art, audio, video) | R2 `app-assets` + CDN | cheap delivery; too large for the web bundle |
 | local session cache | IndexedDB | offline/local-first |
 
 ## PostgreSQL schema
@@ -39,6 +39,8 @@ user_concept_state
 campaign_state
 sync_batches
 devices
+device_wallets
+bit_transactions
 wallets
 wallet_ledger
 inventory
@@ -112,6 +114,15 @@ abuse/data-quality filters
 ## R2 layout
 
 ```text
+app-assets/
+  v000001/                     # immutable asset-set version
+    manifest.json              # logical id -> key, checksum, metadata
+    art/companion/<id>.webp
+    art/buildings/<id>.webp
+    audio/sfx/<id>.ogg
+    audio/music/<id>.ogg
+    ui/icons/<id>.webp
+
 raw-events/
   year=2026/month=09/day=18/<batch>.jsonl.gz
 
@@ -125,6 +136,13 @@ models/
 content/
   aws/dop-c02/v005/bundle.json
 ```
+
+Game media is staged locally under `assets/` (gitignored; see
+`assets/README.md`) and synced to the `app-assets` bucket. Bump the asset-set
+version instead of overwriting published objects, serve them from an R2 public
+domain behind Cloudflare with immutable caching, and never proxy media bytes
+through Cloud Run. Small app-shell assets (icon, favicon) stay in the web bundle
+and are served as static assets.
 
 ## Compaction
 

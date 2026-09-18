@@ -14,31 +14,7 @@ const catalog = {
       exam_code: "SOA-C03",
       official_source_url: "https://docs.aws.amazon.com/",
       last_reviewed: "2026-09-18",
-      versions: [
-        {
-          id: "soa-c03",
-          exam_code: "SOA-C03",
-          effective_date: "2026-06-01",
-          content_version: "soa-c03-content-v1",
-          domains: [
-            {
-              id: "domain-1",
-              name: "Monitoring",
-              weight: 0.22,
-              tasks: [
-                { id: "1.1", name: "A", question_count: 20 },
-                { id: "1.2", name: "B", question_count: 20 },
-              ],
-            },
-            {
-              id: "domain-2",
-              name: "Reliability",
-              weight: 0.22,
-              tasks: [{ id: "2.1", name: "C", question_count: 9 }],
-            },
-          ],
-        },
-      ],
+      versions: [],
     },
     {
       id: "aws-soa-c03-demo",
@@ -47,24 +23,7 @@ const catalog = {
       exam_code: "SOA-C03",
       official_source_url: "https://docs.aws.amazon.com/",
       last_reviewed: "2026-09-18",
-      versions: [
-        {
-          id: "soa-c03-demo",
-          exam_code: "SOA-C03",
-          effective_date: "2026-06-01",
-          content_version: "soa-c03-demo-content-v1",
-          domains: [
-            {
-              id: "domain-2",
-              name: "Reliability and Networking",
-              weight: 0.5,
-              tasks: [
-                { id: "D2.1", name: "Demo task", question_count: 9 },
-              ],
-            },
-          ],
-        },
-      ],
+      versions: [],
     },
   ],
 };
@@ -86,7 +45,7 @@ afterEach(() => {
 });
 
 describe("CertificationsPage", () => {
-  it("shows domain and certification question totals", async () => {
+  it("groups cards by category and links available certifications", async () => {
     render(
       <MemoryRouter>
         <CertificationsPage />
@@ -95,20 +54,33 @@ describe("CertificationsPage", () => {
 
     await waitFor(() =>
       expect(
-        screen.getByRole("heading", {
-          name: "AWS Certified CloudOps Engineer - Associate",
+        screen.getByRole("link", {
+          name: /AWS Certified CloudOps Engineer - Associate/,
         }),
       ).toBeInTheDocument(),
     );
 
-    // Certification total: 20 + 20 + 9 = 49.
-    expect(screen.getByText(/49 questions/)).toBeInTheDocument();
-    // Per-domain totals.
-    expect(screen.getByText(/· 40 questions/)).toBeInTheDocument();
-    expect(screen.getByText(/· 9 questions/)).toBeInTheDocument();
+    // Grouped by category header.
+    expect(screen.getByRole("heading", { name: "AWS" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Microsoft Azure" }),
+    ).toBeInTheDocument();
+
+    // Available certification navigates to the dashboard, not the task page.
+    expect(
+      screen.getByRole("link", {
+        name: /AWS Certified CloudOps Engineer - Associate/,
+      }),
+    ).toHaveAttribute("href", "/certifications/aws-soa-c03");
+
+    // Planned certifications render as disabled WIP cards.
+    expect(screen.getAllByText("WIP").length).toBeGreaterThan(0);
+    expect(
+      screen.getByText("AWS Certified Solutions Architect - Associate"),
+    ).toBeInTheDocument();
   });
 
-  it("does not list demo certifications", async () => {
+  it("excludes demo content from the production catalog", async () => {
     render(
       <MemoryRouter>
         <CertificationsPage />
@@ -117,8 +89,8 @@ describe("CertificationsPage", () => {
 
     await waitFor(() =>
       expect(
-        screen.getByRole("heading", {
-          name: "AWS Certified CloudOps Engineer - Associate",
+        screen.getByRole("link", {
+          name: /AWS Certified CloudOps Engineer - Associate/,
         }),
       ).toBeInTheDocument(),
     );
@@ -126,6 +98,5 @@ describe("CertificationsPage", () => {
     expect(
       screen.queryByText("AWS SOA-C03 Interaction Demo"),
     ).not.toBeInTheDocument();
-    expect(screen.queryByText(/D2\.1/)).not.toBeInTheDocument();
   });
 });

@@ -1,11 +1,7 @@
 import { Link } from "react-router-dom";
 
 import { useCatalog } from "../hooks/useCatalog";
-import {
-  certificationQuestionCount,
-  domainQuestionCount,
-  isDemoCertification,
-} from "../state/demo";
+import { CATALOG, buildCatalog } from "../state/catalogMeta";
 
 export default function CertificationsPage() {
   const { state, reload } = useCatalog();
@@ -25,76 +21,48 @@ export default function CertificationsPage() {
     );
   }
 
-  // Demo content has its own page, so it is excluded here.
-  const certifications = state.data.certifications.filter(
-    (certification) => !isDemoCertification(certification),
-  );
+  const sections = buildCatalog(CATALOG, state.data.certifications);
 
   return (
-    <section>
+    <section className="catalog">
       <h1>Certifications</h1>
-      {certifications.length === 0 ? (
-        <p className="muted">No certifications are available yet.</p>
-      ) : null}
+      <p className="muted">
+        Choose a certification to study. Cards marked WIP are planned and not
+        available yet.
+      </p>
 
-      {certifications.map((certification) => (
-        <article key={certification.id} className="certification">
-          <h2>{certification.name}</h2>
-          <p className="muted">
-            {certification.vendor} · {certification.exam_code} ·{" "}
-            {certificationQuestionCount(certification)} questions · reviewed{" "}
-            {certification.last_reviewed}
-          </p>
-          <p>
-            <a
-              href={certification.official_source_url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Official exam guide
-            </a>
-          </p>
-
-          {certification.versions.map((version) => (
-            <div key={version.id}>
-              <h3>
-                {version.id}{" "}
-                <span className="muted">content {version.content_version}</span>
-              </h3>
-              <ul className="domain-list">
-                {version.domains.map((domain) => (
-                  <li key={domain.id}>
-                    <strong>{domain.name}</strong>{" "}
-                    <span className="domain-weight">
-                      {Math.round(domain.weight * 100)}%
-                    </span>{" "}
-                    <span className="muted">
-                      · {domainQuestionCount(domain)} questions
+      {sections.map((section) => (
+        <section
+          key={section.id}
+          className="catalog-category"
+          aria-label={section.label}
+        >
+          <h2>{section.label}</h2>
+          <ul className="cert-grid">
+            {section.cards.map((card) => (
+              <li key={card.id}>
+                {card.available ? (
+                  <Link
+                    className="cert-card available"
+                    to={`/certifications/${card.id}`}
+                  >
+                    <span className="cert-vendor">{card.examCode}</span>
+                    <span className="cert-name">{card.name}</span>
+                    <span className="cert-go" aria-hidden="true">
+                      →
                     </span>
-                    {domain.tasks.length > 0 ? (
-                      <ul>
-                        {domain.tasks.map((task) => (
-                          <li key={task.id}>
-                            <Link
-                              to={`/certifications/${certification.id}/tasks/${task.id}`}
-                            >
-                              Task {task.id}: {task.name}
-                            </Link>{" "}
-                            <span className="muted">
-                              ({task.question_count} questions)
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <span className="muted"> — not yet authored</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </article>
+                  </Link>
+                ) : (
+                  <div className="cert-card wip" aria-disabled="true">
+                    <span className="cert-vendor">{card.examCode}</span>
+                    <span className="cert-name">{card.name}</span>
+                    <span className="badge wip-badge">WIP</span>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
       ))}
     </section>
   );

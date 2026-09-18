@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::collections::hash_map::Entry;
 
 use crate::EMBEDDED_SOURCES;
@@ -154,6 +155,68 @@ impl ContentRegistry {
             .questions
             .iter()
             .find(|question| question.id == question_id)
+    }
+
+    /// Returns every authored question for a version, in authored domain/task
+    /// order and without duplicates.
+    pub fn questions_for_version<'a>(&'a self, certification_version: &str) -> Vec<&'a Question> {
+        let Some(bundle) = self.bundle_for_version(certification_version) else {
+            return Vec::new();
+        };
+        questions_in_order(bundle)
+    }
+
+    /// Returns every authored question for one domain, in authored order.
+    pub fn questions_for_domain<'a>(
+        &'a self,
+        certification_version: &str,
+        domain_id: &str,
+    ) -> Vec<&'a Question> {
+        let Some(bundle) = self.bundle_for_version(certification_version) else {
+            return Vec::new();
+        };
+        let mut questions = Vec::new();
+        let mut seen = HashSet::new();
+        for domain in bundle
+            .version
+            .domains
+            .iter()
+            .filter(|domain| domain.id == domain_id)
+        {
+            collect_task_questions(bundle, domain, &mut seen, &mut questions);
+        }
+        questions
+    }
+}
+
+fn questions_in_order(bundle: &ContentBundle) -> Vec<&Question> {
+    let mut questions = Vec::new();
+    let mut seen = HashSet::new();
+    for domain in &bundle.version.domains {
+        collect_task_questions(bundle, domain, &mut seen, &mut questions);
+    }
+    questions
+}
+
+fn collect_task_questions<'a>(
+    bundle: &'a ContentBundle,
+    domain: &'a Domain,
+    seen: &mut HashSet<&'a str>,
+    questions: &mut Vec<&'a Question>,
+) {
+    for task in &domain.tasks {
+        for question_id in &task.question_ids {
+            if !seen.insert(question_id.as_str()) {
+                continue;
+            }
+            if let Some(question) = bundle
+                .questions
+                .iter()
+                .find(|question| &question.id == question_id)
+            {
+                questions.push(question);
+            }
+        }
     }
 }
 

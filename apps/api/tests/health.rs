@@ -64,6 +64,7 @@ async fn issue_mission_rejects_unknown_task() {
             "device_id": uuid::Uuid::new_v4(),
             "certification_id": "aws-soa-c03",
             "certification_version": "soa-c03",
+            "mode": "task_practice",
             "task_id": "9.9"
         })),
     )
