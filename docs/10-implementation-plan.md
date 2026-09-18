@@ -16,6 +16,13 @@ Deliver:
 
 Exit: authenticated user can load and sync a trivial state.
 
+> Phase 0 implementation note: this repository currently implements the local
+> foundation only — Rust/Axum skeleton, React/Vite/PWA shell, local PostgreSQL
+> with SQLx migrations, and OpenAPI → TypeScript generation. WorkOS staging
+> auth, deployed Cloud Run/Neon/R2 environments, and IaC are deliberately
+> deferred until credentials and environments exist. See
+> [Local development](11-local-development.md).
+
 ## Phase 1 — Narrow learning MVP
 
 Use **one deliberately narrow slice** of one certification, not full exam coverage.

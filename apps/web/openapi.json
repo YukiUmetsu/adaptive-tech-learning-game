@@ -1,0 +1,159 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Adaptive Learning API",
+    "description": "Operational endpoints today; learning, sync, and economy endpoints in later phases.",
+    "license": {
+      "name": "UNLICENSED",
+      "identifier": "UNLICENSED"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Liveness and dependency check.",
+        "description": "Returns `200` when the database is reachable and `503` when it is not, so a\nload balancer can stop routing to an instance whose dependency is down.",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "Service and database are healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service is running but the database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Serves the generated OpenAPI document.",
+        "description": "The document is the source of truth for the TypeScript client. Regenerate it\nwith `cargo run -p adaptive-learn-api --bin export-openapi` or the web\n`pnpm generate:api` script.",
+        "operationId": "openapi_json",
+        "responses": {
+          "200": {
+            "description": "OpenAPI 3 document"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DatabaseStatus": {
+        "type": "string",
+        "description": "Database reachability.",
+        "enum": [
+          "ok",
+          "unavailable"
+        ]
+      },
+      "ErrorBody": {
+        "type": "object",
+        "description": "Structured error details.",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Stable error code."
+          },
+          "message": {
+            "type": "string",
+            "description": "Safe, human-readable message."
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "description": "Envelope returned for every API error.",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody",
+            "description": "Error payload."
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "description": "Safe operational health payload. Never includes connection strings, hosts,\nversions of dependencies, or other internals.",
+        "required": [
+          "status",
+          "service",
+          "version",
+          "database",
+          "uptime_seconds",
+          "timestamp"
+        ],
+        "properties": {
+          "database": {
+            "$ref": "#/components/schemas/DatabaseStatus",
+            "description": "Database status."
+          },
+          "service": {
+            "type": "string",
+            "description": "Service name."
+          },
+          "status": {
+            "$ref": "#/components/schemas/HealthStatus",
+            "description": "Aggregate status."
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server time in UTC."
+          },
+          "uptime_seconds": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Seconds since process start.",
+            "minimum": 0
+          },
+          "version": {
+            "type": "string",
+            "description": "Service version."
+          }
+        }
+      },
+      "HealthStatus": {
+        "type": "string",
+        "description": "Overall service health.",
+        "enum": [
+          "ok",
+          "degraded"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "system",
+      "description": "Operational endpoints"
+    }
+  ]
+}

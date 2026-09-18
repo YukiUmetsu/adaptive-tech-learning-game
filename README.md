@@ -45,6 +45,34 @@ flowchart LR
 | Analytics | Parquet + DuckDB locally; Iceberg + R2 SQL later if needed | Avoid an expensive analytics service early |
 | ML training | Local first; Modal; RunPod later | $0 initial training; cheap burst GPU later |
 
+## Getting started
+
+Repository layout and full commands are in
+[Local development](docs/11-local-development.md). The short version:
+
+```bash
+# Local PostgreSQL
+docker compose up -d
+
+# API (applies migrations locally)
+cp .env.example .env
+cargo run -p adaptive-learn-api
+
+# Web
+cd apps/web
+pnpm install
+cp .env.example .env.local
+pnpm dev
+```
+
+Checks:
+
+```bash
+cargo fmt --check && cargo clippy --all-targets --all-features -- -D warnings && cargo test
+(cd apps/web && pnpm lint && pnpm typecheck && pnpm test && pnpm build)
+(cd ml && uv run pytest)
+```
+
 ## Documentation
 
 1. [Product and problem statement](docs/01-product.md)
