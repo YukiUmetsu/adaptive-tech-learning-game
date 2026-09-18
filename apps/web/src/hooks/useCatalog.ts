@@ -12,6 +12,16 @@ export type CatalogState =
 // instead of refetching on every page.
 let cached: CatalogResponse | null = null;
 
+/**
+ * Clears the cached catalog.
+ *
+ * Used by tests and by explicit refresh flows that must not reuse stale
+ * certification data.
+ */
+export function clearCatalogCache(): void {
+  cached = null;
+}
+
 /** Loads the certification catalog, reusing a cached copy when available. */
 export function useCatalog() {
   const [state, setState] = useState<CatalogState>(() =>

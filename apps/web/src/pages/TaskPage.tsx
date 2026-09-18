@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { api } from "../api/client";
 import { useCatalog } from "../hooks/useCatalog";
-import { getDeviceId, loadMission, saveMission } from "../state/persistence";
+import { startMission } from "../state/mission";
+import { loadMission } from "../state/persistence";
 
 export default function TaskPage() {
   const { certificationId, taskId } = useParams();
@@ -36,28 +36,8 @@ export default function TaskPage() {
     setStarting(true);
     setError(null);
     try {
-      const result = await api.POST("/v1/missions/issue", {
-        body: {
-          device_id: getDeviceId(),
-          certification_id: certification.id,
-          certification_version: version.id,
-          task_id: taskId,
-        },
-      });
-
-      if (result.error || !result.data) {
-        setError(`Could not start mission (HTTP ${result.response.status})`);
-        return;
-      }
-
-      saveMission({
-        mission: result.data,
-        currentIndex: 0,
-        attempts: [],
-        startedAt: new Date().toISOString(),
-        finished: false,
-      });
-      navigate(`/missions/${result.data.id}`);
+      const mission = await startMission(certification.id, version.id, taskId);
+      navigate(`/missions/${mission.id}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Network error");
     } finally {

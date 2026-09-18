@@ -12,13 +12,15 @@ export default function AppShell() {
             Home
           </NavLink>
           <NavLink to="/certifications">Certifications</NavLink>
-          <NavLink to="/health">Status</NavLink>
+          <NavLink to="/demo">Demo</NavLink>
         </nav>
       </header>
       <main className="app-main">
         <Outlet />
       </main>
-      <footer className="app-footer">Phase 1 · AWS SOA-C03 Task 1.1</footer>
+      <footer className="app-footer">
+        Phase 1 · AWS SOA-C03 · free demo available
+      </footer>
     </div>
   );
 }

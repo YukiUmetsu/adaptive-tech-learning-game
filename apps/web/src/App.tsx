@@ -2,7 +2,7 @@ import { Route, Routes } from "react-router-dom";
 
 import AppShell from "./layout/AppShell";
 import CertificationsPage from "./pages/CertificationsPage";
-import HealthPage from "./pages/HealthPage";
+import DemoPage from "./pages/DemoPage";
 import HomePage from "./pages/HomePage";
 import MissionPage from "./pages/MissionPage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -19,7 +19,7 @@ export default function App() {
           element={<TaskPage />}
         />
         <Route path="missions/:missionId" element={<MissionPage />} />
-        <Route path="health" element={<HealthPage />} />
+        <Route path="demo" element={<DemoPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

@@ -27,6 +27,38 @@ fn correct_answer(question: &Question) -> Value {
         CanonicalAnswer::Classification { placements } => json!({ "placements": placements }),
         CanonicalAnswer::Ordering { ordered_ids } => json!({ "ordered_ids": ordered_ids }),
         CanonicalAnswer::NodeConnection { edges } => json!({ "edges": edges }),
+        CanonicalAnswer::Reconstruction { placements, edges } => json!({
+            "reconstruction": {
+                "placements": placements,
+                "edges": edges,
+            }
+        }),
+        CanonicalAnswer::EvidenceSelection { relevant_ids } => {
+            json!({ "evidence_ids": relevant_ids })
+        }
+        CanonicalAnswer::SpotTheFault { faulty_ids } => json!({ "faulty_ids": faulty_ids }),
+        CanonicalAnswer::FillSlots { values } => json!({ "slot_values": values }),
+        CanonicalAnswer::Troubleshooting { expected_path, .. } => {
+            json!({ "choice_path": expected_path })
+        }
+        CanonicalAnswer::ScenarioChoiceChain { expected_path, .. } => {
+            json!({ "choice_path": expected_path })
+        }
+        CanonicalAnswer::ConfigurationBuilder { assignments } => {
+            json!({ "assignments": assignments })
+        }
+        CanonicalAnswer::TwoDimensionalPlacement { regions } => {
+            let positions: serde_json::Map<String, Value> = regions
+                .iter()
+                .map(|(item_id, region)| {
+                    let x = (region.x[0] + region.x[1]) / 2.0;
+                    let y = (region.y[0] + region.y[1]) / 2.0;
+                    (item_id.clone(), json!({ "x": x, "y": y }))
+                })
+                .collect();
+            json!({ "positions": positions })
+        }
+        CanonicalAnswer::CommandAssembly { values } => json!({ "token_values": values }),
     }
 }
 
@@ -75,17 +107,25 @@ async fn mission_contains_questions_without_answer_keys() {
         return;
     };
     let app = common::app_with_pool(pool);
+    let registry = registry();
     let mission = issue(&app, Uuid::new_v4()).await;
 
+    let expected = registry.questions_for_task("soa-c03", "1.1");
     let questions = mission["questions"].as_array().expect("questions array");
-    assert_eq!(questions.len(), 5);
+    assert_eq!(questions.len(), expected.len());
     for question in questions {
         assert!(
             question.get("canonical_answer").is_none(),
             "answer key must not be sent with a mission"
         );
     }
-    assert_eq!(mission["content_version"], "soa-c03-content-v1");
+
+    // The mission is issued against the content version that owns the task.
+    let first = expected.first().expect("task has questions");
+    assert_eq!(
+        mission["content_version"],
+        Value::from(first.content_version.clone())
+    );
 }
 
 #[tokio::test]
@@ -109,7 +149,9 @@ async fn classification_scoring_returns_partial_credit() {
             device,
             mission_id,
             &question.id,
-            "soa-c03-content-v1",
+            mission["content_version"]
+                .as_str()
+                .expect("mission content version"),
             Uuid::new_v4(),
             correct_answer(&question),
         )),
@@ -144,7 +186,9 @@ async fn classification_scoring_returns_partial_credit() {
             device,
             mission_id,
             &question.id,
-            "soa-c03-content-v1",
+            mission["content_version"]
+                .as_str()
+                .expect("mission content version"),
             Uuid::new_v4(),
             json!({ "placements": wrong }),
         )),
@@ -182,7 +226,9 @@ async fn ordering_and_connection_scoring_work() {
             device,
             mission_id,
             &ordering.id,
-            "soa-c03-content-v1",
+            mission["content_version"]
+                .as_str()
+                .expect("mission content version"),
             Uuid::new_v4(),
             correct_answer(&ordering),
         )),
@@ -206,7 +252,9 @@ async fn ordering_and_connection_scoring_work() {
             device,
             mission_id,
             &connection.id,
-            "soa-c03-content-v1",
+            mission["content_version"]
+                .as_str()
+                .expect("mission content version"),
             Uuid::new_v4(),
             json!({ "edges": missing_one }),
         )),
@@ -241,7 +289,9 @@ async fn invalid_answer_ids_are_rejected() {
             device,
             mission_id,
             "monitoring-classification-001",
-            "soa-c03-content-v1",
+            mission["content_version"]
+                .as_str()
+                .expect("mission content version"),
             Uuid::new_v4(),
             json!({ "placements": { "ghost_item": "metric" } }),
         )),
@@ -299,7 +349,7 @@ async fn sync_persists_events_idempotently() {
         "event_id": event_id,
         "mission_instance_id": mission_uuid,
         "question_id": question.id,
-        "content_version": "soa-c03-content-v1",
+        "content_version": mission["content_version"],
         "attempt_number": 1,
         "hint_count": 0,
         "response_ms": 3000,
@@ -351,7 +401,7 @@ async fn sync_rejects_events_for_another_device() {
             "event_id": Uuid::new_v4(),
             "mission_instance_id": mission_uuid,
             "question_id": question.id,
-            "content_version": "soa-c03-content-v1",
+            "content_version": mission["content_version"],
             "attempt_number": 1,
             "hint_count": 0,
             "response_ms": 1000,
@@ -387,7 +437,7 @@ async fn sync_derives_attempt_number_server_side() {
             "event_id": event_id,
             "mission_instance_id": mission_uuid,
             "question_id": question.id,
-            "content_version": "soa-c03-content-v1",
+            "content_version": mission["content_version"],
             // A client could lie about this; the server must ignore it.
             "attempt_number": 1,
             "hint_count": 0,
@@ -438,7 +488,7 @@ async fn sync_reports_structured_scoring_errors() {
             "event_id": Uuid::new_v4(),
             "mission_instance_id": mission_uuid,
             "question_id": question.id,
-            "content_version": "soa-c03-content-v1",
+            "content_version": mission["content_version"],
             "attempt_number": 1,
             "hint_count": 0,
             "response_ms": 1000,
@@ -476,7 +526,7 @@ async fn concurrent_syncs_assign_distinct_attempt_numbers() {
                 "event_id": event_id,
                 "mission_instance_id": mission_uuid,
                 "question_id": question.id,
-                "content_version": "soa-c03-content-v1",
+                "content_version": mission["content_version"],
                 "attempt_number": 1,
                 "hint_count": 0,
                 "response_ms": 1000,
@@ -535,7 +585,9 @@ async fn completed_mission_rejects_further_answers() {
             device,
             mission_id,
             &question.id,
-            "soa-c03-content-v1",
+            mission["content_version"]
+                .as_str()
+                .expect("mission content version"),
             Uuid::new_v4(),
             correct_answer(&question),
         )),
@@ -570,4 +622,380 @@ async fn unknown_mission_returns_404() {
 
     assert_eq!(status, StatusCode::NOT_FOUND);
     assert_eq!(body["error"]["code"], "not_found");
+}
+
+fn version_question(registry: &ContentRegistry, version: &str, id: &str) -> Question {
+    registry
+        .question(version, id)
+        .expect("question exists")
+        .clone()
+}
+
+async fn issue_task(
+    app: &Router,
+    device: Uuid,
+    certification_id: &str,
+    certification_version: &str,
+    task_id: &str,
+) -> Value {
+    let (status, body) = common::send(
+        app.clone(),
+        "POST",
+        "/v1/missions/issue",
+        Some(json!({
+            "device_id": device,
+            "certification_id": certification_id,
+            "certification_version": certification_version,
+            "task_id": task_id
+        })),
+    )
+    .await;
+
+    assert_eq!(status, StatusCode::OK, "issue failed: {body}");
+    body
+}
+
+#[tokio::test]
+async fn demo_mission_hides_answers_and_scores_every_new_interaction() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let registry = registry();
+    let device = Uuid::new_v4();
+    let mission = issue_task(&app, device, "aws-soa-c03-demo", "soa-c03-demo", "D2.1").await;
+    let mission_id = mission["id"].as_str().expect("mission id");
+
+    for question in mission["questions"].as_array().expect("questions array") {
+        assert!(
+            question.get("canonical_answer").is_none(),
+            "answer key must not be sent with a demo mission"
+        );
+    }
+
+    let ids = [
+        "demo-reconstruction-nat-001",
+        "demo-evidence-vpc-001",
+        "demo-fault-route-001",
+        "demo-fill-route-001",
+        "demo-troubleshooting-alb-001",
+        "demo-scenario-alarm-001",
+        "demo-config-nat-001",
+        "demo-placement-dr-001",
+    ];
+
+    for id in ids {
+        let question = version_question(&registry, "soa-c03-demo", id);
+        let (status, body) = common::send(
+            app.clone(),
+            "POST",
+            &format!("/v1/missions/{mission_id}/answers"),
+            Some(answer_body(
+                device,
+                mission_id,
+                &question.id,
+                "soa-c03-demo-content-v1",
+                Uuid::new_v4(),
+                correct_answer(&question),
+            )),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::OK, "{id} failed: {body}");
+        assert_eq!(body["correct"], true, "{id}");
+        assert_eq!(body["score"], 1.0, "{id}");
+        assert!(
+            body["canonical_answer"].is_object(),
+            "canonical answer is revealed after scoring {id}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn new_interactions_return_partial_credit_and_structured_errors() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let device = Uuid::new_v4();
+    let mission = issue_task(&app, device, "aws-soa-c03-demo", "soa-c03-demo", "D2.1").await;
+    let mission_id = mission["id"].as_str().expect("mission id");
+
+    // Fill slots: one correct, one wrong, one missing.
+    let (status, body) = common::send(
+        app.clone(),
+        "POST",
+        &format!("/v1/missions/{mission_id}/answers"),
+        Some(answer_body(
+            device,
+            mission_id,
+            "demo-fill-route-001",
+            "soa-c03-demo-content-v1",
+            Uuid::new_v4(),
+            json!({
+                "slot_values": {
+                    "destination": "all_ipv4",
+                    "target": "internet_gateway"
+                }
+            }),
+        )),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "fill failed: {body}");
+    assert!((body["score"].as_f64().expect("score") - 1.0 / 3.0).abs() < 1e-9);
+    let codes = body["error_codes"].as_array().expect("error codes");
+    assert!(codes.iter().any(|code| code == "slot_incorrect"));
+    assert!(codes.iter().any(|code| code == "slot_unfilled"));
+
+    // Evidence selection: one hit plus one false positive.
+    let (status, body) = common::send(
+        app.clone(),
+        "POST",
+        &format!("/v1/missions/{mission_id}/answers"),
+        Some(answer_body(
+            device,
+            mission_id,
+            "demo-evidence-vpc-001",
+            "soa-c03-demo-content-v1",
+            Uuid::new_v4(),
+            json!({ "evidence_ids": ["vpc_flow_logs", "cpu_utilization"] }),
+        )),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "evidence failed: {body}");
+    let codes = body["error_codes"].as_array().expect("error codes");
+    assert!(
+        codes
+            .iter()
+            .any(|code| code == "evidence_selected_irrelevant")
+    );
+    assert!(codes.iter().any(|code| code == "evidence_missing_relevant"));
+}
+
+#[tokio::test]
+async fn sync_rejects_a_malformed_new_interaction_payload() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let device = Uuid::new_v4();
+    let mission = issue_task(&app, device, "aws-soa-c03-demo", "soa-c03-demo", "D2.1").await;
+    let mission_uuid: Uuid = mission["id"]
+        .as_str()
+        .expect("mission id")
+        .parse()
+        .expect("uuid");
+
+    let batch = json!({
+        "device_id": device,
+        "events": [{
+            "event_id": Uuid::new_v4(),
+            "mission_instance_id": mission_uuid,
+            "question_id": "demo-reconstruction-nat-001",
+            "content_version": "soa-c03-demo-content-v1",
+            "attempt_number": 1,
+            "hint_count": 0,
+            "response_ms": 2000,
+            "occurred_at": "2026-09-19T10:00:00Z",
+            "answer": {
+                "reconstruction": {
+                    "placements": { "slot_1": "ghost_piece" },
+                    "edges": []
+                }
+            }
+        }]
+    });
+
+    let (status, body) = common::send(app, "POST", "/v1/sync", Some(batch)).await;
+    assert_eq!(status, StatusCode::OK, "sync failed: {body}");
+    assert_eq!(body["results"][0]["accepted"], false);
+    assert_eq!(body["results"][0]["error_code"], "unknown_piece");
+}
+
+#[tokio::test]
+async fn branching_and_configuration_return_structured_errors() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let device = Uuid::new_v4();
+    let mission = issue_task(&app, device, "aws-soa-c03-demo", "soa-c03-demo", "D2.1").await;
+    let mission_id = mission["id"].as_str().expect("mission id");
+
+    // A wrong first diagnostic decision that stops early.
+    let (status, body) = common::send(
+        app.clone(),
+        "POST",
+        &format!("/v1/missions/{mission_id}/answers"),
+        Some(answer_body(
+            device,
+            mission_id,
+            "demo-troubleshooting-alb-001",
+            "soa-c03-demo-content-v1",
+            Uuid::new_v4(),
+            json!({ "choice_path": ["check_rds_metrics"] }),
+        )),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "troubleshooting failed: {body}");
+    assert_eq!(body["score"], 0.0);
+    let codes = body["error_codes"].as_array().expect("error codes");
+    assert!(
+        codes
+            .iter()
+            .any(|code| code == "troubleshooting_wrong_diagnosis")
+    );
+    assert!(
+        codes
+            .iter()
+            .any(|code| code == "troubleshooting_incomplete_path")
+    );
+
+    // A configuration that uses an unnecessary component in one role.
+    let (status, body) = common::send(
+        app.clone(),
+        "POST",
+        &format!("/v1/missions/{mission_id}/answers"),
+        Some(answer_body(
+            device,
+            mission_id,
+            "demo-config-nat-001",
+            "soa-c03-demo-content-v1",
+            Uuid::new_v4(),
+            json!({
+                "assignments": {
+                    "private_route_target": "nat_gateway",
+                    "nat_host_subnet": "public_subnet",
+                    "public_route_target": "egress_only_igw"
+                }
+            }),
+        )),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "configuration failed: {body}");
+    assert!((body["score"].as_f64().expect("score") - 1.0 / 3.0).abs() < 1e-9);
+    let codes = body["error_codes"].as_array().expect("error codes");
+    assert!(
+        codes
+            .iter()
+            .any(|code| code == "config_unnecessary_component")
+    );
+}
+
+#[tokio::test]
+async fn command_assembly_and_placement_score_through_the_api() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let registry = registry();
+    let device = Uuid::new_v4();
+    let mission = issue_task(&app, device, "aws-soa-c03-demo", "soa-c03-demo", "D1.1").await;
+    let mission_id = mission["id"].as_str().expect("mission id");
+
+    let question = version_question(&registry, "soa-c03-demo", "demo-command-presign-001");
+    let (status, body) = common::send(
+        app.clone(),
+        "POST",
+        &format!("/v1/missions/{mission_id}/answers"),
+        Some(answer_body(
+            device,
+            mission_id,
+            &question.id,
+            "soa-c03-demo-content-v1",
+            Uuid::new_v4(),
+            correct_answer(&question),
+        )),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "command failed: {body}");
+    assert_eq!(body["score"], 1.0);
+
+    let (status, body) = common::send(
+        app.clone(),
+        "POST",
+        &format!("/v1/missions/{mission_id}/answers"),
+        Some(answer_body(
+            device,
+            mission_id,
+            &question.id,
+            "soa-c03-demo-content-v1",
+            Uuid::new_v4(),
+            json!({
+                "token_values": {
+                    "service_action": "s3_presign",
+                    "target": "object_uri",
+                    "expiry_flag": "expires_in",
+                    "expiry_value": "recursive"
+                }
+            }),
+        )),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "command failed: {body}");
+    assert_eq!(body["score"], 0.75);
+    assert!(
+        body["error_codes"]
+            .as_array()
+            .expect("error codes")
+            .iter()
+            .any(|code| code == "command_token_wrong")
+    );
+}
+
+#[tokio::test]
+async fn reconstruction_payloads_hide_placements_until_scoring() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let registry = registry();
+    let device = Uuid::new_v4();
+    let mission = issue_task(&app, device, "aws-soa-c03-demo", "soa-c03-demo", "D1.1").await;
+    let mission_id = mission["id"].as_str().expect("mission id");
+
+    let mut seen_reconstruction = false;
+    for question in mission["questions"].as_array().expect("questions array") {
+        if question["interaction_type"] != "reconstruction" {
+            continue;
+        }
+        seen_reconstruction = true;
+        assert!(
+            question["interaction"].get("placements").is_none(),
+            "the interaction must not expose canonical placements"
+        );
+        assert!(
+            question.get("canonical_answer").is_none(),
+            "the answer key must not be sent with a mission"
+        );
+    }
+    assert!(
+        seen_reconstruction,
+        "demo mission should include a reconstruction"
+    );
+
+    // The graph reconstruction scores placements and topology together.
+    let graph = version_question(
+        &registry,
+        "soa-c03-demo",
+        "demo-reconstruction-alarm-graph-001",
+    );
+    let (status, body) = common::send(
+        app.clone(),
+        "POST",
+        &format!("/v1/missions/{mission_id}/answers"),
+        Some(answer_body(
+            device,
+            mission_id,
+            &graph.id,
+            "soa-c03-demo-content-v1",
+            Uuid::new_v4(),
+            correct_answer(&graph),
+        )),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "graph failed: {body}");
+    assert_eq!(body["correct"], true);
+    assert_eq!(body["score"], 1.0);
+    assert!(body["canonical_answer"].is_object());
 }

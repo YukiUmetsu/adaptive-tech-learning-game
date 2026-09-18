@@ -94,9 +94,12 @@ pub async fn issue_mission(
     let questions = state
         .content
         .questions_for_task(&request.certification_version, &request.task_id);
-    if questions.is_empty() {
+    let Some(content_version) = questions
+        .first()
+        .map(|question| question.content_version.clone())
+    else {
         return Err(ApiError::NotFound);
-    }
+    };
 
     let now = Utc::now();
     let mission = MissionInstance {
@@ -104,7 +107,7 @@ pub async fn issue_mission(
         device_id: request.device_id,
         certification_id: bundle.certification.id.clone(),
         certification_version: bundle.version.id.clone(),
-        content_version: bundle.version.content_version.clone(),
+        content_version: content_version.clone(),
         domain_id: domain.id.clone(),
         task_id: task.id.clone(),
         question_ids: questions
@@ -388,25 +391,91 @@ fn validate_attempt_metadata(attempt_number: i32, hint_count: i32) -> Result<(),
 }
 
 fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError> {
-    match (payload.placements, payload.ordered_ids, payload.edges) {
-        (Some(placements), None, None) => Ok(SubmittedAnswer::Classification(placements)),
-        (None, Some(ordered_ids), None) => Ok(SubmittedAnswer::Ordering(ordered_ids)),
-        (None, None, Some(edges)) => {
-            let mut pairs = Vec::with_capacity(edges.len());
-            for edge in edges {
-                if edge.len() != 2 {
-                    return Err(ApiError::BadRequest(
-                        "each edge must have exactly two endpoints".to_owned(),
-                    ));
-                }
-                pairs.push((edge[0].clone(), edge[1].clone()));
-            }
-            Ok(SubmittedAnswer::NodeConnection(pairs))
-        }
-        _ => Err(ApiError::BadRequest(
-            "answer must contain exactly one of placements, ordered_ids, or edges".to_owned(),
-        )),
+    let AnswerPayload {
+        placements,
+        ordered_ids,
+        edges,
+        reconstruction,
+        evidence_ids,
+        faulty_ids,
+        slot_values,
+        choice_path,
+        assignments,
+        positions,
+        token_values,
+    } = payload;
+
+    let shapes = usize::from(placements.is_some())
+        + usize::from(ordered_ids.is_some())
+        + usize::from(edges.is_some())
+        + usize::from(reconstruction.is_some())
+        + usize::from(evidence_ids.is_some())
+        + usize::from(faulty_ids.is_some())
+        + usize::from(slot_values.is_some())
+        + usize::from(choice_path.is_some())
+        + usize::from(assignments.is_some())
+        + usize::from(positions.is_some())
+        + usize::from(token_values.is_some());
+
+    if shapes != 1 {
+        return Err(ApiError::BadRequest(
+            "answer must contain exactly one answer shape".to_owned(),
+        ));
     }
+
+    if let Some(placements) = placements {
+        return Ok(SubmittedAnswer::Classification(placements));
+    }
+    if let Some(ordered_ids) = ordered_ids {
+        return Ok(SubmittedAnswer::Ordering(ordered_ids));
+    }
+    if let Some(edges) = edges {
+        return Ok(SubmittedAnswer::NodeConnection(parse_edges(edges)?));
+    }
+    if let Some(reconstruction) = reconstruction {
+        return Ok(SubmittedAnswer::Reconstruction {
+            placements: reconstruction.placements,
+            edges: parse_edges(reconstruction.edges)?,
+        });
+    }
+    if let Some(evidence_ids) = evidence_ids {
+        return Ok(SubmittedAnswer::EvidenceSelection(evidence_ids));
+    }
+    if let Some(faulty_ids) = faulty_ids {
+        return Ok(SubmittedAnswer::SpotTheFault(faulty_ids));
+    }
+    if let Some(slot_values) = slot_values {
+        return Ok(SubmittedAnswer::FillSlots(slot_values));
+    }
+    if let Some(choice_path) = choice_path {
+        return Ok(SubmittedAnswer::Branching(choice_path));
+    }
+    if let Some(assignments) = assignments {
+        return Ok(SubmittedAnswer::ConfigurationBuilder(assignments));
+    }
+    if let Some(positions) = positions {
+        return Ok(SubmittedAnswer::TwoDimensionalPlacement(positions));
+    }
+    if let Some(token_values) = token_values {
+        return Ok(SubmittedAnswer::CommandAssembly(token_values));
+    }
+
+    Err(ApiError::BadRequest(
+        "answer must contain exactly one answer shape".to_owned(),
+    ))
+}
+
+fn parse_edges(edges: Vec<Vec<String>>) -> Result<Vec<(String, String)>, ApiError> {
+    let mut pairs = Vec::with_capacity(edges.len());
+    for edge in edges {
+        if edge.len() != 2 {
+            return Err(ApiError::BadRequest(
+                "each edge must have exactly two endpoints".to_owned(),
+            ));
+        }
+        pairs.push((edge[0].clone(), edge[1].clone()));
+    }
+    Ok(pairs)
 }
 
 fn concept_weights(question: &adaptive_learn_content::Question) -> Vec<ConceptWeight> {
@@ -444,6 +513,14 @@ mod tests {
             placements: None,
             ordered_ids: None,
             edges: None,
+            reconstruction: None,
+            evidence_ids: None,
+            faulty_ids: None,
+            slot_values: None,
+            choice_path: None,
+            assignments: None,
+            positions: None,
+            token_values: None,
         });
         assert!(empty.is_err());
 
@@ -451,6 +528,14 @@ mod tests {
             placements: Some(BTreeMap::new()),
             ordered_ids: Some(vec!["a".to_owned()]),
             edges: None,
+            reconstruction: None,
+            evidence_ids: None,
+            faulty_ids: None,
+            slot_values: None,
+            choice_path: None,
+            assignments: None,
+            positions: None,
+            token_values: None,
         });
         assert!(two_shapes.is_err());
     }
@@ -461,6 +546,14 @@ mod tests {
             placements: None,
             ordered_ids: None,
             edges: Some(vec![vec!["only-one".to_owned()]]),
+            reconstruction: None,
+            evidence_ids: None,
+            faulty_ids: None,
+            slot_values: None,
+            choice_path: None,
+            assignments: None,
+            positions: None,
+            token_values: None,
         });
         assert!(bad.is_err());
 
@@ -468,11 +561,113 @@ mod tests {
             placements: None,
             ordered_ids: None,
             edges: Some(vec![vec!["a".to_owned(), "b".to_owned()]]),
+            reconstruction: None,
+            evidence_ids: None,
+            faulty_ids: None,
+            slot_values: None,
+            choice_path: None,
+            assignments: None,
+            positions: None,
+            token_values: None,
         });
         assert_eq!(
             good.expect("valid edge"),
             SubmittedAnswer::NodeConnection(vec![("a".to_owned(), "b".to_owned())])
         );
+    }
+
+    #[test]
+    fn reconstruction_answer_maps_to_submitted() {
+        let submitted = to_submitted(AnswerPayload {
+            placements: None,
+            ordered_ids: None,
+            edges: None,
+            reconstruction: Some(crate::dto::ReconstructionAnswerPayload {
+                placements: std::collections::BTreeMap::from([
+                    ("slot_1".to_owned(), "a".to_owned()),
+                    ("slot_2".to_owned(), "b".to_owned()),
+                ]),
+                edges: vec![vec!["a".to_owned(), "b".to_owned()]],
+            }),
+            evidence_ids: None,
+            faulty_ids: None,
+            slot_values: None,
+            choice_path: None,
+            assignments: None,
+            positions: None,
+            token_values: None,
+        })
+        .expect("valid reconstruction");
+
+        assert_eq!(
+            submitted,
+            SubmittedAnswer::Reconstruction {
+                placements: std::collections::BTreeMap::from([
+                    ("slot_1".to_owned(), "a".to_owned()),
+                    ("slot_2".to_owned(), "b".to_owned()),
+                ]),
+                edges: vec![("a".to_owned(), "b".to_owned())],
+            }
+        );
+    }
+
+    #[test]
+    fn selection_and_slot_answers_map_to_submitted() {
+        let evidence = to_submitted(AnswerPayload {
+            placements: None,
+            ordered_ids: None,
+            edges: None,
+            reconstruction: None,
+            evidence_ids: Some(vec!["cloudtrail".to_owned()]),
+            faulty_ids: None,
+            slot_values: None,
+            choice_path: None,
+            assignments: None,
+            positions: None,
+            token_values: None,
+        })
+        .expect("valid evidence");
+        assert_eq!(
+            evidence,
+            SubmittedAnswer::EvidenceSelection(vec!["cloudtrail".to_owned()])
+        );
+
+        let faults = to_submitted(AnswerPayload {
+            placements: None,
+            ordered_ids: None,
+            edges: None,
+            reconstruction: None,
+            evidence_ids: None,
+            faulty_ids: Some(vec!["route".to_owned()]),
+            slot_values: None,
+            choice_path: None,
+            assignments: None,
+            positions: None,
+            token_values: None,
+        })
+        .expect("valid fault selection");
+        assert_eq!(
+            faults,
+            SubmittedAnswer::SpotTheFault(vec!["route".to_owned()])
+        );
+
+        let mut values = BTreeMap::new();
+        values.insert("destination".to_owned(), "nat".to_owned());
+        let slots = to_submitted(AnswerPayload {
+            placements: None,
+            ordered_ids: None,
+            edges: None,
+            reconstruction: None,
+            evidence_ids: None,
+            faulty_ids: None,
+            slot_values: Some(values.clone()),
+            choice_path: None,
+            assignments: None,
+            positions: None,
+            token_values: None,
+        })
+        .expect("valid slots");
+        assert_eq!(slots, SubmittedAnswer::FillSlots(values));
     }
 
     #[test]

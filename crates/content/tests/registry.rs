@@ -5,7 +5,7 @@ use adaptive_learn_content::ContentRegistry;
 #[test]
 fn embedded_registry_loads_and_validates() {
     let registry = ContentRegistry::embedded().expect("embedded content must be valid");
-    assert_eq!(registry.bundles().len(), 1);
+    assert!(!registry.bundles().is_empty());
 }
 
 #[test]
@@ -57,7 +57,7 @@ fn domain_weights_match_the_official_blueprint() {
 }
 
 #[test]
-fn only_task_1_1_has_questions() {
+fn authored_tasks_span_all_domains() {
     let registry = ContentRegistry::embedded().expect("valid registry");
     let bundle = registry
         .bundle_for_certification("aws-soa-c03")
@@ -71,7 +71,13 @@ fn only_task_1_1_has_questions() {
         .map(|task| task.id.as_str())
         .collect();
 
-    assert_eq!(authored_tasks, vec!["1.1"]);
+    assert_eq!(
+        authored_tasks,
+        vec![
+            "1.1", "1.2", "1.3", "2.1", "2.2", "2.3", "3.1", "3.2", "4.1", "4.2", "5.1", "5.2",
+            "5.3",
+        ]
+    );
 }
 
 #[test]
@@ -83,9 +89,10 @@ fn task_1_1_returns_questions_in_authored_order() {
         .iter()
         .map(|question| question.id.as_str())
         .collect();
+    assert_eq!(ids.len(), 20);
     assert_eq!(
-        ids,
-        vec![
+        &ids[..5],
+        &[
             "monitoring-classification-001",
             "monitoring-ordering-001",
             "monitoring-connection-001",
@@ -109,5 +116,5 @@ fn question_lookup_is_version_scoped() {
             .question("soa-c02", "monitoring-classification-001")
             .is_none()
     );
-    assert!(registry.find_task("soa-c03", "1.2").is_none());
+    assert!(registry.find_task("soa-c03", "9.9").is_none());
 }

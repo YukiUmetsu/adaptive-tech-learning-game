@@ -1,8 +1,8 @@
-import { expect, type Page } from "@playwright/test";
+import { readdirSync, readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-import bundleJson from "../../../content/aws/soa-c03/soa-c03-content-v1.json" with {
-  type: "json",
-};
+import { expect, type Page } from "@playwright/test";
 
 interface Choice {
   id: string;
@@ -37,13 +37,58 @@ interface ContentBundle {
   questions: Question[];
 }
 
-// Expectations are derived from the authored bundle so content edits do not
-// silently desynchronize the tests.
-const content = bundleJson as unknown as ContentBundle;
+// Load every content bundle from the repository `content/` tree instead of
+// hardcoding a file path, so adding a certification/version needs no test edit.
+function collectBundles(directory: string): ContentBundle[] {
+  const bundles: ContentBundle[] = [];
+  // Sort entries so discovery order is deterministic across filesystems and
+  // matches the Rust build-time embedding order.
+  const entries = readdirSync(directory, { withFileTypes: true }).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+  for (const entry of entries) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      bundles.push(...collectBundles(path));
+    } else if (entry.name.endsWith(".json")) {
+      bundles.push(JSON.parse(readFileSync(path, "utf8")) as ContentBundle);
+    }
+  }
+  return bundles;
+}
 
-/** Question ids for SOA-C03 Task 1.1, in mission order. */
-export const QUESTION_ORDER: string[] =
-  content.version.domains[0].tasks[0].question_ids;
+const contentRoot = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../../content",
+);
+
+function loadAuthoredBundle(): ContentBundle {
+  const found = collectBundles(contentRoot).find((bundle) =>
+    bundle.version.domains.some((domain) =>
+      domain.tasks.some((task) => task.question_ids.length > 0),
+    ),
+  );
+  if (!found) {
+    throw new Error(`no authored content bundle found under ${contentRoot}`);
+  }
+  return found;
+}
+
+const content = loadAuthoredBundle();
+
+function authoredQuestionIds(bundle: ContentBundle): string[] {
+  for (const domain of bundle.version.domains) {
+    for (const task of domain.tasks) {
+      if (task.question_ids.length > 0) {
+        return task.question_ids;
+      }
+    }
+  }
+  throw new Error(`no authored task found under ${contentRoot}`);
+}
+
+/** Question ids for the authored task, in mission order. */
+export const QUESTION_ORDER: string[] = authoredQuestionIds(content);
 
 export const TOTAL_QUESTIONS = QUESTION_ORDER.length;
 

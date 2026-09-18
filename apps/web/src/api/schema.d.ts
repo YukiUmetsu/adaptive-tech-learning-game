@@ -138,12 +138,35 @@ export interface components {
     schemas: {
         /** @description Answer primitives for one attempt. Exactly one field is set. */
         AnswerPayload: {
+            /** @description Slot id to piece id assignments for configuration builder. */
+            assignments?: {
+                [key: string]: string;
+            } | null;
+            /** @description Ordered choice ids for troubleshooting or a scenario chain. */
+            choice_path?: string[] | null;
             /** @description Directed `[from, to]` pairs for node connection. */
             edges?: string[][] | null;
+            /** @description Selected evidence source ids for evidence selection. */
+            evidence_ids?: string[] | null;
+            /** @description Selected faulty element ids for spot the fault. */
+            faulty_ids?: string[] | null;
             /** @description Item ids in submitted order for ordering. */
             ordered_ids?: string[] | null;
             /** @description Item id to category id placements for classification. */
             placements?: {
+                [key: string]: string;
+            } | null;
+            /** @description Item id to position for two-dimensional placement. */
+            positions?: {
+                [key: string]: components["schemas"]["PlacementPoint"];
+            } | null;
+            reconstruction?: null | components["schemas"]["ReconstructionAnswerPayload"];
+            /** @description Slot id to option id values for fill slots. */
+            slot_values?: {
+                [key: string]: string;
+            } | null;
+            /** @description Slot id to token id values for command assembly. */
+            token_values?: {
                 [key: string]: string;
             } | null;
         };
@@ -214,6 +237,71 @@ export interface components {
             edges: string[][];
             /** @enum {string} */
             type: "node_connection";
+        } | {
+            /** @description Optional directed `[from, to]` piece-id pairs for `graph` layouts. */
+            edges?: string[][];
+            /** @description Slot id to piece id. */
+            placements: {
+                [key: string]: string;
+            };
+            /** @enum {string} */
+            type: "reconstruction";
+        } | {
+            /** @description Relevant evidence ids. Every other candidate is a false positive. */
+            relevant_ids: string[];
+            /** @enum {string} */
+            type: "evidence_selection";
+        } | {
+            /** @description Faulty element ids. */
+            faulty_ids: string[];
+            /** @enum {string} */
+            type: "spot_the_fault";
+        } | {
+            /** @enum {string} */
+            type: "fill_slots";
+            /** @description Slot id to option id. */
+            values: {
+                [key: string]: string;
+            };
+        } | {
+            /** @description Step id to the choice ids that are correct at that step. */
+            correct_choice_ids: {
+                [key: string]: string[];
+            };
+            /** @description The intended ordered choice ids from the start step. */
+            expected_path: string[];
+            /** @enum {string} */
+            type: "troubleshooting";
+        } | {
+            /** @description Step id to the choice ids that are correct at that step. */
+            correct_choice_ids: {
+                [key: string]: string[];
+            };
+            /** @description The intended ordered choice ids from the start step. */
+            expected_path: string[];
+            /** @enum {string} */
+            type: "scenario_choice_chain";
+        } | {
+            /** @description Slot id to piece id. */
+            assignments: {
+                [key: string]: string;
+            };
+            /** @enum {string} */
+            type: "configuration_builder";
+        } | {
+            /** @description Item id to its canonical region. */
+            regions: {
+                [key: string]: components["schemas"]["PlacementRegion"];
+            };
+            /** @enum {string} */
+            type: "two_dimensional_placement";
+        } | {
+            /** @enum {string} */
+            type: "command_assembly";
+            /** @description Slot id to token id. */
+            values: {
+                [key: string]: string;
+            };
         };
         /** @description Response for the certification catalog. */
         CatalogResponse: {
@@ -290,6 +378,13 @@ export interface components {
              */
             weight: number;
         };
+        /** @description A named role the learner assigns a component to. */
+        ConfigSlot: {
+            /** @description Stable identifier within the question. */
+            id: string;
+            /** @description Learner-facing label for the role, for example `IPv4 default route target`. */
+            label: string;
+        };
         /**
          * @description Database reachability.
          * @enum {string}
@@ -346,6 +441,37 @@ export interface components {
              */
             score: number;
         };
+        /** @description A blank the learner must fill from a constrained option set. */
+        FillSlot: {
+            /** @description Stable identifier within the question. */
+            id: string;
+            /** @description Learner-facing label for the blank, for example `Destination`. */
+            label: string;
+        };
+        /** @description A node that is already provided as part of the scaffold. */
+        FixedNode: {
+            /** @description Stable identifier within the question. */
+            id: string;
+            /** @description Learner-facing label. */
+            label: string;
+            /** @description Where the node is shown relative to the slots in `linear` layouts. */
+            position: components["schemas"]["FixedNodePosition"];
+            /**
+             * Format: double
+             * @description Authored horizontal position for `graph` layouts, in `0..=1`.
+             */
+            x?: number | null;
+            /**
+             * Format: double
+             * @description Authored vertical position for `graph` layouts, in `0..=1`.
+             */
+            y?: number | null;
+        };
+        /**
+         * @description Where a provided node sits relative to a reconstruction's slots.
+         * @enum {string}
+         */
+        FixedNodePosition: "start" | "end";
         /**
          * @description Safe operational health payload. Never includes connection strings, hosts,
          *     versions of dependencies, or other internals.
@@ -393,12 +519,77 @@ export interface components {
             nodes: components["schemas"]["Node"][];
             /** @enum {string} */
             type: "node_connection";
+        } | {
+            /** @description Nodes already provided as context. Not part of the answer. */
+            fixed_nodes: components["schemas"]["FixedNode"][];
+            /** @description How the scaffold represents structure. */
+            layout: components["schemas"]["ReconstructionLayout"];
+            /** @description Candidate pieces, including plausible distractors. */
+            pieces: components["schemas"]["Choice"][];
+            /** @description Structural positions the learner fills. */
+            slots: components["schemas"]["ReconstructionSlot"][];
+            /** @enum {string} */
+            type: "reconstruction";
+        } | {
+            /** @description Candidate telemetry, log, or evidence sources. */
+            evidence: components["schemas"]["Choice"][];
+            /** @enum {string} */
+            type: "evidence_selection";
+        } | {
+            /** @description Structured elements (components, rules, rows) the learner inspects. */
+            elements: components["schemas"]["Choice"][];
+            /** @enum {string} */
+            type: "spot_the_fault";
+        } | {
+            /** @description Values the learner may use. May contain distractors. */
+            options: components["schemas"]["Choice"][];
+            /** @description Blanks to fill, in presentation order. */
+            slots: components["schemas"]["FillSlot"][];
+            /** @enum {string} */
+            type: "fill_slots";
+        } | {
+            /** @description Step the scenario starts at. */
+            start_step_id: string;
+            /** @description Authored decision steps. */
+            steps: components["schemas"]["ScenarioStep"][];
+            /** @enum {string} */
+            type: "troubleshooting";
+        } | {
+            /** @description Step the scenario starts at. */
+            start_step_id: string;
+            /** @description Authored decision steps. */
+            steps: components["schemas"]["ScenarioStep"][];
+            /** @enum {string} */
+            type: "scenario_choice_chain";
+        } | {
+            /** @description Components the learner may assign. May contain distractors. */
+            pieces: components["schemas"]["Choice"][];
+            /** @description Named roles that each expect one component. */
+            slots: components["schemas"]["ConfigSlot"][];
+            /** @enum {string} */
+            type: "configuration_builder";
+        } | {
+            /** @description Items the learner positions. */
+            items: components["schemas"]["Choice"][];
+            /** @enum {string} */
+            type: "two_dimensional_placement";
+            /** @description Horizontal axis definition. */
+            x_axis: components["schemas"]["PlacementAxis"];
+            /** @description Vertical axis definition. */
+            y_axis: components["schemas"]["PlacementAxis"];
+        } | {
+            /** @description Ordered parts of the statement. */
+            slots: components["schemas"]["FillSlot"][];
+            /** @description Tokens the learner may use. May contain distractors. */
+            tokens: components["schemas"]["Choice"][];
+            /** @enum {string} */
+            type: "command_assembly";
         };
         /**
          * @description The tactile interaction family a question uses.
          * @enum {string}
          */
-        InteractionType: "classification" | "ordering" | "node_connection";
+        InteractionType: "classification" | "ordering" | "node_connection" | "reconstruction" | "evidence_selection" | "spot_the_fault" | "fill_slots" | "troubleshooting" | "scenario_choice_chain" | "configuration_builder" | "two_dimensional_placement" | "command_assembly";
         /** @description Request to issue a mission for a task. */
         IssueMissionRequest: {
             /** @description Certification identifier. */
@@ -470,6 +661,37 @@ export interface components {
              */
             y: number;
         };
+        /** @description One axis of a two-dimensional conceptual map. */
+        PlacementAxis: {
+            /** @description Label for the high end of the axis. */
+            high_label: string;
+            /** @description Stable identifier within the question. */
+            id: string;
+            /** @description Learner-facing axis name. */
+            label: string;
+            /** @description Label for the low end of the axis. */
+            low_label: string;
+        };
+        /** @description A point submitted for a two-dimensional placement. */
+        PlacementPoint: {
+            /**
+             * Format: double
+             * @description Horizontal position in `0..=1`.
+             */
+            x: number;
+            /**
+             * Format: double
+             * @description Vertical position in `0..=1`.
+             */
+            y: number;
+        };
+        /** @description A tolerant canonical region on a two-dimensional map. */
+        PlacementRegion: {
+            /** @description Inclusive `[min, max]` horizontal range in `0..=1`. */
+            x: number[];
+            /** @description Inclusive `[min, max]` vertical range in `0..=1`. */
+            y: number[];
+        };
         /** @description A question shown to the learner. Contains no answer key. */
         QuestionView: {
             /** @description Evidence mode. */
@@ -491,6 +713,58 @@ export interface components {
             interaction_type: components["schemas"]["InteractionType"];
             /** @description Learner-facing prompt. */
             prompt: string;
+        };
+        /** @description Reconstruction answer primitives. */
+        ReconstructionAnswerPayload: {
+            /** @description Directed `[from, to]` relationships the learner drew. */
+            edges?: string[][];
+            /** @description Slot id to piece id placements. */
+            placements: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * @description How a reconstruction scaffold represents structure.
+         * @enum {string}
+         */
+        ReconstructionLayout: "linear" | "graph";
+        /** @description A structural position the learner fills with a piece. */
+        ReconstructionSlot: {
+            /** @description Stable identifier within the question. */
+            id: string;
+            /**
+             * Format: double
+             * @description Authored horizontal position for `graph` layouts, in `0..=1`.
+             */
+            x?: number | null;
+            /**
+             * Format: double
+             * @description Authored vertical position for `graph` layouts, in `0..=1`.
+             */
+            y?: number | null;
+        };
+        /**
+         * @description The operational stage a branching-scenario decision belongs to.
+         *
+         *     The stage is used only to attach a structured error code to a poor decision;
+         *     it is not a measure of overall mastery.
+         * @enum {string}
+         */
+        ScenarioStage: "diagnosis" | "action" | "remediation" | "verification";
+        /** @description One authored decision point in a branching scenario. */
+        ScenarioStep: {
+            /** @description Choices available at this step. */
+            choices: components["schemas"]["Choice"][];
+            /** @description Stable identifier within the scenario. */
+            id: string;
+            /** @description Choice id to next step id. A choice with no entry ends the scenario. */
+            next_step_by_choice: {
+                [key: string]: string;
+            };
+            /** @description Learner-facing situation or question. */
+            prompt: string;
+            /** @description What kind of decision this step represents. */
+            stage: components["schemas"]["ScenarioStage"];
         };
         /** @description One attempt in a sync batch. */
         SyncEventRequest: {
