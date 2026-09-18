@@ -45,6 +45,40 @@ flowchart LR
 | Analytics | Parquet + DuckDB locally; Iceberg + R2 SQL later if needed | Avoid an expensive analytics service early |
 | ML training | Local first; Modal; RunPod later | $0 initial training; cheap burst GPU later |
 
+## Current implementation status
+
+- **Phase 0** — repository foundation, Rust/Axum API, React/Vite/PWA shell, PostgreSQL + SQLx, OpenAPI → TypeScript generation.
+- **Phase 1 (in progress)** — first end-to-end learning MVP for **AWS Certified CloudOps Engineer - Associate (SOA-C03)**, covering only Domain 1 / Task 1.1 with original content and three tactile interactions (classification, ordering, node connection). No adaptive scheduling, mastery prediction, or gamification yet.
+
+## Getting started
+
+Repository layout and full commands are in
+[Local development](docs/11-local-development.md). The short version:
+
+```bash
+# Local PostgreSQL
+docker compose up -d
+
+# API (applies migrations locally)
+cp .env.example .env
+cargo run -p adaptive-learn-api
+
+# Web
+cd apps/web
+pnpm install
+cp .env.example .env.local
+pnpm dev
+```
+
+Checks:
+
+```bash
+cargo fmt --check && cargo clippy --all-targets --all-features -- -D warnings && cargo test
+(cd apps/web && pnpm lint && pnpm typecheck && pnpm test && pnpm build)
+(cd apps/web && E2E_DATABASE_URL=postgres://app:app@localhost:5432/app pnpm e2e)
+(cd ml && uv run pytest)
+```
+
 ## Documentation
 
 1. [Product and problem statement](docs/01-product.md)

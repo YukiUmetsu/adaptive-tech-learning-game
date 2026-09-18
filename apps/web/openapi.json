@@ -1,0 +1,1312 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Adaptive Learning API",
+    "description": "Operational endpoints plus the Phase 1 learning MVP for AWS SOA-C03.",
+    "license": {
+      "name": "UNLICENSED",
+      "identifier": "UNLICENSED"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Liveness and dependency check.",
+        "description": "Returns `200` when the database is reachable and `503` when it is not, so a\nload balancer can stop routing to an instance whose dependency is down.",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "Service and database are healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service is running but the database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Serves the generated OpenAPI document.",
+        "description": "The document is the source of truth for the TypeScript client. Regenerate it\nwith `cargo run -p adaptive-learn-api --bin export-openapi` or the web\n`pnpm generate:api` script.",
+        "operationId": "openapi_json",
+        "responses": {
+          "200": {
+            "description": "OpenAPI 3 document"
+          }
+        }
+      }
+    },
+    "/v1/certifications": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Lists certifications, versions, domains, and authored tasks.",
+        "operationId": "list_certifications",
+        "responses": {
+          "200": {
+            "description": "Certification catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/missions/issue": {
+      "post": {
+        "tags": [
+          "missions"
+        ],
+        "summary": "Issues a deterministic mission for a task.",
+        "operationId": "issue_mission",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueMissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Issued mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown certification or task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/missions/{mission_id}/answers": {
+      "post": {
+        "tags": [
+          "missions"
+        ],
+        "summary": "Scores one attempt and returns immediate feedback.",
+        "operationId": "answer_mission",
+        "parameters": [
+          {
+            "name": "mission_id",
+            "in": "path",
+            "description": "Mission identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Scored attempt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Mission belongs to another device",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Mission completed or content version mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/missions/{mission_id}/complete": {
+      "post": {
+        "tags": [
+          "missions"
+        ],
+        "summary": "Marks a mission completed.",
+        "operationId": "complete_mission",
+        "parameters": [
+          {
+            "name": "mission_id",
+            "in": "path",
+            "description": "Mission identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteMissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Mission completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteMissionResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Mission belongs to another device",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sync": {
+      "post": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Reconciles a batch of attempts, re-scoring each against canonical content.",
+        "operationId": "sync",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Per-event sync results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnswerPayload": {
+        "type": "object",
+        "description": "Answer primitives for one attempt. Exactly one field is set.",
+        "properties": {
+          "edges": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Directed `[from, to]` pairs for node connection."
+          },
+          "ordered_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Item ids in submitted order for ordering."
+          },
+          "placements": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Item id to category id placements for classification.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AnswerRequest": {
+        "type": "object",
+        "description": "Request to score one attempt.",
+        "required": [
+          "device_id",
+          "event_id",
+          "question_id",
+          "content_version",
+          "attempt_number",
+          "hint_count",
+          "response_ms",
+          "occurred_at",
+          "answer"
+        ],
+        "properties": {
+          "answer": {
+            "$ref": "#/components/schemas/AnswerPayload",
+            "description": "Answer primitives."
+          },
+          "attempt_number": {
+            "type": "integer",
+            "format": "int32",
+            "description": "1-based attempt number."
+          },
+          "content_version": {
+            "type": "string",
+            "description": "Content version the client believes it is answering."
+          },
+          "device_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Client device identifier."
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Stable event identifier for this attempt."
+          },
+          "hint_count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Hints used before submitting."
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the attempt occurred on the device."
+          },
+          "question_id": {
+            "type": "string",
+            "description": "Question being answered."
+          },
+          "response_ms": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Active response time in milliseconds."
+          }
+        }
+      },
+      "AssessmentMode": {
+        "type": "string",
+        "description": "How an attempt measures knowledge.\n\nThe first four are the base evidence modes from `docs/06-learning-engine.md`.\nThe remaining two are explicit Phase 1 subtypes used by tactile\ninteractions; they are still treated as evidence modes, not proven\nindependent latent abilities.",
+        "enum": [
+          "recognition",
+          "recall",
+          "application",
+          "structural_reconstruction",
+          "relationship_recall",
+          "procedural_recall"
+        ]
+      },
+      "CanonicalAnswer": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Correct item-to-category placements.",
+            "required": [
+              "placements",
+              "type"
+            ],
+            "properties": {
+              "placements": {
+                "type": "object",
+                "description": "Item id to category id.",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "propertyNames": {
+                  "type": "string"
+                }
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "classification"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Correct order of item ids.",
+            "required": [
+              "ordered_ids",
+              "type"
+            ],
+            "properties": {
+              "ordered_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Item ids in canonical order."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "ordering"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Correct directed relationships.",
+            "required": [
+              "edges",
+              "type"
+            ],
+            "properties": {
+              "edges": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "description": "Directed `[from, to]` pairs."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "node_connection"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "The canonical answer for a question."
+      },
+      "CatalogResponse": {
+        "type": "object",
+        "description": "Response for the certification catalog.",
+        "required": [
+          "certifications"
+        ],
+        "properties": {
+          "certifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CertificationDto"
+            },
+            "description": "All known certifications."
+          }
+        }
+      },
+      "CertificationDto": {
+        "type": "object",
+        "description": "A certification with its versioned blueprints.",
+        "required": [
+          "id",
+          "vendor",
+          "name",
+          "exam_code",
+          "official_source_url",
+          "last_reviewed",
+          "versions"
+        ],
+        "properties": {
+          "exam_code": {
+            "type": "string",
+            "description": "Official exam code."
+          },
+          "id": {
+            "type": "string",
+            "description": "Certification identifier."
+          },
+          "last_reviewed": {
+            "type": "string",
+            "description": "Last blueprint review date."
+          },
+          "name": {
+            "type": "string",
+            "description": "Full name."
+          },
+          "official_source_url": {
+            "type": "string",
+            "description": "Official blueprint source."
+          },
+          "vendor": {
+            "type": "string",
+            "description": "Vendor."
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CertificationVersionDto"
+            },
+            "description": "Known exam versions."
+          }
+        }
+      },
+      "CertificationVersionDto": {
+        "type": "object",
+        "description": "A versioned exam blueprint.",
+        "required": [
+          "id",
+          "exam_code",
+          "effective_date",
+          "content_version",
+          "domains"
+        ],
+        "properties": {
+          "content_version": {
+            "type": "string",
+            "description": "Immutable content version."
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDto"
+            },
+            "description": "Domains with authored tasks."
+          },
+          "effective_date": {
+            "type": "string",
+            "description": "Blueprint effective date."
+          },
+          "exam_code": {
+            "type": "string",
+            "description": "Official exam code."
+          },
+          "id": {
+            "type": "string",
+            "description": "Version identifier."
+          }
+        }
+      },
+      "Choice": {
+        "type": "object",
+        "description": "A selectable item or category.",
+        "required": [
+          "id",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable identifier within the question."
+          },
+          "label": {
+            "type": "string",
+            "description": "Learner-facing label."
+          }
+        }
+      },
+      "CompleteMissionRequest": {
+        "type": "object",
+        "description": "Request to complete a mission.",
+        "required": [
+          "device_id"
+        ],
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Device that owns the mission."
+          }
+        }
+      },
+      "CompleteMissionResponse": {
+        "type": "object",
+        "description": "Completion result.",
+        "required": [
+          "id",
+          "status"
+        ],
+        "properties": {
+          "completed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Completion time."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Mission identifier."
+          },
+          "status": {
+            "$ref": "#/components/schemas/MissionStatus",
+            "description": "New status."
+          }
+        }
+      },
+      "ConceptWeight": {
+        "type": "object",
+        "description": "A concept mapped to a question, with its share of the evidence.",
+        "required": [
+          "concept_id",
+          "weight"
+        ],
+        "properties": {
+          "concept_id": {
+            "type": "string",
+            "description": "Concept identifier, for example `aws.cloudwatch.alarm`."
+          },
+          "weight": {
+            "type": "number",
+            "format": "double",
+            "description": "Share of the question attributed to this concept, in `(0, 1]`."
+          }
+        }
+      },
+      "DatabaseStatus": {
+        "type": "string",
+        "description": "Database reachability.",
+        "enum": [
+          "ok",
+          "unavailable"
+        ]
+      },
+      "DomainDto": {
+        "type": "object",
+        "description": "A content domain.",
+        "required": [
+          "id",
+          "name",
+          "weight",
+          "tasks"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Domain identifier."
+          },
+          "name": {
+            "type": "string",
+            "description": "Domain name."
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskDto"
+            },
+            "description": "Tasks with authored content."
+          },
+          "weight": {
+            "type": "number",
+            "format": "double",
+            "description": "Share of scored content."
+          }
+        }
+      },
+      "ErrorBody": {
+        "type": "object",
+        "description": "Structured error details.",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Stable error code."
+          },
+          "message": {
+            "type": "string",
+            "description": "Safe, human-readable message."
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "description": "Envelope returned for every API error.",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody",
+            "description": "Error payload."
+          }
+        }
+      },
+      "FeedbackResponse": {
+        "type": "object",
+        "description": "Feedback for one scored attempt.",
+        "required": [
+          "event_id",
+          "question_id",
+          "correct",
+          "score",
+          "error_codes",
+          "explanation",
+          "canonical_answer",
+          "concepts"
+        ],
+        "properties": {
+          "canonical_answer": {
+            "$ref": "#/components/schemas/CanonicalAnswer",
+            "description": "Canonical answer, revealed after scoring."
+          },
+          "concepts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConceptWeight"
+            },
+            "description": "Concept mappings with weights."
+          },
+          "correct": {
+            "type": "boolean",
+            "description": "Whether the attempt was fully correct."
+          },
+          "error_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Structured error codes."
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Event identifier echoed back."
+          },
+          "explanation": {
+            "type": "string",
+            "description": "Short explanation."
+          },
+          "question_id": {
+            "type": "string",
+            "description": "Question identifier."
+          },
+          "score": {
+            "type": "number",
+            "format": "double",
+            "description": "Partial score in `[0, 1]`."
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "description": "Safe operational health payload. Never includes connection strings, hosts,\nversions of dependencies, or other internals.",
+        "required": [
+          "status",
+          "service",
+          "version",
+          "database",
+          "uptime_seconds",
+          "timestamp"
+        ],
+        "properties": {
+          "database": {
+            "$ref": "#/components/schemas/DatabaseStatus",
+            "description": "Database status."
+          },
+          "service": {
+            "type": "string",
+            "description": "Service name."
+          },
+          "status": {
+            "$ref": "#/components/schemas/HealthStatus",
+            "description": "Aggregate status."
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server time in UTC."
+          },
+          "uptime_seconds": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Seconds since process start.",
+            "minimum": 0
+          },
+          "version": {
+            "type": "string",
+            "description": "Service version."
+          }
+        }
+      },
+      "HealthStatus": {
+        "type": "string",
+        "description": "Overall service health.",
+        "enum": [
+          "ok",
+          "degraded"
+        ]
+      },
+      "Interaction": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Place items into categories.",
+            "required": [
+              "items",
+              "categories",
+              "type"
+            ],
+            "properties": {
+              "categories": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Choice"
+                },
+                "description": "Destination categories."
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Choice"
+                },
+                "description": "Items to place."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "classification"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Arrange items into a meaningful order.",
+            "required": [
+              "items",
+              "type"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Choice"
+                },
+                "description": "Items to order."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "ordering"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Connect nodes with directed relationships.",
+            "required": [
+              "nodes",
+              "type"
+            ],
+            "properties": {
+              "nodes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Node"
+                },
+                "description": "Nodes available to connect."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "node_connection"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Interaction definition shown to the learner. Contains no answer key."
+      },
+      "InteractionType": {
+        "type": "string",
+        "description": "The tactile interaction family a question uses.",
+        "enum": [
+          "classification",
+          "ordering",
+          "node_connection"
+        ]
+      },
+      "IssueMissionRequest": {
+        "type": "object",
+        "description": "Request to issue a mission for a task.",
+        "required": [
+          "device_id",
+          "certification_id",
+          "certification_version",
+          "task_id"
+        ],
+        "properties": {
+          "certification_id": {
+            "type": "string",
+            "description": "Certification identifier."
+          },
+          "certification_version": {
+            "type": "string",
+            "description": "Certification version identifier."
+          },
+          "device_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Client device identifier."
+          },
+          "task_id": {
+            "type": "string",
+            "description": "Task to study."
+          }
+        }
+      },
+      "MissionResponse": {
+        "type": "object",
+        "description": "A server-issued mission with its questions.",
+        "required": [
+          "id",
+          "device_id",
+          "certification_id",
+          "certification_version",
+          "content_version",
+          "domain_id",
+          "task_id",
+          "issued_at",
+          "expires_at",
+          "questions"
+        ],
+        "properties": {
+          "certification_id": {
+            "type": "string",
+            "description": "Certification identifier."
+          },
+          "certification_version": {
+            "type": "string",
+            "description": "Certification version identifier."
+          },
+          "content_version": {
+            "type": "string",
+            "description": "Immutable content version."
+          },
+          "device_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Device the mission belongs to."
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "Domain covered."
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Expiry time."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Mission identifier."
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Issue time."
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuestionView"
+            },
+            "description": "Questions in presentation order."
+          },
+          "task_id": {
+            "type": "string",
+            "description": "Task covered."
+          }
+        }
+      },
+      "MissionStatus": {
+        "type": "string",
+        "description": "Lifecycle of a server-issued mission.",
+        "enum": [
+          "issued",
+          "completed"
+        ]
+      },
+      "Node": {
+        "type": "object",
+        "description": "A node in a connection graph.",
+        "required": [
+          "id",
+          "label",
+          "x",
+          "y"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable identifier within the question."
+          },
+          "label": {
+            "type": "string",
+            "description": "Learner-facing label."
+          },
+          "x": {
+            "type": "number",
+            "format": "double",
+            "description": "Horizontal position in an abstract `0..=1` layout space."
+          },
+          "y": {
+            "type": "number",
+            "format": "double",
+            "description": "Vertical position in an abstract `0..=1` layout space."
+          }
+        }
+      },
+      "QuestionView": {
+        "type": "object",
+        "description": "A question shown to the learner. Contains no answer key.",
+        "required": [
+          "id",
+          "prompt",
+          "interaction_type",
+          "assessment_mode",
+          "difficulty_prior",
+          "concepts",
+          "hints",
+          "interaction"
+        ],
+        "properties": {
+          "assessment_mode": {
+            "$ref": "#/components/schemas/AssessmentMode",
+            "description": "Evidence mode."
+          },
+          "concepts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConceptWeight"
+            },
+            "description": "Concept mappings."
+          },
+          "difficulty_prior": {
+            "type": "number",
+            "format": "double",
+            "description": "Prior difficulty."
+          },
+          "hints": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional hints."
+          },
+          "id": {
+            "type": "string",
+            "description": "Question identifier."
+          },
+          "interaction": {
+            "$ref": "#/components/schemas/Interaction",
+            "description": "Interaction definition."
+          },
+          "interaction_type": {
+            "$ref": "#/components/schemas/InteractionType",
+            "description": "Interaction family."
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Learner-facing prompt."
+          }
+        }
+      },
+      "SyncEventRequest": {
+        "type": "object",
+        "description": "One attempt in a sync batch.",
+        "required": [
+          "event_id",
+          "mission_instance_id",
+          "question_id",
+          "content_version",
+          "attempt_number",
+          "hint_count",
+          "response_ms",
+          "occurred_at",
+          "answer"
+        ],
+        "properties": {
+          "answer": {
+            "$ref": "#/components/schemas/AnswerPayload",
+            "description": "Answer primitives."
+          },
+          "attempt_number": {
+            "type": "integer",
+            "format": "int32",
+            "description": "1-based attempt number."
+          },
+          "content_version": {
+            "type": "string",
+            "description": "Content version the answer was produced against."
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Stable event identifier."
+          },
+          "hint_count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Hints used."
+          },
+          "mission_instance_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Mission the attempt belongs to."
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the attempt occurred."
+          },
+          "question_id": {
+            "type": "string",
+            "description": "Question answered."
+          },
+          "response_ms": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Active response time in milliseconds."
+          }
+        }
+      },
+      "SyncEventResult": {
+        "type": "object",
+        "description": "Result for one synced event.",
+        "required": [
+          "event_id",
+          "accepted"
+        ],
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "description": "Whether the event is now accepted server-side."
+          },
+          "error_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Error code when not accepted."
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Event identifier."
+          }
+        }
+      },
+      "SyncRequest": {
+        "type": "object",
+        "description": "Request to sync a batch of evaluated attempts.",
+        "required": [
+          "device_id",
+          "events"
+        ],
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Client device identifier."
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncEventRequest"
+            },
+            "description": "Attempts to reconcile."
+          }
+        }
+      },
+      "SyncResponse": {
+        "type": "object",
+        "description": "Result of a sync batch.",
+        "required": [
+          "results"
+        ],
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncEventResult"
+            },
+            "description": "Per-event results."
+          }
+        }
+      },
+      "TaskDto": {
+        "type": "object",
+        "description": "A task with a count of authored questions.",
+        "required": [
+          "id",
+          "name",
+          "question_count"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Task identifier."
+          },
+          "name": {
+            "type": "string",
+            "description": "Task name."
+          },
+          "question_count": {
+            "type": "integer",
+            "description": "Number of authored questions available.",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "system",
+      "description": "Operational endpoints"
+    },
+    {
+      "name": "catalog",
+      "description": "Certification catalog"
+    },
+    {
+      "name": "missions",
+      "description": "Mission issuance, scoring, and completion"
+    },
+    {
+      "name": "sync",
+      "description": "Batch reconciliation of learning events"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+//! Core domain types for the adaptive learning game.
+//!
+//! This crate holds plain data types and invariants that do not depend on the
+//! database, HTTP, or any provider. Persistence and transport layers map to and
+//! from these types. Phase 0 intentionally covers only the foundational
+//! `users` and `sync_batches` concepts.
+
+pub mod learning;
+pub mod sync;
+pub mod user;
+
+pub use learning::{
+    AssessmentMode, ConceptWeight, InteractionType, LearningEvent, MissionInstance, MissionStatus,
+};
+pub use sync::{NewSyncBatch, SyncBatch, SyncBatchStatus};
+pub use user::{NewUser, User};
+
+/// Errors raised when a value violates a domain invariant.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum DomainError {
+    /// A field failed validation.
+    #[error("invalid {field}: {reason}")]
+    Invalid {
+        /// Name of the offending field.
+        field: &'static str,
+        /// Human-readable reason the value was rejected.
+        reason: &'static str,
+    },
+}
+
+impl DomainError {
+    /// Builds a new invariant error.
+    pub const fn invalid(field: &'static str, reason: &'static str) -> Self {
+        Self::Invalid { field, reason }
+    }
+}

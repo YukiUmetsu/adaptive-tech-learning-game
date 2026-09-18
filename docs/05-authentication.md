@@ -12,6 +12,15 @@ Initial methods:
 
 WorkOS currently provides AuthKit free up to 1M MAU and has official React and Rust SDKs.
 
+## Phase 0 status
+
+Phase 0 defines the configuration boundary only. `WORKOS_CLIENT_ID`,
+`WORKOS_API_KEY`, and optional `WORKOS_ISSUER` are loaded and validated at API
+startup (`apps/api/src/config.rs`), and are required to be set together or not
+at all. No route requires a token and no auth middleware is installed yet.
+Token verification, JWKS handling, and the first authenticated route arrive with
+the first protected endpoint in a later phase.
+
 ## Why code instead of magic link
 
 WorkOS recommends Magic Auth codes and has deprecated Magic Links because enterprise mail security tools can automatically open links and invalidate them.

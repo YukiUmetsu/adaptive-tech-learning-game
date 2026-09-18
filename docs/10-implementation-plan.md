@@ -16,6 +16,13 @@ Deliver:
 
 Exit: authenticated user can load and sync a trivial state.
 
+> Phase 0 implementation note: this repository currently implements the local
+> foundation only — Rust/Axum skeleton, React/Vite/PWA shell, local PostgreSQL
+> with SQLx migrations, and OpenAPI → TypeScript generation. WorkOS staging
+> auth, deployed Cloud Run/Neon/R2 environments, and IaC are deliberately
+> deferred until credentials and environments exist. See
+> [Local development](11-local-development.md).
+
 ## Phase 1 — Narrow learning MVP
 
 Use **one deliberately narrow slice** of one certification, not full exam coverage.
@@ -32,6 +39,15 @@ Deliver:
 - current concept-state cache
 
 Exit: useful study sessions work without game mechanics and events are deterministic/replayable.
+
+> Phase 1 implementation note: the repository currently implements one narrow
+> slice — AWS SOA-C03, Domain 1, Task 1.1 — with classification, ordering, and
+> node-connection interactions, server-side scoring, a normalized learning
+> event, local-first persistence, and a batched sync endpoint. This is
+> deliberately smaller than the 100-300 interaction target below: the current
+> bundle has a small validated set for one task, and the equation mechanic is
+> not implemented yet. Domains 2-5 and other tasks are blueprint metadata only.
+> Adaptive scheduling, mastery prediction, and gamification remain out of scope.
 
 ## Phase 2 — Authoritative mission + sync protocol
 
