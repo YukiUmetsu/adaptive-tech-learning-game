@@ -1,0 +1,75 @@
+# Adaptive Technical Learning Game
+
+Working documentation for a certification-focused learning game for cloud, AI, Linux, security, math, and IT knowledge.
+
+## Product thesis
+
+The app chooses what the learner should study next, explains why, and lets the learner override the plan. Learning sessions are short, tactile, and game-like. Study history is used to predict what the learner is likely to forget.
+
+Primary loop:
+
+```mermaid
+flowchart LR
+    G[Certification goal] --> P[Adaptive study plan]
+    P --> M[2-10 minute mission]
+    M --> Q[Interactive retrieval puzzles]
+    Q --> F[Immediate feedback]
+    F --> K[Update knowledge state]
+    K --> R[Earn game resources]
+    R --> W[Build / explore / companion / gacha]
+    W --> P
+```
+
+## Initial product scope
+
+- Certification campaigns: AWS, Azure, Google Cloud, Linux Foundation, security, AI.
+- Passwordless login plus Google social login.
+- Adaptive study plan based on exam date, objective weights, mastery, and forgetting risk.
+- Quiz mechanics: node connection, ordering, reconstruction, equation assembly, classification, 2D sorting, troubleshooting, and boss battles.
+- Game economy: earned currency, exploration energy, building, anime companion, cosmetics, and earned gacha.
+- Local-first session execution. Backend is used for sync, authoritative economy, account state, and model distribution.
+- No per-question LLM calls.
+
+## Selected stack
+
+| Layer | Decision | Main reason |
+|---|---|---|
+| Web | React + TypeScript + Vite/PWA | Fast UI iteration; good drag/canvas ecosystem; mobile-friendly |
+| Web hosting | Cloudflare static assets | Static requests are free/unlimited |
+| API | Rust + Axum + Tokio | Native Rust, efficient, portable container |
+| DB client | SQLx | Async; compile-time checked SQL; no heavy ORM |
+| API hosting | Google Cloud Run | Scale-to-zero; container portability; generous free tier |
+| Auth | WorkOS AuthKit | Google OAuth + passwordless Magic Auth; first 1M MAU free |
+| Relational DB | Neon Postgres | Postgres portability; scale-to-zero; usage-based pricing |
+| Object/event store | Cloudflare R2 | Cheap storage; S3 API; zero internet egress |
+| Analytics | Parquet + DuckDB locally; Iceberg + R2 SQL later if needed | Avoid an expensive analytics service early |
+| ML training | Local first; Modal; RunPod later | $0 initial training; cheap burst GPU later |
+
+## Documentation
+
+1. [Product and problem statement](docs/01-product.md)
+2. [System architecture](docs/02-system-architecture.md)
+3. [Data and storage architecture](docs/03-data-storage.md)
+4. [Platform and cost analysis](docs/04-platform-costs.md)
+5. [Authentication](docs/05-authentication.md)
+6. [Learning engine](docs/06-learning-engine.md)
+7. [Gamification](docs/07-gamification.md)
+8. [Certification content](docs/08-certification-content.md)
+9. [ML training and model lifecycle](docs/09-ml-training-and-model-lifecycle.md)
+10. [Implementation plan](docs/10-implementation-plan.md)
+11. [Local development](docs/11-local-development.md)
+12. [Deployment](docs/12-deployment.md)
+13. [Scaling plan](docs/13-scaling.md)
+14. [Security and privacy](docs/14-security-privacy.md)
+15. [Review](docs/15-review.md)
+16. [References](docs/REFERENCES.md)
+
+## Design rules
+
+- Optimize for **return frequency and useful retrieval**, not question count.
+- Recognition and recall are separate evidence.
+- The app chooses the default plan; the learner can see the reason and change it.
+- Economic state is server-authoritative.
+- Learning interaction can continue offline; economic rewards remain pending until authoritative reconciliation.
+- Raw historical events belong in cheap object storage, not indefinitely in the transactional database.
+- Do not introduce infrastructure merely because it is theoretically more scalable.
