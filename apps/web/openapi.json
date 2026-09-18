@@ -323,6 +323,29 @@
         "type": "object",
         "description": "Answer primitives for one attempt. Exactly one field is set.",
         "properties": {
+          "assignments": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Slot id to piece id assignments for configuration builder.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "choice_path": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Ordered choice ids for troubleshooting or a scenario chain."
+          },
           "edges": {
             "type": [
               "array",
@@ -335,6 +358,26 @@
               }
             },
             "description": "Directed `[from, to]` pairs for node connection."
+          },
+          "evidence_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Selected evidence source ids for evidence selection."
+          },
+          "faulty_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Selected faulty element ids for spot the fault."
           },
           "ordered_ids": {
             "type": [
@@ -352,6 +395,56 @@
               "null"
             ],
             "description": "Item id to category id placements for classification.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "positions": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Item id to position for two-dimensional placement.",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PlacementPoint"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "reconstruction": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ReconstructionAnswerPayload",
+                "description": "Selected components and relationships for reconstruction."
+              }
+            ]
+          },
+          "slot_values": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Slot id to option id values for fill slots.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "token_values": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Slot id to token id values for command assembly.",
             "additionalProperties": {
               "type": "string"
             },
@@ -506,6 +599,266 @@
                 "enum": [
                   "node_connection"
                 ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Correct piece placed in each slot.",
+            "required": [
+              "placements",
+              "type"
+            ],
+            "properties": {
+              "edges": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "description": "Optional directed `[from, to]` piece-id pairs for `graph` layouts."
+              },
+              "placements": {
+                "type": "object",
+                "description": "Slot id to piece id.",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "propertyNames": {
+                  "type": "string"
+                }
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "reconstruction"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Evidence source ids that are relevant to the question.",
+            "required": [
+              "relevant_ids",
+              "type"
+            ],
+            "properties": {
+              "relevant_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Relevant evidence ids. Every other candidate is a false positive."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "evidence_selection"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Element ids that are faulty.",
+            "required": [
+              "faulty_ids",
+              "type"
+            ],
+            "properties": {
+              "faulty_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Faulty element ids."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "spot_the_fault"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Correct value id for each slot id.",
+            "required": [
+              "values",
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "fill_slots"
+                ]
+              },
+              "values": {
+                "type": "object",
+                "description": "Slot id to option id.",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "propertyNames": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Correct decisions for a diagnosis/remediation scenario.",
+            "required": [
+              "correct_choice_ids",
+              "expected_path",
+              "type"
+            ],
+            "properties": {
+              "correct_choice_ids": {
+                "type": "object",
+                "description": "Step id to the choice ids that are correct at that step.",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "propertyNames": {
+                  "type": "string"
+                }
+              },
+              "expected_path": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "The intended ordered choice ids from the start step."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "troubleshooting"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Correct decisions for an authored decision chain.",
+            "required": [
+              "correct_choice_ids",
+              "expected_path",
+              "type"
+            ],
+            "properties": {
+              "correct_choice_ids": {
+                "type": "object",
+                "description": "Step id to the choice ids that are correct at that step.",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "propertyNames": {
+                  "type": "string"
+                }
+              },
+              "expected_path": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "The intended ordered choice ids from the start step."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "scenario_choice_chain"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Correct component assignment for each role.",
+            "required": [
+              "assignments",
+              "type"
+            ],
+            "properties": {
+              "assignments": {
+                "type": "object",
+                "description": "Slot id to piece id.",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "propertyNames": {
+                  "type": "string"
+                }
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "configuration_builder"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Correct tolerant region for each placed item.",
+            "required": [
+              "regions",
+              "type"
+            ],
+            "properties": {
+              "regions": {
+                "type": "object",
+                "description": "Item id to its canonical region.",
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/PlacementRegion"
+                },
+                "propertyNames": {
+                  "type": "string"
+                }
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "two_dimensional_placement"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Correct token for each ordered slot.",
+            "required": [
+              "values",
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "command_assembly"
+                ]
+              },
+              "values": {
+                "type": "object",
+                "description": "Slot id to token id.",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "propertyNames": {
+                  "type": "string"
+                }
               }
             }
           }
@@ -688,6 +1041,24 @@
           }
         }
       },
+      "ConfigSlot": {
+        "type": "object",
+        "description": "A named role the learner assigns a component to.",
+        "required": [
+          "id",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable identifier within the question."
+          },
+          "label": {
+            "type": "string",
+            "description": "Learner-facing label for the role, for example `IPv4 default route target`."
+          }
+        }
+      },
       "DatabaseStatus": {
         "type": "string",
         "description": "Database reachability.",
@@ -814,6 +1185,71 @@
             "description": "Partial score in `[0, 1]`."
           }
         }
+      },
+      "FillSlot": {
+        "type": "object",
+        "description": "A blank the learner must fill from a constrained option set.",
+        "required": [
+          "id",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable identifier within the question."
+          },
+          "label": {
+            "type": "string",
+            "description": "Learner-facing label for the blank, for example `Destination`."
+          }
+        }
+      },
+      "FixedNode": {
+        "type": "object",
+        "description": "A node that is already provided as part of the scaffold.",
+        "required": [
+          "id",
+          "label",
+          "position"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable identifier within the question."
+          },
+          "label": {
+            "type": "string",
+            "description": "Learner-facing label."
+          },
+          "position": {
+            "$ref": "#/components/schemas/FixedNodePosition",
+            "description": "Where the node is shown relative to the slots in `linear` layouts."
+          },
+          "x": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Authored horizontal position for `graph` layouts, in `0..=1`."
+          },
+          "y": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Authored vertical position for `graph` layouts, in `0..=1`."
+          }
+        }
+      },
+      "FixedNodePosition": {
+        "type": "string",
+        "description": "Where a provided node sits relative to a reconstruction's slots.",
+        "enum": [
+          "start",
+          "end"
+        ]
       },
       "HealthResponse": {
         "type": "object",
@@ -942,6 +1378,278 @@
                 ]
               }
             }
+          },
+          {
+            "type": "object",
+            "description": "Rebuild a structure by placing pieces into a scaffold's slots.",
+            "required": [
+              "layout",
+              "fixed_nodes",
+              "pieces",
+              "slots",
+              "type"
+            ],
+            "properties": {
+              "fixed_nodes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/FixedNode"
+                },
+                "description": "Nodes already provided as context. Not part of the answer."
+              },
+              "layout": {
+                "$ref": "#/components/schemas/ReconstructionLayout",
+                "description": "How the scaffold represents structure."
+              },
+              "pieces": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Choice"
+                },
+                "description": "Candidate pieces, including plausible distractors."
+              },
+              "slots": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ReconstructionSlot"
+                },
+                "description": "Structural positions the learner fills."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "reconstruction"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Select the evidence sources relevant to a question.",
+            "required": [
+              "evidence",
+              "type"
+            ],
+            "properties": {
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Choice"
+                },
+                "description": "Candidate telemetry, log, or evidence sources."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "evidence_selection"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Identify the faulty element(s) in an authored configuration.",
+            "required": [
+              "elements",
+              "type"
+            ],
+            "properties": {
+              "elements": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Choice"
+                },
+                "description": "Structured elements (components, rules, rows) the learner inspects."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "spot_the_fault"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Fill blanks with values drawn from a constrained option set.",
+            "required": [
+              "slots",
+              "options",
+              "type"
+            ],
+            "properties": {
+              "options": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Choice"
+                },
+                "description": "Values the learner may use. May contain distractors."
+              },
+              "slots": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/FillSlot"
+                },
+                "description": "Blanks to fill, in presentation order."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "fill_slots"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Follow a deterministic diagnosis/remediation decision tree.",
+            "required": [
+              "start_step_id",
+              "steps",
+              "type"
+            ],
+            "properties": {
+              "start_step_id": {
+                "type": "string",
+                "description": "Step the scenario starts at."
+              },
+              "steps": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioStep"
+                },
+                "description": "Authored decision steps."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "troubleshooting"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Follow a deterministic authored decision chain.",
+            "required": [
+              "start_step_id",
+              "steps",
+              "type"
+            ],
+            "properties": {
+              "start_step_id": {
+                "type": "string",
+                "description": "Step the scenario starts at."
+              },
+              "steps": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ScenarioStep"
+                },
+                "description": "Authored decision steps."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "scenario_choice_chain"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Assemble a configuration by assigning components to named roles.",
+            "required": [
+              "slots",
+              "pieces",
+              "type"
+            ],
+            "properties": {
+              "pieces": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Choice"
+                },
+                "description": "Components the learner may assign. May contain distractors."
+              },
+              "slots": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ConfigSlot"
+                },
+                "description": "Named roles that each expect one component."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "configuration_builder"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Place items on a two-axis conceptual map.",
+            "required": [
+              "x_axis",
+              "y_axis",
+              "items",
+              "type"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Choice"
+                },
+                "description": "Items the learner positions."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "two_dimensional_placement"
+                ]
+              },
+              "x_axis": {
+                "$ref": "#/components/schemas/PlacementAxis",
+                "description": "Horizontal axis definition."
+              },
+              "y_axis": {
+                "$ref": "#/components/schemas/PlacementAxis",
+                "description": "Vertical axis definition."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Assemble an ordered statement from a token pool.",
+            "required": [
+              "slots",
+              "tokens",
+              "type"
+            ],
+            "properties": {
+              "slots": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/FillSlot"
+                },
+                "description": "Ordered parts of the statement."
+              },
+              "tokens": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Choice"
+                },
+                "description": "Tokens the learner may use. May contain distractors."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "command_assembly"
+                ]
+              }
+            }
           }
         ],
         "description": "Interaction definition shown to the learner. Contains no answer key."
@@ -952,7 +1660,16 @@
         "enum": [
           "classification",
           "ordering",
-          "node_connection"
+          "node_connection",
+          "reconstruction",
+          "evidence_selection",
+          "spot_the_fault",
+          "fill_slots",
+          "troubleshooting",
+          "scenario_choice_chain",
+          "configuration_builder",
+          "two_dimensional_placement",
+          "command_assembly"
         ]
       },
       "IssueMissionRequest": {
@@ -1087,6 +1804,80 @@
           }
         }
       },
+      "PlacementAxis": {
+        "type": "object",
+        "description": "One axis of a two-dimensional conceptual map.",
+        "required": [
+          "id",
+          "label",
+          "low_label",
+          "high_label"
+        ],
+        "properties": {
+          "high_label": {
+            "type": "string",
+            "description": "Label for the high end of the axis."
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable identifier within the question."
+          },
+          "label": {
+            "type": "string",
+            "description": "Learner-facing axis name."
+          },
+          "low_label": {
+            "type": "string",
+            "description": "Label for the low end of the axis."
+          }
+        }
+      },
+      "PlacementPoint": {
+        "type": "object",
+        "description": "A point submitted for a two-dimensional placement.",
+        "required": [
+          "x",
+          "y"
+        ],
+        "properties": {
+          "x": {
+            "type": "number",
+            "format": "double",
+            "description": "Horizontal position in `0..=1`."
+          },
+          "y": {
+            "type": "number",
+            "format": "double",
+            "description": "Vertical position in `0..=1`."
+          }
+        }
+      },
+      "PlacementRegion": {
+        "type": "object",
+        "description": "A tolerant canonical region on a two-dimensional map.",
+        "required": [
+          "x",
+          "y"
+        ],
+        "properties": {
+          "x": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Inclusive `[min, max]` horizontal range in `0..=1`."
+          },
+          "y": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "double"
+            },
+            "description": "Inclusive `[min, max]` vertical range in `0..=1`."
+          }
+        }
+      },
       "QuestionView": {
         "type": "object",
         "description": "A question shown to the learner. Contains no answer key.",
@@ -1139,6 +1930,124 @@
           "prompt": {
             "type": "string",
             "description": "Learner-facing prompt."
+          }
+        }
+      },
+      "ReconstructionAnswerPayload": {
+        "type": "object",
+        "description": "Reconstruction answer primitives.",
+        "required": [
+          "placements"
+        ],
+        "properties": {
+          "edges": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Directed `[from, to]` relationships the learner drew."
+          },
+          "placements": {
+            "type": "object",
+            "description": "Slot id to piece id placements.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ReconstructionLayout": {
+        "type": "string",
+        "description": "How a reconstruction scaffold represents structure.",
+        "enum": [
+          "linear",
+          "graph"
+        ]
+      },
+      "ReconstructionSlot": {
+        "type": "object",
+        "description": "A structural position the learner fills with a piece.",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable identifier within the question."
+          },
+          "x": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Authored horizontal position for `graph` layouts, in `0..=1`."
+          },
+          "y": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Authored vertical position for `graph` layouts, in `0..=1`."
+          }
+        }
+      },
+      "ScenarioStage": {
+        "type": "string",
+        "description": "The operational stage a branching-scenario decision belongs to.\n\nThe stage is used only to attach a structured error code to a poor decision;\nit is not a measure of overall mastery.",
+        "enum": [
+          "diagnosis",
+          "action",
+          "remediation",
+          "verification"
+        ]
+      },
+      "ScenarioStep": {
+        "type": "object",
+        "description": "One authored decision point in a branching scenario.",
+        "required": [
+          "id",
+          "prompt",
+          "stage",
+          "choices",
+          "next_step_by_choice"
+        ],
+        "properties": {
+          "choices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Choice"
+            },
+            "description": "Choices available at this step."
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable identifier within the scenario."
+          },
+          "next_step_by_choice": {
+            "type": "object",
+            "description": "Choice id to next step id. A choice with no entry ends the scenario.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Learner-facing situation or question."
+          },
+          "stage": {
+            "$ref": "#/components/schemas/ScenarioStage",
+            "description": "What kind of decision this step represents."
           }
         }
       },

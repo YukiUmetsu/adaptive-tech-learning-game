@@ -10,6 +10,7 @@ export default function HomePage() {
         (SOA-C03), Task 1.1.
       </p>
       <p>
+        <Link to="/demo">Try the free demo</Link> ·{" "}
         <Link to="/certifications">Browse certifications</Link>
       </p>
     </section>

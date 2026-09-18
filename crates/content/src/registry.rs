@@ -1,12 +1,6 @@
+use crate::EMBEDDED_SOURCES;
 use crate::model::{Certification, ContentBundle, Domain, Question, Task};
 use crate::validate::{ContentError, validate};
-
-/// The content bundle compiled into the API binary.
-///
-/// Embedding keeps the API portable across container hosts and makes content a
-/// build-time dependency of tests.
-pub const EMBEDDED_BUNDLE: &str =
-    include_str!("../../../content/aws/soa-c03/soa-c03-content-v1.json");
 
 /// An immutable set of validated content bundles.
 #[derive(Debug, Clone)]
@@ -15,9 +9,19 @@ pub struct ContentRegistry {
 }
 
 impl ContentRegistry {
-    /// Loads and validates the embedded bundle.
+    /// Loads and validates every content bundle discovered at build time.
+    ///
+    /// Content is organized as `<category>/<certification>/<version>/<file>.json`
+    /// under `content/`; adding a bundle requires no code change.
     pub fn embedded() -> Result<Self, Vec<ContentError>> {
-        Self::from_json(&[EMBEDDED_BUNDLE])
+        if EMBEDDED_SOURCES.is_empty() {
+            return Err(vec![ContentError {
+                code: "no_content",
+                message: "no content bundles were embedded".to_owned(),
+            }]);
+        }
+
+        Self::from_json(EMBEDDED_SOURCES)
     }
 
     /// Parses and validates one or more JSON bundles.

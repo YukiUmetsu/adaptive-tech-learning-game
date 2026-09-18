@@ -1,9 +1,20 @@
 import { useState } from "react";
 
-import type { AnswerPayload, QuestionView } from "../api/types";
+import type {
+  AnswerPayload,
+  PlacementPoint,
+  QuestionView,
+  ReconstructionAnswerPayload,
+} from "../api/types";
+import BranchingScenarioInteraction from "./BranchingScenarioInteraction";
 import ClassificationInteraction from "./ClassificationInteraction";
+import EvidenceSelectionInteraction from "./EvidenceSelectionInteraction";
+import FillSlotsInteraction from "./FillSlotsInteraction";
 import NodeConnectionInteraction from "./NodeConnectionInteraction";
 import OrderingInteraction from "./OrderingInteraction";
+import ReconstructionInteraction from "./ReconstructionInteraction";
+import SpotTheFaultInteraction from "./SpotTheFaultInteraction";
+import TwoDimensionalPlacementInteraction from "./TwoDimensionalPlacementInteraction";
 
 interface QuestionCardProps {
   question: QuestionView;
@@ -25,6 +36,15 @@ export default function QuestionCard({
       : [],
   );
   const [edges, setEdges] = useState<string[][]>([]);
+  const [reconstruction, setReconstruction] =
+    useState<ReconstructionAnswerPayload>({ placements: {}, edges: [] });
+  const [evidence, setEvidence] = useState<string[]>([]);
+  const [faults, setFaults] = useState<string[]>([]);
+  const [slots, setSlots] = useState<Record<string, string>>({});
+  const [choices, setChoices] = useState<string[]>([]);
+  const [positions, setPositions] = useState<Record<string, PlacementPoint>>(
+    {},
+  );
 
   const canSubmit = (() => {
     switch (question.interaction.type) {
@@ -36,6 +56,23 @@ export default function QuestionCard({
         return ordering.length === question.interaction.items.length;
       case "node_connection":
         return edges.length > 0;
+      case "reconstruction":
+        return question.interaction.slots.every(
+          (slot) => reconstruction.placements[slot.id],
+        );
+      case "evidence_selection":
+        return evidence.length > 0;
+      case "spot_the_fault":
+        return faults.length > 0;
+      case "fill_slots":
+      case "configuration_builder":
+      case "command_assembly":
+        return Object.keys(slots).length > 0;
+      case "troubleshooting":
+      case "scenario_choice_chain":
+        return choices.length > 0;
+      case "two_dimensional_placement":
+        return question.interaction.items.every((item) => positions[item.id]);
     }
   })();
 
@@ -49,6 +86,31 @@ export default function QuestionCard({
         return;
       case "node_connection":
         onSubmit({ edges });
+        return;
+      case "reconstruction":
+        onSubmit({ reconstruction });
+        return;
+      case "evidence_selection":
+        onSubmit({ evidence_ids: evidence });
+        return;
+      case "spot_the_fault":
+        onSubmit({ faulty_ids: faults });
+        return;
+      case "fill_slots":
+        onSubmit({ slot_values: slots });
+        return;
+      case "configuration_builder":
+        onSubmit({ assignments: slots });
+        return;
+      case "command_assembly":
+        onSubmit({ token_values: slots });
+        return;
+      case "troubleshooting":
+      case "scenario_choice_chain":
+        onSubmit({ choice_path: choices });
+        return;
+      case "two_dimensional_placement":
+        onSubmit({ positions });
     }
   };
 
@@ -79,6 +141,92 @@ export default function QuestionCard({
           value={edges}
           disabled={disabled}
           onChange={setEdges}
+        />
+      ) : null}
+
+      {question.interaction.type === "reconstruction" ? (
+        <ReconstructionInteraction
+          layout={question.interaction.layout}
+          fixedNodes={question.interaction.fixed_nodes}
+          pieces={question.interaction.pieces}
+          slots={question.interaction.slots}
+          value={reconstruction}
+          disabled={disabled}
+          onChange={setReconstruction}
+        />
+      ) : null}
+
+      {question.interaction.type === "evidence_selection" ? (
+        <EvidenceSelectionInteraction
+          evidence={question.interaction.evidence}
+          value={evidence}
+          disabled={disabled}
+          onChange={setEvidence}
+        />
+      ) : null}
+
+      {question.interaction.type === "spot_the_fault" ? (
+        <SpotTheFaultInteraction
+          elements={question.interaction.elements}
+          value={faults}
+          disabled={disabled}
+          onChange={setFaults}
+        />
+      ) : null}
+
+      {question.interaction.type === "fill_slots" ? (
+        <FillSlotsInteraction
+          slots={question.interaction.slots}
+          options={question.interaction.options}
+          value={slots}
+          disabled={disabled}
+          onChange={setSlots}
+        />
+      ) : null}
+
+      {question.interaction.type === "configuration_builder" ? (
+        <FillSlotsInteraction
+          slots={question.interaction.slots}
+          options={question.interaction.pieces}
+          value={slots}
+          disabled={disabled}
+          onChange={setSlots}
+          optionsLabel="Components"
+          slotsLabel="Configuration roles"
+        />
+      ) : null}
+
+      {question.interaction.type === "command_assembly" ? (
+        <FillSlotsInteraction
+          slots={question.interaction.slots}
+          options={question.interaction.tokens}
+          value={slots}
+          disabled={disabled}
+          onChange={setSlots}
+          optionsLabel="Tokens"
+          slotsLabel="Command parts"
+        />
+      ) : null}
+
+      {question.interaction.type === "two_dimensional_placement" ? (
+        <TwoDimensionalPlacementInteraction
+          xAxis={question.interaction.x_axis}
+          yAxis={question.interaction.y_axis}
+          items={question.interaction.items}
+          value={positions}
+          disabled={disabled}
+          onChange={setPositions}
+        />
+      ) : null}
+
+      {question.interaction.type === "troubleshooting" ||
+      question.interaction.type === "scenario_choice_chain" ? (
+        <BranchingScenarioInteraction
+          startStepId={question.interaction.start_step_id}
+          steps={question.interaction.steps}
+          value={choices}
+          disabled={disabled}
+          onChange={setChoices}
         />
       ) : null}
 

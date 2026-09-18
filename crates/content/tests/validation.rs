@@ -1,11 +1,19 @@
 //! Content validation tests. Each case mutates the real embedded bundle so the
 //! validator is exercised against production content shape.
 
-use adaptive_learn_content::{ContentBundle, ContentError, EMBEDDED_BUNDLE, validate};
+use adaptive_learn_content::{ContentBundle, ContentError, EMBEDDED_SOURCES, validate};
 use serde_json::Value;
 
+fn embedded_source() -> &'static str {
+    EMBEDDED_SOURCES
+        .iter()
+        .copied()
+        .find(|source| source.contains("\"aws-soa-c03\""))
+        .expect("SOA-C03 content is embedded")
+}
+
 fn embedded_value() -> Value {
-    serde_json::from_str(EMBEDDED_BUNDLE).expect("embedded bundle is valid json")
+    serde_json::from_str(embedded_source()).expect("embedded bundle is valid json")
 }
 
 fn validate_value(value: &Value) -> Result<(), Vec<ContentError>> {

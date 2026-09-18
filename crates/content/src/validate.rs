@@ -379,6 +379,509 @@ fn validate_interaction(question: &Question, errors: &mut Vec<ContentError>) {
                 }
             }
         }
+        Interaction::Reconstruction {
+            layout,
+            fixed_nodes,
+            pieces,
+            slots,
+        } => {
+            if pieces.len() < 2 {
+                errors.push(ContentError::new(
+                    "reconstruction_pieces_incomplete",
+                    format!(
+                        "question {} needs at least two candidate pieces",
+                        question.id
+                    ),
+                ));
+            }
+            if slots.is_empty() {
+                errors.push(ContentError::new(
+                    "reconstruction_slots_missing",
+                    format!("question {} needs at least one slot", question.id),
+                ));
+            }
+            ensure_unique_choice_ids(question, pieces, "reconstruction piece", errors);
+
+            let mut slot_ids = HashSet::new();
+            for slot in slots {
+                if slot.id.trim().is_empty() {
+                    errors.push(ContentError::new(
+                        "slot_field_missing",
+                        format!("question {} has a slot with an empty id", question.id),
+                    ));
+                }
+                if !slot_ids.insert(slot.id.as_str()) {
+                    errors.push(ContentError::new(
+                        "duplicate_slot_id",
+                        format!("question {} has duplicate slot id {}", question.id, slot.id),
+                    ));
+                }
+                if *layout == crate::model::ReconstructionLayout::Graph {
+                    let positioned = matches!(
+                        (slot.x, slot.y),
+                        (Some(x), Some(y))
+                            if (0.0..=1.0).contains(&x) && (0.0..=1.0).contains(&y)
+                    );
+                    if !positioned {
+                        errors.push(ContentError::new(
+                            "invalid_slot_position",
+                            format!(
+                                "question {} graph slot {} needs an x and y within [0, 1]",
+                                question.id, slot.id
+                            ),
+                        ));
+                    }
+                }
+            }
+
+            let mut fixed_ids = HashSet::new();
+            for node in fixed_nodes {
+                if node.id.trim().is_empty() || node.label.trim().is_empty() {
+                    errors.push(ContentError::new(
+                        "fixed_node_field_missing",
+                        format!(
+                            "question {} has a fixed node with an empty id or label",
+                            question.id
+                        ),
+                    ));
+                }
+                if !fixed_ids.insert(node.id.as_str()) {
+                    errors.push(ContentError::new(
+                        "duplicate_fixed_node_id",
+                        format!(
+                            "question {} has duplicate fixed node id {}",
+                            question.id, node.id
+                        ),
+                    ));
+                }
+                if *layout == crate::model::ReconstructionLayout::Graph {
+                    let positioned = matches!(
+                        (node.x, node.y),
+                        (Some(x), Some(y))
+                            if (0.0..=1.0).contains(&x) && (0.0..=1.0).contains(&y)
+                    );
+                    if !positioned {
+                        errors.push(ContentError::new(
+                            "invalid_fixed_node_position",
+                            format!(
+                                "question {} graph fixed node {} needs an x and y within [0, 1]",
+                                question.id, node.id
+                            ),
+                        ));
+                    }
+                }
+            }
+
+            for piece in pieces {
+                if fixed_ids.contains(piece.id.as_str()) {
+                    errors.push(ContentError::new(
+                        "fixed_node_piece_id_collision",
+                        format!(
+                            "question {} uses id {} for both a fixed node and a piece",
+                            question.id, piece.id
+                        ),
+                    ));
+                }
+            }
+        }
+        Interaction::EvidenceSelection { evidence } => {
+            if evidence.len() < 2 {
+                errors.push(ContentError::new(
+                    "evidence_selection_incomplete",
+                    format!(
+                        "question {} needs at least two evidence options",
+                        question.id
+                    ),
+                ));
+            }
+            ensure_unique_choice_ids(question, evidence, "evidence", errors);
+        }
+        Interaction::SpotTheFault { elements } => {
+            if elements.is_empty() {
+                errors.push(ContentError::new(
+                    "spot_the_fault_incomplete",
+                    format!("question {} needs at least one element", question.id),
+                ));
+            }
+            ensure_unique_choice_ids(question, elements, "fault element", errors);
+        }
+        Interaction::FillSlots { slots, options } => {
+            if slots.is_empty() {
+                errors.push(ContentError::new(
+                    "fill_slots_incomplete",
+                    format!("question {} needs at least one slot", question.id),
+                ));
+            }
+            if options.len() < 2 {
+                errors.push(ContentError::new(
+                    "fill_slots_options_incomplete",
+                    format!("question {} needs at least two fill options", question.id),
+                ));
+            }
+            ensure_unique_slot_ids(question, slots, errors);
+            ensure_unique_choice_ids(question, options, "fill option", errors);
+        }
+        Interaction::Troubleshooting {
+            start_step_id,
+            steps,
+        }
+        | Interaction::ScenarioChoiceChain {
+            start_step_id,
+            steps,
+        } => {
+            validate_scenario_steps(question, start_step_id, steps, errors);
+        }
+        Interaction::ConfigurationBuilder { slots, pieces } => {
+            if slots.is_empty() {
+                errors.push(ContentError::new(
+                    "configuration_builder_incomplete",
+                    format!("question {} needs at least one slot", question.id),
+                ));
+            }
+            if pieces.is_empty() {
+                errors.push(ContentError::new(
+                    "configuration_builder_pieces_missing",
+                    format!("question {} needs at least one piece", question.id),
+                ));
+            }
+            ensure_unique_config_slots(question, slots, errors);
+            ensure_unique_choice_ids(question, pieces, "configuration piece", errors);
+        }
+        Interaction::TwoDimensionalPlacement {
+            x_axis,
+            y_axis,
+            items,
+        } => {
+            validate_placement_axis(question, x_axis, errors);
+            validate_placement_axis(question, y_axis, errors);
+            if items.is_empty() {
+                errors.push(ContentError::new(
+                    "placement_items_missing",
+                    format!("question {} needs at least one item", question.id),
+                ));
+            }
+            ensure_unique_choice_ids(question, items, "placement item", errors);
+        }
+        Interaction::CommandAssembly { slots, tokens } => {
+            if slots.is_empty() {
+                errors.push(ContentError::new(
+                    "command_assembly_incomplete",
+                    format!("question {} needs at least one slot", question.id),
+                ));
+            }
+            if tokens.len() < 2 {
+                errors.push(ContentError::new(
+                    "command_tokens_incomplete",
+                    format!("question {} needs at least two tokens", question.id),
+                ));
+            }
+            ensure_unique_slot_ids(question, slots, errors);
+            ensure_unique_choice_ids(question, tokens, "command token", errors);
+        }
+    }
+}
+
+fn validate_placement_axis(
+    question: &Question,
+    axis: &crate::model::PlacementAxis,
+    errors: &mut Vec<ContentError>,
+) {
+    if axis.id.trim().is_empty()
+        || axis.label.trim().is_empty()
+        || axis.low_label.trim().is_empty()
+        || axis.high_label.trim().is_empty()
+    {
+        errors.push(ContentError::new(
+            "placement_axis_field_missing",
+            format!(
+                "question {} has an axis with an empty id, label, or endpoint label",
+                question.id
+            ),
+        ));
+    }
+}
+
+fn ensure_unique_config_slots(
+    question: &Question,
+    slots: &[crate::model::ConfigSlot],
+    errors: &mut Vec<ContentError>,
+) {
+    let mut seen = HashSet::new();
+    for slot in slots {
+        if slot.id.trim().is_empty() || slot.label.trim().is_empty() {
+            errors.push(ContentError::new(
+                "slot_field_missing",
+                format!(
+                    "question {} has an empty configuration slot id or label",
+                    question.id
+                ),
+            ));
+        }
+        if !seen.insert(slot.id.as_str()) {
+            errors.push(ContentError::new(
+                "duplicate_slot_id",
+                format!(
+                    "question {} has duplicate configuration slot id {}",
+                    question.id, slot.id
+                ),
+            ));
+        }
+    }
+}
+
+fn validate_scenario_steps(
+    question: &Question,
+    start_step_id: &str,
+    steps: &[crate::model::ScenarioStep],
+    errors: &mut Vec<ContentError>,
+) {
+    if steps.is_empty() {
+        errors.push(ContentError::new(
+            "scenario_steps_missing",
+            format!("question {} needs at least one step", question.id),
+        ));
+        return;
+    }
+
+    let mut step_ids = HashSet::new();
+    let mut choice_ids = HashSet::new();
+
+    for step in steps {
+        if step.id.trim().is_empty() || step.prompt.trim().is_empty() {
+            errors.push(ContentError::new(
+                "scenario_step_field_missing",
+                format!(
+                    "question {} has a step with an empty id or prompt",
+                    question.id
+                ),
+            ));
+        }
+        if !step_ids.insert(step.id.as_str()) {
+            errors.push(ContentError::new(
+                "duplicate_step_id",
+                format!(
+                    "question {} has duplicate scenario step id {}",
+                    question.id, step.id
+                ),
+            ));
+        }
+        if step.choices.is_empty() {
+            errors.push(ContentError::new(
+                "scenario_step_choices_missing",
+                format!("question {} step {} has no choices", question.id, step.id),
+            ));
+        }
+        for choice in &step.choices {
+            if choice.id.trim().is_empty() || choice.label.trim().is_empty() {
+                errors.push(ContentError::new(
+                    "choice_field_missing",
+                    format!(
+                        "question {} has a scenario choice with an empty id or label",
+                        question.id
+                    ),
+                ));
+            }
+            if !choice_ids.insert(choice.id.as_str()) {
+                errors.push(ContentError::new(
+                    "duplicate_scenario_choice_id",
+                    format!(
+                        "question {} uses scenario choice id {} more than once",
+                        question.id, choice.id
+                    ),
+                ));
+            }
+        }
+    }
+
+    if start_step_id.trim().is_empty() || !step_ids.contains(start_step_id) {
+        errors.push(ContentError::new(
+            "scenario_start_missing",
+            format!(
+                "question {} start step {} does not exist",
+                question.id, start_step_id
+            ),
+        ));
+    }
+
+    let mut has_terminal = false;
+    for step in steps {
+        let local_choices: HashSet<&str> = step
+            .choices
+            .iter()
+            .map(|choice| choice.id.as_str())
+            .collect();
+        for (choice_id, next_step_id) in &step.next_step_by_choice {
+            if !local_choices.contains(choice_id.as_str()) {
+                errors.push(ContentError::new(
+                    "scenario_transition_unknown_choice",
+                    format!(
+                        "question {} step {} transition references unknown choice {}",
+                        question.id, step.id, choice_id
+                    ),
+                ));
+            }
+            if !step_ids.contains(next_step_id.as_str()) {
+                errors.push(ContentError::new(
+                    "scenario_transition_unknown_step",
+                    format!(
+                        "question {} step {} transition targets unknown step {}",
+                        question.id, step.id, next_step_id
+                    ),
+                ));
+            }
+        }
+        if step.next_step_by_choice.is_empty() {
+            has_terminal = true;
+        }
+    }
+
+    if !has_terminal {
+        errors.push(ContentError::new(
+            "scenario_terminal_missing",
+            format!(
+                "question {} has no terminal step to end the scenario",
+                question.id
+            ),
+        ));
+    }
+
+    if step_ids.contains(start_step_id) {
+        let mut reachable: HashSet<&str> = HashSet::new();
+        let mut stack = vec![start_step_id];
+        while let Some(id) = stack.pop() {
+            if !reachable.insert(id) {
+                continue;
+            }
+            if let Some(step) = steps.iter().find(|step| step.id == id) {
+                for next in step.next_step_by_choice.values() {
+                    stack.push(next.as_str());
+                }
+            }
+        }
+        for step in steps {
+            if !reachable.contains(step.id.as_str()) {
+                errors.push(ContentError::new(
+                    "scenario_step_unreachable",
+                    format!(
+                        "question {} step {} is not reachable from the start",
+                        question.id, step.id
+                    ),
+                ));
+            }
+        }
+    }
+}
+
+fn validate_scenario_answer(
+    question: &Question,
+    start_step_id: &str,
+    steps: &[crate::model::ScenarioStep],
+    correct_choice_ids: &std::collections::BTreeMap<String, Vec<String>>,
+    expected_path: &[String],
+    errors: &mut Vec<ContentError>,
+) {
+    for (step_id, ids) in correct_choice_ids {
+        let Some(step) = steps.iter().find(|step| step.id == *step_id) else {
+            errors.push(ContentError::new(
+                "canonical_scenario_unknown_step",
+                format!(
+                    "question {} canonical answer references unknown step {}",
+                    question.id, step_id
+                ),
+            ));
+            continue;
+        };
+        if ids.is_empty() {
+            errors.push(ContentError::new(
+                "canonical_scenario_step_empty",
+                format!(
+                    "question {} lists no correct choices for step {}",
+                    question.id, step_id
+                ),
+            ));
+        }
+        let mut seen = HashSet::new();
+        for id in ids {
+            if !step.choices.iter().any(|choice| &choice.id == id) {
+                errors.push(ContentError::new(
+                    "canonical_scenario_unknown_choice",
+                    format!(
+                        "question {} step {} canonical choice {} does not exist",
+                        question.id, step_id, id
+                    ),
+                ));
+            }
+            if !seen.insert(id.as_str()) {
+                errors.push(ContentError::new(
+                    "canonical_scenario_duplicate_choice",
+                    format!(
+                        "question {} step {} lists canonical choice {} twice",
+                        question.id, step_id, id
+                    ),
+                ));
+            }
+        }
+    }
+
+    if expected_path.is_empty() {
+        errors.push(ContentError::new(
+            "canonical_scenario_path_missing",
+            format!(
+                "question {} needs a non-empty expected scenario path",
+                question.id
+            ),
+        ));
+        return;
+    }
+
+    let mut current = start_step_id;
+    for (index, choice_id) in expected_path.iter().enumerate() {
+        let Some(step) = steps.iter().find(|step| step.id == current) else {
+            errors.push(ContentError::new(
+                "canonical_scenario_path_invalid",
+                format!(
+                    "question {} expected path reaches unknown step {}",
+                    question.id, current
+                ),
+            ));
+            return;
+        };
+        if !step.choices.iter().any(|choice| &choice.id == choice_id) {
+            errors.push(ContentError::new(
+                "canonical_scenario_unknown_choice",
+                format!(
+                    "question {} expected path choice {} is not in step {}",
+                    question.id, choice_id, step.id
+                ),
+            ));
+            return;
+        }
+        let is_correct = correct_choice_ids
+            .get(step.id.as_str())
+            .is_some_and(|ids| ids.iter().any(|id| id == choice_id));
+        if !is_correct {
+            errors.push(ContentError::new(
+                "canonical_scenario_incorrect_path",
+                format!(
+                    "question {} expected path choice {} is not marked correct at step {}",
+                    question.id, choice_id, step.id
+                ),
+            ));
+        }
+        match step.next_step_by_choice.get(choice_id) {
+            Some(next) => current = next.as_str(),
+            None if index + 1 == expected_path.len() => {}
+            None => {
+                errors.push(ContentError::new(
+                    "canonical_scenario_path_invalid",
+                    format!(
+                        "question {} expected path continues past terminal choice {}",
+                        question.id, choice_id
+                    ),
+                ));
+                return;
+            }
+        }
     }
 }
 
@@ -488,6 +991,362 @@ fn validate_canonical_answer(question: &Question, errors: &mut Vec<ContentError>
                 }
             }
         }
+        (
+            Interaction::Reconstruction {
+                layout,
+                fixed_nodes,
+                pieces,
+                slots,
+            },
+            CanonicalAnswer::Reconstruction { placements, edges },
+        ) => {
+            let slot_ids: BTreeSet<&str> = slots.iter().map(|slot| slot.id.as_str()).collect();
+            let piece_ids: BTreeSet<&str> = pieces.iter().map(|piece| piece.id.as_str()).collect();
+            let placed_slots: BTreeSet<&str> = placements.keys().map(String::as_str).collect();
+
+            if placed_slots != slot_ids {
+                errors.push(ContentError::new(
+                    "canonical_reconstruction_slots_incomplete",
+                    format!(
+                        "question {} canonical placements must cover every slot exactly once",
+                        question.id
+                    ),
+                ));
+            }
+
+            let mut seen_pieces = HashSet::new();
+            for piece in placements.values() {
+                if !piece_ids.contains(piece.as_str()) {
+                    errors.push(ContentError::new(
+                        "canonical_unknown_piece",
+                        format!(
+                            "question {} canonical placement {piece} is not a candidate piece",
+                            question.id
+                        ),
+                    ));
+                }
+                if !seen_pieces.insert(piece.as_str()) {
+                    errors.push(ContentError::new(
+                        "canonical_reconstruction_duplicate_piece",
+                        format!(
+                            "question {} places piece {} in more than one slot",
+                            question.id, piece
+                        ),
+                    ));
+                }
+            }
+
+            if *layout == crate::model::ReconstructionLayout::Linear && !edges.is_empty() {
+                errors.push(ContentError::new(
+                    "canonical_edges_not_allowed_for_linear",
+                    format!(
+                        "question {} is linear; slot order encodes relationships so edges must be empty",
+                        question.id
+                    ),
+                ));
+            }
+
+            let fixed_ids: HashSet<&str> =
+                fixed_nodes.iter().map(|node| node.id.as_str()).collect();
+            let allowed_nodes: HashSet<&str> = fixed_ids
+                .iter()
+                .copied()
+                .chain(placements.values().map(String::as_str))
+                .collect();
+
+            let mut seen_edges = HashSet::new();
+            for edge in edges {
+                if edge.len() != 2 {
+                    errors.push(ContentError::new(
+                        "canonical_edge_invalid",
+                        format!(
+                            "question {} canonical edge must have two endpoints",
+                            question.id
+                        ),
+                    ));
+                    continue;
+                }
+                let (from, to) = (&edge[0], &edge[1]);
+                if !allowed_nodes.contains(from.as_str()) || !allowed_nodes.contains(to.as_str()) {
+                    errors.push(ContentError::new(
+                        "canonical_edge_unknown_component",
+                        format!(
+                            "question {} canonical edge {from}->{to} references a node that is not provided or placed",
+                            question.id
+                        ),
+                    ));
+                }
+                if from == to {
+                    errors.push(ContentError::new(
+                        "canonical_edge_self_loop",
+                        format!(
+                            "question {} canonical edge {from}->{to} is a self-loop",
+                            question.id
+                        ),
+                    ));
+                }
+                if !seen_edges.insert((from.clone(), to.clone())) {
+                    errors.push(ContentError::new(
+                        "canonical_edge_duplicate",
+                        format!(
+                            "question {} canonical edge {from}->{to} is duplicated",
+                            question.id
+                        ),
+                    ));
+                }
+            }
+        }
+        (
+            Interaction::EvidenceSelection { evidence },
+            CanonicalAnswer::EvidenceSelection { relevant_ids },
+        ) => {
+            let evidence_ids: BTreeSet<&str> =
+                evidence.iter().map(|choice| choice.id.as_str()).collect();
+            let relevant: BTreeSet<&str> = relevant_ids.iter().map(String::as_str).collect();
+
+            if relevant_ids.is_empty() {
+                errors.push(ContentError::new(
+                    "canonical_evidence_missing",
+                    format!(
+                        "question {} evidence selection needs at least one relevant id",
+                        question.id
+                    ),
+                ));
+            }
+            if relevant.len() != relevant_ids.len() {
+                errors.push(ContentError::new(
+                    "canonical_evidence_duplicate",
+                    format!(
+                        "question {} lists an evidence id more than once",
+                        question.id
+                    ),
+                ));
+            }
+            for id in &relevant {
+                if !evidence_ids.contains(id) {
+                    errors.push(ContentError::new(
+                        "canonical_unknown_evidence",
+                        format!(
+                            "question {} canonical evidence {id} is not an option",
+                            question.id
+                        ),
+                    ));
+                }
+            }
+        }
+        (Interaction::SpotTheFault { elements }, CanonicalAnswer::SpotTheFault { faulty_ids }) => {
+            let element_ids: BTreeSet<&str> =
+                elements.iter().map(|choice| choice.id.as_str()).collect();
+            let faulty: BTreeSet<&str> = faulty_ids.iter().map(String::as_str).collect();
+
+            if faulty_ids.is_empty() {
+                errors.push(ContentError::new(
+                    "canonical_faults_missing",
+                    format!(
+                        "question {} spot-the-fault needs at least one faulty id",
+                        question.id
+                    ),
+                ));
+            }
+            if faulty.len() != faulty_ids.len() {
+                errors.push(ContentError::new(
+                    "canonical_fault_duplicate",
+                    format!(
+                        "question {} lists a faulty element id more than once",
+                        question.id
+                    ),
+                ));
+            }
+            for id in &faulty {
+                if !element_ids.contains(id) {
+                    errors.push(ContentError::new(
+                        "canonical_unknown_element",
+                        format!(
+                            "question {} canonical faulty element {id} does not exist",
+                            question.id
+                        ),
+                    ));
+                }
+            }
+        }
+        (Interaction::FillSlots { slots, options }, CanonicalAnswer::FillSlots { values }) => {
+            let slot_ids: BTreeSet<&str> = slots.iter().map(|slot| slot.id.as_str()).collect();
+            let option_ids: BTreeSet<&str> =
+                options.iter().map(|choice| choice.id.as_str()).collect();
+            let filled: BTreeSet<&str> = values.keys().map(String::as_str).collect();
+
+            if filled != slot_ids {
+                errors.push(ContentError::new(
+                    "canonical_slots_incomplete",
+                    format!(
+                        "question {} canonical values must cover every slot exactly once",
+                        question.id
+                    ),
+                ));
+            }
+            for option in values.values() {
+                if !option_ids.contains(option.as_str()) {
+                    errors.push(ContentError::new(
+                        "canonical_unknown_option",
+                        format!(
+                            "question {} canonical slot value {option} is not an option",
+                            question.id
+                        ),
+                    ));
+                }
+            }
+        }
+        (
+            Interaction::Troubleshooting {
+                start_step_id,
+                steps,
+            }
+            | Interaction::ScenarioChoiceChain {
+                start_step_id,
+                steps,
+            },
+            CanonicalAnswer::Troubleshooting {
+                correct_choice_ids,
+                expected_path,
+            }
+            | CanonicalAnswer::ScenarioChoiceChain {
+                correct_choice_ids,
+                expected_path,
+            },
+        ) => {
+            validate_scenario_answer(
+                question,
+                start_step_id,
+                steps,
+                correct_choice_ids,
+                expected_path,
+                errors,
+            );
+        }
+        (
+            Interaction::ConfigurationBuilder { slots, pieces },
+            CanonicalAnswer::ConfigurationBuilder { assignments },
+        ) => {
+            let slot_ids: BTreeSet<&str> = slots.iter().map(|slot| slot.id.as_str()).collect();
+            let piece_ids: BTreeSet<&str> = pieces.iter().map(|piece| piece.id.as_str()).collect();
+            let assigned: BTreeSet<&str> = assignments.keys().map(String::as_str).collect();
+
+            if assigned != slot_ids {
+                errors.push(ContentError::new(
+                    "canonical_config_slots_incomplete",
+                    format!(
+                        "question {} canonical assignments must cover every slot exactly once",
+                        question.id
+                    ),
+                ));
+            }
+
+            let mut seen = HashSet::new();
+            for piece in assignments.values() {
+                if !piece_ids.contains(piece.as_str()) {
+                    errors.push(ContentError::new(
+                        "canonical_unknown_piece",
+                        format!(
+                            "question {} canonical assignment references unknown piece {}",
+                            question.id, piece
+                        ),
+                    ));
+                }
+                if !seen.insert(piece.as_str()) {
+                    errors.push(ContentError::new(
+                        "canonical_config_duplicate_piece",
+                        format!(
+                            "question {} assigns piece {} to more than one slot",
+                            question.id, piece
+                        ),
+                    ));
+                }
+            }
+        }
+        (
+            Interaction::TwoDimensionalPlacement { items, .. },
+            CanonicalAnswer::TwoDimensionalPlacement { regions },
+        ) => {
+            let item_ids: BTreeSet<&str> = items.iter().map(|item| item.id.as_str()).collect();
+            let region_ids: BTreeSet<&str> = regions.keys().map(String::as_str).collect();
+
+            if region_ids != item_ids {
+                errors.push(ContentError::new(
+                    "canonical_regions_incomplete",
+                    format!(
+                        "question {} canonical regions must cover every item exactly once",
+                        question.id
+                    ),
+                ));
+            }
+
+            for (item_id, region) in regions {
+                if region.x.len() != 2 || region.y.len() != 2 {
+                    errors.push(ContentError::new(
+                        "canonical_region_invalid",
+                        format!(
+                            "question {} region {item_id} must define an x and y range of two values",
+                            question.id
+                        ),
+                    ));
+                    continue;
+                }
+                for (axis, range) in [("x", &region.x), ("y", &region.y)] {
+                    let in_range = range
+                        .iter()
+                        .all(|value| value.is_finite() && (0.0..=1.0).contains(value));
+                    if !in_range || range[0] > range[1] {
+                        errors.push(ContentError::new(
+                            "canonical_region_invalid_range",
+                            format!(
+                                "question {} region {item_id} {axis} range must be within [0, 1] with min <= max",
+                                question.id
+                            ),
+                        ));
+                    }
+                }
+            }
+        }
+        (
+            Interaction::CommandAssembly { slots, tokens },
+            CanonicalAnswer::CommandAssembly { values },
+        ) => {
+            let slot_ids: BTreeSet<&str> = slots.iter().map(|slot| slot.id.as_str()).collect();
+            let token_ids: BTreeSet<&str> = tokens.iter().map(|token| token.id.as_str()).collect();
+            let filled: BTreeSet<&str> = values.keys().map(String::as_str).collect();
+
+            if filled != slot_ids {
+                errors.push(ContentError::new(
+                    "canonical_command_slots_incomplete",
+                    format!(
+                        "question {} canonical values must cover every slot exactly once",
+                        question.id
+                    ),
+                ));
+            }
+
+            let mut seen = HashSet::new();
+            for token in values.values() {
+                if !token_ids.contains(token.as_str()) {
+                    errors.push(ContentError::new(
+                        "canonical_unknown_token",
+                        format!(
+                            "question {} canonical token {token} is not available",
+                            question.id
+                        ),
+                    ));
+                }
+                if !seen.insert(token.as_str()) {
+                    errors.push(ContentError::new(
+                        "canonical_command_duplicate_token",
+                        format!(
+                            "question {} uses token {} in more than one slot",
+                            question.id, token
+                        ),
+                    ));
+                }
+            }
+        }
         _ => errors.push(ContentError::new(
             "canonical_answer_mismatch",
             format!(
@@ -579,6 +1438,28 @@ fn ensure_unique_choice_ids(
     }
 }
 
+fn ensure_unique_slot_ids(
+    question: &Question,
+    slots: &[crate::model::FillSlot],
+    errors: &mut Vec<ContentError>,
+) {
+    let mut seen = HashSet::new();
+    for slot in slots {
+        if slot.id.trim().is_empty() || slot.label.trim().is_empty() {
+            errors.push(ContentError::new(
+                "slot_field_missing",
+                format!("question {} has an empty slot id or label", question.id),
+            ));
+        }
+        if !seen.insert(slot.id.as_str()) {
+            errors.push(ContentError::new(
+                "duplicate_slot_id",
+                format!("question {} has duplicate slot id {}", question.id, slot.id),
+            ));
+        }
+    }
+}
+
 fn interaction_matches(question: &Question) -> bool {
     matches!(
         (question.interaction_type, &question.interaction),
@@ -589,6 +1470,39 @@ fn interaction_matches(question: &Question) -> bool {
             | (
                 InteractionType::NodeConnection,
                 Interaction::NodeConnection { .. }
+            )
+            | (
+                InteractionType::Reconstruction,
+                Interaction::Reconstruction { .. }
+            )
+            | (
+                InteractionType::EvidenceSelection,
+                Interaction::EvidenceSelection { .. }
+            )
+            | (
+                InteractionType::SpotTheFault,
+                Interaction::SpotTheFault { .. }
+            )
+            | (InteractionType::FillSlots, Interaction::FillSlots { .. })
+            | (
+                InteractionType::Troubleshooting,
+                Interaction::Troubleshooting { .. }
+            )
+            | (
+                InteractionType::ScenarioChoiceChain,
+                Interaction::ScenarioChoiceChain { .. }
+            )
+            | (
+                InteractionType::ConfigurationBuilder,
+                Interaction::ConfigurationBuilder { .. }
+            )
+            | (
+                InteractionType::TwoDimensionalPlacement,
+                Interaction::TwoDimensionalPlacement { .. }
+            )
+            | (
+                InteractionType::CommandAssembly,
+                Interaction::CommandAssembly { .. }
             )
     )
 }

@@ -1,0 +1,1070 @@
+{
+  "certification": {
+    "id": "aws-soa-c03-demo",
+    "vendor": "AWS",
+    "name": "AWS SOA-C03 Interaction Demo",
+    "exam_code": "SOA-C03",
+    "official_source_url": "https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03-domain1.html",
+    "last_reviewed": "2026-09-18"
+  },
+  "version": {
+    "id": "soa-c03-demo",
+    "exam_code": "SOA-C03",
+    "effective_date": "2026-06-01",
+    "content_version": "soa-c03-demo-content-v1",
+    "domains": [
+      {
+        "id": "domain-1",
+        "name": "Monitoring and Observability",
+        "weight": 0.5,
+        "tasks": [
+          {
+            "id": "D1.1",
+            "name": "Build a monitoring and alarm notification path.",
+            "question_ids": [
+              "demo-reconstruction-cloudwatch-001",
+              "demo-reconstruction-alarm-graph-001",
+              "demo-evidence-cloudtrail-001",
+              "demo-fill-cloudwatch-001",
+              "demo-command-presign-001"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "domain-2",
+        "name": "Reliability and Networking",
+        "weight": 0.5,
+        "tasks": [
+          {
+            "id": "D2.1",
+            "name": "Diagnose VPC routing and load balancer health.",
+            "question_ids": [
+              "demo-reconstruction-nat-001",
+              "demo-evidence-vpc-001",
+              "demo-fault-route-001",
+              "demo-fault-alb-001",
+              "demo-fill-route-001",
+              "demo-troubleshooting-alb-001",
+              "demo-scenario-alarm-001",
+              "demo-config-nat-001",
+              "demo-placement-dr-001"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "concepts": [
+    {
+      "id": "aws.cloudwatch.alarm",
+      "name": "CloudWatch alarms",
+      "description": "Rules that watch a metric or expression and change state."
+    },
+    {
+      "id": "aws.cloudwatch.alarm_actions",
+      "name": "Alarm actions",
+      "description": "What an alarm does after entering the ALARM state."
+    },
+    {
+      "id": "aws.sns",
+      "name": "Amazon SNS",
+      "description": "Publish/subscribe fan-out used for notifications."
+    },
+    {
+      "id": "aws.cloudtrail",
+      "name": "AWS CloudTrail",
+      "description": "Records AWS API activity for auditing and operational history."
+    },
+    {
+      "id": "aws.vpc",
+      "name": "Amazon VPC",
+      "description": "Isolated virtual networks, subnets, and their connectivity."
+    },
+    {
+      "id": "aws.vpc.route_table",
+      "name": "VPC route tables",
+      "description": "Rules that direct subnet traffic to a destination target."
+    },
+    {
+      "id": "aws.vpc.nat_gateway",
+      "name": "NAT gateway",
+      "description": "Managed NAT that gives private subnets outbound internet access."
+    },
+    {
+      "id": "aws.vpc.flow_logs",
+      "name": "VPC Flow Logs",
+      "description": "Records of IP traffic going to and from network interfaces."
+    },
+    {
+      "id": "aws.elb.target_health",
+      "name": "Load balancer target health",
+      "description": "Health checks that decide whether a load balancer sends traffic to a target."
+    },
+    {
+      "id": "aws.dr.strategies",
+      "name": "Disaster recovery strategies",
+      "description": "The cost and recovery-time trade-offs between backup/restore, pilot light, warm standby, and multi-site."
+    },
+    {
+      "id": "aws.s3",
+      "name": "Amazon S3",
+      "description": "Object storage, including access control and presigned URLs."
+    },
+    {
+      "id": "aws.eventbridge",
+      "name": "Amazon EventBridge",
+      "description": "Routes events to targets by matching rules on event buses."
+    }
+  ],
+  "questions": [
+    {
+      "id": "demo-reconstruction-cloudwatch-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-1",
+      "task_id": "D1.1",
+      "assessment_mode": "structural_reconstruction",
+      "interaction_type": "reconstruction",
+      "difficulty_prior": 0.45,
+      "prompt": "Rebuild the path from a metric crossing its threshold to an operator notification.",
+      "interaction": {
+        "type": "reconstruction",
+        "layout": "linear",
+        "fixed_nodes": [
+          {
+            "id": "metric_threshold",
+            "label": "Metric crosses threshold",
+            "position": "start"
+          }
+        ],
+        "pieces": [
+          { "id": "cloudwatch_alarm", "label": "CloudWatch alarm" },
+          { "id": "sns_topic", "label": "SNS topic" },
+          { "id": "operator", "label": "Operator notification" },
+          { "id": "cloudtrail", "label": "CloudTrail" },
+          { "id": "config", "label": "AWS Config" }
+        ],
+        "slots": [{ "id": "slot_1" }, { "id": "slot_2" }, { "id": "slot_3" }]
+      },
+      "canonical_answer": {
+        "type": "reconstruction",
+        "placements": {
+          "slot_1": "cloudwatch_alarm",
+          "slot_2": "sns_topic",
+          "slot_3": "operator"
+        }
+      },
+      "concepts": [
+        { "concept_id": "aws.cloudwatch.alarm", "weight": 0.5 },
+        { "concept_id": "aws.cloudwatch.alarm_actions", "weight": 0.3 },
+        { "concept_id": "aws.sns", "weight": 0.2 }
+      ],
+      "explanation": "A metric crossing its threshold moves the alarm into ALARM, the alarm action publishes to an SNS topic, and SNS delivers the notification to the operator. CloudTrail and AWS Config record activity but are not part of the notification path.",
+      "hints": [
+        "The alarm needs a metric before it can change state, and SNS is what reaches the operator."
+      ],
+      "error_codes": [
+        {
+          "code": "reconstruction_wrong_component",
+          "description": "A piece that is not part of the correct structure was placed in a slot."
+        },
+        {
+          "code": "reconstruction_wrong_position",
+          "description": "A required piece was placed in the wrong slot."
+        },
+        {
+          "code": "reconstruction_missing_component",
+          "description": "A required piece was never placed."
+        },
+        {
+          "code": "reconstruction_unfilled_slot",
+          "description": "A slot was left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Using Amazon CloudWatch alarms",
+          "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html"
+        },
+        {
+          "title": "What is Amazon SNS?",
+          "url": "https://docs.aws.amazon.com/sns/latest/dg/welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-reconstruction-nat-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-2",
+      "task_id": "D2.1",
+      "assessment_mode": "structural_reconstruction",
+      "interaction_type": "reconstruction",
+      "difficulty_prior": 0.6,
+      "prompt": "Rebuild the path that gives instances in a private subnet outbound IPv4 internet access.",
+      "interaction": {
+        "type": "reconstruction",
+        "layout": "linear",
+        "fixed_nodes": [
+          {
+            "id": "private_subnet",
+            "label": "Private subnet",
+            "position": "start"
+          }
+        ],
+        "pieces": [
+          { "id": "route_table", "label": "Private subnet route table" },
+          { "id": "nat_gateway", "label": "NAT gateway" },
+          { "id": "public_subnet", "label": "Public subnet" },
+          { "id": "internet_gateway", "label": "Internet gateway" },
+          { "id": "egress_only_igw", "label": "Egress-only internet gateway" },
+          { "id": "nat_instance", "label": "NAT instance" }
+        ],
+        "slots": [
+          { "id": "slot_1" },
+          { "id": "slot_2" },
+          { "id": "slot_3" },
+          { "id": "slot_4" }
+        ]
+      },
+      "canonical_answer": {
+        "type": "reconstruction",
+        "placements": {
+          "slot_1": "route_table",
+          "slot_2": "nat_gateway",
+          "slot_3": "public_subnet",
+          "slot_4": "internet_gateway"
+        }
+      },
+      "concepts": [
+        { "concept_id": "aws.vpc.nat_gateway", "weight": 0.4 },
+        { "concept_id": "aws.vpc.route_table", "weight": 0.3 },
+        { "concept_id": "aws.vpc", "weight": 0.3 }
+      ],
+      "explanation": "The private subnet is associated with a route table whose IPv4 default route targets a NAT gateway. The NAT gateway lives in a public subnet, and the public subnet's default route targets the internet gateway. An egress-only internet gateway is only for IPv6.",
+      "hints": [
+        "The NAT gateway must sit in a subnet that already has a route to the internet gateway."
+      ],
+      "error_codes": [
+        {
+          "code": "reconstruction_wrong_component",
+          "description": "A piece that is not part of the correct structure was placed in a slot."
+        },
+        {
+          "code": "reconstruction_wrong_position",
+          "description": "A required piece was placed in the wrong slot."
+        },
+        {
+          "code": "reconstruction_missing_component",
+          "description": "A required piece was never placed."
+        },
+        {
+          "code": "reconstruction_unfilled_slot",
+          "description": "A slot was left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "NAT gateways",
+          "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html"
+        },
+        {
+          "title": "Route tables for your VPC",
+          "url": "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-reconstruction-alarm-graph-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-1",
+      "task_id": "D1.1",
+      "assessment_mode": "structural_reconstruction",
+      "interaction_type": "reconstruction",
+      "difficulty_prior": 0.65,
+      "prompt": "Rebuild the alarm fan-out. Place the components in the scaffold, then connect them.",
+      "interaction": {
+        "type": "reconstruction",
+        "layout": "graph",
+        "fixed_nodes": [
+          {
+            "id": "alarm",
+            "label": "CloudWatch alarm",
+            "position": "start",
+            "x": 0.5,
+            "y": 0.15
+          }
+        ],
+        "pieces": [
+          { "id": "sns_topic", "label": "SNS topic" },
+          { "id": "operator", "label": "Operator notification" },
+          { "id": "eventbridge", "label": "EventBridge rule" },
+          { "id": "cloudtrail", "label": "CloudTrail" }
+        ],
+        "slots": [
+          { "id": "sns_slot", "x": 0.22, "y": 0.55 },
+          { "id": "operator_slot", "x": 0.22, "y": 0.9 },
+          { "id": "eventbridge_slot", "x": 0.78, "y": 0.55 }
+        ]
+      },
+      "canonical_answer": {
+        "type": "reconstruction",
+        "placements": {
+          "sns_slot": "sns_topic",
+          "operator_slot": "operator",
+          "eventbridge_slot": "eventbridge"
+        },
+        "edges": [
+          ["alarm", "sns_topic"],
+          ["sns_topic", "operator"],
+          ["alarm", "eventbridge"]
+        ]
+      },
+      "concepts": [
+        { "concept_id": "aws.cloudwatch.alarm_actions", "weight": 0.5 },
+        { "concept_id": "aws.sns", "weight": 0.3 },
+        { "concept_id": "aws.eventbridge", "weight": 0.2 }
+      ],
+      "explanation": "An alarm action can publish to an SNS topic and route through EventBridge. SNS then notifies the operator. The graph branches, so the relationships must be drawn explicitly.",
+      "hints": [
+        "The alarm can reach the operator through SNS, and it also has a second target."
+      ],
+      "error_codes": [
+        {
+          "code": "reconstruction_wrong_component",
+          "description": "A piece that is not part of the correct structure was placed in a slot."
+        },
+        {
+          "code": "reconstruction_wrong_position",
+          "description": "A required piece was placed in the wrong slot."
+        },
+        {
+          "code": "reconstruction_missing_component",
+          "description": "A required piece was never placed."
+        },
+        {
+          "code": "reconstruction_unfilled_slot",
+          "description": "A slot was left empty."
+        },
+        {
+          "code": "reconstruction_missing_relationship",
+          "description": "A required relationship was not drawn."
+        },
+        {
+          "code": "reconstruction_invalid_relationship",
+          "description": "A drawn relationship is not part of the correct structure."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Alarm actions",
+          "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/alarm-actions.html"
+        },
+        {
+          "title": "What is Amazon EventBridge?",
+          "url": "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-evidence-cloudtrail-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-1",
+      "task_id": "D1.1",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.3,
+      "prompt": "An EC2 instance was unexpectedly terminated. You need to identify who performed the API action. Select every evidence source that can help.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          { "id": "cpu_utilization", "label": "EC2 CPUUtilization metric" },
+          { "id": "alb_access_logs", "label": "ALB access logs" },
+          { "id": "cloudtrail_event_history", "label": "CloudTrail event history" },
+          { "id": "vpc_flow_logs", "label": "VPC Flow Logs" },
+          { "id": "rds_performance_insights", "label": "RDS Performance Insights" }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": ["cloudtrail_event_history"]
+      },
+      "concepts": [{ "concept_id": "aws.cloudtrail", "weight": 1.0 }],
+      "explanation": "CloudTrail records the identity, time, source IP, and API call for actions such as TerminateInstances. Metrics and network logs do not record who made the request.",
+      "hints": [
+        "Which service is an audit record of AWS API calls?"
+      ],
+      "error_codes": [
+        {
+          "code": "evidence_missing_relevant",
+          "description": "At least one relevant evidence source was not selected."
+        },
+        {
+          "code": "evidence_selected_irrelevant",
+          "description": "At least one selected evidence source does not help answer the question."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Working with CloudTrail event history",
+          "url": "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/view-cloudtrail-events.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-evidence-vpc-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-2",
+      "task_id": "D2.1",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.5,
+      "prompt": "Traffic from an internet client to a web server in a public subnet is being rejected. Select every evidence source or configuration you should inspect.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          { "id": "vpc_flow_logs", "label": "VPC Flow Logs" },
+          { "id": "security_group_rules", "label": "Security group rules" },
+          { "id": "route_tables", "label": "Subnet route tables" },
+          { "id": "cpu_utilization", "label": "EC2 CPUUtilization metric" },
+          { "id": "rds_performance_insights", "label": "RDS Performance Insights" }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": ["vpc_flow_logs", "security_group_rules", "route_tables"]
+      },
+      "concepts": [
+        { "concept_id": "aws.vpc", "weight": 0.5 },
+        { "concept_id": "aws.vpc.flow_logs", "weight": 0.3 },
+        { "concept_id": "aws.vpc.route_table", "weight": 0.2 }
+      ],
+      "explanation": "Flow Logs show whether packets arrived and were accepted or rejected. Security groups decide allowed inbound traffic, and route tables decide whether the subnet can reach its target. CPU and database metrics do not explain network rejection.",
+      "hints": [
+        "Start with the record of accepted versus rejected packets, then the configuration that decides allow/deny."
+      ],
+      "error_codes": [
+        {
+          "code": "evidence_missing_relevant",
+          "description": "At least one relevant evidence source was not selected."
+        },
+        {
+          "code": "evidence_selected_irrelevant",
+          "description": "At least one selected evidence source does not help answer the question."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Logging IP traffic with VPC Flow Logs",
+          "url": "https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html"
+        },
+        {
+          "title": "Control traffic to resources using security groups",
+          "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-fault-route-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-2",
+      "task_id": "D2.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.5,
+      "prompt": "A private subnet cannot reach the internet even though outbound IPv4 access was intended. Inspect the configuration and flag the faulty element(s).",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          { "id": "route_destination", "label": "Route table entry — Destination 0.0.0.0/0" },
+          { "id": "route_target", "label": "Route table entry — Target: internet gateway" },
+          { "id": "route_association", "label": "Route table association — private-subnet" },
+          { "id": "security_group_egress", "label": "Security group egress — allow all outbound" }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": ["route_target"]
+      },
+      "concepts": [
+        { "concept_id": "aws.vpc.route_table", "weight": 0.6 },
+        { "concept_id": "aws.vpc.nat_gateway", "weight": 0.4 }
+      ],
+      "explanation": "A private subnet's IPv4 default route must target a NAT gateway, not an internet gateway. The destination, association, and egress rule are consistent with the goal.",
+      "hints": [
+        "A private subnet cannot use an internet gateway directly."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The faulty element was not flagged."
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A correct element was flagged as faulty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "NAT gateways",
+          "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-fault-alb-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-2",
+      "task_id": "D2.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.55,
+      "prompt": "An ALB reports HealthyHostCount = 0 while all targets are running. Inspect the configuration and flag the faulty element(s).",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          { "id": "listener", "label": "Listener — HTTPS:443 forwards to the target group" },
+          { "id": "target_group", "label": "Target group — HTTP:80, targets registered" },
+          { "id": "health_check_path", "label": "Health check — path /health, targets return 404" },
+          { "id": "alb_security_group", "label": "ALB security group — allows 443 from 0.0.0.0/0" },
+          { "id": "target_security_group", "label": "Target security group — allows traffic from the ALB security group" }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": ["health_check_path"]
+      },
+      "concepts": [{ "concept_id": "aws.elb.target_health", "weight": 1.0 }],
+      "explanation": "The health check path returns 404, so every target fails its health check and the load balancer reports no healthy hosts. The listener, target group, and security groups are configured correctly.",
+      "hints": [
+        "A target can be running and healthy while still failing a load balancer health check."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The faulty element was not flagged."
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A correct element was flagged as faulty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Health checks for Application Load Balancer target groups",
+          "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-fill-route-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-2",
+      "task_id": "D2.1",
+      "assessment_mode": "recall",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.35,
+      "prompt": "Complete the private subnet route that provides outbound IPv4 internet access.",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          { "id": "destination", "label": "Destination" },
+          { "id": "target", "label": "Target" },
+          { "id": "association", "label": "Associated subnet" }
+        ],
+        "options": [
+          { "id": "all_ipv4", "label": "0.0.0.0/0" },
+          { "id": "all_ipv6", "label": "::/0" },
+          { "id": "nat_gateway", "label": "NAT gateway" },
+          { "id": "internet_gateway", "label": "Internet gateway" },
+          { "id": "private_subnet", "label": "Private subnet" },
+          { "id": "public_subnet", "label": "Public subnet" },
+          { "id": "egress_only_igw", "label": "Egress-only internet gateway" }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "destination": "all_ipv4",
+          "target": "nat_gateway",
+          "association": "private_subnet"
+        }
+      },
+      "concepts": [
+        { "concept_id": "aws.vpc.route_table", "weight": 0.5 },
+        { "concept_id": "aws.vpc.nat_gateway", "weight": 0.5 }
+      ],
+      "explanation": "The private subnet's route table sends all IPv4 traffic (0.0.0.0/0) to a NAT gateway. The route table is associated with the private subnet.",
+      "hints": [
+        "The default IPv4 route is 0.0.0.0/0."
+      ],
+      "error_codes": [
+        {
+          "code": "slot_incorrect",
+          "description": "A blank was filled with the wrong value."
+        },
+        {
+          "code": "slot_unfilled",
+          "description": "A blank was left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Route tables for your VPC",
+          "url": "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-fill-cloudwatch-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-1",
+      "task_id": "D1.1",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.4,
+      "prompt": "Complete the CloudWatch alarm configuration that notifies an operator when CPU is too high.",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          { "id": "metric", "label": "Metric watched" },
+          { "id": "threshold", "label": "Threshold condition" },
+          { "id": "action", "label": "Alarm action" }
+        ],
+        "options": [
+          { "id": "cpu_utilization", "label": "CPUUtilization" },
+          { "id": "rds_connections", "label": "DatabaseConnections" },
+          { "id": "greater_than", "label": "Greater than threshold" },
+          { "id": "less_than", "label": "Less than threshold" },
+          { "id": "sns_topic", "label": "SNS topic" },
+          { "id": "cloudtrail", "label": "CloudTrail trail" }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "metric": "cpu_utilization",
+          "threshold": "greater_than",
+          "action": "sns_topic"
+        }
+      },
+      "concepts": [
+        { "concept_id": "aws.cloudwatch.alarm", "weight": 0.6 },
+        { "concept_id": "aws.cloudwatch.alarm_actions", "weight": 0.4 }
+      ],
+      "explanation": "The alarm watches CPUUtilization, enters ALARM when the value is greater than the threshold, and publishes to an SNS topic as its action.",
+      "hints": [
+        "High CPU is a greater-than condition, and notifications are delivered through SNS."
+      ],
+      "error_codes": [
+        {
+          "code": "slot_incorrect",
+          "description": "A blank was filled with the wrong value."
+        },
+        {
+          "code": "slot_unfilled",
+          "description": "A blank was left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Using Amazon CloudWatch alarms",
+          "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-troubleshooting-alb-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-2",
+      "task_id": "D2.1",
+      "assessment_mode": "application",
+      "interaction_type": "troubleshooting",
+      "difficulty_prior": 0.65,
+      "prompt": "Users report HTTP 503 responses from an Application Load Balancer. Work through the incident and choose the best action at each step.",
+      "interaction": {
+        "type": "troubleshooting",
+        "start_step_id": "diagnose",
+        "steps": [
+          {
+            "id": "diagnose",
+            "prompt": "The ALB is reachable and HealthyHostCount is 0. What do you inspect first?",
+            "stage": "diagnosis",
+            "choices": [
+              {
+                "id": "check_target_health",
+                "label": "Target health reasons in the target group"
+              },
+              {
+                "id": "check_listener_rules",
+                "label": "Listener rules and certificate configuration"
+              },
+              {
+                "id": "check_rds_metrics",
+                "label": "RDS Performance Insights"
+              }
+            ],
+            "next_step_by_choice": {
+              "check_target_health": "remediate",
+              "check_listener_rules": "remediate",
+              "check_rds_metrics": "remediate"
+            }
+          },
+          {
+            "id": "remediate",
+            "prompt": "Target health reports that every target fails its health check with HTTP 404. What do you do?",
+            "stage": "remediation",
+            "choices": [
+              {
+                "id": "fix_health_path",
+                "label": "Point the health check at a path the application serves"
+              },
+              {
+                "id": "restart_targets",
+                "label": "Restart every registered target"
+              },
+              {
+                "id": "increase_timeout",
+                "label": "Raise the health check timeout to 60 seconds"
+              }
+            ],
+            "next_step_by_choice": {}
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "troubleshooting",
+        "correct_choice_ids": {
+          "diagnose": ["check_target_health"],
+          "remediate": ["fix_health_path"]
+        },
+        "expected_path": ["check_target_health", "fix_health_path"]
+      },
+      "concepts": [{ "concept_id": "aws.elb.target_health", "weight": 1.0 }],
+      "explanation": "HealthyHostCount = 0 points directly at target health, not at the listener or an unrelated database. Once the health check path is identified as wrong, correcting the path is the remediation; restarting healthy processes or extending the timeout does not fix a 404.",
+      "hints": [
+        "Start from the signal that already says the targets are unhealthy."
+      ],
+      "error_codes": [
+        {
+          "code": "troubleshooting_wrong_diagnosis",
+          "description": "A diagnostic decision was incorrect."
+        },
+        {
+          "code": "troubleshooting_wrong_next_action",
+          "description": "A next-action decision was incorrect."
+        },
+        {
+          "code": "troubleshooting_wrong_remediation",
+          "description": "A remediation decision was incorrect."
+        },
+        {
+          "code": "troubleshooting_incomplete_path",
+          "description": "The scenario ended before all decisions were made."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Health checks for Application Load Balancer target groups",
+          "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-scenario-alarm-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-2",
+      "task_id": "D2.1",
+      "assessment_mode": "application",
+      "interaction_type": "scenario_choice_chain",
+      "difficulty_prior": 0.5,
+      "prompt": "A CloudWatch alarm reports sustained high CPU across a web fleet. Work through the short response scenario.",
+      "interaction": {
+        "type": "scenario_choice_chain",
+        "start_step_id": "alarm",
+        "steps": [
+          {
+            "id": "alarm",
+            "prompt": "The alarm has just fired. What do you inspect first?",
+            "stage": "diagnosis",
+            "choices": [
+              {
+                "id": "inspect_metric",
+                "label": "The CPU metric, its statistic, and its time range"
+              },
+              {
+                "id": "terminate_busiest",
+                "label": "Terminate the busiest instance immediately"
+              }
+            ],
+            "next_step_by_choice": {
+              "inspect_metric": "respond",
+              "terminate_busiest": "respond"
+            }
+          },
+          {
+            "id": "respond",
+            "prompt": "The metric has been above threshold for 30 minutes and request latency is rising. What is the best next action?",
+            "stage": "action",
+            "choices": [
+              {
+                "id": "scale_out",
+                "label": "Scale the Auto Scaling group out"
+              },
+              {
+                "id": "disable_alarm",
+                "label": "Disable the alarm until traffic drops"
+              }
+            ],
+            "next_step_by_choice": {}
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "scenario_choice_chain",
+        "correct_choice_ids": {
+          "alarm": ["inspect_metric"],
+          "respond": ["scale_out"]
+        },
+        "expected_path": ["inspect_metric", "scale_out"]
+      },
+      "concepts": [
+        { "concept_id": "aws.cloudwatch.alarm", "weight": 0.6 },
+        { "concept_id": "aws.elb.target_health", "weight": 0.4 }
+      ],
+      "explanation": "Confirm the signal before acting, then relieve the load by scaling out. Terminating instances or disabling the alarm removes the symptom without addressing capacity.",
+      "hints": [
+        "Verify the metric before changing capacity, and prefer reversible actions."
+      ],
+      "error_codes": [
+        {
+          "code": "scenario_choice_wrong_diagnosis",
+          "description": "A diagnostic decision was incorrect."
+        },
+        {
+          "code": "scenario_choice_wrong_next_action",
+          "description": "A next-action decision was incorrect."
+        },
+        {
+          "code": "scenario_choice_incomplete_path",
+          "description": "The scenario ended before all decisions were made."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Using Amazon CloudWatch alarms",
+          "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-config-nat-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-2",
+      "task_id": "D2.1",
+      "assessment_mode": "application",
+      "interaction_type": "configuration_builder",
+      "difficulty_prior": 0.6,
+      "prompt": "Assemble the minimum configuration that lets private EC2 instances reach the IPv4 internet. Assign one component to each role.",
+      "interaction": {
+        "type": "configuration_builder",
+        "slots": [
+          {
+            "id": "private_route_target",
+            "label": "Private subnet IPv4 default route target"
+          },
+          {
+            "id": "nat_host_subnet",
+            "label": "Subnet that hosts the NAT gateway"
+          },
+          {
+            "id": "public_route_target",
+            "label": "Public subnet IPv4 default route target"
+          }
+        ],
+        "pieces": [
+          { "id": "nat_gateway", "label": "NAT gateway" },
+          { "id": "internet_gateway", "label": "Internet gateway" },
+          { "id": "egress_only_igw", "label": "Egress-only internet gateway" },
+          { "id": "public_subnet", "label": "Public subnet" },
+          { "id": "private_subnet", "label": "Private subnet" }
+        ]
+      },
+      "canonical_answer": {
+        "type": "configuration_builder",
+        "assignments": {
+          "private_route_target": "nat_gateway",
+          "nat_host_subnet": "public_subnet",
+          "public_route_target": "internet_gateway"
+        }
+      },
+      "concepts": [
+        { "concept_id": "aws.vpc.nat_gateway", "weight": 0.5 },
+        { "concept_id": "aws.vpc.route_table", "weight": 0.3 },
+        { "concept_id": "aws.vpc", "weight": 0.2 }
+      ],
+      "explanation": "Private IPv4 traffic routes to a NAT gateway, the NAT gateway is placed in a public subnet, and the public subnet routes to an internet gateway. An egress-only internet gateway is only for IPv6, and the private subnet is not a route target.",
+      "hints": [
+        "The NAT gateway needs to live somewhere that already has internet access."
+      ],
+      "error_codes": [
+        {
+          "code": "config_missing_required",
+          "description": "A required role was left empty."
+        },
+        {
+          "code": "config_wrong_assignment",
+          "description": "A required component was assigned to the wrong role."
+        },
+        {
+          "code": "config_unnecessary_component",
+          "description": "A component that is not required was used."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "NAT gateways",
+          "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-command-presign-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-1",
+      "task_id": "D1.1",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "command_assembly",
+      "difficulty_prior": 0.45,
+      "prompt": "Assemble the command that creates a one-hour presigned URL for an S3 object.",
+      "interaction": {
+        "type": "command_assembly",
+        "slots": [
+          { "id": "service_action", "label": "Service and action" },
+          { "id": "target", "label": "Object to sign" },
+          { "id": "expiry_flag", "label": "Expiry flag" },
+          { "id": "expiry_value", "label": "Expiry value" }
+        ],
+        "tokens": [
+          { "id": "s3_presign", "label": "aws s3 presign" },
+          { "id": "object_uri", "label": "s3://reports/2026-q3.csv" },
+          { "id": "expires_in", "label": "--expires-in" },
+          { "id": "seconds", "label": "3600" },
+          { "id": "recursive", "label": "--recursive" }
+        ]
+      },
+      "canonical_answer": {
+        "type": "command_assembly",
+        "values": {
+          "service_action": "s3_presign",
+          "target": "object_uri",
+          "expiry_flag": "expires_in",
+          "expiry_value": "seconds"
+        }
+      },
+      "concepts": [{ "concept_id": "aws.s3", "weight": 1.0 }],
+      "explanation": "The action comes first, then the object URI, then the `--expires-in` flag and its value in seconds. `--recursive` is not valid for presigning a single object.",
+      "hints": [
+        "Flags follow the object they apply to, and `--expires-in` takes a number of seconds."
+      ],
+      "error_codes": [
+        {
+          "code": "command_token_wrong",
+          "description": "A token that is not part of the command was used."
+        },
+        {
+          "code": "command_token_missing",
+          "description": "A required part of the command was left empty."
+        },
+        {
+          "code": "command_order_wrong",
+          "description": "A required token was placed in the wrong position."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Sharing objects with presigned URLs",
+          "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/ShareObjectPreSignedURL.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-placement-dr-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-2",
+      "task_id": "D2.1",
+      "assessment_mode": "application",
+      "interaction_type": "two_dimensional_placement",
+      "difficulty_prior": 0.6,
+      "prompt": "Place each disaster recovery strategy by its relative cost and recovery speed.",
+      "interaction": {
+        "type": "two_dimensional_placement",
+        "x_axis": {
+          "id": "cost",
+          "label": "Cost",
+          "low_label": "Lower cost",
+          "high_label": "Higher cost"
+        },
+        "y_axis": {
+          "id": "recovery",
+          "label": "Recovery time",
+          "low_label": "Slower recovery",
+          "high_label": "Faster recovery"
+        },
+        "items": [
+          { "id": "backup_restore", "label": "Backup and restore" },
+          { "id": "pilot_light", "label": "Pilot light" },
+          { "id": "warm_standby", "label": "Warm standby" },
+          { "id": "multi_site", "label": "Multi-site active/active" }
+        ]
+      },
+      "canonical_answer": {
+        "type": "two_dimensional_placement",
+        "regions": {
+          "backup_restore": { "x": [0.0, 0.25], "y": [0.0, 0.25] },
+          "pilot_light": { "x": [0.25, 0.5], "y": [0.25, 0.5] },
+          "warm_standby": { "x": [0.5, 0.75], "y": [0.5, 0.75] },
+          "multi_site": { "x": [0.75, 1.0], "y": [0.75, 1.0] }
+        }
+      },
+      "concepts": [{ "concept_id": "aws.dr.strategies", "weight": 1.0 }],
+      "explanation": "Backup and restore is cheapest but slowest. Pilot light and warm standby trade increasing cost for faster recovery. Multi-site active/active recovers fastest and costs the most to run.",
+      "hints": [
+        "More capacity running all the time means higher cost and a faster recovery."
+      ],
+      "error_codes": [
+        {
+          "code": "placement_missing",
+          "description": "An item was not placed."
+        },
+        {
+          "code": "placement_wrong_x",
+          "description": "An item is on the wrong side of the cost axis."
+        },
+        {
+          "code": "placement_wrong_y",
+          "description": "An item is on the wrong side of the recovery axis."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Disaster recovery options in the cloud",
+          "url": "https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html"
+        }
+      ]
+    }
+  ]
+}

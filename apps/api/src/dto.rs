@@ -5,7 +5,7 @@
 
 use std::collections::BTreeMap;
 
-use adaptive_learn_content::{CanonicalAnswer, Interaction};
+use adaptive_learn_content::{CanonicalAnswer, Interaction, PlacementPoint};
 use adaptive_learn_domain::{AssessmentMode, ConceptWeight, InteractionType, MissionStatus};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -145,6 +145,32 @@ pub struct AnswerPayload {
     pub ordered_ids: Option<Vec<String>>,
     /// Directed `[from, to]` pairs for node connection.
     pub edges: Option<Vec<Vec<String>>>,
+    /// Selected components and relationships for reconstruction.
+    pub reconstruction: Option<ReconstructionAnswerPayload>,
+    /// Selected evidence source ids for evidence selection.
+    pub evidence_ids: Option<Vec<String>>,
+    /// Selected faulty element ids for spot the fault.
+    pub faulty_ids: Option<Vec<String>>,
+    /// Slot id to option id values for fill slots.
+    pub slot_values: Option<BTreeMap<String, String>>,
+    /// Ordered choice ids for troubleshooting or a scenario chain.
+    pub choice_path: Option<Vec<String>>,
+    /// Slot id to piece id assignments for configuration builder.
+    pub assignments: Option<BTreeMap<String, String>>,
+    /// Item id to position for two-dimensional placement.
+    pub positions: Option<BTreeMap<String, PlacementPoint>>,
+    /// Slot id to token id values for command assembly.
+    pub token_values: Option<BTreeMap<String, String>>,
+}
+
+/// Reconstruction answer primitives.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ReconstructionAnswerPayload {
+    /// Slot id to piece id placements.
+    pub placements: BTreeMap<String, String>,
+    /// Directed `[from, to]` relationships the learner drew.
+    #[serde(default)]
+    pub edges: Vec<Vec<String>>,
 }
 
 /// Request to score one attempt.

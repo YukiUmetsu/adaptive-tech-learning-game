@@ -5,7 +5,7 @@ use adaptive_learn_content::ContentRegistry;
 #[test]
 fn embedded_registry_loads_and_validates() {
     let registry = ContentRegistry::embedded().expect("embedded content must be valid");
-    assert_eq!(registry.bundles().len(), 1);
+    assert!(!registry.bundles().is_empty());
 }
 
 #[test]

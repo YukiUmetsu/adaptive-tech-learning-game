@@ -8,8 +8,8 @@ use utoipa::OpenApi;
 use crate::dto::{
     AnswerPayload, AnswerRequest, CatalogResponse, CertificationDto, CertificationVersionDto,
     CompleteMissionRequest, CompleteMissionResponse, DomainDto, FeedbackResponse,
-    IssueMissionRequest, MissionResponse, QuestionView, SyncEventRequest, SyncEventResult,
-    SyncRequest, SyncResponse, TaskDto,
+    IssueMissionRequest, MissionResponse, QuestionView, ReconstructionAnswerPayload,
+    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, TaskDto,
 };
 use crate::error::{ErrorBody, ErrorResponse};
 use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
@@ -45,6 +45,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         MissionResponse,
         QuestionView,
         AnswerPayload,
+        ReconstructionAnswerPayload,
         AnswerRequest,
         FeedbackResponse,
         SyncRequest,
@@ -57,6 +58,17 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         adaptive_learn_content::CanonicalAnswer,
         adaptive_learn_content::Choice,
         adaptive_learn_content::Node,
+        adaptive_learn_content::FillSlot,
+        adaptive_learn_content::ScenarioStage,
+        adaptive_learn_content::ScenarioStep,
+        adaptive_learn_content::ConfigSlot,
+        adaptive_learn_content::PlacementAxis,
+        adaptive_learn_content::PlacementRegion,
+        adaptive_learn_content::PlacementPoint,
+        adaptive_learn_content::ReconstructionLayout,
+        adaptive_learn_content::FixedNodePosition,
+        adaptive_learn_content::FixedNode,
+        adaptive_learn_content::ReconstructionSlot,
         adaptive_learn_domain::ConceptWeight,
         adaptive_learn_domain::AssessmentMode,
         adaptive_learn_domain::InteractionType,

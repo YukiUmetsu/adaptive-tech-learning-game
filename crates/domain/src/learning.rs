@@ -38,6 +38,24 @@ pub enum InteractionType {
     Ordering,
     /// Connect nodes with directed relationships.
     NodeConnection,
+    /// Rebuild a structure from components and relationships.
+    Reconstruction,
+    /// Select the telemetry/log evidence needed to answer a question.
+    EvidenceSelection,
+    /// Identify the faulty element(s) in a broken configuration.
+    SpotTheFault,
+    /// Fill constrained blanks with values drawn from an option set.
+    FillSlots,
+    /// Work through a deterministic diagnosis/remediation decision tree.
+    Troubleshooting,
+    /// Work through a deterministic authored decision chain.
+    ScenarioChoiceChain,
+    /// Assemble a configuration from components into named slots.
+    ConfigurationBuilder,
+    /// Place items on a two-axis conceptual map.
+    TwoDimensionalPlacement,
+    /// Assemble an ordered command or configuration statement from tokens.
+    CommandAssembly,
 }
 
 impl AssessmentMode {
@@ -80,6 +98,15 @@ impl InteractionType {
             Self::Classification => "classification",
             Self::Ordering => "ordering",
             Self::NodeConnection => "node_connection",
+            Self::Reconstruction => "reconstruction",
+            Self::EvidenceSelection => "evidence_selection",
+            Self::SpotTheFault => "spot_the_fault",
+            Self::FillSlots => "fill_slots",
+            Self::Troubleshooting => "troubleshooting",
+            Self::ScenarioChoiceChain => "scenario_choice_chain",
+            Self::ConfigurationBuilder => "configuration_builder",
+            Self::TwoDimensionalPlacement => "two_dimensional_placement",
+            Self::CommandAssembly => "command_assembly",
         }
     }
 }
@@ -92,6 +119,15 @@ impl TryFrom<&str> for InteractionType {
             "classification" => Ok(Self::Classification),
             "ordering" => Ok(Self::Ordering),
             "node_connection" => Ok(Self::NodeConnection),
+            "reconstruction" => Ok(Self::Reconstruction),
+            "evidence_selection" => Ok(Self::EvidenceSelection),
+            "spot_the_fault" => Ok(Self::SpotTheFault),
+            "fill_slots" => Ok(Self::FillSlots),
+            "troubleshooting" => Ok(Self::Troubleshooting),
+            "scenario_choice_chain" => Ok(Self::ScenarioChoiceChain),
+            "configuration_builder" => Ok(Self::ConfigurationBuilder),
+            "two_dimensional_placement" => Ok(Self::TwoDimensionalPlacement),
+            "command_assembly" => Ok(Self::CommandAssembly),
             _ => Err(DomainError::invalid(
                 "interaction_type",
                 "unknown interaction type",

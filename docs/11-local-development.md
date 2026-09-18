@@ -99,11 +99,23 @@ Phase 1 ships one real, narrow module:
 Only Task 1.1 has authored questions. The other domains exist as exam metadata
 (with official weights) and are explicitly marked "not yet authored" in the UI.
 
-Content is authored as versioned JSON at
-`content/aws/soa-c03/soa-c03-content-v1.json`. It is embedded in the API binary,
-validated at startup, and rejected if concept references, canonical answers,
-weights, identifiers, or versions are invalid. Canonical answers are never sent
-with a mission; they are returned only after an answer is scored.
+Content is authored as versioned JSON organized as
+`content/<category>/<certification>/<version>/<file>.json`, for example
+`content/aws/soa-c03/v1/bundle.json`. The content crate discovers and embeds
+every JSON bundle under `content/` at build time (see
+`crates/content/build.rs`), so adding a certification or version requires no
+code change. Bundles are validated at startup and rejected if concept
+references, canonical answers, weights, identifiers, or versions are invalid.
+Canonical answers are never sent with a mission; they are returned only after
+an answer is scored.
+
+A separate `content/demo/` bundle holds original SOA-C03 demo questions that
+exercise every interaction type. It is intentionally kept out of the primary
+certification bundle so demo content can change without touching real authored
+content. The web app's `/demo` route surfaces that bundle and starts its
+missions without an account; it is linked from the primary navigation and the
+home page. The API `/health` endpoint remains for operations, but the former web
+status page has been removed.
 
 Key API endpoints:
 

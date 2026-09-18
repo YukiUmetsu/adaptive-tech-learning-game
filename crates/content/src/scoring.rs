@@ -17,6 +17,27 @@ pub enum SubmittedAnswer {
     Ordering(Vec<String>),
     /// Directed `(from, to)` relationships.
     NodeConnection(Vec<(String, String)>),
+    /// Slot placements and optional directed relationships.
+    Reconstruction {
+        /// Slot id to piece id.
+        placements: BTreeMap<String, String>,
+        /// Directed `(from, to)` relationships the learner drew.
+        edges: Vec<(String, String)>,
+    },
+    /// Selected evidence source ids.
+    EvidenceSelection(Vec<String>),
+    /// Selected faulty element ids.
+    SpotTheFault(Vec<String>),
+    /// Slot id to option id values.
+    FillSlots(BTreeMap<String, String>),
+    /// Ordered choice ids navigating a branching scenario.
+    Branching(Vec<String>),
+    /// Slot id to piece id assignments.
+    ConfigurationBuilder(BTreeMap<String, String>),
+    /// Item id to submitted point.
+    TwoDimensionalPlacement(BTreeMap<String, crate::model::PlacementPoint>),
+    /// Slot id to token id values.
+    CommandAssembly(BTreeMap<String, String>),
 }
 
 /// The outcome of scoring one attempt.
@@ -53,6 +74,30 @@ pub enum ScoringError {
     /// An edge is malformed (wrong shape or a self-loop).
     #[error("edge is malformed")]
     InvalidEdge,
+    /// An evidence id is not part of the question.
+    #[error("unknown evidence id {0}")]
+    UnknownEvidence(String),
+    /// An element id is not part of the question.
+    #[error("unknown element id {0}")]
+    UnknownElement(String),
+    /// A slot id is not part of the question.
+    #[error("unknown slot id {0}")]
+    UnknownSlot(String),
+    /// An option id is not part of the question.
+    #[error("unknown option id {0}")]
+    UnknownOption(String),
+    /// A component piece id is not part of the question.
+    #[error("unknown piece id {0}")]
+    UnknownPiece(String),
+    /// A branching-scenario path violates the authored transitions.
+    #[error("scenario path is not valid for this scenario")]
+    InvalidScenarioPath,
+    /// A submitted point is outside the valid `0..=1` placement space.
+    #[error("placement point is outside the valid space")]
+    InvalidPlacement,
+    /// A token id is not part of the question.
+    #[error("unknown token id {0}")]
+    UnknownToken(String),
 }
 
 impl ScoringError {
@@ -65,6 +110,14 @@ impl ScoringError {
             Self::UnknownNode(_) => "unknown_node",
             Self::InvalidOrdering => "invalid_ordering",
             Self::InvalidEdge => "invalid_edge",
+            Self::UnknownEvidence(_) => "unknown_evidence",
+            Self::UnknownElement(_) => "unknown_element",
+            Self::UnknownSlot(_) => "unknown_slot",
+            Self::UnknownOption(_) => "unknown_option",
+            Self::UnknownPiece(_) => "unknown_piece",
+            Self::InvalidScenarioPath => "invalid_scenario_path",
+            Self::InvalidPlacement => "invalid_placement",
+            Self::UnknownToken(_) => "unknown_token",
         }
     }
 }
@@ -82,6 +135,60 @@ pub fn score(question: &Question, answer: &SubmittedAnswer) -> Result<ScoredAnsw
         (Interaction::NodeConnection { nodes }, SubmittedAnswer::NodeConnection(edges)) => {
             score_connection(question, nodes, edges)
         }
+        (
+            Interaction::Reconstruction {
+                layout,
+                fixed_nodes,
+                pieces,
+                slots,
+                ..
+            },
+            SubmittedAnswer::Reconstruction { placements, edges },
+        ) => score_reconstruction(
+            question,
+            *layout,
+            fixed_nodes,
+            pieces,
+            slots,
+            placements,
+            edges,
+        ),
+        (
+            Interaction::EvidenceSelection { evidence },
+            SubmittedAnswer::EvidenceSelection(selected),
+        ) => score_evidence_selection(question, evidence, selected),
+        (Interaction::SpotTheFault { elements }, SubmittedAnswer::SpotTheFault(selected)) => {
+            score_spot_the_fault(question, elements, selected)
+        }
+        (Interaction::FillSlots { slots, options }, SubmittedAnswer::FillSlots(values)) => {
+            score_fill_slots(question, slots, options, values)
+        }
+        (
+            Interaction::Troubleshooting {
+                start_step_id,
+                steps,
+            },
+            SubmittedAnswer::Branching(path),
+        ) => score_branching(question, start_step_id, steps, path, "troubleshooting"),
+        (
+            Interaction::ScenarioChoiceChain {
+                start_step_id,
+                steps,
+            },
+            SubmittedAnswer::Branching(path),
+        ) => score_branching(question, start_step_id, steps, path, "scenario_choice"),
+        (
+            Interaction::ConfigurationBuilder { slots, pieces },
+            SubmittedAnswer::ConfigurationBuilder(assignments),
+        ) => score_configuration(question, slots, pieces, assignments),
+        (
+            Interaction::TwoDimensionalPlacement { items, .. },
+            SubmittedAnswer::TwoDimensionalPlacement(points),
+        ) => score_placement(question, items, points),
+        (
+            Interaction::CommandAssembly { slots, tokens },
+            SubmittedAnswer::CommandAssembly(values),
+        ) => score_command_assembly(question, slots, tokens, values),
         _ => Err(ScoringError::InteractionMismatch),
     }
 }
@@ -222,6 +329,609 @@ fn score_connection(
     }
     if wrong > 0 {
         error_codes.push("connection_invalid_relationship".to_owned());
+    }
+
+    Ok(ScoredAnswer {
+        correct: score >= 1.0,
+        score,
+        error_codes,
+        canonical: question.canonical_answer.clone(),
+    })
+}
+
+/// Set overlap shared by selection-style interactions.
+struct SelectionOutcome {
+    /// Selected ids that are canonical.
+    hits: usize,
+    /// Selected ids that are not canonical.
+    false_positives: usize,
+    /// Canonical ids that were not selected.
+    missed: usize,
+}
+
+fn evaluate_selection(canonical: &[String], selected: &[String]) -> SelectionOutcome {
+    let canonical_set: HashSet<&str> = canonical.iter().map(String::as_str).collect();
+    let unique: HashSet<&str> = selected.iter().map(String::as_str).collect();
+
+    let hits = unique
+        .iter()
+        .filter(|id| canonical_set.contains(**id))
+        .count();
+    let false_positives = unique.len() - hits;
+    let missed = canonical_set.len() - hits;
+
+    SelectionOutcome {
+        hits,
+        false_positives,
+        missed,
+    }
+}
+
+/// Placement and topology weights for graph reconstruction. Fixed so scoring is
+/// deterministic and comparable across attempts.
+const GRAPH_PLACEMENT_WEIGHT: f64 = 0.7;
+const GRAPH_EDGE_WEIGHT: f64 = 0.3;
+
+fn score_reconstruction(
+    question: &Question,
+    layout: crate::model::ReconstructionLayout,
+    fixed_nodes: &[crate::model::FixedNode],
+    pieces: &[crate::model::Choice],
+    slots: &[crate::model::ReconstructionSlot],
+    placements: &BTreeMap<String, String>,
+    edges: &[(String, String)],
+) -> Result<ScoredAnswer, ScoringError> {
+    let piece_ids: HashSet<&str> = pieces.iter().map(|piece| piece.id.as_str()).collect();
+    // Edges may reference either a candidate piece or a provided fixed node.
+    let node_ids: HashSet<&str> = piece_ids
+        .iter()
+        .copied()
+        .chain(fixed_nodes.iter().map(|node| node.id.as_str()))
+        .collect();
+    let slot_ids: HashSet<&str> = slots.iter().map(|slot| slot.id.as_str()).collect();
+
+    for (slot_id, piece_id) in placements {
+        if !slot_ids.contains(slot_id.as_str()) {
+            return Err(ScoringError::UnknownSlot(slot_id.clone()));
+        }
+        if !piece_ids.contains(piece_id.as_str()) {
+            return Err(ScoringError::UnknownPiece(piece_id.clone()));
+        }
+    }
+
+    let mut submitted_edges: HashSet<(String, String)> = HashSet::new();
+    for (from, to) in edges {
+        if from == to || from.is_empty() || to.is_empty() {
+            return Err(ScoringError::InvalidEdge);
+        }
+        if !node_ids.contains(from.as_str()) {
+            return Err(ScoringError::UnknownPiece(from.clone()));
+        }
+        if !node_ids.contains(to.as_str()) {
+            return Err(ScoringError::UnknownPiece(to.clone()));
+        }
+        submitted_edges.insert((from.clone(), to.clone()));
+    }
+
+    let CanonicalAnswer::Reconstruction {
+        placements: canonical_placements,
+        edges: canonical_edges,
+    } = &question.canonical_answer
+    else {
+        return Err(ScoringError::InteractionMismatch);
+    };
+
+    let required_pieces: HashSet<&str> =
+        canonical_placements.values().map(String::as_str).collect();
+    let placed: HashSet<&str> = placements.values().map(String::as_str).collect();
+
+    let mut correct_slots = 0_usize;
+    let mut unfilled = false;
+    let mut wrong_position = false;
+    let mut wrong_component = false;
+    let linear = layout == crate::model::ReconstructionLayout::Linear;
+
+    if linear {
+        // Slot order is the structure, so each slot must hold its exact piece.
+        for slot in slots {
+            match placements.get(&slot.id) {
+                None => unfilled = true,
+                Some(piece) if canonical_placements.get(&slot.id) == Some(piece) => {
+                    correct_slots += 1;
+                }
+                Some(piece) if required_pieces.contains(piece.as_str()) => wrong_position = true,
+                Some(_) => wrong_component = true,
+            }
+        }
+    } else {
+        // In a graph, authored slot positions are only a display scaffold: the
+        // topology is defined by relationships. A required piece therefore
+        // counts wherever it was placed, so swapping two pieces between slots
+        // is not penalized when the relationships are unchanged.
+        correct_slots = required_pieces
+            .iter()
+            .filter(|piece| placed.contains(*piece))
+            .count();
+        for piece in &placed {
+            if !required_pieces.contains(piece) {
+                wrong_component = true;
+            }
+        }
+        unfilled = slots.iter().any(|slot| placements.get(&slot.id).is_none());
+    }
+
+    let missing_components = required_pieces
+        .iter()
+        .filter(|piece| !placed.contains(**piece))
+        .count();
+
+    let denominator = canonical_placements.len().max(1);
+    let placement_score = correct_slots as f64 / denominator as f64;
+
+    let canonical_edge_set: HashSet<(String, String)> = canonical_edges
+        .iter()
+        .filter(|edge| edge.len() == 2)
+        .map(|edge| (edge[0].clone(), edge[1].clone()))
+        .collect();
+
+    // Linear scaffolds encode relationships in slot order, so explicit edges
+    // are only scored for graph layouts that actually author topology.
+    let use_edges = !linear && !canonical_edge_set.is_empty();
+
+    let hits_edges = submitted_edges.intersection(&canonical_edge_set).count();
+    let invalid_edges = submitted_edges.difference(&canonical_edge_set).count();
+    let missing_edges = canonical_edge_set.len() - hits_edges;
+    let edge_score = ((hits_edges as f64 - invalid_edges as f64)
+        / canonical_edge_set.len().max(1) as f64)
+        .clamp(0.0, 1.0);
+
+    let score = if use_edges {
+        (GRAPH_PLACEMENT_WEIGHT * placement_score + GRAPH_EDGE_WEIGHT * edge_score).clamp(0.0, 1.0)
+    } else {
+        placement_score
+    };
+
+    let mut error_codes = Vec::new();
+    if unfilled {
+        error_codes.push("reconstruction_unfilled_slot".to_owned());
+    }
+    if wrong_position {
+        error_codes.push("reconstruction_wrong_position".to_owned());
+    }
+    if wrong_component {
+        error_codes.push("reconstruction_wrong_component".to_owned());
+    }
+    if missing_components > 0 {
+        error_codes.push("reconstruction_missing_component".to_owned());
+    }
+    if use_edges {
+        if missing_edges > 0 {
+            error_codes.push("reconstruction_missing_relationship".to_owned());
+        }
+        if invalid_edges > 0 {
+            error_codes.push("reconstruction_invalid_relationship".to_owned());
+        }
+    }
+
+    // "Correct" means every required piece is present in the right structure
+    // and, for graph layouts with authored topology, every required edge exists.
+    let placements_perfect = if linear {
+        correct_slots == slots.len() && missing_components == 0
+    } else {
+        correct_slots == required_pieces.len() && missing_components == 0 && !wrong_component
+    };
+    let topology_perfect = !use_edges || (missing_edges == 0 && invalid_edges == 0);
+    let correct = placements_perfect && topology_perfect;
+
+    Ok(ScoredAnswer {
+        correct,
+        score,
+        error_codes,
+        canonical: question.canonical_answer.clone(),
+    })
+}
+
+fn score_evidence_selection(
+    question: &Question,
+    evidence: &[crate::model::Choice],
+    selected: &[String],
+) -> Result<ScoredAnswer, ScoringError> {
+    let available: HashSet<&str> = evidence.iter().map(|c| c.id.as_str()).collect();
+    for id in selected {
+        if !available.contains(id.as_str()) {
+            return Err(ScoringError::UnknownEvidence(id.clone()));
+        }
+    }
+
+    let CanonicalAnswer::EvidenceSelection { relevant_ids } = &question.canonical_answer else {
+        return Err(ScoringError::InteractionMismatch);
+    };
+
+    let outcome = evaluate_selection(relevant_ids, selected);
+    let score = ((outcome.hits as f64 - outcome.false_positives as f64)
+        / relevant_ids.len().max(1) as f64)
+        .clamp(0.0, 1.0);
+
+    let mut error_codes = Vec::new();
+    if outcome.missed > 0 {
+        error_codes.push("evidence_missing_relevant".to_owned());
+    }
+    if outcome.false_positives > 0 {
+        error_codes.push("evidence_selected_irrelevant".to_owned());
+    }
+
+    Ok(ScoredAnswer {
+        correct: score >= 1.0,
+        score,
+        error_codes,
+        canonical: question.canonical_answer.clone(),
+    })
+}
+
+fn score_spot_the_fault(
+    question: &Question,
+    elements: &[crate::model::Choice],
+    selected: &[String],
+) -> Result<ScoredAnswer, ScoringError> {
+    let available: HashSet<&str> = elements.iter().map(|c| c.id.as_str()).collect();
+    for id in selected {
+        if !available.contains(id.as_str()) {
+            return Err(ScoringError::UnknownElement(id.clone()));
+        }
+    }
+
+    let CanonicalAnswer::SpotTheFault { faulty_ids } = &question.canonical_answer else {
+        return Err(ScoringError::InteractionMismatch);
+    };
+
+    let outcome = evaluate_selection(faulty_ids, selected);
+    let score = ((outcome.hits as f64 - outcome.false_positives as f64)
+        / faulty_ids.len().max(1) as f64)
+        .clamp(0.0, 1.0);
+
+    let mut error_codes = Vec::new();
+    if outcome.missed > 0 {
+        error_codes.push("fault_missed".to_owned());
+    }
+    if outcome.false_positives > 0 {
+        error_codes.push("fault_false_positive".to_owned());
+    }
+
+    Ok(ScoredAnswer {
+        correct: score >= 1.0,
+        score,
+        error_codes,
+        canonical: question.canonical_answer.clone(),
+    })
+}
+
+fn score_fill_slots(
+    question: &Question,
+    slots: &[crate::model::FillSlot],
+    options: &[crate::model::Choice],
+    values: &BTreeMap<String, String>,
+) -> Result<ScoredAnswer, ScoringError> {
+    let slot_ids: HashSet<&str> = slots.iter().map(|slot| slot.id.as_str()).collect();
+    let option_ids: HashSet<&str> = options.iter().map(|option| option.id.as_str()).collect();
+
+    for (slot_id, option_id) in values {
+        if !slot_ids.contains(slot_id.as_str()) {
+            return Err(ScoringError::UnknownSlot(slot_id.clone()));
+        }
+        if !option_ids.contains(option_id.as_str()) {
+            return Err(ScoringError::UnknownOption(option_id.clone()));
+        }
+    }
+
+    let CanonicalAnswer::FillSlots { values: canonical } = &question.canonical_answer else {
+        return Err(ScoringError::InteractionMismatch);
+    };
+
+    let mut correct_count = 0_usize;
+    let mut incorrect = false;
+    let mut unfilled = false;
+
+    for slot in slots {
+        match values.get(&slot.id) {
+            None => unfilled = true,
+            Some(option) if canonical.get(&slot.id) == Some(option) => correct_count += 1,
+            Some(_) => incorrect = true,
+        }
+    }
+
+    let score = if slots.is_empty() {
+        0.0
+    } else {
+        correct_count as f64 / slots.len() as f64
+    };
+
+    let mut error_codes = Vec::new();
+    if incorrect {
+        error_codes.push("slot_incorrect".to_owned());
+    }
+    if unfilled {
+        error_codes.push("slot_unfilled".to_owned());
+    }
+
+    Ok(ScoredAnswer {
+        correct: score >= 1.0,
+        score,
+        error_codes,
+        canonical: question.canonical_answer.clone(),
+    })
+}
+
+fn score_branching(
+    question: &Question,
+    start_step_id: &str,
+    steps: &[crate::model::ScenarioStep],
+    path: &[String],
+    prefix: &str,
+) -> Result<ScoredAnswer, ScoringError> {
+    use crate::model::ScenarioStage;
+
+    let step_by_id: HashSet<&str> = steps.iter().map(|step| step.id.as_str()).collect();
+    if !step_by_id.contains(start_step_id) {
+        return Err(ScoringError::InvalidScenarioPath);
+    }
+
+    let (correct_choice_ids, expected_path) = match &question.canonical_answer {
+        CanonicalAnswer::Troubleshooting {
+            correct_choice_ids,
+            expected_path,
+        }
+        | CanonicalAnswer::ScenarioChoiceChain {
+            correct_choice_ids,
+            expected_path,
+        } => (correct_choice_ids, expected_path),
+        _ => return Err(ScoringError::InteractionMismatch),
+    };
+
+    let mut decisions: Vec<(ScenarioStage, bool)> = Vec::with_capacity(path.len());
+    let mut current = start_step_id;
+
+    for (index, choice_id) in path.iter().enumerate() {
+        let Some(step) = steps.iter().find(|step| step.id == current) else {
+            return Err(ScoringError::InvalidScenarioPath);
+        };
+        if !step.choices.iter().any(|choice| &choice.id == choice_id) {
+            return Err(ScoringError::InvalidScenarioPath);
+        }
+
+        let correct = correct_choice_ids
+            .get(step.id.as_str())
+            .is_some_and(|ids| ids.iter().any(|id| id == choice_id));
+        decisions.push((step.stage, correct));
+
+        match step.next_step_by_choice.get(choice_id) {
+            Some(next) => current = next.as_str(),
+            None if index + 1 == path.len() => {}
+            None => return Err(ScoringError::InvalidScenarioPath),
+        }
+    }
+
+    let hits = decisions.iter().filter(|(_, correct)| *correct).count();
+    let wrong = decisions.len() - hits;
+    let denominator = expected_path.len().max(1);
+    let score = ((hits as f64 - wrong as f64) / denominator as f64).clamp(0.0, 1.0);
+
+    let mut error_codes: Vec<String> = Vec::new();
+    let mut push = |code: String| {
+        if !error_codes.contains(&code) {
+            error_codes.push(code);
+        }
+    };
+    for (stage, correct) in &decisions {
+        if *correct {
+            continue;
+        }
+        let suffix = match stage {
+            ScenarioStage::Diagnosis => "wrong_diagnosis",
+            ScenarioStage::Action => "wrong_next_action",
+            ScenarioStage::Remediation => "wrong_remediation",
+            ScenarioStage::Verification => "wrong_verification",
+        };
+        push(format!("{prefix}_{suffix}"));
+    }
+    if path.len() < expected_path.len() {
+        push(format!("{prefix}_incomplete_path"));
+    }
+
+    Ok(ScoredAnswer {
+        correct: score >= 1.0,
+        score,
+        error_codes,
+        canonical: question.canonical_answer.clone(),
+    })
+}
+
+fn score_configuration(
+    question: &Question,
+    slots: &[crate::model::ConfigSlot],
+    pieces: &[crate::model::Choice],
+    assignments: &BTreeMap<String, String>,
+) -> Result<ScoredAnswer, ScoringError> {
+    let slot_ids: HashSet<&str> = slots.iter().map(|slot| slot.id.as_str()).collect();
+    let piece_ids: HashSet<&str> = pieces.iter().map(|piece| piece.id.as_str()).collect();
+
+    for (slot_id, piece_id) in assignments {
+        if !slot_ids.contains(slot_id.as_str()) {
+            return Err(ScoringError::UnknownSlot(slot_id.clone()));
+        }
+        if !piece_ids.contains(piece_id.as_str()) {
+            return Err(ScoringError::UnknownPiece(piece_id.clone()));
+        }
+    }
+
+    let CanonicalAnswer::ConfigurationBuilder {
+        assignments: canonical,
+    } = &question.canonical_answer
+    else {
+        return Err(ScoringError::InteractionMismatch);
+    };
+
+    let required: HashSet<&str> = canonical.values().map(String::as_str).collect();
+    let mut correct = 0_usize;
+    let mut missing = false;
+    let mut wrong_assignment = false;
+    let mut unnecessary = false;
+
+    for (slot_id, expected_piece) in canonical {
+        match assignments.get(slot_id) {
+            None => missing = true,
+            Some(piece) if piece == expected_piece => correct += 1,
+            Some(piece) if required.contains(piece.as_str()) => wrong_assignment = true,
+            Some(_) => unnecessary = true,
+        }
+    }
+
+    let denominator = canonical.len().max(1);
+    let penalty = usize::from(unnecessary);
+    let score = ((correct as f64 - penalty as f64) / denominator as f64).clamp(0.0, 1.0);
+
+    let mut error_codes = Vec::new();
+    if missing {
+        error_codes.push("config_missing_required".to_owned());
+    }
+    if wrong_assignment {
+        error_codes.push("config_wrong_assignment".to_owned());
+    }
+    if unnecessary {
+        error_codes.push("config_unnecessary_component".to_owned());
+    }
+
+    Ok(ScoredAnswer {
+        correct: score >= 1.0,
+        score,
+        error_codes,
+        canonical: question.canonical_answer.clone(),
+    })
+}
+
+fn score_placement(
+    question: &Question,
+    items: &[crate::model::Choice],
+    points: &BTreeMap<String, crate::model::PlacementPoint>,
+) -> Result<ScoredAnswer, ScoringError> {
+    let item_ids: HashSet<&str> = items.iter().map(|item| item.id.as_str()).collect();
+    for (item_id, point) in points {
+        if !item_ids.contains(item_id.as_str()) {
+            return Err(ScoringError::UnknownItem(item_id.clone()));
+        }
+        if !(0.0..=1.0).contains(&point.x) || !(0.0..=1.0).contains(&point.y) {
+            return Err(ScoringError::InvalidPlacement);
+        }
+    }
+
+    let CanonicalAnswer::TwoDimensionalPlacement { regions } = &question.canonical_answer else {
+        return Err(ScoringError::InteractionMismatch);
+    };
+
+    let mut correct_axes = 0_usize;
+    let mut wrong_x = false;
+    let mut wrong_y = false;
+    let mut missing = false;
+
+    for item in items {
+        let Some(point) = points.get(&item.id) else {
+            missing = true;
+            continue;
+        };
+        let Some(region) = regions.get(&item.id) else {
+            return Err(ScoringError::InteractionMismatch);
+        };
+        let x_ok = region.x.len() == 2 && point.x >= region.x[0] && point.x <= region.x[1];
+        let y_ok = region.y.len() == 2 && point.y >= region.y[0] && point.y <= region.y[1];
+        if x_ok {
+            correct_axes += 1;
+        } else {
+            wrong_x = true;
+        }
+        if y_ok {
+            correct_axes += 1;
+        } else {
+            wrong_y = true;
+        }
+    }
+
+    let total_axes = items.len() * 2;
+    let score = if total_axes == 0 {
+        0.0
+    } else {
+        correct_axes as f64 / total_axes as f64
+    };
+
+    let mut error_codes = Vec::new();
+    if missing {
+        error_codes.push("placement_missing".to_owned());
+    }
+    if wrong_x {
+        error_codes.push("placement_wrong_x".to_owned());
+    }
+    if wrong_y {
+        error_codes.push("placement_wrong_y".to_owned());
+    }
+
+    Ok(ScoredAnswer {
+        correct: score >= 1.0,
+        score,
+        error_codes,
+        canonical: question.canonical_answer.clone(),
+    })
+}
+
+fn score_command_assembly(
+    question: &Question,
+    slots: &[crate::model::FillSlot],
+    tokens: &[crate::model::Choice],
+    values: &BTreeMap<String, String>,
+) -> Result<ScoredAnswer, ScoringError> {
+    let slot_ids: HashSet<&str> = slots.iter().map(|slot| slot.id.as_str()).collect();
+    let token_ids: HashSet<&str> = tokens.iter().map(|token| token.id.as_str()).collect();
+
+    for (slot_id, token_id) in values {
+        if !slot_ids.contains(slot_id.as_str()) {
+            return Err(ScoringError::UnknownSlot(slot_id.clone()));
+        }
+        if !token_ids.contains(token_id.as_str()) {
+            return Err(ScoringError::UnknownToken(token_id.clone()));
+        }
+    }
+
+    let CanonicalAnswer::CommandAssembly { values: canonical } = &question.canonical_answer else {
+        return Err(ScoringError::InteractionMismatch);
+    };
+
+    let required: HashSet<&str> = canonical.values().map(String::as_str).collect();
+    let mut correct = 0_usize;
+    let mut missing = false;
+    let mut order_wrong = false;
+    let mut token_wrong = false;
+
+    for slot in slots {
+        match values.get(&slot.id) {
+            None => missing = true,
+            Some(token) if canonical.get(&slot.id) == Some(token) => correct += 1,
+            Some(token) if required.contains(token.as_str()) => order_wrong = true,
+            Some(_) => token_wrong = true,
+        }
+    }
+
+    let score = if slots.is_empty() {
+        0.0
+    } else {
+        correct as f64 / slots.len() as f64
+    };
+
+    let mut error_codes = Vec::new();
+    if missing {
+        error_codes.push("command_token_missing".to_owned());
+    }
+    if order_wrong {
+        error_codes.push("command_order_wrong".to_owned());
+    }
+    if token_wrong {
+        error_codes.push("command_token_wrong".to_owned());
     }
 
     Ok(ScoredAnswer {
@@ -448,5 +1158,922 @@ mod tests {
             &SubmittedAnswer::NodeConnection(vec![("a".to_owned(), "zzz".to_owned())]),
         );
         assert_eq!(result, Err(ScoringError::UnknownNode("zzz".to_owned())));
+    }
+
+    fn choice(id: &str) -> Choice {
+        Choice {
+            id: id.to_owned(),
+            label: id.to_owned(),
+        }
+    }
+
+    fn reconstruction_slot(id: &str) -> crate::model::ReconstructionSlot {
+        crate::model::ReconstructionSlot {
+            id: id.to_owned(),
+            x: None,
+            y: None,
+        }
+    }
+
+    fn linear_reconstruction_question() -> Question {
+        question(
+            Interaction::Reconstruction {
+                layout: crate::model::ReconstructionLayout::Linear,
+                fixed_nodes: vec![crate::model::FixedNode {
+                    id: "metric".to_owned(),
+                    label: "Metric crosses threshold".to_owned(),
+                    position: crate::model::FixedNodePosition::Start,
+                    x: None,
+                    y: None,
+                }],
+                pieces: vec![
+                    choice("alarm"),
+                    choice("sns"),
+                    choice("operator"),
+                    choice("cloudtrail"),
+                ],
+                slots: vec![
+                    reconstruction_slot("slot_1"),
+                    reconstruction_slot("slot_2"),
+                    reconstruction_slot("slot_3"),
+                ],
+            },
+            CanonicalAnswer::Reconstruction {
+                placements: BTreeMap::from([
+                    ("slot_1".to_owned(), "alarm".to_owned()),
+                    ("slot_2".to_owned(), "sns".to_owned()),
+                    ("slot_3".to_owned(), "operator".to_owned()),
+                ]),
+                edges: Vec::new(),
+            },
+        )
+    }
+
+    #[test]
+    fn reconstruction_scores_slot_placements() {
+        let q = linear_reconstruction_question();
+
+        let perfect = score(
+            &q,
+            &SubmittedAnswer::Reconstruction {
+                placements: BTreeMap::from([
+                    ("slot_1".to_owned(), "alarm".to_owned()),
+                    ("slot_2".to_owned(), "sns".to_owned()),
+                    ("slot_3".to_owned(), "operator".to_owned()),
+                ]),
+                edges: Vec::new(),
+            },
+        )
+        .expect("score");
+        assert!(perfect.correct);
+        assert_eq!(perfect.score, 1.0);
+        assert!(perfect.error_codes.is_empty());
+    }
+
+    #[test]
+    fn reconstruction_distinguishes_wrong_position_and_wrong_component() {
+        let q = linear_reconstruction_question();
+
+        // `operator` and `sns` are swapped: both required, both in the wrong slot.
+        let swapped = score(
+            &q,
+            &SubmittedAnswer::Reconstruction {
+                placements: BTreeMap::from([
+                    ("slot_1".to_owned(), "alarm".to_owned()),
+                    ("slot_2".to_owned(), "operator".to_owned()),
+                    ("slot_3".to_owned(), "sns".to_owned()),
+                ]),
+                edges: Vec::new(),
+            },
+        )
+        .expect("score");
+        assert_eq!(swapped.score, 1.0 / 3.0);
+        assert!(!swapped.correct);
+        assert!(
+            swapped
+                .error_codes
+                .contains(&"reconstruction_wrong_position".to_owned())
+        );
+
+        // A distractor in a slot is a wrong component and lowers the score.
+        let distractor = score(
+            &q,
+            &SubmittedAnswer::Reconstruction {
+                placements: BTreeMap::from([
+                    ("slot_1".to_owned(), "alarm".to_owned()),
+                    ("slot_2".to_owned(), "cloudtrail".to_owned()),
+                    ("slot_3".to_owned(), "operator".to_owned()),
+                ]),
+                edges: Vec::new(),
+            },
+        )
+        .expect("score");
+        assert_eq!(distractor.score, 2.0 / 3.0);
+        assert!(
+            distractor
+                .error_codes
+                .contains(&"reconstruction_wrong_component".to_owned())
+        );
+    }
+
+    #[test]
+    fn reconstruction_reports_incomplete_and_duplicate_slots() {
+        let q = linear_reconstruction_question();
+
+        let partial = score(
+            &q,
+            &SubmittedAnswer::Reconstruction {
+                placements: BTreeMap::from([
+                    ("slot_1".to_owned(), "alarm".to_owned()),
+                    ("slot_2".to_owned(), "sns".to_owned()),
+                ]),
+                edges: Vec::new(),
+            },
+        )
+        .expect("score");
+        assert_eq!(partial.score, 2.0 / 3.0);
+        assert!(
+            partial
+                .error_codes
+                .contains(&"reconstruction_unfilled_slot".to_owned())
+        );
+        assert!(
+            partial
+                .error_codes
+                .contains(&"reconstruction_missing_component".to_owned())
+        );
+
+        // The same required piece twice leaves another piece missing.
+        let duplicate = score(
+            &q,
+            &SubmittedAnswer::Reconstruction {
+                placements: BTreeMap::from([
+                    ("slot_1".to_owned(), "alarm".to_owned()),
+                    ("slot_2".to_owned(), "alarm".to_owned()),
+                    ("slot_3".to_owned(), "operator".to_owned()),
+                ]),
+                edges: Vec::new(),
+            },
+        )
+        .expect("score");
+        assert_eq!(duplicate.score, 2.0 / 3.0);
+        assert!(
+            duplicate
+                .error_codes
+                .contains(&"reconstruction_missing_component".to_owned())
+        );
+        assert!(
+            duplicate
+                .error_codes
+                .contains(&"reconstruction_wrong_position".to_owned())
+        );
+    }
+
+    #[test]
+    fn reconstruction_rejects_unknown_slots_and_pieces() {
+        let q = linear_reconstruction_question();
+
+        assert_eq!(
+            score(
+                &q,
+                &SubmittedAnswer::Reconstruction {
+                    placements: BTreeMap::from([("ghost_slot".to_owned(), "alarm".to_owned())]),
+                    edges: Vec::new(),
+                },
+            ),
+            Err(ScoringError::UnknownSlot("ghost_slot".to_owned()))
+        );
+
+        assert_eq!(
+            score(
+                &q,
+                &SubmittedAnswer::Reconstruction {
+                    placements: BTreeMap::from([("slot_1".to_owned(), "ghost".to_owned())]),
+                    edges: Vec::new(),
+                },
+            ),
+            Err(ScoringError::UnknownPiece("ghost".to_owned()))
+        );
+    }
+
+    fn graph_reconstruction_question() -> Question {
+        question(
+            Interaction::Reconstruction {
+                layout: crate::model::ReconstructionLayout::Graph,
+                fixed_nodes: vec![crate::model::FixedNode {
+                    id: "alarm".to_owned(),
+                    label: "CloudWatch alarm".to_owned(),
+                    position: crate::model::FixedNodePosition::Start,
+                    x: Some(0.5),
+                    y: Some(0.15),
+                }],
+                pieces: vec![choice("sns"), choice("operator"), choice("eventbridge")],
+                slots: vec![
+                    crate::model::ReconstructionSlot {
+                        id: "sns_slot".to_owned(),
+                        x: Some(0.25),
+                        y: Some(0.3),
+                    },
+                    crate::model::ReconstructionSlot {
+                        id: "operator_slot".to_owned(),
+                        x: Some(0.25),
+                        y: Some(0.8),
+                    },
+                    crate::model::ReconstructionSlot {
+                        id: "eventbridge_slot".to_owned(),
+                        x: Some(0.75),
+                        y: Some(0.3),
+                    },
+                ],
+            },
+            CanonicalAnswer::Reconstruction {
+                placements: BTreeMap::from([
+                    ("sns_slot".to_owned(), "sns".to_owned()),
+                    ("operator_slot".to_owned(), "operator".to_owned()),
+                    ("eventbridge_slot".to_owned(), "eventbridge".to_owned()),
+                ]),
+                edges: vec![
+                    vec!["alarm".to_owned(), "sns".to_owned()],
+                    vec!["sns".to_owned(), "operator".to_owned()],
+                    vec!["alarm".to_owned(), "eventbridge".to_owned()],
+                ],
+            },
+        )
+    }
+
+    #[test]
+    fn graph_reconstruction_weights_placements_and_topology() {
+        let q = graph_reconstruction_question();
+
+        let placements = BTreeMap::from([
+            ("sns_slot".to_owned(), "sns".to_owned()),
+            ("operator_slot".to_owned(), "operator".to_owned()),
+            ("eventbridge_slot".to_owned(), "eventbridge".to_owned()),
+        ]);
+
+        let perfect = score(
+            &q,
+            &SubmittedAnswer::Reconstruction {
+                placements: placements.clone(),
+                edges: vec![
+                    ("alarm".to_owned(), "sns".to_owned()),
+                    ("sns".to_owned(), "operator".to_owned()),
+                    ("alarm".to_owned(), "eventbridge".to_owned()),
+                ],
+            },
+        )
+        .expect("score");
+        assert!(perfect.correct);
+        assert!((perfect.score - 1.0).abs() < 1e-9);
+
+        // Correct placements with no edges lose only the topology weight.
+        let placements_only = score(
+            &q,
+            &SubmittedAnswer::Reconstruction {
+                placements,
+                edges: Vec::new(),
+            },
+        )
+        .expect("score");
+        assert!(!placements_only.correct);
+        assert!((placements_only.score - 0.7).abs() < 1e-9);
+        assert!(
+            placements_only
+                .error_codes
+                .contains(&"reconstruction_missing_relationship".to_owned())
+        );
+
+        // Slot identity is not meaningful in a graph: swapping two pieces
+        // between slots is the same structure when the relationships match.
+        let swapped = score(
+            &q,
+            &SubmittedAnswer::Reconstruction {
+                placements: BTreeMap::from([
+                    ("sns_slot".to_owned(), "sns".to_owned()),
+                    ("operator_slot".to_owned(), "eventbridge".to_owned()),
+                    ("eventbridge_slot".to_owned(), "operator".to_owned()),
+                ]),
+                edges: vec![
+                    ("alarm".to_owned(), "sns".to_owned()),
+                    ("sns".to_owned(), "operator".to_owned()),
+                    ("alarm".to_owned(), "eventbridge".to_owned()),
+                ],
+            },
+        )
+        .expect("score");
+        assert!(swapped.correct);
+        assert!((swapped.score - 1.0).abs() < 1e-9);
+        assert!(swapped.error_codes.is_empty());
+    }
+
+    fn evidence_question() -> Question {
+        question(
+            Interaction::EvidenceSelection {
+                evidence: vec![
+                    choice("cpu"),
+                    choice("cloudtrail"),
+                    choice("flow_logs"),
+                    choice("rds_pi"),
+                ],
+            },
+            CanonicalAnswer::EvidenceSelection {
+                relevant_ids: vec!["cloudtrail".to_owned(), "flow_logs".to_owned()],
+            },
+        )
+    }
+
+    #[test]
+    fn evidence_selection_balances_precision_and_recall() {
+        let q = evidence_question();
+
+        let perfect = score(
+            &q,
+            &SubmittedAnswer::EvidenceSelection(vec![
+                "cloudtrail".to_owned(),
+                "flow_logs".to_owned(),
+            ]),
+        )
+        .expect("score");
+        assert!(perfect.correct);
+        assert_eq!(perfect.score, 1.0);
+
+        // One hit, one false positive: (1 - 1) / 2 = 0.
+        let mixed = score(
+            &q,
+            &SubmittedAnswer::EvidenceSelection(vec!["cloudtrail".to_owned(), "cpu".to_owned()]),
+        )
+        .expect("score");
+        assert_eq!(mixed.score, 0.0);
+        assert!(
+            mixed
+                .error_codes
+                .contains(&"evidence_selected_irrelevant".to_owned())
+        );
+        assert!(
+            mixed
+                .error_codes
+                .contains(&"evidence_missing_relevant".to_owned())
+        );
+
+        // Selecting nothing earns nothing.
+        let empty = score(&q, &SubmittedAnswer::EvidenceSelection(Vec::new())).expect("score");
+        assert_eq!(empty.score, 0.0);
+        assert_eq!(empty.error_codes, vec!["evidence_missing_relevant"]);
+
+        let unknown = score(
+            &q,
+            &SubmittedAnswer::EvidenceSelection(vec!["ghost".to_owned()]),
+        );
+        assert_eq!(
+            unknown,
+            Err(ScoringError::UnknownEvidence("ghost".to_owned()))
+        );
+    }
+
+    fn fault_question() -> Question {
+        question(
+            Interaction::SpotTheFault {
+                elements: vec![
+                    choice("route_destination"),
+                    choice("route_target"),
+                    choice("security_group"),
+                ],
+            },
+            CanonicalAnswer::SpotTheFault {
+                faulty_ids: vec!["route_target".to_owned()],
+            },
+        )
+    }
+
+    #[test]
+    fn spot_the_fault_penalizes_false_positives() {
+        let q = fault_question();
+
+        let correct = score(
+            &q,
+            &SubmittedAnswer::SpotTheFault(vec!["route_target".to_owned()]),
+        )
+        .expect("score");
+        assert!(correct.correct);
+
+        let false_positive = score(
+            &q,
+            &SubmittedAnswer::SpotTheFault(vec![
+                "route_target".to_owned(),
+                "security_group".to_owned(),
+            ]),
+        )
+        .expect("score");
+        assert_eq!(false_positive.score, 0.0);
+        assert_eq!(false_positive.error_codes, vec!["fault_false_positive"]);
+
+        let missed = score(&q, &SubmittedAnswer::SpotTheFault(Vec::new())).expect("score");
+        assert_eq!(missed.score, 0.0);
+        assert_eq!(missed.error_codes, vec!["fault_missed"]);
+
+        let unknown = score(&q, &SubmittedAnswer::SpotTheFault(vec!["ghost".to_owned()]));
+        assert_eq!(
+            unknown,
+            Err(ScoringError::UnknownElement("ghost".to_owned()))
+        );
+    }
+
+    fn fill_question() -> Question {
+        question(
+            Interaction::FillSlots {
+                slots: vec![
+                    crate::model::FillSlot {
+                        id: "destination".to_owned(),
+                        label: "Destination".to_owned(),
+                    },
+                    crate::model::FillSlot {
+                        id: "target".to_owned(),
+                        label: "Target".to_owned(),
+                    },
+                ],
+                options: vec![choice("0.0.0.0/0"), choice("nat_gateway"), choice("igw")],
+            },
+            CanonicalAnswer::FillSlots {
+                values: BTreeMap::from([
+                    ("destination".to_owned(), "0.0.0.0/0".to_owned()),
+                    ("target".to_owned(), "nat_gateway".to_owned()),
+                ]),
+            },
+        )
+    }
+
+    #[test]
+    fn fill_slots_scores_each_blank() {
+        let q = fill_question();
+
+        let all_correct = score(
+            &q,
+            &SubmittedAnswer::FillSlots(BTreeMap::from([
+                ("destination".to_owned(), "0.0.0.0/0".to_owned()),
+                ("target".to_owned(), "nat_gateway".to_owned()),
+            ])),
+        )
+        .expect("score");
+        assert!(all_correct.correct);
+
+        let half = score(
+            &q,
+            &SubmittedAnswer::FillSlots(BTreeMap::from([
+                ("destination".to_owned(), "0.0.0.0/0".to_owned()),
+                ("target".to_owned(), "igw".to_owned()),
+            ])),
+        )
+        .expect("score");
+        assert_eq!(half.score, 0.5);
+        assert_eq!(half.error_codes, vec!["slot_incorrect"]);
+
+        let unfilled = score(
+            &q,
+            &SubmittedAnswer::FillSlots(BTreeMap::from([(
+                "destination".to_owned(),
+                "0.0.0.0/0".to_owned(),
+            )])),
+        )
+        .expect("score");
+        assert_eq!(unfilled.score, 0.5);
+        assert_eq!(unfilled.error_codes, vec!["slot_unfilled"]);
+
+        let unknown_slot = score(
+            &q,
+            &SubmittedAnswer::FillSlots(BTreeMap::from([("ghost".to_owned(), "igw".to_owned())])),
+        );
+        assert_eq!(
+            unknown_slot,
+            Err(ScoringError::UnknownSlot("ghost".to_owned()))
+        );
+
+        let unknown_option = score(
+            &q,
+            &SubmittedAnswer::FillSlots(BTreeMap::from([(
+                "target".to_owned(),
+                "ghost".to_owned(),
+            )])),
+        );
+        assert_eq!(
+            unknown_option,
+            Err(ScoringError::UnknownOption("ghost".to_owned()))
+        );
+    }
+
+    fn scenario_step(
+        id: &str,
+        stage: crate::model::ScenarioStage,
+        choices: &[&str],
+        transitions: &[(&str, &str)],
+    ) -> crate::model::ScenarioStep {
+        crate::model::ScenarioStep {
+            id: id.to_owned(),
+            prompt: id.to_owned(),
+            stage,
+            choices: choices.iter().map(|id| choice(id)).collect(),
+            next_step_by_choice: transitions
+                .iter()
+                .map(|(choice_id, next)| ((*choice_id).to_owned(), (*next).to_owned()))
+                .collect(),
+        }
+    }
+
+    fn branching_question(interaction: Interaction, canonical: CanonicalAnswer) -> Question {
+        question(interaction, canonical)
+    }
+
+    #[test]
+    fn troubleshooting_scores_the_decision_path() {
+        use crate::model::ScenarioStage;
+
+        let steps = vec![
+            scenario_step(
+                "step-1",
+                ScenarioStage::Diagnosis,
+                &["diagnose_right", "diagnose_wrong"],
+                &[("diagnose_right", "step-2"), ("diagnose_wrong", "step-2")],
+            ),
+            scenario_step(
+                "step-2",
+                ScenarioStage::Remediation,
+                &["remediate_right", "remediate_wrong"],
+                &[],
+            ),
+        ];
+
+        let q = branching_question(
+            Interaction::Troubleshooting {
+                start_step_id: "step-1".to_owned(),
+                steps,
+            },
+            CanonicalAnswer::Troubleshooting {
+                correct_choice_ids: BTreeMap::from([
+                    ("step-1".to_owned(), vec!["diagnose_right".to_owned()]),
+                    ("step-2".to_owned(), vec!["remediate_right".to_owned()]),
+                ]),
+                expected_path: vec!["diagnose_right".to_owned(), "remediate_right".to_owned()],
+            },
+        );
+
+        let perfect = score(
+            &q,
+            &SubmittedAnswer::Branching(vec![
+                "diagnose_right".to_owned(),
+                "remediate_right".to_owned(),
+            ]),
+        )
+        .expect("score");
+        assert!(perfect.correct);
+        assert_eq!(perfect.score, 1.0);
+
+        let partial = score(
+            &q,
+            &SubmittedAnswer::Branching(vec!["diagnose_right".to_owned()]),
+        )
+        .expect("score");
+        assert_eq!(partial.score, 0.5);
+        assert_eq!(partial.error_codes, vec!["troubleshooting_incomplete_path"]);
+
+        let wrong = score(
+            &q,
+            &SubmittedAnswer::Branching(vec!["diagnose_wrong".to_owned()]),
+        )
+        .expect("score");
+        assert_eq!(wrong.score, 0.0);
+        assert!(
+            wrong
+                .error_codes
+                .contains(&"troubleshooting_wrong_diagnosis".to_owned())
+        );
+        assert!(
+            wrong
+                .error_codes
+                .contains(&"troubleshooting_incomplete_path".to_owned())
+        );
+
+        // A choice that is not in the start step cannot be scored.
+        assert_eq!(
+            score(
+                &q,
+                &SubmittedAnswer::Branching(vec!["remediate_right".to_owned()])
+            ),
+            Err(ScoringError::InvalidScenarioPath)
+        );
+    }
+
+    #[test]
+    fn scenario_choice_chain_uses_its_own_error_prefix() {
+        use crate::model::ScenarioStage;
+
+        let q = branching_question(
+            Interaction::ScenarioChoiceChain {
+                start_step_id: "s1".to_owned(),
+                steps: vec![scenario_step(
+                    "s1",
+                    ScenarioStage::Action,
+                    &["right", "wrong"],
+                    &[],
+                )],
+            },
+            CanonicalAnswer::ScenarioChoiceChain {
+                correct_choice_ids: BTreeMap::from([("s1".to_owned(), vec!["right".to_owned()])]),
+                expected_path: vec!["right".to_owned()],
+            },
+        );
+
+        let scored =
+            score(&q, &SubmittedAnswer::Branching(vec!["wrong".to_owned()])).expect("score");
+        assert_eq!(
+            scored.error_codes,
+            vec!["scenario_choice_wrong_next_action"]
+        );
+    }
+
+    fn configuration_question() -> Question {
+        question(
+            Interaction::ConfigurationBuilder {
+                slots: vec![
+                    crate::model::ConfigSlot {
+                        id: "route_target".to_owned(),
+                        label: "IPv4 default route target".to_owned(),
+                    },
+                    crate::model::ConfigSlot {
+                        id: "subnet".to_owned(),
+                        label: "Associated subnet".to_owned(),
+                    },
+                ],
+                pieces: vec![choice("nat"), choice("igw"), choice("private")],
+            },
+            CanonicalAnswer::ConfigurationBuilder {
+                assignments: BTreeMap::from([
+                    ("route_target".to_owned(), "nat".to_owned()),
+                    ("subnet".to_owned(), "private".to_owned()),
+                ]),
+            },
+        )
+    }
+
+    #[test]
+    fn configuration_builder_scores_assignments() {
+        let q = configuration_question();
+
+        let perfect = score(
+            &q,
+            &SubmittedAnswer::ConfigurationBuilder(BTreeMap::from([
+                ("route_target".to_owned(), "nat".to_owned()),
+                ("subnet".to_owned(), "private".to_owned()),
+            ])),
+        )
+        .expect("score");
+        assert!(perfect.correct);
+
+        // Both required pieces are swapped into the wrong roles.
+        let swapped = score(
+            &q,
+            &SubmittedAnswer::ConfigurationBuilder(BTreeMap::from([
+                ("route_target".to_owned(), "private".to_owned()),
+                ("subnet".to_owned(), "nat".to_owned()),
+            ])),
+        )
+        .expect("score");
+        assert_eq!(swapped.score, 0.0);
+        assert!(
+            swapped
+                .error_codes
+                .contains(&"config_wrong_assignment".to_owned())
+        );
+
+        // `igw` is not required anywhere: an unnecessary component.
+        let unnecessary = score(
+            &q,
+            &SubmittedAnswer::ConfigurationBuilder(BTreeMap::from([
+                ("route_target".to_owned(), "nat".to_owned()),
+                ("subnet".to_owned(), "igw".to_owned()),
+            ])),
+        )
+        .expect("score");
+        assert_eq!(unnecessary.score, 0.0);
+        assert!(
+            unnecessary
+                .error_codes
+                .contains(&"config_unnecessary_component".to_owned())
+        );
+
+        let missing = score(
+            &q,
+            &SubmittedAnswer::ConfigurationBuilder(BTreeMap::from([(
+                "route_target".to_owned(),
+                "nat".to_owned(),
+            )])),
+        )
+        .expect("score");
+        assert_eq!(missing.score, 0.5);
+        assert!(
+            missing
+                .error_codes
+                .contains(&"config_missing_required".to_owned())
+        );
+
+        assert_eq!(
+            score(
+                &q,
+                &SubmittedAnswer::ConfigurationBuilder(BTreeMap::from([(
+                    "route_target".to_owned(),
+                    "ghost".to_owned(),
+                )])),
+            ),
+            Err(ScoringError::UnknownPiece("ghost".to_owned()))
+        );
+    }
+
+    fn placement_question() -> Question {
+        question(
+            Interaction::TwoDimensionalPlacement {
+                x_axis: crate::model::PlacementAxis {
+                    id: "cost".to_owned(),
+                    label: "Cost".to_owned(),
+                    low_label: "Lower cost".to_owned(),
+                    high_label: "Higher cost".to_owned(),
+                },
+                y_axis: crate::model::PlacementAxis {
+                    id: "recovery".to_owned(),
+                    label: "Recovery".to_owned(),
+                    low_label: "Slower recovery".to_owned(),
+                    high_label: "Faster recovery".to_owned(),
+                },
+                items: vec![choice("backup"), choice("multi_site")],
+            },
+            CanonicalAnswer::TwoDimensionalPlacement {
+                regions: BTreeMap::from([
+                    (
+                        "backup".to_owned(),
+                        crate::model::PlacementRegion {
+                            x: vec![0.0, 0.3],
+                            y: vec![0.0, 0.3],
+                        },
+                    ),
+                    (
+                        "multi_site".to_owned(),
+                        crate::model::PlacementRegion {
+                            x: vec![0.7, 1.0],
+                            y: vec![0.7, 1.0],
+                        },
+                    ),
+                ]),
+            },
+        )
+    }
+
+    #[test]
+    fn two_dimensional_placement_scores_axes_tolerantly() {
+        let point = |x: f64, y: f64| crate::model::PlacementPoint { x, y };
+        let q = placement_question();
+
+        let perfect = score(
+            &q,
+            &SubmittedAnswer::TwoDimensionalPlacement(BTreeMap::from([
+                ("backup".to_owned(), point(0.1, 0.2)),
+                ("multi_site".to_owned(), point(0.9, 0.85)),
+            ])),
+        )
+        .expect("score");
+        assert!(perfect.correct);
+        assert_eq!(perfect.score, 1.0);
+
+        // `backup` is right on cost but wrong on recovery: 3 of 4 axes.
+        let partial = score(
+            &q,
+            &SubmittedAnswer::TwoDimensionalPlacement(BTreeMap::from([
+                ("backup".to_owned(), point(0.1, 0.9)),
+                ("multi_site".to_owned(), point(0.9, 0.85)),
+            ])),
+        )
+        .expect("score");
+        assert_eq!(partial.score, 0.75);
+        assert!(
+            partial
+                .error_codes
+                .contains(&"placement_wrong_y".to_owned())
+        );
+
+        let missing = score(
+            &q,
+            &SubmittedAnswer::TwoDimensionalPlacement(BTreeMap::from([(
+                "backup".to_owned(),
+                point(0.1, 0.2),
+            )])),
+        )
+        .expect("score");
+        assert_eq!(missing.score, 0.5);
+        assert!(
+            missing
+                .error_codes
+                .contains(&"placement_missing".to_owned())
+        );
+
+        assert_eq!(
+            score(
+                &q,
+                &SubmittedAnswer::TwoDimensionalPlacement(BTreeMap::from([(
+                    "backup".to_owned(),
+                    point(1.5, 0.2),
+                )])),
+            ),
+            Err(ScoringError::InvalidPlacement)
+        );
+    }
+
+    fn command_question() -> Question {
+        question(
+            Interaction::CommandAssembly {
+                slots: vec![
+                    crate::model::FillSlot {
+                        id: "command".to_owned(),
+                        label: "Command".to_owned(),
+                    },
+                    crate::model::FillSlot {
+                        id: "flag".to_owned(),
+                        label: "Expiry flag".to_owned(),
+                    },
+                ],
+                tokens: vec![choice("presign"), choice("--expires-in"), choice("delete")],
+            },
+            CanonicalAnswer::CommandAssembly {
+                values: BTreeMap::from([
+                    ("command".to_owned(), "presign".to_owned()),
+                    ("flag".to_owned(), "--expires-in".to_owned()),
+                ]),
+            },
+        )
+    }
+
+    #[test]
+    fn command_assembly_scores_tokens_and_order() {
+        let q = command_question();
+
+        let perfect = score(
+            &q,
+            &SubmittedAnswer::CommandAssembly(BTreeMap::from([
+                ("command".to_owned(), "presign".to_owned()),
+                ("flag".to_owned(), "--expires-in".to_owned()),
+            ])),
+        )
+        .expect("score");
+        assert!(perfect.correct);
+
+        let swapped = score(
+            &q,
+            &SubmittedAnswer::CommandAssembly(BTreeMap::from([
+                ("command".to_owned(), "--expires-in".to_owned()),
+                ("flag".to_owned(), "presign".to_owned()),
+            ])),
+        )
+        .expect("score");
+        assert_eq!(swapped.score, 0.0);
+        assert!(
+            swapped
+                .error_codes
+                .contains(&"command_order_wrong".to_owned())
+        );
+
+        let wrong_token = score(
+            &q,
+            &SubmittedAnswer::CommandAssembly(BTreeMap::from([
+                ("command".to_owned(), "presign".to_owned()),
+                ("flag".to_owned(), "delete".to_owned()),
+            ])),
+        )
+        .expect("score");
+        assert_eq!(wrong_token.score, 0.5);
+        assert!(
+            wrong_token
+                .error_codes
+                .contains(&"command_token_wrong".to_owned())
+        );
+
+        let missing = score(
+            &q,
+            &SubmittedAnswer::CommandAssembly(BTreeMap::from([(
+                "command".to_owned(),
+                "presign".to_owned(),
+            )])),
+        )
+        .expect("score");
+        assert!(
+            missing
+                .error_codes
+                .contains(&"command_token_missing".to_owned())
+        );
+
+        assert_eq!(
+            score(
+                &q,
+                &SubmittedAnswer::CommandAssembly(BTreeMap::from([(
+                    "command".to_owned(),
+                    "ghost".to_owned(),
+                )])),
+            ),
+            Err(ScoringError::UnknownToken("ghost".to_owned()))
+        );
     }
 }

@@ -121,6 +121,137 @@ pub struct Node {
     pub y: f64,
 }
 
+/// A blank the learner must fill from a constrained option set.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct FillSlot {
+    /// Stable identifier within the question.
+    pub id: String,
+    /// Learner-facing label for the blank, for example `Destination`.
+    pub label: String,
+}
+
+/// The operational stage a branching-scenario decision belongs to.
+///
+/// The stage is used only to attach a structured error code to a poor decision;
+/// it is not a measure of overall mastery.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ScenarioStage {
+    /// Gather evidence or identify the cause.
+    Diagnosis,
+    /// Choose the next operational action.
+    Action,
+    /// Apply a fix.
+    Remediation,
+    /// Confirm recovery.
+    Verification,
+}
+
+/// One authored decision point in a branching scenario.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct ScenarioStep {
+    /// Stable identifier within the scenario.
+    pub id: String,
+    /// Learner-facing situation or question.
+    pub prompt: String,
+    /// What kind of decision this step represents.
+    pub stage: ScenarioStage,
+    /// Choices available at this step.
+    pub choices: Vec<Choice>,
+    /// Choice id to next step id. A choice with no entry ends the scenario.
+    pub next_step_by_choice: std::collections::BTreeMap<String, String>,
+}
+
+/// A named role the learner assigns a component to.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct ConfigSlot {
+    /// Stable identifier within the question.
+    pub id: String,
+    /// Learner-facing label for the role, for example `IPv4 default route target`.
+    pub label: String,
+}
+
+/// One axis of a two-dimensional conceptual map.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct PlacementAxis {
+    /// Stable identifier within the question.
+    pub id: String,
+    /// Learner-facing axis name.
+    pub label: String,
+    /// Label for the low end of the axis.
+    pub low_label: String,
+    /// Label for the high end of the axis.
+    pub high_label: String,
+}
+
+/// A tolerant canonical region on a two-dimensional map.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct PlacementRegion {
+    /// Inclusive `[min, max]` horizontal range in `0..=1`.
+    pub x: Vec<f64>,
+    /// Inclusive `[min, max]` vertical range in `0..=1`.
+    pub y: Vec<f64>,
+}
+
+/// A point submitted for a two-dimensional placement.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct PlacementPoint {
+    /// Horizontal position in `0..=1`.
+    pub x: f64,
+    /// Vertical position in `0..=1`.
+    pub y: f64,
+}
+
+/// How a reconstruction scaffold represents structure.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ReconstructionLayout {
+    /// Ordered slots; the slot order itself encodes the relationships.
+    Linear,
+    /// Positioned slots; explicit edges may be required for topology.
+    Graph,
+}
+
+/// Where a provided node sits relative to a reconstruction's slots.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum FixedNodePosition {
+    /// Before the first slot.
+    Start,
+    /// After the last slot.
+    End,
+}
+
+/// A node that is already provided as part of the scaffold.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct FixedNode {
+    /// Stable identifier within the question.
+    pub id: String,
+    /// Learner-facing label.
+    pub label: String,
+    /// Where the node is shown relative to the slots in `linear` layouts.
+    pub position: FixedNodePosition,
+    /// Authored horizontal position for `graph` layouts, in `0..=1`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub x: Option<f64>,
+    /// Authored vertical position for `graph` layouts, in `0..=1`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub y: Option<f64>,
+}
+
+/// A structural position the learner fills with a piece.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct ReconstructionSlot {
+    /// Stable identifier within the question.
+    pub id: String,
+    /// Authored horizontal position for `graph` layouts, in `0..=1`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub x: Option<f64>,
+    /// Authored vertical position for `graph` layouts, in `0..=1`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub y: Option<f64>,
+}
+
 /// Interaction definition shown to the learner. Contains no answer key.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -142,6 +273,71 @@ pub enum Interaction {
         /// Nodes available to connect.
         nodes: Vec<Node>,
     },
+    /// Rebuild a structure by placing pieces into a scaffold's slots.
+    Reconstruction {
+        /// How the scaffold represents structure.
+        layout: ReconstructionLayout,
+        /// Nodes already provided as context. Not part of the answer.
+        fixed_nodes: Vec<FixedNode>,
+        /// Candidate pieces, including plausible distractors.
+        pieces: Vec<Choice>,
+        /// Structural positions the learner fills.
+        slots: Vec<ReconstructionSlot>,
+    },
+    /// Select the evidence sources relevant to a question.
+    EvidenceSelection {
+        /// Candidate telemetry, log, or evidence sources.
+        evidence: Vec<Choice>,
+    },
+    /// Identify the faulty element(s) in an authored configuration.
+    SpotTheFault {
+        /// Structured elements (components, rules, rows) the learner inspects.
+        elements: Vec<Choice>,
+    },
+    /// Fill blanks with values drawn from a constrained option set.
+    FillSlots {
+        /// Blanks to fill, in presentation order.
+        slots: Vec<FillSlot>,
+        /// Values the learner may use. May contain distractors.
+        options: Vec<Choice>,
+    },
+    /// Follow a deterministic diagnosis/remediation decision tree.
+    Troubleshooting {
+        /// Step the scenario starts at.
+        start_step_id: String,
+        /// Authored decision steps.
+        steps: Vec<ScenarioStep>,
+    },
+    /// Follow a deterministic authored decision chain.
+    ScenarioChoiceChain {
+        /// Step the scenario starts at.
+        start_step_id: String,
+        /// Authored decision steps.
+        steps: Vec<ScenarioStep>,
+    },
+    /// Assemble a configuration by assigning components to named roles.
+    ConfigurationBuilder {
+        /// Named roles that each expect one component.
+        slots: Vec<ConfigSlot>,
+        /// Components the learner may assign. May contain distractors.
+        pieces: Vec<Choice>,
+    },
+    /// Place items on a two-axis conceptual map.
+    TwoDimensionalPlacement {
+        /// Horizontal axis definition.
+        x_axis: PlacementAxis,
+        /// Vertical axis definition.
+        y_axis: PlacementAxis,
+        /// Items the learner positions.
+        items: Vec<Choice>,
+    },
+    /// Assemble an ordered statement from a token pool.
+    CommandAssembly {
+        /// Ordered parts of the statement.
+        slots: Vec<FillSlot>,
+        /// Tokens the learner may use. May contain distractors.
+        tokens: Vec<Choice>,
+    },
 }
 
 /// The canonical answer for a question.
@@ -162,6 +358,58 @@ pub enum CanonicalAnswer {
     NodeConnection {
         /// Directed `[from, to]` pairs.
         edges: Vec<Vec<String>>,
+    },
+    /// Correct piece placed in each slot.
+    Reconstruction {
+        /// Slot id to piece id.
+        placements: std::collections::BTreeMap<String, String>,
+        /// Optional directed `[from, to]` piece-id pairs for `graph` layouts.
+        #[serde(default)]
+        edges: Vec<Vec<String>>,
+    },
+    /// Evidence source ids that are relevant to the question.
+    EvidenceSelection {
+        /// Relevant evidence ids. Every other candidate is a false positive.
+        relevant_ids: Vec<String>,
+    },
+    /// Element ids that are faulty.
+    SpotTheFault {
+        /// Faulty element ids.
+        faulty_ids: Vec<String>,
+    },
+    /// Correct value id for each slot id.
+    FillSlots {
+        /// Slot id to option id.
+        values: std::collections::BTreeMap<String, String>,
+    },
+    /// Correct decisions for a diagnosis/remediation scenario.
+    Troubleshooting {
+        /// Step id to the choice ids that are correct at that step.
+        correct_choice_ids: std::collections::BTreeMap<String, Vec<String>>,
+        /// The intended ordered choice ids from the start step.
+        expected_path: Vec<String>,
+    },
+    /// Correct decisions for an authored decision chain.
+    ScenarioChoiceChain {
+        /// Step id to the choice ids that are correct at that step.
+        correct_choice_ids: std::collections::BTreeMap<String, Vec<String>>,
+        /// The intended ordered choice ids from the start step.
+        expected_path: Vec<String>,
+    },
+    /// Correct component assignment for each role.
+    ConfigurationBuilder {
+        /// Slot id to piece id.
+        assignments: std::collections::BTreeMap<String, String>,
+    },
+    /// Correct tolerant region for each placed item.
+    TwoDimensionalPlacement {
+        /// Item id to its canonical region.
+        regions: std::collections::BTreeMap<String, PlacementRegion>,
+    },
+    /// Correct token for each ordered slot.
+    CommandAssembly {
+        /// Slot id to token id.
+        values: std::collections::BTreeMap<String, String>,
     },
 }
 

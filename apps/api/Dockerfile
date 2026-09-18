@@ -9,6 +9,7 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 COPY apps ./apps
 COPY crates ./crates
+COPY content ./content
 
 RUN cargo build --release --locked -p adaptive-learn-api
 
