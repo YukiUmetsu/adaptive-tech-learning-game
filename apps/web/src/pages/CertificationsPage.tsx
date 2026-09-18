@@ -1,6 +1,11 @@
 import { Link } from "react-router-dom";
 
 import { useCatalog } from "../hooks/useCatalog";
+import {
+  certificationQuestionCount,
+  domainQuestionCount,
+  isDemoCertification,
+} from "../state/demo";
 
 export default function CertificationsPage() {
   const { state, reload } = useCatalog();
@@ -20,14 +25,24 @@ export default function CertificationsPage() {
     );
   }
 
+  // Demo content has its own page, so it is excluded here.
+  const certifications = state.data.certifications.filter(
+    (certification) => !isDemoCertification(certification),
+  );
+
   return (
     <section>
       <h1>Certifications</h1>
-      {state.data.certifications.map((certification) => (
+      {certifications.length === 0 ? (
+        <p className="muted">No certifications are available yet.</p>
+      ) : null}
+
+      {certifications.map((certification) => (
         <article key={certification.id} className="certification">
           <h2>{certification.name}</h2>
           <p className="muted">
-            {certification.vendor} · {certification.exam_code} · reviewed{" "}
+            {certification.vendor} · {certification.exam_code} ·{" "}
+            {certificationQuestionCount(certification)} questions · reviewed{" "}
             {certification.last_reviewed}
           </p>
           <p>
@@ -52,6 +67,9 @@ export default function CertificationsPage() {
                     <strong>{domain.name}</strong>{" "}
                     <span className="domain-weight">
                       {Math.round(domain.weight * 100)}%
+                    </span>{" "}
+                    <span className="muted">
+                      · {domainQuestionCount(domain)} questions
                     </span>
                     {domain.tasks.length > 0 ? (
                       <ul>

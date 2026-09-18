@@ -90,22 +90,25 @@ DATABASE_URL=postgres://app:app@localhost:55432/app cargo run -p adaptive-learn-
 
 ## Phase 1 learning MVP (AWS SOA-C03)
 
-Phase 1 ships one real, narrow module:
+Phase 1 ships one real module:
 
 - Certification: AWS Certified CloudOps Engineer - Associate (`aws-soa-c03`, `SOA-C03`).
-- Domain 1: Monitoring, Logging, Analysis, Remediation, and Performance Optimization.
-- Task 1.1: Implement metrics, alarms, and filters by using AWS monitoring and logging services.
-
-Only Task 1.1 has authored questions. The other domains exist as exam metadata
-(with official weights) and are explicitly marked "not yet authored" in the UI.
+- Domains 1-5 from the official SOA-C03 blueprint, each with authored tasks and questions.
 
 Content is authored as versioned JSON organized as
-`content/<category>/<certification>/<version>/<file>.json`, for example
-`content/aws/soa-c03/v1/bundle.json`. The content crate discovers and embeds
-every JSON bundle under `content/` at build time (see
-`crates/content/build.rs`), so adding a certification or version requires no
-code change. Bundles are validated at startup and rejected if concept
+`content/<category>/<certification>/<version>/<file>.json`. The content crate
+discovers and embeds every JSON file under `content/` at build time (see
+`crates/content/build.rs`), so adding or splitting content requires no code
+change. Each file is independently validated at startup and rejected if concept
 references, canonical answers, weights, identifiers, or versions are invalid.
+
+Multiple files may declare the same certification version (for example one file
+per exam domain): the registry merges them into one logical bundle. Concepts,
+questions, and tasks are keyed by id, with later files overriding earlier
+definitions, so a newer file can expand or rewrite a task without duplicating
+it. Authored content versions are preserved per file, and a mission is issued
+against the content version that owns the task it covers.
+
 Canonical answers are never sent with a mission; they are returned only after
 an answer is scored.
 

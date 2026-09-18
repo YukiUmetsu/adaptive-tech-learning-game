@@ -94,9 +94,12 @@ pub async fn issue_mission(
     let questions = state
         .content
         .questions_for_task(&request.certification_version, &request.task_id);
-    if questions.is_empty() {
+    let Some(content_version) = questions
+        .first()
+        .map(|question| question.content_version.clone())
+    else {
         return Err(ApiError::NotFound);
-    }
+    };
 
     let now = Utc::now();
     let mission = MissionInstance {
@@ -104,7 +107,7 @@ pub async fn issue_mission(
         device_id: request.device_id,
         certification_id: bundle.certification.id.clone(),
         certification_version: bundle.version.id.clone(),
-        content_version: bundle.version.content_version.clone(),
+        content_version: content_version.clone(),
         domain_id: domain.id.clone(),
         task_id: task.id.clone(),
         question_ids: questions

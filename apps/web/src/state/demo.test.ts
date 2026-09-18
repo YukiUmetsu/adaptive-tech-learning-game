@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import type { CertificationDto } from "../api/types";
-import { demoTasks, findDemoCertification } from "./demo";
+import {
+  certificationQuestionCount,
+  demoTasks,
+  domainQuestionCount,
+  findDemoCertification,
+  isDemoCertification,
+} from "./demo";
 
 function certification(overrides: Partial<CertificationDto>): CertificationDto {
   return {
@@ -87,5 +93,64 @@ describe("demoTasks", () => {
         questionCount: 9,
       },
     ]);
+  });
+});
+
+describe("isDemoCertification", () => {
+  it("detects a demo id", () => {
+    expect(isDemoCertification(demo)).toBe(true);
+  });
+
+  it("detects a demo name", () => {
+    expect(
+      isDemoCertification(
+        certification({ id: "sandbox", name: "Sandbox Demo Track" }),
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects a normal certification", () => {
+    expect(isDemoCertification(certification({}))).toBe(false);
+  });
+});
+
+const authored = certification({
+  versions: [
+    {
+      id: "soa-c03",
+      exam_code: "SOA-C03",
+      effective_date: "2026-06-01",
+      content_version: "soa-c03-content-v1",
+      domains: [
+        {
+          id: "domain-1",
+          name: "Monitoring",
+          weight: 0.5,
+          tasks: [
+            { id: "1.1", name: "A", question_count: 20 },
+            { id: "1.2", name: "B", question_count: 20 },
+          ],
+        },
+        {
+          id: "domain-2",
+          name: "Reliability",
+          weight: 0.5,
+          tasks: [{ id: "2.1", name: "C", question_count: 9 }],
+        },
+      ],
+    },
+  ],
+});
+
+describe("question counts", () => {
+  it("counts the questions in one domain", () => {
+    expect(domainQuestionCount(authored.versions[0].domains[0])).toBe(40);
+    expect(domainQuestionCount(authored.versions[0].domains[1])).toBe(9);
+  });
+
+  it("counts every question in a certification", () => {
+    expect(certificationQuestionCount(authored)).toBe(49);
+    expect(certificationQuestionCount(demo)).toBe(9);
+    expect(certificationQuestionCount(certification({}))).toBe(0);
   });
 });

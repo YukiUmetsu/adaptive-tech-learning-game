@@ -107,17 +107,25 @@ async fn mission_contains_questions_without_answer_keys() {
         return;
     };
     let app = common::app_with_pool(pool);
+    let registry = registry();
     let mission = issue(&app, Uuid::new_v4()).await;
 
+    let expected = registry.questions_for_task("soa-c03", "1.1");
     let questions = mission["questions"].as_array().expect("questions array");
-    assert_eq!(questions.len(), 5);
+    assert_eq!(questions.len(), expected.len());
     for question in questions {
         assert!(
             question.get("canonical_answer").is_none(),
             "answer key must not be sent with a mission"
         );
     }
-    assert_eq!(mission["content_version"], "soa-c03-content-v1");
+
+    // The mission is issued against the content version that owns the task.
+    let first = expected.first().expect("task has questions");
+    assert_eq!(
+        mission["content_version"],
+        Value::from(first.content_version.clone())
+    );
 }
 
 #[tokio::test]
@@ -141,7 +149,9 @@ async fn classification_scoring_returns_partial_credit() {
             device,
             mission_id,
             &question.id,
-            "soa-c03-content-v1",
+            mission["content_version"]
+                .as_str()
+                .expect("mission content version"),
             Uuid::new_v4(),
             correct_answer(&question),
         )),
@@ -176,7 +186,9 @@ async fn classification_scoring_returns_partial_credit() {
             device,
             mission_id,
             &question.id,
-            "soa-c03-content-v1",
+            mission["content_version"]
+                .as_str()
+                .expect("mission content version"),
             Uuid::new_v4(),
             json!({ "placements": wrong }),
         )),
@@ -214,7 +226,9 @@ async fn ordering_and_connection_scoring_work() {
             device,
             mission_id,
             &ordering.id,
-            "soa-c03-content-v1",
+            mission["content_version"]
+                .as_str()
+                .expect("mission content version"),
             Uuid::new_v4(),
             correct_answer(&ordering),
         )),
@@ -238,7 +252,9 @@ async fn ordering_and_connection_scoring_work() {
             device,
             mission_id,
             &connection.id,
-            "soa-c03-content-v1",
+            mission["content_version"]
+                .as_str()
+                .expect("mission content version"),
             Uuid::new_v4(),
             json!({ "edges": missing_one }),
         )),
@@ -273,7 +289,9 @@ async fn invalid_answer_ids_are_rejected() {
             device,
             mission_id,
             "monitoring-classification-001",
-            "soa-c03-content-v1",
+            mission["content_version"]
+                .as_str()
+                .expect("mission content version"),
             Uuid::new_v4(),
             json!({ "placements": { "ghost_item": "metric" } }),
         )),
@@ -331,7 +349,7 @@ async fn sync_persists_events_idempotently() {
         "event_id": event_id,
         "mission_instance_id": mission_uuid,
         "question_id": question.id,
-        "content_version": "soa-c03-content-v1",
+        "content_version": mission["content_version"],
         "attempt_number": 1,
         "hint_count": 0,
         "response_ms": 3000,
@@ -383,7 +401,7 @@ async fn sync_rejects_events_for_another_device() {
             "event_id": Uuid::new_v4(),
             "mission_instance_id": mission_uuid,
             "question_id": question.id,
-            "content_version": "soa-c03-content-v1",
+            "content_version": mission["content_version"],
             "attempt_number": 1,
             "hint_count": 0,
             "response_ms": 1000,
@@ -419,7 +437,7 @@ async fn sync_derives_attempt_number_server_side() {
             "event_id": event_id,
             "mission_instance_id": mission_uuid,
             "question_id": question.id,
-            "content_version": "soa-c03-content-v1",
+            "content_version": mission["content_version"],
             // A client could lie about this; the server must ignore it.
             "attempt_number": 1,
             "hint_count": 0,
@@ -470,7 +488,7 @@ async fn sync_reports_structured_scoring_errors() {
             "event_id": Uuid::new_v4(),
             "mission_instance_id": mission_uuid,
             "question_id": question.id,
-            "content_version": "soa-c03-content-v1",
+            "content_version": mission["content_version"],
             "attempt_number": 1,
             "hint_count": 0,
             "response_ms": 1000,
@@ -508,7 +526,7 @@ async fn concurrent_syncs_assign_distinct_attempt_numbers() {
                 "event_id": event_id,
                 "mission_instance_id": mission_uuid,
                 "question_id": question.id,
-                "content_version": "soa-c03-content-v1",
+                "content_version": mission["content_version"],
                 "attempt_number": 1,
                 "hint_count": 0,
                 "response_ms": 1000,
@@ -567,7 +585,9 @@ async fn completed_mission_rejects_further_answers() {
             device,
             mission_id,
             &question.id,
-            "soa-c03-content-v1",
+            mission["content_version"]
+                .as_str()
+                .expect("mission content version"),
             Uuid::new_v4(),
             correct_answer(&question),
         )),

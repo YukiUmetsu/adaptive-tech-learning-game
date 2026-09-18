@@ -1,18 +1,42 @@
-import type { CertificationDto } from "../api/types";
+import type { CertificationDto, DomainDto } from "../api/types";
 
 /**
- * Picks the demo certification from the catalog.
+ * Whether a catalog entry is demo content.
  *
- * Demo content is authored as a normal (separate) certification bundle, so the
- * page discovers it by the catalog entry it declares rather than by a file path.
+ * Demo content is authored as a normal (separate) certification bundle, so it is
+ * discovered by the entry it declares rather than by a file path.
  */
+export function isDemoCertification(certification: CertificationDto): boolean {
+  return (
+    certification.id.endsWith("-demo") ||
+    certification.name.toLowerCase().includes("demo")
+  );
+}
+
+/** Picks the demo certification from the catalog. */
 export function findDemoCertification(
   certifications: CertificationDto[],
 ): CertificationDto | undefined {
-  return certifications.find(
-    (certification) =>
-      certification.id.endsWith("-demo") ||
-      certification.name.toLowerCase().includes("demo"),
+  return certifications.find(isDemoCertification);
+}
+
+/** Total authored questions in one domain. */
+export function domainQuestionCount(domain: DomainDto): number {
+  return domain.tasks.reduce((total, task) => total + task.question_count, 0);
+}
+
+/** Total authored questions across every version and domain of a certification. */
+export function certificationQuestionCount(
+  certification: CertificationDto,
+): number {
+  return certification.versions.reduce(
+    (total, version) =>
+      total +
+      version.domains.reduce(
+        (domainTotal, domain) => domainTotal + domainQuestionCount(domain),
+        0,
+      ),
+    0,
   );
 }
 
