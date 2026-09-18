@@ -47,15 +47,268 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/certifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lists certifications, versions, domains, and authored tasks. */
+        get: operations["list_certifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Issues a deterministic mission for a task. */
+        post: operations["issue_mission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/{mission_id}/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Scores one attempt and returns immediate feedback. */
+        post: operations["answer_mission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/{mission_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marks a mission completed. */
+        post: operations["complete_mission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reconciles a batch of attempts, re-scoring each against canonical content. */
+        post: operations["sync"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Answer primitives for one attempt. Exactly one field is set. */
+        AnswerPayload: {
+            /** @description Directed `[from, to]` pairs for node connection. */
+            edges?: string[][] | null;
+            /** @description Item ids in submitted order for ordering. */
+            ordered_ids?: string[] | null;
+            /** @description Item id to category id placements for classification. */
+            placements?: {
+                [key: string]: string;
+            } | null;
+        };
+        /** @description Request to score one attempt. */
+        AnswerRequest: {
+            /** @description Answer primitives. */
+            answer: components["schemas"]["AnswerPayload"];
+            /**
+             * Format: int32
+             * @description 1-based attempt number.
+             */
+            attempt_number: number;
+            /** @description Content version the client believes it is answering. */
+            content_version: string;
+            /**
+             * Format: uuid
+             * @description Client device identifier.
+             */
+            device_id: string;
+            /**
+             * Format: uuid
+             * @description Stable event identifier for this attempt.
+             */
+            event_id: string;
+            /**
+             * Format: int32
+             * @description Hints used before submitting.
+             */
+            hint_count: number;
+            /**
+             * Format: date-time
+             * @description When the attempt occurred on the device.
+             */
+            occurred_at: string;
+            /** @description Question being answered. */
+            question_id: string;
+            /**
+             * Format: int32
+             * @description Active response time in milliseconds.
+             */
+            response_ms: number;
+        };
+        /**
+         * @description How an attempt measures knowledge.
+         *
+         *     The first four are the base evidence modes from `docs/06-learning-engine.md`.
+         *     The remaining two are explicit Phase 1 subtypes used by tactile
+         *     interactions; they are still treated as evidence modes, not proven
+         *     independent latent abilities.
+         * @enum {string}
+         */
+        AssessmentMode: "recognition" | "recall" | "application" | "structural_reconstruction" | "relationship_recall" | "procedural_recall";
+        /** @description The canonical answer for a question. */
+        CanonicalAnswer: {
+            /** @description Item id to category id. */
+            placements: {
+                [key: string]: string;
+            };
+            /** @enum {string} */
+            type: "classification";
+        } | {
+            /** @description Item ids in canonical order. */
+            ordered_ids: string[];
+            /** @enum {string} */
+            type: "ordering";
+        } | {
+            /** @description Directed `[from, to]` pairs. */
+            edges: string[][];
+            /** @enum {string} */
+            type: "node_connection";
+        };
+        /** @description Response for the certification catalog. */
+        CatalogResponse: {
+            /** @description All known certifications. */
+            certifications: components["schemas"]["CertificationDto"][];
+        };
+        /** @description A certification with its versioned blueprints. */
+        CertificationDto: {
+            /** @description Official exam code. */
+            exam_code: string;
+            /** @description Certification identifier. */
+            id: string;
+            /** @description Last blueprint review date. */
+            last_reviewed: string;
+            /** @description Full name. */
+            name: string;
+            /** @description Official blueprint source. */
+            official_source_url: string;
+            /** @description Vendor. */
+            vendor: string;
+            /** @description Known exam versions. */
+            versions: components["schemas"]["CertificationVersionDto"][];
+        };
+        /** @description A versioned exam blueprint. */
+        CertificationVersionDto: {
+            /** @description Immutable content version. */
+            content_version: string;
+            /** @description Domains with authored tasks. */
+            domains: components["schemas"]["DomainDto"][];
+            /** @description Blueprint effective date. */
+            effective_date: string;
+            /** @description Official exam code. */
+            exam_code: string;
+            /** @description Version identifier. */
+            id: string;
+        };
+        /** @description A selectable item or category. */
+        Choice: {
+            /** @description Stable identifier within the question. */
+            id: string;
+            /** @description Learner-facing label. */
+            label: string;
+        };
+        /** @description Request to complete a mission. */
+        CompleteMissionRequest: {
+            /**
+             * Format: uuid
+             * @description Device that owns the mission.
+             */
+            device_id: string;
+        };
+        /** @description Completion result. */
+        CompleteMissionResponse: {
+            /**
+             * Format: date-time
+             * @description Completion time.
+             */
+            completed_at?: string | null;
+            /**
+             * Format: uuid
+             * @description Mission identifier.
+             */
+            id: string;
+            /** @description New status. */
+            status: components["schemas"]["MissionStatus"];
+        };
+        /** @description A concept mapped to a question, with its share of the evidence. */
+        ConceptWeight: {
+            /** @description Concept identifier, for example `aws.cloudwatch.alarm`. */
+            concept_id: string;
+            /**
+             * Format: double
+             * @description Share of the question attributed to this concept, in `(0, 1]`.
+             */
+            weight: number;
+        };
         /**
          * @description Database reachability.
          * @enum {string}
          */
         DatabaseStatus: "ok" | "unavailable";
+        /** @description A content domain. */
+        DomainDto: {
+            /** @description Domain identifier. */
+            id: string;
+            /** @description Domain name. */
+            name: string;
+            /** @description Tasks with authored content. */
+            tasks: components["schemas"]["TaskDto"][];
+            /**
+             * Format: double
+             * @description Share of scored content.
+             */
+            weight: number;
+        };
         /** @description Structured error details. */
         ErrorBody: {
             /** @description Stable error code. */
@@ -67,6 +320,31 @@ export interface components {
         ErrorResponse: {
             /** @description Error payload. */
             error: components["schemas"]["ErrorBody"];
+        };
+        /** @description Feedback for one scored attempt. */
+        FeedbackResponse: {
+            /** @description Canonical answer, revealed after scoring. */
+            canonical_answer: components["schemas"]["CanonicalAnswer"];
+            /** @description Concept mappings with weights. */
+            concepts: components["schemas"]["ConceptWeight"][];
+            /** @description Whether the attempt was fully correct. */
+            correct: boolean;
+            /** @description Structured error codes. */
+            error_codes: string[];
+            /**
+             * Format: uuid
+             * @description Event identifier echoed back.
+             */
+            event_id: string;
+            /** @description Short explanation. */
+            explanation: string;
+            /** @description Question identifier. */
+            question_id: string;
+            /**
+             * Format: double
+             * @description Partial score in `[0, 1]`.
+             */
+            score: number;
         };
         /**
          * @description Safe operational health payload. Never includes connection strings, hosts,
@@ -97,6 +375,198 @@ export interface components {
          * @enum {string}
          */
         HealthStatus: "ok" | "degraded";
+        /** @description Interaction definition shown to the learner. Contains no answer key. */
+        Interaction: {
+            /** @description Destination categories. */
+            categories: components["schemas"]["Choice"][];
+            /** @description Items to place. */
+            items: components["schemas"]["Choice"][];
+            /** @enum {string} */
+            type: "classification";
+        } | {
+            /** @description Items to order. */
+            items: components["schemas"]["Choice"][];
+            /** @enum {string} */
+            type: "ordering";
+        } | {
+            /** @description Nodes available to connect. */
+            nodes: components["schemas"]["Node"][];
+            /** @enum {string} */
+            type: "node_connection";
+        };
+        /**
+         * @description The tactile interaction family a question uses.
+         * @enum {string}
+         */
+        InteractionType: "classification" | "ordering" | "node_connection";
+        /** @description Request to issue a mission for a task. */
+        IssueMissionRequest: {
+            /** @description Certification identifier. */
+            certification_id: string;
+            /** @description Certification version identifier. */
+            certification_version: string;
+            /**
+             * Format: uuid
+             * @description Client device identifier.
+             */
+            device_id: string;
+            /** @description Task to study. */
+            task_id: string;
+        };
+        /** @description A server-issued mission with its questions. */
+        MissionResponse: {
+            /** @description Certification identifier. */
+            certification_id: string;
+            /** @description Certification version identifier. */
+            certification_version: string;
+            /** @description Immutable content version. */
+            content_version: string;
+            /**
+             * Format: uuid
+             * @description Device the mission belongs to.
+             */
+            device_id: string;
+            /** @description Domain covered. */
+            domain_id: string;
+            /**
+             * Format: date-time
+             * @description Expiry time.
+             */
+            expires_at: string;
+            /**
+             * Format: uuid
+             * @description Mission identifier.
+             */
+            id: string;
+            /**
+             * Format: date-time
+             * @description Issue time.
+             */
+            issued_at: string;
+            /** @description Questions in presentation order. */
+            questions: components["schemas"]["QuestionView"][];
+            /** @description Task covered. */
+            task_id: string;
+        };
+        /**
+         * @description Lifecycle of a server-issued mission.
+         * @enum {string}
+         */
+        MissionStatus: "issued" | "completed";
+        /** @description A node in a connection graph. */
+        Node: {
+            /** @description Stable identifier within the question. */
+            id: string;
+            /** @description Learner-facing label. */
+            label: string;
+            /**
+             * Format: double
+             * @description Horizontal position in an abstract `0..=1` layout space.
+             */
+            x: number;
+            /**
+             * Format: double
+             * @description Vertical position in an abstract `0..=1` layout space.
+             */
+            y: number;
+        };
+        /** @description A question shown to the learner. Contains no answer key. */
+        QuestionView: {
+            /** @description Evidence mode. */
+            assessment_mode: components["schemas"]["AssessmentMode"];
+            /** @description Concept mappings. */
+            concepts: components["schemas"]["ConceptWeight"][];
+            /**
+             * Format: double
+             * @description Prior difficulty.
+             */
+            difficulty_prior: number;
+            /** @description Optional hints. */
+            hints: string[];
+            /** @description Question identifier. */
+            id: string;
+            /** @description Interaction definition. */
+            interaction: components["schemas"]["Interaction"];
+            /** @description Interaction family. */
+            interaction_type: components["schemas"]["InteractionType"];
+            /** @description Learner-facing prompt. */
+            prompt: string;
+        };
+        /** @description One attempt in a sync batch. */
+        SyncEventRequest: {
+            /** @description Answer primitives. */
+            answer: components["schemas"]["AnswerPayload"];
+            /**
+             * Format: int32
+             * @description 1-based attempt number.
+             */
+            attempt_number: number;
+            /** @description Content version the answer was produced against. */
+            content_version: string;
+            /**
+             * Format: uuid
+             * @description Stable event identifier.
+             */
+            event_id: string;
+            /**
+             * Format: int32
+             * @description Hints used.
+             */
+            hint_count: number;
+            /**
+             * Format: uuid
+             * @description Mission the attempt belongs to.
+             */
+            mission_instance_id: string;
+            /**
+             * Format: date-time
+             * @description When the attempt occurred.
+             */
+            occurred_at: string;
+            /** @description Question answered. */
+            question_id: string;
+            /**
+             * Format: int32
+             * @description Active response time in milliseconds.
+             */
+            response_ms: number;
+        };
+        /** @description Result for one synced event. */
+        SyncEventResult: {
+            /** @description Whether the event is now accepted server-side. */
+            accepted: boolean;
+            /** @description Error code when not accepted. */
+            error_code?: string | null;
+            /**
+             * Format: uuid
+             * @description Event identifier.
+             */
+            event_id: string;
+        };
+        /** @description Request to sync a batch of evaluated attempts. */
+        SyncRequest: {
+            /**
+             * Format: uuid
+             * @description Client device identifier.
+             */
+            device_id: string;
+            /** @description Attempts to reconcile. */
+            events: components["schemas"]["SyncEventRequest"][];
+        };
+        /** @description Result of a sync batch. */
+        SyncResponse: {
+            /** @description Per-event results. */
+            results: components["schemas"]["SyncEventResult"][];
+        };
+        /** @description A task with a count of authored questions. */
+        TaskDto: {
+            /** @description Task identifier. */
+            id: string;
+            /** @description Task name. */
+            name: string;
+            /** @description Number of authored questions available. */
+            question_count: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -150,6 +620,209 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_certifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Certification catalog */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogResponse"];
+                };
+            };
+        };
+    };
+    issue_mission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssueMissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Issued mission */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown certification or task */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    answer_mission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Mission identifier */
+                mission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerRequest"];
+            };
+        };
+        responses: {
+            /** @description Scored attempt */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackResponse"];
+                };
+            };
+            /** @description Invalid answer */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Mission belongs to another device */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown mission */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Mission completed or content version mismatch */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    complete_mission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Mission identifier */
+                mission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteMissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Mission completed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompleteMissionResponse"];
+                };
+            };
+            /** @description Mission belongs to another device */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown mission */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    sync: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SyncRequest"];
+            };
+        };
+        responses: {
+            /** @description Per-event sync results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
             };
         };
     };

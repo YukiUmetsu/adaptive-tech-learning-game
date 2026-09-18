@@ -1,5 +1,8 @@
+use std::sync::Arc;
+
 use adaptive_learn_api::config::{Config, LogFormat};
 use adaptive_learn_api::{AppState, build_router};
+use adaptive_learn_content::ContentRegistry;
 use adaptive_learn_db as db;
 use anyhow::Context;
 use tokio::net::TcpListener;
@@ -31,7 +34,21 @@ async fn main() -> anyhow::Result<()> {
         db::MIGRATOR.run(&pool).await.context("apply migrations")?;
     }
 
-    let state = AppState::new(pool.clone());
+    let content = ContentRegistry::embedded().map_err(|errors| {
+        let details = errors
+            .iter()
+            .map(|error| format!("{}: {}", error.code, error.message))
+            .collect::<Vec<_>>()
+            .join("; ");
+        anyhow::anyhow!("content validation failed: {details}")
+    })?;
+    let content = Arc::new(content);
+    tracing::info!(
+        bundles = content.bundles().len(),
+        "loaded and validated content"
+    );
+
+    let state = AppState::new(pool.clone(), content);
     let app = build_router(state, &config);
 
     let listener = TcpListener::bind(config.bind_addr)

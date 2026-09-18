@@ -5,11 +5,12 @@ export default function HomePage() {
     <section>
       <h1>Adaptive Learning</h1>
       <p>
-        A local-first study game for technical certifications. This Phase 0
-        shell exists to prove the API contract and the deployment foundation.
+        A local-first study game for technical certifications. Phase 1 ships one
+        real learning module: AWS Certified CloudOps Engineer - Associate
+        (SOA-C03), Task 1.1.
       </p>
       <p>
-        <Link to="/health">Check API status</Link>
+        <Link to="/certifications">Browse certifications</Link>
       </p>
     </section>
   );

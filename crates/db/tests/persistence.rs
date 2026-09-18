@@ -82,7 +82,7 @@ async fn count_foundation_tables(pool: &PgPool) -> i64 {
         "SELECT count(*)
          FROM information_schema.tables
          WHERE table_schema = 'public'
-           AND table_name IN ('users', 'sync_batches')",
+           AND table_name IN ('users', 'sync_batches', 'mission_instances', 'learning_events')",
     )
     .fetch_one(pool)
     .await
@@ -203,7 +203,7 @@ async fn migrations_apply_and_revert_in_an_isolated_database() {
         .expect("connect isolated database");
 
     db::MIGRATOR.run(&isolated).await.expect("apply migrations");
-    assert_eq!(count_foundation_tables(&isolated).await, 2);
+    assert_eq!(count_foundation_tables(&isolated).await, 4);
 
     db::MIGRATOR
         .undo(&isolated, 0)

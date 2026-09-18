@@ -1,0 +1,224 @@
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
+use uuid::Uuid;
+
+use crate::DomainError;
+
+/// How an attempt measures knowledge.
+///
+/// The first four are the base evidence modes from `docs/06-learning-engine.md`.
+/// The remaining two are explicit Phase 1 subtypes used by tactile
+/// interactions; they are still treated as evidence modes, not proven
+/// independent latent abilities.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum AssessmentMode {
+    /// Recognizing a correct option.
+    Recognition,
+    /// Retrieving a fact unaided.
+    Recall,
+    /// Applying knowledge to a scenario.
+    Application,
+    /// Reconstructing a structure.
+    StructuralReconstruction,
+    /// Retrieving a relationship between components.
+    RelationshipRecall,
+    /// Recalling a procedure or ordered sequence.
+    ProceduralRecall,
+}
+
+/// The tactile interaction family a question uses.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum InteractionType {
+    /// Place items into categories.
+    Classification,
+    /// Arrange items in a meaningful order.
+    Ordering,
+    /// Connect nodes with directed relationships.
+    NodeConnection,
+}
+
+impl AssessmentMode {
+    /// Canonical string stored in PostgreSQL.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Recognition => "recognition",
+            Self::Recall => "recall",
+            Self::Application => "application",
+            Self::StructuralReconstruction => "structural_reconstruction",
+            Self::RelationshipRecall => "relationship_recall",
+            Self::ProceduralRecall => "procedural_recall",
+        }
+    }
+}
+
+impl TryFrom<&str> for AssessmentMode {
+    type Error = DomainError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "recognition" => Ok(Self::Recognition),
+            "recall" => Ok(Self::Recall),
+            "application" => Ok(Self::Application),
+            "structural_reconstruction" => Ok(Self::StructuralReconstruction),
+            "relationship_recall" => Ok(Self::RelationshipRecall),
+            "procedural_recall" => Ok(Self::ProceduralRecall),
+            _ => Err(DomainError::invalid(
+                "assessment_mode",
+                "unknown assessment mode",
+            )),
+        }
+    }
+}
+
+impl InteractionType {
+    /// Canonical string stored in PostgreSQL.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Classification => "classification",
+            Self::Ordering => "ordering",
+            Self::NodeConnection => "node_connection",
+        }
+    }
+}
+
+impl TryFrom<&str> for InteractionType {
+    type Error = DomainError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "classification" => Ok(Self::Classification),
+            "ordering" => Ok(Self::Ordering),
+            "node_connection" => Ok(Self::NodeConnection),
+            _ => Err(DomainError::invalid(
+                "interaction_type",
+                "unknown interaction type",
+            )),
+        }
+    }
+}
+
+/// A concept mapped to a question, with its share of the evidence.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct ConceptWeight {
+    /// Concept identifier, for example `aws.cloudwatch.alarm`.
+    pub concept_id: String,
+    /// Share of the question attributed to this concept, in `(0, 1]`.
+    pub weight: f64,
+}
+
+/// Lifecycle of a server-issued mission.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum MissionStatus {
+    /// Issued and still answerable.
+    Issued,
+    /// The learner finished the mission.
+    Completed,
+}
+
+impl MissionStatus {
+    /// Canonical string stored in PostgreSQL.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Issued => "issued",
+            Self::Completed => "completed",
+        }
+    }
+}
+
+impl std::fmt::Display for MissionStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl TryFrom<&str> for MissionStatus {
+    type Error = DomainError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "issued" => Ok(Self::Issued),
+            "completed" => Ok(Self::Completed),
+            _ => Err(DomainError::invalid(
+                "mission_status",
+                "must be issued or completed",
+            )),
+        }
+    }
+}
+
+/// A server-issued mission. The client never invents its identifiers.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct MissionInstance {
+    /// Server-generated mission identifier.
+    pub id: Uuid,
+    /// Device the mission was issued to.
+    pub device_id: Uuid,
+    /// Certification identifier.
+    pub certification_id: String,
+    /// Certification version identifier.
+    pub certification_version: String,
+    /// Immutable content version the mission was issued against.
+    pub content_version: String,
+    /// Domain covered by the mission.
+    pub domain_id: String,
+    /// Task covered by the mission.
+    pub task_id: String,
+    /// Questions selected for the mission, in presentation order.
+    pub question_ids: Vec<String>,
+    /// Current status.
+    pub status: MissionStatus,
+    /// Issue time in UTC.
+    pub issued_at: DateTime<Utc>,
+    /// Expiry time in UTC.
+    pub expires_at: DateTime<Utc>,
+    /// Completion time, when finished.
+    pub completed_at: Option<DateTime<Utc>>,
+}
+
+/// A normalized, server-evaluated learning event.
+///
+/// This is the append-oriented evidence record. It intentionally keeps partial
+/// scores and structured error codes instead of collapsing to correct/incorrect.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct LearningEvent {
+    /// Stable event identifier used for deduplication.
+    pub event_id: Uuid,
+    /// Device that produced the attempt.
+    pub device_id: Uuid,
+    /// Mission the attempt belongs to.
+    pub mission_instance_id: Uuid,
+    /// Certification identifier.
+    pub certification_id: String,
+    /// Certification version identifier.
+    pub certification_version: String,
+    /// Domain identifier.
+    pub domain_id: String,
+    /// Task identifier.
+    pub task_id: String,
+    /// Question identifier.
+    pub question_id: String,
+    /// Content version the answer was scored against.
+    pub content_version: String,
+    /// Concept mappings with weights.
+    pub concepts: Vec<ConceptWeight>,
+    /// Assessment/evidence mode.
+    pub assessment_mode: AssessmentMode,
+    /// Interaction family.
+    pub interaction_type: InteractionType,
+    /// Partial score in `[0, 1]`.
+    pub score: f64,
+    /// 1-based attempt number for the question within the mission.
+    pub attempt_number: i32,
+    /// Hints used before submitting.
+    pub hint_count: i32,
+    /// Active response time in milliseconds.
+    pub response_ms: i32,
+    /// Structured error codes from scoring.
+    pub structured_error_codes: Vec<String>,
+    /// Time the attempt occurred on the device.
+    pub occurred_at: DateTime<Utc>,
+}

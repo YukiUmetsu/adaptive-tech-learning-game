@@ -33,12 +33,14 @@ export function useHealth() {
 
       setState({
         status: "error",
-        message: `Request failed with HTTP ${result.response.status}`,
+        message: `The API returned HTTP ${result.response.status}. Check that the API is running and VITE_API_PROXY_TARGET points to it.`,
       });
     } catch (error) {
       setState({
         status: "error",
-        message: error instanceof Error ? error.message : "Network error",
+        message: `The API could not be reached (${
+          error instanceof Error ? error.message : "network error"
+        }). Start the API and check VITE_API_PROXY_TARGET (dev) or VITE_API_BASE_URL (deployed).`,
       });
     }
   }, []);

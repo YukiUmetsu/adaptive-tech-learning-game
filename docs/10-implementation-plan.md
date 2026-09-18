@@ -40,6 +40,15 @@ Deliver:
 
 Exit: useful study sessions work without game mechanics and events are deterministic/replayable.
 
+> Phase 1 implementation note: the repository currently implements one narrow
+> slice — AWS SOA-C03, Domain 1, Task 1.1 — with classification, ordering, and
+> node-connection interactions, server-side scoring, a normalized learning
+> event, local-first persistence, and a batched sync endpoint. This is
+> deliberately smaller than the 100-300 interaction target below: the current
+> bundle has a small validated set for one task, and the equation mechanic is
+> not implemented yet. Domains 2-5 and other tasks are blueprint metadata only.
+> Adaptive scheduling, mastery prediction, and gamification remain out of scope.
+
 ## Phase 2 — Authoritative mission + sync protocol
 
 Deliver:

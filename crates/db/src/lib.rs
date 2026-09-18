@@ -5,6 +5,8 @@
 //! `users` and `sync_batches` tables.
 
 pub mod error;
+pub mod learning_events;
+pub mod missions;
 pub mod sync_batches;
 pub mod users;
 

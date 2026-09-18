@@ -5,16 +5,18 @@
 //! services as later phases add them.
 
 pub mod config;
+pub mod dto;
 pub mod error;
 pub mod openapi;
 pub mod routes;
+pub mod services;
 pub mod state;
 
 use std::time::Duration;
 
 use axum::Router;
 use axum::http::{Method, StatusCode, header};
-use axum::routing::get;
+use axum::routing::{get, post};
 use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
@@ -35,6 +37,20 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
     Router::new()
         .route("/health", get(routes::health::health))
         .route("/openapi.json", get(routes::openapi::openapi_json))
+        .route(
+            "/v1/certifications",
+            get(routes::certifications::list_certifications),
+        )
+        .route("/v1/missions/issue", post(routes::missions::issue_mission))
+        .route(
+            "/v1/missions/{mission_id}/answers",
+            post(routes::missions::answer_mission),
+        )
+        .route(
+            "/v1/missions/{mission_id}/complete",
+            post(routes::missions::complete_mission),
+        )
+        .route("/v1/sync", post(routes::sync::sync))
         .layer(TraceLayer::new_for_http())
         .layer(TimeoutLayer::with_status_code(
             StatusCode::REQUEST_TIMEOUT,

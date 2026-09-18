@@ -1,5 +1,7 @@
+use std::sync::Arc;
 use std::time::Instant;
 
+use adaptive_learn_content::ContentRegistry;
 use adaptive_learn_db::PgPool;
 
 /// Shared application state passed to handlers.
@@ -7,6 +9,8 @@ use adaptive_learn_db::PgPool;
 pub struct AppState {
     /// Database connection pool.
     pub pool: PgPool,
+    /// Immutable, validated content registry.
+    pub content: Arc<ContentRegistry>,
     /// Process start time, used to report uptime.
     started_at: Instant,
     service_name: &'static str,
@@ -15,9 +19,10 @@ pub struct AppState {
 
 impl AppState {
     /// Builds state for a running API process.
-    pub fn new(pool: PgPool) -> Self {
+    pub fn new(pool: PgPool, content: Arc<ContentRegistry>) -> Self {
         Self {
             pool,
+            content,
             started_at: Instant::now(),
             service_name: env!("CARGO_PKG_NAME"),
             version: env!("CARGO_PKG_VERSION"),

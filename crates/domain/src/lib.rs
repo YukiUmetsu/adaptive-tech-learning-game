@@ -5,9 +5,13 @@
 //! from these types. Phase 0 intentionally covers only the foundational
 //! `users` and `sync_batches` concepts.
 
+pub mod learning;
 pub mod sync;
 pub mod user;
 
+pub use learning::{
+    AssessmentMode, ConceptWeight, InteractionType, LearningEvent, MissionInstance, MissionStatus,
+};
 pub use sync::{NewSyncBatch, SyncBatch, SyncBatchStatus};
 pub use user::{NewUser, User};
 

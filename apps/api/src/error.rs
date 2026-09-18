@@ -71,6 +71,12 @@ impl ApiError {
     }
 }
 
+impl From<adaptive_learn_db::DbError> for ApiError {
+    fn from(error: adaptive_learn_db::DbError) -> Self {
+        Self::Internal(error.into())
+    }
+}
+
 /// Envelope returned for every API error.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ErrorResponse {

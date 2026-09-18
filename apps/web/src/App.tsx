@@ -1,15 +1,24 @@
 import { Route, Routes } from "react-router-dom";
 
 import AppShell from "./layout/AppShell";
+import CertificationsPage from "./pages/CertificationsPage";
 import HealthPage from "./pages/HealthPage";
 import HomePage from "./pages/HomePage";
+import MissionPage from "./pages/MissionPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import TaskPage from "./pages/TaskPage";
 
 export default function App() {
   return (
     <Routes>
       <Route element={<AppShell />}>
         <Route index element={<HomePage />} />
+        <Route path="certifications" element={<CertificationsPage />} />
+        <Route
+          path="certifications/:certificationId/tasks/:taskId"
+          element={<TaskPage />}
+        />
+        <Route path="missions/:missionId" element={<MissionPage />} />
         <Route path="health" element={<HealthPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
