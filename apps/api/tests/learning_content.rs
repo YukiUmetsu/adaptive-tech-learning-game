@@ -1,6 +1,8 @@
-//! Content-only tests for the pre-quiz learning endpoint.
+//! Tests for the pre-quiz learning endpoint.
 //!
-//! These do not require PostgreSQL: the endpoint serves embedded curriculum.
+//! Learning content requires an authenticated account, so the content
+//! assertions run against a database-backed app. The authentication check runs
+//! without a database.
 
 mod common;
 
@@ -8,8 +10,27 @@ use axum::http::StatusCode;
 use serde_json::Value;
 
 #[tokio::test]
-async fn learning_endpoint_returns_the_domain_knowledge_map() {
+async fn learning_requires_authentication() {
     let app = common::app_without_database();
+
+    let (status, body) = common::send_anonymous(
+        app,
+        "GET",
+        "/v1/certifications/aws-soa-c03/domains/domain-1/learning",
+        None,
+    )
+    .await;
+
+    assert_eq!(status, StatusCode::UNAUTHORIZED, "{body}");
+    assert_eq!(body["error"]["code"], "unauthorized");
+}
+
+#[tokio::test]
+async fn learning_endpoint_returns_the_domain_knowledge_map() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
 
     let (status, body) = common::send(
         app,
@@ -47,7 +68,10 @@ async fn learning_endpoint_returns_the_domain_knowledge_map() {
 
 #[tokio::test]
 async fn learning_endpoint_never_exposes_quiz_answers_or_authoring_notes() {
-    let app = common::app_without_database();
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
 
     let (status, body) = common::send(
         app,
@@ -72,7 +96,10 @@ async fn learning_endpoint_never_exposes_quiz_answers_or_authoring_notes() {
 
 #[tokio::test]
 async fn every_soa_c03_domain_has_learning_content() {
-    let app = common::app_without_database();
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
 
     for index in 1..=5 {
         let domain_id = format!("domain-{index}");
@@ -94,7 +121,10 @@ async fn every_soa_c03_domain_has_learning_content() {
 
 #[tokio::test]
 async fn unknown_domain_learning_returns_not_found() {
-    let app = common::app_without_database();
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
 
     let (status, body) = common::send(
         app,
@@ -110,6 +140,7 @@ async fn unknown_domain_learning_returns_not_found() {
 
 #[tokio::test]
 async fn catalog_marks_domains_with_learning_available() {
+    // The catalog itself stays public.
     let app = common::app_without_database();
 
     let (status, body) = common::send(app, "GET", "/v1/certifications", None).await;

@@ -4,11 +4,12 @@
 //! client is generated from this document, so the two never drift by hand.
 
 use utoipa::OpenApi;
+use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
 
 use crate::dto::{
     AnswerPayload, AnswerRequest, CatalogResponse, CertificationDto, CertificationVersionDto,
     CompleteMissionRequest, CompleteMissionResponse, ConceptDto, DomainDto, FeedbackResponse,
-    IssueMissionRequest, LearningDomainResponse, MissionResponse, QuestionView,
+    IssueMissionRequest, LearningDomainResponse, MeResponse, MissionResponse, QuestionView,
     ReconstructionAnswerPayload, SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse,
     TaskDto, WalletResponse,
 };
@@ -32,6 +33,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         crate::routes::missions::complete_mission,
         crate::routes::sync::sync,
         crate::routes::wallet::get_wallet,
+        crate::routes::me::get_me,
     ),
     components(schemas(
         HealthResponse,
@@ -48,6 +50,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         IssueMissionRequest,
         MissionResponse,
         WalletResponse,
+        MeResponse,
         QuestionView,
         AnswerPayload,
         ReconstructionAnswerPayload,
@@ -103,10 +106,31 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         (name = "learning", description = "Pre-quiz knowledge maps and discovery progress"),
         (name = "missions", description = "Mission issuance, scoring, and completion"),
         (name = "sync", description = "Batch reconciliation of learning events"),
-        (name = "wallet", description = "Server-authoritative Bits balance")
-    )
+        (name = "wallet", description = "Server-authoritative Bits balance"),
+        (name = "account", description = "Authenticated learner account")
+    ),
+    modifiers(&SecurityAddon)
 )]
 pub struct ApiDoc;
+
+/// Adds the bearer-token security scheme used by protected routes.
+struct SecurityAddon;
+
+impl utoipa::Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        if let Some(components) = openapi.components.as_mut() {
+            components.add_security_scheme(
+                "bearerAuth",
+                SecurityScheme::Http(
+                    HttpBuilder::new()
+                        .scheme(HttpAuthScheme::Bearer)
+                        .bearer_format("JWT")
+                        .build(),
+                ),
+            );
+        }
+    }
+}
 
 /// Returns the OpenAPI document with the crate version applied at runtime.
 pub fn openapi() -> utoipa::openapi::OpenApi {

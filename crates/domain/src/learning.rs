@@ -259,7 +259,10 @@ impl TryFrom<&str> for QuizMode {
 pub struct MissionInstance {
     /// Server-generated mission identifier.
     pub id: Uuid,
-    /// Device the mission was issued to.
+    /// Owning learner, or `None` for a public demo mission issued without an
+    /// account. Ownership checks always use this field, never `device_id`.
+    pub user_id: Option<Uuid>,
+    /// Device the mission was issued from. Context only, not an owner.
     pub device_id: Uuid,
     /// Certification identifier.
     pub certification_id: String,
@@ -294,7 +297,9 @@ pub struct MissionInstance {
 pub struct LearningEvent {
     /// Stable event identifier used for deduplication.
     pub event_id: Uuid,
-    /// Device that produced the attempt.
+    /// Owning learner, or `None` for an anonymous public demo attempt.
+    pub user_id: Option<Uuid>,
+    /// Device that produced the attempt. Context only, not an owner.
     pub device_id: Uuid,
     /// Mission the attempt belongs to.
     pub mission_instance_id: Uuid,

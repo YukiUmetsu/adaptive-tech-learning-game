@@ -2,6 +2,10 @@
 //!
 //! Handlers stay thin; this module owns mission issuance, scoring, sync, and
 //! completion. Scores are always recomputed from canonical content.
+//!
+//! Ownership is user-based: services receive the authenticated identity and
+//! check `mission.user_id`, never the client-supplied `device_id`. A device may
+//! still be recorded as context.
 
 use std::collections::{HashMap, HashSet};
 
@@ -13,6 +17,7 @@ use adaptive_learn_domain::{
 use chrono::{Duration, Utc};
 use uuid::Uuid;
 
+use crate::auth::AuthenticatedUser;
 use crate::dto::{
     AnswerPayload, AnswerRequest, CatalogResponse, CertificationDto, CertificationVersionDto,
     CompleteMissionResponse, ConceptDto, DomainDto, FeedbackResponse, IssueMissionRequest,
@@ -111,11 +116,35 @@ pub fn learning_domain(
     })
 }
 
+/// Whether a certification is the public demo bundle, which may be issued
+/// without an account.
+///
+/// Demo missions carry no account and therefore never settle Bits. They are the
+/// only anonymous missions the API creates.
+pub fn is_demo_certification(certification_id: &str) -> bool {
+    certification_id.ends_with("-demo")
+}
+
 /// Issues a mission for a quiz mode, selecting questions server-side.
+///
+/// Authenticated callers get a user-owned mission. Anonymous callers may issue
+/// demo task-practice missions only; those carry no owner and award no Bits.
 pub async fn issue_mission(
     state: &AppState,
+    user: Option<&AuthenticatedUser>,
     request: IssueMissionRequest,
 ) -> Result<MissionResponse, ApiError> {
+    let owner = user.map(|user| user.id);
+
+    if owner.is_none() {
+        if !is_demo_certification(&request.certification_id) {
+            return Err(ApiError::Unauthorized);
+        }
+        if request.mode != QuizMode::TaskPractice {
+            return Err(ApiError::Unauthorized);
+        }
+    }
+
     let bundle = state
         .content
         .bundle_for_certification(&request.certification_id)
@@ -127,15 +156,26 @@ pub async fn issue_mission(
         ));
     }
 
+    // `device_id` is required to address an anonymous demo mission; for an
+    // authenticated mission it is context and may be absent.
+    if owner.is_none() && request.device_id.is_none() {
+        return Err(ApiError::BadRequest(
+            "demo missions require device_id".to_owned(),
+        ));
+    }
+    let device_id = request.device_id.unwrap_or_else(Uuid::new_v4);
+
     let now = Utc::now();
-    let (domain_id, task_id, question_ids) = build_question_set(state, &request, now).await?;
+    let (domain_id, task_id, question_ids) =
+        build_question_set(state, &request, owner, now).await?;
     if question_ids.is_empty() {
         return Err(ApiError::NotFound);
     }
 
     let mission = MissionInstance {
         id: Uuid::new_v4(),
-        device_id: request.device_id,
+        user_id: owner,
+        device_id,
         certification_id: bundle.certification.id.clone(),
         certification_version: bundle.version.id.clone(),
         content_version: bundle.version.content_version.clone(),
@@ -150,6 +190,12 @@ pub async fn issue_mission(
     };
 
     let stored = db::missions::insert(&state.pool, &mission).await?;
+
+    if let (Some(user), Some(device)) = (user, request.device_id) {
+        if let Err(error) = db::devices::upsert(&state.pool, device, user.id).await {
+            tracing::debug!(error = %error, "could not associate device with user");
+        }
+    }
 
     let questions: Vec<QuestionView> = stored
         .question_ids
@@ -181,6 +227,7 @@ pub async fn issue_mission(
 async fn build_question_set(
     state: &AppState,
     request: &IssueMissionRequest,
+    owner: Option<Uuid>,
     now: chrono::DateTime<Utc>,
 ) -> Result<(Option<String>, Option<String>, Vec<String>), ApiError> {
     let version = &request.certification_version;
@@ -221,11 +268,11 @@ async fn build_question_set(
             {
                 return Err(ApiError::NotFound);
             }
-            let ids = select_ids(state, request, Some(&domain_id), now).await?;
+            let ids = select_ids(state, request, owner, Some(&domain_id), now).await?;
             Ok((Some(domain_id), None, ids))
         }
         QuizMode::QuickAdaptive | QuizMode::FullPractice => {
-            let ids = select_ids(state, request, None, now).await?;
+            let ids = select_ids(state, request, owner, None, now).await?;
             Ok((None, None, ids))
         }
     }
@@ -235,9 +282,13 @@ async fn build_question_set(
 async fn select_ids(
     state: &AppState,
     request: &IssueMissionRequest,
+    owner: Option<Uuid>,
     domain_id: Option<&str>,
     now: chrono::DateTime<Utc>,
 ) -> Result<Vec<String>, ApiError> {
+    // Adaptive modes are only issued to an authenticated account.
+    let user_id = owner.ok_or(ApiError::Unauthorized)?;
+
     let version = &request.certification_version;
     let questions = match domain_id {
         Some(domain) => state.content.questions_for_domain(version, domain),
@@ -261,9 +312,10 @@ async fn select_ids(
         })
         .unwrap_or_default();
 
-    let history: Vec<HistoryEntry> = db::learning_events::recent_for_device(
+    // History is combined across every device the learner has signed in on.
+    let history: Vec<HistoryEntry> = db::learning_events::recent_for_user(
         &state.pool,
-        request.device_id,
+        user_id,
         &request.certification_id,
         HISTORY_LIMIT,
     )
@@ -308,6 +360,7 @@ fn candidate_from(question: &Question) -> Candidate {
 /// Persistence happens through `sync`, which keeps offline replay idempotent.
 pub async fn score_attempt(
     state: &AppState,
+    user: Option<&AuthenticatedUser>,
     mission_id: Uuid,
     request: AnswerRequest,
 ) -> Result<FeedbackResponse, ApiError> {
@@ -320,7 +373,8 @@ pub async fn score_attempt(
     let question = resolve_question(
         state,
         &mission,
-        &request.device_id,
+        user,
+        request.device_id,
         &request.question_id,
         &request.content_version,
     )?;
@@ -351,8 +405,19 @@ pub async fn score_attempt(
 ///
 /// Missions are loaded once per batch. Each event is validated independently so
 /// one bad event does not discard the rest of an offline queue.
-pub async fn sync(state: &AppState, request: SyncRequest) -> Result<SyncResponse, ApiError> {
+pub async fn sync(
+    state: &AppState,
+    user: Option<&AuthenticatedUser>,
+    request: SyncRequest,
+) -> Result<SyncResponse, ApiError> {
     let mut results = Vec::with_capacity(request.events.len());
+    let device_id = request.device_id;
+
+    if let (Some(user), Some(device)) = (user, device_id) {
+        if let Err(error) = db::devices::upsert(&state.pool, device, user.id).await {
+            tracing::debug!(error = %error, "could not associate device with user");
+        }
+    }
 
     // Load each distinct mission once instead of per event (avoids N+1 reads).
     let mission_ids: HashSet<Uuid> = request
@@ -380,7 +445,7 @@ pub async fn sync(state: &AppState, request: SyncRequest) -> Result<SyncResponse
             continue;
         };
 
-        match apply_event(state, &request.device_id, &mission, event).await {
+        match apply_event(state, user, device_id, &mission, event).await {
             Ok(bits_settled) => results.push(SyncEventResult {
                 event_id,
                 accepted: true,
@@ -392,7 +457,10 @@ pub async fn sync(state: &AppState, request: SyncRequest) -> Result<SyncResponse
         }
     }
 
-    let bits_balance = db::wallets::balance(&state.pool, request.device_id).await?;
+    let bits_balance = match user {
+        Some(user) => db::wallets::balance(&state.pool, user.id).await?,
+        None => 0,
+    };
     Ok(SyncResponse {
         results,
         bits_balance,
@@ -408,11 +476,14 @@ fn reject(event_id: Uuid, code: impl Into<String>) -> SyncEventResult {
     }
 }
 
-/// Returns a device's settled Bits balance.
-pub async fn wallet(state: &AppState, device_id: Uuid) -> Result<WalletResponse, ApiError> {
-    let bits_balance = db::wallets::balance(&state.pool, device_id).await?;
+/// Returns the authenticated user's settled Bits balance.
+pub async fn wallet(
+    state: &AppState,
+    user: &AuthenticatedUser,
+) -> Result<WalletResponse, ApiError> {
+    let bits_balance = db::wallets::balance(&state.pool, user.id).await?;
     Ok(WalletResponse {
-        device_id,
+        user_id: user.id,
         bits_balance,
     })
 }
@@ -425,23 +496,29 @@ enum SyncRejection {
     Fatal(anyhow::Error),
 }
 
-/// Marks a mission completed for its owning device.
+/// Marks a mission completed for its owner.
 pub async fn complete_mission(
     state: &AppState,
+    user: Option<&AuthenticatedUser>,
     mission_id: Uuid,
-    device_id: Uuid,
+    device_id: Option<Uuid>,
 ) -> Result<CompleteMissionResponse, ApiError> {
-    let updated = db::missions::mark_completed(&state.pool, mission_id, device_id).await?;
-    let mission = match updated {
-        Some(mission) => mission,
+    let mission = load_mission(state, mission_id).await?;
+    ensure_access(&mission, user, device_id)?;
+
+    let updated = match mission.user_id {
+        Some(owner) => db::missions::mark_completed(&state.pool, mission_id, owner).await?,
         None => {
-            return match db::missions::find_by_id(&state.pool, mission_id).await? {
-                Some(_) => Err(ApiError::Forbidden),
-                None => Err(ApiError::NotFound),
-            };
+            db::missions::mark_completed_anonymous_device(
+                &state.pool,
+                mission_id,
+                mission.device_id,
+            )
+            .await?
         }
     };
 
+    let mission = updated.ok_or(ApiError::NotFound)?;
     Ok(CompleteMissionResponse {
         id: mission.id,
         status: mission.status,
@@ -449,15 +526,59 @@ pub async fn complete_mission(
     })
 }
 
+/// Authorizes access to a mission.
+///
+/// Owned missions require the matching authenticated user. Anonymous demo
+/// missions are addressable by the device that issued them and carry no
+/// economic authority.
+fn ensure_access(
+    mission: &MissionInstance,
+    user: Option<&AuthenticatedUser>,
+    device_id: Option<Uuid>,
+) -> Result<(), ApiError> {
+    match mission.user_id {
+        Some(owner) => match user {
+            Some(user) if user.id == owner => Ok(()),
+            Some(_) => Err(ApiError::Forbidden),
+            None => Err(ApiError::Unauthorized),
+        },
+        None => {
+            if !is_demo_certification(&mission.certification_id) {
+                // Legacy anonymous non-demo missions are not addressable.
+                return Err(ApiError::NotFound);
+            }
+            if device_id == Some(mission.device_id) {
+                Ok(())
+            } else {
+                Err(ApiError::Forbidden)
+            }
+        }
+    }
+}
+
 async fn apply_event(
     state: &AppState,
-    device_id: &Uuid,
+    user: Option<&AuthenticatedUser>,
+    device_id: Option<Uuid>,
     mission: &MissionInstance,
     event: SyncEventRequest,
 ) -> Result<i64, SyncRejection> {
-    if &mission.device_id != device_id {
-        return Err(SyncRejection::Rejected("forbidden".to_owned()));
-    }
+    let owned_by_user = match mission.user_id {
+        Some(owner) => match user {
+            Some(user) if user.id == owner => true,
+            _ => return Err(SyncRejection::Rejected("forbidden".to_owned())),
+        },
+        None => {
+            if !is_demo_certification(&mission.certification_id) {
+                return Err(SyncRejection::Rejected("not_found".to_owned()));
+            }
+            if device_id != Some(mission.device_id) {
+                return Err(SyncRejection::Rejected("forbidden".to_owned()));
+            }
+            false
+        }
+    };
+
     if !mission
         .question_ids
         .iter()
@@ -489,7 +610,8 @@ async fn apply_event(
     // missions have no single task, and analytics must stay per-question.
     let learning_event = LearningEvent {
         event_id: event.event_id,
-        device_id: mission.device_id,
+        user_id: mission.user_id,
+        device_id: device_id.unwrap_or(mission.device_id),
         mission_instance_id: mission.id,
         certification_id: mission.certification_id.clone(),
         certification_version: mission.certification_version.clone(),
@@ -516,10 +638,10 @@ async fn apply_event(
             .map_err(|error| SyncRejection::Fatal(error.into()))?;
 
     Ok(match attempt {
-        Some(attempt_number) => {
+        Some(attempt_number) if owned_by_user => {
             reward_bits(attempt_number, scored.score, question.difficulty_prior)
         }
-        None => 0,
+        _ => 0,
     })
 }
 
@@ -532,13 +654,12 @@ async fn load_mission(state: &AppState, mission_id: Uuid) -> Result<MissionInsta
 fn resolve_question<'a>(
     state: &'a AppState,
     mission: &MissionInstance,
-    device_id: &Uuid,
+    user: Option<&AuthenticatedUser>,
+    device_id: Option<Uuid>,
     question_id: &str,
     content_version: &str,
 ) -> Result<&'a adaptive_learn_content::Question, ApiError> {
-    if &mission.device_id != device_id {
-        return Err(ApiError::Forbidden);
-    }
+    ensure_access(mission, user, device_id)?;
     if !mission.question_ids.iter().any(|id| id == question_id) {
         return Err(ApiError::BadRequest(
             "question is not part of this mission".to_owned(),

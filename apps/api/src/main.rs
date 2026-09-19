@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use adaptive_learn_api::config::{Config, LogFormat};
-use adaptive_learn_api::{AppState, build_router};
+use adaptive_learn_api::{AppState, auth, build_router};
 use adaptive_learn_content::ContentRegistry;
 use adaptive_learn_db as db;
 use anyhow::Context;
@@ -21,7 +21,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!(
         environment = config.app_env.as_str(),
         version = env!("CARGO_PKG_VERSION"),
-        auth_configured = config.workos.is_some(),
+        auth_mode = ?config.auth,
         "starting adaptive-learn-api"
     );
 
@@ -48,7 +48,7 @@ async fn main() -> anyhow::Result<()> {
         "loaded and validated content"
     );
 
-    let state = AppState::new(pool.clone(), content);
+    let state = AppState::new(pool.clone(), content, auth::build_authenticator(&config));
     let app = build_router(state, &config);
 
     let listener = TcpListener::bind(config.bind_addr)

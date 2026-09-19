@@ -41,6 +41,7 @@ sync_batches
 devices
 device_wallets
 bit_transactions
+user_wallets
 wallets
 wallet_ledger
 inventory
@@ -71,6 +72,13 @@ updated_at
 ```
 
 Do not accept blind client replacement of this row.
+
+Ownership is user-based: `mission_instances`, `learning_events`, and wallet
+state carry an owning `user_id`. `device_wallets` is the legacy pre-auth table
+and is retained only for audit; new settlements go to `user_wallets`. Rows
+written before authentication existed have a NULL `user_id` and are excluded
+from every user-scoped query rather than being attributed to a guessed account,
+because a bare `device_id` is not a secure account-claim credential.
 
 ## Raw event schema
 

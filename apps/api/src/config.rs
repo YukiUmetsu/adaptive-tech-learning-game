@@ -70,6 +70,21 @@ impl LogFormat {
     }
 }
 
+/// How the API authenticates requests.
+///
+/// `Dev` is an explicit, local-only mode that accepts `Authorization: Bearer
+/// dev:<subject>` so developers and automated tests can work without WorkOS
+/// credentials. It is never selectable in staging or production, where WorkOS
+/// configuration is mandatory.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AuthMode {
+    /// Verify WorkOS AuthKit access tokens against the provider JWKS.
+    Workos,
+    /// Local/test identity from a `dev:` bearer token. Never enabled outside
+    /// `local` and `test`.
+    Dev,
+}
+
 /// WorkOS AuthKit settings.
 ///
 /// Phase 0 only carries these values as a configuration boundary. Token
@@ -81,8 +96,12 @@ pub struct WorkosConfig {
     pub client_id: String,
     /// Server-side WorkOS API key. Never exposed to the browser or logs.
     pub api_key: String,
-    /// Optional expected token issuer.
+    /// Optional expected token issuer. Defaults to `https://api.workos.com`;
+    /// set it to a custom AuthKit authentication domain when one is configured.
     pub issuer: Option<String>,
+    /// Optional explicit JWKS URL. Defaults to the provider's standard location
+    /// for the configured issuer.
+    pub jwks_url: Option<String>,
 }
 
 /// Validated runtime configuration.
@@ -106,6 +125,8 @@ pub struct Config {
     pub request_body_limit_bytes: usize,
     /// Tracing output format.
     pub log_format: LogFormat,
+    /// How requests are authenticated.
+    pub auth: AuthMode,
     /// WorkOS settings, or `None` when authentication is not configured.
     pub workos: Option<WorkosConfig>,
 }
@@ -204,8 +225,20 @@ impl Config {
                 client_id,
                 api_key,
                 issuer: raw("WORKOS_ISSUER"),
+                jwks_url: raw("WORKOS_JWKS_URL"),
             }),
             _ => return Err(ConfigError::IncompleteWorkos),
+        };
+
+        // Auth is required everywhere except local development and tests. In
+        // staging/production a missing WorkOS configuration is a startup error
+        // so an unauthenticated deployment can never come up by accident.
+        let auth = match (&workos, app_env) {
+            (Some(_), _) => AuthMode::Workos,
+            (None, AppEnv::Local | AppEnv::Test) => AuthMode::Dev,
+            (None, AppEnv::Staging | AppEnv::Production) => {
+                return Err(ConfigError::AuthRequired);
+            }
         };
 
         Ok(Self {
@@ -218,6 +251,7 @@ impl Config {
             request_timeout_seconds,
             request_body_limit_bytes,
             log_format,
+            auth,
             workos,
         })
     }
@@ -267,6 +301,11 @@ pub enum ConfigError {
     /// WorkOS credentials must be supplied together or not at all.
     #[error("WORKOS_CLIENT_ID and WORKOS_API_KEY must be set together")]
     IncompleteWorkos,
+    /// Staging and production require real authentication configuration.
+    #[error(
+        "authentication is required outside local/test: set WORKOS_CLIENT_ID and WORKOS_API_KEY"
+    )]
+    AuthRequired,
 }
 
 impl ConfigError {
@@ -297,6 +336,7 @@ mod tests {
         assert!(config.run_migrations);
         assert_eq!(config.log_format, LogFormat::Pretty);
         assert!(config.workos.is_none());
+        assert_eq!(config.auth, AuthMode::Dev);
         assert_eq!(
             config.cors_allowed_origins,
             vec![HeaderValue::from_static("http://localhost:5173")]
@@ -327,12 +367,40 @@ mod tests {
     fn production_defaults_to_json_logs_and_no_migrations() {
         let mut source = minimal();
         source.push(("APP_ENV", "production"));
+        source.push(("WORKOS_CLIENT_ID", "client_123"));
+        source.push(("WORKOS_API_KEY", "sk_test_123"));
         let config = Config::from_source(source).expect("valid config");
 
         assert_eq!(config.app_env, AppEnv::Production);
         assert_eq!(config.log_format, LogFormat::Json);
         assert!(!config.run_migrations);
         assert!(config.cors_allowed_origins.is_empty());
+        assert_eq!(config.auth, AuthMode::Workos);
+    }
+
+    #[test]
+    fn production_requires_workos_configuration() {
+        let mut source = minimal();
+        source.push(("APP_ENV", "production"));
+        let error = Config::from_source(source).expect_err("auth is required");
+        assert_eq!(error, ConfigError::AuthRequired);
+    }
+
+    #[test]
+    fn staging_requires_workos_configuration() {
+        let mut source = minimal();
+        source.push(("APP_ENV", "staging"));
+        let error = Config::from_source(source).expect_err("auth is required");
+        assert_eq!(error, ConfigError::AuthRequired);
+    }
+
+    #[test]
+    fn test_env_without_workos_uses_dev_auth() {
+        let mut source = minimal();
+        source.push(("APP_ENV", "test"));
+        let config = Config::from_source(source).expect("valid config");
+        assert_eq!(config.auth, AuthMode::Dev);
+        assert!(config.workos.is_none());
     }
 
     #[test]
@@ -375,6 +443,23 @@ mod tests {
         assert_eq!(
             workos.issuer.as_deref(),
             Some("https://example.authkit.app")
+        );
+        assert!(workos.jwks_url.is_none());
+    }
+
+    #[test]
+    fn workos_jwks_url_is_optional_and_loaded() {
+        let mut source = minimal();
+        source.push(("WORKOS_CLIENT_ID", "client_123"));
+        source.push(("WORKOS_API_KEY", "sk_test_123"));
+        source.push(("WORKOS_ISSUER", "https://example.authkit.app"));
+        source.push(("WORKOS_JWKS_URL", "https://example.authkit.app/oauth2/jwks"));
+        let config = Config::from_source(source).expect("valid config");
+
+        let workos = config.workos.expect("workos configured");
+        assert_eq!(
+            workos.jwks_url.as_deref(),
+            Some("https://example.authkit.app/oauth2/jwks")
         );
     }
 

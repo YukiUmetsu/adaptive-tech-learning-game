@@ -169,9 +169,24 @@ function nodeLabel(nodes: GraphNode[], id: string): string {
   return node.label;
 }
 
+export async function signInAsDevUser(page: Page): Promise<void> {
+  // E2E runs the API in `test` mode without WorkOS credentials, and the web dev
+  // server exposes the matching local developer sign-in. Sign in so scored
+  // missions are owned by an account rather than treated as anonymous.
+  await page.goto("/login?returnTo=%2F");
+  const button = page.getByRole("button", {
+    name: "Continue as local developer",
+  });
+  await expect(button).toBeVisible();
+  await button.click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/login"));
+}
+
 export async function startMission(page: Page): Promise<void> {
   // Task Practice remains available for the demo/internal flow, so the E2E
   // suite drives it directly rather than through the new dashboard modes.
+  await signInAsDevUser(page);
+
   const certificationId = content.certification.id;
   const taskId = firstAuthoredTaskId(content);
 

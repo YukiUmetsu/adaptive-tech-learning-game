@@ -27,8 +27,20 @@ describe("buildCatalog", () => {
     expect(soa?.available).toBe(true);
     expect(soa?.name).toBe("AWS Certified CloudOps Engineer - Associate");
 
-    const wip = aws?.cards.find((card) => card.id === "aws-saa-c03");
+    const saa = aws?.cards.find((card) => card.id === "aws-saa-c03");
+    expect(saa?.available).toBe(false);
+
+    const azure = sections.find((section) => section.id === "azure");
+    const wip = azure?.cards.find((card) => card.id === "azure-az-104");
     expect(wip?.available).toBe(false);
+  });
+
+  it("drops the DVA-C02 and MLA-C01 planned entries", () => {
+    const ids = CATALOG.flatMap((section) =>
+      section.certifications.map((entry) => entry.id),
+    );
+    expect(ids).not.toContain("aws-dva-c02");
+    expect(ids).not.toContain("aws-mla-c01");
   });
 
   it("keeps planned certifications disabled when there is no content", () => {

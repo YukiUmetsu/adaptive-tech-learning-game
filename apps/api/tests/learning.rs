@@ -93,6 +93,26 @@ async fn issue(app: &Router, device: Uuid) -> Value {
     body
 }
 
+async fn issue_as(app: &Router, subject: &str, device: Uuid) -> Value {
+    let (status, body) = common::send_as(
+        app.clone(),
+        subject,
+        "POST",
+        "/v1/missions/issue",
+        Some(json!({
+            "device_id": device,
+            "certification_id": "aws-soa-c03",
+            "certification_version": "soa-c03",
+            "mode": "task_practice",
+            "task_id": "1.1"
+        })),
+    )
+    .await;
+
+    assert_eq!(status, StatusCode::OK, "issue failed: {body}");
+    body
+}
+
 fn answer_body(
     device: Uuid,
     _mission_id: &str,
@@ -393,14 +413,15 @@ async fn sync_persists_events_idempotently() {
 }
 
 #[tokio::test]
-async fn sync_rejects_events_for_another_device() {
+async fn sync_rejects_events_for_another_user() {
     let Some(pool) = common::database_pool().await else {
         return;
     };
     let app = common::app_with_pool(pool);
     let registry = registry();
-    let owner = Uuid::new_v4();
-    let mission = issue(&app, owner).await;
+    let owner = "owner-user";
+    let attacker = "attacker-user";
+    let mission = issue_as(&app, owner, Uuid::new_v4()).await;
     let mission_uuid: Uuid = mission["id"]
         .as_str()
         .expect("mission id")
@@ -423,10 +444,51 @@ async fn sync_rejects_events_for_another_device() {
         }]
     });
 
-    let (status, body) = common::send(app, "POST", "/v1/sync", Some(batch)).await;
+    let (status, body) = common::send_as(app, attacker, "POST", "/v1/sync", Some(batch)).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["results"][0]["accepted"], false);
     assert_eq!(body["results"][0]["error_code"], "forbidden");
+}
+
+#[tokio::test]
+async fn another_user_cannot_answer_or_complete_a_mission() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let registry = registry();
+    let owner = "mission-owner";
+    let attacker = "mission-attacker";
+    let mission = issue_as(&app, owner, Uuid::new_v4()).await;
+    let mission_id = mission["id"].as_str().expect("mission id").to_owned();
+    let question = question(&registry, "monitoring-classification-001");
+
+    let (status, body) = common::send_as(
+        app.clone(),
+        attacker,
+        "POST",
+        &format!("/v1/missions/{mission_id}/answers"),
+        Some(answer_body(
+            Uuid::new_v4(),
+            &mission_id,
+            &question.id,
+            mission["content_version"].as_str().expect("version"),
+            Uuid::new_v4(),
+            correct_answer(&question),
+        )),
+    )
+    .await;
+    assert_eq!(status, StatusCode::FORBIDDEN, "{body}");
+
+    let (status, body) = common::send_as(
+        app,
+        attacker,
+        "POST",
+        &format!("/v1/missions/{mission_id}/complete"),
+        Some(json!({ "device_id": Uuid::new_v4() })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::FORBIDDEN, "{body}");
 }
 
 #[tokio::test]
@@ -1123,6 +1185,31 @@ async fn issue_mode(
     .await
 }
 
+async fn issue_mode_as(
+    app: &Router,
+    subject: &str,
+    device: Uuid,
+    mode: &str,
+    domain_id: Option<&str>,
+    task_id: Option<&str>,
+) -> (StatusCode, Value) {
+    common::send_as(
+        app.clone(),
+        subject,
+        "POST",
+        "/v1/missions/issue",
+        Some(json!({
+            "device_id": device,
+            "certification_id": "aws-soa-c03",
+            "certification_version": "soa-c03",
+            "mode": mode,
+            "domain_id": domain_id,
+            "task_id": task_id
+        })),
+    )
+    .await
+}
+
 fn wrong_classification_answer(question: &Question) -> Value {
     let CanonicalAnswer::Classification { placements } = &question.canonical_answer else {
         panic!("expected classification canonical answer");
@@ -1233,8 +1320,10 @@ async fn mixed_mission_events_use_question_scope_and_settle_once() {
     };
     let app = common::app_with_pool(pool.clone());
     let registry = registry();
+    let subject = format!("mixed-user-{}", Uuid::new_v4());
     let device = Uuid::new_v4();
-    let (status, mission) = issue_mode(&app, device, "quick_adaptive", None, None).await;
+    let (status, mission) =
+        issue_mode_as(&app, &subject, device, "quick_adaptive", None, None).await;
     assert_eq!(status, StatusCode::OK, "quick failed: {mission}");
     let mission_uuid: Uuid = mission["id"]
         .as_str()
@@ -1261,7 +1350,14 @@ async fn mixed_mission_events_use_question_scope_and_settle_once() {
         }]
     });
 
-    let (status, body) = common::send(app.clone(), "POST", "/v1/sync", Some(batch.clone())).await;
+    let (status, body) = common::send_as(
+        app.clone(),
+        &subject,
+        "POST",
+        "/v1/sync",
+        Some(batch.clone()),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK, "sync failed: {body}");
     let settled = body["results"][0]["bits_settled"].as_i64().expect("bits");
     assert!(settled > 0, "first correct attempt should earn Bits");
@@ -1275,7 +1371,8 @@ async fn mixed_mission_events_use_question_scope_and_settle_once() {
     assert_eq!(events[0].task_id, question.task_id);
 
     // Replaying the event is idempotent and settles nothing further.
-    let (status, body) = common::send(app.clone(), "POST", "/v1/sync", Some(batch)).await;
+    let (status, body) =
+        common::send_as(app.clone(), &subject, "POST", "/v1/sync", Some(batch)).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["results"][0]["accepted"], true);
     assert_eq!(body["results"][0]["bits_settled"], 0);
@@ -1289,16 +1386,18 @@ async fn wrong_attempt_earns_nothing_and_recovery_earns_less() {
     };
     let app = common::app_with_pool(pool);
     let registry = registry();
+    let subject = format!("recovery-user-{}", Uuid::new_v4());
     let device = Uuid::new_v4();
-    let mission = issue(&app, device).await;
+    let mission = issue_as(&app, &subject, device).await;
     let mission_id = mission["id"].as_str().expect("mission id");
     let mission_uuid: Uuid = mission_id.parse().expect("uuid");
     let content_version = mission["content_version"].as_str().expect("version");
     let question = question(&registry, "monitoring-classification-001");
 
     // Attempt 1: wrong, no Bits.
-    let (status, body) = common::send(
+    let (status, body) = common::send_as(
         app.clone(),
+        &subject,
         "POST",
         "/v1/sync",
         Some(json!({ "device_id": device, "events": [{
@@ -1319,8 +1418,9 @@ async fn wrong_attempt_earns_nothing_and_recovery_earns_less() {
     assert_eq!(body["bits_balance"], 0);
 
     // Attempt 2: correct recovery, earns Bits but less than a first attempt.
-    let (status, body) = common::send(
+    let (status, body) = common::send_as(
         app.clone(),
+        &subject,
         "POST",
         "/v1/sync",
         Some(json!({ "device_id": device, "events": [{
@@ -1347,21 +1447,254 @@ async fn wrong_attempt_earns_nothing_and_recovery_earns_less() {
 }
 
 #[tokio::test]
-async fn wallet_endpoint_returns_the_settled_balance() {
+async fn same_user_on_two_devices_sees_one_wallet() {
     let Some(pool) = common::database_pool().await else {
         return;
     };
     let app = common::app_with_pool(pool);
-    let device = Uuid::new_v4();
+    let registry = registry();
+    let subject = "multi-device-user";
+    let device_a = Uuid::new_v4();
+    let device_b = Uuid::new_v4();
 
-    let (status, body) = common::send(
+    let mission = issue_as(&app, subject, device_a).await;
+    let mission_uuid: Uuid = mission["id"]
+        .as_str()
+        .expect("mission id")
+        .parse()
+        .expect("uuid");
+    let question = question(&registry, "monitoring-classification-001");
+
+    // Settle a correct answer from device A.
+    let batch = json!({
+        "device_id": device_a,
+        "events": [{
+            "event_id": Uuid::new_v4(),
+            "mission_instance_id": mission_uuid,
+            "question_id": question.id,
+            "content_version": mission["content_version"],
+            "attempt_number": 1,
+            "hint_count": 0,
+            "response_ms": 1000,
+            "occurred_at": "2026-09-19T10:00:00Z",
+            "answer": correct_answer(&question)
+        }]
+    });
+    let (status, body) =
+        common::send_as(app.clone(), subject, "POST", "/v1/sync", Some(batch)).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let earned = body["bits_balance"].as_i64().expect("bits balance");
+    assert!(earned > 0, "a correct first attempt should earn Bits");
+
+    // The same account on device B sees the same wallet.
+    let (status, body) = common::send_as(app.clone(), subject, "GET", "/v1/wallet", None).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["bits_balance"], earned);
+
+    // A different account has its own wallet.
+    let (status, body) = common::send_as(app, "someone-else", "GET", "/v1/wallet", None).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["bits_balance"], 0);
+    let _ = device_b;
+}
+
+#[tokio::test]
+async fn duplicated_sync_event_never_duplicates_bits() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let registry = registry();
+    let subject = "idempotent-bits-user";
+    let device = Uuid::new_v4();
+    let mission = issue_as(&app, subject, device).await;
+    let mission_uuid: Uuid = mission["id"]
+        .as_str()
+        .expect("mission id")
+        .parse()
+        .expect("uuid");
+    let question = question(&registry, "monitoring-classification-001");
+    let event_id = Uuid::new_v4();
+
+    let batch = json!({
+        "device_id": device,
+        "events": [{
+            "event_id": event_id,
+            "mission_instance_id": mission_uuid,
+            "question_id": question.id,
+            "content_version": mission["content_version"],
+            "attempt_number": 1,
+            "hint_count": 0,
+            "response_ms": 1000,
+            "occurred_at": "2026-09-19T10:00:00Z",
+            "answer": correct_answer(&question)
+        }]
+    });
+
+    let (status, first) = common::send_as(
         app.clone(),
-        "GET",
-        &format!("/v1/wallet?device_id={device}"),
-        None,
+        subject,
+        "POST",
+        "/v1/sync",
+        Some(batch.clone()),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{first}");
+    let settled = first["bits_balance"].as_i64().expect("bits balance");
+    assert!(settled > 0);
+
+    let (status, second) =
+        common::send_as(app.clone(), subject, "POST", "/v1/sync", Some(batch)).await;
+    assert_eq!(status, StatusCode::OK, "{second}");
+    assert_eq!(second["results"][0]["bits_settled"], 0);
+    assert_eq!(second["bits_balance"], settled);
+}
+
+#[tokio::test]
+async fn adaptive_history_combines_a_users_devices() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool.clone());
+    let registry = registry();
+    let subject = "cross-device-history-user";
+    let device_a = Uuid::new_v4();
+    let device_b = Uuid::new_v4();
+
+    let mission = issue_as(&app, subject, device_a).await;
+    let mission_uuid: Uuid = mission["id"]
+        .as_str()
+        .expect("mission id")
+        .parse()
+        .expect("uuid");
+    let question = question(&registry, "monitoring-classification-001");
+    let event = json!({
+        "event_id": Uuid::new_v4(),
+        "mission_instance_id": mission_uuid,
+        "question_id": question.id,
+        "content_version": mission["content_version"],
+        "attempt_number": 1,
+        "hint_count": 0,
+        "response_ms": 1000,
+        "occurred_at": "2026-09-19T10:00:00Z",
+        "answer": correct_answer(&question)
+    });
+    let (status, body) = common::send_as(
+        app.clone(),
+        subject,
+        "POST",
+        "/v1/sync",
+        Some(json!({ "device_id": device_a, "events": [event] })),
     )
     .await;
     assert_eq!(status, StatusCode::OK, "{body}");
+
+    // The user's history now includes the device-A event, regardless of the
+    // device that queries next.
+    let user_id = adaptive_learn_db::users::find_by_auth_subject(&pool, "workos", subject)
+        .await
+        .expect("lookup user")
+        .expect("user exists")
+        .id;
+    let history =
+        adaptive_learn_db::learning_events::recent_for_user(&pool, user_id, "aws-soa-c03", 50)
+            .await
+            .expect("history");
+    assert!(
+        history.iter().any(|entry| entry.question_id == question.id),
+        "history must include the event recorded from device A"
+    );
+
+    // Another account has no such history.
+    assert!(
+        adaptive_learn_db::learning_events::recent_for_user(
+            &pool,
+            Uuid::new_v4(),
+            "aws-soa-c03",
+            50,
+        )
+        .await
+        .expect("history")
+        .is_empty(),
+        "another user's selection must not see this history"
+    );
+    let _ = device_b;
+}
+
+#[tokio::test]
+async fn public_demo_missions_work_without_login_and_award_no_bits() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let registry = registry();
+    let device = Uuid::new_v4();
+
+    // Anonymous demo issuance is allowed for the demo certification only.
+    let (status, mission) = common::send_anonymous(
+        app.clone(),
+        "POST",
+        "/v1/missions/issue",
+        Some(json!({
+            "device_id": device,
+            "certification_id": "aws-soa-c03-demo",
+            "certification_version": "soa-c03-demo",
+            "mode": "task_practice",
+            "task_id": "D2.1"
+        })),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "anonymous demo issue failed: {mission}"
+    );
+    let mission_uuid: Uuid = mission["id"]
+        .as_str()
+        .expect("mission id")
+        .parse()
+        .expect("uuid");
+
+    // A non-demo certification still requires authentication.
+    let (status, body) = common::send_anonymous(
+        app.clone(),
+        "POST",
+        "/v1/missions/issue",
+        Some(json!({
+            "device_id": device,
+            "certification_id": "aws-soa-c03",
+            "certification_version": "soa-c03",
+            "mode": "task_practice",
+            "task_id": "1.1"
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED, "{body}");
+
+    // Anonymous demo sync accepts evidence but settles no Bits.
+    let question = version_question(&registry, "soa-c03-demo", "demo-reconstruction-nat-001");
+    let (status, body) = common::send_anonymous(
+        app.clone(),
+        "POST",
+        "/v1/sync",
+        Some(json!({
+            "device_id": device,
+            "events": [{
+                "event_id": Uuid::new_v4(),
+                "mission_instance_id": mission_uuid,
+                "question_id": question.id,
+                "content_version": "soa-c03-demo-content-v1",
+                "attempt_number": 1,
+                "hint_count": 0,
+                "response_ms": 1200,
+                "occurred_at": "2026-09-19T10:00:00Z",
+                "answer": correct_answer(&question)
+            }]
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["results"][0]["accepted"], true);
+    assert_eq!(body["results"][0]["bits_settled"], 0);
     assert_eq!(body["bits_balance"], 0);
-    assert_eq!(body["device_id"], device.to_string());
 }
