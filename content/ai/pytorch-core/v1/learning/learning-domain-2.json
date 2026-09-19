@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "pytorch-core-learning-2026-09-19-v1",
+  "content_version": "pytorch-core-learning-2026-09-19-v2",
   "certification_id": "ai-pytorch-core",
   "certification_version": "pytorch-core-v1",
   "exam_guide_revision": "Not a certification. PyTorch stable documentation reviewed 2026-09-19 (current docs identified as 2.14).",
@@ -11,7 +11,7 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code and table discoveries.",
     "mastery_note": "Discovery progress is not mastery evidence; typed recall and coding questions provide the scored retrieval signal."
   },
   "source_refs": [
@@ -41,9 +41,9 @@
     ],
     "module_count": 2,
     "knowledge_node_count": 8,
-    "prompt_count": 24
+    "prompt_count": 12
   },
-  "authoring_notes": "This is a practical learning track, not a certification. Domain weights are curriculum emphasis weights used for adaptive selection. Learning placeholders are exact cloze versions of their revealed text. Reviewed against PyTorch 2.14-era official documentation and the app's structured typed-fill code/table renderer on 2026-09-19.",
+  "authoring_notes": "Updated for the learning-v2 renderer. PyTorch code is displayed as syntax-highlighted code_file material with clickable annotations instead of inline prose. Progressive tables are used for shape reasoning and concept comparisons while preserving the existing curriculum scope.",
   "modules": [
     {
       "id": "domain-2-task-2-1",
@@ -66,52 +66,104 @@
           "concept_ids": [
             "ai.pytorch.dataset_contract"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.16
-          },
           "prompts": [
             {
-              "id": "what",
+              "id": "roles",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ stores or retrieves samples and labels, while `DataLoader` wraps a dataset with iteration, batching, sampling, and optional multiprocessing.",
+              "label": "DATASET OR DATALOADER?",
+              "placeholder": "Reveal one responsibility at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "`Dataset` stores or retrieves samples and labels, while `DataLoader` wraps a dataset with iteration, batching, sampling, and optional multiprocessing."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "object",
+                    "label": "Object"
+                  },
+                  {
+                    "id": "responsibility",
+                    "label": "Responsibility"
+                  },
+                  {
+                    "id": "typical",
+                    "label": "Typical concern"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "dataset",
+                    "cells": {
+                      "object": "Dataset",
+                      "responsibility": "Defines how individual samples/targets are retrieved",
+                      "typical": "__len__, __getitem__, transforms"
+                    }
+                  },
+                  {
+                    "id": "loader",
+                    "cells": {
+                      "object": "DataLoader",
+                      "responsibility": "Defines how samples are delivered as iterable batches",
+                      "typical": "batch_size, shuffle, workers, collation"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "column",
+                  "initially_visible": {
+                    "column_ids": [
+                      "object"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Use a __________ to iterate through minibatches instead of manually slicing the full dataset in the training loop.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "SEE THE TWO OBJECTS WORK TOGETHER",
+              "placeholder": "Click Dataset creation and DataLoader wrapping.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use a `DataLoader` to iterate through minibatches instead of manually slicing the full dataset in the training loop."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "A `Dataset` and a `DataLoader` solve __________: one defines samples and the other defines how samples are delivered.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A `Dataset` and a `DataLoader` solve different problems: one defines samples and the other defines how samples are delivered."
+                "type": "code_file",
+                "filename": "dataset_loader.py",
+                "language": "python",
+                "code": "from torch.utils.data import DataLoader, TensorDataset\nimport torch\n\nfeatures = torch.randn(100, 20)\ntargets = torch.randint(0, 3, (100,))\n\ndataset = TensorDataset(features, targets)\nloader = DataLoader(dataset, batch_size=16, shuffle=True)\n\nfor X, y in loader:\n    print(X.shape, y.shape)\n    break",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "dataset",
+                    "anchor": {
+                      "line": 7,
+                      "text": "TensorDataset(features, targets)",
+                      "occurrence": 1
+                    },
+                    "title": "Dataset defines samples",
+                    "explanation": "TensorDataset makes aligned tensors available as indexed sample tuples.",
+                    "required": true
+                  },
+                  {
+                    "id": "loader",
+                    "anchor": {
+                      "line": 8,
+                      "text": "DataLoader(dataset, batch_size=16, shuffle=True)",
+                      "occurrence": 1
+                    },
+                    "title": "DataLoader defines delivery",
+                    "explanation": "The DataLoader batches and optionally shuffles samples from the dataset.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Dataset and DataLoader roles — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/beginner/basics/data_tutorial.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "source_refs": []
         },
         {
           "id": "domain-2-custom-dataset",
@@ -119,54 +171,65 @@
           "concept_ids": [
             "ai.pytorch.custom_dataset"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "IMPLEMENT A MAP-STYLE DATASET",
+              "placeholder": "Click __len__ and __getitem__.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "custom_dataset.py",
+                "language": "python",
+                "code": "from torch.utils.data import Dataset\n\nclass RecordDataset(Dataset):\n    def __init__(self, records, transform=None):\n        self.records = records\n        self.transform = transform\n\n    def __len__(self):\n        return len(self.records)\n\n    def __getitem__(self, idx):\n        features, target = self.records[idx]\n        if self.transform is not None:\n            features = self.transform(features)\n        return features, target",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "len",
+                    "anchor": {
+                      "line": 8,
+                      "text": "def __len__(self):",
+                      "occurrence": 1
+                    },
+                    "title": "Dataset size",
+                    "explanation": "__len__ reports how many indexed samples the map-style dataset exposes.",
+                    "required": true
+                  },
+                  {
+                    "id": "getitem",
+                    "anchor": {
+                      "line": 11,
+                      "text": "def __getitem__(self, idx):",
+                      "occurrence": 1
+                    },
+                    "title": "Retrieve one sample",
+                    "explanation": "__getitem__ returns the sample or sample-target structure for one index.",
+                    "required": true
+                  },
+                  {
+                    "id": "transform",
+                    "anchor": {
+                      "line": 14,
+                      "text": "self.transform(features)",
+                      "occurrence": 1
+                    },
+                    "title": "Optional sample transform",
+                    "explanation": "Per-sample preprocessing can be applied before the sample is returned.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-dataset-contract"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.16
+            "x": 0.35,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "A map-style custom `Dataset` typically implements __________ for dataset size and `__getitem__` for retrieving one indexed sample.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A map-style custom `Dataset` typically implements `__len__` for dataset size and `__getitem__` for retrieving one indexed sample."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "`__________` returns the sample or sample-label structure for one index.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`__getitem__(self, idx)` returns the sample or sample-label structure for one index."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Do not return __________ from a normal map-style `__getitem__` unless that batching is an intentional design.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not return whole pre-batched epochs from a normal map-style `__getitem__` unless that batching is an intentional design."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Custom Dataset methods — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/beginner/basics/data_tutorial.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-2-dataloader-batching",
@@ -174,54 +237,65 @@
           "concept_ids": [
             "ai.pytorch.dataloader_batching"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "CONFIGURE BATCHING",
+              "placeholder": "Click batch_size, shuffle, and drop_last.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "dataloader_batching.py",
+                "language": "python",
+                "code": "from torch.utils.data import DataLoader\n\ntrain_loader = DataLoader(\n    dataset,\n    batch_size=64,\n    shuffle=True,\n    drop_last=False,\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "batch",
+                    "anchor": {
+                      "line": 5,
+                      "text": "batch_size=64",
+                      "occurrence": 1
+                    },
+                    "title": "Automatic minibatches",
+                    "explanation": "DataLoader groups samples into batches of up to 64 items.",
+                    "required": true
+                  },
+                  {
+                    "id": "shuffle",
+                    "anchor": {
+                      "line": 6,
+                      "text": "shuffle=True",
+                      "occurrence": 1
+                    },
+                    "title": "Randomize map-style sample order",
+                    "explanation": "Training loaders commonly shuffle samples between epochs.",
+                    "required": true
+                  },
+                  {
+                    "id": "drop",
+                    "anchor": {
+                      "line": 7,
+                      "text": "drop_last=False",
+                      "occurrence": 1
+                    },
+                    "title": "Keep the final smaller batch",
+                    "explanation": "When the dataset size is not divisible by batch_size, the final batch can be smaller unless drop_last=True.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-custom-dataset"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.16
+            "x": 0.58,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`DataLoader(dataset, __________=..., shuffle=...)` can automatically form minibatches and optionally reshuffle map-style data between epochs.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`DataLoader(dataset, batch_size=..., shuffle=...)` can automatically form minibatches and optionally reshuffle map-style data between epochs."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Training loaders commonly use `__________` when sample order should be randomized each epoch.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Training loaders commonly use `shuffle=True` when sample order should be randomized each epoch."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Validation and test loaders usually __________ for correctness.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Validation and test loaders usually do not need random shuffling for correctness."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "DataLoader batching and shuffle — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/data.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-2-dataloader-iteration",
@@ -229,54 +303,54 @@
           "concept_ids": [
             "ai.pytorch.dataloader_iteration"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ A MINIBATCH LOOP",
+              "placeholder": "Click the loop unpacking and inspect batch shapes.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "iterate_loader.py",
+                "language": "python",
+                "code": "for X, y in loader:\n    logits = model(X)\n    loss = loss_fn(logits, y)\n    print(X.shape, y.shape)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "loop",
+                    "anchor": {
+                      "line": 1,
+                      "text": "for X, y in loader:",
+                      "occurrence": 1
+                    },
+                    "title": "Receive collated batches",
+                    "explanation": "The batch structure follows the structure returned by dataset samples and the collate step.",
+                    "required": true
+                  },
+                  {
+                    "id": "model",
+                    "anchor": {
+                      "line": 2,
+                      "text": "model(X)",
+                      "occurrence": 1
+                    },
+                    "title": "Feed the batch to the model",
+                    "explanation": "X is already a batch produced by the DataLoader rather than a manually sliced dataset.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-dataloader-batching"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.16
+            "x": 0.81,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Iterating a `DataLoader` __________ whose structure is produced by dataset samples and the collate step.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Iterating a `DataLoader` yields batches whose structure is produced by dataset samples and the collate step."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "For a dataset returning `(features, target)`, a common loop is `__________:`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "For a dataset returning `(features, target)`, a common loop is `for X, y in loader:`."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "The final batch can be __________ unless `drop_last=True`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The final batch can be smaller than `batch_size` unless `drop_last=True`."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Iterating minibatches — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/beginner/basics/data_tutorial.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -303,52 +377,77 @@
           "concept_ids": [
             "ai.pytorch.num_workers"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.38
-          },
           "prompts": [
             {
-              "id": "what",
+              "id": "workers",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ controls how many subprocesses a `DataLoader` uses for data loading, with 0 meaning loading occurs in the main process.",
+              "label": "WHAT DOES num_workers CHANGE?",
+              "placeholder": "Reveal each setting and its execution model.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "`num_workers` controls how many subprocesses a `DataLoader` uses for data loading, with 0 meaning loading occurs in the main process."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "value",
+                    "label": "num_workers"
+                  },
+                  {
+                    "id": "behavior",
+                    "label": "Behavior"
+                  },
+                  {
+                    "id": "tradeoff",
+                    "label": "Trade-off"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "zero",
+                    "cells": {
+                      "value": "0",
+                      "behavior": "Load data in the main process",
+                      "tradeoff": "Simpler debugging; no worker-process overlap"
+                    }
+                  },
+                  {
+                    "id": "positive",
+                    "cells": {
+                      "value": "> 0",
+                      "behavior": "Use subprocesses for loading",
+                      "tradeoff": "Can overlap input work but adds process/memory overhead"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "value"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Increase `num_workers` when data preparation is a measured input bottleneck, then __________ because the best value depends on workload and platform.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Increase `num_workers` when data preparation is a measured input bottleneck, then profile because the best value depends on workload and platform."
-              }
-            },
-            {
-              "id": "not_this",
+              "id": "profile",
               "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "More workers are __________ and can increase memory use or process overhead.",
+              "label": "PROFILE INSTEAD OF GUESSING",
+              "placeholder": "Is a larger num_workers always better?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "More workers are not automatically faster and can increase memory use or process overhead."
+                "text": "No. Increase num_workers only when data preparation is a measured bottleneck, then profile because the best value depends on workload, storage, transforms, and platform."
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "DataLoader workers — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/data.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "source_refs": []
         },
         {
           "id": "domain-2-pin-memory",
@@ -356,54 +455,65 @@
           "concept_ids": [
             "ai.pytorch.pin_memory"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "PAIR PINNED HOST MEMORY WITH DEVICE TRANSFER",
+              "placeholder": "Click pin_memory and non_blocking.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "pin_memory.py",
+                "language": "python",
+                "code": "from torch.utils.data import DataLoader\n\nloader = DataLoader(\n    dataset,\n    batch_size=64,\n    pin_memory=True,\n)\n\nfor X, y in loader:\n    X = X.to(device, non_blocking=True)\n    y = y.to(device, non_blocking=True)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "pin",
+                    "anchor": {
+                      "line": 6,
+                      "text": "pin_memory=True",
+                      "occurrence": 1
+                    },
+                    "title": "Pinned host memory",
+                    "explanation": "Pinned host memory can improve CPU-to-CUDA transfer performance.",
+                    "required": true
+                  },
+                  {
+                    "id": "nonblocking",
+                    "anchor": {
+                      "line": 10,
+                      "text": "non_blocking=True",
+                      "occurrence": 1
+                    },
+                    "title": "Request asynchronous-compatible transfer",
+                    "explanation": "non_blocking=True can enable overlap when the source/destination and execution context support it.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "scope",
+              "kind": "not_this",
+              "label": "KNOW WHAT PINNING OPTIMIZES",
+              "placeholder": "Is pinned memory a universal CPU speedup?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "No. Pinned memory is primarily a host-to-accelerator transfer optimization."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-num-workers"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.38
+            "x": 0.35,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` asks DataLoader to return tensors in pinned host memory, which can improve CPU-to-CUDA transfer performance.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`pin_memory=True` asks DataLoader to return tensors in pinned host memory, which can improve CPU-to-CUDA transfer performance."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "A common CUDA pattern combines a pinned DataLoader with `tensor.to(device, __________)`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A common CUDA pattern combines a pinned DataLoader with `tensor.to(device, non_blocking=True)`."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Pinned memory is primarily a __________ transfer optimization, not a universal CPU speedup.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Pinned memory is primarily a host-to-accelerator transfer optimization, not a universal CPU speedup."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Pinned memory and non-blocking transfer — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/data.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-2-collate-fn",
@@ -411,54 +521,65 @@
           "concept_ids": [
             "ai.pytorch.collate_fn"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "COLLATE VARIABLE-LENGTH SAMPLES",
+              "placeholder": "Click collate_fn and pad_sequence.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "custom_collate.py",
+                "language": "python",
+                "code": "import torch\nfrom torch.nn.utils.rnn import pad_sequence\nfrom torch.utils.data import DataLoader\n\ndef collate_batch(samples):\n    sequences, labels = zip(*samples)\n    padded = pad_sequence(sequences, batch_first=True)\n    labels = torch.tensor(labels)\n    return padded, labels\n\nloader = DataLoader(\n    dataset,\n    batch_size=32,\n    collate_fn=collate_batch,\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "collate",
+                    "anchor": {
+                      "line": 5,
+                      "text": "def collate_batch(samples):",
+                      "occurrence": 1
+                    },
+                    "title": "Custom batch construction",
+                    "explanation": "The collate function receives a list of individual dataset samples and decides how to merge them.",
+                    "required": true
+                  },
+                  {
+                    "id": "pad",
+                    "anchor": {
+                      "line": 7,
+                      "text": "pad_sequence(sequences, batch_first=True)",
+                      "occurrence": 1
+                    },
+                    "title": "Handle variable lengths",
+                    "explanation": "Padding is a common reason to replace default collation.",
+                    "required": true
+                  },
+                  {
+                    "id": "loader",
+                    "anchor": {
+                      "line": 14,
+                      "text": "collate_fn=collate_batch",
+                      "occurrence": 1
+                    },
+                    "title": "Attach custom collation",
+                    "explanation": "DataLoader calls the supplied collate_fn when forming each batch.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-pin-memory"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.38
+            "x": 0.58,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ controls how a list of individual dataset samples is merged into a batch.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`collate_fn` controls how a list of individual dataset samples is merged into a batch."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Use a custom `collate_fn` for cases such as __________ that need padding or custom batch objects.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use a custom `collate_fn` for cases such as variable-length examples that need padding or custom batch objects."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "A custom collate function changes batch construction; it __________ the Dataset itself.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A custom collate function changes batch construction; it does not replace the Dataset itself."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Custom collation — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/data.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-2-transforms",
@@ -466,54 +587,65 @@
           "concept_ids": [
             "ai.pytorch.transforms"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "KEEP TRAINING AUGMENTATION IN THE TRAINING PIPELINE",
+              "placeholder": "Click the train and evaluation transform differences.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "transforms.py",
+                "language": "python",
+                "code": "from torchvision import transforms\n\ntrain_transform = transforms.Compose([\n    transforms.RandomHorizontalFlip(),\n    transforms.ToTensor(),\n])\n\neval_transform = transforms.Compose([\n    transforms.ToTensor(),\n])",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "random",
+                    "anchor": {
+                      "line": 4,
+                      "text": "transforms.RandomHorizontalFlip()",
+                      "occurrence": 1
+                    },
+                    "title": "Stochastic training augmentation",
+                    "explanation": "Random augmentation is commonly used in the training pipeline to vary examples.",
+                    "required": true
+                  },
+                  {
+                    "id": "eval",
+                    "anchor": {
+                      "line": 8,
+                      "text": "eval_transform = transforms.Compose([",
+                      "occurrence": 1
+                    },
+                    "title": "Deterministic evaluation pipeline",
+                    "explanation": "Evaluation usually avoids stochastic augmentation unless randomness is intentionally part of the evaluation design.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "targets",
+              "kind": "what",
+              "label": "FEATURES AND TARGETS CAN HAVE SEPARATE TRANSFORMS",
+              "placeholder": "What separate hook do TorchVision datasets commonly expose for labels?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "TorchVision datasets commonly accept transform for features and target_transform for labels."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-collate-fn"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.38
+            "x": 0.81,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ preprocess samples or targets before they are consumed by the model.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Transforms preprocess samples or targets before they are consumed by the model."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "TorchVision datasets commonly accept `transform` for features and `__________` for labels.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "TorchVision datasets commonly accept `transform` for features and `target_transform` for labels."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Keep stochastic augmentation in the __________ unless you intentionally want randomness during evaluation.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Keep stochastic augmentation in the training pipeline unless you intentionally want randomness during evaluation."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Transforms — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/beginner/basics/transforms_tutorial.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

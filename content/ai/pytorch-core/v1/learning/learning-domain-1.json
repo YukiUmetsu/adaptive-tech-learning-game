@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "pytorch-core-learning-2026-09-19-v1",
+  "content_version": "pytorch-core-learning-2026-09-19-v2",
   "certification_id": "ai-pytorch-core",
   "certification_version": "pytorch-core-v1",
   "exam_guide_revision": "Not a certification. PyTorch stable documentation reviewed 2026-09-19 (current docs identified as 2.14).",
@@ -11,7 +11,7 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code and table discoveries.",
     "mastery_note": "Discovery progress is not mastery evidence; typed recall and coding questions provide the scored retrieval signal."
   },
   "source_refs": [
@@ -46,9 +46,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 12,
-    "prompt_count": 36
+    "prompt_count": 22
   },
-  "authoring_notes": "This is a practical learning track, not a certification. Domain weights are curriculum emphasis weights used for adaptive selection. Learning placeholders are exact cloze versions of their revealed text. Reviewed against PyTorch 2.14-era official documentation and the app's structured typed-fill code/table renderer on 2026-09-19.",
+  "authoring_notes": "Updated for the learning-v2 renderer. PyTorch code is displayed as syntax-highlighted code_file material with clickable annotations instead of inline prose. Progressive tables are used for shape reasoning and concept comparisons while preserving the existing curriculum scope.",
   "modules": [
     {
       "id": "domain-1-task-1-1",
@@ -71,52 +71,85 @@
           "concept_ids": [
             "ai.pytorch.tensor_creation"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.16
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` creates a tensor from existing Python data, while factory functions such as `torch.zeros` and `torch.randn` create new tensor values.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "CREATE TENSORS IN CONTEXT",
+              "placeholder": "Click each constructor and compare what it is used for.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "`torch.tensor(...)` creates a tensor from existing Python data, while factory functions such as `torch.zeros` and `torch.randn` create new tensor values."
+                "type": "code_file",
+                "filename": "tensor_creation.py",
+                "language": "python",
+                "code": "import torch\n\ndata = [[1, 2], [3, 4]]\n\nfrom_data = torch.tensor(data, dtype=torch.float32)\nzeros = torch.zeros((2, 3))\nnoise = torch.randn((2, 3))\n\ncopied = from_data.clone()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "tensor",
+                    "anchor": {
+                      "line": 5,
+                      "text": "torch.tensor(data",
+                      "occurrence": 1
+                    },
+                    "title": "Create from Python data",
+                    "explanation": "torch.tensor(...) constructs a tensor from existing Python data and can set dtype explicitly.",
+                    "required": true
+                  },
+                  {
+                    "id": "zeros",
+                    "anchor": {
+                      "line": 6,
+                      "text": "torch.zeros((2, 3))",
+                      "occurrence": 1
+                    },
+                    "title": "Factory-created values",
+                    "explanation": "Factory functions such as torch.zeros create a new tensor directly from the requested shape.",
+                    "required": true
+                  },
+                  {
+                    "id": "randn",
+                    "anchor": {
+                      "line": 7,
+                      "text": "torch.randn((2, 3))",
+                      "occurrence": 1
+                    },
+                    "title": "Random factory",
+                    "explanation": "torch.randn creates new random values drawn from a standard normal distribution.",
+                    "required": true
+                  },
+                  {
+                    "id": "clone",
+                    "anchor": {
+                      "line": 9,
+                      "text": "from_data.clone()",
+                      "occurrence": 1
+                    },
+                    "title": "Copy an existing tensor",
+                    "explanation": "When you need another tensor with copied data, clone is clearer than reconstructing with torch.tensor(existing_tensor).",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "A common explicit constructor is `x = __________(data, dtype=torch.float32)`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A common explicit constructor is `x = torch.tensor(data, dtype=torch.float32)`."
-              }
-            },
-            {
-              "id": "not_this",
+              "id": "gotcha",
               "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Do not use `__________` when you only need another view or copy; tensor construction can copy data and lose autograd history.",
+              "label": "DON'T RECONSTRUCT AN EXISTING TENSOR",
+              "placeholder": "Why is torch.tensor(existing_tensor) usually the wrong copy/view tool?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Do not use `torch.tensor(existing_tensor)` when you only need another view or copy; tensor construction can copy data and lose autograd history."
+                "text": "Constructing a new tensor from an existing tensor can copy data and lose autograd history. Use tensor operations such as clone, detach, or view/reshape according to the behavior you actually need."
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Creating tensors — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/beginner/basics/tensorqs_tutorial.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "source_refs": []
         },
         {
           "id": "domain-1-shape-ndim-numel",
@@ -124,54 +157,65 @@
           "concept_ids": [
             "ai.pytorch.shape_ndim_numel"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ TENSOR STRUCTURE",
+              "placeholder": "Click shape, ndim, and numel. Each answers a different structural question.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "tensor_structure.py",
+                "language": "python",
+                "code": "import torch\n\nx = torch.zeros((8, 3, 32, 32))\n\nbatch_size = x.shape[0]\ndimensions = x.ndim\nelements = x.numel()\n\n# x.shape -> torch.Size([8, 3, 32, 32])\n# x.ndim  -> 4\n# x.numel() -> 24576",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "shape",
+                    "anchor": {
+                      "line": 5,
+                      "text": "x.shape[0]",
+                      "occurrence": 1
+                    },
+                    "title": "Read a dimension size",
+                    "explanation": "shape contains the size of every axis. The leading dimension is often the batch dimension.",
+                    "required": true
+                  },
+                  {
+                    "id": "ndim",
+                    "anchor": {
+                      "line": 6,
+                      "text": "x.ndim",
+                      "occurrence": 1
+                    },
+                    "title": "Count axes",
+                    "explanation": "ndim reports the number of dimensions, not the number of elements.",
+                    "required": true
+                  },
+                  {
+                    "id": "numel",
+                    "anchor": {
+                      "line": 7,
+                      "text": "x.numel()",
+                      "occurrence": 1
+                    },
+                    "title": "Count all elements",
+                    "explanation": "numel multiplies the dimension sizes and returns the total element count.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-tensor-creation"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.16
+            "x": 0.35,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` reports dimension sizes, `tensor.ndim` reports the number of dimensions, and `tensor.numel()` reports the total number of elements.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`tensor.shape` reports dimension sizes, `tensor.ndim` reports the number of dimensions, and `tensor.numel()` reports the total number of elements."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "For a batch tensor, `batch_size = __________` reads the leading dimension.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "For a batch tensor, `batch_size = x.shape[0]` reads the leading dimension."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Do not confuse `__________` with `numel()`: one counts axes and the other counts elements.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not confuse `ndim` with `numel()`: one counts axes and the other counts elements."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Shape, dimensions, and element count — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/beginner/basics/tensorqs_tutorial.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-1-dtype-device-to",
@@ -179,41 +223,61 @@
           "concept_ids": [
             "ai.pytorch.dtype_device_to"
           ],
-          "prerequisite_node_ids": [
-            "domain-1-shape-ndim-numel"
-          ],
-          "map_position": {
-            "x": 0.627,
-            "y": 0.16
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "A tensor has a `dtype` and a `device`, and __________ can move it to another device or convert its dtype.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "MOVE AND CONVERT A TENSOR",
+              "placeholder": "Click dtype, device, and .to(...).",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A tensor has a `dtype` and a `device`, and `.to(...)` can move it to another device or convert its dtype."
+                "type": "code_file",
+                "filename": "dtype_device.py",
+                "language": "python",
+                "code": "import torch\n\nx = torch.tensor([1, 2, 3], dtype=torch.float32)\n\nprint(x.dtype)\nprint(x.device)\n\ndevice = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")\nx = x.to(device=device, dtype=torch.float32)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "dtype",
+                    "anchor": {
+                      "line": 5,
+                      "text": "x.dtype",
+                      "occurrence": 1
+                    },
+                    "title": "Tensor dtype",
+                    "explanation": "dtype describes the numeric type used to store tensor elements.",
+                    "required": true
+                  },
+                  {
+                    "id": "device",
+                    "anchor": {
+                      "line": 6,
+                      "text": "x.device",
+                      "occurrence": 1
+                    },
+                    "title": "Tensor device",
+                    "explanation": "device tells you where the tensor currently lives.",
+                    "required": true
+                  },
+                  {
+                    "id": "to",
+                    "anchor": {
+                      "line": 9,
+                      "text": "x.to(device=device, dtype=torch.float32)",
+                      "occurrence": 1
+                    },
+                    "title": "Move and/or convert",
+                    "explanation": ".to(...) can move a tensor to another device and can also change dtype.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "A common training pattern is `x = __________` before the forward pass.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A common training pattern is `x = x.to(device)` before the forward pass."
-              }
-            },
-            {
-              "id": "not_this",
+              "id": "compatibility",
               "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Model parameters and input tensors used by the same operation normally need to be on __________.",
+              "label": "KEEP OPERANDS COMPATIBLE",
+              "placeholder": "What is the common device rule for model operations?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -221,12 +285,14 @@
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "dtype, device, and `.to(...)` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/beginner/basics/tensorqs_tutorial.html"
-            }
-          ]
+          "prerequisite_node_ids": [
+            "domain-1-shape-ndim-numel"
+          ],
+          "map_position": {
+            "x": 0.58,
+            "y": 0.14
+          },
+          "source_refs": []
         },
         {
           "id": "domain-1-manual-seed",
@@ -234,54 +300,54 @@
           "concept_ids": [
             "ai.pytorch.manual_seed"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "START FROM A REPEATABLE PYTORCH RNG STATE",
+              "placeholder": "Click manual_seed and compare the repeated random draws.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "manual_seed.py",
+                "language": "python",
+                "code": "import torch\n\ntorch.manual_seed(42)\nfirst = torch.randn(3)\n\ntorch.manual_seed(42)\nsecond = torch.randn(3)\n\n# first and second begin from the same PyTorch random sequence",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "seed",
+                    "anchor": {
+                      "line": 3,
+                      "text": "torch.manual_seed(42)",
+                      "occurrence": 1
+                    },
+                    "title": "Set PyTorch's random seed",
+                    "explanation": "torch.manual_seed seeds PyTorch random-number generators so a run can begin from a repeatable random sequence.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "limit",
+              "kind": "not_this",
+              "label": "SEEDING IS NOT FULL DETERMINISM",
+              "placeholder": "What does a fixed seed not guarantee?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A fixed seed improves reproducibility but does not by itself guarantee that every operation is deterministic across every platform, backend, or PyTorch release."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-dtype-device-to"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.16
+            "x": 0.81,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` sets the seed for generating random numbers on all devices for PyTorch random-number generators.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`torch.manual_seed(seed)` sets the seed for generating random numbers on all devices for PyTorch random-number generators."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Use a __________ when you want runs to begin from repeatable PyTorch random-number sequences.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use a fixed seed when you want runs to begin from repeatable PyTorch random-number sequences."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "A fixed seed improves reproducibility but __________ every operation is deterministic on every platform.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A fixed seed improves reproducibility but does not by itself guarantee every operation is deterministic on every platform."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Random seeds — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/notes/randomness.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -308,52 +374,104 @@
           "concept_ids": [
             "ai.pytorch.reshape_view"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.38
-          },
           "prompts": [
             {
-              "id": "what",
+              "id": "compare",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ changes tensor shape while preserving the number of elements and may return either a view or a copy.",
+              "label": "RESHAPE OR VIEW?",
+              "placeholder": "Reveal one property column at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "`reshape` changes tensor shape while preserving the number of elements and may return either a view or a copy."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "op",
+                    "label": "Operation"
+                  },
+                  {
+                    "id": "layout",
+                    "label": "Layout requirement"
+                  },
+                  {
+                    "id": "copy",
+                    "label": "View/copy behavior"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "reshape",
+                    "cells": {
+                      "op": "reshape",
+                      "layout": "Works across more input layouts",
+                      "copy": "May return a view or a copy"
+                    }
+                  },
+                  {
+                    "id": "view",
+                    "cells": {
+                      "op": "view",
+                      "layout": "Requires a compatible stride/layout",
+                      "copy": "Returns a view when valid"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "column",
+                  "initially_visible": {
+                    "column_ids": [
+                      "op"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Use `__________` when one dimension should be inferred automatically.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "RESHAPE WHILE PRESERVING ELEMENT COUNT",
+              "placeholder": "Click reshape and the inferred -1 dimension.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use `x.reshape(batch, -1)` when one dimension should be inferred automatically."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Do not depend on `reshape` __________; use shape semantics rather than copy-versus-view behavior as your assumption.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not depend on `reshape` returning a view; use shape semantics rather than copy-versus-view behavior as your assumption."
+                "type": "code_file",
+                "filename": "reshape_view.py",
+                "language": "python",
+                "code": "import torch\n\nx = torch.arange(24).reshape(2, 3, 4)\n\nflat = x.reshape(2, -1)\n\n# x.shape    -> [2, 3, 4]\n# flat.shape -> [2, 12]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "reshape",
+                    "anchor": {
+                      "line": 5,
+                      "text": "x.reshape(2, -1)",
+                      "occurrence": 1
+                    },
+                    "title": "Change shape",
+                    "explanation": "reshape preserves the total number of elements while changing the dimension structure.",
+                    "required": true
+                  },
+                  {
+                    "id": "infer",
+                    "anchor": {
+                      "line": 5,
+                      "text": "-1",
+                      "occurrence": 1
+                    },
+                    "title": "Infer one dimension",
+                    "explanation": "A single -1 tells PyTorch to infer that dimension from the remaining sizes.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "`reshape` and `view` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.reshape.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "source_refs": []
         },
         {
           "id": "domain-1-unsqueeze-squeeze",
@@ -361,54 +479,65 @@
           "concept_ids": [
             "ai.pytorch.unsqueeze_squeeze"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "ADD OR REMOVE SIZE-1 AXES",
+              "placeholder": "Click unsqueeze and squeeze.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "squeeze_unsqueeze.py",
+                "language": "python",
+                "code": "import torch\n\nimage = torch.zeros((3, 224, 224))\nbatched = image.unsqueeze(0)\n\nrestored = batched.squeeze(0)\n\n# image.shape   -> [3, 224, 224]\n# batched.shape -> [1, 3, 224, 224]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "unsqueeze",
+                    "anchor": {
+                      "line": 4,
+                      "text": "image.unsqueeze(0)",
+                      "occurrence": 1
+                    },
+                    "title": "Insert a size-1 dimension",
+                    "explanation": "unsqueeze(0) adds a leading dimension, which is useful when turning one sample into a batch of size 1.",
+                    "required": true
+                  },
+                  {
+                    "id": "squeeze",
+                    "anchor": {
+                      "line": 6,
+                      "text": "batched.squeeze(0)",
+                      "occurrence": 1
+                    },
+                    "title": "Remove a selected size-1 dimension",
+                    "explanation": "squeeze(0) removes only dimension 0 when its size is 1.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "gotcha",
+              "kind": "not_this",
+              "label": "BE CAREFUL WITH BARE squeeze()",
+              "placeholder": "Why can squeeze() be dangerous when batch size may equal 1?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Bare squeeze() removes every size-1 dimension, so it can accidentally remove a meaningful batch dimension. Prefer squeeze(dim) when you know which axis should disappear."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-reshape-view"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.38
+            "x": 0.35,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` inserts a size-1 dimension, while `squeeze(dim)` removes a size-1 dimension at the selected position.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`unsqueeze(dim)` inserts a size-1 dimension, while `squeeze(dim)` removes a size-1 dimension at the selected position."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Use `__________` to add a leading batch-like axis to an unbatched tensor.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use `x.unsqueeze(0)` to add a leading batch-like axis to an unbatched tensor."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Be careful with __________ when a batch dimension can equal 1, because it removes every size-1 dimension.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Be careful with bare `squeeze()` when a batch dimension can equal 1, because it removes every size-1 dimension."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "`unsqueeze` and `squeeze` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.unsqueeze.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-1-permute-transpose",
@@ -416,54 +545,65 @@
           "concept_ids": [
             "ai.pytorch.permute_transpose"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "REORDER DIMENSIONS",
+              "placeholder": "Click permute and transpose and compare their scope.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "permute_transpose.py",
+                "language": "python",
+                "code": "import torch\n\nnhwc = torch.zeros((8, 224, 224, 3))\nnchw = nhwc.permute(0, 3, 1, 2)\n\nmatrix = torch.zeros((5, 7))\nmatrix_t = matrix.transpose(0, 1)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "permute",
+                    "anchor": {
+                      "line": 4,
+                      "text": "nhwc.permute(0, 3, 1, 2)",
+                      "occurrence": 1
+                    },
+                    "title": "Reorder multiple axes",
+                    "explanation": "permute can rearrange all dimensions in one operation; here NHWC becomes NCHW.",
+                    "required": true
+                  },
+                  {
+                    "id": "transpose",
+                    "anchor": {
+                      "line": 7,
+                      "text": "matrix.transpose(0, 1)",
+                      "occurrence": 1
+                    },
+                    "title": "Swap two axes",
+                    "explanation": "transpose(dim0, dim1) swaps exactly two selected dimensions.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "layout",
+              "kind": "not_this",
+              "label": "REORDERING CHANGES STRIDES",
+              "placeholder": "What layout detail can matter after permute/transpose?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Permuting or transposing dimensions changes tensor strides and layout. Some later operations may require a compatible or contiguous layout."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-unsqueeze-squeeze"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.38
+            "x": 0.58,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ reorders multiple dimensions, while `transpose(dim0, dim1)` swaps two dimensions.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`permute(...)` reorders multiple dimensions, while `transpose(dim0, dim1)` swaps two dimensions."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Image pipelines often use `__________` to convert NHWC data to NCHW.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Image pipelines often use `x.permute(0, 3, 1, 2)` to convert NHWC data to NCHW."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Permuting dimensions __________ and layout; some later operations may require a compatible or contiguous layout.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Permuting dimensions changes strides and layout; some later operations may require a compatible or contiguous layout."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "`permute` and `transpose` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.permute.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-1-cat-stack",
@@ -471,54 +611,106 @@
           "concept_ids": [
             "ai.pytorch.cat_stack"
           ],
+          "prompts": [
+            {
+              "id": "compare",
+              "kind": "what",
+              "label": "CAT OR STACK?",
+              "placeholder": "Reveal the shape effect after identifying the operation.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "op",
+                    "label": "Operation"
+                  },
+                  {
+                    "id": "axis",
+                    "label": "What happens"
+                  },
+                  {
+                    "id": "shape",
+                    "label": "Example"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "cat",
+                    "cells": {
+                      "op": "torch.cat",
+                      "axis": "Joins along an existing dimension",
+                      "shape": "two [2, 3] tensors → [4, 3] with dim=0"
+                    }
+                  },
+                  {
+                    "id": "stack",
+                    "cells": {
+                      "op": "torch.stack",
+                      "axis": "Creates a new dimension",
+                      "shape": "two [2, 3] tensors → [2, 2, 3] with dim=0"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "column",
+                  "initially_visible": {
+                    "column_ids": [
+                      "op"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "SEE THE DIMENSION CHANGE",
+              "placeholder": "Click cat and stack.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "cat_stack.py",
+                "language": "python",
+                "code": "import torch\n\na = torch.zeros((2, 3))\nb = torch.ones((2, 3))\n\njoined = torch.cat([a, b], dim=0)\nbatched = torch.stack([a, b], dim=0)\n\n# joined.shape  -> [4, 3]\n# batched.shape -> [2, 2, 3]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "cat",
+                    "anchor": {
+                      "line": 6,
+                      "text": "torch.cat([a, b], dim=0)",
+                      "occurrence": 1
+                    },
+                    "title": "Join an existing axis",
+                    "explanation": "cat extends dimension 0 without increasing the number of dimensions.",
+                    "required": true
+                  },
+                  {
+                    "id": "stack",
+                    "anchor": {
+                      "line": 7,
+                      "text": "torch.stack([a, b], dim=0)",
+                      "occurrence": 1
+                    },
+                    "title": "Create a new axis",
+                    "explanation": "stack inserts a new dimension that identifies which source tensor each slice came from.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-permute-transpose"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.38
+            "x": 0.81,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ joins tensors along an existing dimension, while `torch.stack` joins tensors along a newly created dimension.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`torch.cat` joins tensors along an existing dimension, while `torch.stack` joins tensors along a newly created dimension."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Use `__________` when separate same-shaped samples should become a new batch dimension.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use `torch.stack(samples, dim=0)` when separate same-shaped samples should become a new batch dimension."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Do not substitute `stack` for `cat`: `stack` __________ and `cat` does not.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not substitute `stack` for `cat`: `stack` increases the number of dimensions and `cat` does not."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "`cat` vs `stack` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.cat.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -545,52 +737,109 @@
           "concept_ids": [
             "ai.pytorch.broadcasting"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.6
-          },
           "prompts": [
             {
-              "id": "what",
+              "id": "rules",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ lets compatible tensor shapes participate in elementwise operations without explicitly copying values to the larger shape.",
+              "label": "CHECK BROADCAST COMPATIBILITY",
+              "placeholder": "Reveal each example after comparing shapes from the trailing dimensions.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Broadcasting lets compatible tensor shapes participate in elementwise operations without explicitly copying values to the larger shape."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "left",
+                    "label": "Left shape"
+                  },
+                  {
+                    "id": "right",
+                    "label": "Right shape"
+                  },
+                  {
+                    "id": "works",
+                    "label": "Broadcasts?"
+                  },
+                  {
+                    "id": "result",
+                    "label": "Result"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "bias",
+                    "cells": {
+                      "left": "[32, 128]",
+                      "right": "[128]",
+                      "works": "Yes",
+                      "result": "[32, 128]"
+                    }
+                  },
+                  {
+                    "id": "column",
+                    "cells": {
+                      "left": "[4, 3]",
+                      "right": "[4, 1]",
+                      "works": "Yes",
+                      "result": "[4, 3]"
+                    }
+                  },
+                  {
+                    "id": "bad",
+                    "cells": {
+                      "left": "[4, 3]",
+                      "right": "[4]",
+                      "works": "No",
+                      "result": "Trailing sizes 3 and 4 conflict"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "left",
+                      "right"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "A bias shaped `[features]` can __________ a batch shaped `[batch, features]` during addition.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "BROADCAST A FEATURE BIAS",
+              "placeholder": "Click the bias addition and match it to the shapes.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A bias shaped `[features]` can broadcast across a batch shaped `[batch, features]` during addition."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Two dimensions are not broadcast-compatible when their sizes differ and __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Two dimensions are not broadcast-compatible when their sizes differ and neither size is 1."
+                "type": "code_file",
+                "filename": "broadcasting.py",
+                "language": "python",
+                "code": "import torch\n\nbatch = torch.randn(32, 128)\nbias = torch.randn(128)\n\nshifted = batch + bias\n\n# batch.shape   -> [32, 128]\n# bias.shape    -> [128]\n# shifted.shape -> [32, 128]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "add",
+                    "anchor": {
+                      "line": 6,
+                      "text": "batch + bias",
+                      "occurrence": 1
+                    },
+                    "title": "Implicit broadcasting",
+                    "explanation": "The [128] bias broadcasts across the leading batch dimension without an explicit copy.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Broadcasting — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/notes/broadcasting.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "source_refs": []
         },
         {
           "id": "domain-1-reductions-dim",
@@ -598,54 +847,65 @@
           "concept_ids": [
             "ai.pytorch.reductions_dim"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "REDUCE THE INTENDED AXIS",
+              "placeholder": "Click dim and keepdim. Watch which dimension disappears.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "reductions.py",
+                "language": "python",
+                "code": "import torch\n\nx = torch.arange(12, dtype=torch.float32).reshape(3, 4)\n\ncolumn_mean = x.mean(dim=0)\nrow_sum = x.sum(dim=1)\nrow_mean_keep = x.mean(dim=1, keepdim=True)\n\n# column_mean.shape -> [4]\n# row_sum.shape     -> [3]\n# row_mean_keep.shape -> [3, 1]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "dim0",
+                    "anchor": {
+                      "line": 5,
+                      "text": "x.mean(dim=0)",
+                      "occurrence": 1
+                    },
+                    "title": "Reduce dimension 0",
+                    "explanation": "Dimension 0 disappears, leaving one result for each column.",
+                    "required": true
+                  },
+                  {
+                    "id": "dim1",
+                    "anchor": {
+                      "line": 6,
+                      "text": "x.sum(dim=1)",
+                      "occurrence": 1
+                    },
+                    "title": "Reduce dimension 1",
+                    "explanation": "Dimension 1 disappears, leaving one result for each row.",
+                    "required": true
+                  },
+                  {
+                    "id": "keep",
+                    "anchor": {
+                      "line": 7,
+                      "text": "keepdim=True",
+                      "occurrence": 1
+                    },
+                    "title": "Keep a size-1 axis",
+                    "explanation": "keepdim preserves the reduced axis with length 1, which can simplify later broadcasting.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-broadcasting"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.6
+            "x": 0.35,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Reduction operations such as `sum` and `mean` reduce values along selected dimensions, and `__________` preserves reduced axes with size 1.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Reduction operations such as `sum` and `mean` reduce values along selected dimensions, and `keepdim=True` preserves reduced axes with size 1."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Use `__________` to average across the first dimension.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use `x.mean(dim=0)` to average across the first dimension."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Choosing the __________ is a common shape bug because it changes which axis is aggregated.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Choosing the wrong `dim` is a common shape bug because it changes which axis is aggregated."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Reductions and `dim` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/beginner/basics/tensorqs_tutorial.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-1-matmul",
@@ -653,54 +913,65 @@
           "concept_ids": [
             "ai.pytorch.matmul"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ MATRIX MULTIPLICATION SHAPES",
+              "placeholder": "Click @ and compare it with elementwise multiplication.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "matmul.py",
+                "language": "python",
+                "code": "import torch\n\nx = torch.randn(32, 128)\nweight = torch.randn(64, 128)\n\ny = x @ weight.T\n\n# x:        [32, 128]\n# weight.T: [128, 64]\n# y:        [32, 64]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "matmul",
+                    "anchor": {
+                      "line": 6,
+                      "text": "x @ weight.T",
+                      "occurrence": 1
+                    },
+                    "title": "Matrix multiplication",
+                    "explanation": "The inner 128-sized dimensions align, producing one 64-feature output vector per batch item.",
+                    "required": true
+                  },
+                  {
+                    "id": "transpose",
+                    "anchor": {
+                      "line": 6,
+                      "text": "weight.T",
+                      "occurrence": 1
+                    },
+                    "title": "Transpose the weight rows",
+                    "explanation": "The weight tensor is transposed so its in_features dimension aligns with x.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "not_elementwise",
+              "kind": "not_this",
+              "label": "DON'T CONFUSE @ WITH *",
+              "placeholder": "What does elementwise * do instead?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Elementwise * multiplies aligned tensor elements using broadcasting rules; it is not matrix multiplication."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-reductions-dim"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.6
+            "x": 0.58,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ and the `@` operator perform matrix multiplication with PyTorch broadcasting rules for batched dimensions.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`torch.matmul` and the `@` operator perform matrix multiplication with PyTorch broadcasting rules for batched dimensions."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "For a linear-style calculation, `y = __________` multiplies feature vectors by transposed weight rows.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "For a linear-style calculation, `y = x @ weight.T` multiplies feature vectors by transposed weight rows."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ is not matrix multiplication.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Elementwise `*` is not matrix multiplication."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Matrix multiplication — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.matmul.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-1-softmax-argmax",
@@ -708,54 +979,65 @@
           "concept_ids": [
             "ai.pytorch.softmax_argmax"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "TURN LOGITS INTO PROBABILITIES OR CLASS IDS",
+              "placeholder": "Click softmax dim and argmax dim.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "softmax_argmax.py",
+                "language": "python",
+                "code": "import torch\n\nlogits = torch.tensor([\n    [2.0, 0.5, -1.0],\n    [0.1, 1.5, 0.4],\n])\n\nprobabilities = torch.softmax(logits, dim=1)\npredictions = logits.argmax(dim=1)\n\n# probabilities.shape -> [2, 3]\n# predictions.shape   -> [2]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "softmax",
+                    "anchor": {
+                      "line": 8,
+                      "text": "torch.softmax(logits, dim=1)",
+                      "occurrence": 1
+                    },
+                    "title": "Normalize class scores",
+                    "explanation": "For [batch, classes] logits, dim=1 normalizes across classes within each sample.",
+                    "required": true
+                  },
+                  {
+                    "id": "argmax",
+                    "anchor": {
+                      "line": 9,
+                      "text": "logits.argmax(dim=1)",
+                      "occurrence": 1
+                    },
+                    "title": "Pick the largest class score",
+                    "explanation": "argmax returns the class index with the maximum logit for each sample.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "ce",
+              "kind": "not_this",
+              "label": "CROSS-ENTROPY EXPECTS LOGITS",
+              "placeholder": "Should you apply softmax before nn.CrossEntropyLoss?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "No. CrossEntropyLoss expects unnormalized logits directly, so do not apply softmax before the loss."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-matmul"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.6
+            "x": 0.81,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ converts scores along a chosen dimension into values that sum to 1, while `argmax` returns the index of the largest value.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`softmax` converts scores along a chosen dimension into values that sum to 1, while `argmax` returns the index of the largest value."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "For class logits shaped `[batch, classes]`, class probabilities commonly use `softmax(logits, __________)`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "For class logits shaped `[batch, classes]`, class probabilities commonly use `softmax(logits, dim=1)`."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ before `CrossEntropyLoss`; it expects unnormalized logits.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not apply softmax before `CrossEntropyLoss`; it expects unnormalized logits."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Softmax and argmax — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.softmax.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }
