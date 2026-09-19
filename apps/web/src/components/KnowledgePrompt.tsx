@@ -1,4 +1,8 @@
 import type { KnowledgePrompt as KnowledgePromptData } from "../api/types";
+import {
+  comparisonGridClass,
+  comparisonPlaceholderColumns,
+} from "../lib/comparison";
 import { PROMPT_KIND_META, promptAccessibleName, promptWords } from "../state/learningVocabulary";
 import RevealContent from "./RevealContent";
 
@@ -24,6 +28,13 @@ export default function KnowledgePrompt({
 }: KnowledgePromptProps) {
   const meta = PROMPT_KIND_META[prompt.kind];
   const accessibleName = promptAccessibleName(prompt);
+  // A comparison prompt mirrors its columns in the blank, so show the blank as
+  // aligned column cells instead of one running line.
+  const columnSegments =
+    prompt.reveal.type === "comparison"
+      ? comparisonPlaceholderColumns(prompt.placeholder)
+      : [];
+  const hasColumns = columnSegments.length > 1;
 
   return (
     <li
@@ -49,13 +60,31 @@ export default function KnowledgePrompt({
       ) : (
         <button
           type="button"
-          className="knowledge-prompt-blank"
+          className={`knowledge-prompt-blank${
+            hasColumns ? " knowledge-prompt-blank--columns" : ""
+          }`}
           aria-label={`Reveal ${accessibleName}`}
           aria-expanded={false}
           disabled={disabled}
           onClick={() => onReveal(prompt.id)}
         >
-          {prompt.placeholder}
+          {hasColumns ? (
+            <span
+              className={`comparison-grid ${comparisonGridClass(columnSegments.length)}`}
+              data-columns={columnSegments.length}
+            >
+              {columnSegments.map((segment, index) => (
+                <span
+                  key={`${index}-${segment}`}
+                  className="knowledge-prompt-blank-cell"
+                >
+                  {segment}
+                </span>
+              ))}
+            </span>
+          ) : (
+            prompt.placeholder
+          )}
         </button>
       )}
     </li>

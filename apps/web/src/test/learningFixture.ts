@@ -93,7 +93,7 @@ export const learningFixture: LearningDomainResponse = {
               id: "compare",
               kind: "mental_model",
               label: "🧠 MENTAL MODEL",
-              placeholder: "Beta versus Gamma",
+              placeholder: "Beta: first | Gamma: __________",
               required: true,
               reveal: {
                 type: "comparison",

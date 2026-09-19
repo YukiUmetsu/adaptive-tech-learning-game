@@ -54,6 +54,36 @@ describe("RevealContent", () => {
     expect(screen.getByText("API activity")).toBeInTheDocument();
     expect(screen.getByText("Metrics / logs")).toBeInTheDocument();
   });
+
+  it("scales the comparison grid by column count", () => {
+    const columns = (count: number) =>
+      Array.from({ length: count }, (_, index) => ({
+        title: `Column ${index + 1}`,
+        items: [`item ${index + 1}`],
+      }));
+
+    const two = render(
+      <RevealContent reveal={{ type: "comparison", columns: columns(2) }} />,
+    );
+    expect(two.container.querySelector(".reveal-comparison")).toHaveClass(
+      "comparison-grid--cols-2",
+    );
+
+    const three = render(
+      <RevealContent reveal={{ type: "comparison", columns: columns(3) }} />,
+    );
+    expect(three.container.querySelector(".reveal-comparison")).toHaveClass(
+      "comparison-grid--cols-3",
+    );
+
+    const six = render(
+      <RevealContent reveal={{ type: "comparison", columns: columns(6) }} />,
+    );
+    const sixGrid = six.container.querySelector(".reveal-comparison");
+    expect(sixGrid).toHaveClass("comparison-grid--cols-many");
+    expect(sixGrid).toHaveAttribute("data-columns", "6");
+    expect(six.container.querySelectorAll(".reveal-comparison-column")).toHaveLength(6);
+  });
 });
 
 describe("prompt vocabulary", () => {

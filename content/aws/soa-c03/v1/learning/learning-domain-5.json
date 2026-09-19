@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "soa-c03-learning-2026-09-18",
+  "content_version": "soa-c03-learning-2026-09-18-v2",
   "certification_id": "aws-soa-c03",
   "certification_version": "soa-c03",
   "exam_guide_revision": "1.1",
@@ -44,7 +44,7 @@
               "id": "mental",
               "kind": "mental_model",
               "label": "🧠 MENTAL MODEL",
-              "placeholder": "VPC CIDR → subnet CIDRs → ENI private __________.",
+              "placeholder": "Subnets carve the VPC address space into __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -55,7 +55,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Public subnet = route to an internet gateway plus resource/public-address requirements; subnet itself is not “public” by __________.",
+              "placeholder": "Internet reachability depends on routing and __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -66,7 +66,7 @@
               "id": "look",
               "kind": "look_for",
               "label": "🔍 LOOK FOR",
-              "placeholder": "Deployment fails with insufficient addresses → check subnet free __________.",
+              "placeholder": "CIDR sizing and available IP __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -99,7 +99,7 @@
               "id": "what",
               "kind": "what",
               "label": "❓ WHAT?",
-              "placeholder": "Destination CIDR/prefix → next-hop __________.",
+              "placeholder": "Route tables determine where subnet/ENI __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -110,7 +110,7 @@
               "id": "mental",
               "kind": "mental_model",
               "label": "🧠 MENTAL MODEL",
-              "placeholder": "Most specific matching route __________.",
+              "placeholder": "Routing chooses the most __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -125,7 +125,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Route tables are one of the first checks."
+                "text": "Route tables. Check whether the destination has a route to the required NAT gateway, internet gateway, Transit Gateway, or other target."
               }
             }
           ],
@@ -154,7 +154,7 @@
               "id": "what",
               "kind": "what",
               "label": "❓ WHAT?",
-              "placeholder": "Stateful virtual firewall at ENI/resource __________.",
+              "placeholder": "Security groups control allowed inbound/outbound traffic __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -165,7 +165,7 @@
               "id": "mental",
               "kind": "mental_model",
               "label": "🧠 MENTAL MODEL",
-              "placeholder": "Return traffic for an allowed flow is automatically __________.",
+              "placeholder": "Stateful behavior tracks __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -176,7 +176,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Security group rules are allow-only; no explicit __________ rules.",
+              "placeholder": "Network ACLs support allow __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -209,7 +209,7 @@
               "id": "what",
               "kind": "what",
               "label": "❓ WHAT?",
-              "placeholder": "Stateless subnet-level allow/deny __________.",
+              "placeholder": "Network ACLs filter traffic entering/leaving subnets __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -220,7 +220,7 @@
               "id": "mental",
               "kind": "mental_model",
               "label": "🧠 MENTAL MODEL",
-              "placeholder": "Because NACLs are stateless, allow both request and return __________.",
+              "placeholder": "Return-path ephemeral ports/directions must be __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -231,7 +231,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Security group / NACL",
+              "placeholder": "Security group: stateful, ENI/resource scope, allow rules | NACL: __________",
               "required": true,
               "reveal": {
                 "type": "comparison",
@@ -278,7 +278,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "IGW / NAT Gateway / Egress-only IGW",
+              "placeholder": "Internet Gateway: public IPv4/IPv6 internet path for addressed resources | NAT Gateway: __________ | Egress-only IGW: __________",
               "required": true,
               "reveal": {
                 "type": "comparison",
@@ -312,7 +312,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Use a NAT gateway in an appropriate public subnet plus routes."
+                "text": "NAT gateway. Place it appropriately and route private IPv4 outbound internet traffic through it."
               }
             },
             {
@@ -323,7 +323,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Use an egress-only internet gateway."
+                "text": "Egress-only internet gateway. Use it for outbound-only IPv6 internet access from a VPC."
               }
             }
           ],
@@ -368,7 +368,7 @@
               "id": "mental",
               "kind": "mental_model",
               "label": "🧠 MENTAL MODEL",
-              "placeholder": "Gateway endpoint / interface endpoint",
+              "placeholder": "Gateway endpoint: route-table target for supported services such as S3/DynamoDB | Interface endpoint: __________",
               "required": true,
               "reveal": {
                 "type": "comparison",
@@ -392,7 +392,7 @@
               "id": "when",
               "kind": "when",
               "label": "⏱️ WHEN?",
-              "placeholder": "Access supported AWS service privately without NAT/internet → __________.",
+              "placeholder": "A VPC endpoint is __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -403,7 +403,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "PrivateLink provides service connectivity; it is not full VPC-to-VPC __________.",
+              "placeholder": "Use peering/TGW/VPN/DX for broader __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -434,7 +434,7 @@
               "id": "what",
               "kind": "what",
               "label": "❓ WHAT?",
-              "placeholder": "Private IP connectivity between two VPCs via a non-transitive __________.",
+              "placeholder": "VPC peering directly __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -445,7 +445,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Peering is non-__________.",
+              "placeholder": "You cannot use one peered VPC as a transit __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -456,7 +456,7 @@
               "id": "when",
               "kind": "when",
               "label": "⏱️ WHEN?",
-              "placeholder": "Small number of direct VPC pairs → peering may be simpler than __________.",
+              "placeholder": "Transit Gateway becomes attractive as connectivity grows __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -489,7 +489,7 @@
               "id": "what",
               "kind": "what",
               "label": "❓ WHAT?",
-              "placeholder": "Hub for connecting many VPCs and on-premises __________.",
+              "placeholder": "Transit Gateway provides centralized routing __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -500,7 +500,7 @@
               "id": "when",
               "kind": "when",
               "label": "⏱️ WHEN?",
-              "placeholder": "Many VPCs with complex mesh peering → consider __________.",
+              "placeholder": "Transit Gateway can reduce __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -511,7 +511,7 @@
               "id": "mental",
               "kind": "mental_model",
               "label": "🧠 MENTAL MODEL",
-              "placeholder": "Attachment + TGW route table + propagation/association → __________.",
+              "placeholder": "Troubleshoot both attachment state and __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -542,7 +542,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "WAF / Shield / Network Firewall / DNS Firewall",
+              "placeholder": "WAF: HTTP(S) web request filtering | Shield: __________ | Network Firewall: __________ | Route 53 Resolver DNS Firewall: __________",
               "required": true,
               "reveal": {
                 "type": "comparison",
@@ -578,7 +578,7 @@
               "id": "when",
               "kind": "when",
               "label": "⏱️ WHEN?",
-              "placeholder": "SQL injection/web path rules → __________.",
+              "placeholder": "__________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -589,7 +589,7 @@
               "id": "when2",
               "kind": "when",
               "label": "⏱️ WHEN?",
-              "placeholder": "Filter DNS queries to malicious domains → __________.",
+              "placeholder": "Route 53 Resolver __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -622,7 +622,7 @@
               "id": "look",
               "kind": "look_for",
               "label": "🔍 LOOK FOR",
-              "placeholder": "NAT processing, cross-AZ/Region transfer, public egress, and duplicated __________.",
+              "placeholder": "Network cost depends heavily on traffic path __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -633,7 +633,7 @@
               "id": "action",
               "kind": "action",
               "label": "⚡ ACTION",
-              "placeholder": "Keep high-volume traffic on efficient/private paths where that reduces data-processing/transfer __________.",
+              "placeholder": "Evaluate endpoints, topology, AZ placement, CloudFront, and __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -644,7 +644,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Cheapest path is not automatically the most resilient/secure __________.",
+              "placeholder": "Optimize cost within availability, security __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -693,7 +693,7 @@
               "id": "mental",
               "kind": "mental_model",
               "label": "🧠 MENTAL MODEL",
-              "placeholder": "Domain → hosted zone → DNS record → __________.",
+              "placeholder": "DNS records map names to values/targets according to record __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -704,7 +704,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Public hosted zone / private hosted zone",
+              "placeholder": "Public: internet DNS | Private: __________",
               "required": true,
               "reveal": {
                 "type": "comparison",
@@ -728,7 +728,7 @@
               "id": "look",
               "kind": "look_for",
               "label": "🔍 LOOK FOR",
-              "placeholder": "Alias record can point to supported AWS resources without exposing a fixed __________.",
+              "placeholder": "Alias records integrate directly with __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -761,7 +761,7 @@
               "id": "mental",
               "kind": "mental_model",
               "label": "🧠 MENTAL MODEL",
-              "placeholder": "Inbound endpoint: on-prem → VPC DNS; outbound endpoint: VPC → on-prem DNS.",
+              "placeholder": "Inbound: external/on-prem resolvers query Route 53 Resolver | Outbound: __________",
               "required": true,
               "reveal": {
                 "type": "comparison",
@@ -785,7 +785,7 @@
               "id": "when",
               "kind": "when",
               "label": "⏱️ WHEN?",
-              "placeholder": "Hybrid DNS between VPC and on-prem domains → __________.",
+              "placeholder": "Use Route 53 __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -796,7 +796,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Resolver endpoint is not a general-purpose TCP/IP __________.",
+              "placeholder": "It is for __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -829,7 +829,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Weighted / latency / failover / geolocation / geoproximity / multivalue",
+              "placeholder": "Weighted: split by configured weights | Latency: __________ | Failover: __________ | Geolocation: __________ | Geoproximity: __________ | Multivalue: __________",
               "required": true,
               "reveal": {
                 "type": "comparison",
@@ -881,7 +881,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Weighted routing."
+                "text": "Weighted routing. Use configured weights to split DNS responses between endpoints."
               }
             },
             {
@@ -892,7 +892,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Latency-based routing."
+                "text": "Latency-based routing. Route users to the Region that provides the lowest measured latency."
               }
             }
           ],
@@ -921,7 +921,7 @@
               "id": "what",
               "kind": "what",
               "label": "❓ WHAT?",
-              "placeholder": "Capture DNS queries for visibility/troubleshooting and security __________.",
+              "placeholder": "Route 53 Resolver query logging records DNS queries __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -932,7 +932,7 @@
               "id": "when",
               "kind": "when",
               "label": "⏱️ WHEN?",
-              "placeholder": "Need to know which domains workloads are resolving → __________.",
+              "placeholder": "Enable Resolver query logging for __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -943,7 +943,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Query logging is not the same as VPC Flow Logs, which record network flow __________.",
+              "placeholder": "Use the log source that __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -974,7 +974,7 @@
               "id": "what",
               "kind": "what",
               "label": "❓ WHAT?",
-              "placeholder": "CDN that caches/serves content through global edge __________.",
+              "placeholder": "CloudFront accelerates HTTP(S) content delivery and can protect/origin-shield __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -985,7 +985,7 @@
               "id": "mental",
               "kind": "mental_model",
               "label": "🧠 MENTAL MODEL",
-              "placeholder": "Viewer → edge → origin",
+              "placeholder": "Viewer → __________ → Origin",
               "required": true,
               "reveal": {
                 "type": "sequence",
@@ -1000,7 +1000,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "CloudFront / Global Accelerator",
+              "placeholder": "CloudFront: HTTP(S) content caching/distribution | Global Accelerator: __________",
               "required": true,
               "reveal": {
                 "type": "comparison",
@@ -1046,7 +1046,7 @@
               "id": "look",
               "kind": "look_for",
               "label": "🔍 LOOK FOR",
-              "placeholder": "Cache key includes selected headers/cookies/query strings; extra variance lowers cache __________.",
+              "placeholder": "Keep the cache key only as variable __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1057,7 +1057,7 @@
               "id": "action",
               "kind": "action",
               "label": "⚡ ACTION",
-              "placeholder": "Stale cached object after urgent update → use invalidation or versioned object __________.",
+              "placeholder": "Control freshness with TTLs, invalidations, and __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1068,7 +1068,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Origin request policy can forward values without making them part of the cache __________.",
+              "placeholder": "Separate cache variation from __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1101,7 +1101,7 @@
               "id": "what",
               "kind": "what",
               "label": "❓ WHAT?",
-              "placeholder": "Static anycast IP entry points route traffic across the AWS global __________.",
+              "placeholder": "Global Accelerator improves availability/performance for supported application endpoints using __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1112,7 +1112,7 @@
               "id": "when",
               "kind": "when",
               "label": "⏱️ WHEN?",
-              "placeholder": "Need static global IPs and accelerate TCP/UDP or non-cacheable app traffic → __________.",
+              "placeholder": "Global Accelerator is __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1123,7 +1123,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Global Accelerator does not cache web objects like __________.",
+              "placeholder": "CloudFront provides CDN __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1177,7 +1177,7 @@
               "id": "mental",
               "kind": "mental_model",
               "label": "🧠 MENTAL MODEL",
-              "placeholder": "Source → route → security controls → middleboxes/gateways → destination → return __________.",
+              "placeholder": "Validate every hop and __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1188,7 +1188,7 @@
               "id": "look",
               "kind": "look_for",
               "label": "🔍 LOOK FOR",
-              "placeholder": "Check DNS, routes, SGs, NACLs, target/service health, and __________.",
+              "placeholder": "Also inspect NAT/TGW/endpoints/firewalls and return __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1199,7 +1199,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Opening every port is not a valid troubleshooting __________.",
+              "placeholder": "Diagnose the actual blocking control and __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1232,7 +1232,7 @@
               "id": "what",
               "kind": "what",
               "label": "❓ WHAT?",
-              "placeholder": "Network flow metadata such as source/destination, ports, protocol, and accept/reject __________.",
+              "placeholder": "VPC Flow Logs capture metadata for IP traffic at __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1243,7 +1243,7 @@
               "id": "when",
               "kind": "when",
               "label": "⏱️ WHEN?",
-              "placeholder": "Use to verify whether traffic is reaching an ENI/subnet/VPC and whether it is accepted/rejected.",
+              "placeholder": "Flow records help narrow down network __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1254,7 +1254,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Flow Logs do not capture full packet payload __________.",
+              "placeholder": "They are flow metadata __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1289,7 +1289,7 @@
               "id": "mental",
               "kind": "mental_model",
               "label": "🧠 MENTAL MODEL",
-              "placeholder": "Pick logs at the layer where the failure is __________.",
+              "placeholder": "ELB access logs __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1300,7 +1300,7 @@
               "id": "look",
               "kind": "look_for",
               "label": "🔍 LOOK FOR",
-              "placeholder": "Client reached edge but origin returned error → correlate CloudFront/ELB/app __________.",
+              "placeholder": "Cross-layer correlation helps identify where __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1311,7 +1311,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "One log source rarely explains an entire multi-tier request __________.",
+              "placeholder": "Correlate request IDs/timestamps __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1352,7 +1352,7 @@
               "id": "what",
               "kind": "what",
               "label": "❓ WHAT?",
-              "placeholder": "Static configuration analysis of network __________ between source and destination.",
+              "placeholder": "Reachability Analyzer analyzes the configured path and identifies blocking/missing __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1363,7 +1363,7 @@
               "id": "when",
               "kind": "when",
               "label": "⏱️ WHEN?",
-              "placeholder": "“Which route/SG/NACL component prevents connectivity?” → __________.",
+              "placeholder": "VPC Reachability Analyzer is a __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1374,7 +1374,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "It is not an end-to-end live latency/performance __________.",
+              "placeholder": "Use monitoring/synthetic/flow tools __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1407,7 +1407,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Direct Connect / Site-to-Site VPN",
+              "placeholder": "Direct Connect: dedicated/private connectivity via DX location/partner | Site-to-Site VPN: __________",
               "required": true,
               "reveal": {
                 "type": "comparison",
@@ -1431,7 +1431,7 @@
               "id": "mental",
               "kind": "mental_model",
               "label": "🧠 MENTAL MODEL",
-              "placeholder": "Hybrid troubleshooting includes BGP/routes, tunnel/virtual interface state, on-prem firewall, and __________.",
+              "placeholder": "Validate both AWS and on-premises __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1446,7 +1446,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Direct Connect; Site-to-Site VPN."
+                "text": "Direct Connect for a dedicated private connection; Site-to-Site VPN for encrypted IPsec tunnels over the internet."
               }
             }
           ],
@@ -1481,7 +1481,7 @@
               "id": "look",
               "kind": "look_for",
               "label": "🔍 LOOK FOR",
-              "placeholder": "Endpoint policy, DNS, route table, SGs, service support, peering/TGW routes, and __________.",
+              "placeholder": "Private connectivity requires both correct path __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1496,14 +1496,14 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Check endpoint configuration, VPC DNS settings, and the name being resolved."
+                "text": "Endpoint configuration and VPC DNS settings. Verify private DNS is enabled where appropriate and that the expected hostname is being resolved."
               }
             },
             {
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "A VPC endpoint does not make every AWS service privately reachable by __________.",
+              "placeholder": "Only supported endpoint services and configured endpoints are __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1540,7 +1540,7 @@
               "id": "look",
               "kind": "look_for",
               "label": "🔍 LOOK FOR",
-              "placeholder": "Unexpected stale/wrong variants: TTL, cache key, origin headers/cookies/query strings, invalidation, and __________.",
+              "placeholder": "Verify behavior/path pattern and which __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1551,18 +1551,18 @@
               "id": "exam",
               "kind": "exam_clue",
               "label": "🎯 EXAM CLUE",
-              "placeholder": "“Origin has new file but users still see old content” → inspect cache freshness/invalidation.",
+              "placeholder": "“Origin has new file but users still see old content” → inspect __________ cache behavior.",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "CloudFront cache behavior is the focus."
+                "text": "CloudFront cache behavior. Check TTLs, invalidation, cache keys, and the behavior that matches the request path."
               }
             },
             {
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Changing origin content does not necessarily purge existing edge __________.",
+              "placeholder": "Cached objects remain until __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1609,7 +1609,7 @@
               "id": "what",
               "kind": "what",
               "label": "❓ WHAT?",
-              "placeholder": "Helps monitor network flows and identify performance/network-health __________.",
+              "placeholder": "Network Flow Monitor provides network flow performance visibility __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1620,7 +1620,7 @@
               "id": "when",
               "kind": "when",
               "label": "⏱️ WHEN?",
-              "placeholder": "Use when you need flow-level network performance visibility rather than only accept/reject __________.",
+              "placeholder": "It complements VPC Flow Logs __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1631,7 +1631,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Network Flow Monitor ≠ VPC Flow Logs.",
+              "placeholder": "Network Flow Monitor: network performance/health monitoring | VPC Flow Logs: __________",
               "required": true,
               "reveal": {
                 "type": "comparison",
@@ -1681,7 +1681,7 @@
               "id": "what",
               "kind": "what",
               "label": "❓ WHAT?",
-              "placeholder": "Observes how internet performance/availability affects application traffic from user __________.",
+              "placeholder": "Internet Monitor provides visibility into internet paths and end-user network __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1692,7 +1692,7 @@
               "id": "when",
               "kind": "when",
               "label": "⏱️ WHEN?",
-              "placeholder": "Users in a geography report internet-path degradation but AWS resource metrics look healthy → __________.",
+              "placeholder": "Internet Monitor is __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1703,7 +1703,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "It is not DNS routing configuration itself.",
+              "placeholder": "Use it for visibility/analysis; use Route 53/CloudFront/Global Accelerator or architecture changes __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1736,7 +1736,7 @@
               "id": "what",
               "kind": "what",
               "label": "❓ WHAT?",
-              "placeholder": "Runs synthetic network tests between configured endpoints to measure reachability/performance __________.",
+              "placeholder": "Network Synthetic Monitor actively probes configured hybrid network paths, such as from AWS resources toward on-premises destination IP addresses, to __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1747,7 +1747,7 @@
               "id": "when",
               "kind": "when",
               "label": "⏱️ WHEN?",
-              "placeholder": "Need proactive scheduled path tests rather than waiting for user traffic → __________.",
+              "placeholder": "Use it when you need proactive, repeatable monitoring of hybrid network connectivity instead of __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1758,7 +1758,7 @@
               "id": "not",
               "kind": "not_this",
               "label": "🚫 NOT THIS",
-              "placeholder": "Synthetic tests are active probes; Flow Logs are passive traffic __________.",
+              "placeholder": "Choose based on whether you need generated tests or __________.",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1822,5 +1822,5 @@
     "knowledge_node_count": 27,
     "prompt_count": 81
   },
-  "authoring_notes": "Original learning content. Official SOA-C03 exam guide revision 1.1 is the scope authority; the supplied May 2026 study guide was used as a supplementary coverage check and was not copied."
+  "authoring_notes": "Original learning content. Official SOA-C03 exam guide revision 1.1 is the scope authority; the supplied May 2026 study guide was used as a supplementary coverage check and was not copied. Prompt placeholders were revised in v2 so ordinary prompts directly cloze or structurally preview the revealed content. Exam-clue prompts retain certification-style scenario wording and now reveal a direct answer first."
 }

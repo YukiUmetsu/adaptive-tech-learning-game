@@ -1,4 +1,5 @@
 import type { LearningReveal } from "../api/types";
+import { comparisonGridClass } from "../lib/comparison";
 
 interface RevealContentProps {
   reveal: LearningReveal;
@@ -50,7 +51,12 @@ export default function RevealContent({ reveal }: RevealContentProps) {
       );
     case "comparison":
       return (
-        <div className="reveal reveal-comparison">
+        <div
+          className={`reveal reveal-comparison comparison-grid ${comparisonGridClass(
+            reveal.columns.length,
+          )}`}
+          data-columns={reveal.columns.length}
+        >
           {reveal.columns.map((column) => (
             <section key={column.title} className="reveal-comparison-column">
               <h4>{column.title}</h4>
