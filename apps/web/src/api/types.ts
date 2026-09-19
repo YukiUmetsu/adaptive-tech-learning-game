@@ -33,3 +33,13 @@ export type FeedbackResponse = components["schemas"]["FeedbackResponse"];
 export type CanonicalAnswer = components["schemas"]["CanonicalAnswer"];
 export type SyncEventRequest = components["schemas"]["SyncEventRequest"];
 export type SyncResponse = components["schemas"]["SyncResponse"];
+export type LearningDomainResponse =
+  components["schemas"]["LearningDomainResponse"];
+export type LearningModule = components["schemas"]["LearningModule"];
+export type KnowledgeNode = components["schemas"]["KnowledgeNode"];
+export type KnowledgePrompt = components["schemas"]["KnowledgePrompt"];
+export type PromptKind = components["schemas"]["PromptKind"];
+export type LearningReveal = components["schemas"]["LearningReveal"];
+export type RevealColumn = components["schemas"]["RevealColumn"];
+export type MapPosition = components["schemas"]["MapPosition"];
+export type SourceRef = components["schemas"]["SourceRef"];

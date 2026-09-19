@@ -46,6 +46,7 @@ const demo = certification({
           id: "domain-2",
           name: "Reliability and Networking",
           weight: 0.5,
+          learning_available: false,
           tasks: [
             {
               id: "D2.1",
@@ -58,6 +59,7 @@ const demo = certification({
           id: "domain-empty",
           name: "No authored task",
           weight: 0.5,
+          learning_available: false,
           tasks: [{ id: "D9.9", name: "Empty", question_count: 0 }],
         },
       ],
@@ -129,6 +131,7 @@ const authored = certification({
           id: "domain-1",
           name: "Monitoring",
           weight: 0.5,
+          learning_available: false,
           tasks: [
             { id: "1.1", name: "A", question_count: 20 },
             { id: "1.2", name: "B", question_count: 20 },
@@ -138,6 +141,7 @@ const authored = certification({
           id: "domain-2",
           name: "Reliability",
           weight: 0.5,
+          learning_available: false,
           tasks: [{ id: "2.1", name: "C", question_count: 9 }],
         },
       ],

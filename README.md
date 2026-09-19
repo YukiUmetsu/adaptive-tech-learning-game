@@ -48,7 +48,7 @@ flowchart LR
 ## Current implementation status
 
 - **Phase 0** — repository foundation, Rust/Axum API, React/Vite/PWA shell, PostgreSQL + SQLx, OpenAPI → TypeScript generation.
-- **Phase 1 (in progress)** — first end-to-end learning MVP for **AWS Certified CloudOps Engineer - Associate (SOA-C03)**. Content is now all five SOA-C03 domains. The web app has a category-grouped certification catalog, a game-style certification dashboard, and three learner-facing quiz modes (Quick Quiz, Domain Quiz, Full Practice) with server-side question selection. A full set of tactile interaction types is implemented underneath them, plus a server-authoritative **Bits** currency with immediate reward feedback. A free demo at `/demo` runs original sample questions for every interaction type. Adaptive scheduling, mastery prediction, and the persistent game world are not built yet.
+- **Phase 1 (in progress)** — first end-to-end learning MVP for **AWS Certified CloudOps Engineer - Associate (SOA-C03)**. Content is now all five SOA-C03 domains. The web app has a category-grouped certification catalog, a game-style certification dashboard, three learner-facing quiz modes (Quick Quiz, Domain Quiz, Full Practice) with server-side question selection, and a pre-quiz **Knowledge Map** exploration layer with progressive reveals and persistent Discovery Progress. A full set of tactile interaction types is implemented underneath them, plus a server-authoritative **Bits** currency with immediate reward feedback. A free demo at `/demo` runs original sample questions for every interaction type. Adaptive scheduling, mastery prediction, and the persistent game world are not built yet.
 
 ## Getting started
 

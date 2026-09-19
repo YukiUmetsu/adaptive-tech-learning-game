@@ -8,8 +8,9 @@ use utoipa::OpenApi;
 use crate::dto::{
     AnswerPayload, AnswerRequest, CatalogResponse, CertificationDto, CertificationVersionDto,
     CompleteMissionRequest, CompleteMissionResponse, ConceptDto, DomainDto, FeedbackResponse,
-    IssueMissionRequest, MissionResponse, QuestionView, ReconstructionAnswerPayload,
-    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, TaskDto, WalletResponse,
+    IssueMissionRequest, LearningDomainResponse, MissionResponse, QuestionView,
+    ReconstructionAnswerPayload, SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse,
+    TaskDto, WalletResponse,
 };
 use crate::error::{ErrorBody, ErrorResponse};
 use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
@@ -25,6 +26,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         crate::routes::health::health,
         crate::routes::openapi::openapi_json,
         crate::routes::certifications::list_certifications,
+        crate::routes::learning::get_learning_domain,
         crate::routes::missions::issue_mission,
         crate::routes::missions::answer_mission,
         crate::routes::missions::complete_mission,
@@ -57,6 +59,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         SyncEventResult,
         CompleteMissionRequest,
         CompleteMissionResponse,
+        LearningDomainResponse,
         adaptive_learn_content::Interaction,
         adaptive_learn_content::CanonicalAnswer,
         adaptive_learn_content::Choice,
@@ -72,6 +75,16 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         adaptive_learn_content::FixedNodePosition,
         adaptive_learn_content::FixedNode,
         adaptive_learn_content::ReconstructionSlot,
+        adaptive_learn_content::SourceRef,
+        adaptive_learn_content::LearningDomainMeta,
+        adaptive_learn_content::LearningDesign,
+        adaptive_learn_content::LearningModule,
+        adaptive_learn_content::KnowledgeNode,
+        adaptive_learn_content::KnowledgePrompt,
+        adaptive_learn_content::PromptKind,
+        adaptive_learn_content::LearningReveal,
+        adaptive_learn_content::RevealColumn,
+        adaptive_learn_content::MapPosition,
         adaptive_learn_domain::ConceptWeight,
         adaptive_learn_domain::AssessmentMode,
         adaptive_learn_domain::InteractionType,
@@ -81,6 +94,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
     tags(
         (name = "system", description = "Operational endpoints"),
         (name = "catalog", description = "Certification catalog"),
+        (name = "learning", description = "Pre-quiz knowledge maps and discovery progress"),
         (name = "missions", description = "Mission issuance, scoring, and completion"),
         (name = "sync", description = "Batch reconciliation of learning events"),
         (name = "wallet", description = "Server-authoritative Bits balance")

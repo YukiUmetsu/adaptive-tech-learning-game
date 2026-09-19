@@ -42,6 +42,10 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
             "/v1/certifications",
             get(routes::certifications::list_certifications),
         )
+        .route(
+            "/v1/certifications/{certification_id}/domains/{domain_id}/learning",
+            get(routes::learning::get_learning_domain),
+        )
         .route("/v1/missions/issue", post(routes::missions::issue_mission))
         .route(
             "/v1/missions/{mission_id}/answers",

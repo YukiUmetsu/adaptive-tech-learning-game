@@ -26,12 +26,14 @@ const catalog = {
               id: "domain-1",
               name: "Monitoring and Observability",
               weight: 0.22,
+              learning_available: true,
               tasks: [{ id: "1.1", name: "A", question_count: 20 }],
             },
             {
               id: "domain-2",
               name: "Reliability and Business Continuity",
               weight: 0.22,
+              learning_available: false,
               tasks: [{ id: "2.1", name: "B", question_count: 9 }],
             },
           ],
@@ -187,5 +189,24 @@ describe("CertificationDashboardPage", () => {
       mode: "full_practice",
       domain_id: null,
     });
+  });
+
+  it("offers Explore Domain only where learning content exists", async () => {
+    renderDashboard();
+    await ready();
+
+    const explore = screen.getByRole("link", {
+      name: /Explore Domain: Monitoring and Observability/,
+    });
+    expect(explore).toHaveAttribute(
+      "href",
+      "/certifications/aws-soa-c03/domains/domain-1/learn",
+    );
+
+    expect(
+      screen.queryByRole("link", {
+        name: /Explore Domain: Reliability and Business Continuity/,
+      }),
+    ).not.toBeInTheDocument();
   });
 });

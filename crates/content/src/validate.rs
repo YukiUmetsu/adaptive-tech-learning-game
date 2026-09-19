@@ -19,7 +19,7 @@ pub struct ContentError {
 }
 
 impl ContentError {
-    fn new(code: &'static str, message: impl Into<String>) -> Self {
+    pub(crate) fn new(code: &'static str, message: impl Into<String>) -> Self {
         Self {
             code,
             message: message.into(),

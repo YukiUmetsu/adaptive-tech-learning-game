@@ -78,6 +78,51 @@
         }
       }
     },
+    "/v1/certifications/{certification_id}/domains/{domain_id}/learning": {
+      "get": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Returns the pre-quiz learning content for a certification domain.",
+        "description": "This is the Knowledge Map curriculum: modules, knowledge nodes, and\nprogressive reveals. It is a discovery mechanic, not a scored assessment, so\nit is deliberately separate from mission issuance and scoring.",
+        "operationId": "get_learning_domain",
+        "parameters": [
+          {
+            "name": "certification_id",
+            "in": "path",
+            "description": "Certification identifier, for example `aws-soa-c03`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "domain_id",
+            "in": "path",
+            "description": "Domain identifier, for example `domain-1`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain learning content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningDomainResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No learning content for this domain"
+          }
+        }
+      }
+    },
     "/v1/missions/issue": {
       "post": {
         "tags": [
@@ -1133,12 +1178,17 @@
           "id",
           "name",
           "weight",
+          "learning_available",
           "tasks"
         ],
         "properties": {
           "id": {
             "type": "string",
             "description": "Domain identifier."
+          },
+          "learning_available": {
+            "type": "boolean",
+            "description": "Whether pre-quiz learning content exists for this domain."
           },
           "name": {
             "type": "string",
@@ -1780,6 +1830,394 @@
           }
         }
       },
+      "KnowledgeNode": {
+        "type": "object",
+        "description": "One knowledge card on the map.",
+        "required": [
+          "id",
+          "title",
+          "concept_ids",
+          "map_position",
+          "prompts"
+        ],
+        "properties": {
+          "concept_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Certification concepts this node teaches. The bridge to quiz evidence."
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable node identifier."
+          },
+          "map_position": {
+            "$ref": "#/components/schemas/MapPosition",
+            "description": "Authored position on the map in `0..=1` space."
+          },
+          "prerequisite_node_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Nodes that must be unlocked before this node becomes ready."
+          },
+          "prompts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KnowledgePrompt"
+            },
+            "description": "Progressive reveal prompts. All required prompts unlock the node."
+          },
+          "source_refs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceRef"
+            },
+            "description": "Official references for this node."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing node title."
+          }
+        }
+      },
+      "KnowledgePrompt": {
+        "type": "object",
+        "description": "One progressive-reveal prompt on a knowledge card.",
+        "required": [
+          "id",
+          "kind",
+          "label",
+          "placeholder",
+          "reveal"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable prompt identifier within the node."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PromptKind",
+            "description": "Prompt kind, which selects the shared icon and styling vocabulary."
+          },
+          "label": {
+            "type": "string",
+            "description": "Learner-facing label, authored by the curriculum."
+          },
+          "placeholder": {
+            "type": "string",
+            "description": "Blank text shown before the reveal."
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether revealing this prompt counts toward unlocking the node."
+          },
+          "reveal": {
+            "$ref": "#/components/schemas/LearningReveal",
+            "description": "The information revealed when the learner taps the blank."
+          }
+        }
+      },
+      "LearningDesign": {
+        "type": "object",
+        "description": "The vocabulary and rules shown to learners on the map.",
+        "required": [
+          "progress_label",
+          "unlock_rule",
+          "mastery_note"
+        ],
+        "properties": {
+          "mastery_note": {
+            "type": "string",
+            "description": "Reminder that discovery is not mastery."
+          },
+          "progress_label": {
+            "type": "string",
+            "description": "Label for discovery progress, for example `Discovery Progress`."
+          },
+          "unlock_rule": {
+            "type": "string",
+            "description": "Explanation of the unlock rule."
+          }
+        }
+      },
+      "LearningDomainMeta": {
+        "type": "object",
+        "description": "Domain identity within a certification blueprint.",
+        "required": [
+          "id",
+          "name",
+          "weight"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Domain identifier, for example `domain-1`."
+          },
+          "name": {
+            "type": "string",
+            "description": "Official domain name."
+          },
+          "weight": {
+            "type": "number",
+            "format": "double",
+            "description": "Share of scored content, in `(0, 1]`."
+          }
+        }
+      },
+      "LearningDomainResponse": {
+        "type": "object",
+        "description": "Learner-facing learning content for one certification domain.\n\nThis is the discovery layer that sits before retrieval practice. Reveals are\npresent because progressive disclosure is the mechanic, not a secret. Quiz\ncanonical answers are never included.",
+        "required": [
+          "schema_version",
+          "content_version",
+          "certification_id",
+          "certification_version",
+          "domain",
+          "learning_design",
+          "source_refs",
+          "modules"
+        ],
+        "properties": {
+          "certification_id": {
+            "type": "string",
+            "description": "Certification identifier."
+          },
+          "certification_version": {
+            "type": "string",
+            "description": "Certification version identifier."
+          },
+          "content_version": {
+            "type": "string",
+            "description": "Immutable learning content version."
+          },
+          "domain": {
+            "$ref": "#/components/schemas/LearningDomainMeta",
+            "description": "Domain identity and weight."
+          },
+          "exam_guide_revision": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Official exam guide revision."
+          },
+          "learning_design": {
+            "$ref": "#/components/schemas/LearningDesign",
+            "description": "Learner-facing vocabulary and unlock rules."
+          },
+          "modules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearningModule"
+            },
+            "description": "Modules with their knowledge nodes."
+          },
+          "schema_version": {
+            "type": "string",
+            "description": "Learning schema version."
+          },
+          "source_refs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceRef"
+            },
+            "description": "Domain-level references."
+          }
+        }
+      },
+      "LearningModule": {
+        "type": "object",
+        "description": "A group of knowledge nodes unlocked along one path.",
+        "required": [
+          "id",
+          "title",
+          "order",
+          "nodes"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable module identifier."
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeNode"
+            },
+            "description": "Knowledge nodes in presentation order."
+          },
+          "order": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Presentation order within the domain."
+          },
+          "prerequisite_module_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Modules that must be completed before this one becomes available."
+          },
+          "skill_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Exam skill ids this module teaches."
+          },
+          "task_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Exam task ids this module teaches."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing module title."
+          }
+        }
+      },
+      "LearningReveal": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "A short prose reveal.",
+            "required": [
+              "text",
+              "type"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "Revealed text. Keep it to one or two sentences."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "text"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "An ordered sequence, rendered top-to-bottom with arrows.",
+            "required": [
+              "items",
+              "type"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Ordered items."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "sequence"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A compact set of bullets.",
+            "required": [
+              "items",
+              "type"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Bullet items."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "bullets"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Keyword clues, rendered as compact chips.",
+            "required": [
+              "items",
+              "type"
+            ],
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Clue items."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "keywords"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A side-by-side or stacked comparison.",
+            "required": [
+              "columns",
+              "type"
+            ],
+            "properties": {
+              "columns": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/RevealColumn"
+                },
+                "description": "Comparison columns."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "comparison"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "How a revealed prompt renders. Deliberately not a plain string: the\ncurriculum distinguishes prose, sequences, comparisons, and keyword clues."
+      },
+      "MapPosition": {
+        "type": "object",
+        "description": "Normalized position on the knowledge map.",
+        "required": [
+          "x",
+          "y"
+        ],
+        "properties": {
+          "x": {
+            "type": "number",
+            "format": "double",
+            "description": "Horizontal position in `0..=1`."
+          },
+          "y": {
+            "type": "number",
+            "format": "double",
+            "description": "Vertical position in `0..=1`."
+          }
+        }
+      },
       "MissionResponse": {
         "type": "object",
         "description": "A server-issued mission with its questions.",
@@ -1966,6 +2404,20 @@
           }
         }
       },
+      "PromptKind": {
+        "type": "string",
+        "description": "The shared prompt vocabulary. Icons are selected by the UI from this kind,\nso content can change labels without the renderer special-casing nodes.",
+        "enum": [
+          "what",
+          "when",
+          "connects_to",
+          "not_this",
+          "exam_clue",
+          "mental_model",
+          "action",
+          "look_for"
+        ]
+      },
       "QuestionView": {
         "type": "object",
         "description": "A question shown to the learner. Contains no answer key.",
@@ -2107,6 +2559,27 @@
           }
         }
       },
+      "RevealColumn": {
+        "type": "object",
+        "description": "One titled column of a comparison reveal.",
+        "required": [
+          "title",
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Column items."
+          },
+          "title": {
+            "type": "string",
+            "description": "Column heading."
+          }
+        }
+      },
       "ScenarioStage": {
         "type": "string",
         "description": "The operational stage a branching-scenario decision belongs to.\n\nThe stage is used only to attach a structured error code to a poor decision;\nit is not a measure of overall mastery.",
@@ -2156,6 +2629,24 @@
           "stage": {
             "$ref": "#/components/schemas/ScenarioStage",
             "description": "What kind of decision this step represents."
+          }
+        }
+      },
+      "SourceRef": {
+        "type": "object",
+        "description": "A reference to the official source of a content unit.",
+        "required": [
+          "title",
+          "url"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Display title."
+          },
+          "url": {
+            "type": "string",
+            "description": "URL."
           }
         }
       },
@@ -2348,6 +2839,10 @@
     {
       "name": "catalog",
       "description": "Certification catalog"
+    },
+    {
+      "name": "learning",
+      "description": "Pre-quiz knowledge maps and discovery progress"
     },
     {
       "name": "missions",

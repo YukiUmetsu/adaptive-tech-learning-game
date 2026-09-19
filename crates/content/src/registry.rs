@@ -3,24 +3,29 @@ use std::collections::HashSet;
 use std::collections::hash_map::Entry;
 
 use crate::EMBEDDED_SOURCES;
+use crate::learning::{KnowledgeNode, LearningDomain, LearningModule, validate_learning_domain};
 use crate::model::{Certification, ContentBundle, Domain, Question, Task};
 use crate::validate::{ContentError, validate};
 
-/// An immutable set of validated content bundles.
+/// An immutable set of validated content bundles and learning domains.
 ///
-/// Bundles that declare the same certification version are merged into one
+/// Quiz bundles that declare the same certification version are merged into one
 /// logical bundle, so a certification's content can be split across files (for
-/// example one file per exam domain) without a code change.
+/// example one file per exam domain) without a code change. Learning knowledge
+/// maps are a distinct content type and are kept separate.
 #[derive(Debug, Clone)]
 pub struct ContentRegistry {
     bundles: Vec<ContentBundle>,
+    learning_domains: Vec<LearningDomain>,
 }
 
 impl ContentRegistry {
-    /// Loads and validates every content bundle discovered at build time.
+    /// Loads and validates every content source discovered at build time.
     ///
-    /// Content is organized as `<category>/<certification>/<version>/<file>.json`
-    /// under `content/`; adding or splitting content requires no code change.
+    /// Quiz content is organized as
+    /// `<category>/<certification>/<version>/<file>.json` and learning content
+    /// as `.../learning/<file>.json` under `content/`; adding or splitting
+    /// content requires no code change.
     pub fn embedded() -> Result<Self, Vec<ContentError>> {
         if EMBEDDED_SOURCES.is_empty() {
             return Err(vec![ContentError {
@@ -29,60 +34,40 @@ impl ContentRegistry {
             }]);
         }
 
-        Self::from_json(EMBEDDED_SOURCES)
+        Self::from_sources(EMBEDDED_SOURCES, crate::EMBEDDED_LEARNING_SOURCES)
     }
 
-    /// Parses, validates, and merges one or more JSON bundle sources.
-    ///
-    /// Each source must independently be a valid bundle. Sources that share a
-    /// certification id and version id are then merged: concepts and questions
-    /// are keyed by id (later sources override earlier ones), and domains are
-    /// merged by task id (later definitions override earlier ones). This lets a
-    /// task be expanded or rewritten by a newer file without duplicating it.
+    /// Parses, validates, and merges quiz bundle sources only.
     pub fn from_json(sources: &[&str]) -> Result<Self, Vec<ContentError>> {
-        let mut parsed = Vec::new();
+        Self::from_sources(sources, &[])
+    }
+
+    /// Parses, validates, and merges quiz and learning sources.
+    ///
+    /// Each source must independently be valid. Quiz sources that share a
+    /// certification id and version id are merged: concepts and questions are
+    /// keyed by id (later sources override earlier ones), and domains are merged
+    /// by task id (later definitions override earlier ones). Learning domains
+    /// are validated on their own and cross-checked against the quiz bundle for
+    /// the same certification version.
+    pub fn from_sources(
+        sources: &[&str],
+        learning_sources: &[&str],
+    ) -> Result<Self, Vec<ContentError>> {
         let mut errors = Vec::new();
+        let bundles = parse_bundles(sources, &mut errors);
+        let learning_domains = parse_learning_domains(learning_sources, &mut errors);
 
-        for source in sources {
-            match serde_json::from_str::<ContentBundle>(source) {
-                Ok(bundle) => match validate(&bundle) {
-                    Ok(()) => parsed.push(bundle),
-                    Err(mut found) => errors.append(&mut found),
-                },
-                Err(error) => errors.push(ContentError {
-                    code: "invalid_json",
-                    message: error.to_string(),
-                }),
-            }
+        for domain in &learning_domains {
+            validate_learning_against_bundles(domain, &bundles, &mut errors);
         }
-
-        if !errors.is_empty() {
-            return Err(errors);
-        }
-
-        // Group by certification version, preserving first-seen order.
-        let mut order: Vec<(String, String)> = Vec::new();
-        let mut groups: HashMap<(String, String), Vec<ContentBundle>> = HashMap::new();
-        for bundle in parsed {
-            let key = (bundle.certification.id.clone(), bundle.version.id.clone());
-            if !groups.contains_key(&key) {
-                order.push(key.clone());
-            }
-            groups.entry(key).or_default().push(bundle);
-        }
-
-        let mut bundles = Vec::new();
-        for key in order {
-            if let Some(group) = groups.remove(&key) {
-                match merge_group(group) {
-                    Ok(merged) => bundles.push(merged),
-                    Err(mut found) => errors.append(&mut found),
-                }
-            }
-        }
+        validate_unique_learning_domains(&learning_domains, &mut errors);
 
         if errors.is_empty() {
-            Ok(Self { bundles })
+            Ok(Self {
+                bundles,
+                learning_domains,
+            })
         } else {
             Err(errors)
         }
@@ -186,6 +171,63 @@ impl ContentRegistry {
             collect_task_questions(bundle, domain, &mut seen, &mut questions);
         }
         questions
+    }
+
+    /// All validated learning domains.
+    pub fn learning_domains(&self) -> &[LearningDomain] {
+        &self.learning_domains
+    }
+
+    /// Finds a learning domain by certification version and domain id.
+    pub fn learning_domain(
+        &self,
+        certification_version: &str,
+        domain_id: &str,
+    ) -> Option<&LearningDomain> {
+        self.learning_domains.iter().find(|domain| {
+            domain.certification_version == certification_version && domain.domain.id == domain_id
+        })
+    }
+
+    /// Finds a learning domain by certification id and domain id.
+    ///
+    /// The learning API is addressed by certification id, not version; a
+    /// certification currently exposes one active version.
+    pub fn learning_domain_for_certification(
+        &self,
+        certification_id: &str,
+        domain_id: &str,
+    ) -> Option<&LearningDomain> {
+        self.learning_domains.iter().find(|domain| {
+            domain.certification_id == certification_id && domain.domain.id == domain_id
+        })
+    }
+
+    /// Whether learner-facing learning content exists for a domain.
+    pub fn learning_available(&self, certification_id: &str, domain_id: &str) -> bool {
+        self.learning_domain_for_certification(certification_id, domain_id)
+            .is_some()
+    }
+
+    /// Returns the modules of a learning domain in authored order.
+    pub fn learning_modules(
+        &self,
+        certification_version: &str,
+        domain_id: &str,
+    ) -> Option<&[LearningModule]> {
+        self.learning_domain(certification_version, domain_id)
+            .map(|domain| domain.modules.as_slice())
+    }
+
+    /// Finds one knowledge node within a learning domain.
+    pub fn learning_node(
+        &self,
+        certification_version: &str,
+        domain_id: &str,
+        node_id: &str,
+    ) -> Option<&KnowledgeNode> {
+        self.learning_domain(certification_version, domain_id)?
+            .node(node_id)
     }
 }
 
@@ -353,6 +395,169 @@ fn validate_task_content_versions(bundle: &ContentBundle, errors: &mut Vec<Conte
                     message: format!(
                         "task {} spans multiple content versions; a mission must use one",
                         task.id
+                    ),
+                });
+            }
+        }
+    }
+}
+
+/// Parses and merges quiz bundle sources, recording every error found.
+fn parse_bundles(sources: &[&str], errors: &mut Vec<ContentError>) -> Vec<ContentBundle> {
+    let mut parsed = Vec::new();
+
+    for source in sources {
+        match serde_json::from_str::<ContentBundle>(source) {
+            Ok(bundle) => match validate(&bundle) {
+                Ok(()) => parsed.push(bundle),
+                Err(mut found) => errors.append(&mut found),
+            },
+            Err(error) => errors.push(ContentError {
+                code: "invalid_json",
+                message: error.to_string(),
+            }),
+        }
+    }
+
+    // Group by certification version, preserving first-seen order.
+    let mut order: Vec<(String, String)> = Vec::new();
+    let mut groups: HashMap<(String, String), Vec<ContentBundle>> = HashMap::new();
+    for bundle in parsed {
+        let key = (bundle.certification.id.clone(), bundle.version.id.clone());
+        if !groups.contains_key(&key) {
+            order.push(key.clone());
+        }
+        groups.entry(key).or_default().push(bundle);
+    }
+
+    let mut bundles = Vec::new();
+    for key in order {
+        if let Some(group) = groups.remove(&key) {
+            match merge_group(group) {
+                Ok(merged) => bundles.push(merged),
+                Err(mut found) => errors.append(&mut found),
+            }
+        }
+    }
+
+    bundles
+}
+
+/// Parses and validates learning domain sources, recording every error found.
+fn parse_learning_domains(sources: &[&str], errors: &mut Vec<ContentError>) -> Vec<LearningDomain> {
+    let mut domains = Vec::new();
+
+    for source in sources {
+        match serde_json::from_str::<LearningDomain>(source) {
+            Ok(domain) => match validate_learning_domain(&domain) {
+                Ok(()) => domains.push(domain),
+                Err(mut found) => errors.append(&mut found),
+            },
+            Err(error) => errors.push(ContentError {
+                code: "invalid_learning_json",
+                message: error.to_string(),
+            }),
+        }
+    }
+
+    domains
+}
+
+/// Rejects two learning domains claiming the same certification/version/domain.
+fn validate_unique_learning_domains(domains: &[LearningDomain], errors: &mut Vec<ContentError>) {
+    let mut seen = HashSet::new();
+    for domain in domains {
+        let key = (
+            domain.certification_id.as_str(),
+            domain.certification_version.as_str(),
+            domain.domain.id.as_str(),
+        );
+        if !seen.insert(key) {
+            errors.push(ContentError {
+                code: "duplicate_learning_domain",
+                message: format!(
+                    "duplicate learning domain {} for certification version {}",
+                    domain.domain.id, domain.certification_version
+                ),
+            });
+        }
+    }
+}
+
+/// Cross-checks a learning domain against the quiz bundle for its version.
+///
+/// When no quiz bundle exists yet, learning content is still valid on its own;
+/// the cross-check only runs when there is something to check against.
+fn validate_learning_against_bundles(
+    domain: &LearningDomain,
+    bundles: &[ContentBundle],
+    errors: &mut Vec<ContentError>,
+) {
+    let Some(bundle) = bundles.iter().find(|bundle| {
+        bundle.certification.id == domain.certification_id
+            && bundle.version.id == domain.certification_version
+    }) else {
+        return;
+    };
+
+    let Some(official_domain) = bundle
+        .version
+        .domains
+        .iter()
+        .find(|candidate| candidate.id == domain.domain.id)
+    else {
+        errors.push(ContentError {
+            code: "learning_domain_unknown",
+            message: format!(
+                "learning domain {} is not part of certification version {}",
+                domain.domain.id, domain.certification_version
+            ),
+        });
+        return;
+    };
+
+    if (official_domain.weight - domain.domain.weight).abs() > 1e-6 {
+        errors.push(ContentError {
+            code: "learning_domain_weight_mismatch",
+            message: format!(
+                "learning domain {} weight {} does not match the blueprint weight {}",
+                domain.domain.id, domain.domain.weight, official_domain.weight
+            ),
+        });
+    }
+
+    let concept_ids: HashSet<&str> = bundle
+        .concepts
+        .iter()
+        .map(|concept| concept.id.as_str())
+        .collect();
+    for node in domain.nodes() {
+        for concept_id in &node.concept_ids {
+            if !concept_ids.contains(concept_id.as_str()) {
+                errors.push(ContentError {
+                    code: "learning_unknown_concept",
+                    message: format!(
+                        "knowledge node {} references unknown concept {}",
+                        node.id, concept_id
+                    ),
+                });
+            }
+        }
+    }
+
+    let official_tasks: HashSet<&str> = official_domain
+        .tasks
+        .iter()
+        .map(|task| task.id.as_str())
+        .collect();
+    for module in &domain.modules {
+        for task_id in &module.task_ids {
+            if !official_tasks.contains(task_id.as_str()) {
+                errors.push(ContentError {
+                    code: "learning_unknown_task",
+                    message: format!(
+                        "learning module {} references unknown task {} for domain {}",
+                        module.id, task_id, domain.domain.id
                     ),
                 });
             }
