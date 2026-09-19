@@ -2,11 +2,18 @@ import { describe, expect, it } from "vitest";
 
 import type { MissionResponse, QuestionView } from "../api/types";
 import type { AttemptRecord } from "./persistence";
-import { computeSummary, formatDuration } from "./summary";
+import {
+  completionMessage,
+  computeSummary,
+  formatDuration,
+  type MissionSummary,
+} from "./summary";
 
 function question(id: string, concepts: string[]): QuestionView {
   return {
     id,
+    domain_id: "domain-1",
+    task_id: "1.1",
     prompt: `Prompt ${id}`,
     interaction_type: "classification",
     assessment_mode: "recognition",
@@ -23,8 +30,9 @@ const mission: MissionResponse = {
   certification_id: "aws-soa-c03",
   certification_version: "soa-c03",
   content_version: "soa-c03-content-v1",
-  domain_id: "domain-1",
-  task_id: "1.1",
+  mode: "quick_adaptive",
+  domain_id: null,
+  task_id: null,
   issued_at: "2026-09-19T10:00:00Z",
   expires_at: "2026-09-19T11:00:00Z",
   questions: [question("q1", ["a"]), question("q2", ["b"])],
@@ -74,6 +82,68 @@ describe("computeSummary", () => {
 
     expect(summary.firstAttemptCorrect).toBe(0);
     expect(summary.recoveredAttempts).toBe(0);
+  });
+
+  it("sums Bits and reports per-domain and per-task coverage", () => {
+    const summary = computeSummary(
+      mission,
+      [
+        { ...attempt("q1", 1, true, 1000), bits: 12 },
+        { ...attempt("q2", 1, false, 1000), bits: 0 },
+        { ...attempt("q2", 2, true, 1000), bits: 6 },
+      ],
+      0,
+    );
+
+    expect(summary.bitsEarned).toBe(18);
+    expect(summary.domains).toEqual([
+      { domainId: "domain-1", totalQuestions: 2, firstAttemptCorrect: 1 },
+    ]);
+    expect(summary.tasks).toEqual([
+      {
+        taskId: "1.1",
+        domainId: "domain-1",
+        totalQuestions: 2,
+        firstAttemptCorrect: 1,
+      },
+    ]);
+  });
+});
+
+function summaryWith(
+  firstAttemptCorrect: number,
+  recoveredAttempts: number,
+  completed: number,
+): MissionSummary {
+  return {
+    totalQuestions: completed,
+    questionsCompleted: completed,
+    firstAttemptCorrect,
+    recoveredAttempts,
+    conceptsPracticed: [],
+    studyTimeMs: 0,
+    pendingEvents: 0,
+    bitsEarned: 0,
+    domains: [],
+    tasks: [],
+  };
+}
+
+describe("completionMessage", () => {
+  it("celebrates a flawless run", () => {
+    expect(completionMessage(summaryWith(10, 0, 10))).toBe("Flawless run!");
+  });
+
+  it("celebrates an excellent run", () => {
+    expect(completionMessage(summaryWith(9, 1, 10))).toBe("Excellent run!");
+  });
+
+  it("celebrates several recoveries as successful learning", () => {
+    expect(completionMessage(summaryWith(3, 3, 10))).toBe("Strong recovery!");
+  });
+
+  it("falls back to a neutral positive message", () => {
+    expect(completionMessage(summaryWith(2, 1, 10))).toBe("Quiz complete!");
   });
 });
 

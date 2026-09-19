@@ -7,9 +7,9 @@ use utoipa::OpenApi;
 
 use crate::dto::{
     AnswerPayload, AnswerRequest, CatalogResponse, CertificationDto, CertificationVersionDto,
-    CompleteMissionRequest, CompleteMissionResponse, DomainDto, FeedbackResponse,
+    CompleteMissionRequest, CompleteMissionResponse, ConceptDto, DomainDto, FeedbackResponse,
     IssueMissionRequest, MissionResponse, QuestionView, ReconstructionAnswerPayload,
-    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, TaskDto,
+    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, TaskDto, WalletResponse,
 };
 use crate::error::{ErrorBody, ErrorResponse};
 use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
@@ -29,6 +29,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         crate::routes::missions::answer_mission,
         crate::routes::missions::complete_mission,
         crate::routes::sync::sync,
+        crate::routes::wallet::get_wallet,
     ),
     components(schemas(
         HealthResponse,
@@ -41,8 +42,10 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         CertificationVersionDto,
         DomainDto,
         TaskDto,
+        ConceptDto,
         IssueMissionRequest,
         MissionResponse,
+        WalletResponse,
         QuestionView,
         AnswerPayload,
         ReconstructionAnswerPayload,
@@ -72,13 +75,15 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         adaptive_learn_domain::ConceptWeight,
         adaptive_learn_domain::AssessmentMode,
         adaptive_learn_domain::InteractionType,
-        adaptive_learn_domain::MissionStatus
+        adaptive_learn_domain::MissionStatus,
+        adaptive_learn_domain::QuizMode
     )),
     tags(
         (name = "system", description = "Operational endpoints"),
         (name = "catalog", description = "Certification catalog"),
         (name = "missions", description = "Mission issuance, scoring, and completion"),
-        (name = "sync", description = "Batch reconciliation of learning events")
+        (name = "sync", description = "Batch reconciliation of learning events"),
+        (name = "wallet", description = "Server-authoritative Bits balance")
     )
 )]
 pub struct ApiDoc;

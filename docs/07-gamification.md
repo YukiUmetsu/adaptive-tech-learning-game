@@ -7,7 +7,7 @@ Gamification should increase useful return frequency without rewarding low-value
 ```mermaid
 flowchart LR
     Study[Study mission] --> Learn[Useful retrieval]
-    Learn --> Reward[Credits + Energy]
+    Learn --> Reward[Bits + Energy]
     Reward --> World[Build / explore]
     World --> Collect[Items / companion / gacha]
     Collect --> Return[Return later]
@@ -16,9 +16,12 @@ flowchart LR
 
 ## Currencies
 
-### Credits
+### Bits
 
-Earned from meaningful learning. Spend on cosmetics, building, companion items, exploration actions, and some earned gacha.
+Spendable game currency earned from meaningful learning. Spend on cosmetics,
+building, companion items, exploration actions, and some earned gacha.
+
+Bits are not mastery. Mastery/readiness and currency are separate concepts.
 
 ### Energy
 
@@ -47,6 +50,24 @@ Recovery bonus should reduce the cost of a mistake, not outperform first-pass su
 ## Reward calculation
 
 Freeze challenge/difficulty before the first attempt.
+
+V1 Bits policy (`crates/domain/src/reward.rs`):
+
+```text
+first attempt, fully correct:
+    base 10 + round(difficulty_prior * 6)   (0..6 bonus)
+
+later attempt, fully correct (recovery):
+    half of the full reward, minimum 1
+
+not fully correct:
+    0 Bits, never negative
+```
+
+Settlement is server-authoritative and idempotent: the reward is written with
+the accepted learning event in one transaction, keyed by `event_id`, so a
+retried sync cannot award the same attempt twice. The scoring response returns a
+`bits_preview` for immediate feedback; only sync settles the wallet balance.
 
 Conceptually:
 

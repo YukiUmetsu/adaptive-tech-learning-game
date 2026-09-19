@@ -9,6 +9,7 @@ pub mod dto;
 pub mod error;
 pub mod openapi;
 pub mod routes;
+pub mod selection;
 pub mod services;
 pub mod state;
 
@@ -51,6 +52,7 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
             post(routes::missions::complete_mission),
         )
         .route("/v1/sync", post(routes::sync::sync))
+        .route("/v1/wallet", get(routes::wallet::get_wallet))
         .layer(TraceLayer::new_for_http())
         .layer(TimeoutLayer::with_status_code(
             StatusCode::REQUEST_TIMEOUT,

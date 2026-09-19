@@ -29,7 +29,7 @@ pub enum AssessmentMode {
 }
 
 /// The tactile interaction family a question uses.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum InteractionType {
     /// Place items into categories.
@@ -186,6 +186,70 @@ impl TryFrom<&str> for MissionStatus {
     }
 }
 
+/// The quiz mode a mission was issued for.
+///
+/// `task_practice` is kept for the demo/task flow and internal debugging; the
+/// three learner-facing modes are quick, domain, and full practice.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum QuizMode {
+    /// A short, cross-domain adaptive set.
+    QuickAdaptive,
+    /// A focused set drawn from one exam domain.
+    DomainQuiz,
+    /// A full-length, weighted certification challenge.
+    FullPractice,
+    /// A single task's questions (demo/internal).
+    TaskPractice,
+}
+
+impl QuizMode {
+    /// Canonical string stored in PostgreSQL.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::QuickAdaptive => "quick_adaptive",
+            Self::DomainQuiz => "domain_quiz",
+            Self::FullPractice => "full_practice",
+            Self::TaskPractice => "task_practice",
+        }
+    }
+
+    /// Whether the mode draws across the whole certification.
+    pub const fn is_certification_wide(self) -> bool {
+        matches!(self, Self::QuickAdaptive | Self::FullPractice)
+    }
+
+    /// Server-side mission lifetime in minutes.
+    pub const fn ttl_minutes(self) -> i64 {
+        match self {
+            Self::QuickAdaptive => 60,
+            Self::DomainQuiz => 120,
+            Self::FullPractice => 180,
+            Self::TaskPractice => 60,
+        }
+    }
+}
+
+impl std::fmt::Display for QuizMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl TryFrom<&str> for QuizMode {
+    type Error = DomainError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "quick_adaptive" => Ok(Self::QuickAdaptive),
+            "domain_quiz" => Ok(Self::DomainQuiz),
+            "full_practice" => Ok(Self::FullPractice),
+            "task_practice" => Ok(Self::TaskPractice),
+            _ => Err(DomainError::invalid("quiz_mode", "unknown quiz mode")),
+        }
+    }
+}
+
 /// A server-issued mission. The client never invents its identifiers.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
 pub struct MissionInstance {
@@ -199,11 +263,14 @@ pub struct MissionInstance {
     pub certification_version: String,
     /// Immutable content version the mission was issued against.
     pub content_version: String,
-    /// Domain covered by the mission.
-    pub domain_id: String,
-    /// Task covered by the mission.
-    pub task_id: String,
-    /// Questions selected for the mission, in presentation order.
+    /// Quiz mode used to build the mission.
+    pub mode: QuizMode,
+    /// Domain covered, when the mission is domain-scoped.
+    pub domain_id: Option<String>,
+    /// Task covered, when the mission is task-scoped.
+    pub task_id: Option<String>,
+    /// Questions selected for the mission, in presentation order. For
+    /// mixed-domain modes this is the authoritative scope, not domain_id/task_id.
     pub question_ids: Vec<String>,
     /// Current status.
     pub status: MissionStatus,

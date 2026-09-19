@@ -6,12 +6,15 @@
 //! `users` and `sync_batches` concepts.
 
 pub mod learning;
+pub mod reward;
 pub mod sync;
 pub mod user;
 
 pub use learning::{
     AssessmentMode, ConceptWeight, InteractionType, LearningEvent, MissionInstance, MissionStatus,
+    QuizMode,
 };
+pub use reward::{BASE_BITS, reward_bits};
 pub use sync::{NewSyncBatch, SyncBatch, SyncBatchStatus};
 pub use user::{NewUser, User};
 

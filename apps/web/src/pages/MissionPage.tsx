@@ -1,13 +1,19 @@
 import { Link, useParams } from "react-router-dom";
 
+import BitsIcon from "../components/BitsIcon";
 import FeedbackPanel from "../components/FeedbackPanel";
-import MissionSummary from "../components/MissionSummary";
 import QuestionCard from "../components/QuestionCard";
+import QuizCompletionSummary from "../components/QuizCompletionSummary";
+import { useCatalog } from "../hooks/useCatalog";
 import { useMissionRunner } from "../hooks/useMissionRunner";
+import { quizModeLabel } from "../state/quizModes";
+import { useBitsBalance } from "../state/wallet";
 
 export default function MissionPage() {
   const { missionId } = useParams();
   const runner = useMissionRunner(missionId ?? "");
+  const bits = useBitsBalance();
+  const { state } = useCatalog();
 
   if (runner.phase === "loading") {
     return <p role="status">Loading mission…</p>;
@@ -27,7 +33,7 @@ export default function MissionPage() {
 
   if (runner.phase === "summary") {
     return (
-      <MissionSummary
+      <QuizCompletionSummary
         mission={runner.mission}
         attempts={runner.attempts}
         syncState={runner.syncState}
@@ -38,16 +44,25 @@ export default function MissionPage() {
 
   const isLast = runner.currentIndex === runner.total - 1;
 
+  const domainName =
+    runner.mission.domain_id && state.status === "loaded"
+      ? state.data.certifications
+          .flatMap((certification) => certification.versions)
+          .flatMap((version) => version.domains)
+          .find((domain) => domain.id === runner.mission?.domain_id)?.name
+      : undefined;
+
   return (
     <section>
       <header className="mission-header" data-testid="mission-header">
         <div className="mission-meta">
-          <span className="badge">SOA-C03 · Task {runner.mission.task_id}</span>
+          <span className="badge">{quizModeLabel(runner.mission.mode)}</span>
+          {domainName ? <span className="muted">{domainName}</span> : null}
           <span className="muted">
             Question {runner.currentIndex + 1} of {runner.total}
           </span>
-          <span className="muted interaction-tag">
-            {runner.question.interaction_type.replaceAll("_", " ")}
+          <span className="mission-bits" aria-label={`${bits} Bits`}>
+            <BitsIcon className="bits-icon" /> {bits.toLocaleString()}
           </span>
         </div>
         <h1>{runner.question.prompt}</h1>

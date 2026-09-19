@@ -19,7 +19,12 @@ export default function DemoPage() {
     setStartingTask(taskId);
     setError(null);
     try {
-      const mission = await startMission(certificationId, versionId, taskId);
+      const mission = await startMission({
+        certificationId,
+        certificationVersion: versionId,
+        mode: "task_practice",
+        taskId,
+      });
       navigate(`/missions/${mission.id}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Network error");

@@ -6,7 +6,11 @@ export type CertificationVersionDto =
   components["schemas"]["CertificationVersionDto"];
 export type DomainDto = components["schemas"]["DomainDto"];
 export type TaskDto = components["schemas"]["TaskDto"];
+export type ConceptDto = components["schemas"]["ConceptDto"];
 export type MissionResponse = components["schemas"]["MissionResponse"];
+export type IssueMissionRequest = components["schemas"]["IssueMissionRequest"];
+export type QuizMode = components["schemas"]["QuizMode"];
+export type WalletResponse = components["schemas"]["WalletResponse"];
 export type QuestionView = components["schemas"]["QuestionView"];
 export type Interaction = components["schemas"]["Interaction"];
 export type Choice = components["schemas"]["Choice"];

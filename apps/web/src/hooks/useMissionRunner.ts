@@ -19,6 +19,7 @@ import {
   type AttemptRecord,
   type MissionProgress,
 } from "../state/persistence";
+import { previewBits, reconcileBits } from "../state/wallet";
 import { useQuestionTimer } from "./useQuestionTimer";
 
 export type RunnerPhase =
@@ -128,6 +129,7 @@ export function useMissionRunner(missionId: string): MissionRunner {
         .filter((entry) => entry.accepted)
         .map((entry) => entry.event_id);
       markEventsSynced(accepted);
+      reconcileBits(result.data.bits_balance);
       const remaining = pendingEventCount();
       setSyncState({
         status: remaining === 0 ? "synced" : "pending",
@@ -207,7 +209,9 @@ export function useMissionRunner(missionId: string): MissionRunner {
           hintCount: 0,
           responseMs,
           occurredAt,
+          bits: scored.bits_preview,
         };
+        previewBits(scored.bits_preview);
 
         persist({
           ...progress,

@@ -23,6 +23,7 @@ function certification(overrides: Partial<CertificationDto>): CertificationDto {
         exam_code: "SOA-C03",
         effective_date: "2026-06-01",
         content_version: "soa-c03-content-v1",
+        concepts: [],
         domains: [],
       },
     ],
@@ -39,6 +40,7 @@ const demo = certification({
       exam_code: "SOA-C03",
       effective_date: "2026-06-01",
       content_version: "soa-c03-demo-content-v1",
+      concepts: [],
       domains: [
         {
           id: "domain-2",
@@ -121,6 +123,7 @@ const authored = certification({
       exam_code: "SOA-C03",
       effective_date: "2026-06-01",
       content_version: "soa-c03-content-v1",
+      concepts: [],
       domains: [
         {
           id: "domain-1",

@@ -4,6 +4,7 @@ import { newId } from "../lib/id";
 const DEVICE_KEY = "adaptive-learn.device-id";
 const MISSION_KEY = "adaptive-learn.active-mission";
 const PENDING_KEY = "adaptive-learn.pending-events";
+const BITS_KEY = "adaptive-learn.bits-cache";
 
 /** One scored attempt, mirrored locally for the mission summary. */
 export interface AttemptRecord {
@@ -16,6 +17,8 @@ export interface AttemptRecord {
   hintCount: number;
   responseMs: number;
   occurredAt: string;
+  /** Bits previewed for this attempt (settled later during sync). */
+  bits?: number;
 }
 
 /** Locally persisted mission progress. */
@@ -110,4 +113,19 @@ export function markEventsSynced(eventIds: string[]): PendingEvent[] {
 
 export function pendingEventCount(): number {
   return loadPendingEvents().length;
+}
+
+/**
+ * Cached settled Bits balance, for instant display before the wallet loads.
+ *
+ * The server is authoritative; this is only a display cache that is reconciled
+ * on every wallet fetch and sync.
+ */
+export function loadCachedBits(): number {
+  const value = readJson<number>(BITS_KEY);
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+export function saveCachedBits(bits: number): boolean {
+  return writeJson(BITS_KEY, bits);
 }

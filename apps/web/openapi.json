@@ -315,6 +315,39 @@
           }
         }
       }
+    },
+    "/v1/wallet": {
+      "get": {
+        "tags": [
+          "wallet"
+        ],
+        "summary": "Returns a device's settled Bits balance.",
+        "operationId": "get_wallet",
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "query",
+            "description": "Client device identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Settled Bits balance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -935,9 +968,17 @@
           "exam_code",
           "effective_date",
           "content_version",
-          "domains"
+          "domains",
+          "concepts"
         ],
         "properties": {
+          "concepts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConceptDto"
+            },
+            "description": "Learner-facing knowledge concepts referenced by this version.\n\nMission payloads carry only concept ids; the catalog supplies the names so\nsummaries never have to render a raw identifier."
+          },
           "content_version": {
             "type": "string",
             "description": "Immutable content version."
@@ -1019,6 +1060,24 @@
           "status": {
             "$ref": "#/components/schemas/MissionStatus",
             "description": "New status."
+          }
+        }
+      },
+      "ConceptDto": {
+        "type": "object",
+        "description": "A learner-facing knowledge concept.",
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable concept identifier, for example `aws.cloudformation.changesets`."
+          },
+          "name": {
+            "type": "string",
+            "description": "Short learner-facing name, for example `CloudFormation change sets`."
           }
         }
       },
@@ -1139,11 +1198,17 @@
           "correct",
           "score",
           "error_codes",
+          "bits_preview",
           "explanation",
           "canonical_answer",
           "concepts"
         ],
         "properties": {
+          "bits_preview": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Bits the learner is expected to earn when this attempt is settled.\n\nA preview only: the authoritative balance is settled during sync."
+          },
           "canonical_answer": {
             "$ref": "#/components/schemas/CanonicalAnswer",
             "description": "Canonical answer, revealed after scoring."
@@ -1674,12 +1739,12 @@
       },
       "IssueMissionRequest": {
         "type": "object",
-        "description": "Request to issue a mission for a task.",
+        "description": "Request to issue a mission for a quiz mode.",
         "required": [
           "device_id",
           "certification_id",
           "certification_version",
-          "task_id"
+          "mode"
         ],
         "properties": {
           "certification_id": {
@@ -1695,9 +1760,23 @@
             "format": "uuid",
             "description": "Client device identifier."
           },
+          "domain_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Domain to scope a domain quiz to. Ignored for other modes."
+          },
+          "mode": {
+            "$ref": "#/components/schemas/QuizMode",
+            "description": "Quiz mode deciding how the server selects questions."
+          },
           "task_id": {
-            "type": "string",
-            "description": "Task to study."
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Task to scope a task practice to. Required for `task_practice`."
           }
         }
       },
@@ -1710,8 +1789,7 @@
           "certification_id",
           "certification_version",
           "content_version",
-          "domain_id",
-          "task_id",
+          "mode",
           "issued_at",
           "expires_at",
           "questions"
@@ -1735,8 +1813,11 @@
             "description": "Device the mission belongs to."
           },
           "domain_id": {
-            "type": "string",
-            "description": "Domain covered."
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Domain covered, for domain quizzes."
           },
           "expires_at": {
             "type": "string",
@@ -1753,6 +1834,10 @@
             "format": "date-time",
             "description": "Issue time."
           },
+          "mode": {
+            "$ref": "#/components/schemas/QuizMode",
+            "description": "Quiz mode."
+          },
           "questions": {
             "type": "array",
             "items": {
@@ -1761,8 +1846,11 @@
             "description": "Questions in presentation order."
           },
           "task_id": {
-            "type": "string",
-            "description": "Task covered."
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Task covered, for task practice."
           }
         }
       },
@@ -1883,6 +1971,8 @@
         "description": "A question shown to the learner. Contains no answer key.",
         "required": [
           "id",
+          "domain_id",
+          "task_id",
           "prompt",
           "interaction_type",
           "assessment_mode",
@@ -1908,6 +1998,10 @@
             "format": "double",
             "description": "Prior difficulty."
           },
+          "domain_id": {
+            "type": "string",
+            "description": "Owning domain."
+          },
           "hints": {
             "type": "array",
             "items": {
@@ -1930,8 +2024,22 @@
           "prompt": {
             "type": "string",
             "description": "Learner-facing prompt."
+          },
+          "task_id": {
+            "type": "string",
+            "description": "Owning task."
           }
         }
+      },
+      "QuizMode": {
+        "type": "string",
+        "description": "The quiz mode a mission was issued for.\n\n`task_practice` is kept for the demo/task flow and internal debugging; the\nthree learner-facing modes are quick, domain, and full practice.",
+        "enum": [
+          "quick_adaptive",
+          "domain_quiz",
+          "full_practice",
+          "task_practice"
+        ]
       },
       "ReconstructionAnswerPayload": {
         "type": "object",
@@ -2115,12 +2223,18 @@
         "description": "Result for one synced event.",
         "required": [
           "event_id",
-          "accepted"
+          "accepted",
+          "bits_settled"
         ],
         "properties": {
           "accepted": {
             "type": "boolean",
             "description": "Whether the event is now accepted server-side."
+          },
+          "bits_settled": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Bits settled for this event (0 when rejected or already settled)."
           },
           "error_code": {
             "type": [
@@ -2162,9 +2276,15 @@
         "type": "object",
         "description": "Result of a sync batch.",
         "required": [
-          "results"
+          "results",
+          "bits_balance"
         ],
         "properties": {
+          "bits_balance": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Authoritative settled Bits balance after this batch."
+          },
           "results": {
             "type": "array",
             "items": {
@@ -2197,6 +2317,26 @@
             "minimum": 0
           }
         }
+      },
+      "WalletResponse": {
+        "type": "object",
+        "description": "A device's settled Bits balance.",
+        "required": [
+          "device_id",
+          "bits_balance"
+        ],
+        "properties": {
+          "bits_balance": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Settled Bits balance."
+          },
+          "device_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Device the wallet belongs to."
+          }
+        }
       }
     }
   },
@@ -2216,6 +2356,10 @@
     {
       "name": "sync",
       "description": "Batch reconciliation of learning events"
+    },
+    {
+      "name": "wallet",
+      "description": "Server-authoritative Bits balance"
     }
   ]
 }

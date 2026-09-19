@@ -19,6 +19,7 @@ const mission: MissionResponse = {
   certification_id: "aws-soa-c03",
   certification_version: "soa-c03",
   content_version: "soa-c03-content-v1",
+  mode: "task_practice",
   domain_id: "domain-1",
   task_id: "1.1",
   issued_at: "2026-09-19T10:00:00Z",

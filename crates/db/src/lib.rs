@@ -9,6 +9,7 @@ pub mod learning_events;
 pub mod missions;
 pub mod sync_batches;
 pub mod users;
+pub mod wallets;
 
 use std::time::Duration;
 

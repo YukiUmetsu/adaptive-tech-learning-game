@@ -5,26 +5,29 @@
 
 use std::collections::{HashMap, HashSet};
 
-use adaptive_learn_content::{SubmittedAnswer, score};
+use adaptive_learn_content::{Question, SubmittedAnswer, score};
 use adaptive_learn_db as db;
-use adaptive_learn_domain::{ConceptWeight, LearningEvent, MissionInstance, MissionStatus};
+use adaptive_learn_domain::{
+    ConceptWeight, LearningEvent, MissionInstance, MissionStatus, QuizMode, reward_bits,
+};
 use chrono::{Duration, Utc};
 use uuid::Uuid;
 
 use crate::dto::{
     AnswerPayload, AnswerRequest, CatalogResponse, CertificationDto, CertificationVersionDto,
-    CompleteMissionResponse, DomainDto, FeedbackResponse, IssueMissionRequest, MissionResponse,
-    QuestionView, SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, TaskDto,
+    CompleteMissionResponse, ConceptDto, DomainDto, FeedbackResponse, IssueMissionRequest,
+    MissionResponse, QuestionView, SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse,
+    TaskDto, WalletResponse,
 };
 use crate::error::ApiError;
+use crate::selection::{self, Candidate, HistoryEntry};
 use crate::state::AppState;
-
-/// Missions expire after one hour. Long enough for a study session, short
-/// enough that stale missions do not accumulate.
-const MISSION_TTL_MINUTES: i64 = 60;
 
 /// Response times are capped so background time cannot inflate study time.
 const MAX_RESPONSE_MS: i32 = 30 * 60 * 1000;
+
+/// How many recent accepted events inform adaptive selection.
+const HISTORY_LIMIT: i64 = 500;
 
 /// Builds the certification catalog.
 pub fn catalog(state: &AppState) -> CatalogResponse {
@@ -63,6 +66,14 @@ pub fn catalog(state: &AppState) -> CatalogResponse {
                             .collect(),
                     })
                     .collect(),
+                concepts: bundle
+                    .concepts
+                    .iter()
+                    .map(|concept| ConceptDto {
+                        id: concept.id.clone(),
+                        name: concept.name.clone(),
+                    })
+                    .collect(),
             }],
         })
         .collect();
@@ -70,7 +81,7 @@ pub fn catalog(state: &AppState) -> CatalogResponse {
     CatalogResponse { certifications }
 }
 
-/// Issues a deterministic mission for a task.
+/// Issues a mission for a quiz mode, selecting questions server-side.
 pub async fn issue_mission(
     state: &AppState,
     request: IssueMissionRequest,
@@ -86,41 +97,40 @@ pub async fn issue_mission(
         ));
     }
 
-    let (domain, task) = state
-        .content
-        .find_task(&request.certification_version, &request.task_id)
-        .ok_or(ApiError::NotFound)?;
-
-    let questions = state
-        .content
-        .questions_for_task(&request.certification_version, &request.task_id);
-    let Some(content_version) = questions
-        .first()
-        .map(|question| question.content_version.clone())
-    else {
-        return Err(ApiError::NotFound);
-    };
-
     let now = Utc::now();
+    let (domain_id, task_id, question_ids) = build_question_set(state, &request, now).await?;
+    if question_ids.is_empty() {
+        return Err(ApiError::NotFound);
+    }
+
     let mission = MissionInstance {
         id: Uuid::new_v4(),
         device_id: request.device_id,
         certification_id: bundle.certification.id.clone(),
         certification_version: bundle.version.id.clone(),
-        content_version: content_version.clone(),
-        domain_id: domain.id.clone(),
-        task_id: task.id.clone(),
-        question_ids: questions
-            .iter()
-            .map(|question| question.id.clone())
-            .collect(),
+        content_version: bundle.version.content_version.clone(),
+        mode: request.mode,
+        domain_id,
+        task_id,
+        question_ids,
         status: MissionStatus::Issued,
         issued_at: now,
-        expires_at: now + Duration::minutes(MISSION_TTL_MINUTES),
+        expires_at: now + Duration::minutes(request.mode.ttl_minutes()),
         completed_at: None,
     };
 
     let stored = db::missions::insert(&state.pool, &mission).await?;
+
+    let questions: Vec<QuestionView> = stored
+        .question_ids
+        .iter()
+        .filter_map(|id| {
+            state
+                .content
+                .question(&stored.certification_version, id)
+                .map(question_view)
+        })
+        .collect();
 
     Ok(MissionResponse {
         id: stored.id,
@@ -128,15 +138,139 @@ pub async fn issue_mission(
         certification_id: stored.certification_id,
         certification_version: stored.certification_version,
         content_version: stored.content_version,
+        mode: stored.mode,
         domain_id: stored.domain_id,
         task_id: stored.task_id,
         issued_at: stored.issued_at,
         expires_at: stored.expires_at,
-        questions: questions
-            .iter()
-            .map(|question| question_view(question))
-            .collect(),
+        questions,
     })
+}
+
+/// Builds `(domain_id, task_id, question_ids)` for a mode.
+async fn build_question_set(
+    state: &AppState,
+    request: &IssueMissionRequest,
+    now: chrono::DateTime<Utc>,
+) -> Result<(Option<String>, Option<String>, Vec<String>), ApiError> {
+    let version = &request.certification_version;
+
+    match request.mode {
+        QuizMode::TaskPractice => {
+            let task_id = request
+                .task_id
+                .as_deref()
+                .ok_or_else(|| ApiError::BadRequest("task_practice requires task_id".to_owned()))?;
+            let (_, task) = state
+                .content
+                .find_task(version, task_id)
+                .ok_or(ApiError::NotFound)?;
+            let questions = state.content.questions_for_task(version, task_id);
+            if questions.is_empty() {
+                return Err(ApiError::NotFound);
+            }
+            let domain_id = questions.first().map(|question| question.domain_id.clone());
+            Ok((
+                domain_id,
+                Some(task.id.clone()),
+                questions
+                    .iter()
+                    .map(|question| question.id.clone())
+                    .collect(),
+            ))
+        }
+        QuizMode::DomainQuiz => {
+            let domain_id = request
+                .domain_id
+                .clone()
+                .ok_or_else(|| ApiError::BadRequest("domain_quiz requires domain_id".to_owned()))?;
+            if state
+                .content
+                .questions_for_domain(version, &domain_id)
+                .is_empty()
+            {
+                return Err(ApiError::NotFound);
+            }
+            let ids = select_ids(state, request, Some(&domain_id), now).await?;
+            Ok((Some(domain_id), None, ids))
+        }
+        QuizMode::QuickAdaptive | QuizMode::FullPractice => {
+            let ids = select_ids(state, request, None, now).await?;
+            Ok((None, None, ids))
+        }
+    }
+}
+
+/// Runs the selection service for a certification-wide or domain mode.
+async fn select_ids(
+    state: &AppState,
+    request: &IssueMissionRequest,
+    domain_id: Option<&str>,
+    now: chrono::DateTime<Utc>,
+) -> Result<Vec<String>, ApiError> {
+    let version = &request.certification_version;
+    let questions = match domain_id {
+        Some(domain) => state.content.questions_for_domain(version, domain),
+        None => state.content.questions_for_version(version),
+    };
+    if questions.is_empty() {
+        return Err(ApiError::NotFound);
+    }
+
+    let candidates: Vec<Candidate> = questions.iter().map(|q| candidate_from(q)).collect();
+    let domains: Vec<(String, f64)> = state
+        .content
+        .bundle_for_version(version)
+        .map(|bundle| {
+            bundle
+                .version
+                .domains
+                .iter()
+                .map(|domain| (domain.id.clone(), domain.weight))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let history: Vec<HistoryEntry> = db::learning_events::recent_for_device(
+        &state.pool,
+        request.device_id,
+        &request.certification_id,
+        HISTORY_LIMIT,
+    )
+    .await?
+    .into_iter()
+    .map(|entry| HistoryEntry {
+        question_id: entry.question_id,
+        score: entry.score,
+        occurred_at: entry.occurred_at,
+        concepts: entry.concepts,
+    })
+    .collect();
+
+    Ok(selection::select(
+        &candidates,
+        &domains,
+        &history,
+        request.mode,
+        domain_id,
+        now,
+    ))
+}
+
+fn candidate_from(question: &Question) -> Candidate {
+    Candidate {
+        id: question.id.clone(),
+        domain_id: question.domain_id.clone(),
+        task_id: question.task_id.clone(),
+        interaction_type: question.interaction_type,
+        assessment_mode: question.assessment_mode,
+        difficulty_prior: question.difficulty_prior,
+        concepts: question
+            .concepts
+            .iter()
+            .map(|concept| concept.concept_id.clone())
+            .collect(),
+    }
 }
 
 /// Scores one attempt without persisting an event.
@@ -164,6 +298,11 @@ pub async fn score_attempt(
     let submitted = to_submitted(request.answer)?;
     let scored =
         score(question, &submitted).map_err(|error| ApiError::BadRequest(error.to_string()))?;
+    let bits_preview = reward_bits(
+        request.attempt_number,
+        scored.score,
+        question.difficulty_prior,
+    );
 
     Ok(FeedbackResponse {
         event_id: request.event_id,
@@ -171,6 +310,7 @@ pub async fn score_attempt(
         correct: scored.correct,
         score: scored.score,
         error_codes: scored.error_codes,
+        bits_preview,
         explanation: question.explanation.clone(),
         canonical_answer: scored.canonical,
         concepts: concept_weights(question),
@@ -211,17 +351,22 @@ pub async fn sync(state: &AppState, request: SyncRequest) -> Result<SyncResponse
         };
 
         match apply_event(state, &request.device_id, &mission, event).await {
-            Ok(()) => results.push(SyncEventResult {
+            Ok(bits_settled) => results.push(SyncEventResult {
                 event_id,
                 accepted: true,
                 error_code: None,
+                bits_settled,
             }),
             Err(SyncRejection::Fatal(error)) => return Err(ApiError::Internal(error)),
             Err(SyncRejection::Rejected(code)) => results.push(reject(event_id, code)),
         }
     }
 
-    Ok(SyncResponse { results })
+    let bits_balance = db::wallets::balance(&state.pool, request.device_id).await?;
+    Ok(SyncResponse {
+        results,
+        bits_balance,
+    })
 }
 
 fn reject(event_id: Uuid, code: impl Into<String>) -> SyncEventResult {
@@ -229,7 +374,17 @@ fn reject(event_id: Uuid, code: impl Into<String>) -> SyncEventResult {
         event_id,
         accepted: false,
         error_code: Some(code.into()),
+        bits_settled: 0,
     }
+}
+
+/// Returns a device's settled Bits balance.
+pub async fn wallet(state: &AppState, device_id: Uuid) -> Result<WalletResponse, ApiError> {
+    let bits_balance = db::wallets::balance(&state.pool, device_id).await?;
+    Ok(WalletResponse {
+        device_id,
+        bits_balance,
+    })
 }
 
 /// Why a single synced event was not accepted.
@@ -269,7 +424,7 @@ async fn apply_event(
     device_id: &Uuid,
     mission: &MissionInstance,
     event: SyncEventRequest,
-) -> Result<(), SyncRejection> {
+) -> Result<i64, SyncRejection> {
     if &mission.device_id != device_id {
         return Err(SyncRejection::Rejected("forbidden".to_owned()));
     }
@@ -294,28 +449,24 @@ async fn apply_event(
                 event.question_id
             ))
         })?;
-    if question.content_version != mission.content_version {
-        return Err(SyncRejection::Rejected("conflict".to_owned()));
-    }
 
     let submitted = to_submitted(event.answer)
         .map_err(|error| SyncRejection::Rejected(error.code().to_owned()))?;
     let scored = score(question, &submitted)
         .map_err(|error| SyncRejection::Rejected(error.code().to_owned()))?;
 
-    // The database assigns the next attempt number inside a locked transaction.
-    // Hints are not implemented in Phase 1, so the server records zero rather
-    // than trusting a client count.
+    // Domain and task come from the actual question, not the mission: mixed
+    // missions have no single task, and analytics must stay per-question.
     let learning_event = LearningEvent {
         event_id: event.event_id,
         device_id: mission.device_id,
         mission_instance_id: mission.id,
         certification_id: mission.certification_id.clone(),
         certification_version: mission.certification_version.clone(),
-        domain_id: mission.domain_id.clone(),
-        task_id: mission.task_id.clone(),
+        domain_id: question.domain_id.clone(),
+        task_id: question.task_id.clone(),
         question_id: event.question_id,
-        content_version: mission.content_version.clone(),
+        content_version: question.content_version.clone(),
         concepts: concept_weights(question),
         assessment_mode: question.assessment_mode,
         interaction_type: question.interaction_type,
@@ -327,10 +478,19 @@ async fn apply_event(
         occurred_at: event.occurred_at,
     };
 
-    db::learning_events::insert_with_next_attempt(&state.pool, &learning_event)
-        .await
-        .map_err(|error| SyncRejection::Fatal(error.into()))?;
-    Ok(())
+    // The database assigns the next attempt number and settles Bits in one
+    // idempotent transaction.
+    let attempt =
+        db::learning_events::accept_answer(&state.pool, &learning_event, question.difficulty_prior)
+            .await
+            .map_err(|error| SyncRejection::Fatal(error.into()))?;
+
+    Ok(match attempt {
+        Some(attempt_number) => {
+            reward_bits(attempt_number, scored.score, question.difficulty_prior)
+        }
+        None => 0,
+    })
 }
 
 async fn load_mission(state: &AppState, mission_id: Uuid) -> Result<MissionInstance, ApiError> {
@@ -368,10 +528,6 @@ fn resolve_question<'a>(
                 question_id
             ))
         })?;
-
-    if question.content_version != mission.content_version {
-        return Err(ApiError::Conflict("content version mismatch".to_owned()));
-    }
 
     Ok(question)
 }
@@ -492,6 +648,8 @@ fn concept_weights(question: &adaptive_learn_content::Question) -> Vec<ConceptWe
 fn question_view(question: &adaptive_learn_content::Question) -> QuestionView {
     QuestionView {
         id: question.id.clone(),
+        domain_id: question.domain_id.clone(),
+        task_id: question.task_id.clone(),
         prompt: question.prompt.clone(),
         interaction_type: question.interaction_type,
         assessment_mode: question.assessment_mode,
