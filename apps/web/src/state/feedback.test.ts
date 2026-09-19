@@ -479,7 +479,10 @@ describe("reviewDetails", () => {
       assessment_mode: "recall",
       interaction: {
         type: "typed_fill_blank",
-        text: "Amazon {{service}} is a queue.",
+        content: {
+          type: "text",
+          template: "Amazon {{service}} is a queue.",
+        },
         slots: [{ id: "service", label: "Service" }],
       },
     };
@@ -528,7 +531,10 @@ describe("reviewDetails", () => {
       assessment_mode: "recall",
       interaction: {
         type: "typed_fill_blank",
-        text: "An explicit {{result}} overrides an Allow.",
+        content: {
+          type: "text",
+          template: "An explicit {{result}} overrides an Allow.",
+        },
         slots: [{ id: "result", label: "Result" }],
       },
     };

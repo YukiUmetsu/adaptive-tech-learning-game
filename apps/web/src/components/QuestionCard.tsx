@@ -2,11 +2,13 @@ import { useState } from "react";
 
 import type {
   AnswerPayload,
+  FeedbackResponse,
   PlacementPoint,
   QuestionView,
   ReconstructionAnswerPayload,
 } from "../api/types";
 import { shuffledOrder } from "../lib/shuffle";
+import { typedBlankStatuses } from "../lib/typedBlank";
 import BranchingScenarioInteraction from "./BranchingScenarioInteraction";
 import ClassificationInteraction from "./ClassificationInteraction";
 import EvidenceSelectionInteraction from "./EvidenceSelectionInteraction";
@@ -21,12 +23,15 @@ import TypedFillBlankInteraction from "./TypedFillBlankInteraction";
 interface QuestionCardProps {
   question: QuestionView;
   disabled?: boolean;
+  /** Server feedback for this question, used for per-blank presentation state. */
+  feedback?: FeedbackResponse | null;
   onSubmit: (answer: AnswerPayload) => void;
 }
 
 export default function QuestionCard({
   question,
   disabled = false,
+  feedback = null,
   onSubmit,
 }: QuestionCardProps) {
   const [classification, setClassification] = useState<Record<string, string>>(
@@ -52,6 +57,11 @@ export default function QuestionCard({
   const [positions, setPositions] = useState<Record<string, PlacementPoint>>(
     {},
   );
+
+  const typedStatuses =
+    question.interaction.type === "typed_fill_blank"
+      ? typedBlankStatuses(question.interaction.slots, slots, feedback)
+      : undefined;
 
   const canSubmit = (() => {
     switch (question.interaction.type) {
@@ -235,10 +245,11 @@ export default function QuestionCard({
 
       {question.interaction.type === "typed_fill_blank" ? (
         <TypedFillBlankInteraction
-          text={question.interaction.text}
+          content={question.interaction.content}
           slots={question.interaction.slots}
           value={slots}
           disabled={disabled}
+          statuses={typedStatuses}
           onChange={setSlots}
         />
       ) : null}

@@ -132,7 +132,7 @@ pub struct FillSlot {
 
 /// A blank the learner fills by typing free text.
 ///
-/// The slot's `id` is referenced as `{{id}}` inside the interaction text.
+/// The slot's `id` is referenced as `{{id}}` inside a content template.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
 pub struct TypedBlankSlot {
     /// Stable identifier within the question, used as the `{{id}}` placeholder.
@@ -152,6 +152,72 @@ pub struct TypedBlankSlot {
 pub struct TypedBlankAnswer {
     /// Authored answers that are accepted for this blank.
     pub accepted_answers: Vec<String>,
+}
+
+/// Presentation context for a typed fill-in-the-blank interaction.
+///
+/// Presentation is explicit and tagged, so the renderer never has to guess
+/// whether authored content is prose, source code, or a table. Blank positions
+/// are always marked with `{{slot_id}}` inside a `template`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum TypedFillContent {
+    /// A sentence or short prose statement containing `{{slot_id}}` placeholders.
+    Text {
+        /// Template text containing `{{slot_id}}` placeholders.
+        template: String,
+    },
+    /// A syntax-highlighted source-code sample containing `{{slot_id}}` placeholders.
+    Code {
+        /// Highlighting language, for example `python`.
+        language: String,
+        /// Code template containing `{{slot_id}}` placeholders. Newlines and
+        /// indentation are significant.
+        template: String,
+    },
+    /// A table whose cells may contain text or code templates.
+    Table {
+        /// Columns in presentation order.
+        columns: Vec<TypedFillTableColumn>,
+        /// Rows in presentation order.
+        rows: Vec<TypedFillTableRow>,
+    },
+}
+
+/// A column in a typed fill-in-the-blank table.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct TypedFillTableColumn {
+    /// Stable identifier within the interaction.
+    pub id: String,
+    /// Learner-facing column heading.
+    pub label: String,
+}
+
+/// A row in a typed fill-in-the-blank table.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct TypedFillTableRow {
+    /// Stable identifier within the interaction.
+    pub id: String,
+    /// Column id to the cell presented in that column.
+    pub cells: std::collections::BTreeMap<String, TypedFillTableCell>,
+}
+
+/// Presentation of one typed fill-in-the-blank table cell.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum TypedFillTableCell {
+    /// A text template containing `{{slot_id}}` placeholders.
+    Text {
+        /// Cell text containing `{{slot_id}}` placeholders.
+        template: String,
+    },
+    /// A syntax-highlighted code template containing `{{slot_id}}` placeholders.
+    Code {
+        /// Highlighting language, for example `python`.
+        language: String,
+        /// Code template containing `{{slot_id}}` placeholders.
+        template: String,
+    },
 }
 
 /// The operational stage a branching-scenario decision belongs to.
@@ -364,9 +430,9 @@ pub enum Interaction {
     },
     /// Fill inline blanks inside a sentence by typing the missing text.
     TypedFillBlank {
-        /// Sentence or statement containing `{{slot_id}}` placeholders.
-        text: String,
-        /// Blanks referenced by the text, in declaration order.
+        /// Presentation context (prose, code, or table).
+        content: TypedFillContent,
+        /// Blanks referenced anywhere in the content, in declaration order.
         slots: Vec<TypedBlankSlot>,
     },
 }

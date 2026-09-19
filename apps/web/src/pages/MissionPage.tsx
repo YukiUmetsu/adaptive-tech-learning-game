@@ -89,6 +89,7 @@ export default function MissionPage() {
         key={runner.question.id}
         question={runner.question}
         disabled={runner.submitting || runner.phase === "feedback"}
+        feedback={runner.feedback}
         onSubmit={(answer) => void runner.submit(answer)}
       />
 

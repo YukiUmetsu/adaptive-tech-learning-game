@@ -69,6 +69,25 @@ fn demo_question(id: &str) -> adaptive_learn_content::Question {
         .clone()
 }
 
+fn pytorch_source() -> &'static str {
+    adaptive_learn_content::EMBEDDED_SOURCES
+        .iter()
+        .copied()
+        .find(|source| source.contains("\"pytorch-typed-fill-demo\""))
+        .expect("pytorch demo bundle is embedded")
+}
+
+fn pytorch_value() -> Value {
+    serde_json::from_str(pytorch_source()).expect("pytorch demo bundle is valid json")
+}
+
+fn pytorch_question(id: &str) -> adaptive_learn_content::Question {
+    demo_registry()
+        .question("pytorch-demo-v1", id)
+        .expect("pytorch demo question exists")
+        .clone()
+}
+
 fn validate_value(value: &Value) -> Result<(), Vec<ContentError>> {
     let bundle: ContentBundle =
         serde_json::from_value(value.clone()).expect("mutation remains deserializable");
@@ -596,13 +615,154 @@ fn typed_fill_blank_serializes_with_expected_discriminator() {
     let question = demo_question("demo-typed-sg-nacl-001");
     let interaction = serde_json::to_value(&question.interaction).expect("serialize");
     assert_eq!(interaction["type"], serde_json::json!("typed_fill_blank"));
-    assert!(interaction["text"].as_str().is_some());
+    assert_eq!(interaction["content"]["type"], serde_json::json!("text"));
+    assert!(interaction["content"]["template"].as_str().is_some());
     assert_eq!(interaction["slots"].as_array().map(Vec::len), Some(2));
 
     let canonical = serde_json::to_value(&question.canonical_answer).expect("serialize");
     assert_eq!(canonical["type"], serde_json::json!("typed_fill_blank"));
 
     let decoded: Interaction = serde_json::from_value(interaction).expect("deserialize");
+    assert_eq!(decoded, question.interaction);
+}
+
+#[test]
+fn typed_fill_code_scores_and_preserves_language() {
+    let question = pytorch_question("pytorch-typed-optimizer-001");
+
+    let Interaction::TypedFillBlank { content, .. } = &question.interaction else {
+        panic!("expected typed fill blank");
+    };
+    let adaptive_learn_content::TypedFillContent::Code { language, template } = content else {
+        panic!("expected code content");
+    };
+    assert_eq!(language, "python");
+    assert_eq!(
+        template,
+        "optimizer.{{zero}}()\nloss.backward()\noptimizer.{{step}}()"
+    );
+
+    let perfect = score(
+        &question,
+        &SubmittedAnswer::TypedFillBlank(
+            [
+                ("zero".to_owned(), " zero_grad ".to_owned()),
+                ("step".to_owned(), "STEP.".to_owned()),
+            ]
+            .into_iter()
+            .collect(),
+        ),
+    )
+    .expect("score");
+    assert!(perfect.correct);
+    assert_eq!(perfect.score, 1.0);
+
+    let partial = score(
+        &question,
+        &SubmittedAnswer::TypedFillBlank(
+            [
+                ("zero".to_owned(), "zero_grad".to_owned()),
+                ("step".to_owned(), "backward".to_owned()),
+            ]
+            .into_iter()
+            .collect(),
+        ),
+    )
+    .expect("score");
+    assert!(!partial.correct);
+    assert_eq!(partial.score, 0.5);
+    assert!(
+        partial
+            .error_codes
+            .contains(&"typed_fill_blank_incorrect".to_owned())
+    );
+}
+
+#[test]
+fn typed_fill_code_argument_and_mode_score() {
+    let dim = pytorch_question("pytorch-typed-softmax-dim-001");
+    let scored = score(
+        &dim,
+        &SubmittedAnswer::TypedFillBlank(
+            [("dim".to_owned(), "-1".to_owned())].into_iter().collect(),
+        ),
+    )
+    .expect("score");
+    assert!(scored.correct);
+
+    let mode = pytorch_question("pytorch-typed-model-mode-001");
+    let scored = score(
+        &mode,
+        &SubmittedAnswer::TypedFillBlank(
+            [("mode".to_owned(), "eval".to_owned())]
+                .into_iter()
+                .collect(),
+        ),
+    )
+    .expect("score");
+    assert!(scored.correct);
+}
+
+#[test]
+fn typed_fill_table_scores_every_cell_slot() {
+    let question = pytorch_question("pytorch-typed-table-001");
+
+    let perfect = score(
+        &question,
+        &SubmittedAnswer::TypedFillBlank(
+            [
+                ("zero".to_owned(), "zero_grad".to_owned()),
+                ("backward".to_owned(), "backward".to_owned()),
+                ("step".to_owned(), "step".to_owned()),
+            ]
+            .into_iter()
+            .collect(),
+        ),
+    )
+    .expect("score");
+    assert!(perfect.correct);
+    assert_eq!(perfect.score, 1.0);
+
+    let partial = score(
+        &question,
+        &SubmittedAnswer::TypedFillBlank(
+            [
+                ("zero".to_owned(), "zero_grad".to_owned()),
+                ("backward".to_owned(), "backword".to_owned()),
+                ("step".to_owned(), "step".to_owned()),
+            ]
+            .into_iter()
+            .collect(),
+        ),
+    )
+    .expect("score");
+    assert_eq!(partial.score, 2.0 / 3.0);
+}
+
+#[test]
+fn typed_fill_table_serializes_cell_and_content_types() {
+    let question = pytorch_question("pytorch-typed-table-001");
+    let interaction = serde_json::to_value(&question.interaction).expect("serialize");
+
+    assert_eq!(interaction["type"], serde_json::json!("typed_fill_blank"));
+    assert_eq!(interaction["content"]["type"], serde_json::json!("table"));
+
+    let columns = interaction["content"]["columns"]
+        .as_array()
+        .expect("columns");
+    assert_eq!(columns.len(), 2);
+    assert_eq!(columns[0]["id"], serde_json::json!("goal"));
+
+    let rows = interaction["content"]["rows"].as_array().expect("rows");
+    assert_eq!(rows[0]["cells"]["goal"]["type"], serde_json::json!("text"));
+    assert_eq!(rows[0]["cells"]["api"]["type"], serde_json::json!("code"));
+    assert_eq!(
+        rows[0]["cells"]["api"]["language"],
+        serde_json::json!("python")
+    );
+
+    let decoded: Interaction =
+        serde_json::from_value(interaction).expect("table interaction deserializes");
     assert_eq!(decoded, question.interaction);
 }
 
@@ -954,7 +1114,7 @@ fn rejects_canonical_command_missing_slot() {
 fn rejects_typed_placeholder_for_unknown_slot() {
     let mut value = demo_value();
     let index = question_index(&value, "demo-typed-sg-nacl-001");
-    value["questions"][index]["interaction"]["text"] =
+    value["questions"][index]["interaction"]["content"]["template"] =
         Value::from("Security groups are {{sg_behavior}} and {{ghost}}.");
 
     expect_error(&value, "typed_placeholder_unknown_slot");
@@ -964,7 +1124,7 @@ fn rejects_typed_placeholder_for_unknown_slot() {
 fn rejects_typed_slot_never_referenced_in_text() {
     let mut value = demo_value();
     let index = question_index(&value, "demo-typed-sg-nacl-001");
-    value["questions"][index]["interaction"]["text"] =
+    value["questions"][index]["interaction"]["content"]["template"] =
         Value::from("Security groups are {{sg_behavior}}.");
 
     expect_error(&value, "typed_slot_not_referenced");
@@ -974,7 +1134,7 @@ fn rejects_typed_slot_never_referenced_in_text() {
 fn rejects_typed_duplicate_placeholder() {
     let mut value = demo_value();
     let index = question_index(&value, "demo-typed-sg-nacl-001");
-    value["questions"][index]["interaction"]["text"] =
+    value["questions"][index]["interaction"]["content"]["template"] =
         Value::from("{{sg_behavior}} and {{sg_behavior}}.");
 
     expect_error(&value, "typed_duplicate_placeholder");
@@ -984,7 +1144,7 @@ fn rejects_typed_duplicate_placeholder() {
 fn rejects_malformed_typed_placeholder() {
     let mut value = demo_value();
     let index = question_index(&value, "demo-typed-deny-001");
-    value["questions"][index]["interaction"]["text"] =
+    value["questions"][index]["interaction"]["content"]["template"] =
         Value::from("An explicit {{policy_result overrides an Allow.");
 
     expect_error(&value, "typed_placeholder_malformed");
@@ -1062,6 +1222,115 @@ fn rejects_typed_interaction_type_mismatch() {
     value["questions"][index]["interaction_type"] = Value::from("fill_slots");
 
     expect_error(&value, "interaction_type_mismatch");
+}
+
+#[test]
+fn rejects_code_placeholder_for_unknown_slot() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-backward-001");
+    value["questions"][index]["interaction"]["content"]["template"] =
+        Value::from("loss.{{ghost}}()");
+
+    expect_error(&value, "typed_placeholder_unknown_slot");
+}
+
+#[test]
+fn rejects_code_slot_never_referenced() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-backward-001");
+    value["questions"][index]["interaction"]["content"]["template"] =
+        Value::from("loss.backward()");
+
+    expect_error(&value, "typed_slot_not_referenced");
+}
+
+#[test]
+fn rejects_code_template_without_a_language() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-backward-001");
+    value["questions"][index]["interaction"]["content"]["language"] = Value::from("");
+
+    expect_error(&value, "typed_code_language_missing");
+}
+
+#[test]
+fn rejects_empty_code_template() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-backward-001");
+    value["questions"][index]["interaction"]["content"]["template"] = Value::from("");
+
+    expect_error(&value, "typed_template_empty");
+}
+
+#[test]
+fn rejects_duplicate_table_column_id() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-table-001");
+    let column = value["questions"][index]["interaction"]["content"]["columns"][0].clone();
+    value["questions"][index]["interaction"]["content"]["columns"]
+        .as_array_mut()
+        .expect("columns")
+        .push(column);
+
+    expect_error(&value, "duplicate_typed_table_column_id");
+}
+
+#[test]
+fn rejects_duplicate_table_row_id() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-table-001");
+    let row = value["questions"][index]["interaction"]["content"]["rows"][0].clone();
+    value["questions"][index]["interaction"]["content"]["rows"]
+        .as_array_mut()
+        .expect("rows")
+        .push(row);
+
+    expect_error(&value, "duplicate_typed_table_row_id");
+}
+
+#[test]
+fn rejects_table_cell_for_unknown_column() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-table-001");
+    value["questions"][index]["interaction"]["content"]["rows"][0]["cells"]["ghost"] =
+        serde_json::json!({ "type": "text", "template": "ghost" });
+
+    expect_error(&value, "typed_table_unknown_cell");
+}
+
+#[test]
+fn rejects_table_row_missing_a_column_cell() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-table-001");
+    value["questions"][index]["interaction"]["content"]["rows"][0]["cells"]
+        .as_object_mut()
+        .expect("cells")
+        .remove("api");
+
+    expect_error(&value, "typed_table_row_column_missing");
+}
+
+#[test]
+fn rejects_duplicate_placeholder_across_table_cells() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-table-001");
+    // Point the second row at the same slot the first row already uses.
+    value["questions"][index]["interaction"]["content"]["rows"][1]["cells"]["api"]["template"] =
+        Value::from("optimizer.{{zero}}()");
+
+    expect_error(&value, "typed_duplicate_placeholder");
+}
+
+#[test]
+fn rejects_canonical_typed_answer_missing_for_table() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-table-001");
+    value["questions"][index]["canonical_answer"]["answers"]
+        .as_object_mut()
+        .expect("answers")
+        .remove("step");
+
+    expect_error(&value, "canonical_typed_answer_missing");
 }
 
 #[test]

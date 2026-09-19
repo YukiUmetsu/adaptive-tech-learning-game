@@ -301,7 +301,11 @@ describe("QuestionCard", () => {
       assessment_mode: "recall",
       interaction: {
         type: "typed_fill_blank",
-        text: "Security groups are {{sg}}, while network ACLs are {{nacl}}.",
+        content: {
+          type: "text",
+          template:
+            "Security groups are {{sg}}, while network ACLs are {{nacl}}.",
+        },
         slots: [
           { id: "sg", label: "Security group behavior", placeholder: "Type..." },
           { id: "nacl", label: "NACL behavior", placeholder: "Type..." },
@@ -327,6 +331,79 @@ describe("QuestionCard", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       typed_answers: { sg: "stateful", nacl: "stateless" },
+    });
+  });
+
+  it("does not submit a typed code answer on Enter", async () => {
+    const onSubmit = vi.fn();
+    const question = base({
+      interaction_type: "typed_fill_blank",
+      assessment_mode: "recall",
+      interaction: {
+        type: "typed_fill_blank",
+        content: {
+          type: "code",
+          language: "python",
+          template: "loss.{{method}}()",
+        },
+        slots: [{ id: "method", label: "Loss method", placeholder: "method" }],
+      },
+    });
+
+    render(<QuestionCard question={question} onSubmit={onSubmit} />);
+
+    await userEvent.type(
+      screen.getByRole("textbox", { name: "Loss method" }),
+      "backward{Enter}",
+    );
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: "Submit answer" }),
+    ).toBeEnabled();
+  });
+
+  it("submits typed answers from table cells", async () => {
+    const onSubmit = vi.fn();
+    const question = base({
+      interaction_type: "typed_fill_blank",
+      assessment_mode: "recall",
+      interaction: {
+        type: "typed_fill_blank",
+        content: {
+          type: "table",
+          columns: [
+            { id: "goal", label: "Goal" },
+            { id: "api", label: "PyTorch code" },
+          ],
+          rows: [
+            {
+              id: "clear",
+              cells: {
+                goal: { type: "text", template: "Clear gradients" },
+                api: {
+                  type: "code",
+                  language: "python",
+                  template: "optimizer.{{zero}}()",
+                },
+              },
+            },
+          ],
+        },
+        slots: [{ id: "zero", label: "Clear gradients", placeholder: "method" }],
+      },
+    });
+
+    render(<QuestionCard question={question} onSubmit={onSubmit} />);
+
+    await userEvent.type(
+      screen.getByRole("textbox", { name: "Clear gradients" }),
+      "zero_grad",
+    );
+    await submit();
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      typed_answers: { zero: "zero_grad" },
     });
   });
 });

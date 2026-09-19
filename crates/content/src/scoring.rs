@@ -2170,7 +2170,9 @@ mod tests {
     fn typed_question() -> Question {
         question(
             Interaction::TypedFillBlank {
-                text: "Security groups are {{sg}} and NACLs are {{nacl}}.".to_owned(),
+                content: crate::model::TypedFillContent::Text {
+                    template: "Security groups are {{sg}} and NACLs are {{nacl}}.".to_owned(),
+                },
                 slots: vec![
                     crate::model::TypedBlankSlot {
                         id: "sg".to_owned(),
@@ -2280,7 +2282,9 @@ mod tests {
     fn typed_fill_blank_accepts_authored_aliases_only() {
         let q = question(
             Interaction::TypedFillBlank {
-                text: "Amazon {{service}} is a queue.".to_owned(),
+                content: crate::model::TypedFillContent::Text {
+                    template: "Amazon {{service}} is a queue.".to_owned(),
+                },
                 slots: vec![crate::model::TypedBlankSlot {
                     id: "service".to_owned(),
                     label: "Service".to_owned(),

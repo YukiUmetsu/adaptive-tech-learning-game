@@ -658,10 +658,10 @@ export interface components {
             /** @enum {string} */
             type: "command_assembly";
         } | {
-            /** @description Blanks referenced by the text, in declaration order. */
+            /** @description Presentation context (prose, code, or table). */
+            content: components["schemas"]["TypedFillContent"];
+            /** @description Blanks referenced anywhere in the content, in declaration order. */
             slots: components["schemas"]["TypedBlankSlot"][];
-            /** @description Sentence or statement containing `{{slot_id}}` placeholders. */
-            text: string;
             /** @enum {string} */
             type: "typed_fill_blank";
         };
@@ -1125,7 +1125,7 @@ export interface components {
         /**
          * @description A blank the learner fills by typing free text.
          *
-         *     The slot's `id` is referenced as `{{id}}` inside the interaction text.
+         *     The slot's `id` is referenced as `{{id}}` inside a content template.
          */
         TypedBlankSlot: {
             /** @description Stable identifier within the question, used as the `{{id}}` placeholder. */
@@ -1134,6 +1134,66 @@ export interface components {
             label: string;
             /** @description Optional hint text shown inside the empty input. */
             placeholder?: string;
+        };
+        /**
+         * @description Presentation context for a typed fill-in-the-blank interaction.
+         *
+         *     Presentation is explicit and tagged, so the renderer never has to guess
+         *     whether authored content is prose, source code, or a table. Blank positions
+         *     are always marked with `{{slot_id}}` inside a `template`.
+         */
+        TypedFillContent: {
+            /** @description Template text containing `{{slot_id}}` placeholders. */
+            template: string;
+            /** @enum {string} */
+            type: "text";
+        } | {
+            /** @description Highlighting language, for example `python`. */
+            language: string;
+            /**
+             * @description Code template containing `{{slot_id}}` placeholders. Newlines and
+             *     indentation are significant.
+             */
+            template: string;
+            /** @enum {string} */
+            type: "code";
+        } | {
+            /** @description Columns in presentation order. */
+            columns: components["schemas"]["TypedFillTableColumn"][];
+            /** @description Rows in presentation order. */
+            rows: components["schemas"]["TypedFillTableRow"][];
+            /** @enum {string} */
+            type: "table";
+        };
+        /** @description Presentation of one typed fill-in-the-blank table cell. */
+        TypedFillTableCell: {
+            /** @description Cell text containing `{{slot_id}}` placeholders. */
+            template: string;
+            /** @enum {string} */
+            type: "text";
+        } | {
+            /** @description Highlighting language, for example `python`. */
+            language: string;
+            /** @description Code template containing `{{slot_id}}` placeholders. */
+            template: string;
+            /** @enum {string} */
+            type: "code";
+        };
+        /** @description A column in a typed fill-in-the-blank table. */
+        TypedFillTableColumn: {
+            /** @description Stable identifier within the interaction. */
+            id: string;
+            /** @description Learner-facing column heading. */
+            label: string;
+        };
+        /** @description A row in a typed fill-in-the-blank table. */
+        TypedFillTableRow: {
+            /** @description Column id to the cell presented in that column. */
+            cells: {
+                [key: string]: components["schemas"]["TypedFillTableCell"];
+            };
+            /** @description Stable identifier within the interaction. */
+            id: string;
         };
         /** @description A device's settled Bits balance. */
         WalletResponse: {
