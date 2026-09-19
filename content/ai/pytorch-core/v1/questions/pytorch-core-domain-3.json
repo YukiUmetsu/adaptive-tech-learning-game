@@ -1,0 +1,2385 @@
+{
+  "certification": {
+    "id": "ai-pytorch-core",
+    "vendor": "PyTorch",
+    "name": "PyTorch Core: Practical ML & Neural Networks",
+    "exam_code": "PYTORCH-CORE",
+    "official_source_url": "https://docs.pytorch.org/docs/stable/",
+    "last_reviewed": "2026-09-19"
+  },
+  "version": {
+    "id": "pytorch-core-v1",
+    "exam_code": "PYTORCH-CORE",
+    "effective_date": "2026-09-19",
+    "content_version": "pytorch-core-content-2026-09-19-v2",
+    "domains": [
+      {
+        "id": "domain-1",
+        "name": "Tensor Fundamentals & Shape Fluency",
+        "weight": 0.19,
+        "tasks": []
+      },
+      {
+        "id": "domain-2",
+        "name": "Datasets & Data Pipelines",
+        "weight": 0.14,
+        "tasks": []
+      },
+      {
+        "id": "domain-3",
+        "name": "Models & Common Neural Network Layers",
+        "weight": 0.19,
+        "tasks": [
+          {
+            "id": "3.1",
+            "name": "Build models with nn.Module",
+            "question_ids": [
+              "nn-module-typed-001",
+              "nn-module-typed-002",
+              "forward-call-typed-001",
+              "forward-call-typed-002",
+              "linear-typed-001",
+              "linear-typed-002",
+              "sequential-typed-001",
+              "sequential-typed-002"
+            ]
+          },
+          {
+            "id": "3.2",
+            "name": "Use common layers and reason about shapes",
+            "question_ids": [
+              "activations-typed-001",
+              "activations-typed-002",
+              "flatten-typed-001",
+              "flatten-typed-002",
+              "conv2d-typed-001",
+              "conv2d-typed-002",
+              "pooling-typed-001",
+              "pooling-typed-002",
+              "layer-selection-class-001",
+              "layer-selection-class-002"
+            ]
+          },
+          {
+            "id": "3.3",
+            "name": "Use embeddings, normalization, and registered modules",
+            "question_ids": [
+              "embedding-typed-001",
+              "embedding-typed-002",
+              "dropout-typed-001",
+              "dropout-typed-002",
+              "batchnorm-typed-001",
+              "batchnorm-typed-002",
+              "modulelist-typed-001",
+              "modulelist-typed-002",
+              "parameters-state-typed-001",
+              "parameters-state-typed-002"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "domain-4",
+        "name": "Autograd & Training Loops",
+        "weight": 0.19,
+        "tasks": []
+      },
+      {
+        "id": "domain-5",
+        "name": "Losses, Optimizers & Learning-Rate Control",
+        "weight": 0.15,
+        "tasks": []
+      },
+      {
+        "id": "domain-6",
+        "name": "Devices, Checkpoints & Performance",
+        "weight": 0.14,
+        "tasks": []
+      }
+    ]
+  },
+  "concepts": [
+    {
+      "id": "ai.pytorch.nn_module",
+      "name": "Subclassing `nn.Module`",
+      "description": "Custom neural networks normally subclass `nn.Module`, call `super().__init__()`, and assign child layers as module attributes."
+    },
+    {
+      "id": "ai.pytorch.forward_call",
+      "name": "`forward` and calling the model",
+      "description": "A Module defines computation in `forward`, while normal user code should call `model(x)` so Module hooks and wrapper behavior are respected."
+    },
+    {
+      "id": "ai.pytorch.linear",
+      "name": "`nn.Linear`",
+      "description": "`nn.Linear(in_features, out_features)` applies an affine transformation to the last input dimension."
+    },
+    {
+      "id": "ai.pytorch.sequential",
+      "name": "`nn.Sequential`",
+      "description": "`nn.Sequential` chains modules in order so each module receives the previous module output."
+    },
+    {
+      "id": "ai.pytorch.activations",
+      "name": "Common activation modules",
+      "description": "`nn.ReLU` applies `max(0, x)`, while activations such as GELU provide alternative nonlinearities used in many modern architectures."
+    },
+    {
+      "id": "ai.pytorch.flatten",
+      "name": "Flattening feature dimensions",
+      "description": "`nn.Flatten(start_dim=1)` commonly flattens all non-batch dimensions while preserving dimension 0 as the batch axis."
+    },
+    {
+      "id": "ai.pytorch.conv2d",
+      "name": "`nn.Conv2d`",
+      "description": "`nn.Conv2d` expects image-like input with channels in the second dimension for batched tensors: `[N, C, H, W]`."
+    },
+    {
+      "id": "ai.pytorch.pooling",
+      "name": "Pooling",
+      "description": "`nn.MaxPool2d` downsamples spatial dimensions by taking local maxima over a window."
+    },
+    {
+      "id": "ai.pytorch.embedding",
+      "name": "`nn.Embedding`",
+      "description": "`nn.Embedding(num_embeddings, embedding_dim)` is a learnable lookup table that maps integer indices to embedding vectors."
+    },
+    {
+      "id": "ai.pytorch.dropout",
+      "name": "Dropout",
+      "description": "`nn.Dropout(p)` randomly zeroes elements with probability `p` during training and behaves as an identity transform during evaluation."
+    },
+    {
+      "id": "ai.pytorch.batchnorm",
+      "name": "Batch normalization mode behavior",
+      "description": "BatchNorm modules can track running statistics and use training-versus-evaluation mode differently, so `train()` and `eval()` matter for inference correctness."
+    },
+    {
+      "id": "ai.pytorch.modulelist",
+      "name": "`ModuleList` and module registration",
+      "description": "`nn.ModuleList` stores a list of child modules while keeping them registered with the parent Module."
+    },
+    {
+      "id": "ai.pytorch.parameters_state",
+      "name": "Parameters and `state_dict`",
+      "description": "`model.parameters()` iterates registered Parameter objects, while `model.state_dict()` returns a mapping of registered parameters and persistent buffers."
+    }
+  ],
+  "questions": [
+    {
+      "id": "nn-module-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the model skeleton.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "class Net(nn.{{base}}):\n    def __init__(self):\n        {{super_call}}"
+        },
+        "slots": [
+          {
+            "id": "base",
+            "label": "Base",
+            "placeholder": "Type..."
+          },
+          {
+            "id": "super_call",
+            "label": "Super Call",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "base": {
+            "accepted_answers": [
+              "Module"
+            ]
+          },
+          "super_call": {
+            "accepted_answers": [
+              "super().__init__()",
+              "super().__init__"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.nn_module",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Custom neural networks normally subclass nn.Module, call super().__init__(), and assign child layers as module attributes. Registered child modules and parameters are discovered by methods such as model.parameters() and state_dict(). Keeping layers only in an ordinary Python container can bypass module registration unless you use containers such as ModuleList or ModuleDict.",
+      "hints": [
+        "Registered child modules and parameters are discovered by methods such as model.parameters() and state_dict()."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Subclassing `nn.Module` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html"
+        }
+      ]
+    },
+    {
+      "id": "nn-module-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "need",
+              "label": "Need"
+            },
+            {
+              "id": "base-class",
+              "label": "Base class"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "need": {
+                  "type": "text",
+                  "template": "Custom PyTorch model"
+                },
+                "base-class": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "nn.{{base}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "base",
+            "label": "Base",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "base": {
+            "accepted_answers": [
+              "Module"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.nn_module",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Custom neural networks normally subclass nn.Module, call super().__init__(), and assign child layers as module attributes. Registered child modules and parameters are discovered by methods such as model.parameters() and state_dict(). Keeping layers only in an ordinary Python container can bypass module registration unless you use containers such as ModuleList or ModuleDict.",
+      "hints": [
+        "Registered child modules and parameters are discovered by methods such as model.parameters() and state_dict()."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Subclassing `nn.Module` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html"
+        }
+      ]
+    },
+    {
+      "id": "forward-call-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the model method.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "class Net(nn.Module):\n    def {{method}}(self, x):\n        return self.layer(x)"
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "forward"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.forward_call",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A Module defines computation in forward, while normal user code should call model(x) so Module hooks and wrapper behavior are respected. Implement def forward(self, x): ... and invoke the model with output = model(x). Do not normally call model.forward(x) directly from training code.",
+      "hints": [
+        "Implement def forward(self, x): ... and invoke the model with output = model(x)."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`forward` and calling the model — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html"
+        }
+      ]
+    },
+    {
+      "id": "forward-call-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Complete the preferred invocation.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "output = {{call}}"
+        },
+        "slots": [
+          {
+            "id": "call",
+            "label": "Call",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "call": {
+            "accepted_answers": [
+              "model(x)",
+              "net(x)"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.forward_call",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A Module defines computation in forward, while normal user code should call model(x) so Module hooks and wrapper behavior are respected. Implement def forward(self, x): ... and invoke the model with output = model(x). Do not normally call model.forward(x) directly from training code.",
+      "hints": [
+        "Implement def forward(self, x): ... and invoke the model with output = model(x)."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`forward` and calling the model — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html"
+        }
+      ]
+    },
+    {
+      "id": "linear-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the layer definition.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "self.fc = nn.{{layer}}(128, 64)"
+        },
+        "slots": [
+          {
+            "id": "layer",
+            "label": "Layer",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "layer": {
+            "accepted_answers": [
+              "Linear"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.linear",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.Linear(in_features, out_features) applies an affine transformation to the last input dimension. For input shaped [batch, features], nn.Linear(features, hidden) returns [batch, hidden]. The input last dimension must match in_features.",
+      "hints": [
+        "For input shaped [batch, features], nn.Linear(features, hidden) returns [batch, hidden]."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`nn.Linear` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html"
+        }
+      ]
+    },
+    {
+      "id": "linear-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cells.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "input-shape",
+              "label": "Input shape"
+            },
+            {
+              "id": "layer",
+              "label": "Layer"
+            },
+            {
+              "id": "output-shape",
+              "label": "Output shape"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "input-shape": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "[32, 128]"
+                },
+                "layer": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "nn.Linear(128, 64)"
+                },
+                "output-shape": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "[32, {{features}}]"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "features",
+            "label": "Features",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "features": {
+            "accepted_answers": [
+              "64"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.linear",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.Linear(in_features, out_features) applies an affine transformation to the last input dimension. For input shaped [batch, features], nn.Linear(features, hidden) returns [batch, hidden]. The input last dimension must match in_features.",
+      "hints": [
+        "For input shaped [batch, features], nn.Linear(features, hidden) returns [batch, hidden]."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`nn.Linear` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html"
+        }
+      ]
+    },
+    {
+      "id": "sequential-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the model stack.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "self.net = nn.{{container}}(\n    nn.Linear(128, 64),\n    nn.ReLU(),\n    nn.Linear(64, 10),\n)"
+        },
+        "slots": [
+          {
+            "id": "container",
+            "label": "Container",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "container": {
+            "accepted_answers": [
+              "Sequential"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.sequential",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.Sequential chains modules in order so each module receives the previous module output. Use it for straightforward feed-forward stacks such as Linear -> ReLU -> Linear. Use a custom forward when the graph needs branching, multiple inputs, skip connections, or other non-sequential logic.",
+      "hints": [
+        "Use it for straightforward feed-forward stacks such as Linear -> ReLU -> Linear."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`nn.Sequential` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Sequential.html"
+        }
+      ]
+    },
+    {
+      "id": "sequential-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "need",
+              "label": "Need"
+            },
+            {
+              "id": "container",
+              "label": "Container"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "need": {
+                  "type": "text",
+                  "template": "Run modules one after another"
+                },
+                "container": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "nn.{{name}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "name",
+            "label": "Name",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "name": {
+            "accepted_answers": [
+              "Sequential"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.sequential",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.Sequential chains modules in order so each module receives the previous module output. Use it for straightforward feed-forward stacks such as Linear -> ReLU -> Linear. Use a custom forward when the graph needs branching, multiple inputs, skip connections, or other non-sequential logic.",
+      "hints": [
+        "Use it for straightforward feed-forward stacks such as Linear -> ReLU -> Linear."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`nn.Sequential` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Sequential.html"
+        }
+      ]
+    },
+    {
+      "id": "activations-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the MLP.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "self.net = nn.Sequential(\n    nn.Linear(128, 64),\n    nn.{{activation}}(),\n    nn.Linear(64, 10),\n)"
+        },
+        "slots": [
+          {
+            "id": "activation",
+            "label": "Activation",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "activation": {
+            "accepted_answers": [
+              "ReLU"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.activations",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.ReLU applies max(0, x), while activations such as GELU provide alternative nonlinearities used in many modern architectures. A typical MLP places an activation between Linear layers. Do not automatically add a probability activation to final logits when the chosen loss already expects raw logits.",
+      "hints": [
+        "A typical MLP places an activation between Linear layers."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Common activation modules — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.ReLU.html"
+        }
+      ]
+    },
+    {
+      "id": "activations-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "activation",
+              "label": "Activation"
+            },
+            {
+              "id": "pytorch-module",
+              "label": "PyTorch module"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "activation": {
+                  "type": "text",
+                  "template": "Rectified linear unit"
+                },
+                "pytorch-module": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "nn.{{module}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "module",
+            "label": "Module",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "module": {
+            "accepted_answers": [
+              "ReLU"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.activations",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.ReLU applies max(0, x), while activations such as GELU provide alternative nonlinearities used in many modern architectures. A typical MLP places an activation between Linear layers. Do not automatically add a probability activation to final logits when the chosen loss already expects raw logits.",
+      "hints": [
+        "A typical MLP places an activation between Linear layers."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Common activation modules — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.ReLU.html"
+        }
+      ]
+    },
+    {
+      "id": "flatten-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the layer.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "self.flatten = nn.Flatten(start_dim={{dim}})"
+        },
+        "slots": [
+          {
+            "id": "dim",
+            "label": "Dim",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "dim": {
+            "accepted_answers": [
+              "1"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.flatten",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.Flatten(start_dim=1) commonly flattens all non-batch dimensions while preserving dimension 0 as the batch axis. For [N, C, H, W], flattening from dimension 1 produces [N, C*H*W]. Bare reshaping that accidentally folds the batch dimension into features breaks the sample structure.",
+      "hints": [
+        "For [N, C, H, W], flattening from dimension 1 produces [N, C*H*W]."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Flattening feature dimensions — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Flatten.html"
+        }
+      ]
+    },
+    {
+      "id": "flatten-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing output shape.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "input",
+              "label": "Input"
+            },
+            {
+              "id": "operation",
+              "label": "Operation"
+            },
+            {
+              "id": "output",
+              "label": "Output"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "input": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "[32, 3, 28, 28]"
+                },
+                "operation": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "nn.Flatten(1)"
+                },
+                "output": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "[32, {{features}}]"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "features",
+            "label": "Features",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "features": {
+            "accepted_answers": [
+              "2352",
+              "3*28*28"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.flatten",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.Flatten(start_dim=1) commonly flattens all non-batch dimensions while preserving dimension 0 as the batch axis. For [N, C, H, W], flattening from dimension 1 produces [N, C*H*W]. Bare reshaping that accidentally folds the batch dimension into features breaks the sample structure.",
+      "hints": [
+        "For [N, C, H, W], flattening from dimension 1 produces [N, C*H*W]."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Flattening feature dimensions — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Flatten.html"
+        }
+      ]
+    },
+    {
+      "id": "conv2d-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the convolution layer.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "self.conv = nn.{{layer}}(in_channels=3, out_channels=32, kernel_size=3)"
+        },
+        "slots": [
+          {
+            "id": "layer",
+            "label": "Layer",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "layer": {
+            "accepted_answers": [
+              "Conv2d"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.conv2d",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.Conv2d expects image-like input with channels in the second dimension for batched tensors: [N, C, H, W]. nn.Conv2d(in_channels, out_channels, kernel_size, ...) controls input channels, learned output channels, and spatial kernel size. A common shape error is passing NHWC data directly to a Conv2d that expects NCHW.",
+      "hints": [
+        "nn.Conv2d(in_channels, out_channels, kernel_size, ...) controls input channels, learned output channels, and spatial kernel size."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`nn.Conv2d` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html"
+        }
+      ]
+    },
+    {
+      "id": "conv2d-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing input layout.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "layer",
+              "label": "Layer"
+            },
+            {
+              "id": "batched-input-layout",
+              "label": "Batched input layout"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "layer": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "nn.Conv2d"
+                },
+                "batched-input-layout": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "[{{n}}, {{c}}, {{h}}, {{w}}]"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "n",
+            "label": "N",
+            "placeholder": "Type..."
+          },
+          {
+            "id": "c",
+            "label": "C",
+            "placeholder": "Type..."
+          },
+          {
+            "id": "h",
+            "label": "H",
+            "placeholder": "Type..."
+          },
+          {
+            "id": "w",
+            "label": "W",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "n": {
+            "accepted_answers": [
+              "N"
+            ]
+          },
+          "c": {
+            "accepted_answers": [
+              "C"
+            ]
+          },
+          "h": {
+            "accepted_answers": [
+              "H"
+            ]
+          },
+          "w": {
+            "accepted_answers": [
+              "W"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.conv2d",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.Conv2d expects image-like input with channels in the second dimension for batched tensors: [N, C, H, W]. nn.Conv2d(in_channels, out_channels, kernel_size, ...) controls input channels, learned output channels, and spatial kernel size. A common shape error is passing NHWC data directly to a Conv2d that expects NCHW.",
+      "hints": [
+        "nn.Conv2d(in_channels, out_channels, kernel_size, ...) controls input channels, learned output channels, and spatial kernel size."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`nn.Conv2d` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html"
+        }
+      ]
+    },
+    {
+      "id": "pooling-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the layer.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "self.pool = nn.{{layer}}(kernel_size=2, stride=2)"
+        },
+        "slots": [
+          {
+            "id": "layer",
+            "label": "Layer",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "layer": {
+            "accepted_answers": [
+              "MaxPool2d"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.pooling",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.MaxPool2d downsamples spatial dimensions by taking local maxima over a window. A common pattern is convolution, activation, then pooling to reduce spatial resolution. Pooling changes spatial shape, so later Linear layer input sizes must match the post-pooling dimensions.",
+      "hints": [
+        "A common pattern is convolution, activation, then pooling to reduce spatial resolution."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Pooling — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html"
+        }
+      ]
+    },
+    {
+      "id": "pooling-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "goal",
+              "label": "Goal"
+            },
+            {
+              "id": "common-layer",
+              "label": "Common layer"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "goal": {
+                  "type": "text",
+                  "template": "Local max downsampling"
+                },
+                "common-layer": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "nn.{{layer}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "layer",
+            "label": "Layer",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "layer": {
+            "accepted_answers": [
+              "MaxPool2d"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.pooling",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.MaxPool2d downsamples spatial dimensions by taking local maxima over a window. A common pattern is convolution, activation, then pooling to reduce spatial resolution. Pooling changes spatial shape, so later Linear layer input sizes must match the post-pooling dimensions.",
+      "hints": [
+        "A common pattern is convolution, activation, then pooling to reduce spatial resolution."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Pooling — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html"
+        }
+      ]
+    },
+    {
+      "id": "embedding-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the embedding layer.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "self.embedding = nn.{{layer}}(vocab_size, d_model)"
+        },
+        "slots": [
+          {
+            "id": "layer",
+            "label": "Layer",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "layer": {
+            "accepted_answers": [
+              "Embedding"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.embedding",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.Embedding(num_embeddings, embedding_dim) is a learnable lookup table that maps integer indices to embedding vectors. If the input index tensor has shape [*], the output adds an embedding dimension of size embedding_dim. Embedding inputs are indices, not one-hot floating-point vectors passed to Linear.",
+      "hints": [
+        "If the input index tensor has shape [*], the output adds an embedding dimension of size embedding_dim."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`nn.Embedding` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Embedding.html"
+        }
+      ]
+    },
+    {
+      "id": "embedding-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing output shape.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "input-indices",
+              "label": "Input indices"
+            },
+            {
+              "id": "embedding-dim",
+              "label": "Embedding dim"
+            },
+            {
+              "id": "output",
+              "label": "Output"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "input-indices": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "[32, 20]"
+                },
+                "embedding-dim": {
+                  "type": "text",
+                  "template": "128"
+                },
+                "output": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "[32, 20, {{dim}}]"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "dim",
+            "label": "Dim",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "dim": {
+            "accepted_answers": [
+              "128"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.embedding",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.Embedding(num_embeddings, embedding_dim) is a learnable lookup table that maps integer indices to embedding vectors. If the input index tensor has shape [*], the output adds an embedding dimension of size embedding_dim. Embedding inputs are indices, not one-hot floating-point vectors passed to Linear.",
+      "hints": [
+        "If the input index tensor has shape [*], the output adds an embedding dimension of size embedding_dim."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`nn.Embedding` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Embedding.html"
+        }
+      ]
+    },
+    {
+      "id": "dropout-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the layer.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "self.dropout = nn.{{layer}}(p=0.2)"
+        },
+        "slots": [
+          {
+            "id": "layer",
+            "label": "Layer",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "layer": {
+            "accepted_answers": [
+              "Dropout"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.dropout",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.Dropout(p) randomly zeroes elements with probability p during training and behaves as an identity transform during evaluation. Call model.train() for training behavior and model.eval() before evaluation so Dropout switches modes correctly. Dropout behavior depends on module training mode; disabling gradients alone does not switch Dropout to evaluation behavior.",
+      "hints": [
+        "Call model.train() for training behavior and model.eval() before evaluation so Dropout switches modes correctly."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Dropout — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Dropout.html"
+        }
+      ]
+    },
+    {
+      "id": "dropout-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cells.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "mode",
+              "label": "Mode"
+            },
+            {
+              "id": "dropout-behavior",
+              "label": "Dropout behavior"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "mode": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "model.{{train_method}}()"
+                },
+                "dropout-behavior": {
+                  "type": "text",
+                  "template": "random dropping"
+                }
+              }
+            },
+            {
+              "id": "row-2",
+              "cells": {
+                "mode": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "model.{{eval_method}}()"
+                },
+                "dropout-behavior": {
+                  "type": "text",
+                  "template": "identity behavior"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "train_method",
+            "label": "Train Method",
+            "placeholder": "Type..."
+          },
+          {
+            "id": "eval_method",
+            "label": "Eval Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "train_method": {
+            "accepted_answers": [
+              "train"
+            ]
+          },
+          "eval_method": {
+            "accepted_answers": [
+              "eval"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.dropout",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.Dropout(p) randomly zeroes elements with probability p during training and behaves as an identity transform during evaluation. Call model.train() for training behavior and model.eval() before evaluation so Dropout switches modes correctly. Dropout behavior depends on module training mode; disabling gradients alone does not switch Dropout to evaluation behavior.",
+      "hints": [
+        "Call model.train() for training behavior and model.eval() before evaluation so Dropout switches modes correctly."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Dropout — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Dropout.html"
+        }
+      ]
+    },
+    {
+      "id": "batchnorm-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the inference setup.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "model.{{mode}}()\nwith torch.no_grad():\n    y = model(x)"
+        },
+        "slots": [
+          {
+            "id": "mode",
+            "label": "Mode",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "mode": {
+            "accepted_answers": [
+              "eval"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.batchnorm",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "BatchNorm modules can track running statistics and use training-versus-evaluation mode differently, so train() and eval() matter for inference correctness. BatchNorm running statistics are registered buffers and therefore appear in the module state dictionary. Gradient disabling does not replace model.eval() because evaluation mode changes module behavior rather than autograd recording.",
+      "hints": [
+        "BatchNorm running statistics are registered buffers and therefore appear in the module state dictionary."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Batch normalization mode behavior — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/nn.html"
+        }
+      ]
+    },
+    {
+      "id": "batchnorm-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "item",
+              "label": "Item"
+            },
+            {
+              "id": "stored-in-state-dict",
+              "label": "Stored in `state_dict`?"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "item": {
+                  "type": "text",
+                  "template": "BatchNorm running statistics"
+                },
+                "stored-in-state-dict": {
+                  "type": "text",
+                  "template": "{{answer}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Answer",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "yes",
+              "true"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.batchnorm",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "BatchNorm modules can track running statistics and use training-versus-evaluation mode differently, so train() and eval() matter for inference correctness. BatchNorm running statistics are registered buffers and therefore appear in the module state dictionary. Gradient disabling does not replace model.eval() because evaluation mode changes module behavior rather than autograd recording.",
+      "hints": [
+        "BatchNorm running statistics are registered buffers and therefore appear in the module state dictionary."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Batch normalization mode behavior — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/nn.html"
+        }
+      ]
+    },
+    {
+      "id": "modulelist-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the model code.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "self.blocks = nn.{{container}}([Block() for _ in range(depth)])"
+        },
+        "slots": [
+          {
+            "id": "container",
+            "label": "Container",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "container": {
+            "accepted_answers": [
+              "ModuleList"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.modulelist",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.ModuleList stores a list of child modules while keeping them registered with the parent Module. Use ModuleList when you need list-like iteration over a dynamic number of layers but cannot express the computation as a simple Sequential chain. A plain Python list of layers is not a substitute when you need automatic parameter registration by the parent Module.",
+      "hints": [
+        "Use ModuleList when you need list-like iteration over a dynamic number of layers but cannot express the computation as a simple Sequential chain."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`ModuleList` and module registration — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/nn.html"
+        }
+      ]
+    },
+    {
+      "id": "modulelist-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "need",
+              "label": "Need"
+            },
+            {
+              "id": "container",
+              "label": "Container"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "need": {
+                  "type": "text",
+                  "template": "List-like collection that registers child modules"
+                },
+                "container": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "nn.{{name}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "name",
+            "label": "Name",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "name": {
+            "accepted_answers": [
+              "ModuleList"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.modulelist",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "nn.ModuleList stores a list of child modules while keeping them registered with the parent Module. Use ModuleList when you need list-like iteration over a dynamic number of layers but cannot express the computation as a simple Sequential chain. A plain Python list of layers is not a substitute when you need automatic parameter registration by the parent Module.",
+      "hints": [
+        "Use ModuleList when you need list-like iteration over a dynamic number of layers but cannot express the computation as a simple Sequential chain."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`ModuleList` and module registration — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/nn.html"
+        }
+      ]
+    },
+    {
+      "id": "parameters-state-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the optimizer construction.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "optimizer = torch.optim.AdamW(model.{{method}}(), lr=1e-3)"
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "parameters"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.parameters_state",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "model.parameters() iterates registered Parameter objects, while model.state_dict() returns a mapping of registered parameters and persistent buffers. Optimizers are commonly constructed with model.parameters() so they know which tensors to update. A state_dict is data, not the Python model architecture itself.",
+      "hints": [
+        "Optimizers are commonly constructed with model.parameters() so they know which tensors to update."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Parameters and `state_dict` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/recipes/recipes/what_is_state_dict.html"
+        }
+      ]
+    },
+    {
+      "id": "parameters-state-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cells.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "need",
+              "label": "Need"
+            },
+            {
+              "id": "method",
+              "label": "Method"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "need": {
+                  "type": "text",
+                  "template": "Iterate model parameters"
+                },
+                "method": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "model.{{params}}()"
+                }
+              }
+            },
+            {
+              "id": "row-2",
+              "cells": {
+                "need": {
+                  "type": "text",
+                  "template": "Get parameter/buffer mapping"
+                },
+                "method": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "model.{{state}}()"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "params",
+            "label": "Params",
+            "placeholder": "Type..."
+          },
+          {
+            "id": "state",
+            "label": "State",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "params": {
+            "accepted_answers": [
+              "parameters"
+            ]
+          },
+          "state": {
+            "accepted_answers": [
+              "state_dict"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.parameters_state",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "model.parameters() iterates registered Parameter objects, while model.state_dict() returns a mapping of registered parameters and persistent buffers. Optimizers are commonly constructed with model.parameters() so they know which tensors to update. A state_dict is data, not the Python model architecture itself.",
+      "hints": [
+        "Optimizers are commonly constructed with model.parameters() so they know which tensors to update."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Parameters and `state_dict` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/recipes/recipes/what_is_state_dict.html"
+        }
+      ]
+    },
+    {
+      "id": "layer-selection-class-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.46,
+      "prompt": "Classify each modeling need by the most fitting PyTorch layer/container.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "item-1",
+            "label": "Affine map from feature vector to hidden vector"
+          },
+          {
+            "id": "item-2",
+            "label": "Learn spatial image filters"
+          },
+          {
+            "id": "item-3",
+            "label": "Lookup vectors by integer token ids"
+          },
+          {
+            "id": "item-4",
+            "label": "Chain modules one after another"
+          }
+        ],
+        "categories": [
+          {
+            "id": "cat-1",
+            "label": "Linear"
+          },
+          {
+            "id": "cat-2",
+            "label": "Conv2d"
+          },
+          {
+            "id": "cat-3",
+            "label": "Embedding"
+          },
+          {
+            "id": "cat-4",
+            "label": "Sequential"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "item-1": "cat-1",
+          "item-2": "cat-2",
+          "item-3": "cat-3",
+          "item-4": "cat-4"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.linear",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.conv2d",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.embedding",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.sequential",
+          "weight": 0.25
+        }
+      ],
+      "explanation": "nn.Linear(in_features, out_features) applies an affine transformation to the last input dimension. nn.Conv2d expects image-like input with channels in the second dimension for batched tensors: [N, C, H, W]. nn.Embedding(num_embeddings, embedding_dim) is a learnable lookup table that maps integer indices to embedding vectors. nn.Sequential chains modules in order so each module receives the previous module output.",
+      "hints": [
+        "Focus on the operation each API performs, not merely whether it can appear in the same training program."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was matched to the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not classified."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/nn.html"
+        }
+      ]
+    },
+    {
+      "id": "layer-selection-class-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.58,
+      "prompt": "Classify each modeling need by the most fitting PyTorch layer/container. Use the second scenario set.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "item-1",
+            "label": "Common fully connected classifier layer"
+          },
+          {
+            "id": "item-2",
+            "label": "Consumes NCHW image batches"
+          },
+          {
+            "id": "item-3",
+            "label": "Maps vocabulary indices to dense vectors"
+          },
+          {
+            "id": "item-4",
+            "label": "Simple Linear-ReLU-Linear stack"
+          }
+        ],
+        "categories": [
+          {
+            "id": "cat-1",
+            "label": "Linear"
+          },
+          {
+            "id": "cat-2",
+            "label": "Conv2d"
+          },
+          {
+            "id": "cat-3",
+            "label": "Embedding"
+          },
+          {
+            "id": "cat-4",
+            "label": "Sequential"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "item-1": "cat-1",
+          "item-2": "cat-2",
+          "item-3": "cat-3",
+          "item-4": "cat-4"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.linear",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.conv2d",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.embedding",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.sequential",
+          "weight": 0.25
+        }
+      ],
+      "explanation": "nn.Linear(in_features, out_features) applies an affine transformation to the last input dimension. nn.Conv2d expects image-like input with channels in the second dimension for batched tensors: [N, C, H, W]. nn.Embedding(num_embeddings, embedding_dim) is a learnable lookup table that maps integer indices to embedding vectors. nn.Sequential chains modules in order so each module receives the previous module output.",
+      "hints": [
+        "Focus on the operation each API performs, not merely whether it can appear in the same training program."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was matched to the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not classified."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/nn.html"
+        }
+      ]
+    }
+  ]
+}

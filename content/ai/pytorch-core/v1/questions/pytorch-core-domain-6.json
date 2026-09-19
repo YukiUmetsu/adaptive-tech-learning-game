@@ -1,0 +1,1700 @@
+{
+  "certification": {
+    "id": "ai-pytorch-core",
+    "vendor": "PyTorch",
+    "name": "PyTorch Core: Practical ML & Neural Networks",
+    "exam_code": "PYTORCH-CORE",
+    "official_source_url": "https://docs.pytorch.org/docs/stable/",
+    "last_reviewed": "2026-09-19"
+  },
+  "version": {
+    "id": "pytorch-core-v1",
+    "exam_code": "PYTORCH-CORE",
+    "effective_date": "2026-09-19",
+    "content_version": "pytorch-core-content-2026-09-19-v2",
+    "domains": [
+      {
+        "id": "domain-1",
+        "name": "Tensor Fundamentals & Shape Fluency",
+        "weight": 0.19,
+        "tasks": []
+      },
+      {
+        "id": "domain-2",
+        "name": "Datasets & Data Pipelines",
+        "weight": 0.14,
+        "tasks": []
+      },
+      {
+        "id": "domain-3",
+        "name": "Models & Common Neural Network Layers",
+        "weight": 0.19,
+        "tasks": []
+      },
+      {
+        "id": "domain-4",
+        "name": "Autograd & Training Loops",
+        "weight": 0.19,
+        "tasks": []
+      },
+      {
+        "id": "domain-5",
+        "name": "Losses, Optimizers & Learning-Rate Control",
+        "weight": 0.15,
+        "tasks": []
+      },
+      {
+        "id": "domain-6",
+        "name": "Devices, Checkpoints & Performance",
+        "weight": 0.14,
+        "tasks": [
+          {
+            "id": "6.1",
+            "name": "Move work to an accelerator",
+            "question_ids": [
+              "accelerator-device-typed-001",
+              "accelerator-device-typed-002",
+              "move-model-data-typed-001",
+              "move-model-data-typed-002"
+            ]
+          },
+          {
+            "id": "6.2",
+            "name": "Save and restore model state",
+            "question_ids": [
+              "save-state-dict-typed-001",
+              "save-state-dict-typed-002",
+              "load-state-dict-typed-001",
+              "load-state-dict-typed-002",
+              "training-checkpoint-typed-001",
+              "training-checkpoint-typed-002"
+            ]
+          },
+          {
+            "id": "6.3",
+            "name": "Use modern performance tools",
+            "question_ids": [
+              "autocast-typed-001",
+              "autocast-typed-002",
+              "grad-scaler-typed-001",
+              "grad-scaler-typed-002",
+              "torch-compile-typed-001",
+              "torch-compile-typed-002",
+              "reproducibility-typed-001",
+              "reproducibility-typed-002",
+              "performance-tools-class-001",
+              "performance-tools-class-002"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "concepts": [
+    {
+      "id": "ai.pytorch.accelerator_device",
+      "name": "Selecting an accelerator",
+      "description": "Current PyTorch provides `torch.accelerator` APIs to query an available accelerator such as CUDA, MPS, XPU, or other supported backends."
+    },
+    {
+      "id": "ai.pytorch.move_model_data",
+      "name": "Move model and data together",
+      "description": "`model.to(device)` moves registered model parameters and buffers, while input tensors usually need their own `.to(device)` call."
+    },
+    {
+      "id": "ai.pytorch.save_state_dict",
+      "name": "Saving model weights",
+      "description": "A recommended PyTorch pattern saves `model.state_dict()` rather than serializing the entire Python model object."
+    },
+    {
+      "id": "ai.pytorch.load_state_dict",
+      "name": "Loading model weights",
+      "description": "To restore a state dict, recreate the model architecture and call `model.load_state_dict(...)` with the loaded mapping."
+    },
+    {
+      "id": "ai.pytorch.training_checkpoint",
+      "name": "Training checkpoints",
+      "description": "A resumable training checkpoint commonly stores the model state dict, optimizer state dict, current epoch or step, and other training state you need to continue."
+    },
+    {
+      "id": "ai.pytorch.autocast",
+      "name": "Automatic mixed precision autocast",
+      "description": "`torch.autocast` runs eligible operations in selected lower precision while keeping other operations in higher precision as appropriate."
+    },
+    {
+      "id": "ai.pytorch.grad_scaler",
+      "name": "Gradient scaling for float16 AMP",
+      "description": "`torch.amp.GradScaler` scales the loss and gradients to reduce float16 gradient underflow during mixed-precision training."
+    },
+    {
+      "id": "ai.pytorch.torch_compile",
+      "name": "`torch.compile`",
+      "description": "`torch.compile` returns an optimized callable around a model or Python function using PyTorch compilation infrastructure."
+    },
+    {
+      "id": "ai.pytorch.reproducibility",
+      "name": "Reproducibility and determinism",
+      "description": "Reproducible PyTorch experiments often begin by seeding random generators, while stricter determinism may require additional backend or algorithm settings."
+    }
+  ],
+  "questions": [
+    {
+      "id": "accelerator-device-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the current PyTorch accelerator check.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "device = (\n    torch.accelerator.current_accelerator().type\n    if torch.accelerator.{{check}}()\n    else \"cpu\"\n)\nmodel = model.to(device)"
+        },
+        "slots": [
+          {
+            "id": "check",
+            "label": "Check",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "check": {
+            "accepted_answers": [
+              "is_available"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.accelerator_device",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Current PyTorch provides torch.accelerator APIs to query an available accelerator such as CUDA, MPS, XPU, or other supported backends. A current quickstart pattern uses the available accelerator when present and otherwise falls back to CPU. Selecting a device is only part of the job; model parameters and input tensors must also be moved to that device.",
+      "hints": [
+        "A current quickstart pattern uses the available accelerator when present and otherwise falls back to CPU."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Selecting an accelerator — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/beginner/introyt/tensors_deeper_tutorial.html"
+        }
+      ]
+    },
+    {
+      "id": "accelerator-device-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "need",
+              "label": "Need"
+            },
+            {
+              "id": "api",
+              "label": "API"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "need": {
+                  "type": "text",
+                  "template": "Check for a current accelerator"
+                },
+                "api": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "torch.accelerator.{{method}}()"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "is_available"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.accelerator_device",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Current PyTorch provides torch.accelerator APIs to query an available accelerator such as CUDA, MPS, XPU, or other supported backends. A current quickstart pattern uses the available accelerator when present and otherwise falls back to CPU. Selecting a device is only part of the job; model parameters and input tensors must also be moved to that device.",
+      "hints": [
+        "A current quickstart pattern uses the available accelerator when present and otherwise falls back to CPU."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Selecting an accelerator — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/beginner/introyt/tensors_deeper_tutorial.html"
+        }
+      ]
+    },
+    {
+      "id": "move-model-data-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the device moves.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "model = model.{{model_method}}(device)\n\nfor X, y in train_loader:\n    X = X.{{tensor_method}}(device)\n    y = y.to(device)\n    logits = model(X)"
+        },
+        "slots": [
+          {
+            "id": "model_method",
+            "label": "Model Method",
+            "placeholder": "Type..."
+          },
+          {
+            "id": "tensor_method",
+            "label": "Tensor Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "model_method": {
+            "accepted_answers": [
+              "to"
+            ]
+          },
+          "tensor_method": {
+            "accepted_answers": [
+              "to"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.move_model_data",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "model.to(device) moves registered model parameters and buffers, while input tensors usually need their own .to(device) call. Move both model and batch tensors to compatible devices before running operations between them. Moving only the model or only the data commonly causes device-mismatch errors.",
+      "hints": [
+        "Move both model and batch tensors to compatible devices before running operations between them."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Move model and data together — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/beginner/basics/buildmodel_tutorial.html"
+        }
+      ]
+    },
+    {
+      "id": "move-model-data-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "object",
+              "label": "Object"
+            },
+            {
+              "id": "common-move-method",
+              "label": "Common move method"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "object": {
+                  "type": "text",
+                  "template": "Model or tensor"
+                },
+                "common-move-method": {
+                  "type": "code",
+                  "language": "python",
+                  "template": ".{{method}}(device)"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "to"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.move_model_data",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "model.to(device) moves registered model parameters and buffers, while input tensors usually need their own .to(device) call. Move both model and batch tensors to compatible devices before running operations between them. Moving only the model or only the data commonly causes device-mismatch errors.",
+      "hints": [
+        "Move both model and batch tensors to compatible devices before running operations between them."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Move model and data together — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/beginner/basics/buildmodel_tutorial.html"
+        }
+      ]
+    },
+    {
+      "id": "save-state-dict-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the save code.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "checkpoint_path = \"model.pth\"\ntorch.{{save_fn}}(\n    model.{{state_fn}}(),\n    checkpoint_path,\n)"
+        },
+        "slots": [
+          {
+            "id": "save_fn",
+            "label": "Save Fn",
+            "placeholder": "Type..."
+          },
+          {
+            "id": "state_fn",
+            "label": "State Fn",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "save_fn": {
+            "accepted_answers": [
+              "save"
+            ]
+          },
+          "state_fn": {
+            "accepted_answers": [
+              "state_dict"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.save_state_dict",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A recommended PyTorch pattern saves model.state_dict() rather than serializing the entire Python model object. Use torch.save(model.state_dict(), path) to persist model weights and buffers. Saving only the state dict means the model architecture must be recreated in code before loading those weights.",
+      "hints": [
+        "Use torch.save(model.state_dict(), path) to persist model weights and buffers."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Saving model weights — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/beginner/basics/saveloadrun_tutorial.html"
+        }
+      ]
+    },
+    {
+      "id": "save-state-dict-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "best-practice-object-to-save-for-model-weights",
+              "label": "Best-practice object to save for model weights"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "best-practice-object-to-save-for-model-weights": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "model.{{method}}()"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "state_dict"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.save_state_dict",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A recommended PyTorch pattern saves model.state_dict() rather than serializing the entire Python model object. Use torch.save(model.state_dict(), path) to persist model weights and buffers. Saving only the state dict means the model architecture must be recreated in code before loading those weights.",
+      "hints": [
+        "Use torch.save(model.state_dict(), path) to persist model weights and buffers."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Saving model weights — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/beginner/basics/saveloadrun_tutorial.html"
+        }
+      ]
+    },
+    {
+      "id": "load-state-dict-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the load code.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "state = torch.load(\"model.pth\", {{argument}}=True)\nmodel.{{method}}(state)"
+        },
+        "slots": [
+          {
+            "id": "argument",
+            "label": "Argument",
+            "placeholder": "Type..."
+          },
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "argument": {
+            "accepted_answers": [
+              "weights_only"
+            ]
+          },
+          "method": {
+            "accepted_answers": [
+              "load_state_dict"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.load_state_dict",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "To restore a state dict, recreate the model architecture and call model.load_state_dict(...) with the loaded mapping. When loading a weights file, torch.load(..., weights_only=True) limits loading to weights-oriented objects and is a recommended safety practice. Loading a state dict does not automatically call model.eval(); choose train or eval mode explicitly for the next use.",
+      "hints": [
+        "When loading a weights file, torch.load(..., weights_only=True) limits loading to weights-oriented objects and is a recommended safety practice."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Loading model weights — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/beginner/basics/saveloadrun_tutorial.html"
+        }
+      ]
+    },
+    {
+      "id": "load-state-dict-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "need",
+              "label": "Need"
+            },
+            {
+              "id": "method",
+              "label": "Method"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "need": {
+                  "type": "text",
+                  "template": "Load parameter/buffer mapping into model"
+                },
+                "method": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "model.{{method}}(...)"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "load_state_dict"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.load_state_dict",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "To restore a state dict, recreate the model architecture and call model.load_state_dict(...) with the loaded mapping. When loading a weights file, torch.load(..., weights_only=True) limits loading to weights-oriented objects and is a recommended safety practice. Loading a state dict does not automatically call model.eval(); choose train or eval mode explicitly for the next use.",
+      "hints": [
+        "When loading a weights file, torch.load(..., weights_only=True) limits loading to weights-oriented objects and is a recommended safety practice."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Loading model weights — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/beginner/basics/saveloadrun_tutorial.html"
+        }
+      ]
+    },
+    {
+      "id": "training-checkpoint-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the checkpoint dictionary.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "checkpoint = {\n    \"model\": model.state_dict(),\n    \"optimizer\": optimizer.{{method}}(),\n    \"epoch\": epoch,\n}"
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "state_dict"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.training_checkpoint",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A resumable training checkpoint commonly stores the model state dict, optimizer state dict, current epoch or step, and other training state you need to continue. Optimizer state matters because adaptive optimizers and momentum methods keep internal state beyond model weights. Saving only model weights is enough for inference but may not reproduce a seamless training resume.",
+      "hints": [
+        "Optimizer state matters because adaptive optimizers and momentum methods keep internal state beyond model weights."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Training checkpoints — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/recipes/recipes/what_is_state_dict.html"
+        }
+      ]
+    },
+    {
+      "id": "training-checkpoint-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "resume-need",
+              "label": "Resume need"
+            },
+            {
+              "id": "save",
+              "label": "Save?"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "resume-need": {
+                  "type": "text",
+                  "template": "Optimizer momentum/adaptive state"
+                },
+                "save": {
+                  "type": "text",
+                  "template": "{{answer}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Answer",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "yes",
+              "true"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.training_checkpoint",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A resumable training checkpoint commonly stores the model state dict, optimizer state dict, current epoch or step, and other training state you need to continue. Optimizer state matters because adaptive optimizers and momentum methods keep internal state beyond model weights. Saving only model weights is enough for inference but may not reproduce a seamless training resume.",
+      "hints": [
+        "Optimizer state matters because adaptive optimizers and momentum methods keep internal state beyond model weights."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Training checkpoints — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/recipes/recipes/what_is_state_dict.html"
+        }
+      ]
+    },
+    {
+      "id": "autocast-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the AMP context.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "with torch.{{context}}(device_type=\"cuda\", dtype=torch.float16):\n    pred = model(x)\n    loss = loss_fn(pred, y)"
+        },
+        "slots": [
+          {
+            "id": "context",
+            "label": "Context",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "context": {
+            "accepted_answers": [
+              "autocast"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.autocast",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "torch.autocast runs eligible operations in selected lower precision while keeping other operations in higher precision as appropriate. Wrap the forward pass and loss computation in an autocast context when using automatic mixed precision. Do not place backward itself inside autocast; backward uses the dtypes chosen for the corresponding forward operations.",
+      "hints": [
+        "Wrap the forward pass and loss computation in an autocast context when using automatic mixed precision."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Automatic mixed precision autocast — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/recipes/recipes/amp_recipe.html"
+        }
+      ]
+    },
+    {
+      "id": "autocast-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "amp-phase",
+              "label": "AMP phase"
+            },
+            {
+              "id": "inside-autocast",
+              "label": "Inside autocast?"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "amp-phase": {
+                  "type": "text",
+                  "template": "Forward + loss"
+                },
+                "inside-autocast": {
+                  "type": "text",
+                  "template": "{{answer}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Answer",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "yes",
+              "true"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.autocast",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "torch.autocast runs eligible operations in selected lower precision while keeping other operations in higher precision as appropriate. Wrap the forward pass and loss computation in an autocast context when using automatic mixed precision. Do not place backward itself inside autocast; backward uses the dtypes chosen for the corresponding forward operations.",
+      "hints": [
+        "Wrap the forward pass and loss computation in an autocast context when using automatic mixed precision."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Automatic mixed precision autocast — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/recipes/recipes/amp_recipe.html"
+        }
+      ]
+    },
+    {
+      "id": "grad-scaler-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the mixed-precision update.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "scaler = torch.amp.{{scaler}}(\"cuda\")\nscaler.scale(loss).backward()\nscaler.step(optimizer)\nscaler.{{update}}()"
+        },
+        "slots": [
+          {
+            "id": "scaler",
+            "label": "Scaler",
+            "placeholder": "Type..."
+          },
+          {
+            "id": "update",
+            "label": "Update",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "scaler": {
+            "accepted_answers": [
+              "GradScaler"
+            ]
+          },
+          "update": {
+            "accepted_answers": [
+              "update"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.grad_scaler",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "torch.amp.GradScaler scales the loss and gradients to reduce float16 gradient underflow during mixed-precision training. A common CUDA sequence is scaler.scale(loss).backward(), scaler.step(optimizer), then scaler.update(). GradScaler is not required for ordinary full-precision training and is not needed for inference-only autocast.",
+      "hints": [
+        "A common CUDA sequence is scaler.scale(loss).backward(), scaler.step(optimizer), then scaler.update()."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Gradient scaling for float16 AMP — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/recipes/recipes/amp_recipe.html"
+        }
+      ]
+    },
+    {
+      "id": "grad-scaler-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "need",
+              "label": "Need"
+            },
+            {
+              "id": "tool",
+              "label": "Tool"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "need": {
+                  "type": "text",
+                  "template": "Reduce float16 gradient underflow during training"
+                },
+                "tool": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "torch.amp.{{tool}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "tool",
+            "label": "Tool",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "tool": {
+            "accepted_answers": [
+              "GradScaler"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.grad_scaler",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "torch.amp.GradScaler scales the loss and gradients to reduce float16 gradient underflow during mixed-precision training. A common CUDA sequence is scaler.scale(loss).backward(), scaler.step(optimizer), then scaler.update(). GradScaler is not required for ordinary full-precision training and is not needed for inference-only autocast.",
+      "hints": [
+        "A common CUDA sequence is scaler.scale(loss).backward(), scaler.step(optimizer), then scaler.update()."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Gradient scaling for float16 AMP — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/recipes/recipes/amp_recipe.html"
+        }
+      ]
+    },
+    {
+      "id": "torch-compile-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the compilation code.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "compiled_model = torch.{{function}}(model)"
+        },
+        "slots": [
+          {
+            "id": "function",
+            "label": "Function",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "function": {
+            "accepted_answers": [
+              "compile"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.torch_compile",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "torch.compile returns an optimized callable around a model or Python function using PyTorch compilation infrastructure. A simple entry point is compiled_model = torch.compile(model) and then calling the compiled model normally. Compilation can add startup overhead and graph breaks, so measure end-to-end performance instead of assuming every workload becomes faster.",
+      "hints": [
+        "A simple entry point is compiled_model = torch.compile(model) and then calling the compiled model normally."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`torch.compile` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.compile.html"
+        }
+      ]
+    },
+    {
+      "id": "torch-compile-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "goal",
+              "label": "Goal"
+            },
+            {
+              "id": "api",
+              "label": "API"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "goal": {
+                  "type": "text",
+                  "template": "Compile/optimize a callable"
+                },
+                "api": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "torch.{{api}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "api",
+            "label": "Api",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "api": {
+            "accepted_answers": [
+              "compile"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.torch_compile",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "torch.compile returns an optimized callable around a model or Python function using PyTorch compilation infrastructure. A simple entry point is compiled_model = torch.compile(model) and then calling the compiled model normally. Compilation can add startup overhead and graph breaks, so measure end-to-end performance instead of assuming every workload becomes faster.",
+      "hints": [
+        "A simple entry point is compiled_model = torch.compile(model) and then calling the compiled model normally."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`torch.compile` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.compile.html"
+        }
+      ]
+    },
+    {
+      "id": "reproducibility-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the reproducibility setup.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "seed = 42\ntorch.{{function}}(seed)"
+        },
+        "slots": [
+          {
+            "id": "function",
+            "label": "Function",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "function": {
+            "accepted_answers": [
+              "manual_seed"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.reproducibility",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Reproducible PyTorch experiments often begin by seeding random generators, while stricter determinism may require additional backend or algorithm settings. Record seeds, software versions, data splits, and hyperparameters when you need to compare experiments reliably. Exact reproducibility is not guaranteed across PyTorch releases, platforms, or all CPU and accelerator operations.",
+      "hints": [
+        "Record seeds, software versions, data splits, and hyperparameters when you need to compare experiments reliably."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Reproducibility and determinism — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/notes/randomness.html"
+        }
+      ]
+    },
+    {
+      "id": "reproducibility-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "reproducibility-item",
+              "label": "Reproducibility item"
+            },
+            {
+              "id": "record-it",
+              "label": "Record it?"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "reproducibility-item": {
+                  "type": "text",
+                  "template": "Random seed"
+                },
+                "record-it": {
+                  "type": "text",
+                  "template": "{{answer}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Answer",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "yes",
+              "true"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.reproducibility",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Reproducible PyTorch experiments often begin by seeding random generators, while stricter determinism may require additional backend or algorithm settings. Record seeds, software versions, data splits, and hyperparameters when you need to compare experiments reliably. Exact reproducibility is not guaranteed across PyTorch releases, platforms, or all CPU and accelerator operations.",
+      "hints": [
+        "Record seeds, software versions, data splits, and hyperparameters when you need to compare experiments reliably."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Reproducibility and determinism — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/notes/randomness.html"
+        }
+      ]
+    },
+    {
+      "id": "performance-tools-class-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.3",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.46,
+      "prompt": "Classify each performance/checkpoint need by the PyTorch mechanism.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "item-1",
+            "label": "Run eligible ops in mixed precision"
+          },
+          {
+            "id": "item-2",
+            "label": "Reduce float16 gradient underflow"
+          },
+          {
+            "id": "item-3",
+            "label": "Compile an optimized callable around a model"
+          },
+          {
+            "id": "item-4",
+            "label": "Mapping of registered parameters and buffers"
+          }
+        ],
+        "categories": [
+          {
+            "id": "cat-1",
+            "label": "autocast"
+          },
+          {
+            "id": "cat-2",
+            "label": "GradScaler"
+          },
+          {
+            "id": "cat-3",
+            "label": "torch.compile"
+          },
+          {
+            "id": "cat-4",
+            "label": "state_dict"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "item-1": "cat-1",
+          "item-2": "cat-2",
+          "item-3": "cat-3",
+          "item-4": "cat-4"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.autocast",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.grad_scaler",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.torch_compile",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.save_state_dict",
+          "weight": 0.25
+        }
+      ],
+      "explanation": "torch.autocast runs eligible operations in selected lower precision while keeping other operations in higher precision as appropriate. torch.amp.GradScaler scales the loss and gradients to reduce float16 gradient underflow during mixed-precision training. torch.compile returns an optimized callable around a model or Python function using PyTorch compilation infrastructure. A recommended PyTorch pattern saves model.state_dict() rather than serializing the entire Python model object.",
+      "hints": [
+        "Focus on the operation each API performs, not merely whether it can appear in the same training program."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was matched to the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not classified."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.compile.html"
+        }
+      ]
+    },
+    {
+      "id": "performance-tools-class-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.3",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.58,
+      "prompt": "Classify each performance/checkpoint need by the PyTorch mechanism. Use the second scenario set.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "item-1",
+            "label": "Wrap forward/loss for AMP"
+          },
+          {
+            "id": "item-2",
+            "label": "Scale loss before backward in AMP"
+          },
+          {
+            "id": "item-3",
+            "label": "May add startup overhead before steady-state speedup"
+          },
+          {
+            "id": "item-4",
+            "label": "Common object saved for model weights"
+          }
+        ],
+        "categories": [
+          {
+            "id": "cat-1",
+            "label": "autocast"
+          },
+          {
+            "id": "cat-2",
+            "label": "GradScaler"
+          },
+          {
+            "id": "cat-3",
+            "label": "torch.compile"
+          },
+          {
+            "id": "cat-4",
+            "label": "state_dict"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "item-1": "cat-1",
+          "item-2": "cat-2",
+          "item-3": "cat-3",
+          "item-4": "cat-4"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.autocast",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.grad_scaler",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.torch_compile",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.save_state_dict",
+          "weight": 0.25
+        }
+      ],
+      "explanation": "torch.autocast runs eligible operations in selected lower precision while keeping other operations in higher precision as appropriate. torch.amp.GradScaler scales the loss and gradients to reduce float16 gradient underflow during mixed-precision training. torch.compile returns an optimized callable around a model or Python function using PyTorch compilation infrastructure. A recommended PyTorch pattern saves model.state_dict() rather than serializing the entire Python model object.",
+      "hints": [
+        "Focus on the operation each API performs, not merely whether it can appear in the same training program."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was matched to the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not classified."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.compile.html"
+        }
+      ]
+    }
+  ]
+}

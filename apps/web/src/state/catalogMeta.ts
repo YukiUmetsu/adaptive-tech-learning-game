@@ -27,6 +27,18 @@ export interface CatalogCategory {
 
 export const CATALOG: CatalogCategory[] = [
   {
+    id: "ai",
+    label: "AI & Machine Learning",
+    certifications: [
+      {
+        id: "ai-pytorch-core",
+        name: "PyTorch Core: Practical ML & Neural Networks",
+        examCode: "PYTORCH-CORE",
+        wip: false,
+      },
+    ],
+  },
+  {
     id: "aws",
     label: "AWS",
     certifications: [
