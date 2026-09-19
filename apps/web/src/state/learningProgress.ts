@@ -410,10 +410,40 @@ export function clearDomainProgress(
 }
 
 function requiredPromptIds(node: KnowledgeNode): string[] {
+  return requiredPrompts(node).map((prompt) => prompt.id);
+}
+
+/**
+ * The prompts that count toward a node's discovery progress.
+ *
+ * A node normally has required prompts; a node authored with none falls back to
+ * all of its prompts, so it can still be completed.
+ */
+export function requiredPrompts(node: KnowledgeNode): KnowledgePrompt[] {
   const required = node.prompts.filter((prompt) => prompt.required !== false);
-  return (required.length > 0 ? required : node.prompts).map(
-    (prompt) => prompt.id,
-  );
+  return required.length > 0 ? required : node.prompts;
+}
+
+/**
+ * Completed versus total prompts for a node, using every completion rule.
+ *
+ * This is the single source of truth for the map badge and the card charge, so
+ * a node can never read "Unlocked" while showing partial progress.
+ */
+export function nodePromptProgress(
+  node: KnowledgeNode,
+  revealedPromptIds: ReadonlySet<string>,
+  revealedElements: ReadonlyMap<string, ReadonlySet<string>> = new Map(),
+): { completed: number; total: number } {
+  const counted = requiredPrompts(node);
+  const completed = counted.filter((prompt) =>
+    isPromptComplete(
+      prompt,
+      revealedPromptIds,
+      revealedElements.get(prompt.id) ?? EMPTY_ELEMENTS_SET,
+    ),
+  ).length;
+  return { completed, total: counted.length };
 }
 
 /**

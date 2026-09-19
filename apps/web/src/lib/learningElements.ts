@@ -42,6 +42,32 @@ export function isProgressiveTable(
 /** Visibility/discovery state of one progressive-table cell. */
 export type TableCellState = "given" | "revealed" | "hidden";
 
+/**
+ * Per-column width reservations for a progressive table.
+ *
+ * The width of each column is derived from the longest authored text it can
+ * show, including hidden values. Reserving that space up front keeps the table
+ * from reflowing when a cell reveals. Widths are expressed in `ch` so they
+ * scale with the learning font size, clamped to keep very short and very long
+ * columns readable.
+ */
+export function tableColumnWidths(
+  reveal: LearningTableReveal,
+  min = 7,
+  max = 40,
+): string[] {
+  const mode = reveal.progressive_reveal?.mode;
+  const affordance =
+    mode === "column" ? "Reveal column" : mode === "row" ? "Reveal row" : "Reveal";
+  return reveal.columns.map((column) => {
+    let longest = Math.max(column.label.length, affordance.length);
+    for (const row of reveal.rows) {
+      longest = Math.max(longest, (row.cells[column.id] ?? "").length);
+    }
+    return `${Math.min(Math.max(longest, min), max)}ch`;
+  });
+}
+
 /** The derived reveal plan for one progressive table. */
 export interface ProgressiveTableState {
   mode: TableRevealMode;

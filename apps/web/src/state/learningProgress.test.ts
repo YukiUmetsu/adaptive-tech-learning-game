@@ -11,6 +11,7 @@ import {
   isNodeUnlocked,
   isPromptComplete,
   loadDomainProgress,
+  nodePromptProgress,
   revealElement,
   revealPrompt,
 } from "./learningProgress";
@@ -368,6 +369,52 @@ describe("code annotation progress", () => {
       isPromptComplete(tablePrompt, new Set(["constraints"]), new Set()),
     ).toBe(true);
     expect(isPromptComplete(tablePrompt, new Set(), new Set())).toBe(false);
+  });
+});
+
+describe("node prompt progress consistency", () => {
+  it("counts element-based completion the same way unlock does", () => {
+    const node = codeLearningFixture.modules[0].nodes[0]; // one code_file prompt
+    const revealedElements = new Set([
+      "annotation:terraform-version",
+      "annotation:provider-source",
+    ]);
+    const elementMap = new Map([["versions", revealedElements]]);
+
+    const progress = nodePromptProgress(node, new Set(), elementMap);
+    expect(progress).toEqual({ completed: 1, total: 1 });
+    expect(isNodeUnlocked(node, new Set(), elementMap)).toBe(true);
+  });
+
+  it("never reports partial progress for an unlocked mixed node", () => {
+    const node = {
+      ...codeLearningFixture.modules[0].nodes[0],
+      prompts: [
+        codeLearningFixture.modules[0].nodes[0].prompts[0], // code_file
+        {
+          id: "what",
+          kind: "what" as const,
+          label: "WHAT?",
+          placeholder: "",
+          required: true,
+          reveal: { type: "text" as const, text: "An IaC tool." },
+        },
+      ],
+    };
+
+    const revealedPrompts = new Set(["what"]);
+    const revealedElements = new Map([
+      [
+        "versions",
+        new Set(["annotation:terraform-version", "annotation:provider-source"]),
+      ],
+    ]);
+
+    expect(nodePromptProgress(node, revealedPrompts, revealedElements)).toEqual({
+      completed: 2,
+      total: 2,
+    });
+    expect(isNodeUnlocked(node, revealedPrompts, revealedElements)).toBe(true);
   });
 });
 

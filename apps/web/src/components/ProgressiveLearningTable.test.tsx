@@ -190,6 +190,38 @@ describe("ProgressiveLearningTable — cell mode", () => {
   });
 });
 
+describe("ProgressiveLearningTable — stable column widths", () => {
+  it("reserves each column width from the widest authored content, including hidden cells", () => {
+    const { container } = render(<Harness reveal={cellTableReveal} />);
+    const cols = Array.from(container.querySelectorAll("col")).map(
+      (col) => (col as HTMLElement).style.width,
+    );
+
+    // basis: "Lowest AWS network latency" (26) beats the header (15)
+    expect(cols[1]).toBe("26ch");
+    // health: header "Health checks" (13) beats "Supported" (9)
+    expect(cols[2]).toBe("13ch");
+  });
+
+  it("keeps column widths unchanged after a reveal", async () => {
+    const { container } = render(<Harness reveal={cellTableReveal} />);
+    const widthsBefore = Array.from(container.querySelectorAll("col")).map(
+      (col) => (col as HTMLElement).style.width,
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: "Reveal Selection basis for Weighted",
+      }),
+    );
+
+    const widthsAfter = Array.from(container.querySelectorAll("col")).map(
+      (col) => (col as HTMLElement).style.width,
+    );
+    expect(widthsAfter).toEqual(widthsBefore);
+  });
+});
+
 describe("ProgressiveLearningTable — accessibility", () => {
   it("does not expose hidden values as text", () => {
     const { container } = render(<Harness reveal={cellTableReveal} />);

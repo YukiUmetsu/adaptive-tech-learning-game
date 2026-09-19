@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import type { KnowledgeNode } from "../api/types";
 import {
   isPromptComplete,
+  nodePromptProgress,
   type NodeState,
 } from "../state/learningProgress";
 import KnowledgePrompt from "./KnowledgePrompt";
@@ -52,10 +53,11 @@ export default function KnowledgeCard({
   const revealed = useMemo(() => new Set(revealedPromptIds), [revealedPromptIds]);
   const promptComplete = (prompt: KnowledgeNode["prompts"][number]) =>
     isPromptComplete(prompt, revealed, elementSets.get(prompt.id));
-  const requiredPrompts = node.prompts.filter((prompt) => prompt.required !== false);
-  const counted = requiredPrompts.length > 0 ? requiredPrompts : node.prompts;
-  const revealedCount = counted.filter(promptComplete).length;
-  const total = counted.length;
+  const { completed: revealedCount, total } = nodePromptProgress(
+    node,
+    revealed,
+    elementSets,
+  );
   const unlocked = state === "unlocked";
 
   return (

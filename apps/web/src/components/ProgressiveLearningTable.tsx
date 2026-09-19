@@ -4,6 +4,7 @@ import type { LearningTableReveal } from "../lib/learningElements";
 import {
   deriveProgressiveTable,
   elementId,
+  tableColumnWidths,
   type TableCellState,
 } from "../lib/learningElements";
 
@@ -40,6 +41,7 @@ export default function ProgressiveLearningTable({
   interaction,
 }: ProgressiveLearningTableProps) {
   const state = useMemo(() => deriveProgressiveTable(reveal), [reveal]);
+  const columnWidths = useMemo(() => tableColumnWidths(reveal), [reveal]);
   const revealed = useMemo(
     () => new Set(interaction?.revealedElementIds ?? []),
     [interaction?.revealedElementIds],
@@ -148,6 +150,15 @@ export default function ProgressiveLearningTable({
   return (
     <div className="learning-table-wrap">
       <table className="learning-table learning-table--progressive">
+        <colgroup>
+          {reveal.columns.map((column, index) => (
+            <col
+              key={column.id}
+              data-column-id={column.id}
+              style={{ width: columnWidths[index] }}
+            />
+          ))}
+        </colgroup>
         <thead>
           <tr>
             {reveal.columns.map((column) => {
