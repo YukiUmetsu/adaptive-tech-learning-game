@@ -1,0 +1,847 @@
+{
+  "schema_version": "2.0.0",
+  "content_version": "terraform-associate-004-learning-2026-09-19-v2",
+  "certification_id": "hashicorp-terraform-associate-004",
+  "certification_version": "terraform-associate-004",
+  "exam_guide_revision": "004 / Terraform 1.12",
+  "domain": {
+    "id": "domain-6",
+    "name": "Terraform state management",
+    "weight": 0.125
+  },
+  "learning_design": {
+    "progress_label": "Discovery Progress",
+    "unlock_rule": "Reveal the required explanations and required code annotations to unlock each knowledge node.",
+    "mastery_note": "Discovery builds the model first; quiz attempts provide the scored retrieval and application evidence."
+  },
+  "source_refs": [
+    {
+      "title": "Terraform Associate 004 - official exam content",
+      "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+    },
+    {
+      "title": "Terraform Associate 004 - official learning path",
+      "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004"
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "6a",
+      "6b",
+      "6c",
+      "6d"
+    ],
+    "skill_ids": [
+      "6a.1",
+      "6b.1",
+      "6c.1",
+      "6d.1"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 10,
+    "prompt_count": 17
+  },
+  "authoring_notes": "Targets Terraform Associate 004 / Terraform 1.12. Domain weight 0.125 is an internal planning weight because HashiCorp does not publish objective percentages. This v2 learning content uses real tables and interactive syntax-highlighted code_file reveals; generic exam-clue and generic mental-model prompts were intentionally removed.",
+  "modules": [
+    {
+      "id": "d6-module-1",
+      "title": "Backends and locking",
+      "order": 1,
+      "task_ids": [
+        "6a",
+        "6b",
+        "6c"
+      ],
+      "skill_ids": [
+        "6a.1",
+        "6b.1",
+        "6c.1"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "d6-backend-role",
+          "title": "A backend decides where state lives",
+          "concept_ids": [
+            "tf.backend",
+            "tf.backend.local",
+            "tf.backend.remote"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.22
+          },
+          "prompts": [
+            {
+              "id": "backend-jobs",
+              "kind": "what",
+              "label": "BACKEND RESPONSIBILITIES",
+              "placeholder": "What does a Terraform backend control?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "responsibility",
+                    "label": "Responsibility"
+                  },
+                  {
+                    "id": "detail",
+                    "label": "Meaning"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "responsibility": "State storage",
+                      "detail": "Where Terraform reads/writes the state snapshot"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "responsibility": "Locking API when supported",
+                      "detail": "How Terraform prevents concurrent state writes"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "responsibility": "Remote collaboration behavior",
+                      "detail": "Remote backends can centralize shared state instead of leaving it on one engineer’s disk"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "local-remote",
+              "kind": "not_this",
+              "label": "LOCAL VS REMOTE",
+              "placeholder": "What changes when state moves from the default local backend to a remote backend?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "backend",
+                    "label": "Backend"
+                  },
+                  {
+                    "id": "state_location",
+                    "label": "State location"
+                  },
+                  {
+                    "id": "collaboration",
+                    "label": "Collaboration"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "backend": "Local",
+                      "state_location": "Local disk, normally terraform.tfstate",
+                      "collaboration": "Simple but tied to the local working context"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "backend": "Remote",
+                      "state_location": "Backend service/object store depending on backend",
+                      "collaboration": "Central state access; locking/security depend on backend capabilities"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Backends",
+              "url": "https://developer.hashicorp.com/terraform/language/state/backends"
+            }
+          ]
+        },
+        {
+          "id": "d6-remote-backend",
+          "title": "Remote backend configuration",
+          "concept_ids": [
+            "tf.backend.remote",
+            "tf.backend"
+          ],
+          "prerequisite_node_ids": [
+            "d6-backend-role"
+          ],
+          "map_position": {
+            "x": 0.34,
+            "y": 0.18
+          },
+          "prompts": [
+            {
+              "id": "backend-code",
+              "kind": "look_for",
+              "label": "INSPECT backend.tf",
+              "placeholder": "Backend configuration lives inside the terraform block. Click the backend type and the state object key.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "backend.tf",
+                "language": "hcl",
+                "code": "terraform {\n  backend \"s3\" {\n    bucket = \"company-terraform-state\"\n    key    = \"network/prod.tfstate\"\n    region = \"us-east-1\"\n  }\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "backend",
+                    "anchor": {
+                      "line": 2,
+                      "text": "backend \"s3\"",
+                      "occurrence": 1
+                    },
+                    "title": "Backend type",
+                    "explanation": "The backend type selects the state storage implementation. Backend-specific arguments configure how Terraform reaches that storage.",
+                    "required": true
+                  },
+                  {
+                    "id": "key",
+                    "anchor": {
+                      "line": 4,
+                      "text": "key    = \"network/prod.tfstate\"",
+                      "occurrence": 1
+                    },
+                    "title": "State location within the backend",
+                    "explanation": "The backend key/path identifies the state object for this configuration within the remote storage system.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "backend-init",
+              "kind": "action",
+              "label": "BACKEND CHANGE REQUIRES INIT",
+              "placeholder": "After adding or changing backend configuration, what must you run before normal plan/apply?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Run terraform init. Use migration or reconfiguration options deliberately when switching from an already-initialized backend."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Backends",
+              "url": "https://developer.hashicorp.com/terraform/language/state/backends"
+            },
+            {
+              "title": "terraform init",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/init"
+            }
+          ]
+        },
+        {
+          "id": "d6-locking",
+          "title": "State locking protects concurrent writes",
+          "concept_ids": [
+            "tf.locking"
+          ],
+          "prerequisite_node_ids": [
+            "d6-remote-backend"
+          ],
+          "map_position": {
+            "x": 0.56,
+            "y": 0.28
+          },
+          "prompts": [
+            {
+              "id": "locking",
+              "kind": "what",
+              "label": "LOCKING BEHAVIOR",
+              "placeholder": "What should you assume about state locking?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "fact",
+                    "label": "Fact"
+                  },
+                  {
+                    "id": "meaning",
+                    "label": "Meaning"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "fact": "Automatic when supported",
+                      "meaning": "Terraform locks state for operations that could write it"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "fact": "Backend capability matters",
+                      "meaning": "Not every backend offers the same locking implementation"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "fact": "Lock contention is a safety signal",
+                      "meaning": "A second writer should normally wait or stop instead of bypassing an active operation"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "fact": "force-unlock is exceptional",
+                      "meaning": "Use it only after verifying the lock is stale and no active operation owns it"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "State locking",
+              "url": "https://developer.hashicorp.com/terraform/language/state/locking"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d6-module-2",
+      "title": "Drift and declarative state transitions",
+      "order": 2,
+      "task_ids": [
+        "6d"
+      ],
+      "skill_ids": [
+        "6d.1"
+      ],
+      "prerequisite_module_ids": [
+        "d6-module-1"
+      ],
+      "nodes": [
+        {
+          "id": "d6-drift",
+          "title": "Drift is a three-layer mismatch",
+          "concept_ids": [
+            "tf.drift"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.22
+          },
+          "prompts": [
+            {
+              "id": "drift-layers",
+              "kind": "connects_to",
+              "label": "COMPARE THE THREE LAYERS",
+              "placeholder": "When diagnosing drift, what should you compare?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "layer",
+                    "label": "Layer"
+                  },
+                  {
+                    "id": "example_question",
+                    "label": "Question"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "layer": "Configuration",
+                      "example_question": "What do the .tf files say should exist?"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "layer": "State",
+                      "example_question": "Which remote object is this resource address currently bound to, and what was recorded?"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "layer": "Remote API",
+                      "example_question": "What values and objects exist now outside Terraform’s stored view?"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "normal-plan",
+              "kind": "action",
+              "label": "NORMAL PLAN RECONCILES TO CONFIGURATION",
+              "placeholder": "If someone changes a managed remote setting manually and the configuration stays unchanged, what will a normal plan generally try to do?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "After refreshing remote values, Terraform normally proposes actions that move the remote object back toward the configuration’s desired state."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Terraform plan",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/plan"
+            },
+            {
+              "title": "State purpose",
+              "url": "https://developer.hashicorp.com/terraform/language/state/purpose"
+            }
+          ]
+        },
+        {
+          "id": "d6-refresh-only",
+          "title": "Refresh-only accepts remote reality into state",
+          "concept_ids": [
+            "tf.refresh_only",
+            "tf.drift"
+          ],
+          "prerequisite_node_ids": [
+            "d6-drift"
+          ],
+          "map_position": {
+            "x": 0.34,
+            "y": 0.18
+          },
+          "prompts": [
+            {
+              "id": "refresh-only",
+              "kind": "not_this",
+              "label": "NORMAL PLAN VS REFRESH-ONLY",
+              "placeholder": "What changes when you use refresh-only mode?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "mode",
+                    "label": "Mode"
+                  },
+                  {
+                    "id": "remote_objects",
+                    "label": "Remote infrastructure"
+                  },
+                  {
+                    "id": "state",
+                    "label": "State/outputs"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "mode": "Normal plan/apply",
+                      "remote_objects": "May propose and perform changes to reconcile toward configuration",
+                      "state": "Updated as operations and refresh occur"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "mode": "Refresh-only plan/apply",
+                      "remote_objects": "Does not propose normal infrastructure changes",
+                      "state": "Updates state and root outputs to match the refreshed remote reality"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "use-carefully",
+              "kind": "when",
+              "label": "WHEN IT FITS",
+              "placeholder": "When is refresh-only useful?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use it when an intentional out-of-band change should be accepted into Terraform’s recorded view rather than immediately changed back to the current configuration. Review the resulting state/output changes carefully."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "terraform plan",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/plan"
+            }
+          ]
+        },
+        {
+          "id": "d6-moved",
+          "title": "moved preserves identity across address refactors",
+          "concept_ids": [
+            "tf.moved"
+          ],
+          "prerequisite_node_ids": [
+            "d6-refresh-only"
+          ],
+          "map_position": {
+            "x": 0.56,
+            "y": 0.28
+          },
+          "prompts": [
+            {
+              "id": "moved-code",
+              "kind": "look_for",
+              "label": "INSPECT moved BLOCK",
+              "placeholder": "The object is not changing; only its Terraform address is moving into a module. Click from and to.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "moved.tf",
+                "language": "hcl",
+                "code": "moved {\n  from = aws_instance.web\n  to   = module.app.aws_instance.web\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "from",
+                    "anchor": {
+                      "line": 2,
+                      "text": "from = aws_instance.web",
+                      "occurrence": 1
+                    },
+                    "title": "Old Terraform address",
+                    "explanation": "from identifies the address currently recorded in state.",
+                    "required": true
+                  },
+                  {
+                    "id": "to",
+                    "anchor": {
+                      "line": 3,
+                      "text": "to   = module.app.aws_instance.web",
+                      "occurrence": 1
+                    },
+                    "title": "New Terraform address",
+                    "explanation": "to declares where that same object should be tracked after the refactor.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "not-ignore",
+              "kind": "not_this",
+              "label": "MOVED DOES NOT HIDE OTHER CHANGES",
+              "placeholder": "Does a moved block suppress every other difference in the resource?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "No. It prevents replacement caused only by the address change. Terraform still plans real argument/lifecycle changes, so review the plan."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Refactor modules/resources",
+              "url": "https://developer.hashicorp.com/terraform/language/modules/develop/refactoring"
+            }
+          ]
+        },
+        {
+          "id": "d6-removed",
+          "title": "removed can stop management without destroying the object",
+          "concept_ids": [
+            "tf.removed"
+          ],
+          "prerequisite_node_ids": [
+            "d6-moved"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.2
+          },
+          "prompts": [
+            {
+              "id": "removed-code",
+              "kind": "look_for",
+              "label": "INSPECT removed BLOCK",
+              "placeholder": "This configuration wants Terraform to forget a bucket while leaving the real bucket intact. Click the address and destroy setting.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "removed.tf",
+                "language": "hcl",
+                "code": "removed {\n  from = aws_s3_bucket.logs\n\n  lifecycle {\n    destroy = false\n  }\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "from",
+                    "anchor": {
+                      "line": 2,
+                      "text": "from = aws_s3_bucket.logs",
+                      "occurrence": 1
+                    },
+                    "title": "Address leaving management",
+                    "explanation": "from identifies the managed object Terraform should remove from its state tracking.",
+                    "required": true
+                  },
+                  {
+                    "id": "destroy-false",
+                    "anchor": {
+                      "line": 5,
+                      "text": "destroy = false",
+                      "occurrence": 1
+                    },
+                    "title": "Keep the remote object",
+                    "explanation": "destroy = false means Terraform removes the binding without deleting the real infrastructure object.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "removed-vs-delete",
+              "kind": "not_this",
+              "label": "STOP MANAGING VS DESTROY",
+              "placeholder": "Choose the intent before using a state/removal mechanism.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "intent",
+                    "label": "Intent"
+                  },
+                  {
+                    "id": "tool",
+                    "label": "Configuration/command"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "intent": "Delete the real object",
+                      "tool": "Normal configuration removal with destroy allowed, or terraform destroy for full teardown"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "intent": "Keep the object but stop managing it",
+                      "tool": "removed block with destroy = false, or carefully use state rm for an imperative state-only change"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Removing resources",
+              "url": "https://developer.hashicorp.com/terraform/language/resources/syntax#removing-resources"
+            },
+            {
+              "title": "State remove",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/state/rm"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d6-module-3",
+      "title": "State inspection and high-risk operations",
+      "order": 3,
+      "task_ids": [
+        "6d"
+      ],
+      "skill_ids": [
+        "6d.1"
+      ],
+      "prerequisite_module_ids": [
+        "d6-module-2"
+      ],
+      "nodes": [
+        {
+          "id": "d6-state-cli",
+          "title": "State CLI: inspection versus surgery",
+          "concept_ids": [
+            "tf.state.cli"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.22
+          },
+          "prompts": [
+            {
+              "id": "state-commands",
+              "kind": "what",
+              "label": "STATE COMMAND RISK",
+              "placeholder": "Which state subcommands are primarily inspection, and which change bindings/state?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "command",
+                    "label": "Command"
+                  },
+                  {
+                    "id": "intent",
+                    "label": "Primary intent"
+                  },
+                  {
+                    "id": "risk",
+                    "label": "Risk level"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "command": "terraform state list",
+                      "intent": "List tracked resource addresses",
+                      "risk": "Low / read-oriented"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "command": "terraform state show ADDRESS",
+                      "intent": "Inspect one tracked object",
+                      "risk": "Low / read-oriented"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "command": "terraform state pull",
+                      "intent": "Download raw state snapshot",
+                      "risk": "Read-oriented but contains sensitive data"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "command": "terraform state mv",
+                      "intent": "Move a binding/address imperatively",
+                      "risk": "Mutating; review carefully"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "command": "terraform state rm",
+                      "intent": "Remove a binding without deleting remote object",
+                      "risk": "Mutating; can create unmanaged infrastructure"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "command": "terraform state push",
+                      "intent": "Replace backend state with a local snapshot",
+                      "risk": "High-risk recovery operation"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "prefer-config",
+              "kind": "action",
+              "label": "PREFER REVIEWABLE CONFIGURATION WHEN POSSIBLE",
+              "placeholder": "For address refactors and planned removals, why prefer moved/removed blocks over one-off state surgery when the language feature fits?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Configuration-driven transitions are reviewable, repeatable, and visible in plans. State subcommands remain useful, but they directly mutate Terraform’s tracking and require more operational care."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "State CLI",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/state"
+            },
+            {
+              "title": "Refactoring",
+              "url": "https://developer.hashicorp.com/terraform/language/modules/develop/refactoring"
+            }
+          ]
+        },
+        {
+          "id": "d6-force-unlock",
+          "title": "Force-unlock only stale locks",
+          "concept_ids": [
+            "tf.locking",
+            "tf.state.cli"
+          ],
+          "prerequisite_node_ids": [
+            "d6-state-cli"
+          ],
+          "map_position": {
+            "x": 0.34,
+            "y": 0.18
+          },
+          "prompts": [
+            {
+              "id": "stale-lock",
+              "kind": "action",
+              "label": "SAFE STALE-LOCK RESPONSE",
+              "placeholder": "Terraform says the state is locked. What sequence minimizes the chance of corrupting an active run?",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Identify the lock holder and operation",
+                  "Verify no plan/apply/state write is still active",
+                  "Wait for the active operation if the lock is legitimate",
+                  "Only if the lock is confirmed stale, use terraform force-unlock with the lock ID",
+                  "Resume normal Terraform operations with locking enabled"
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "State locking",
+              "url": "https://developer.hashicorp.com/terraform/language/state/locking"
+            }
+          ]
+        },
+        {
+          "id": "d6-backup-security",
+          "title": "Treat state as sensitive infrastructure data",
+          "concept_ids": [
+            "tf.backend.remote",
+            "tf.state.cli"
+          ],
+          "prerequisite_node_ids": [
+            "d6-force-unlock"
+          ],
+          "map_position": {
+            "x": 0.56,
+            "y": 0.28
+          },
+          "prompts": [
+            {
+              "id": "state-security",
+              "kind": "look_for",
+              "label": "STATE SECURITY",
+              "placeholder": "Why should state storage and state snapshots be protected?",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "State can contain resource attributes and values that are sensitive even when normal CLI output redacts them.",
+                  "Anyone able to replace or corrupt state can disrupt Terraform’s understanding of resource identity.",
+                  "Remote backends can centralize access controls, encryption, versioning, and collaboration depending on backend capabilities.",
+                  "Before manual state operations, preserve a recoverable copy or rely on backend version history where available."
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Backends",
+              "url": "https://developer.hashicorp.com/terraform/language/state/backends"
+            },
+            {
+              "title": "Manage sensitive data",
+              "url": "https://developer.hashicorp.com/terraform/language/manage-sensitive-data"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

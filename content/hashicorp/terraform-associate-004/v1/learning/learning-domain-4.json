@@ -1,0 +1,1606 @@
+{
+  "schema_version": "2.0.0",
+  "content_version": "terraform-associate-004-learning-2026-09-19-v2",
+  "certification_id": "hashicorp-terraform-associate-004",
+  "certification_version": "terraform-associate-004",
+  "exam_guide_revision": "004 / Terraform 1.12",
+  "domain": {
+    "id": "domain-4",
+    "name": "Terraform configuration",
+    "weight": 0.125
+  },
+  "learning_design": {
+    "progress_label": "Discovery Progress",
+    "unlock_rule": "Reveal the required explanations and required code annotations to unlock each knowledge node.",
+    "mastery_note": "Discovery builds the model first; quiz attempts provide the scored retrieval and application evidence."
+  },
+  "source_refs": [
+    {
+      "title": "Terraform Associate 004 - official exam content",
+      "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+    },
+    {
+      "title": "Terraform Associate 004 - official learning path",
+      "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004"
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "4a",
+      "4b",
+      "4c",
+      "4d",
+      "4e",
+      "4f",
+      "4g",
+      "4h"
+    ],
+    "skill_ids": [
+      "4a.1",
+      "4b.1",
+      "4c.1",
+      "4d.1",
+      "4e.1",
+      "4f.1",
+      "4g.1",
+      "4h.1"
+    ],
+    "module_count": 4,
+    "knowledge_node_count": 14,
+    "prompt_count": 28
+  },
+  "authoring_notes": "Targets Terraform Associate 004 / Terraform 1.12. Domain weight 0.125 is an internal planning weight because HashiCorp does not publish objective percentages. This v2 learning content uses real tables and interactive syntax-highlighted code_file reveals; generic exam-clue and generic mental-model prompts were intentionally removed.",
+  "modules": [
+    {
+      "id": "d4-module-1",
+      "title": "Blocks, references, and module interfaces",
+      "order": 1,
+      "task_ids": [
+        "4a",
+        "4b",
+        "4c"
+      ],
+      "skill_ids": [
+        "4a.1",
+        "4b.1",
+        "4c.1"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "d4-resource-data",
+          "title": "resource manages; data reads",
+          "concept_ids": [
+            "tf.resource.data"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.22
+          },
+          "prompts": [
+            {
+              "id": "resource-data-code",
+              "kind": "look_for",
+              "label": "COMPARE BLOCK TYPES",
+              "placeholder": "The two blocks can look similar, but their ownership intent is different. Click each block keyword.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "main.tf",
+                "language": "hcl",
+                "code": "resource \"aws_vpc\" \"app\" {\n  cidr_block = \"10.0.0.0/16\"\n}\n\ndata \"aws_ami\" \"base\" {\n  most_recent = true\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "resource",
+                    "anchor": {
+                      "line": 1,
+                      "text": "resource \"aws_vpc\"",
+                      "occurrence": 1
+                    },
+                    "title": "Managed resource",
+                    "explanation": "A resource block asks Terraform to manage the lifecycle of a remote object through create/read/update/delete behavior.",
+                    "required": true
+                  },
+                  {
+                    "id": "data",
+                    "anchor": {
+                      "line": 5,
+                      "text": "data \"aws_ami\"",
+                      "occurrence": 1
+                    },
+                    "title": "Data source",
+                    "explanation": "A data block reads information that exists elsewhere. It does not claim lifecycle ownership of that object.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "resource-data-table",
+              "kind": "not_this",
+              "label": "OWNERSHIP DIFFERENCE",
+              "placeholder": "What is the practical difference between resource and data?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "block",
+                    "label": "Block"
+                  },
+                  {
+                    "id": "intent",
+                    "label": "Primary intent"
+                  },
+                  {
+                    "id": "lifecycle",
+                    "label": "Terraform lifecycle ownership"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "block": "resource",
+                      "intent": "Manage a remote object",
+                      "lifecycle": "Yes"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "block": "data",
+                      "intent": "Read existing information",
+                      "lifecycle": "No"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Resources",
+              "url": "https://developer.hashicorp.com/terraform/language/resources"
+            },
+            {
+              "title": "Data sources",
+              "url": "https://developer.hashicorp.com/terraform/language/data-sources"
+            }
+          ]
+        },
+        {
+          "id": "d4-references",
+          "title": "References pass values and create graph edges",
+          "concept_ids": [
+            "tf.references"
+          ],
+          "prerequisite_node_ids": [
+            "d4-resource-data"
+          ],
+          "map_position": {
+            "x": 0.34,
+            "y": 0.18
+          },
+          "prompts": [
+            {
+              "id": "reference-code",
+              "kind": "connects_to",
+              "label": "FOLLOW THE REFERENCE",
+              "placeholder": "This subnet needs the ID produced by another resource. Click the reference and see why Terraform already knows the dependency.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "network.tf",
+                "language": "hcl",
+                "code": "resource \"aws_subnet\" \"app\" {\n  vpc_id     = aws_vpc.main.id\n  cidr_block = \"10.0.1.0/24\"\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "vpc-ref",
+                    "anchor": {
+                      "line": 2,
+                      "text": "aws_vpc.main.id",
+                      "occurrence": 1
+                    },
+                    "title": "Cross-resource reference",
+                    "explanation": "This expression reads the id attribute from aws_vpc.main. Because the value is needed by the subnet, Terraform can infer that the VPC operation must happen first.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "implicit-first",
+              "kind": "not_this",
+              "label": "DO NOT ADD depends_on BY HABIT",
+              "placeholder": "If a normal expression reference already represents the real dependency, should you also add depends_on?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Usually no. Prefer data references because they express both the value flow and the dependency. Use explicit depends_on only for a real hidden dependency that cannot be expressed through data."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "References and expressions",
+              "url": "https://developer.hashicorp.com/terraform/language/expressions"
+            },
+            {
+              "title": "depends_on",
+              "url": "https://developer.hashicorp.com/terraform/language/meta-arguments/depends_on"
+            }
+          ]
+        },
+        {
+          "id": "d4-variables",
+          "title": "Input variables are the module interface",
+          "concept_ids": [
+            "tf.variables",
+            "tf.types"
+          ],
+          "prerequisite_node_ids": [
+            "d4-references"
+          ],
+          "map_position": {
+            "x": 0.56,
+            "y": 0.28
+          },
+          "prompts": [
+            {
+              "id": "variables-file",
+              "kind": "look_for",
+              "label": "INSPECT variables.tf",
+              "placeholder": "Variables accept values from callers instead of hard-coding every environment-specific setting. Click the declaration parts.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "variables.tf",
+                "language": "hcl",
+                "code": "variable \"environment\" {\n  type        = string\n  description = \"Deployment environment\"\n  default     = \"dev\"\n}\n\nvariable \"ports\" {\n  type    = list(number)\n  default = [80, 443]\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "var-block",
+                    "anchor": {
+                      "line": 1,
+                      "text": "variable \"environment\"",
+                      "occurrence": 1
+                    },
+                    "title": "Input variable declaration",
+                    "explanation": "The block declares an input named environment. Code inside the module references it as var.environment.",
+                    "required": true
+                  },
+                  {
+                    "id": "type",
+                    "anchor": {
+                      "line": 2,
+                      "text": "type        = string",
+                      "occurrence": 1
+                    },
+                    "title": "Type constraint",
+                    "explanation": "A type constraint catches incompatible caller values and documents the expected shape.",
+                    "required": true
+                  },
+                  {
+                    "id": "default",
+                    "anchor": {
+                      "line": 4,
+                      "text": "default     = \"dev\"",
+                      "occurrence": 1
+                    },
+                    "title": "Fallback value",
+                    "explanation": "A default makes the variable optional for callers. Supplied variable values override the declaration default.",
+                    "required": true
+                  },
+                  {
+                    "id": "list-type",
+                    "anchor": {
+                      "line": 8,
+                      "text": "type    = list(number)",
+                      "occurrence": 1
+                    },
+                    "title": "Complex collection type",
+                    "explanation": "Terraform type constraints can describe collections and structural values, not only primitive strings and numbers.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "variable-sources",
+              "kind": "when",
+              "label": "VALUE SOURCES",
+              "placeholder": "Which common value sources can replace a variable declaration default?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "source",
+                    "label": "Source"
+                  },
+                  {
+                    "id": "effect",
+                    "label": "Relationship to declaration default"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "source": "variable default",
+                      "effect": "Fallback when no higher-precedence value is supplied"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "source": "TF_VAR_name environment variable",
+                      "effect": "Can supply a value that overrides the default"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "source": "terraform.tfvars / auto-loaded tfvars",
+                      "effect": "Can supply a value that overrides the default"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "source": "-var or -var-file CLI option",
+                      "effect": "Explicitly supplies a value and overrides the default"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Input variables",
+              "url": "https://developer.hashicorp.com/terraform/language/values/variables"
+            },
+            {
+              "title": "Type constraints",
+              "url": "https://developer.hashicorp.com/terraform/language/expressions/type-constraints"
+            }
+          ]
+        },
+        {
+          "id": "d4-outputs",
+          "title": "Outputs expose selected values",
+          "concept_ids": [
+            "tf.outputs",
+            "tf.references"
+          ],
+          "prerequisite_node_ids": [
+            "d4-variables"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.2
+          },
+          "prompts": [
+            {
+              "id": "output-file",
+              "kind": "connects_to",
+              "label": "INSPECT outputs.tf",
+              "placeholder": "An output is an explicit value leaving a module. Click the name and value expression.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "outputs.tf",
+                "language": "hcl",
+                "code": "output \"vpc_id\" {\n  description = \"ID of the application VPC\"\n  value       = aws_vpc.app.id\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "output",
+                    "anchor": {
+                      "line": 1,
+                      "text": "output \"vpc_id\"",
+                      "occurrence": 1
+                    },
+                    "title": "Named output",
+                    "explanation": "A child module output becomes part of that module’s public interface. The root module also uses outputs to present selected values after runs.",
+                    "required": true
+                  },
+                  {
+                    "id": "value",
+                    "anchor": {
+                      "line": 3,
+                      "text": "value       = aws_vpc.app.id",
+                      "occurrence": 1
+                    },
+                    "title": "Output expression",
+                    "explanation": "The output evaluates an expression and exposes its result. Child-module callers can reference it as module.<name>.vpc_id.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "input-output",
+              "kind": "not_this",
+              "label": "INPUTS VS OUTPUTS",
+              "placeholder": "Which direction does data cross a module boundary?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "kind",
+                    "label": "Interface"
+                  },
+                  {
+                    "id": "direction",
+                    "label": "Direction"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "kind": "Input variable",
+                      "direction": "Caller -> module"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "kind": "Output value",
+                      "direction": "Module -> caller"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Output values",
+              "url": "https://developer.hashicorp.com/terraform/language/values/outputs"
+            },
+            {
+              "title": "Modules",
+              "url": "https://developer.hashicorp.com/terraform/language/modules/syntax"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d4-module-2",
+      "title": "Types, expressions, repetition, and YAML",
+      "order": 2,
+      "task_ids": [
+        "4d",
+        "4e"
+      ],
+      "skill_ids": [
+        "4d.1",
+        "4e.1"
+      ],
+      "prerequisite_module_ids": [
+        "d4-module-1"
+      ],
+      "nodes": [
+        {
+          "id": "d4-types",
+          "title": "Choose types that match the data shape",
+          "concept_ids": [
+            "tf.types"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.22
+          },
+          "prompts": [
+            {
+              "id": "type-table",
+              "kind": "what",
+              "label": "COMMON TYPE SHAPES",
+              "placeholder": "Which Terraform type fits each kind of configuration value?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "type",
+                    "label": "Type"
+                  },
+                  {
+                    "id": "shape",
+                    "label": "Use it for"
+                  },
+                  {
+                    "id": "example",
+                    "label": "Example"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "type": "string",
+                      "shape": "Single text value",
+                      "example": "\"prod\""
+                    }
+                  },
+                  {
+                    "cells": {
+                      "type": "number",
+                      "shape": "Numeric value",
+                      "example": "3"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "type": "bool",
+                      "shape": "True/false switch",
+                      "example": "true"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "type": "list(T)",
+                      "shape": "Ordered values of one element type",
+                      "example": "[80, 443]"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "type": "set(T)",
+                      "shape": "Unique unordered values of one element type",
+                      "example": "toset([\"a\", \"b\"])"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "type": "map(T)",
+                      "shape": "String keys to one element type",
+                      "example": "{ env = \"prod\" }"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "type": "object({...})",
+                      "shape": "Named attributes with their own types",
+                      "example": "{ name = string, size = number }"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "type": "tuple([...])",
+                      "shape": "Fixed positions with independently typed elements",
+                      "example": "[string, number]"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "convert",
+              "kind": "look_for",
+              "label": "TERRAFORM CAN CONVERT SOME VALUES",
+              "placeholder": "Why still declare an explicit variable type if Terraform can perform some automatic conversions?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Type constraints document the expected interface and reject incompatible shapes early. Automatic conversion is useful, but it should not replace a clear contract."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Type constraints",
+              "url": "https://developer.hashicorp.com/terraform/language/expressions/type-constraints"
+            }
+          ]
+        },
+        {
+          "id": "d4-expressions",
+          "title": "Expressions transform values",
+          "concept_ids": [
+            "tf.expressions"
+          ],
+          "prerequisite_node_ids": [
+            "d4-types"
+          ],
+          "map_position": {
+            "x": 0.34,
+            "y": 0.18
+          },
+          "prompts": [
+            {
+              "id": "expressions-file",
+              "kind": "look_for",
+              "label": "READ THE DATA TRANSFORMS",
+              "placeholder": "Terraform expressions combine references, operators, and functions. Click the examples to see what each transformation does.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "locals.tf",
+                "language": "hcl",
+                "code": "locals {\n  normalized_env = lower(var.environment)\n  common_tags = merge(\n    var.base_tags,\n    { Environment = local.normalized_env }\n  )\n}\n\noutput \"safe_name\" {\n  value = try(var.optional_name, \"default\")\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "lower",
+                    "anchor": {
+                      "line": 2,
+                      "text": "lower(var.environment)",
+                      "occurrence": 1
+                    },
+                    "title": "Function call on a referenced value",
+                    "explanation": "lower transforms the input string; expressions can derive values instead of requiring every value to be supplied directly.",
+                    "required": true
+                  },
+                  {
+                    "id": "merge",
+                    "anchor": {
+                      "line": 3,
+                      "text": "merge(",
+                      "occurrence": 1
+                    },
+                    "title": "Combine maps/objects",
+                    "explanation": "merge combines maps or objects; later arguments win when keys overlap.",
+                    "required": true
+                  },
+                  {
+                    "id": "try",
+                    "anchor": {
+                      "line": 10,
+                      "text": "try(var.optional_name, \"default\")",
+                      "occurrence": 1
+                    },
+                    "title": "Fallback across expressions",
+                    "explanation": "try evaluates expressions in order and returns the first one that does not produce an error.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "function-intent",
+              "kind": "when",
+              "label": "FUNCTION INTENT",
+              "placeholder": "Match useful functions to the problem they solve.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "function",
+                    "label": "Function"
+                  },
+                  {
+                    "id": "purpose",
+                    "label": "Typical purpose"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "function": "can(expr)",
+                      "purpose": "Turn expression success/failure into true/false"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "function": "try(a, b, ...)",
+                      "purpose": "Return the first expression that does not error"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "function": "merge(...)",
+                      "purpose": "Combine maps/objects"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "function": "flatten(...)",
+                      "purpose": "Flatten nested lists"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "function": "jsonencode / yamlencode",
+                      "purpose": "Serialize Terraform values"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "function": "jsondecode / yamldecode",
+                      "purpose": "Parse documents into Terraform values"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Expressions",
+              "url": "https://developer.hashicorp.com/terraform/language/expressions"
+            },
+            {
+              "title": "Functions",
+              "url": "https://developer.hashicorp.com/terraform/language/functions"
+            }
+          ]
+        },
+        {
+          "id": "d4-count-foreach",
+          "title": "count and for_each create multiple instances",
+          "concept_ids": [
+            "tf.count.foreach"
+          ],
+          "prerequisite_node_ids": [
+            "d4-expressions"
+          ],
+          "map_position": {
+            "x": 0.56,
+            "y": 0.28
+          },
+          "prompts": [
+            {
+              "id": "count-foreach",
+              "kind": "not_this",
+              "label": "INDEX VS STABLE KEY",
+              "placeholder": "When should you prefer count versus for_each?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "meta",
+                    "label": "Meta-argument"
+                  },
+                  {
+                    "id": "instance_address",
+                    "label": "Instance identity"
+                  },
+                  {
+                    "id": "good_fit",
+                    "label": "Good fit"
+                  },
+                  {
+                    "id": "watch_out",
+                    "label": "Watch out"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "meta": "count",
+                      "instance_address": "Numeric index such as [0]",
+                      "good_fit": "Simple N copies or list positions where index identity is acceptable",
+                      "watch_out": "Removing/reordering list elements can shift indexes"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "meta": "for_each",
+                      "instance_address": "Map/set key such as [\"api\"]",
+                      "good_fit": "Instances have meaningful stable keys",
+                      "watch_out": "Keys must be known before apply"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "foreach-code",
+              "kind": "look_for",
+              "label": "INSPECT for_each",
+              "placeholder": "This map uses stable service names as instance keys. Click for_each and each.key.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "services.tf",
+                "language": "hcl",
+                "code": "resource \"terraform_data\" \"service\" {\n  for_each = {\n    api = \"v1\"\n    web = \"v2\"\n  }\n\n  input = {\n    name    = each.key\n    version = each.value\n  }\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "for-each",
+                    "anchor": {
+                      "line": 2,
+                      "text": "for_each = {",
+                      "occurrence": 1
+                    },
+                    "title": "Create one instance per key",
+                    "explanation": "for_each creates instances keyed by map keys or set members, which makes addresses stable and meaningful.",
+                    "required": true
+                  },
+                  {
+                    "id": "each-key",
+                    "anchor": {
+                      "line": 8,
+                      "text": "each.key",
+                      "occurrence": 1
+                    },
+                    "title": "Current instance key",
+                    "explanation": "Inside a for_each block, each.key identifies the current map/set key.",
+                    "required": true
+                  },
+                  {
+                    "id": "each-value",
+                    "anchor": {
+                      "line": 9,
+                      "text": "each.value",
+                      "occurrence": 1
+                    },
+                    "title": "Current map value",
+                    "explanation": "For a map, each.value is the value associated with the current key.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "count",
+              "url": "https://developer.hashicorp.com/terraform/language/meta-arguments/count"
+            },
+            {
+              "title": "for_each",
+              "url": "https://developer.hashicorp.com/terraform/language/meta-arguments/for_each"
+            }
+          ]
+        },
+        {
+          "id": "d4-yaml",
+          "title": "Terraform can read and write YAML documents",
+          "concept_ids": [
+            "tf.yaml",
+            "tf.expressions"
+          ],
+          "prerequisite_node_ids": [
+            "d4-count-foreach"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.2
+          },
+          "prompts": [
+            {
+              "id": "yaml-file",
+              "kind": "look_for",
+              "label": "FIRST: THE YAML FILE",
+              "placeholder": "Terraform configuration is normally HCL in .tf files. This is an external YAML data file that Terraform will read.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "config.yaml",
+                "language": "yaml",
+                "code": "application:\n  name: checkout\n  replicas: 3\n  regions:\n    - us-east-1\n    - us-west-2",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "yaml-app",
+                    "anchor": {
+                      "line": 1,
+                      "text": "application:",
+                      "occurrence": 1
+                    },
+                    "title": "YAML mapping",
+                    "explanation": "This is YAML data, not Terraform configuration. Terraform can parse it into Terraform values with yamldecode.",
+                    "required": true
+                  },
+                  {
+                    "id": "yaml-replicas",
+                    "anchor": {
+                      "line": 3,
+                      "text": "replicas: 3",
+                      "occurrence": 1
+                    },
+                    "title": "YAML scalar value",
+                    "explanation": "After yamldecode, this number becomes accessible through the resulting Terraform object.",
+                    "required": true
+                  },
+                  {
+                    "id": "yaml-list",
+                    "anchor": {
+                      "line": 4,
+                      "text": "regions:",
+                      "occurrence": 1
+                    },
+                    "title": "YAML list field",
+                    "explanation": "The nested YAML list is decoded into a Terraform collection value.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "yaml-hcl",
+              "kind": "connects_to",
+              "label": "THEN: THE TERRAFORM FILE",
+              "placeholder": "Now inspect the HCL that loads config.yaml. Click the file() read and yamldecode() parse steps.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "main.tf",
+                "language": "hcl",
+                "code": "locals {\n  app_config = yamldecode(file(\"${path.module}/config.yaml\"))\n}\n\noutput \"replicas\" {\n  value = local.app_config.application.replicas\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "file",
+                    "anchor": {
+                      "line": 2,
+                      "text": "file(\"${path.module}/config.yaml\")",
+                      "occurrence": 1
+                    },
+                    "title": "Read the file as text",
+                    "explanation": "file reads the YAML document contents from disk.",
+                    "required": true
+                  },
+                  {
+                    "id": "decode",
+                    "anchor": {
+                      "line": 2,
+                      "text": "yamldecode(",
+                      "occurrence": 1
+                    },
+                    "title": "Parse YAML into Terraform values",
+                    "explanation": "yamldecode converts a YAML string into the corresponding Terraform value structure.",
+                    "required": true
+                  },
+                  {
+                    "id": "access",
+                    "anchor": {
+                      "line": 6,
+                      "text": "local.app_config.application.replicas",
+                      "occurrence": 1
+                    },
+                    "title": "Use the decoded value",
+                    "explanation": "After decoding, normal Terraform expressions can navigate the resulting object and collections.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "yamldecode",
+              "url": "https://developer.hashicorp.com/terraform/language/functions/yamldecode"
+            },
+            {
+              "title": "yamlencode",
+              "url": "https://developer.hashicorp.com/terraform/language/functions/yamlencode"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d4-module-3",
+      "title": "Dependencies, lifecycle, and validation",
+      "order": 3,
+      "task_ids": [
+        "4f",
+        "4g"
+      ],
+      "skill_ids": [
+        "4f.1",
+        "4g.1"
+      ],
+      "prerequisite_module_ids": [
+        "d4-module-2"
+      ],
+      "nodes": [
+        {
+          "id": "d4-depends-on",
+          "title": "Use depends_on only for hidden dependencies",
+          "concept_ids": [
+            "tf.depends_on",
+            "tf.references"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.22
+          },
+          "prompts": [
+            {
+              "id": "implicit-explicit",
+              "kind": "not_this",
+              "label": "IMPLICIT FIRST, EXPLICIT WHEN NEEDED",
+              "placeholder": "How should you express a dependency?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "case",
+                    "label": "Situation"
+                  },
+                  {
+                    "id": "best_model",
+                    "label": "Best model"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "case": "Downstream argument uses an upstream attribute",
+                      "best_model": "Use the expression reference; Terraform infers the dependency"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "case": "Downstream behavior depends on an upstream object but consumes none of its data",
+                      "best_model": "Use depends_on to model the hidden dependency"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "case": "You only want a specific file order",
+                      "best_model": "Do not use file order; Terraform uses the dependency graph"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "depends-code",
+              "kind": "look_for",
+              "label": "HIDDEN DEPENDENCY EXAMPLE",
+              "placeholder": "This policy attachment must exist before a data read, but the data block does not consume one of its values. Click depends_on.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "dependency.tf",
+                "language": "hcl",
+                "code": "data \"aws_iam_policy_document\" \"example\" {\n  depends_on = [aws_iam_role_policy.example]\n\n  statement {\n    actions   = [\"s3:ListBucket\"]\n    resources = [\"*\"]\n  }\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "depends",
+                    "anchor": {
+                      "line": 2,
+                      "text": "depends_on = [aws_iam_role_policy.example]",
+                      "occurrence": 1
+                    },
+                    "title": "Explicit hidden dependency",
+                    "explanation": "depends_on tells Terraform to finish operations on the referenced object before this block is evaluated. Use it when normal data references cannot express the real dependency.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "depends_on",
+              "url": "https://developer.hashicorp.com/terraform/language/meta-arguments/depends_on"
+            }
+          ]
+        },
+        {
+          "id": "d4-lifecycle",
+          "title": "Lifecycle rules change replacement and update behavior",
+          "concept_ids": [
+            "tf.lifecycle"
+          ],
+          "prerequisite_node_ids": [
+            "d4-depends-on"
+          ],
+          "map_position": {
+            "x": 0.34,
+            "y": 0.18
+          },
+          "prompts": [
+            {
+              "id": "lifecycle-table",
+              "kind": "what",
+              "label": "LIFECYCLE RULES",
+              "placeholder": "Which lifecycle rule solves which problem?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "rule",
+                    "label": "Rule"
+                  },
+                  {
+                    "id": "effect",
+                    "label": "Effect"
+                  },
+                  {
+                    "id": "caution",
+                    "label": "Caution"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "rule": "create_before_destroy",
+                      "effect": "Create the replacement before destroying the old object",
+                      "caution": "May fail when the remote system requires a globally unique name"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "rule": "prevent_destroy",
+                      "effect": "Reject plans that would destroy the configured resource",
+                      "caution": "Removing the entire resource block also removes this protection"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "rule": "ignore_changes",
+                      "effect": "Ignore selected remote changes when planning updates",
+                      "caution": "Can hide intentional drift if overused"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "rule": "replace_triggered_by",
+                      "effect": "Replace when referenced managed resources/attributes change",
+                      "caution": "Tracks managed resource changes, not arbitrary plain values directly"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "lifecycle-code",
+              "kind": "look_for",
+              "label": "INSPECT lifecycle",
+              "placeholder": "This resource wants replacement before destruction and refuses ordinary destroy plans. Click both rules.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "main.tf",
+                "language": "hcl",
+                "code": "resource \"aws_instance\" \"app\" {\n  ami           = var.ami_id\n  instance_type = \"t3.micro\"\n\n  lifecycle {\n    create_before_destroy = true\n    prevent_destroy       = true\n  }\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "create-first",
+                    "anchor": {
+                      "line": 6,
+                      "text": "create_before_destroy = true",
+                      "occurrence": 1
+                    },
+                    "title": "Reverse replacement order",
+                    "explanation": "Terraform normally destroys then creates when replacement is required. create_before_destroy asks it to create the replacement first.",
+                    "required": true
+                  },
+                  {
+                    "id": "prevent",
+                    "anchor": {
+                      "line": 7,
+                      "text": "prevent_destroy       = true",
+                      "occurrence": 1
+                    },
+                    "title": "Reject destructive plans",
+                    "explanation": "prevent_destroy causes Terraform to reject a plan that would destroy this configured resource. It is a guardrail, not a backup system.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Lifecycle",
+              "url": "https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle"
+            }
+          ]
+        },
+        {
+          "id": "d4-conditions",
+          "title": "Custom conditions validate at different stages",
+          "concept_ids": [
+            "tf.conditions",
+            "tf.expressions"
+          ],
+          "prerequisite_node_ids": [
+            "d4-lifecycle"
+          ],
+          "map_position": {
+            "x": 0.56,
+            "y": 0.28
+          },
+          "prompts": [
+            {
+              "id": "condition-table",
+              "kind": "what",
+              "label": "CUSTOM CONDITION TYPES",
+              "placeholder": "Where should a condition live based on what you are validating?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "type",
+                    "label": "Condition"
+                  },
+                  {
+                    "id": "use",
+                    "label": "Best use"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "type": "variable validation",
+                      "use": "Reject invalid input values at the variable boundary"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "type": "precondition",
+                      "use": "Assert something must be true before a resource/data/output operation proceeds"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "type": "postcondition",
+                      "use": "Assert something about a result after evaluation/apply"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "type": "check block",
+                      "use": "Continuously validate broader infrastructure assertions without blocking every operation in the same way as resource conditions"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "validation-code",
+              "kind": "look_for",
+              "label": "VARIABLE VALIDATION EXAMPLE",
+              "placeholder": "This variable accepts CIDR text only when cidrnetmask can parse it. Click validation, can(), and error_message.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "variables.tf",
+                "language": "hcl",
+                "code": "variable \"cidr\" {\n  type = string\n\n  validation {\n    condition     = can(cidrnetmask(var.cidr))\n    error_message = \"cidr must use valid CIDR notation\"\n  }\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "validation",
+                    "anchor": {
+                      "line": 4,
+                      "text": "validation {",
+                      "occurrence": 1
+                    },
+                    "title": "Variable boundary check",
+                    "explanation": "A validation block rejects caller input that does not satisfy its condition.",
+                    "required": true
+                  },
+                  {
+                    "id": "can",
+                    "anchor": {
+                      "line": 5,
+                      "text": "can(cidrnetmask(var.cidr))",
+                      "occurrence": 1
+                    },
+                    "title": "Convert parse failure into false",
+                    "explanation": "can returns false instead of propagating an expression error, which makes it useful for validation of parsable formats.",
+                    "required": true
+                  },
+                  {
+                    "id": "message",
+                    "anchor": {
+                      "line": 6,
+                      "text": "error_message = \"cidr must use valid CIDR notation\"",
+                      "occurrence": 1
+                    },
+                    "title": "Actionable failure message",
+                    "explanation": "The message should tell the caller what is wrong and what shape of value is expected.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Custom conditions",
+              "url": "https://developer.hashicorp.com/terraform/language/expressions/custom-conditions"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d4-module-4",
+      "title": "Sensitive and temporary data",
+      "order": 4,
+      "task_ids": [
+        "4h"
+      ],
+      "skill_ids": [
+        "4h.1"
+      ],
+      "prerequisite_module_ids": [
+        "d4-module-3"
+      ],
+      "nodes": [
+        {
+          "id": "d4-sensitive",
+          "title": "Sensitive is about display, not persistence",
+          "concept_ids": [
+            "tf.sensitive",
+            "tf.ephemeral"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.22
+          },
+          "prompts": [
+            {
+              "id": "secret-semantics",
+              "kind": "not_this",
+              "label": "DISPLAY VS PERSISTENCE",
+              "placeholder": "These features solve different secret-handling problems. Which one does what?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "feature",
+                    "label": "Feature"
+                  },
+                  {
+                    "id": "normal_display",
+                    "label": "Normal display"
+                  },
+                  {
+                    "id": "state_plan",
+                    "label": "Persistence in plan/state"
+                  },
+                  {
+                    "id": "purpose",
+                    "label": "Purpose"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "feature": "sensitive = true",
+                      "normal_display": "Redacted in normal CLI/UI output",
+                      "state_plan": "Can still be stored",
+                      "purpose": "Reduce accidental display"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "feature": "ephemeral = true",
+                      "normal_display": "Can be sensitive as well",
+                      "state_plan": "Omitted from Terraform plan/state where supported",
+                      "purpose": "Keep temporary values out of Terraform artifacts"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "feature": "write-only provider argument",
+                      "normal_display": "Not returned as readable state",
+                      "state_plan": "Value is not persisted by Terraform in the normal readable attribute",
+                      "purpose": "Pass a temporary secret into a provider-managed operation"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "redaction-limit",
+              "kind": "not_this",
+              "label": "REDACTED DOES NOT MEAN ABSENT",
+              "placeholder": "If a value is marked sensitive, can you assume it is absent from state?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "No. sensitive primarily controls presentation. Protect state storage, and use ephemeral/write-only flows when you specifically need a value omitted from Terraform artifacts."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Manage sensitive data",
+              "url": "https://developer.hashicorp.com/terraform/language/manage-sensitive-data"
+            },
+            {
+              "title": "Write-only arguments",
+              "url": "https://developer.hashicorp.com/terraform/language/manage-sensitive-data/write-only"
+            }
+          ]
+        },
+        {
+          "id": "d4-ephemeral",
+          "title": "Ephemeral values stay out of plan/state",
+          "concept_ids": [
+            "tf.ephemeral",
+            "tf.sensitive"
+          ],
+          "prerequisite_node_ids": [
+            "d4-sensitive"
+          ],
+          "map_position": {
+            "x": 0.34,
+            "y": 0.18
+          },
+          "prompts": [
+            {
+              "id": "ephemeral-code",
+              "kind": "look_for",
+              "label": "INSPECT EPHEMERAL VALUES",
+              "placeholder": "These values are meant to exist during an operation without being retained in normal Terraform artifacts. Click the ephemeral pieces.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "secrets.tf",
+                "language": "hcl",
+                "code": "variable \"api_token\" {\n  type      = string\n  sensitive = true\n  ephemeral = true\n}\n\nephemeral \"random_password\" \"db\" {\n  length = 24\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "sensitive",
+                    "anchor": {
+                      "line": 3,
+                      "text": "sensitive = true",
+                      "occurrence": 1
+                    },
+                    "title": "Hide normal display",
+                    "explanation": "Sensitive redacts the value in normal output, but redaction alone does not guarantee non-persistence.",
+                    "required": true
+                  },
+                  {
+                    "id": "ephemeral-var",
+                    "anchor": {
+                      "line": 4,
+                      "text": "ephemeral = true",
+                      "occurrence": 1
+                    },
+                    "title": "Ephemeral input variable",
+                    "explanation": "An ephemeral variable is available during the operation but omitted from plan and state artifacts.",
+                    "required": true
+                  },
+                  {
+                    "id": "ephemeral-block",
+                    "anchor": {
+                      "line": 7,
+                      "text": "ephemeral \"random_password\"",
+                      "occurrence": 1
+                    },
+                    "title": "Ephemeral resource block",
+                    "explanation": "An ephemeral block can obtain or generate temporary data for the operation without persisting the resulting value to state.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "write-only-pair",
+              "kind": "connects_to",
+              "label": "PASSING THE VALUE TO A RESOURCE",
+              "placeholder": "How can an ephemeral secret be consumed by a managed resource without turning it back into a persisted readable value?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use a provider-supported write-only argument. Terraform passes the value to the provider during the operation but does not store that write-only value as a normal readable attribute."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Manage sensitive data",
+              "url": "https://developer.hashicorp.com/terraform/language/manage-sensitive-data"
+            },
+            {
+              "title": "Ephemeral blocks",
+              "url": "https://developer.hashicorp.com/terraform/language/block/ephemeral"
+            },
+            {
+              "title": "Write-only arguments",
+              "url": "https://developer.hashicorp.com/terraform/language/manage-sensitive-data/write-only"
+            }
+          ]
+        },
+        {
+          "id": "d4-vault",
+          "title": "Vault is a secret source, not a persistence guarantee",
+          "concept_ids": [
+            "tf.vault",
+            "tf.sensitive",
+            "tf.ephemeral"
+          ],
+          "prerequisite_node_ids": [
+            "d4-ephemeral"
+          ],
+          "map_position": {
+            "x": 0.56,
+            "y": 0.28
+          },
+          "prompts": [
+            {
+              "id": "vault-flow",
+              "kind": "connects_to",
+              "label": "SECRET FLOW",
+              "placeholder": "Where does Vault fit in Terraform secret handling?",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Vault centrally stores or dynamically issues a secret",
+                  "Terraform/provider retrieves the secret for a run",
+                  "Terraform configuration passes the value to the target operation",
+                  "Terraform persistence semantics still depend on whether the consuming path is normal, sensitive, ephemeral, or write-only"
+                ]
+              }
+            },
+            {
+              "id": "vault-not-magic",
+              "kind": "not_this",
+              "label": "SOURCE VS STORAGE",
+              "placeholder": "What problem does each layer solve?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "layer",
+                    "label": "Layer"
+                  },
+                  {
+                    "id": "solves",
+                    "label": "What it solves"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "layer": "Vault",
+                      "solves": "Secret issuance, central management, leasing/rotation depending on secret engine"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "layer": "Terraform sensitive marking",
+                      "solves": "Reduces accidental display"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "layer": "Terraform ephemeral/write-only features",
+                      "solves": "Avoid persistence in Terraform artifacts where the flow supports it"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "layer": "Secure backend / access controls",
+                      "solves": "Protect state that legitimately contains sensitive values"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Vault with Terraform",
+              "url": "https://developer.hashicorp.com/terraform/tutorials/secrets/secrets-vault"
+            },
+            {
+              "title": "Manage sensitive data",
+              "url": "https://developer.hashicorp.com/terraform/language/manage-sensitive-data"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

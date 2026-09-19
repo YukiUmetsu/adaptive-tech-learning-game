@@ -1,0 +1,646 @@
+{
+  "schema_version": "2.0.0",
+  "content_version": "terraform-associate-004-learning-2026-09-19-v2",
+  "certification_id": "hashicorp-terraform-associate-004",
+  "certification_version": "terraform-associate-004",
+  "exam_guide_revision": "004 / Terraform 1.12",
+  "domain": {
+    "id": "domain-5",
+    "name": "Terraform modules",
+    "weight": 0.125
+  },
+  "learning_design": {
+    "progress_label": "Discovery Progress",
+    "unlock_rule": "Reveal the required explanations and required code annotations to unlock each knowledge node.",
+    "mastery_note": "Discovery builds the model first; quiz attempts provide the scored retrieval and application evidence."
+  },
+  "source_refs": [
+    {
+      "title": "Terraform Associate 004 - official exam content",
+      "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+    },
+    {
+      "title": "Terraform Associate 004 - official learning path",
+      "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004"
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "5a",
+      "5b",
+      "5c",
+      "5d"
+    ],
+    "skill_ids": [
+      "5a.1",
+      "5b.1",
+      "5c.1",
+      "5d.1"
+    ],
+    "module_count": 2,
+    "knowledge_node_count": 7,
+    "prompt_count": 13
+  },
+  "authoring_notes": "Targets Terraform Associate 004 / Terraform 1.12. Domain weight 0.125 is an internal planning weight because HashiCorp does not publish objective percentages. This v2 learning content uses real tables and interactive syntax-highlighted code_file reveals; generic exam-clue and generic mental-model prompts were intentionally removed.",
+  "modules": [
+    {
+      "id": "d5-module-1",
+      "title": "Module interfaces, sources, and versions",
+      "order": 1,
+      "task_ids": [
+        "5a",
+        "5b",
+        "5d"
+      ],
+      "skill_ids": [
+        "5a.1",
+        "5b.1",
+        "5d.1"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "d5-module-interface",
+          "title": "Modules package configuration behind inputs and outputs",
+          "concept_ids": [
+            "tf.modules",
+            "tf.module.scope"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.22
+          },
+          "prompts": [
+            {
+              "id": "module-call",
+              "kind": "connects_to",
+              "label": "FOLLOW MODULE DATA FLOW",
+              "placeholder": "The root module calls a child module, passes one input, and reads one output. Click each boundary crossing.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "main.tf",
+                "language": "hcl",
+                "code": "module \"network\" {\n  source = \"./modules/network\"\n\n  cidr_block = \"10.0.0.0/16\"\n}\n\noutput \"vpc_id\" {\n  value = module.network.vpc_id\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "module",
+                    "anchor": {
+                      "line": 1,
+                      "text": "module \"network\"",
+                      "occurrence": 1
+                    },
+                    "title": "Child module call",
+                    "explanation": "A module block instantiates a child module as part of the current configuration.",
+                    "required": true
+                  },
+                  {
+                    "id": "source",
+                    "anchor": {
+                      "line": 2,
+                      "text": "source = \"./modules/network\"",
+                      "occurrence": 1
+                    },
+                    "title": "Module source",
+                    "explanation": "source tells Terraform where to load the child module code from.",
+                    "required": true
+                  },
+                  {
+                    "id": "input",
+                    "anchor": {
+                      "line": 4,
+                      "text": "cidr_block = \"10.0.0.0/16\"",
+                      "occurrence": 1
+                    },
+                    "title": "Input passed to child",
+                    "explanation": "Arguments inside the module block provide values for input variables declared by the child module.",
+                    "required": true
+                  },
+                  {
+                    "id": "output-ref",
+                    "anchor": {
+                      "line": 8,
+                      "text": "module.network.vpc_id",
+                      "occurrence": 1
+                    },
+                    "title": "Read child output",
+                    "explanation": "The parent can only directly consume values the child intentionally exposes through output blocks.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "scope",
+              "kind": "not_this",
+              "label": "MODULE SCOPE",
+              "placeholder": "How do values cross module boundaries?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "direction",
+                    "label": "Direction"
+                  },
+                  {
+                    "id": "mechanism",
+                    "label": "Mechanism"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "direction": "Parent -> child",
+                      "mechanism": "Input variables / module block arguments"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "direction": "Child -> parent",
+                      "mechanism": "Output values / module.<name>.<output> references"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "direction": "Sibling -> sibling",
+                      "mechanism": "Usually through the parent wiring one module output into another module input"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Module syntax",
+              "url": "https://developer.hashicorp.com/terraform/language/modules/syntax"
+            }
+          ]
+        },
+        {
+          "id": "d5-sources",
+          "title": "Module source addresses",
+          "concept_ids": [
+            "tf.module.sources"
+          ],
+          "prerequisite_node_ids": [
+            "d5-module-interface"
+          ],
+          "map_position": {
+            "x": 0.34,
+            "y": 0.18
+          },
+          "prompts": [
+            {
+              "id": "sources",
+              "kind": "what",
+              "label": "WHERE MODULES COME FROM",
+              "placeholder": "What does the module source tell Terraform?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "source_type",
+                    "label": "Source type"
+                  },
+                  {
+                    "id": "example",
+                    "label": "Example source"
+                  },
+                  {
+                    "id": "versioning",
+                    "label": "Typical pinning mechanism"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "source_type": "Local path",
+                      "example": "./modules/network",
+                      "versioning": "Source is local filesystem content"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "source_type": "Registry",
+                      "example": "hashicorp/consul/aws",
+                      "versioning": "Use module version argument"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "source_type": "Git",
+                      "example": "git::https://example.com/repo.git//module",
+                      "versioning": "Use a ref query for a branch/tag/commit when pinning"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "source_type": "Other supported remote packages",
+                      "example": "HTTP/object storage and supported address forms",
+                      "versioning": "Depends on the source scheme"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "init-module",
+              "kind": "action",
+              "label": "AFTER SOURCE CHANGES",
+              "placeholder": "You changed a module source or added a new child module. What command downloads/initializes it?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Run terraform init. Module installation is part of working-directory initialization."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Module sources",
+              "url": "https://developer.hashicorp.com/terraform/language/modules/sources"
+            },
+            {
+              "title": "terraform init",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/init"
+            }
+          ]
+        },
+        {
+          "id": "d5-module-version",
+          "title": "Module versions depend on the source type",
+          "concept_ids": [
+            "tf.module.versions",
+            "tf.module.sources"
+          ],
+          "prerequisite_node_ids": [
+            "d5-sources"
+          ],
+          "map_position": {
+            "x": 0.56,
+            "y": 0.28
+          },
+          "prompts": [
+            {
+              "id": "registry-module",
+              "kind": "look_for",
+              "label": "REGISTRY MODULE VERSION",
+              "placeholder": "Registry modules can use the module version argument. Click source and version.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "main.tf",
+                "language": "hcl",
+                "code": "module \"vpc\" {\n  source  = \"terraform-aws-modules/vpc/aws\"\n  version = \"5.0.0\"\n\n  name = \"app\"\n  cidr = \"10.0.0.0/16\"\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "registry-source",
+                    "anchor": {
+                      "line": 2,
+                      "text": "source  = \"terraform-aws-modules/vpc/aws\"",
+                      "occurrence": 1
+                    },
+                    "title": "Registry module source",
+                    "explanation": "This registry source syntax lets Terraform query registry module versions.",
+                    "required": true
+                  },
+                  {
+                    "id": "module-version",
+                    "anchor": {
+                      "line": 3,
+                      "text": "version = \"5.0.0\"",
+                      "occurrence": 1
+                    },
+                    "title": "Module version constraint/selection",
+                    "explanation": "The version argument applies to registry modules. It is separate from provider version constraints and the provider dependency lock file.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "git-version",
+              "kind": "not_this",
+              "label": "NON-REGISTRY SOURCES",
+              "placeholder": "Can you use the module version argument for an arbitrary Git source?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "No. Non-registry sources use source-specific pinning, such as a Git ref in the source address. The module version argument is for registry-style module sources."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Module sources",
+              "url": "https://developer.hashicorp.com/terraform/language/modules/sources"
+            },
+            {
+              "title": "Module syntax",
+              "url": "https://developer.hashicorp.com/terraform/language/modules/syntax"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d5-module-2",
+      "title": "Using providers with child modules",
+      "order": 2,
+      "task_ids": [
+        "5c"
+      ],
+      "skill_ids": [
+        "5c.1"
+      ],
+      "prerequisite_module_ids": [
+        "d5-module-1"
+      ],
+      "nodes": [
+        {
+          "id": "d5-child-provider-requirements",
+          "title": "Child modules declare provider requirements",
+          "concept_ids": [
+            "tf.module.providers"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.22
+          },
+          "prompts": [
+            {
+              "id": "child-versions",
+              "kind": "look_for",
+              "label": "INSPECT CHILD MODULE versions.tf",
+              "placeholder": "A reusable child module should declare the providers it needs, but usually should not own the caller’s credentials/region configuration. Click the provider requirement.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "modules/network/versions.tf",
+                "language": "hcl",
+                "code": "terraform {\n  required_providers {\n    aws = {\n      source  = \"hashicorp/aws\"\n      version = \">= 5.0\"\n    }\n  }\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "requirements",
+                    "anchor": {
+                      "line": 2,
+                      "text": "required_providers",
+                      "occurrence": 1
+                    },
+                    "title": "Child declares dependency",
+                    "explanation": "Every module should declare its provider requirements so Terraform can resolve compatible provider plugins for the whole configuration.",
+                    "required": true
+                  },
+                  {
+                    "id": "min-version",
+                    "anchor": {
+                      "line": 5,
+                      "text": "version = \">= 5.0\"",
+                      "occurrence": 1
+                    },
+                    "title": "Reusable module compatibility floor",
+                    "explanation": "Reusable modules commonly declare a minimum provider version they are known to support and let the root module choose tighter upper bounds when appropriate.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "root-configures",
+              "kind": "not_this",
+              "label": "WHO CONFIGURES CREDENTIALS AND REGION?",
+              "placeholder": "Should a reusable child module normally contain its own provider block with environment-specific credentials and region?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Usually no. Provider configurations are normally defined by the root module and inherited or explicitly passed to child modules; the child declares requirements."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Providers within modules",
+              "url": "https://developer.hashicorp.com/terraform/language/modules/develop/providers"
+            },
+            {
+              "title": "Provider requirements",
+              "url": "https://developer.hashicorp.com/terraform/language/providers/requirements"
+            }
+          ]
+        },
+        {
+          "id": "d5-provider-inheritance",
+          "title": "Default provider configurations can be inherited",
+          "concept_ids": [
+            "tf.module.providers"
+          ],
+          "prerequisite_node_ids": [
+            "d5-child-provider-requirements"
+          ],
+          "map_position": {
+            "x": 0.34,
+            "y": 0.18
+          },
+          "prompts": [
+            {
+              "id": "inheritance",
+              "kind": "what",
+              "label": "DEFAULT PROVIDER FLOW",
+              "placeholder": "How does a child module receive provider configurations?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "case",
+                    "label": "Case"
+                  },
+                  {
+                    "id": "behavior",
+                    "label": "Behavior"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "case": "Child uses default provider local name",
+                      "behavior": "Root default provider configuration can be inherited automatically"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "case": "Child needs a different/aliased configuration",
+                      "behavior": "Parent explicitly maps a provider configuration in the module providers argument"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "case": "Child declares required_providers",
+                      "behavior": "Declares compatibility/source; it does not itself create the caller’s provider configuration"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Providers within modules",
+              "url": "https://developer.hashicorp.com/terraform/language/modules/develop/providers"
+            }
+          ]
+        },
+        {
+          "id": "d5-provider-aliases",
+          "title": "Pass aliased providers explicitly",
+          "concept_ids": [
+            "tf.module.aliases",
+            "tf.module.providers"
+          ],
+          "prerequisite_node_ids": [
+            "d5-provider-inheritance"
+          ],
+          "map_position": {
+            "x": 0.56,
+            "y": 0.28
+          },
+          "prompts": [
+            {
+              "id": "child-alias",
+              "kind": "look_for",
+              "label": "CHILD DECLARES ALIAS NAMES",
+              "placeholder": "The child module expects an alternate AWS provider configuration named replica. Click configuration_aliases.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "modules/database/versions.tf",
+                "language": "hcl",
+                "code": "terraform {\n  required_providers {\n    aws = {\n      source = \"hashicorp/aws\"\n      configuration_aliases = [aws.replica]\n    }\n  }\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "config-aliases",
+                    "anchor": {
+                      "line": 5,
+                      "text": "configuration_aliases = [aws.replica]",
+                      "occurrence": 1
+                    },
+                    "title": "Allowed alias reference in the child",
+                    "explanation": "configuration_aliases tells Terraform that the child module may refer to the aliased provider name aws.replica.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "parent-alias",
+              "kind": "connects_to",
+              "label": "PARENT PASSES REAL CONFIGURATIONS",
+              "placeholder": "The root module maps its provider configurations into the child’s expected provider names. Click both mappings.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "main.tf",
+                "language": "hcl",
+                "code": "module \"database\" {\n  source = \"./modules/database\"\n\n  providers = {\n    aws         = aws.primary\n    aws.replica = aws.replica\n  }\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "default-map",
+                    "anchor": {
+                      "line": 5,
+                      "text": "aws         = aws.primary",
+                      "occurrence": 1
+                    },
+                    "title": "Child default -> parent alias",
+                    "explanation": "Inside the child, references to default aws use the parent’s aws.primary configuration.",
+                    "required": true
+                  },
+                  {
+                    "id": "replica-map",
+                    "anchor": {
+                      "line": 6,
+                      "text": "aws.replica = aws.replica",
+                      "occurrence": 1
+                    },
+                    "title": "Child alias -> parent alias",
+                    "explanation": "The child alias name is explicitly bound to the parent’s aws.replica provider configuration.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Providers within modules",
+              "url": "https://developer.hashicorp.com/terraform/language/modules/develop/providers"
+            }
+          ]
+        },
+        {
+          "id": "d5-module-updates",
+          "title": "Module updates are explicit changes",
+          "concept_ids": [
+            "tf.module.versions",
+            "tf.modules"
+          ],
+          "prerequisite_node_ids": [
+            "d5-provider-aliases"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.2
+          },
+          "prompts": [
+            {
+              "id": "update-module",
+              "kind": "action",
+              "label": "SAFE MODULE UPDATE",
+              "placeholder": "How should a team update a pinned/constrainted module?",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Change the module version constraint or source ref intentionally",
+                  "Run terraform init so Terraform installs the new module package",
+                  "Generate and review a fresh plan",
+                  "Apply only after the module-generated infrastructure changes are understood"
+                ]
+              }
+            },
+            {
+              "id": "lock-diff",
+              "kind": "not_this",
+              "label": "PROVIDER LOCK FILE DOES NOT PIN MODULES",
+              "placeholder": "Does .terraform.lock.hcl record the selected versions of remote modules?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "No. The dependency lock file currently tracks provider selections. Module reproducibility depends on the module source and its version/ref constraints."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Module sources",
+              "url": "https://developer.hashicorp.com/terraform/language/modules/sources"
+            },
+            {
+              "title": "Dependency lock file",
+              "url": "https://developer.hashicorp.com/terraform/language/files/dependency-lock"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

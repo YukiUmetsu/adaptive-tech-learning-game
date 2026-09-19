@@ -1,0 +1,552 @@
+{
+  "schema_version": "2.0.0",
+  "content_version": "terraform-associate-004-learning-2026-09-19-v2",
+  "certification_id": "hashicorp-terraform-associate-004",
+  "certification_version": "terraform-associate-004",
+  "exam_guide_revision": "004 / Terraform 1.12",
+  "domain": {
+    "id": "domain-7",
+    "name": "Maintain infrastructure with Terraform",
+    "weight": 0.125
+  },
+  "learning_design": {
+    "progress_label": "Discovery Progress",
+    "unlock_rule": "Reveal the required explanations and required code annotations to unlock each knowledge node.",
+    "mastery_note": "Discovery builds the model first; quiz attempts provide the scored retrieval and application evidence."
+  },
+  "source_refs": [
+    {
+      "title": "Terraform Associate 004 - official exam content",
+      "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+    },
+    {
+      "title": "Terraform Associate 004 - official learning path",
+      "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004"
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "7a",
+      "7b",
+      "7c"
+    ],
+    "skill_ids": [
+      "7a.1",
+      "7b.1",
+      "7c.1"
+    ],
+    "module_count": 2,
+    "knowledge_node_count": 6,
+    "prompt_count": 12
+  },
+  "authoring_notes": "Targets Terraform Associate 004 / Terraform 1.12. Domain weight 0.125 is an internal planning weight because HashiCorp does not publish objective percentages. This v2 learning content uses real tables and interactive syntax-highlighted code_file reveals; generic exam-clue and generic mental-model prompts were intentionally removed.",
+  "modules": [
+    {
+      "id": "d7-module-1",
+      "title": "Bring existing infrastructure under management",
+      "order": 1,
+      "task_ids": [
+        "7a"
+      ],
+      "skill_ids": [
+        "7a.1"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "d7-import-model",
+          "title": "Import binds an existing object to a resource address",
+          "concept_ids": [
+            "tf.import"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.22
+          },
+          "prompts": [
+            {
+              "id": "import-model",
+              "kind": "what",
+              "label": "WHAT IMPORT CHANGES",
+              "placeholder": "What happens when you import an existing object?",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "The real remote object already exists",
+                  "You write or identify the Terraform resource address that should manage it",
+                  "Import records a binding between that address and the remote object identity",
+                  "A fresh plan compares your authored configuration with the imported object",
+                  "You reconcile configuration until the plan shows only intended changes"
+                ]
+              }
+            },
+            {
+              "id": "import-not",
+              "kind": "not_this",
+              "label": "IMPORT DOES NOT MEAN",
+              "placeholder": "What should you not assume from import alone?",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Import does not create the remote object.",
+                  "Import does not guarantee your resource arguments already match the remote object.",
+                  "The key verification step after import is a plan."
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "terraform import",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/import"
+            },
+            {
+              "title": "Import blocks",
+              "url": "https://developer.hashicorp.com/terraform/language/import"
+            }
+          ]
+        },
+        {
+          "id": "d7-import-cli",
+          "title": "Imperative CLI import",
+          "concept_ids": [
+            "tf.import"
+          ],
+          "prerequisite_node_ids": [
+            "d7-import-model"
+          ],
+          "map_position": {
+            "x": 0.34,
+            "y": 0.18
+          },
+          "prompts": [
+            {
+              "id": "import-cli",
+              "kind": "action",
+              "label": "CLI IMPORT",
+              "placeholder": "This command associates an existing bucket ID with a resource address. Click the address and remote ID.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "import.sh",
+                "language": "bash",
+                "code": "terraform import aws_s3_bucket.logs company-logs",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "address",
+                    "anchor": {
+                      "line": 1,
+                      "text": "aws_s3_bucket.logs",
+                      "occurrence": 1
+                    },
+                    "title": "Destination Terraform address",
+                    "explanation": "This must identify the managed resource instance that should own the imported remote object.",
+                    "required": true
+                  },
+                  {
+                    "id": "remote-id",
+                    "anchor": {
+                      "line": 1,
+                      "text": "company-logs",
+                      "occurrence": 1
+                    },
+                    "title": "Provider-specific remote identity",
+                    "explanation": "The import ID identifies the existing remote object in the format expected by that resource type/provider.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "write-config",
+              "kind": "connects_to",
+              "label": "CONFIGURATION STILL MATTERS",
+              "placeholder": "What should exist before or alongside an import?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Managed configuration for the destination resource. Import establishes identity; configuration defines the desired state Terraform should compare against afterward."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "terraform import",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/import"
+            }
+          ]
+        },
+        {
+          "id": "d7-import-block",
+          "title": "Configuration-driven import is reviewable",
+          "concept_ids": [
+            "tf.import.block",
+            "tf.import"
+          ],
+          "prerequisite_node_ids": [
+            "d7-import-cli"
+          ],
+          "map_position": {
+            "x": 0.56,
+            "y": 0.28
+          },
+          "prompts": [
+            {
+              "id": "import-block",
+              "kind": "look_for",
+              "label": "INSPECT import BLOCK",
+              "placeholder": "Instead of a one-off CLI command, the import intent can live in configuration and appear in planning. Click to and id.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "imports.tf",
+                "language": "hcl",
+                "code": "import {\n  to = aws_s3_bucket.logs\n  id = \"company-logs\"\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "to",
+                    "anchor": {
+                      "line": 2,
+                      "text": "to = aws_s3_bucket.logs",
+                      "occurrence": 1
+                    },
+                    "title": "Managed destination address",
+                    "explanation": "to declares the Terraform resource address that will be bound to the existing object.",
+                    "required": true
+                  },
+                  {
+                    "id": "id",
+                    "anchor": {
+                      "line": 3,
+                      "text": "id = \"company-logs\"",
+                      "occurrence": 1
+                    },
+                    "title": "Remote object identity",
+                    "explanation": "id identifies the existing remote object to import. Terraform can then show the import action in a plan.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "cli-vs-block",
+              "kind": "not_this",
+              "label": "TWO IMPORT STYLES",
+              "placeholder": "How do the two import workflows differ?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "style",
+                    "label": "Style"
+                  },
+                  {
+                    "id": "strength",
+                    "label": "Strength"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "style": "terraform import ADDRESS ID",
+                      "strength": "Immediate CLI state transition; useful interactively"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "style": "import block",
+                      "strength": "Declarative, reviewable in code, and visible through plan/apply workflow"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Import blocks",
+              "url": "https://developer.hashicorp.com/terraform/language/import"
+            },
+            {
+              "title": "terraform import",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/import"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d7-module-2",
+      "title": "Inspect and troubleshoot safely",
+      "order": 2,
+      "task_ids": [
+        "7b",
+        "7c"
+      ],
+      "skill_ids": [
+        "7b.1",
+        "7c.1"
+      ],
+      "prerequisite_module_ids": [
+        "d7-module-1"
+      ],
+      "nodes": [
+        {
+          "id": "d7-inspect-state",
+          "title": "Use read-oriented commands before changing state",
+          "concept_ids": [
+            "tf.state.inspect"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.22
+          },
+          "prompts": [
+            {
+              "id": "inspect-table",
+              "kind": "what",
+              "label": "INSPECTION COMMANDS",
+              "placeholder": "Which command answers which state question?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "question",
+                    "label": "Question"
+                  },
+                  {
+                    "id": "command",
+                    "label": "Command"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "question": "What resource addresses are currently tracked?",
+                      "command": "terraform state list"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "question": "What attributes are recorded for one address?",
+                      "command": "terraform state show ADDRESS"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "question": "What does this whole state or saved plan artifact contain in human-readable form?",
+                      "command": "terraform show [FILE]"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "diagnose-first",
+              "kind": "action",
+              "label": "START WITH EVIDENCE",
+              "placeholder": "If a binding seems wrong, why inspect before using state mv/rm/push?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "State mutation changes Terraform’s model of resource identity. First compare configuration, state, and remote reality so the repair targets the correct layer."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "state list",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/state/list"
+            },
+            {
+              "title": "state show",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/state/show"
+            }
+          ]
+        },
+        {
+          "id": "d7-logging",
+          "title": "Verbose logs are temporary troubleshooting evidence",
+          "concept_ids": [
+            "tf.logging"
+          ],
+          "prerequisite_node_ids": [
+            "d7-inspect-state"
+          ],
+          "map_position": {
+            "x": 0.34,
+            "y": 0.18
+          },
+          "prompts": [
+            {
+              "id": "log-code",
+              "kind": "look_for",
+              "label": "ENABLE LOGGING FOR A TARGETED RUN",
+              "placeholder": "These environment variables increase diagnostic detail. Click TRACE, DEBUG, and TF_LOG_PATH.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "debug.sh",
+                "language": "bash",
+                "code": "TF_LOG=TRACE terraform plan\nTF_LOG=DEBUG TF_LOG_PATH=terraform-debug.log terraform plan",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "trace",
+                    "anchor": {
+                      "line": 1,
+                      "text": "TF_LOG=TRACE",
+                      "occurrence": 1
+                    },
+                    "title": "Very verbose Terraform logging",
+                    "explanation": "TRACE produces highly detailed Terraform logs. Enable it only while investigating a problem because the output can be large and may include sensitive operational context.",
+                    "required": true
+                  },
+                  {
+                    "id": "debug",
+                    "anchor": {
+                      "line": 2,
+                      "text": "TF_LOG=DEBUG",
+                      "occurrence": 1
+                    },
+                    "title": "Debug-level logging",
+                    "explanation": "DEBUG is less verbose than TRACE and is often sufficient for narrowing down provider/core behavior.",
+                    "required": true
+                  },
+                  {
+                    "id": "path",
+                    "anchor": {
+                      "line": 2,
+                      "text": "TF_LOG_PATH=terraform-debug.log",
+                      "occurrence": 1
+                    },
+                    "title": "Write logs to a file",
+                    "explanation": "TF_LOG_PATH directs enabled Terraform logs to a file, which is useful for preserving evidence while keeping terminal output manageable.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "turn-off",
+              "kind": "not_this",
+              "label": "DO NOT LEAVE VERBOSE LOGGING ON",
+              "placeholder": "Why disable verbose logging after diagnosis?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Verbose logs can contain detailed request, path, identifier, and value context. Keep them only as long as needed and protect any captured log files."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Terraform debugging/logging",
+              "url": "https://developer.hashicorp.com/terraform/internals/debugging"
+            }
+          ]
+        },
+        {
+          "id": "d7-troubleshoot",
+          "title": "Troubleshoot the failing layer before state surgery",
+          "concept_ids": [
+            "tf.troubleshooting",
+            "tf.logging",
+            "tf.state.inspect"
+          ],
+          "prerequisite_node_ids": [
+            "d7-logging"
+          ],
+          "map_position": {
+            "x": 0.56,
+            "y": 0.28
+          },
+          "prompts": [
+            {
+              "id": "troubleshoot-flow",
+              "kind": "action",
+              "label": "DISCIPLINED DEBUG FLOW",
+              "placeholder": "A plan starts failing after a provider upgrade. What evidence-first sequence should you follow?",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Read the exact Terraform/provider/API error and note the versions involved",
+                  "Inspect the relevant configuration and dependency lock change",
+                  "Use state list/show when resource identity or recorded attributes are relevant",
+                  "Enable targeted DEBUG/TRACE logging only if the normal error is insufficient",
+                  "Correct configuration/provider/auth/API issue at its layer",
+                  "Run a fresh plan to verify the diagnosis before considering state mutation"
+                ]
+              }
+            },
+            {
+              "id": "layers",
+              "kind": "connects_to",
+              "label": "MATCH SYMPTOM TO EVIDENCE",
+              "placeholder": "Which evidence is most useful for each kind of symptom?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "symptom",
+                    "label": "Symptom"
+                  },
+                  {
+                    "id": "evidence",
+                    "label": "Start with"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "symptom": "Parser or validation error",
+                      "evidence": "Configuration file and terraform validate output"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "symptom": "Provider/API rejection",
+                      "evidence": "Provider error details, credentials/permissions, targeted logs"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "symptom": "Wrong resource identity/binding",
+                      "evidence": "Configuration address, state list/show, remote object identity"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "symptom": "Unexpected plan after manual cloud change",
+                      "evidence": "Configuration, refreshed plan, state, and remote object values"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Terraform debugging/logging",
+              "url": "https://developer.hashicorp.com/terraform/internals/debugging"
+            },
+            {
+              "title": "State CLI",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/state"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
