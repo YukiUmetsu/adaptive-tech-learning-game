@@ -243,7 +243,7 @@ function renderSummary(options: {
           }
         />
         <Route
-          path="/certifications/:certificationId"
+          path="/tracks/:certificationId"
           element={<p>Study Dashboard</p>}
         />
       </Routes>

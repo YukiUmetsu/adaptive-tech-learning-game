@@ -1,4 +1,10 @@
-import { Route, Routes } from "react-router-dom";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useParams,
+} from "react-router-dom";
 
 import RequireAuth from "./auth/RequireAuth";
 import AppShell from "./layout/AppShell";
@@ -18,13 +24,13 @@ export default function App() {
     <Routes>
       <Route element={<AppShell />}>
         <Route index element={<HomePage />} />
-        <Route path="certifications" element={<CertificationsPage />} />
+        <Route path="tracks" element={<CertificationsPage />} />
         <Route
-          path="certifications/:certificationId"
+          path="tracks/:certificationId"
           element={<CertificationDashboardPage />}
         />
         <Route
-          path="certifications/:certificationId/domains/:domainId/learn"
+          path="tracks/:certificationId/domains/:domainId/learn"
           element={
             <RequireAuth>
               <DomainLearningPage />
@@ -32,8 +38,17 @@ export default function App() {
           }
         />
         <Route
-          path="certifications/:certificationId/tasks/:taskId"
+          path="tracks/:certificationId/tasks/:taskId"
           element={<TaskPage />}
+        />
+        {/* Legacy paths kept as redirects so existing links keep working. */}
+        <Route
+          path="certifications"
+          element={<Navigate to="/tracks" replace />}
+        />
+        <Route
+          path="certifications/*"
+          element={<LegacyTrackRedirect />}
         />
         <Route path="missions/:missionId" element={<MissionPage />} />
         <Route path="demo" element={<DemoPage />} />
@@ -50,4 +65,16 @@ export default function App() {
       </Route>
     </Routes>
   );
+}
+
+/**
+ * Redirects a legacy `/certifications/...` path to its `/tracks/...` equivalent,
+ * preserving the suffix and query string. Only used for old links and stored
+ * return paths, so `/tracks` is the single canonical location.
+ */
+function LegacyTrackRedirect() {
+  const params = useParams();
+  const location = useLocation();
+  const suffix = params["*"] ? `/${params["*"]}` : "";
+  return <Navigate to={`/tracks${suffix}${location.search}`} replace />;
 }

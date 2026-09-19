@@ -67,10 +67,28 @@ describe("App routing", () => {
   });
 
   it("requires sign-in for learning pages", async () => {
-    renderAt("/certifications/aws-soa-c03/domains/domain-1/learn");
+    renderAt("/tracks/aws-soa-c03/domains/domain-1/learn");
 
     expect(
       await screen.findByRole("heading", { name: "Welcome back" }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders the Learning Tracks page at /tracks with the new title", async () => {
+    renderAt("/tracks");
+
+    expect(
+      await screen.findByRole("heading", { name: "Learning Tracks" }),
+    ).toBeInTheDocument();
+    expect(document.title).toBe("Learning Tracks · Adaptive Learning");
+  });
+
+  it("redirects legacy /certifications links to /tracks", async () => {
+    renderAt("/certifications/aws-soa-c03");
+
+    // The dashboard for the track renders after the redirect, not a 404.
+    expect(
+      await screen.findByRole("heading", { name: "Certification not found" }),
     ).toBeInTheDocument();
   });
 });

@@ -71,13 +71,58 @@ describe("CertificationsPage", () => {
       screen.getByRole("link", {
         name: /AWS Certified CloudOps Engineer - Associate/,
       }),
-    ).toHaveAttribute("href", "/certifications/aws-soa-c03");
+    ).toHaveAttribute("href", "/tracks/aws-soa-c03");
 
     // Planned certifications render as disabled WIP cards.
     expect(screen.getAllByText("WIP").length).toBeGreaterThan(0);
     expect(
       screen.getByText("AWS Certified Solutions Architect - Associate"),
     ).toBeInTheDocument();
+  });
+
+  it("titles the page Learning Tracks and tags only certifications", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        jsonResponse({
+          certifications: [
+            {
+              id: "aws-soa-c03",
+              vendor: "AWS",
+              name: "AWS Certified CloudOps Engineer - Associate",
+              exam_code: "SOA-C03",
+              official_source_url: "https://docs.aws.amazon.com/",
+              last_reviewed: "2026-09-18",
+              versions: [],
+            },
+            {
+              id: "ai-pytorch-core",
+              vendor: "PyTorch",
+              name: "PyTorch Core: Practical ML & Neural Networks",
+              exam_code: "PYTORCH-CORE",
+              official_source_url: "https://pytorch.org/",
+              last_reviewed: "2026-09-18",
+              versions: [],
+            },
+          ],
+        }),
+      ),
+    );
+
+    render(
+      <MemoryRouter>
+        <CertificationsPage />
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Learning Tracks" }),
+    ).toBeInTheDocument();
+    await screen.findByRole("link", { name: /PyTorch Core/ });
+
+    // Certifications show their exam code; non-certification tracks do not.
+    expect(screen.getByText("SOA-C03")).toBeInTheDocument();
+    expect(screen.queryByText("PYTORCH-CORE")).toBeNull();
   });
 
   it("excludes demo content from the production catalog", async () => {

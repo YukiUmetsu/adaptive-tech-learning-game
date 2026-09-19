@@ -295,6 +295,76 @@ describe("TypedFillBlankInteraction — code", () => {
     expect(screen.getByRole("textbox", { name: "Value" })).toBeInTheDocument();
     expect(lineLayout(lines()[0])).toBe('d = {"a": {"b": [blank]}}');
   });
+
+  it("renders an authored multiline blank inside highlighted code", () => {
+    const { container } = render(
+      <TypedFillBlankInteraction
+        content={{
+          type: "code",
+          language: "python",
+          template: "{{training_step}}",
+        }}
+        slots={[
+          {
+            id: "training_step",
+            label: "Training step",
+            placeholder: "Type the training code...",
+            width_chars: 55,
+            multiline: true,
+            rows: 4,
+          },
+        ]}
+        value={{}}
+        onChange={() => undefined}
+      />,
+    );
+
+    const field = screen.getByRole("textbox", { name: "Training step" });
+    expect(field.tagName).toBe("TEXTAREA");
+    expect(field).toHaveAttribute("rows", "4");
+    // The surrounding code surface is preserved.
+    expect(container.querySelector("pre.typed-code")).not.toBeNull();
+  });
+
+  it("submits multiline values through the same typed_answers payload", async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    const answer = "optimizer.zero_grad()\nloss.backward()\noptimizer.step()";
+
+    function Harness() {
+      const [value, setValue] = useState<Record<string, string>>({});
+      return (
+        <TypedFillBlankInteraction
+          content={{
+            type: "code",
+            language: "python",
+            template: "{{training_step}}",
+          }}
+          slots={[
+            {
+              id: "training_step",
+              label: "Training step",
+              placeholder: "code",
+              multiline: true,
+              rows: 4,
+            },
+          ]}
+          value={value}
+          onChange={(next) => {
+            onChange(next);
+            setValue(next);
+          }}
+        />
+      );
+    }
+
+    render(<Harness />);
+
+    await user.click(screen.getByRole("textbox", { name: "Training step" }));
+    await user.paste(answer);
+
+    expect(onChange).toHaveBeenLastCalledWith({ training_step: answer });
+  });
 });
 
 describe("TypedFillBlankInteraction — table", () => {
@@ -514,5 +584,162 @@ describe("TypedBlankInput", () => {
       "size",
       "24",
     );
+  });
+
+  it("renders a single-line input when no presentation hints are authored", () => {
+    render(
+      <TypedBlankInput
+        slot={{ id: "x", label: "Method", placeholder: "method" }}
+        value=""
+        onChange={() => undefined}
+      />,
+    );
+
+    const field = screen.getByRole("textbox", { name: "Method" });
+    expect(field.tagName).toBe("INPUT");
+    expect(field).toHaveAttribute("type", "text");
+    // Historical default minimum width.
+    expect(field).toHaveAttribute("size", "6");
+  });
+
+  it("starts wider when width_chars is authored", () => {
+    render(
+      <TypedBlankInput
+        slot={{
+          id: "x",
+          label: "Expression",
+          placeholder: "expression",
+          width_chars: 36,
+        }}
+        value=""
+        onChange={() => undefined}
+      />,
+    );
+
+    expect(screen.getByRole("textbox", { name: "Expression" })).toHaveAttribute(
+      "size",
+      "36",
+    );
+  });
+
+  it("still grows past an authored width as the learner types", () => {
+    const { rerender } = render(
+      <TypedBlankInput
+        slot={{
+          id: "x",
+          label: "Expression",
+          placeholder: "expression",
+          width_chars: 12,
+        }}
+        value=""
+        onChange={() => undefined}
+      />,
+    );
+
+    expect(screen.getByRole("textbox", { name: "Expression" })).toHaveAttribute(
+      "size",
+      "12",
+    );
+
+    rerender(
+      <TypedBlankInput
+        slot={{
+          id: "x",
+          label: "Expression",
+          placeholder: "expression",
+          width_chars: 12,
+        }}
+        value={"a".repeat(20)}
+        onChange={() => undefined}
+      />,
+    );
+
+    expect(screen.getByRole("textbox", { name: "Expression" })).toHaveAttribute(
+      "size",
+      "21",
+    );
+  });
+
+  it("renders a textarea when multiline is authored", () => {
+    render(
+      <TypedBlankInput
+        slot={{
+          id: "x",
+          label: "Training step",
+          placeholder: "code",
+          multiline: true,
+        }}
+        value=""
+        onChange={() => undefined}
+      />,
+    );
+
+    const field = screen.getByRole("textbox", { name: "Training step" });
+    expect(field.tagName).toBe("TEXTAREA");
+    // A sensible default row count when rows is omitted.
+    expect(field).toHaveAttribute("rows", "3");
+  });
+
+  it("uses authored rows for a multiline blank", () => {
+    render(
+      <TypedBlankInput
+        slot={{
+          id: "x",
+          label: "Training step",
+          placeholder: "code",
+          width_chars: 55,
+          multiline: true,
+          rows: 4,
+        }}
+        value=""
+        onChange={() => undefined}
+      />,
+    );
+
+    const field = screen.getByRole("textbox", { name: "Training step" });
+    expect(field).toHaveAttribute("rows", "4");
+    expect(field).toHaveAttribute("cols", "55");
+  });
+
+  it("keeps the correct/incorrect treatment on a multiline blank", () => {
+    render(
+      <TypedBlankInput
+        slot={{
+          id: "x",
+          label: "Training step",
+          placeholder: "code",
+          multiline: true,
+          rows: 3,
+        }}
+        value="optimizer.step()"
+        disabled
+        status="incorrect"
+        onChange={() => undefined}
+      />,
+    );
+
+    const field = screen.getByRole("textbox", { name: "Training step" });
+    expect(field.tagName).toBe("TEXTAREA");
+    expect(field).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText("Training step is incorrect")).toBeInTheDocument();
+    expect(screen.getByText("✕")).toBeInTheDocument();
+  });
+
+  it("disables a multiline blank", () => {
+    render(
+      <TypedBlankInput
+        slot={{
+          id: "x",
+          label: "Training step",
+          placeholder: "code",
+          multiline: true,
+        }}
+        value="optimizer.step()"
+        disabled
+        onChange={() => undefined}
+      />,
+    );
+
+    expect(screen.getByRole("textbox", { name: "Training step" })).toBeDisabled();
   });
 });

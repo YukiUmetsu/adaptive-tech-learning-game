@@ -6,7 +6,7 @@
 
 use adaptive_learn_content::{
     CanonicalAnswer, ContentBundle, ContentError, ContentRegistry, Interaction, PlacementPoint,
-    ScoringError, SubmittedAnswer, score, validate,
+    Question, ScoringError, SubmittedAnswer, score, validate,
 };
 use serde_json::Value;
 
@@ -1392,4 +1392,275 @@ fn backward_compatibility_existing_interactions_still_score() {
         .collect();
     let scored = score(&connection, &SubmittedAnswer::NodeConnection(pairs)).expect("score");
     assert!(scored.correct);
+}
+
+#[test]
+fn typed_blank_slot_without_presentation_hints_still_parses() {
+    // Authored content that predates the width/multiline hints must keep
+    // working byte-for-byte. `pytorch-typed-optimizer-001` declares only the
+    // original three fields.
+    let question = pytorch_question("pytorch-typed-optimizer-001");
+    let Interaction::TypedFillBlank { slots, .. } = &question.interaction else {
+        panic!("expected typed fill blank");
+    };
+    assert_eq!(slots[0].width_chars, None);
+    assert!(!slots[0].multiline);
+    assert_eq!(slots[0].rows, None);
+}
+
+#[test]
+fn typed_blank_slot_parses_presentation_hints() {
+    let width = pytorch_question("pytorch-typed-backward-001");
+    let Interaction::TypedFillBlank { slots, .. } = &width.interaction else {
+        panic!("expected typed fill blank");
+    };
+    assert_eq!(slots[0].width_chars, Some(10));
+
+    let multiline = pytorch_question("pytorch-typed-training-step-001");
+    let Interaction::TypedFillBlank { slots, .. } = &multiline.interaction else {
+        panic!("expected typed fill blank");
+    };
+    assert_eq!(slots[0].width_chars, Some(55));
+    assert!(slots[0].multiline);
+    assert_eq!(slots[0].rows, Some(4));
+}
+
+#[test]
+fn typed_blank_slot_round_trips_presentation_hints() {
+    let question = pytorch_question("pytorch-typed-training-step-001");
+    let encoded = serde_json::to_value(&question.interaction).expect("serialize");
+    let slot = &encoded["slots"][0];
+    assert_eq!(slot["width_chars"], serde_json::json!(55));
+    assert_eq!(slot["multiline"], serde_json::json!(true));
+    assert_eq!(slot["rows"], serde_json::json!(4));
+
+    let decoded: Interaction = serde_json::from_value(encoded).expect("deserialize");
+    assert_eq!(decoded, question.interaction);
+}
+
+#[test]
+fn presentation_hints_do_not_affect_typed_scoring() {
+    // `pytorch-typed-backward-001` carries `width_chars: 10`. Scoring must be
+    // identical to a hint-free blank: same normalization, same partial credit.
+    let question = pytorch_question("pytorch-typed-backward-001");
+    let perfect = score(
+        &question,
+        &SubmittedAnswer::TypedFillBlank(
+            [("method".to_owned(), " Backward. ".to_owned())]
+                .into_iter()
+                .collect(),
+        ),
+    )
+    .expect("score");
+    assert!(perfect.correct);
+    assert_eq!(perfect.score, 1.0);
+
+    let wrong = score(
+        &question,
+        &SubmittedAnswer::TypedFillBlank(
+            [("method".to_owned(), "forward".to_owned())]
+                .into_iter()
+                .collect(),
+        ),
+    )
+    .expect("score");
+    assert!(!wrong.correct);
+    assert_eq!(wrong.score, 0.0);
+}
+
+#[test]
+fn multiline_typed_answer_uses_the_existing_scorer() {
+    // A multi-line textarea submits through the same `typed_answers` map. The
+    // newline-preserving normalization means an authored multi-line answer
+    // matches exactly, and a partial answer still earns partial credit.
+    let question = pytorch_question("pytorch-typed-training-step-001");
+    let exact = score(
+        &question,
+        &SubmittedAnswer::TypedFillBlank(
+            [(
+                "training_step".to_owned(),
+                "optimizer.zero_grad()\nloss.backward()\noptimizer.step()".to_owned(),
+            )]
+            .into_iter()
+            .collect(),
+        ),
+    )
+    .expect("score");
+    assert!(exact.correct);
+    assert_eq!(exact.score, 1.0);
+
+    // Whitespace normalization collapses indentation but keeps the answer a
+    // single normalized line, so a differently laid-out answer does not match.
+    let wrong = score(
+        &question,
+        &SubmittedAnswer::TypedFillBlank(
+            [("training_step".to_owned(), "optimizer.step()".to_owned())]
+                .into_iter()
+                .collect(),
+        ),
+    )
+    .expect("score");
+    assert!(!wrong.correct);
+    assert_eq!(wrong.score, 0.0);
+}
+
+#[test]
+fn multiline_partial_credit_still_works_for_multiple_blanks() {
+    // Build a question whose slots mix a single-line and a multi-line blank.
+    // Presentation must not change per-blank partial credit.
+    let question = Question {
+        id: "synthetic-multiline-mix".to_owned(),
+        content_version: "pytorch-demo-content-v1".to_owned(),
+        certification_version: "pytorch-demo-v1".to_owned(),
+        domain_id: "domain-1".to_owned(),
+        task_id: "1.1".to_owned(),
+        assessment_mode: adaptive_learn_domain::AssessmentMode::Application,
+        interaction_type: adaptive_learn_domain::InteractionType::TypedFillBlank,
+        difficulty_prior: 0.5,
+        prompt: "Write the clear and update lines.".to_owned(),
+        interaction: Interaction::TypedFillBlank {
+            content: adaptive_learn_content::TypedFillContent::Code {
+                language: "python".to_owned(),
+                template: "{{clear}}\n{{update}}".to_owned(),
+            },
+            slots: vec![
+                adaptive_learn_content::TypedBlankSlot {
+                    id: "clear".to_owned(),
+                    label: "Clear gradients".to_owned(),
+                    placeholder: "method".to_owned(),
+                    width_chars: Some(20),
+                    multiline: false,
+                    rows: None,
+                },
+                adaptive_learn_content::TypedBlankSlot {
+                    id: "update".to_owned(),
+                    label: "Update parameters".to_owned(),
+                    placeholder: "code".to_owned(),
+                    width_chars: Some(40),
+                    multiline: true,
+                    rows: Some(3),
+                },
+            ],
+        },
+        canonical_answer: CanonicalAnswer::TypedFillBlank {
+            answers: std::collections::BTreeMap::from([
+                (
+                    "clear".to_owned(),
+                    adaptive_learn_content::TypedBlankAnswer {
+                        accepted_answers: vec!["optimizer.zero_grad()".to_owned()],
+                    },
+                ),
+                (
+                    "update".to_owned(),
+                    adaptive_learn_content::TypedBlankAnswer {
+                        accepted_answers: vec!["optimizer.step()".to_owned()],
+                    },
+                ),
+            ]),
+        },
+        concepts: vec![adaptive_learn_content::QuestionConcept {
+            concept_id: "pytorch.optim".to_owned(),
+            weight: 1.0,
+        }],
+        explanation: String::new(),
+        hints: Vec::new(),
+        error_codes: Vec::new(),
+        source_refs: Vec::new(),
+    };
+
+    // The multi-line blank is correct; the single-line blank is wrong.
+    let partial = score(
+        &question,
+        &SubmittedAnswer::TypedFillBlank(
+            [
+                ("clear".to_owned(), "zero_grad".to_owned()),
+                ("update".to_owned(), "optimizer.step()".to_owned()),
+            ]
+            .into_iter()
+            .collect(),
+        ),
+    )
+    .expect("score");
+    assert!(!partial.correct);
+    assert_eq!(partial.score, 0.5);
+    assert!(
+        partial
+            .error_codes
+            .contains(&"typed_fill_blank_incorrect".to_owned())
+    );
+
+    // Both blanks correct yields full credit regardless of presentation.
+    let perfect = score(
+        &question,
+        &SubmittedAnswer::TypedFillBlank(
+            [
+                ("clear".to_owned(), "optimizer.zero_grad()".to_owned()),
+                ("update".to_owned(), "optimizer.step()".to_owned()),
+            ]
+            .into_iter()
+            .collect(),
+        ),
+    )
+    .expect("score");
+    assert!(perfect.correct);
+    assert_eq!(perfect.score, 1.0);
+}
+
+#[test]
+fn rejects_typed_blank_width_below_minimum() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-backward-001");
+    value["questions"][index]["interaction"]["slots"][0]["width_chars"] = serde_json::json!(5);
+
+    expect_error(&value, "typed_blank_width_invalid");
+}
+
+#[test]
+fn rejects_typed_blank_width_above_maximum() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-backward-001");
+    value["questions"][index]["interaction"]["slots"][0]["width_chars"] = serde_json::json!(81);
+
+    expect_error(&value, "typed_blank_width_invalid");
+}
+
+#[test]
+fn rejects_typed_blank_rows_without_multiline() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-backward-001");
+    value["questions"][index]["interaction"]["slots"][0]["rows"] = serde_json::json!(4);
+
+    expect_error(&value, "typed_blank_rows_without_multiline");
+}
+
+#[test]
+fn rejects_typed_blank_rows_below_minimum() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-training-step-001");
+    value["questions"][index]["interaction"]["slots"][0]["rows"] = serde_json::json!(1);
+
+    expect_error(&value, "typed_blank_rows_invalid");
+}
+
+#[test]
+fn rejects_typed_blank_rows_above_maximum() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-training-step-001");
+    value["questions"][index]["interaction"]["slots"][0]["rows"] = serde_json::json!(13);
+
+    expect_error(&value, "typed_blank_rows_invalid");
+}
+
+#[test]
+fn accepts_typed_blank_width_and_rows_at_the_bounds() {
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-training-step-001");
+    value["questions"][index]["interaction"]["slots"][0]["width_chars"] = serde_json::json!(80);
+    value["questions"][index]["interaction"]["slots"][0]["rows"] = serde_json::json!(12);
+
+    assert!(
+        validate_value(&value).is_ok(),
+        "boundary hints must be valid: {:?}",
+        validate_value(&value)
+    );
 }

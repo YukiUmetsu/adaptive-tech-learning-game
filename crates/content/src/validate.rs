@@ -29,6 +29,19 @@ impl ContentError {
 
 const WEIGHT_TOLERANCE: f64 = 1e-6;
 
+/// Inclusive bounds for an authored typed-blank `width_chars` hint.
+///
+/// The lower bound keeps a blank wide enough to type into; the upper bound
+/// keeps one blank from dominating the layout on a normal viewport.
+pub const TYPED_BLANK_MIN_WIDTH_CHARS: u16 = 6;
+/// See [`TYPED_BLANK_MIN_WIDTH_CHARS`].
+pub const TYPED_BLANK_MAX_WIDTH_CHARS: u16 = 80;
+
+/// Inclusive bounds for an authored multi-line typed-blank `rows` hint.
+pub const TYPED_BLANK_MIN_ROWS: u8 = 2;
+/// See [`TYPED_BLANK_MIN_ROWS`].
+pub const TYPED_BLANK_MAX_ROWS: u8 = 12;
+
 /// Validates a bundle, returning every problem found.
 pub fn validate(bundle: &ContentBundle) -> Result<(), Vec<ContentError>> {
     let mut errors = Vec::new();
@@ -842,7 +855,11 @@ fn extract_typed_placeholders(text: &str) -> Result<Vec<String>, ()> {
     Ok(placeholders)
 }
 
-/// Validates typed blank slot ids and labels, and rejects duplicate ids.
+/// Validates typed blank slot ids, labels, and presentation hints, and rejects
+/// duplicate ids.
+///
+/// Presentation hints are optional and never influence scoring; they are only
+/// checked so authored content cannot request an unusable input size.
 fn ensure_unique_typed_slots(
     question: &Question,
     slots: &[crate::model::TypedBlankSlot],
@@ -861,6 +878,42 @@ fn ensure_unique_typed_slots(
                 "duplicate_slot_id",
                 format!("question {} has duplicate slot id {}", question.id, slot.id),
             ));
+        }
+
+        if let Some(width_chars) = slot.width_chars {
+            if !(TYPED_BLANK_MIN_WIDTH_CHARS..=TYPED_BLANK_MAX_WIDTH_CHARS).contains(&width_chars) {
+                errors.push(ContentError::new(
+                    "typed_blank_width_invalid",
+                    format!(
+                        "question {} slot {} has width_chars {} outside {}..={}",
+                        question.id,
+                        slot.id,
+                        width_chars,
+                        TYPED_BLANK_MIN_WIDTH_CHARS,
+                        TYPED_BLANK_MAX_WIDTH_CHARS
+                    ),
+                ));
+            }
+        }
+
+        if let Some(rows) = slot.rows {
+            if !slot.multiline {
+                errors.push(ContentError::new(
+                    "typed_blank_rows_without_multiline",
+                    format!(
+                        "question {} slot {} sets rows but multiline is not true",
+                        question.id, slot.id
+                    ),
+                ));
+            } else if !(TYPED_BLANK_MIN_ROWS..=TYPED_BLANK_MAX_ROWS).contains(&rows) {
+                errors.push(ContentError::new(
+                    "typed_blank_rows_invalid",
+                    format!(
+                        "question {} slot {} has rows {} outside {}..={}",
+                        question.id, slot.id, rows, TYPED_BLANK_MIN_ROWS, TYPED_BLANK_MAX_ROWS
+                    ),
+                ));
+            }
         }
     }
 }

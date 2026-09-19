@@ -127,7 +127,7 @@ export default function HomePage() {
             <Link className="home-btn home-btn-primary" to="/demo">
               Start Free Demo →
             </Link>
-            <Link className="home-btn home-btn-ghost" to="/certifications">
+            <Link className="home-btn home-btn-ghost" to="/tracks">
               Try a Quick Quiz
             </Link>
           </div>
@@ -219,7 +219,7 @@ export default function HomePage() {
               Choose your next milestone.
             </h2>
           </div>
-          <Link className="home-more" to="/certifications">
+          <Link className="home-more" to="/tracks">
             More coming soon →
           </Link>
         </div>
@@ -229,7 +229,7 @@ export default function HomePage() {
               {milestone.available ? (
                 <Link
                   className="home-milestone home-milestone--available"
-                  to={`/certifications/${milestone.id}`}
+                  to={`/tracks/${milestone.id}`}
                 >
                   <span className="home-card-head">
                     <span className="home-milestone-icon" aria-hidden="true">

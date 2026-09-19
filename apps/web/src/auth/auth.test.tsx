@@ -51,7 +51,7 @@ afterEach(() => {
 
 describe("sanitizeReturnTo", () => {
   it("accepts internal paths", () => {
-    expect(sanitizeReturnTo("/certifications")).toBe("/certifications");
+    expect(sanitizeReturnTo("/tracks")).toBe("/tracks");
     expect(sanitizeReturnTo("/a?b=1#c")).toBe("/a?b=1#c");
   });
 
@@ -175,7 +175,7 @@ describe("LoginPage", () => {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route
-              path="/certifications/aws-soa-c03"
+              path="/tracks/aws-soa-c03"
               element={<p>Intended dashboard</p>}
             />
             <Route index element={<p>App home</p>} />
@@ -188,7 +188,7 @@ describe("LoginPage", () => {
   it("returns to the intended internal route after signing in", async () => {
     const signIn = vi.fn(async () => {});
     renderLogin(
-      "/login?returnTo=%2Fcertifications%2Faws-soa-c03",
+      "/login?returnTo=%2Ftracks%2Faws-soa-c03",
       authValue({ signIn }),
     );
 
@@ -200,7 +200,7 @@ describe("LoginPage", () => {
       expect(screen.getByText("Intended dashboard")).toBeInTheDocument(),
     );
     expect(signIn).toHaveBeenCalledWith(
-      expect.objectContaining({ returnTo: "/certifications/aws-soa-c03" }),
+      expect.objectContaining({ returnTo: "/tracks/aws-soa-c03" }),
     );
   });
 
@@ -222,7 +222,7 @@ describe("LoginPage", () => {
 
   it("redirects an already-authenticated learner to the intended route", () => {
     renderLogin(
-      "/login?returnTo=%2Fcertifications%2Faws-soa-c03",
+      "/login?returnTo=%2Ftracks%2Faws-soa-c03",
       authValue({
         status: "authenticated",
         user: { id: "user-1", email: "learner@example.com" },

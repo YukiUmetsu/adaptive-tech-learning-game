@@ -13,50 +13,75 @@ export interface PlannedCertification {
   id: string;
   /** Display name used before content exists. */
   name: string;
+  /**
+   * Compact name for space-constrained surfaces such as the navbar dropdown,
+   * where the category heading already supplies the vendor. Authored
+   * explicitly so the UI never strips vendor words with fragile matching.
+   */
+  shortName?: string;
   /** Display exam code used before content exists. */
   examCode: string;
   /** Marks a planned certification that has no content yet. */
   wip: boolean;
 }
 
+/**
+ * Whether a group holds vendor certifications or general learning tracks.
+ *
+ * Authored explicitly so the UI never infers it from names or vendors.
+ */
+export type TrackKind = "certification" | "track";
+
 export interface CatalogCategory {
   id: string;
   label: string;
+  /** Selects the display order: certifications before other tracks. */
+  kind: TrackKind;
   certifications: PlannedCertification[];
+}
+
+/** Certifications are listed before non-certification learning tracks. */
+const KIND_ORDER: Record<TrackKind, number> = {
+  certification: 0,
+  track: 1,
+};
+
+/** Stable-orders groups by kind, preserving authored order within a kind. */
+function orderByKind(categories: CatalogCategory[]): CatalogCategory[] {
+  return categories
+    .map((category, index) => ({ category, index }))
+    .sort(
+      (a, b) =>
+        KIND_ORDER[a.category.kind] - KIND_ORDER[b.category.kind] ||
+        a.index - b.index,
+    )
+    .map(({ category }) => category);
 }
 
 export const CATALOG: CatalogCategory[] = [
   {
-    id: "ai",
-    label: "AI & Machine Learning",
-    certifications: [
-      {
-        id: "ai-pytorch-core",
-        name: "PyTorch Core: Practical ML & Neural Networks",
-        examCode: "PYTORCH-CORE",
-        wip: false,
-      },
-    ],
-  },
-  {
     id: "aws",
     label: "AWS",
+    kind: "certification",
     certifications: [
       {
         id: "aws-soa-c03",
         name: "AWS Certified CloudOps Engineer - Associate",
+        shortName: "CloudOps Engineer - Associate",
         examCode: "SOA-C03",
         wip: false,
       },
       {
         id: "aws-aip-c01",
         name: "AWS Certified Generative AI Developer - Professional",
+        shortName: "Generative AI Developer - Professional",
         examCode: "AIP-C01",
         wip: false,
       },
       {
         id: "aws-saa-c03",
         name: "AWS Certified Solutions Architect - Associate",
+        shortName: "Solutions Architect - Associate",
         examCode: "SAA-C03",
         wip: false,
       },
@@ -65,6 +90,7 @@ export const CATALOG: CatalogCategory[] = [
   {
     id: "azure",
     label: "Microsoft Azure",
+    kind: "certification",
     certifications: [
       {
         id: "azure-az-104",
@@ -77,6 +103,7 @@ export const CATALOG: CatalogCategory[] = [
   {
     id: "gcp",
     label: "Google Cloud",
+    kind: "certification",
     certifications: [
       {
         id: "gcp-ace",
@@ -89,6 +116,7 @@ export const CATALOG: CatalogCategory[] = [
   {
     id: "security",
     label: "Security",
+    kind: "certification",
     certifications: [
       {
         id: "comptia-security-plus",
@@ -98,19 +126,70 @@ export const CATALOG: CatalogCategory[] = [
       },
     ],
   },
+  {
+    id: "ai",
+    label: "AI & Machine Learning",
+    kind: "track",
+    certifications: [
+      {
+        id: "ai-python-fluency",
+        name: "Python Fluency",
+        examCode: "PYTHON-FLUENCY",
+        wip: false,
+      },
+      {
+        id: "python-data-stack",
+        name: "Python Data Stack: NumPy, pandas, Matplotlib & Seaborn",
+        examCode: "PY-DATA-STACK",
+        wip: false,
+      },
+      {
+        id: "ai-pytorch-core",
+        name: "PyTorch Core: Practical ML & Neural Networks",
+        examCode: "PYTORCH-CORE",
+        wip: false,
+      },
+    ],
+  },
 ];
 
 export interface CatalogCard {
   id: string;
   name: string;
+  /** Compact name for space-constrained surfaces; falls back to `name`. */
+  shortName: string;
   examCode: string;
   available: boolean;
   certification?: CertificationDto;
 }
 
+/** A navigable learning track, as shown in the navbar dropdown. */
+export interface TrackLink {
+  id: string;
+  name: string;
+  /** Compact label for the dropdown; falls back to `name`. */
+  shortName: string;
+  examCode: string;
+  /**
+   * Whether this is a vendor certification. Only certifications show their
+   * exam-code tag, since it is meaningful there.
+   */
+  certification: boolean;
+}
+
+/** Available learning tracks for one catalog category. */
+export interface TrackGroup {
+  id: string;
+  label: string;
+  kind: TrackKind;
+  tracks: TrackLink[];
+}
+
 export interface CatalogSection {
   id: string;
   label: string;
+  /** Whether this section holds vendor certifications or other tracks. */
+  kind: TrackKind;
   cards: CatalogCard[];
 }
 
@@ -123,18 +202,49 @@ export function buildCatalog(
     certifications.map((certification) => [certification.id, certification]),
   );
 
-  return categories.map((category) => ({
+  return orderByKind(categories).map((category) => ({
     id: category.id,
     label: category.label,
+    kind: category.kind,
     cards: category.certifications.map((entry) => {
       const certification = byId.get(entry.id);
+      const name = certification?.name ?? entry.name;
       return {
         id: entry.id,
-        name: certification?.name ?? entry.name,
+        name,
+        // Compact label for tight surfaces; the full name when none is authored.
+        shortName: entry.shortName ?? name,
         examCode: certification?.exam_code ?? entry.examCode,
         available: Boolean(certification) && !entry.wip,
         certification,
       };
     }),
   }));
+}
+
+/**
+ * Selects the available learning tracks grouped by category, reusing the same
+ * catalog join as the Learning Tracks page so the navbar and the page never
+ * drift. Planned/WIP entries are omitted: the navbar only links to real tracks.
+ */
+export function selectTrackGroups(
+  categories: CatalogCategory[],
+  certifications: CertificationDto[],
+): TrackGroup[] {
+  return buildCatalog(categories, certifications)
+    .map((section) => ({
+      id: section.id,
+      label: section.label,
+      kind: section.kind,
+      tracks: section.cards
+        .filter((card) => card.available)
+        .map((card) => ({
+          id: card.id,
+          name: card.name,
+          shortName: card.shortName,
+          examCode: card.examCode,
+          certification: section.kind === "certification",
+        })),
+    }))
+    .filter((group) => group.tracks.length > 0);
 }

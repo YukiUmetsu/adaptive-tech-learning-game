@@ -65,7 +65,7 @@ export default function TaskPage() {
   return (
     <section>
       <p>
-        <Link to="/certifications">← Certifications</Link>
+        <Link to="/tracks">← Learning Tracks</Link>
       </p>
       <h1>{certification.name}</h1>
       <h2>{domain.name}</h2>

@@ -11,10 +11,13 @@ fn embedded_registry_loads_and_validates() {
 #[test]
 fn catalog_exposes_soa_c03_metadata() {
     let registry = ContentRegistry::embedded().expect("valid registry");
+    // Look the bundle up by id: embedded order follows file discovery order,
+    // which is not a stable contract for any particular certification.
     let certification = registry
-        .certifications()
-        .next()
-        .expect("at least one certification");
+        .bundle_for_certification("aws-soa-c03")
+        .expect("SOA-C03 bundle is embedded")
+        .certification
+        .clone();
 
     assert_eq!(certification.id, "aws-soa-c03");
     assert_eq!(certification.vendor, "AWS");

@@ -242,7 +242,7 @@ export default function DomainLearningPage() {
           <button type="button" onClick={() => void reload()}>
             Try again
           </button>
-          <Link to={`/certifications/${certificationId ?? ""}`}>
+          <Link to={`/tracks/${certificationId ?? ""}`}>
             Back to {certificationId ?? "certification"}
           </Link>
         </div>
@@ -274,7 +274,7 @@ export default function DomainLearningPage() {
             Build the mental model first. {data.learning_design.mastery_note}
           </p>
         </div>
-        <Link className="knowledge-page-back" to={`/certifications/${data.certification_id}`}>
+        <Link className="knowledge-page-back" to={`/tracks/${data.certification_id}`}>
           Back to dashboard
         </Link>
       </header>

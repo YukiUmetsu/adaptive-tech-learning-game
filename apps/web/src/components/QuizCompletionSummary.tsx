@@ -222,7 +222,7 @@ export default function QuizCompletionSummary({
 
   const presentation = quizCompletionPresentation(mission.mode);
   const message = completionMessage(summary);
-  const dashboardPath = `/certifications/${mission.certification_id}`;
+  const dashboardPath = `/tracks/${mission.certification_id}`;
   const busy = starting !== null;
 
   let actions: CompletionAction[];
