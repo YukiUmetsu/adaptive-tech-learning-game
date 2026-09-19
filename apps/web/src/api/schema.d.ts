@@ -1178,14 +1178,32 @@ export interface components {
          * @description A blank the learner fills by typing free text.
          *
          *     The slot's `id` is referenced as `{{id}}` inside a content template.
+         *
+         *     The optional presentation hints (`width_chars`, `multiline`, `rows`) only
+         *     shape the input; they never affect scoring or the accepted answers.
          */
         TypedBlankSlot: {
             /** @description Stable identifier within the question, used as the `{{id}}` placeholder. */
             id: string;
             /** @description Learner-facing label for the blank, for example `Policy result`. */
             label: string;
+            /** @description Whether the blank should render as a multi-line answer box. */
+            multiline?: boolean;
             /** @description Optional hint text shown inside the empty input. */
             placeholder?: string;
+            /**
+             * Format: int32
+             * @description Optional number of visible rows for a multi-line blank. Only meaningful
+             *     when `multiline` is true.
+             */
+            rows?: number | null;
+            /**
+             * Format: int32
+             * @description Optional initial/minimum visible width of the blank, in characters.
+             *
+             *     When omitted the input keeps its historical auto-growing behavior.
+             */
+            width_chars?: number | null;
         };
         /**
          * @description Presentation context for a typed fill-in-the-blank interaction.

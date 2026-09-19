@@ -26,7 +26,9 @@
               "pytorch-typed-optimizer-001",
               "pytorch-typed-softmax-dim-001",
               "pytorch-typed-model-mode-001",
-              "pytorch-typed-table-001"
+              "pytorch-typed-table-001",
+              "pytorch-typed-expression-001",
+              "pytorch-typed-training-step-001"
             ]
           }
         ]
@@ -77,7 +79,8 @@
           {
             "id": "method",
             "label": "Loss method",
-            "placeholder": "method"
+            "placeholder": "method",
+            "width_chars": 10
           }
         ]
       },
@@ -354,6 +357,124 @@
       ],
       "explanation": "A standard step clears gradients, backpropagates the loss, then updates the parameters.",
       "hints": ["Follow the order of a normal training loop."],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "The typed answer does not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Optimizing Model Parameters",
+          "url": "https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html"
+        }
+      ]
+    },
+    {
+      "id": "pytorch-typed-expression-001",
+      "content_version": "pytorch-demo-content-v1",
+      "certification_version": "pytorch-demo-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.6,
+      "prompt": "Write the expression that averages a batch of loss values.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "filtered = {{expression}}"
+        },
+        "slots": [
+          {
+            "id": "expression",
+            "label": "Filtering expression",
+            "placeholder": "Type expression...",
+            "width_chars": 36
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "expression": {
+            "accepted_answers": [
+              "losses[losses > 0].mean()",
+              "losses[losses > 0].mean(dim=0)"
+            ]
+          }
+        }
+      },
+      "concepts": [{ "concept_id": "pytorch.tensor", "weight": 1.0 }],
+      "explanation": "Boolean indexing selects the positive losses and `.mean()` reduces the selection to a single average.",
+      "hints": ["Combine a boolean mask with a reduction."],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "The typed answer does not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "torch.Tensor.mean",
+          "url": "https://pytorch.org/docs/stable/generated/torch.Tensor.mean.html"
+        }
+      ]
+    },
+    {
+      "id": "pytorch-typed-training-step-001",
+      "content_version": "pytorch-demo-content-v1",
+      "certification_version": "pytorch-demo-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.1",
+      "assessment_mode": "application",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.7,
+      "prompt": "Write the three lines of a standard training step.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "{{training_step}}"
+        },
+        "slots": [
+          {
+            "id": "training_step",
+            "label": "Training step",
+            "placeholder": "Type the training code...",
+            "width_chars": 55,
+            "multiline": true,
+            "rows": 4
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "training_step": {
+            "accepted_answers": [
+              "optimizer.zero_grad()\nloss.backward()\noptimizer.step()"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        { "concept_id": "pytorch.optim", "weight": 0.5 },
+        { "concept_id": "pytorch.autograd", "weight": 0.5 }
+      ],
+      "explanation": "A standard step clears old gradients, backpropagates the loss, then applies the optimizer update.",
+      "hints": ["Clear, backpropagate, then update."],
       "error_codes": [
         {
           "code": "typed_fill_blank_incorrect",

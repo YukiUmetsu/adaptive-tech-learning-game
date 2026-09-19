@@ -133,6 +133,9 @@ pub struct FillSlot {
 /// A blank the learner fills by typing free text.
 ///
 /// The slot's `id` is referenced as `{{id}}` inside a content template.
+///
+/// The optional presentation hints (`width_chars`, `multiline`, `rows`) only
+/// shape the input; they never affect scoring or the accepted answers.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
 pub struct TypedBlankSlot {
     /// Stable identifier within the question, used as the `{{id}}` placeholder.
@@ -142,6 +145,18 @@ pub struct TypedBlankSlot {
     /// Optional hint text shown inside the empty input.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub placeholder: String,
+    /// Optional initial/minimum visible width of the blank, in characters.
+    ///
+    /// When omitted the input keeps its historical auto-growing behavior.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub width_chars: Option<u16>,
+    /// Whether the blank should render as a multi-line answer box.
+    #[serde(default)]
+    pub multiline: bool,
+    /// Optional number of visible rows for a multi-line blank. Only meaningful
+    /// when `multiline` is true.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rows: Option<u8>,
 }
 
 /// Accepted typed answers for one blank.
