@@ -109,6 +109,7 @@ export default function LocalAuthProvider({
       user,
       configured: false,
       devSignIn: devSignInEnabled,
+      authError: null,
       signIn,
       signOut,
       getAccessToken,

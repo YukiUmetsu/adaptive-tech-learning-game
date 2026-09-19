@@ -4,6 +4,10 @@ import { createContext, useContext } from "react";
 export interface AuthUser {
   id: string;
   email: string | null;
+  /** Display name from the provider, when available. */
+  name?: string | null;
+  /** Provider profile picture URL (for example the Google avatar). */
+  avatarUrl?: string | null;
 }
 
 /** Coarse authentication state used by the UI. */
@@ -25,6 +29,8 @@ export interface AuthContextValue {
   configured: boolean;
   /** Whether the local/test developer sign-in is available. */
   devSignIn: boolean;
+  /** Human-readable reason the last sign-in attempt failed, if known. */
+  authError: string | null;
   /** Starts sign-in. Resolves for local sign-in; WorkOS redirects the page. */
   signIn: (options?: SignInOptions) => Promise<void>;
   /** Ends the session. */
@@ -38,6 +44,7 @@ const anonymousFallback: AuthContextValue = {
   user: null,
   configured: false,
   devSignIn: false,
+  authError: null,
   signIn: async () => {},
   signOut: async () => {},
   getAccessToken: async () => null,

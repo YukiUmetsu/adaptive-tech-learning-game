@@ -93,6 +93,7 @@ function renderDashboard() {
     user: { id: "user-1", email: "learner@example.com" },
     configured: true,
     devSignIn: false,
+    authError: null,
     signIn: vi.fn(async () => {}),
     signOut: vi.fn(async () => {}),
     getAccessToken: vi.fn(async () => "token"),

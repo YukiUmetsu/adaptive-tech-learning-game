@@ -22,6 +22,7 @@ function authValue(overrides: Partial<AuthContextValue> = {}): AuthContextValue 
     user: null,
     configured: true,
     devSignIn: false,
+    authError: null,
     signIn: vi.fn(async () => {}),
     signOut: vi.fn(async () => {}),
     getAccessToken: vi.fn(async () => null),
@@ -104,11 +105,41 @@ describe("AppShell authentication UI", () => {
       </AuthContext.Provider>,
     );
 
-    expect(
-      screen.getByRole("link", { name: "learner@example.com" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Account" })).toBeInTheDocument();
+    expect(screen.queryByText("learner@example.com")).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
     await waitFor(() => expect(signOut).toHaveBeenCalled());
+  });
+
+  it("shows the provider avatar when one is available", () => {
+    render(
+      <AuthContext.Provider
+        value={authValue({
+          status: "authenticated",
+          user: {
+            id: "user-1",
+            email: "learner@example.com",
+            name: "Ada Lovelace",
+            avatarUrl: "https://example.com/avatar.png",
+          },
+        })}
+      >
+        <MemoryRouter>
+          <Routes>
+            <Route element={<AppShell />}>
+              <Route index element={<p>Home body</p>} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+
+    const account = screen.getByRole("link", { name: "Account" });
+    expect(account.querySelector("img")).toHaveAttribute(
+      "src",
+      "https://example.com/avatar.png",
+    );
+    expect(screen.queryByText("learner@example.com")).not.toBeInTheDocument();
   });
 
   it("never stores an access token in localStorage", async () => {
@@ -199,6 +230,17 @@ describe("LoginPage", () => {
     );
 
     expect(screen.getByText("Intended dashboard")).toBeInTheDocument();
+  });
+
+  it("surfaces a failed sign-in callback", () => {
+    renderLogin(
+      "/login",
+      authValue({ authError: "Sign-in didn't complete." }),
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Sign-in didn't complete.",
+    );
   });
 });
 

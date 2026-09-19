@@ -14,10 +14,10 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <AuthRoot>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthRoot>
         <App />
-      </BrowserRouter>
-    </AuthRoot>
+      </AuthRoot>
+    </BrowserRouter>
   </StrictMode>,
 );

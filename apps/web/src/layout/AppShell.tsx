@@ -6,6 +6,21 @@ import BitsHud from "../components/BitsHud";
 import { toggleSoundMuted, useSoundMuted } from "../state/sound";
 import { refreshWallet, resetWallet } from "../state/wallet";
 
+/** Generic account glyph used when the provider has no profile picture. */
+function AccountIcon() {
+  return (
+    <svg
+      className="account-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 19.5c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5" />
+    </svg>
+  );
+}
+
 export default function AppShell() {
   const muted = useSoundMuted();
   const { status, user, signOut } = useAuth();
@@ -41,8 +56,21 @@ export default function AppShell() {
             <>
               <BitsHud size="sm" />
               <div className="account-menu">
-                <NavLink to="/account" className="account-email">
-                  {user?.email ?? "Account"}
+                <NavLink
+                  to="/account"
+                  className="account-avatar"
+                  aria-label="Account"
+                  title={user?.name ?? "Account"}
+                >
+                  {user?.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt=""
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <AccountIcon />
+                  )}
                 </NavLink>
                 <button
                   type="button"

@@ -1,5 +1,12 @@
 import { AuthKitProvider, useAuth as useWorkosAuth } from "@workos-inc/authkit-react";
-import { useCallback, useEffect, useMemo, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   AuthContext,
@@ -14,8 +21,57 @@ import { setAccessTokenProvider } from "./token";
 function WorkosBridge({ children }: { children: ReactNode }) {
   const { isLoading, user, getAccessToken, signIn, signOut } = useWorkosAuth();
 
+  // The SDK strips the OAuth query string quickly, so read it once on the first
+  // render. This is how we detect a callback that failed to establish a session
+  // and capture the provider's error code/reason (never any token material).
+  const [callback] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        hadCode: params.has("code"),
+        error: params.get("error"),
+        errorDescription: params.get("error_description"),
+      };
+    } catch {
+      return { hadCode: false, error: null, errorDescription: null };
+    }
+  });
+
+  const authError = useMemo(() => {
+    if (isLoading || user) {
+      return null;
+    }
+    if (callback.error) {
+      return `WorkOS rejected sign-in (${callback.error}${
+        callback.errorDescription ? `: ${callback.errorDescription}` : ""
+      }).`;
+    }
+    if (callback.hadCode) {
+      return "Sign-in didn't complete. Make sure the WorkOS redirect URI matches this exact app origin and that sign-in started from the app. See the browser console for AuthKit details.";
+    }
+    return null;
+  }, [isLoading, user, callback]);
+
+  useEffect(() => {
+    if (authError) {
+      // No secrets are logged: only the provider error code and a short reason.
+      console.error("[auth]", authError, callback);
+    }
+  }, [authError, callback]);
+
   const appUser: AuthUser | null = useMemo(
-    () => (user ? { id: user.id, email: user.email ?? null } : null),
+    () =>
+      user
+        ? {
+            id: user.id,
+            email: user.email ?? null,
+            name:
+              [user.firstName, user.lastName]
+                .filter((part): part is string => Boolean(part))
+                .join(" ") || null,
+            avatarUrl: user.profilePictureUrl ?? null,
+          }
+        : null,
     [user],
   );
 
@@ -56,11 +112,20 @@ function WorkosBridge({ children }: { children: ReactNode }) {
       user: appUser,
       configured: true,
       devSignIn: false,
+      authError,
       signIn: startSignIn,
       signOut: endSession,
       getAccessToken: getToken,
     }),
-    [isLoading, user, appUser, startSignIn, endSession, getToken],
+    [
+      isLoading,
+      user,
+      appUser,
+      authError,
+      startSignIn,
+      endSession,
+      getToken,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -70,8 +135,10 @@ function WorkosBridge({ children }: { children: ReactNode }) {
  * Official WorkOS AuthKit provider.
  *
  * `onRedirectCallback` runs after the hosted sign-in redirect and returns the
- * learner to the internal path they started from, validated against the current
- * origin to prevent open redirects.
+ * learner to the internal path they started from. Navigation is done client-side
+ * through React Router rather than a full page reload: the SDK only persists the
+ * session across reloads on localhost, so reloading would drop the session on
+ * other hosts and leave the UI looking signed out.
  */
 export default function WorkosAuthProvider({
   clientId,
@@ -80,18 +147,30 @@ export default function WorkosAuthProvider({
   clientId: string;
   children: ReactNode;
 }) {
+  // Optional custom AuthKit authentication domain. Defaults to api.workos.com.
+  const apiHostname = import.meta.env.VITE_WORKOS_API_HOSTNAME?.trim();
+  const navigate = useNavigate();
+
   return (
     <AuthKitProvider
       clientId={clientId}
+      apiHostname={apiHostname || undefined}
+      redirectUri={window.location.origin}
       onRedirectCallback={(params) => {
-        const state = (params as { state?: unknown } | undefined)?.state;
+        const rawState = (params as { state?: unknown } | undefined)?.state;
+        let state: unknown = rawState;
+        if (typeof rawState === "string") {
+          try {
+            state = JSON.parse(rawState);
+          } catch {
+            state = undefined;
+          }
+        }
         const returnTo =
           state && typeof state === "object"
             ? sanitizeReturnTo((state as { returnTo?: unknown }).returnTo)
             : null;
-        if (returnTo) {
-          window.location.assign(returnTo);
-        }
+        navigate(returnTo ?? "/", { replace: true });
       }}
     >
       <WorkosBridge>{children}</WorkosBridge>

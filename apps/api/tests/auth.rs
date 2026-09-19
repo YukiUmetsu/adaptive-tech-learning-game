@@ -49,6 +49,7 @@ async fn public_routes_do_not_require_authentication() {
         common::send_anonymous(app.clone(), "GET", "/v1/certifications", None).await;
     assert_eq!(status, StatusCode::OK, "{body}");
 
+    // Learning content is account-only.
     let (status, body) = common::send_anonymous(
         app,
         "GET",
@@ -56,7 +57,7 @@ async fn public_routes_do_not_require_authentication() {
         None,
     )
     .await;
-    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(status, StatusCode::UNAUTHORIZED, "{body}");
 }
 
 #[tokio::test]

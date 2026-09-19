@@ -75,7 +75,8 @@ export interface paths {
          * Returns the pre-quiz learning content for a certification domain.
          * @description This is the Knowledge Map curriculum: modules, knowledge nodes, and
          *     progressive reveals. It is a discovery mechanic, not a scored assessment, so
-         *     it is deliberately separate from mission issuance and scoring.
+         *     it is deliberately separate from mission issuance and scoring. Learning
+         *     content requires an authenticated account.
          */
         get: operations["get_learning_domain"];
         put?: never;
@@ -1260,6 +1261,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LearningDomainResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description No learning content for this domain */

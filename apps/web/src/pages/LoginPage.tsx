@@ -12,7 +12,7 @@ import { sanitizeReturnTo } from "../auth/returnTo";
  * learner's intended destination.
  */
 export default function LoginPage() {
-  const { status, configured, devSignIn, signIn } = useAuth();
+  const { status, configured, devSignIn, authError, signIn } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = sanitizeReturnTo(searchParams.get("returnTo")) ?? "/";
@@ -91,7 +91,11 @@ export default function LoginPage() {
           <>
             <p className="muted">
               WorkOS is not configured here. A local developer session is
-              available.
+              available. To test Google sign-in, set{" "}
+              <code>VITE_WORKOS_CLIENT_ID</code> in{" "}
+              <code>apps/web/.env.local</code>, set the matching{" "}
+              <code>WORKOS_*</code> values for the API, and restart both
+              servers.
             </p>
             <button
               type="button"
@@ -109,6 +113,7 @@ export default function LoginPage() {
         )}
 
         {error ? <p role="alert">{error}</p> : null}
+        {authError ? <p role="alert">{authError}</p> : null}
 
         <p className="login-alternatives">
           <Link to={returnTo}>Continue exploring without an account</Link>

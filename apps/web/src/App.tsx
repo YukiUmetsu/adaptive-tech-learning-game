@@ -25,7 +25,11 @@ export default function App() {
         />
         <Route
           path="certifications/:certificationId/domains/:domainId/learn"
-          element={<DomainLearningPage />}
+          element={
+            <RequireAuth>
+              <DomainLearningPage />
+            </RequireAuth>
+          }
         />
         <Route
           path="certifications/:certificationId/tasks/:taskId"

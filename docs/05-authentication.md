@@ -36,10 +36,12 @@ client-supplied `device_id`.
   telemetry columns). It is never an authorization boundary.
 - Protected routes: `POST /v1/missions/issue` (scored modes),
   `POST /v1/missions/{id}/answers`, `POST /v1/missions/{id}/complete`,
-  `POST /v1/sync`, `GET /v1/wallet`, `GET /v1/me`.
-- Public routes: `GET /health`, `GET /openapi.json`, `GET /v1/certifications`,
-  and learning-domain content. Anonymous task-practice missions are allowed only
-  for the `*-demo` certification and never settle Bits.
+  `POST /v1/sync`, `GET /v1/wallet`, `GET /v1/me`, and
+  `GET /v1/certifications/{certification_id}/domains/{domain_id}/learning`
+  (pre-quiz knowledge-map content).
+- Public routes: `GET /health`, `GET /openapi.json`, and
+  `GET /v1/certifications` (the catalog). Anonymous task-practice missions are
+  allowed only for the `*-demo` certification and never settle Bits.
 
 ### Local development without credentials
 
@@ -48,8 +50,45 @@ client-supplied `device_id`.
 accidentally in staging or production: those environments fail startup unless
 `WORKOS_CLIENT_ID` and `WORKOS_API_KEY` are set. There is no `X-User-Id` header
 and no production bypass. On the web side, `VITE_WORKOS_CLIENT_ID` selects the
-official AuthKit SDK; without it the app stays anonymous, and the local dev
-identity is only offered in dev builds (or with explicit `VITE_AUTH_DEV_MODE`).
+official AuthKit SDK; without it the **Continue as local developer** option is
+offered on `/login` in dev builds and on localhost hostnames (including a
+production build served with `vite preview`), or anywhere with an explicit
+`VITE_AUTH_DEV_MODE=true`.
+
+### Testing real Google sign-in locally
+
+The Google button only appears when `VITE_WORKOS_CLIENT_ID` is set, so it is
+absent in a clone without WorkOS credentials by design. To test the real flow:
+
+1. Create a WorkOS **Staging** environment (it can use WorkOS's default Google
+   credentials, so no Google Cloud project is required) and an AuthKit
+   application. Note the `client_...` id and `sk_test_...` key.
+2. In the WorkOS dashboard:
+   - Applications → Redirects: `http://localhost:5173` and initiate login URI
+     `http://localhost:5173/login`.
+   - Authentication → allowed origins: `http://localhost:5173`. This is
+     required and easy to miss: the callback exchanges the code with a browser
+     `fetch` to `api.workos.com`, so a missing origin fails the exchange (a CORS
+     error in the console) even though Google itself succeeded.
+   - Authentication → OAuth providers → Google: enable it.
+3. Set `WORKOS_CLIENT_ID` and `WORKOS_API_KEY` in the root `.env`, and
+   `VITE_WORKOS_CLIENT_ID` in `apps/web/.env.local`.
+4. Restart both servers. `/login` then shows **Continue with Google**; the local
+   developer option disappears and `dev:` tokens are rejected (the modes are
+   mutually exclusive).
+
+If `GET /v1/me` returns 401 after the redirect, it is almost always an issuer or
+client-id mismatch: set `WORKOS_ISSUER` to the exact `iss` claim (the default is
+`https://api.workos.com`) and make sure the API and web client ids match.
+`VITE_WORKOS_API_HOSTNAME` supports a custom AuthKit authentication domain.
+
+The post-login redirect is handled client-side through React Router (not a full
+page reload). The AuthKit SDK only persists the session across reloads on
+`localhost`/`127.0.0.1`, so a forced reload on any other host would drop the
+session and leave the UI looking signed out. If the header still shows “Sign in”
+after Google, open the browser console: a `[auth]` warning means the OAuth code
+could not be exchanged, usually because the registered redirect URI does not
+exactly match `window.location.origin` or sign-in was not started from the app.
 
 ## Why code instead of magic link
 

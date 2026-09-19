@@ -6,6 +6,8 @@ interface ImportMetaEnv {
   readonly VITE_ASSET_BASE_URL?: string;
   /** WorkOS AuthKit public client id. Empty disables hosted sign-in. */
   readonly VITE_WORKOS_CLIENT_ID?: string;
+  /** Optional custom AuthKit authentication domain (defaults to api.workos.com). */
+  readonly VITE_WORKOS_API_HOSTNAME?: string;
   /** Explicit opt-in for the local development identity in non-dev builds. */
   readonly VITE_AUTH_DEV_MODE?: string;
 }
