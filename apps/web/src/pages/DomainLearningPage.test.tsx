@@ -191,6 +191,23 @@ describe("DomainLearningPage", () => {
     expect(playNodeUnlock).toHaveBeenCalledTimes(1);
   });
 
+  it("celebrates an unlock inside the card, with no transient banner", async () => {
+    const { container } = renderPage();
+    await ready();
+
+    await openNode("Alpha", "Ready to discover");
+    await revealPrompt("WHAT?");
+    await revealPrompt("LOOK FOR");
+
+    // The persistent card state is the celebration; nothing appears and
+    // disappears elsewhere on the page.
+    expect(container.querySelector(".node-unlock-celebration")).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Continue to Knowledge Map" }),
+    ).toBeInTheDocument();
+    expect(playNodeUnlock).toHaveBeenCalledTimes(1);
+  });
+
   it("opens the dependent node after a prerequisite unlocks", async () => {
     renderPage();
     await ready();
@@ -301,6 +318,17 @@ describe("DomainLearningPage", () => {
     expect(within(celebration).getByText(/Path Unlocked:/)).toBeInTheDocument();
     expect(within(celebration).getByText("Advanced")).toBeInTheDocument();
 
+    // The celebration sits below the knowledge card, so completing a module
+    // never pushes the open card down.
+    const card = container.querySelector(
+      ".knowledge-card-panel",
+    ) as HTMLElement | null;
+    expect(card).not.toBeNull();
+    expect(
+      card!.compareDocumentPosition(celebration) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
     await selectGroup("Advanced");
     expect(
       screen.getByRole("button", { name: "Gamma, Ready to discover" }),
@@ -353,7 +381,7 @@ describe("DomainLearningPage", () => {
     ).toBe(false);
   });
 
-  it("keeps the unlock announcement without motion when reduced motion is set", async () => {
+  it("announces the unlock in the card without a transient banner", async () => {
     setReducedMotion(true);
     const { container } = renderPage();
     await ready();
@@ -363,9 +391,7 @@ describe("DomainLearningPage", () => {
     await revealPrompt("LOOK FOR");
 
     expect(screen.getAllByText(/UNLOCKED!/).length).toBeGreaterThan(0);
-    const celebration = container.querySelector(".node-unlock-celebration");
-    expect(celebration).not.toBeNull();
-    expect(celebration).not.toHaveClass("node-unlock-celebration--animated");
+    expect(container.querySelector(".node-unlock-celebration")).toBeNull();
   });
 
   it("uses semantic controls rather than canvas coordinates", async () => {

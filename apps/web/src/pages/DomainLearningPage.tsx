@@ -6,7 +6,6 @@ import KnowledgeCard from "../components/KnowledgeCard";
 import KnowledgeMap from "../components/KnowledgeMap";
 import KnowledgeMapHud from "../components/KnowledgeMapHud";
 import ModuleCompleteCelebration from "../components/ModuleCompleteCelebration";
-import NodeUnlockCelebration from "../components/NodeUnlockCelebration";
 import { useLearningDomain } from "../hooks/useLearningDomain";
 import { prefersReducedMotion } from "../lib/motion";
 import {
@@ -53,7 +52,6 @@ export default function DomainLearningPage() {
   const [progress, setProgress] = useState<DomainLearningProgress | null>(null);
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [unlockCelebration, setUnlockCelebration] = useState<string | null>(null);
   const [moduleCelebration, setModuleCelebration] = useState<string | null>(null);
   const [justUnlockedNodeId, setJustUnlockedNodeId] = useState<string | null>(null);
   const [startingQuiz, setStartingQuiz] = useState(false);
@@ -75,7 +73,6 @@ export default function DomainLearningPage() {
     setProgress(loadDomainProgress(data.certification_version, data.domain.id));
     setActiveModuleId(null);
     setSelectedNodeId(null);
-    setUnlockCelebration(null);
     setModuleCelebration(null);
     setJustUnlockedNodeId(null);
   }, [data]);
@@ -193,10 +190,10 @@ export default function DomainLearningPage() {
       if (module !== undefined && moduleJustCompleted) {
         playModuleComplete();
         setModuleCelebration(module.id);
-        setUnlockCelebration(null);
       } else {
+        // No transient banner: unlocking plays a sound and the card shows its
+        // own persistent "UNLOCKED" state, so nothing shifts on screen.
         playNodeUnlock();
-        setUnlockCelebration(node.id);
         const openedPath = Object.keys(after.nodeState).some(
           (id) => before.nodeState[id] === "locked" && after.nodeState[id] === "ready",
         );
@@ -291,33 +288,6 @@ export default function DomainLearningPage() {
         onSelectModule={selectModule}
       />
 
-      {unlockCelebration ? (
-        <NodeUnlockCelebration
-          nodeTitle={findNode(nodes, unlockCelebration)?.title ?? ""}
-          reducedMotion={reducedMotion}
-          onDone={() => setUnlockCelebration(null)}
-        />
-      ) : null}
-
-      {moduleForCelebration && celebrationProgress ? (
-        <ModuleCompleteCelebration
-          moduleTitle={moduleForCelebration.title}
-          unlockedCount={celebrationProgress.unlocked}
-          totalCount={celebrationProgress.total}
-          nextModuleTitle={nextModule?.title ?? null}
-          domainComplete={derived.domainComplete}
-          reducedMotion={reducedMotion}
-          startingQuiz={startingQuiz}
-          onContinue={() => {
-            if (nextModule) {
-              setActiveModuleId(nextModule.id);
-            }
-            setModuleCelebration(null);
-          }}
-          onStartQuiz={() => void startDomainQuiz()}
-        />
-      ) : null}
-
       {selectedNode && moduleForSelected ? (
         <KnowledgeCard
           node={selectedNode}
@@ -339,6 +309,28 @@ export default function DomainLearningPage() {
           onSelectNode={selectNode}
         />
       )}
+
+      {/* The module-complete panel renders below the card so revealing the
+          final prompt never pushes the card (and the learner's pointer)
+          around. */}
+      {moduleForCelebration && celebrationProgress ? (
+        <ModuleCompleteCelebration
+          moduleTitle={moduleForCelebration.title}
+          unlockedCount={celebrationProgress.unlocked}
+          totalCount={celebrationProgress.total}
+          nextModuleTitle={nextModule?.title ?? null}
+          domainComplete={derived.domainComplete}
+          reducedMotion={reducedMotion}
+          startingQuiz={startingQuiz}
+          onContinue={() => {
+            if (nextModule) {
+              setActiveModuleId(nextModule.id);
+            }
+            setModuleCelebration(null);
+          }}
+          onStartQuiz={() => void startDomainQuiz()}
+        />
+      ) : null}
 
       {derived.domainComplete ? (
         <section className="knowledge-page-quiz" aria-label="Continue to quiz">
