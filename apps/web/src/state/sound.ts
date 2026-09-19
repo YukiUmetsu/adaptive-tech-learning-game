@@ -81,7 +81,14 @@ function audioContextCtor():
   return globalWindow.AudioContext ?? globalWindow.webkitAudioContext ?? null;
 }
 
-type SoundName = "correct" | "wrong" | "complete";
+type SoundName =
+  | "correct"
+  | "wrong"
+  | "complete"
+  | "reveal"
+  | "node_unlock"
+  | "path_unlock"
+  | "module_complete";
 
 interface SoundShape {
   notes: number[];
@@ -112,6 +119,39 @@ const SOUNDS: Record<SoundName, SoundShape> = {
     noteDuration: 0.22,
     peak: 0.18,
     spacing: 0.11,
+    wave: "triangle",
+  },
+  // Very soft data blip for revealing one card prompt. Deliberately quieter
+  // than the reward sounds so it does not become annoying.
+  reveal: {
+    notes: [1046.5, 1568.0],
+    noteDuration: 0.06,
+    peak: 0.05,
+    spacing: 0.03,
+    wave: "sine",
+  },
+  // Satisfying short technological chime when a knowledge node unlocks.
+  node_unlock: {
+    notes: [523.25, 783.99, 1046.5],
+    noteDuration: 0.16,
+    peak: 0.16,
+    spacing: 0.07,
+    wave: "triangle",
+  },
+  // Small rising digital tone as a new path opens.
+  path_unlock: {
+    notes: [659.25, 987.77],
+    noteDuration: 0.12,
+    peak: 0.12,
+    spacing: 0.06,
+    wave: "triangle",
+  },
+  // Stronger but short success flourish when a module completes.
+  module_complete: {
+    notes: [392.0, 523.25, 659.25, 880.0],
+    noteDuration: 0.2,
+    peak: 0.18,
+    spacing: 0.09,
     wave: "triangle",
   },
 };
@@ -171,4 +211,24 @@ export function playWrong(): void {
 /** Celebratory chime played once when a quiz is completed. */
 export function playMissionComplete(): void {
   play("complete");
+}
+
+/** Very soft blip for revealing one knowledge prompt. */
+export function playReveal(): void {
+  play("reveal");
+}
+
+/** Short technological chime for unlocking a knowledge node. */
+export function playNodeUnlock(): void {
+  play("node_unlock");
+}
+
+/** Rising digital tone for unlocking a path to the next module. */
+export function playPathUnlock(): void {
+  play("path_unlock");
+}
+
+/** Short success flourish for completing all nodes in a module. */
+export function playModuleComplete(): void {
+  play("module_complete");
 }

@@ -4,6 +4,7 @@ import AppShell from "./layout/AppShell";
 import CertificationDashboardPage from "./pages/CertificationDashboardPage";
 import CertificationsPage from "./pages/CertificationsPage";
 import DemoPage from "./pages/DemoPage";
+import DomainLearningPage from "./pages/DomainLearningPage";
 import HomePage from "./pages/HomePage";
 import MissionPage from "./pages/MissionPage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -18,6 +19,10 @@ export default function App() {
         <Route
           path="certifications/:certificationId"
           element={<CertificationDashboardPage />}
+        />
+        <Route
+          path="certifications/:certificationId/domains/:domainId/learn"
+          element={<DomainLearningPage />}
         />
         <Route
           path="certifications/:certificationId/tasks/:taskId"

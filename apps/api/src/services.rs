@@ -16,8 +16,8 @@ use uuid::Uuid;
 use crate::dto::{
     AnswerPayload, AnswerRequest, CatalogResponse, CertificationDto, CertificationVersionDto,
     CompleteMissionResponse, ConceptDto, DomainDto, FeedbackResponse, IssueMissionRequest,
-    MissionResponse, QuestionView, SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse,
-    TaskDto, WalletResponse,
+    LearningDomainResponse, MissionResponse, QuestionView, SyncEventRequest, SyncEventResult,
+    SyncRequest, SyncResponse, TaskDto, WalletResponse,
 };
 use crate::error::ApiError;
 use crate::selection::{self, Candidate, HistoryEntry};
@@ -55,6 +55,9 @@ pub fn catalog(state: &AppState) -> CatalogResponse {
                         id: domain.id.clone(),
                         name: domain.name.clone(),
                         weight: domain.weight,
+                        learning_available: state
+                            .content
+                            .learning_available(&bundle.certification.id, &domain.id),
                         tasks: domain
                             .tasks
                             .iter()
@@ -79,6 +82,33 @@ pub fn catalog(state: &AppState) -> CatalogResponse {
         .collect();
 
     CatalogResponse { certifications }
+}
+
+/// Returns learner-facing learning content for one certification domain.
+///
+/// Learning is a discovery layer, so this never includes quiz canonical answers
+/// and never touches scoring or mission state.
+pub fn learning_domain(
+    state: &AppState,
+    certification_id: &str,
+    domain_id: &str,
+) -> Result<LearningDomainResponse, ApiError> {
+    let domain = state
+        .content
+        .learning_domain_for_certification(certification_id, domain_id)
+        .ok_or(ApiError::NotFound)?;
+
+    Ok(LearningDomainResponse {
+        schema_version: domain.schema_version.clone(),
+        content_version: domain.content_version.clone(),
+        certification_id: domain.certification_id.clone(),
+        certification_version: domain.certification_version.clone(),
+        exam_guide_revision: domain.exam_guide_revision.clone(),
+        domain: domain.domain.clone(),
+        learning_design: domain.learning_design.clone(),
+        source_refs: domain.source_refs.clone(),
+        modules: domain.modules.clone(),
+    })
 }
 
 /// Issues a mission for a quiz mode, selecting questions server-side.

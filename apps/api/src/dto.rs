@@ -5,7 +5,10 @@
 
 use std::collections::BTreeMap;
 
-use adaptive_learn_content::{CanonicalAnswer, Interaction, PlacementPoint};
+use adaptive_learn_content::{
+    CanonicalAnswer, Interaction, LearningDesign, LearningDomainMeta, LearningModule,
+    PlacementPoint, SourceRef,
+};
 use adaptive_learn_domain::{
     AssessmentMode, ConceptWeight, InteractionType, MissionStatus, QuizMode,
 };
@@ -78,6 +81,8 @@ pub struct DomainDto {
     pub name: String,
     /// Share of scored content.
     pub weight: f64,
+    /// Whether pre-quiz learning content exists for this domain.
+    pub learning_available: bool,
     /// Tasks with authored content.
     pub tasks: Vec<TaskDto>,
 }
@@ -326,4 +331,31 @@ pub struct CompleteMissionResponse {
     pub status: MissionStatus,
     /// Completion time.
     pub completed_at: Option<DateTime<Utc>>,
+}
+
+/// Learner-facing learning content for one certification domain.
+///
+/// This is the discovery layer that sits before retrieval practice. Reveals are
+/// present because progressive disclosure is the mechanic, not a secret. Quiz
+/// canonical answers are never included.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct LearningDomainResponse {
+    /// Learning schema version.
+    pub schema_version: String,
+    /// Immutable learning content version.
+    pub content_version: String,
+    /// Certification identifier.
+    pub certification_id: String,
+    /// Certification version identifier.
+    pub certification_version: String,
+    /// Official exam guide revision.
+    pub exam_guide_revision: Option<String>,
+    /// Domain identity and weight.
+    pub domain: LearningDomainMeta,
+    /// Learner-facing vocabulary and unlock rules.
+    pub learning_design: LearningDesign,
+    /// Domain-level references.
+    pub source_refs: Vec<SourceRef>,
+    /// Modules with their knowledge nodes.
+    pub modules: Vec<LearningModule>,
 }

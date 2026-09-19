@@ -88,6 +88,51 @@ hints
 source references
 ```
 
+## Learning modules (knowledge maps)
+
+Quiz bundles and learning content are distinct first-class content types:
+
+```text
+content/<category>/<certification>/<version>/
+├── learning/            # LearningDomain knowledge maps (pre-quiz)
+│   └── learning-domain-1.json
+└── questions/           # ContentBundle quiz content (scored)
+    └── domain-1.json
+```
+
+The build discovers learning sources by path (`**/learning/**/*.json`) and quiz
+sources as every other JSON file, so neither can be silently parsed as the
+other. `ContentRegistry` validates and exposes both; it does not merge them.
+
+Each `LearningDomain` contains ordered `LearningModule`s of `KnowledgeNode`s.
+A node carries `concept_ids` (the bridge to quiz evidence), authored
+`prerequisite_node_ids` and `map_position`, and progressive `prompts` whose
+`reveal` is one of `text`, `sequence`, `bullets`, `keywords`, or `comparison`.
+
+Rules:
+
+- Learning is a discovery layer before retrieval practice, not a fourth quiz
+  mode. Reveals are **never** scored and do not create `learning_event` rows.
+- Discovery progress (`adaptive-learn.learning-progress.v1` in local storage)
+  stores only revealed prompt ids. Node and module state are derived, so
+  progress cannot drift from the curriculum and stale ids are ignored.
+- A node is `unlocked` when every required prompt is revealed. `ready`,
+  `in_progress`, and `locked` are derived from node prerequisites, module
+  prerequisites, and reveals.
+- Vocabulary stays game-like: Knowledge Map, Knowledge Node, Locked, Ready,
+  Discover, Unlocked, Path Unlocked, Module Complete, Continue Exploring,
+  Discovery Progress. Do not say "Mastered" for exploration.
+- The API exposes it at
+  `GET /v1/certifications/{certification_id}/domains/{domain_id}/learning`.
+  Reveals are included because progressive disclosure is the mechanic; quiz
+  canonical answers are never included.
+
+Validation fails loudly on malformed maps: duplicate module/node/prompt ids,
+unknown or self prerequisites, dependency cycles, invalid map positions,
+missing required prompts, incomplete reveal payloads, coverage counts that do
+not match the authored shape, and concept/task ids that do not exist in the
+quiz bundle for the same certification version.
+
 ## Interaction schema
 
 Interactions are authored as Serde-tagged JSON. `interaction` and

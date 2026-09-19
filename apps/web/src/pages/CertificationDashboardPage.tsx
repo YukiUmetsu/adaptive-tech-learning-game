@@ -126,6 +126,44 @@ export default function CertificationDashboardPage() {
     </button>
   );
 
+  const domainCard = (domain: DomainDto, index: number) => (
+    <article className="domain-card">
+      <div className="domain-card-heading">
+        <span className="domain-number">Domain {index + 1}</span>
+        <h3 className="domain-name">{domain.name}</h3>
+        <span className="domain-meta">
+          {Math.round(domain.weight * 100)}% · {domainQuestionCount(domain)} questions
+        </span>
+      </div>
+      <div className="domain-card-actions">
+        {domain.learning_available ? (
+          <Link
+            className="primary domain-explore"
+            to={`/certifications/${certification.id}/domains/${domain.id}/learn`}
+            aria-label={`Explore Domain: ${domain.name}`}
+          >
+            Explore Domain
+          </Link>
+        ) : null}
+        <button
+          type="button"
+          className={domain.learning_available ? "" : "primary"}
+          disabled={starting !== null}
+          aria-label={`Start Domain Quiz for ${domain.name}`}
+          onClick={() =>
+            void launch({
+              mode: "domain_quiz",
+              domainId: domain.id,
+              key: `card-${domain.id}`,
+            })
+          }
+        >
+          {starting === `card-${domain.id}` ? "Starting…" : "Domain Quiz"}
+        </button>
+      </div>
+    </article>
+  );
+
   return (
     <section className="dashboard">
       <header className="dashboard-hud">
@@ -202,7 +240,7 @@ export default function CertificationDashboardPage() {
       <h2>Domain map</h2>
       <ul className="domain-map" aria-label="Exam domains">
         {domains.map((domain, index) => (
-          <li key={domain.id}>{domainButton(domain, index, domain.id)}</li>
+          <li key={domain.id}>{domainCard(domain, index)}</li>
         ))}
       </ul>
     </section>

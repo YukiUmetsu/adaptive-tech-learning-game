@@ -1,0 +1,1826 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "soa-c03-learning-2026-09-18",
+  "certification_id": "aws-soa-c03",
+  "certification_version": "soa-c03",
+  "exam_guide_revision": "1.1",
+  "domain": {
+    "id": "domain-5",
+    "name": "Networking and Content Delivery",
+    "weight": 0.18
+  },
+  "learning_design": {
+    "progress_label": "Discovery Progress",
+    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
+    "mastery_note": "Exploration progress is not mastery evidence; quiz attempts remain the scored retrieval signal."
+  },
+  "modules": [
+    {
+      "id": "d5-vpc-foundations",
+      "title": "VPC Foundations",
+      "order": 1,
+      "task_ids": [
+        "5.1"
+      ],
+      "skill_ids": [
+        "5.1.1"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "d5-vpc-subnets",
+          "title": "VPC CIDR and subnets",
+          "concept_ids": [
+            "aws.vpc",
+            "aws.vpc.subnets"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.08,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "VPC CIDR → subnet CIDRs → ENI private __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Subnets carve the VPC address space into Availability-Zone-scoped networks for resources."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Public subnet = route to an internet gateway plus resource/public-address requirements; subnet itself is not “public” by __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Internet reachability depends on routing and the resource’s addressing/security configuration."
+              }
+            },
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "Deployment fails with insufficient addresses → check subnet free __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "CIDR sizing and available IP addresses matter operationally."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Amazon VPC",
+              "url": "https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-routes",
+          "title": "Route tables",
+          "concept_ids": [
+            "aws.vpc.routes"
+          ],
+          "prerequisite_node_ids": [
+            "d5-vpc-subnets"
+          ],
+          "map_position": {
+            "x": 0.28,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Destination CIDR/prefix → next-hop __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Route tables determine where subnet/ENI traffic is directed."
+              }
+            },
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Most specific matching route __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Routing chooses the most specific matching route."
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "“Packets never reach NAT/IGW/TGW” → inspect __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Route tables are one of the first checks."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "VPC route tables",
+              "url": "https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-sg",
+          "title": "Security groups",
+          "concept_ids": [
+            "aws.vpc.sg"
+          ],
+          "prerequisite_node_ids": [
+            "d5-vpc-subnets"
+          ],
+          "map_position": {
+            "x": 0.48,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Stateful virtual firewall at ENI/resource __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Security groups control allowed inbound/outbound traffic and are stateful."
+              }
+            },
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Return traffic for an allowed flow is automatically __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Stateful behavior tracks permitted connections."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Security group rules are allow-only; no explicit __________ rules.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Network ACLs support allow and deny entries."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "VPC security groups",
+              "url": "https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-nacl",
+          "title": "Network ACLs",
+          "concept_ids": [
+            "aws.vpc.nacl"
+          ],
+          "prerequisite_node_ids": [
+            "d5-vpc-subnets"
+          ],
+          "map_position": {
+            "x": 0.68,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Stateless subnet-level allow/deny __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Network ACLs filter traffic entering/leaving subnets using numbered rules."
+              }
+            },
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Because NACLs are stateless, allow both request and return __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Return-path ephemeral ports/directions must be permitted as required."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Security group / NACL",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Security group",
+                    "items": [
+                      "stateful, ENI/resource scope, allow rules"
+                    ]
+                  },
+                  {
+                    "title": "NACL",
+                    "items": [
+                      "stateless, subnet scope, allow + deny"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Network ACLs",
+              "url": "https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-internet-egress",
+          "title": "Internet gateway, NAT, and egress-only IGW",
+          "concept_ids": [
+            "aws.vpc.nat",
+            "aws.vpc.eigw"
+          ],
+          "prerequisite_node_ids": [
+            "d5-routes"
+          ],
+          "map_position": {
+            "x": 0.88,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "IGW / NAT Gateway / Egress-only IGW",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Internet Gateway",
+                    "items": [
+                      "public IPv4/IPv6 internet path for addressed resources"
+                    ]
+                  },
+                  {
+                    "title": "NAT Gateway",
+                    "items": [
+                      "outbound IPv4 for private-subnet resources"
+                    ]
+                  },
+                  {
+                    "title": "Egress-only IGW",
+                    "items": [
+                      "outbound-only IPv6 internet access"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "Private IPv4 instances need outbound internet updates, no inbound internet → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use a NAT gateway in an appropriate public subnet plus routes."
+              }
+            },
+            {
+              "id": "exam2",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "Private IPv6 egress-only internet → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use an egress-only internet gateway."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Amazon VPC",
+              "url": "https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d5-private-connectivity",
+      "title": "Private Connectivity and Network Protection",
+      "order": 2,
+      "task_ids": [
+        "5.1"
+      ],
+      "skill_ids": [
+        "5.1.2",
+        "5.1.3",
+        "5.1.4"
+      ],
+      "prerequisite_module_ids": [
+        "d5-vpc-foundations"
+      ],
+      "nodes": [
+        {
+          "id": "d5-endpoints",
+          "title": "VPC endpoints and PrivateLink",
+          "concept_ids": [
+            "aws.vpc.endpoints"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.08,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Gateway endpoint / interface endpoint",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Gateway endpoint",
+                    "items": [
+                      "route-table target for supported services such as S3/DynamoDB"
+                    ]
+                  },
+                  {
+                    "title": "Interface endpoint",
+                    "items": [
+                      "ENIs powered by PrivateLink for supported services"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Access supported AWS service privately without NAT/internet → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A VPC endpoint is a key clue."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "PrivateLink provides service connectivity; it is not full VPC-to-VPC __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use peering/TGW/VPN/DX for broader network connectivity patterns."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS PrivateLink",
+              "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-peering",
+          "title": "VPC peering",
+          "concept_ids": [
+            "aws.vpc.peering"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.28,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Private IP connectivity between two VPCs via a non-transitive __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "VPC peering directly connects two VPCs; routing and security must allow traffic."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Peering is non-__________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "You cannot use one peered VPC as a transit router for another peer."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Small number of direct VPC pairs → peering may be simpler than __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Transit Gateway becomes attractive as connectivity grows into a hub-and-spoke topology."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "VPC peering",
+              "url": "https://docs.aws.amazon.com/vpc/latest/peering/what-is-vpc-peering.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-transit-gateway",
+          "title": "Transit Gateway",
+          "concept_ids": [
+            "aws.transitgateway"
+          ],
+          "prerequisite_node_ids": [
+            "d5-peering"
+          ],
+          "map_position": {
+            "x": 0.48,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Hub for connecting many VPCs and on-premises __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Transit Gateway provides centralized routing among attached networks."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Many VPCs with complex mesh peering → consider __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Transit Gateway can reduce pairwise connectivity complexity."
+              }
+            },
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Attachment + TGW route table + propagation/association → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Troubleshoot both attachment state and Transit Gateway routing."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Transit Gateway",
+              "url": "https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-network-protection",
+          "title": "Network protection services",
+          "concept_ids": [
+            "aws.network.protection"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.68,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "WAF / Shield / Network Firewall / DNS Firewall",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "WAF",
+                    "items": [
+                      "HTTP(S) web request filtering"
+                    ]
+                  },
+                  {
+                    "title": "Shield",
+                    "items": [
+                      "DDoS protection"
+                    ]
+                  },
+                  {
+                    "title": "Network Firewall",
+                    "items": [
+                      "VPC network traffic filtering"
+                    ]
+                  },
+                  {
+                    "title": "Route 53 Resolver DNS Firewall",
+                    "items": [
+                      "DNS-domain filtering"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "SQL injection/web path rules → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "AWS WAF."
+              }
+            },
+            {
+              "id": "when2",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Filter DNS queries to malicious domains → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Route 53 Resolver DNS Firewall."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS WAF",
+              "url": "https://docs.aws.amazon.com/waf/latest/developerguide/what-is-aws-waf.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-network-cost",
+          "title": "Network cost optimization",
+          "concept_ids": [
+            "aws.network.cost"
+          ],
+          "prerequisite_node_ids": [
+            "d5-endpoints"
+          ],
+          "map_position": {
+            "x": 0.88,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "NAT processing, cross-AZ/Region transfer, public egress, and duplicated __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Network cost depends heavily on traffic path, transfer direction, and intermediaries."
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "⚡ ACTION",
+              "placeholder": "Keep high-volume traffic on efficient/private paths where that reduces data-processing/transfer __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Evaluate endpoints, topology, AZ placement, CloudFront, and architecture against actual traffic."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Cheapest path is not automatically the most resilient/secure __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Optimize cost within availability, security, and performance requirements."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS VPC pricing concepts",
+              "url": "https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d5-dns-content",
+      "title": "DNS and Content Delivery",
+      "order": 3,
+      "task_ids": [
+        "5.2"
+      ],
+      "skill_ids": [
+        "5.2.1",
+        "5.2.2",
+        "5.2.3"
+      ],
+      "prerequisite_module_ids": [
+        "d5-private-connectivity"
+      ],
+      "nodes": [
+        {
+          "id": "d5-route53-basics",
+          "title": "Route 53 hosted zones and records",
+          "concept_ids": [
+            "aws.route53"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.08,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Domain → hosted zone → DNS record → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "DNS records map names to values/targets according to record type and routing policy."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Public hosted zone / private hosted zone",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Public",
+                    "items": [
+                      "internet DNS"
+                    ]
+                  },
+                  {
+                    "title": "Private",
+                    "items": [
+                      "DNS inside associated VPCs"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "Alias record can point to supported AWS resources without exposing a fixed __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Alias records integrate directly with supported AWS targets."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Amazon Route 53",
+              "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-resolver",
+          "title": "Route 53 Resolver",
+          "concept_ids": [
+            "aws.route53.resolver"
+          ],
+          "prerequisite_node_ids": [
+            "d5-route53-basics"
+          ],
+          "map_position": {
+            "x": 0.3,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Inbound endpoint: on-prem → VPC DNS; outbound endpoint: VPC → on-prem DNS.",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Inbound",
+                    "items": [
+                      "external/on-prem resolvers query Route 53 Resolver"
+                    ]
+                  },
+                  {
+                    "title": "Outbound",
+                    "items": [
+                      "VPC queries forwarded to external/on-prem DNS"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Hybrid DNS between VPC and on-prem domains → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use Route 53 Resolver endpoints/rules."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Resolver endpoint is not a general-purpose TCP/IP __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "It is for DNS query resolution/forwarding."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Route 53 Resolver",
+              "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-routing-policies",
+          "title": "Route 53 routing policies",
+          "concept_ids": [
+            "aws.route53.routing"
+          ],
+          "prerequisite_node_ids": [
+            "d5-route53-basics"
+          ],
+          "map_position": {
+            "x": 0.52,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Weighted / latency / failover / geolocation / geoproximity / multivalue",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Weighted",
+                    "items": [
+                      "split by configured weights"
+                    ]
+                  },
+                  {
+                    "title": "Latency",
+                    "items": [
+                      "lowest AWS network latency location"
+                    ]
+                  },
+                  {
+                    "title": "Failover",
+                    "items": [
+                      "primary/secondary"
+                    ]
+                  },
+                  {
+                    "title": "Geolocation",
+                    "items": [
+                      "based on user location"
+                    ]
+                  },
+                  {
+                    "title": "Geoproximity",
+                    "items": [
+                      "shift traffic among resource locations"
+                    ]
+                  },
+                  {
+                    "title": "Multivalue",
+                    "items": [
+                      "multiple healthy records"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "“90% to blue, 10% to green” → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Weighted routing."
+              }
+            },
+            {
+              "id": "exam2",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "“Send users to Region with lowest latency” → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Latency-based routing."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Route 53 routing",
+              "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-query-logging",
+          "title": "DNS query logging",
+          "concept_ids": [
+            "aws.route53.querylogs"
+          ],
+          "prerequisite_node_ids": [
+            "d5-resolver"
+          ],
+          "map_position": {
+            "x": 0.74,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Capture DNS queries for visibility/troubleshooting and security __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Route 53 Resolver query logging records DNS queries from configured VPC resources."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Need to know which domains workloads are resolving → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Enable Resolver query logging for the relevant VPCs."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Query logging is not the same as VPC Flow Logs, which record network flow __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use the log source that matches the question."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Route 53 Resolver query logging",
+              "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-query-logs.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-cloudfront",
+          "title": "CloudFront",
+          "concept_ids": [
+            "aws.cloudfront"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.2,
+            "y": 0.37
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "CDN that caches/serves content through global edge __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "CloudFront accelerates HTTP(S) content delivery and can protect/origin-shield applications with integrated features."
+              }
+            },
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Viewer → edge → origin",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Viewer",
+                  "CloudFront edge",
+                  "Origin"
+                ]
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "CloudFront / Global Accelerator",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "CloudFront",
+                    "items": [
+                      "HTTP(S) content caching/distribution"
+                    ]
+                  },
+                  {
+                    "title": "Global Accelerator",
+                    "items": [
+                      "network acceleration to application endpoints using static anycast IPs"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Amazon CloudFront",
+              "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-cloudfront-cache",
+          "title": "CloudFront cache behavior",
+          "concept_ids": [
+            "aws.cloudfront.cache"
+          ],
+          "prerequisite_node_ids": [
+            "d5-cloudfront"
+          ],
+          "map_position": {
+            "x": 0.46,
+            "y": 0.37
+          },
+          "prompts": [
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "Cache key includes selected headers/cookies/query strings; extra variance lowers cache __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Keep the cache key only as variable as the application requires."
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "⚡ ACTION",
+              "placeholder": "Stale cached object after urgent update → use invalidation or versioned object __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Control freshness with TTLs, invalidations, and versioned filenames/keys as appropriate."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Origin request policy can forward values without making them part of the cache __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Separate cache variation from origin forwarding needs."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "CloudFront caching",
+              "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-global-accelerator",
+          "title": "AWS Global Accelerator",
+          "concept_ids": [
+            "aws.globalaccelerator"
+          ],
+          "prerequisite_node_ids": [
+            "d5-cloudfront"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.37
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Static anycast IP entry points route traffic across the AWS global __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Global Accelerator improves availability/performance for supported application endpoints using AWS global network routing."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Need static global IPs and accelerate TCP/UDP or non-cacheable app traffic → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Global Accelerator is a strong clue."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Global Accelerator does not cache web objects like __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "CloudFront provides CDN caching."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Global Accelerator",
+              "url": "https://docs.aws.amazon.com/global-accelerator/latest/dg/what-is-global-accelerator.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d5-troubleshooting",
+      "title": "Network Troubleshooting",
+      "order": 4,
+      "task_ids": [
+        "5.3"
+      ],
+      "skill_ids": [
+        "5.3.1",
+        "5.3.2",
+        "5.3.3",
+        "5.3.4"
+      ],
+      "prerequisite_module_ids": [
+        "d5-dns-content"
+      ],
+      "nodes": [
+        {
+          "id": "d5-path-troubleshooting",
+          "title": "VPC path troubleshooting",
+          "concept_ids": [
+            "aws.vpc.routes",
+            "aws.vpc.sg",
+            "aws.vpc.nacl",
+            "aws.vpc.nat",
+            "aws.transitgateway"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.08,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Source → route → security controls → middleboxes/gateways → destination → return __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Validate every hop and the return path; networking failures are often asymmetric."
+              }
+            },
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "Check DNS, routes, SGs, NACLs, target/service health, and __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Also inspect NAT/TGW/endpoints/firewalls and return routing where present."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Opening every port is not a valid troubleshooting __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Diagnose the actual blocking control and preserve least privilege."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Amazon VPC",
+              "url": "https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-flow-logs",
+          "title": "VPC Flow Logs",
+          "concept_ids": [
+            "aws.vpc.flowlogs"
+          ],
+          "prerequisite_node_ids": [
+            "d5-path-troubleshooting"
+          ],
+          "map_position": {
+            "x": 0.28,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Network flow metadata such as source/destination, ports, protocol, and accept/reject __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "VPC Flow Logs capture metadata for IP traffic at supported VPC networking scopes."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Use to verify whether traffic is reaching an ENI/subnet/VPC and whether it is accepted/rejected.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Flow records help narrow down network path and security-control issues."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Flow Logs do not capture full packet payload __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "They are flow metadata, not packet capture."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "VPC Flow Logs",
+              "url": "https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-service-logs",
+          "title": "ELB, WAF, CloudFront, and container logs",
+          "concept_ids": [
+            "aws.elb.accesslogs",
+            "aws.waf.logs",
+            "aws.cloudfront.logs"
+          ],
+          "prerequisite_node_ids": [
+            "d5-path-troubleshooting"
+          ],
+          "map_position": {
+            "x": 0.48,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Pick logs at the layer where the failure is __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "ELB access logs show load-balancer requests; WAF logs show web ACL decisions; CloudFront logs show edge requests; app/container logs show workload behavior."
+              }
+            },
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "Client reached edge but origin returned error → correlate CloudFront/ELB/app __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Cross-layer correlation helps identify where the request failed."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "One log source rarely explains an entire multi-tier request __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Correlate request IDs/timestamps where possible."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "ELB access logs",
+              "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/userguide/what-is-load-balancing.html"
+            },
+            {
+              "title": "AWS WAF logs",
+              "url": "https://docs.aws.amazon.com/waf/latest/developerguide/what-is-aws-waf.html"
+            },
+            {
+              "title": "CloudFront logs",
+              "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-reachability",
+          "title": "VPC Reachability Analyzer",
+          "concept_ids": [
+            "aws.reachability"
+          ],
+          "prerequisite_node_ids": [
+            "d5-path-troubleshooting"
+          ],
+          "map_position": {
+            "x": 0.68,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Static configuration analysis of network __________ between source and destination.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Reachability Analyzer analyzes the configured path and identifies blocking/missing components without sending packets."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "“Which route/SG/NACL component prevents connectivity?” → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "VPC Reachability Analyzer is a strong diagnostic tool."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "It is not an end-to-end live latency/performance __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use monitoring/synthetic/flow tools for live behavior."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "VPC Reachability Analyzer",
+              "url": "https://docs.aws.amazon.com/vpc/latest/reachability/what-is-reachability-analyzer.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-hybrid",
+          "title": "Hybrid connectivity: Direct Connect and VPN",
+          "concept_ids": [
+            "aws.hybrid",
+            "aws.directconnect",
+            "aws.vpn"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.2,
+            "y": 0.38
+          },
+          "prompts": [
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Direct Connect / Site-to-Site VPN",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Direct Connect",
+                    "items": [
+                      "dedicated/private connectivity via DX location/partner"
+                    ]
+                  },
+                  {
+                    "title": "Site-to-Site VPN",
+                    "items": [
+                      "IPsec tunnels over internet"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Hybrid troubleshooting includes BGP/routes, tunnel/virtual interface state, on-prem firewall, and __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Validate both AWS and on-premises routing/security plus redundancy."
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "“Dedicated private circuit” → __________; “encrypted tunnels over internet” → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Direct Connect; Site-to-Site VPN."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Direct Connect",
+              "url": "https://docs.aws.amazon.com/directconnect/latest/UserGuide/Welcome.html"
+            },
+            {
+              "title": "AWS Site-to-Site VPN",
+              "url": "https://docs.aws.amazon.com/vpn/latest/s2svpn/VPC_VPN.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-private-troubleshooting",
+          "title": "Private connectivity troubleshooting",
+          "concept_ids": [
+            "aws.vpc.endpoints",
+            "aws.vpc.peering",
+            "aws.transitgateway"
+          ],
+          "prerequisite_node_ids": [
+            "d5-hybrid"
+          ],
+          "map_position": {
+            "x": 0.46,
+            "y": 0.38
+          },
+          "prompts": [
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "Endpoint policy, DNS, route table, SGs, service support, peering/TGW routes, and __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Private connectivity requires both correct path configuration and authorization/service-specific settings."
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "Interface endpoint resolves publicly instead of privately → check private DNS and __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Check endpoint configuration, VPC DNS settings, and the name being resolved."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "A VPC endpoint does not make every AWS service privately reachable by __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Only supported endpoint services and configured endpoints are available through that path."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS PrivateLink",
+              "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html"
+            },
+            {
+              "title": "VPC peering",
+              "url": "https://docs.aws.amazon.com/vpc/latest/peering/what-is-vpc-peering.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-cloudfront-troubleshooting",
+          "title": "CloudFront caching issues",
+          "concept_ids": [
+            "aws.cloudfront.cache"
+          ],
+          "prerequisite_node_ids": [
+            "d5-service-logs"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.38
+          },
+          "prompts": [
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "Unexpected stale/wrong variants: TTL, cache key, origin headers/cookies/query strings, invalidation, and __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Verify behavior/path pattern and which policy controls caching/forwarding."
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "“Origin has new file but users still see old content” → inspect cache freshness/invalidation.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "CloudFront cache behavior is the focus."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Changing origin content does not necessarily purge existing edge __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Cached objects remain until expiration/invalidation/versioned URL changes."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "CloudFront caching",
+              "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d5-network-monitoring",
+      "title": "CloudWatch Network Monitoring",
+      "order": 5,
+      "task_ids": [
+        "5.3"
+      ],
+      "skill_ids": [
+        "5.3.5"
+      ],
+      "prerequisite_module_ids": [
+        "d5-troubleshooting"
+      ],
+      "nodes": [
+        {
+          "id": "d5-network-flow-monitor",
+          "title": "CloudWatch Network Flow Monitor",
+          "concept_ids": [
+            "aws.networkflowmonitor"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Helps monitor network flows and identify performance/network-health __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Network Flow Monitor provides network flow performance visibility for supported AWS workloads."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Use when you need flow-level network performance visibility rather than only accept/reject __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "It complements VPC Flow Logs with performance-oriented monitoring."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Network Flow Monitor ≠ VPC Flow Logs.",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Network Flow Monitor",
+                    "items": [
+                      "network performance/health monitoring"
+                    ]
+                  },
+                  {
+                    "title": "VPC Flow Logs",
+                    "items": [
+                      "flow metadata and accept/reject records"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "SOA-C03 Domain 5",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03-domain5.html"
+            },
+            {
+              "title": "CloudWatch network monitoring",
+              "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Network-Monitoring-Sections.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-internet-monitor",
+          "title": "CloudWatch Internet Monitor",
+          "concept_ids": [
+            "aws.internetsmonitor"
+          ],
+          "prerequisite_node_ids": [
+            "d5-network-flow-monitor"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.15
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Observes how internet performance/availability affects application traffic from user __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Internet Monitor provides visibility into internet paths and end-user network performance for monitored applications."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Users in a geography report internet-path degradation but AWS resource metrics look healthy → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Internet Monitor is a strong clue."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "It is not DNS routing configuration itself.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use it for visibility/analysis; use Route 53/CloudFront/Global Accelerator or architecture changes for remediation as appropriate."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "CloudWatch Internet Monitor",
+              "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-InternetMonitor.html"
+            }
+          ]
+        },
+        {
+          "id": "d5-network-synthetic",
+          "title": "CloudWatch Network Synthetic Monitor",
+          "concept_ids": [
+            "aws.networksynthetic"
+          ],
+          "prerequisite_node_ids": [
+            "d5-network-flow-monitor"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.15
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Runs synthetic network tests between configured endpoints to measure reachability/performance __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Network Synthetic Monitor actively probes configured hybrid network paths, such as from AWS resources toward on-premises destination IP addresses, to measure latency and packet loss."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Need proactive scheduled path tests rather than waiting for user traffic → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use it when you need proactive, repeatable monitoring of hybrid network connectivity instead of waiting for real user traffic."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Synthetic tests are active probes; Flow Logs are passive traffic __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choose based on whether you need generated tests or observations of real traffic."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "SOA-C03 Domain 5",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03-domain5.html"
+            },
+            {
+              "title": "CloudWatch network monitoring",
+              "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Network-Monitoring-Sections.html"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "source_refs": [
+    {
+      "title": "Official SOA-C03 Domain 5 exam guide",
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03-domain5.html"
+    },
+    {
+      "title": "SOA-C03 revisions (exam guide version 1.1)",
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/soa-03-revisions.html"
+    },
+    {
+      "title": "AWS Well-Architected Framework",
+      "url": "https://aws.amazon.com/architecture/well-architected/"
+    },
+    {
+      "title": "SOA-C03 in-scope AWS services",
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/soa-03-in-scope-services.html"
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "5.1",
+      "5.2",
+      "5.3"
+    ],
+    "skill_ids": [
+      "5.1.1",
+      "5.1.2",
+      "5.1.3",
+      "5.1.4",
+      "5.2.1",
+      "5.2.2",
+      "5.2.3",
+      "5.3.1",
+      "5.3.2",
+      "5.3.3",
+      "5.3.4",
+      "5.3.5"
+    ],
+    "module_count": 5,
+    "knowledge_node_count": 27,
+    "prompt_count": 81
+  },
+  "authoring_notes": "Original learning content. Official SOA-C03 exam guide revision 1.1 is the scope authority; the supplied May 2026 study guide was used as a supplementary coverage check and was not copied."
+}

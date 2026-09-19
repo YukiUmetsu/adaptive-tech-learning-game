@@ -5,12 +5,14 @@ mod embedded {
     include!(concat!(env!("OUT_DIR"), "/embedded_content.rs"));
 }
 
+pub mod learning;
 pub mod model;
 pub mod registry;
 pub mod scoring;
 pub mod validate;
 
-pub use embedded::EMBEDDED_SOURCES;
+pub use embedded::{EMBEDDED_LEARNING_SOURCES, EMBEDDED_SOURCES};
+pub use learning::*;
 pub use model::*;
 pub use registry::ContentRegistry;
 pub use scoring::{ScoredAnswer, ScoringError, SubmittedAnswer, score};

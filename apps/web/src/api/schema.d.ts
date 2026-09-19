@@ -64,6 +64,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/certifications/{certification_id}/domains/{domain_id}/learning": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns the pre-quiz learning content for a certification domain.
+         * @description This is the Knowledge Map curriculum: modules, knowledge nodes, and
+         *     progressive reveals. It is a discovery mechanic, not a scored assessment, so
+         *     it is deliberately separate from mission issuance and scoring.
+         */
+        get: operations["get_learning_domain"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/missions/issue": {
         parameters: {
             query?: never;
@@ -425,6 +447,8 @@ export interface components {
         DomainDto: {
             /** @description Domain identifier. */
             id: string;
+            /** @description Whether pre-quiz learning content exists for this domain. */
+            learning_available: boolean;
             /** @description Domain name. */
             name: string;
             /** @description Tasks with authored content. */
@@ -646,6 +670,149 @@ export interface components {
             /** @description Task to scope a task practice to. Required for `task_practice`. */
             task_id?: string | null;
         };
+        /** @description One knowledge card on the map. */
+        KnowledgeNode: {
+            /** @description Certification concepts this node teaches. The bridge to quiz evidence. */
+            concept_ids: string[];
+            /** @description Stable node identifier. */
+            id: string;
+            /** @description Authored position on the map in `0..=1` space. */
+            map_position: components["schemas"]["MapPosition"];
+            /** @description Nodes that must be unlocked before this node becomes ready. */
+            prerequisite_node_ids?: string[];
+            /** @description Progressive reveal prompts. All required prompts unlock the node. */
+            prompts: components["schemas"]["KnowledgePrompt"][];
+            /** @description Official references for this node. */
+            source_refs?: components["schemas"]["SourceRef"][];
+            /** @description Learner-facing node title. */
+            title: string;
+        };
+        /** @description One progressive-reveal prompt on a knowledge card. */
+        KnowledgePrompt: {
+            /** @description Stable prompt identifier within the node. */
+            id: string;
+            /** @description Prompt kind, which selects the shared icon and styling vocabulary. */
+            kind: components["schemas"]["PromptKind"];
+            /** @description Learner-facing label, authored by the curriculum. */
+            label: string;
+            /** @description Blank text shown before the reveal. */
+            placeholder: string;
+            /** @description Whether revealing this prompt counts toward unlocking the node. */
+            required?: boolean;
+            /** @description The information revealed when the learner taps the blank. */
+            reveal: components["schemas"]["LearningReveal"];
+        };
+        /** @description The vocabulary and rules shown to learners on the map. */
+        LearningDesign: {
+            /** @description Reminder that discovery is not mastery. */
+            mastery_note: string;
+            /** @description Label for discovery progress, for example `Discovery Progress`. */
+            progress_label: string;
+            /** @description Explanation of the unlock rule. */
+            unlock_rule: string;
+        };
+        /** @description Domain identity within a certification blueprint. */
+        LearningDomainMeta: {
+            /** @description Domain identifier, for example `domain-1`. */
+            id: string;
+            /** @description Official domain name. */
+            name: string;
+            /**
+             * Format: double
+             * @description Share of scored content, in `(0, 1]`.
+             */
+            weight: number;
+        };
+        /**
+         * @description Learner-facing learning content for one certification domain.
+         *
+         *     This is the discovery layer that sits before retrieval practice. Reveals are
+         *     present because progressive disclosure is the mechanic, not a secret. Quiz
+         *     canonical answers are never included.
+         */
+        LearningDomainResponse: {
+            /** @description Certification identifier. */
+            certification_id: string;
+            /** @description Certification version identifier. */
+            certification_version: string;
+            /** @description Immutable learning content version. */
+            content_version: string;
+            /** @description Domain identity and weight. */
+            domain: components["schemas"]["LearningDomainMeta"];
+            /** @description Official exam guide revision. */
+            exam_guide_revision?: string | null;
+            /** @description Learner-facing vocabulary and unlock rules. */
+            learning_design: components["schemas"]["LearningDesign"];
+            /** @description Modules with their knowledge nodes. */
+            modules: components["schemas"]["LearningModule"][];
+            /** @description Learning schema version. */
+            schema_version: string;
+            /** @description Domain-level references. */
+            source_refs: components["schemas"]["SourceRef"][];
+        };
+        /** @description A group of knowledge nodes unlocked along one path. */
+        LearningModule: {
+            /** @description Stable module identifier. */
+            id: string;
+            /** @description Knowledge nodes in presentation order. */
+            nodes: components["schemas"]["KnowledgeNode"][];
+            /**
+             * Format: int64
+             * @description Presentation order within the domain.
+             */
+            order: number;
+            /** @description Modules that must be completed before this one becomes available. */
+            prerequisite_module_ids?: string[];
+            /** @description Exam skill ids this module teaches. */
+            skill_ids?: string[];
+            /** @description Exam task ids this module teaches. */
+            task_ids?: string[];
+            /** @description Learner-facing module title. */
+            title: string;
+        };
+        /**
+         * @description How a revealed prompt renders. Deliberately not a plain string: the
+         *     curriculum distinguishes prose, sequences, comparisons, and keyword clues.
+         */
+        LearningReveal: {
+            /** @description Revealed text. Keep it to one or two sentences. */
+            text: string;
+            /** @enum {string} */
+            type: "text";
+        } | {
+            /** @description Ordered items. */
+            items: string[];
+            /** @enum {string} */
+            type: "sequence";
+        } | {
+            /** @description Bullet items. */
+            items: string[];
+            /** @enum {string} */
+            type: "bullets";
+        } | {
+            /** @description Clue items. */
+            items: string[];
+            /** @enum {string} */
+            type: "keywords";
+        } | {
+            /** @description Comparison columns. */
+            columns: components["schemas"]["RevealColumn"][];
+            /** @enum {string} */
+            type: "comparison";
+        };
+        /** @description Normalized position on the knowledge map. */
+        MapPosition: {
+            /**
+             * Format: double
+             * @description Horizontal position in `0..=1`.
+             */
+            x: number;
+            /**
+             * Format: double
+             * @description Vertical position in `0..=1`.
+             */
+            y: number;
+        };
         /** @description A server-issued mission with its questions. */
         MissionResponse: {
             /** @description Certification identifier. */
@@ -736,6 +903,12 @@ export interface components {
             /** @description Inclusive `[min, max]` vertical range in `0..=1`. */
             y: number[];
         };
+        /**
+         * @description The shared prompt vocabulary. Icons are selected by the UI from this kind,
+         *     so content can change labels without the renderer special-casing nodes.
+         * @enum {string}
+         */
+        PromptKind: "what" | "when" | "connects_to" | "not_this" | "exam_clue" | "mental_model" | "action" | "look_for";
         /** @description A question shown to the learner. Contains no answer key. */
         QuestionView: {
             /** @description Evidence mode. */
@@ -799,6 +972,13 @@ export interface components {
              */
             y?: number | null;
         };
+        /** @description One titled column of a comparison reveal. */
+        RevealColumn: {
+            /** @description Column items. */
+            items: string[];
+            /** @description Column heading. */
+            title: string;
+        };
         /**
          * @description The operational stage a branching-scenario decision belongs to.
          *
@@ -821,6 +1001,13 @@ export interface components {
             prompt: string;
             /** @description What kind of decision this step represents. */
             stage: components["schemas"]["ScenarioStage"];
+        };
+        /** @description A reference to the official source of a content unit. */
+        SourceRef: {
+            /** @description Display title. */
+            title: string;
+            /** @description URL. */
+            url: string;
         };
         /** @description One attempt in a sync batch. */
         SyncEventRequest: {
@@ -993,6 +1180,38 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CatalogResponse"];
                 };
+            };
+        };
+    };
+    get_learning_domain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Certification identifier, for example `aws-soa-c03`. */
+                certification_id: string;
+                /** @description Domain identifier, for example `domain-1`. */
+                domain_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Domain learning content */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningDomainResponse"];
+                };
+            };
+            /** @description No learning content for this domain */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
