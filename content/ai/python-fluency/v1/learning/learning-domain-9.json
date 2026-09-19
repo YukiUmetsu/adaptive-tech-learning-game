@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-fluency-learning-2026-09-19-v1",
+  "content_version": "python-fluency-learning-2026-09-19-v2",
   "certification_id": "ai-python-fluency",
   "certification_version": "python-fluency-v1",
   "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python documentation and selected AnyIO/HTTPX docs reviewed 2026-09-19.",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; progressively harder typed code recall provides the scored signal."
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code or table discoveries.",
+    "mastery_note": "Discovery progress is not mastery evidence; progressively harder retrieval and typed coding questions provide the scored signal."
   },
   "source_refs": [
     {
@@ -34,9 +34,9 @@
     ],
     "module_count": 2,
     "knowledge_node_count": 5,
-    "prompt_count": 15
+    "prompt_count": 5
   },
-  "authoring_notes": "Python Fluency is practical coding retrieval, not beginner trivia or a certification. Questions use progressive recall depth: guided -> recall -> construct -> fluency. Short literals stay on one line where readable, unfamiliar data shapes and intent are explained, and most questions have one meaningful blank.",
+  "authoring_notes": "Updated for the learning-v2 renderer. Code examples are authored as first-class syntax-highlighted code_file reveals with clickable annotations instead of prose strings. Tables are used for contrasts that benefit from progressive reveal.",
   "modules": [
     {
       "id": "domain-9-task-9-1",
@@ -58,52 +58,52 @@
           "concept_ids": [
             "ai.python.py312_type_params"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.14
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.12 introduced bracketed type-parameter syntax for generic classes and functions, avoiding a separate TypeVar declaration for many cases.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ THE NEW GENERIC SYNTAX",
+              "placeholder": "Click function and class type parameters.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Python 3.12 introduced bracketed type-parameter syntax for generic classes and functions, avoiding a separate TypeVar declaration for many cases."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ Cache[T]: ... declares T in the class header and makes it available in the class's annotation scope.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "class Cache[T]: ... declares T in the class header and makes it available in the class's annotation scope."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ new syntax requires Python 3.12+ unless a tool transpiles or otherwise handles it; it is not valid source syntax on older interpreters.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The new syntax requires Python 3.12+ unless a tool transpiles or otherwise handles it; it is not valid source syntax on older interpreters."
+                "type": "code_file",
+                "filename": "type_params.py",
+                "language": "python",
+                "code": "def first[T](items: list[T]) -> T:\n    return items[0]\n\nclass Box[T]:\n    def __init__(self, value: T):\n        self.value = value",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "func",
+                    "anchor": {
+                      "line": 1,
+                      "text": "def first[T]",
+                      "occurrence": 1
+                    },
+                    "title": "Function type parameter",
+                    "explanation": "T is declared directly in the generic function header.",
+                    "required": true
+                  },
+                  {
+                    "id": "class",
+                    "anchor": {
+                      "line": 4,
+                      "text": "class Box[T]",
+                      "occurrence": 1
+                    },
+                    "title": "Class type parameter",
+                    "explanation": "The class declares T without a separate TypeVar assignment.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "What's new in Python 3.12 — type parameter syntax",
-              "url": "https://docs.python.org/3.12/whatsnew/3.12.html#pep-695-type-parameter-syntax"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-9-py312_type_statement",
@@ -111,54 +111,54 @@
           "concept_ids": [
             "ai.python.py312_type_statement"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "DECLARE EXPLICIT TYPE ALIASES",
+              "placeholder": "Click both type statements.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "type_alias.py",
+                "language": "python",
+                "code": "type UserId = int\ntype Pair[T] = tuple[T, T]\n\ndef duplicate[T](value: T) -> Pair[T]:\n    return value, value",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "simple",
+                    "anchor": {
+                      "line": 1,
+                      "text": "type UserId = int",
+                      "occurrence": 1
+                    },
+                    "title": "Type alias statement",
+                    "explanation": "This explicitly declares UserId as a type alias.",
+                    "required": true
+                  },
+                  {
+                    "id": "generic",
+                    "anchor": {
+                      "line": 2,
+                      "text": "type Pair[T] = tuple[T, T]",
+                      "occurrence": 1
+                    },
+                    "title": "Generic type alias",
+                    "explanation": "The alias can declare its own type parameters.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-9-py312_type_params"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.14
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.12 added the type statement for explicit aliases, including parameterized aliases.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Python 3.12 added the type statement for explicit aliases, including parameterized aliases."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ Pair[T] = tuple[T, T] declares a generic type alias without TypeAlias or TypeVar boilerplate.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "type Pair[T] = tuple[T, T] declares a generic type alias without TypeAlias or TypeVar boilerplate."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ new type statement creates a TypeAliasType and is different from ordinary runtime assignment.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The new type statement creates a TypeAliasType and is different from ordinary runtime assignment."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "What's new in Python 3.12 — type statement",
-              "url": "https://docs.python.org/3.12/whatsnew/3.12.html#pep-695-type-parameter-syntax"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-9-py312_override",
@@ -166,54 +166,43 @@
           "concept_ids": [
             "ai.python.py312_override"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "MARK INTENTIONAL OVERRIDES",
+              "placeholder": "Click @override.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "override.py",
+                "language": "python",
+                "code": "from typing import override\n\nclass Base:\n    def close(self) -> None:\n        pass\n\nclass Resource(Base):\n    @override\n    def close(self) -> None:\n        print(\"closed\")",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "override",
+                    "anchor": {
+                      "line": 8,
+                      "text": "@override",
+                      "occurrence": 1
+                    },
+                    "title": "Override intent",
+                    "explanation": "Type checkers can verify that a compatible base-class method exists.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-9-py312_type_statement"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.14
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.12 added typing.override to tell type checkers that a method is intended to override a base-class method.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Python 3.12 added typing.override to tell type checkers that a method is intended to override a base-class method."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "@__________ above a subclass method helps catch accidental renames or signature drift in static analysis.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "@override above a subclass method helps catch accidental renames or signature drift in static analysis."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ decorator primarily supports type checking; it does not dynamically enforce subclass method compatibility by itself.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The decorator primarily supports type checking; it does not dynamically enforce subclass method compatibility by itself."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "What's new in Python 3.12 — typing",
-              "url": "https://docs.python.org/3.12/whatsnew/3.12.html#typing"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -238,52 +227,41 @@
           "concept_ids": [
             "ai.python.py312_batched"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.36
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.12 added itertools.batched(iterable, n), which lazily groups input into tuples up to size n.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "CHUNK LAZILY",
+              "placeholder": "Click batched.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Python 3.12 added itertools.batched(iterable, n), which lazily groups input into tuples up to size n."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ batch in batched(records, 100): ... replaces many manual slicing/chunking loops.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "for batch in batched(records, 100): ... replaces many manual slicing/chunking loops."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ Python 3.12 the final tuple may be shorter; strict= was added later in Python 3.13.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "In Python 3.12 the final tuple may be shorter; strict= was added later in Python 3.13."
+                "type": "code_file",
+                "filename": "py312_batched.py",
+                "language": "python",
+                "code": "from itertools import batched\n\nfor chunk in batched(range(10), 4):\n    print(chunk)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "batched",
+                    "anchor": {
+                      "line": 3,
+                      "text": "batched(range(10), 4)",
+                      "occurrence": 1
+                    },
+                    "title": "Lazy batching",
+                    "explanation": "Successive tuples contain up to four items; the final batch may be shorter.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "itertools.batched",
-              "url": "https://docs.python.org/3.12/library/itertools.html#itertools.batched"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-9-py312_path_walk",
@@ -291,54 +269,54 @@
           "concept_ids": [
             "ai.python.py312_path_walk"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "WALK A DIRECTORY TREE WITH PATH OBJECTS",
+              "placeholder": "Click Path.walk and root / filename.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "path_walk.py",
+                "language": "python",
+                "code": "from pathlib import Path\n\nfor root, dirs, files in Path(\"src\").walk():\n    for filename in files:\n        print(root / filename)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "walk",
+                    "anchor": {
+                      "line": 3,
+                      "text": "Path(\"src\").walk()",
+                      "occurrence": 1
+                    },
+                    "title": "Directory-tree iterator",
+                    "explanation": "Path.walk yields each directory Path with child directory and file-name lists.",
+                    "required": true
+                  },
+                  {
+                    "id": "join",
+                    "anchor": {
+                      "line": 5,
+                      "text": "root / filename",
+                      "occurrence": 1
+                    },
+                    "title": "Compose a child path",
+                    "explanation": "The yielded root is already a Path object.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-9-py312_batched"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.36
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.12 added pathlib.Path.walk(), which yields directory path, directory names, and file names while walking a tree.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Python 3.12 added pathlib.Path.walk(), which yields directory path, directory names, and file names while walking a tree."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ root, dirs, files in base.walk(): ... offers pathlib-oriented tree traversal.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "for root, dirs, files in base.walk(): ... offers pathlib-oriented tree traversal."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ yielded file names are names relative to root, so join them with root when a complete Path is needed.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The yielded file names are names relative to root, so join them with root when a complete Path is needed."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "pathlib.Path.walk",
-              "url": "https://docs.python.org/3.12/library/pathlib.html#pathlib.Path.walk"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

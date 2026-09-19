@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-data-stack-learning-2026-09-19-v1",
+  "content_version": "python-data-stack-learning-2026-09-19-v2",
   "certification_id": "python-data-stack",
   "certification_version": "python-data-stack-v1",
   "exam_guide_revision": "Practical Python data-stack curriculum reviewed against current official NumPy, pandas, Matplotlib, and Seaborn documentation on 2026-09-19.",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; retrieval questions and typed coding questions provide the scored signal."
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code or table discoveries.",
+    "mastery_note": "Discovery progress is not mastery evidence; progressively harder retrieval and typed coding questions provide the scored signal."
   },
   "source_refs": [
     {
@@ -43,9 +43,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 9,
-    "prompt_count": 27
+    "prompt_count": 10
   },
-  "authoring_notes": "Interactive first-pass learning for NumPy. Prompts use exact cloze versions of their revealed text and progress from purpose/mental models to code patterns and gotchas.",
+  "authoring_notes": "Updated for the learning-v2 renderer. Executable-looking material is shown as syntax-highlighted code_file content with clickable annotations. Low-difficulty examples include small concrete data and result comments so learners can connect code to shape/output.",
   "modules": [
     {
       "id": "domain-1-task-1-1",
@@ -67,56 +67,82 @@
           "concept_ids": [
             "python.numpy.function_selection"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.18
-          },
           "prompts": [
             {
-              "id": "what",
+              "id": "map",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Start with the __________, then choose the NumPy operation that performs that transformation.",
+              "label": "GOAL → NUMPY OPERATION",
+              "placeholder": "Reveal one goal at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Start with the analysis goal, then choose the NumPy operation that performs that transformation."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "`reshape` changes __________, `where` chooses conditionally, `unique` finds distinct values, and `argsort` returns sorting indices.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`reshape` changes shape, `where` chooses conditionally, `unique` finds distinct values, and `argsort` returns sorting indices."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "`sort` returns sorted __________; `argsort` returns the indices that would produce that order.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`sort` returns sorted values; `argsort` returns the indices that would produce that order."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "goal",
+                    "label": "Goal"
+                  },
+                  {
+                    "id": "operation",
+                    "label": "Good starting operation"
+                  },
+                  {
+                    "id": "returns",
+                    "label": "What it gives you"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "choose",
+                    "cells": {
+                      "goal": "Choose element-by-element between alternatives",
+                      "operation": "np.where",
+                      "returns": "An array from condition/x/y choices"
+                    }
+                  },
+                  {
+                    "id": "unique",
+                    "cells": {
+                      "goal": "Find distinct values",
+                      "operation": "np.unique",
+                      "returns": "Sorted unique values plus optional counts/index data"
+                    }
+                  },
+                  {
+                    "id": "order",
+                    "cells": {
+                      "goal": "Get indices that would sort values",
+                      "operation": "np.argsort",
+                      "returns": "Integer index array"
+                    }
+                  },
+                  {
+                    "id": "reduce",
+                    "cells": {
+                      "goal": "Summarize along an axis",
+                      "operation": "sum / mean / min / max / std",
+                      "returns": "Reduced array or scalar"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "goal"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "NumPy reference",
-              "url": "https://numpy.org/doc/stable/reference/"
-            },
-            {
-              "title": "NumPy user guide",
-              "url": "https://numpy.org/doc/stable/user/"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-1-where",
@@ -124,58 +150,43 @@
           "concept_ids": [
             "python.numpy.where_unique_sort"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ ELEMENTWISE SELECTION",
+              "placeholder": "Click np.where and compare with the result comment.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "where_example.py",
+                "language": "python",
+                "code": "import numpy as np\n\nscores = np.array([72, 91, 65, 88])\nlabels = np.where(scores >= 80, \"pass\", \"review\")\n\n# labels -> [\"review\", \"pass\", \"review\", \"pass\"]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "where",
+                    "anchor": {
+                      "line": 4,
+                      "text": "np.where(scores >= 80, \"pass\", \"review\")",
+                      "occurrence": 1
+                    },
+                    "title": "Vectorized conditional selection",
+                    "explanation": "Each output position chooses 'pass' where the condition is true and 'review' otherwise.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-function-choice"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.18
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`np.where(condition, a, b)` chooses values from `a` where the condition is __________ and from `b` otherwise.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`np.where(condition, a, b)` chooses values from `a` where the condition is true and from `b` otherwise."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Use `where` when the output should be chosen __________ for every element from a condition.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use `where` when the output should be chosen elementwise for every element from a condition."
-              }
-            },
-            {
-              "id": "code",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Replace negatives with zero using `clean = np.where(x < 0, __________, x)`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Replace negatives with zero using `clean = np.where(x < 0, 0, x)`."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "NumPy reference",
-              "url": "https://numpy.org/doc/stable/reference/"
-            },
-            {
-              "title": "NumPy user guide",
-              "url": "https://numpy.org/doc/stable/user/"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-1-unique-argsort",
@@ -183,58 +194,65 @@
           "concept_ids": [
             "python.numpy.where_unique_sort"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "DISTINGUISH VALUES FROM SORT INDICES",
+              "placeholder": "Click unique, argsort, and the index application.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "unique_argsort.py",
+                "language": "python",
+                "code": "import numpy as np\n\nvalues = np.array([30, 10, 30, 20])\n\nunique_values = np.unique(values)\norder = np.argsort(values)\nsorted_values = values[order]\n\n# unique_values -> [10, 20, 30]\n# order         -> [1, 3, 0, 2]\n# sorted_values -> [10, 20, 30, 30]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "unique",
+                    "anchor": {
+                      "line": 5,
+                      "text": "np.unique(values)",
+                      "occurrence": 1
+                    },
+                    "title": "Distinct values",
+                    "explanation": "unique returns distinct values in sorted order by default.",
+                    "required": true
+                  },
+                  {
+                    "id": "argsort",
+                    "anchor": {
+                      "line": 6,
+                      "text": "np.argsort(values)",
+                      "occurrence": 1
+                    },
+                    "title": "Sorting indices",
+                    "explanation": "argsort returns indices that would sort the array.",
+                    "required": true
+                  },
+                  {
+                    "id": "apply",
+                    "anchor": {
+                      "line": 7,
+                      "text": "values[order]",
+                      "occurrence": 1
+                    },
+                    "title": "Apply the index order",
+                    "explanation": "Indexing by the argsort result produces sorted values.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-where"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.18
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`np.unique` finds distinct values; `np.argsort` returns __________ rather than sorted values.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`np.unique` finds distinct values; `np.argsort` returns sorting indices rather than sorted values."
-              }
-            },
-            {
-              "id": "code",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Get distinct labels and counts with `np.unique(labels, __________=True)`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Get distinct labels and counts with `np.unique(labels, return_counts=True)`."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Use `np.sort(x)` when you need sorted values; use `np.argsort(x)` when you need to reorder __________ arrays consistently.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use `np.sort(x)` when you need sorted values; use `np.argsort(x)` when you need to reorder related arrays consistently."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "NumPy reference",
-              "url": "https://numpy.org/doc/stable/reference/"
-            },
-            {
-              "title": "NumPy user guide",
-              "url": "https://numpy.org/doc/stable/user/"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -260,56 +278,82 @@
           "concept_ids": [
             "python.numpy.axes"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.5
-          },
           "prompts": [
             {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "For a reduction, `axis` identifies the dimension being __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "For a reduction, `axis` identifies the dimension being collapsed."
-              }
-            },
-            {
-              "id": "what",
+              "id": "axis",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "For shape `(rows, columns)`, `axis=0` collapses __________ and leaves one result per column.",
+              "label": "WHICH DIMENSION DISAPPEARS?",
+              "placeholder": "Reveal the output shape after choosing the reduction axis.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "For shape `(rows, columns)`, `axis=0` collapses rows and leaves one result per column."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "`axis=-1` means the __________ dimension, which is often the feature/column dimension in a 2-D array.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`axis=-1` means the last dimension, which is often the feature/column dimension in a 2-D array."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "input",
+                    "label": "Input shape"
+                  },
+                  {
+                    "id": "axis",
+                    "label": "Reduction"
+                  },
+                  {
+                    "id": "output",
+                    "label": "Output shape"
+                  },
+                  {
+                    "id": "meaning",
+                    "label": "Meaning"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "a0",
+                    "cells": {
+                      "input": "(3, 4)",
+                      "axis": "axis=0",
+                      "output": "(4,)",
+                      "meaning": "Collapse rows; one result per column"
+                    }
+                  },
+                  {
+                    "id": "a1",
+                    "cells": {
+                      "input": "(3, 4)",
+                      "axis": "axis=1",
+                      "output": "(3,)",
+                      "meaning": "Collapse columns; one result per row"
+                    }
+                  },
+                  {
+                    "id": "all",
+                    "cells": {
+                      "input": "(3, 4)",
+                      "axis": "axis=None",
+                      "output": "scalar",
+                      "meaning": "Reduce across all elements"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "input",
+                      "axis"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "NumPy reference",
-              "url": "https://numpy.org/doc/stable/reference/"
-            },
-            {
-              "title": "NumPy user guide",
-              "url": "https://numpy.org/doc/stable/user/"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-1-reductions",
@@ -317,58 +361,54 @@
           "concept_ids": [
             "python.numpy.reductions"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "REDUCE ALONG AN AXIS",
+              "placeholder": "Click mean and sum. Read the result comments.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "reductions.py",
+                "language": "python",
+                "code": "import numpy as np\n\ndata = np.array([\n    [1, 2, 3],\n    [4, 5, 6],\n])\n\ncolumn_means = data.mean(axis=0)\nrow_sums = data.sum(axis=1)\n\n# column_means -> [2.5, 3.5, 4.5]\n# row_sums     -> [6, 15]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "mean",
+                    "anchor": {
+                      "line": 8,
+                      "text": "data.mean(axis=0)",
+                      "occurrence": 1
+                    },
+                    "title": "Column-wise mean",
+                    "explanation": "axis=0 collapses rows, leaving one mean per column.",
+                    "required": true
+                  },
+                  {
+                    "id": "sum",
+                    "anchor": {
+                      "line": 9,
+                      "text": "data.sum(axis=1)",
+                      "occurrence": 1
+                    },
+                    "title": "Row-wise sum",
+                    "explanation": "axis=1 collapses columns, leaving one sum per row.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-axis"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.5
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Reduction functions summarize many values into __________ values along a chosen axis.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Reduction functions summarize many values into fewer values along a chosen axis."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Use `mean` for an average, `sum` for a total, and `std` for __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use `mean` for an average, `sum` for a total, and `std` for spread."
-              }
-            },
-            {
-              "id": "code",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "For `x.shape == (100, 4)`, one mean per feature is `np.mean(x, axis=__________)`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "For `x.shape == (100, 4)`, one mean per feature is `np.mean(x, axis=0)`."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "NumPy reference",
-              "url": "https://numpy.org/doc/stable/reference/"
-            },
-            {
-              "title": "NumPy user guide",
-              "url": "https://numpy.org/doc/stable/user/"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-1-keepdims",
@@ -377,58 +417,54 @@
             "python.numpy.reductions",
             "python.numpy.axes"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "KEEP A SIZE-1 DIMENSION",
+              "placeholder": "Click keepdims=True and the subtraction.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "keepdims.py",
+                "language": "python",
+                "code": "import numpy as np\n\ndata = np.array([\n    [2, 4, 6],\n    [1, 3, 5],\n])\n\nrow_mean = data.mean(axis=1, keepdims=True)\ncentered = data - row_mean\n\n# row_mean.shape -> (2, 1)\n# centered.shape -> (2, 3)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "keep",
+                    "anchor": {
+                      "line": 8,
+                      "text": "keepdims=True",
+                      "occurrence": 1
+                    },
+                    "title": "Preserve the reduced axis",
+                    "explanation": "The result keeps shape (2,1) instead of becoming (2,).",
+                    "required": true
+                  },
+                  {
+                    "id": "broadcast",
+                    "anchor": {
+                      "line": 9,
+                      "text": "data - row_mean",
+                      "occurrence": 1
+                    },
+                    "title": "Broadcast back across columns",
+                    "explanation": "The size-1 second dimension expands naturally across the three columns.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-reductions"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.5
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`keepdims=True` keeps each reduced axis with size __________ instead of removing it.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`keepdims=True` keeps each reduced axis with size 1 instead of removing it."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Keep the reduced dimension when the result should broadcast naturally back across the original __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Keep the reduced dimension when the result should broadcast naturally back across the original array."
-              }
-            },
-            {
-              "id": "code",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "For `x.shape == (100, 3)`, `x.mean(axis=0, keepdims=True)` has shape __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "For `x.shape == (100, 3)`, `x.mean(axis=0, keepdims=True)` has shape `(1, 3)`."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "NumPy reference",
-              "url": "https://numpy.org/doc/stable/reference/"
-            },
-            {
-              "title": "NumPy user guide",
-              "url": "https://numpy.org/doc/stable/user/"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -454,56 +490,41 @@
           "concept_ids": [
             "python.numpy.reshape"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.82
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`reshape` changes an array's dimensions while preserving the total number of __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`reshape` changes an array's dimensions while preserving the total number of elements."
-              }
-            },
-            {
               "id": "code",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "A flat 12-element array can become 3×4 with `x.reshape(__________, 4)`.",
+              "kind": "look_for",
+              "label": "RESHAPE WITHOUT CHANGING ELEMENT COUNT",
+              "placeholder": "Click reshape and read the shapes.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A flat 12-element array can become 3×4 with `x.reshape(3, 4)`."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "A requested shape is invalid if its dimension sizes multiply to a different __________ count.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A requested shape is invalid if its dimension sizes multiply to a different element count."
+                "type": "code_file",
+                "filename": "reshape.py",
+                "language": "python",
+                "code": "import numpy as np\n\nvalues = np.arange(12)\nmatrix = values.reshape(3, 4)\n\n# values.shape -> (12,)\n# matrix.shape -> (3, 4)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "reshape",
+                    "anchor": {
+                      "line": 4,
+                      "text": "reshape(3, 4)",
+                      "occurrence": 1
+                    },
+                    "title": "New shape request",
+                    "explanation": "3 × 4 equals the original 12 elements, so the reshape is valid.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "NumPy reference",
-              "url": "https://numpy.org/doc/stable/reference/"
-            },
-            {
-              "title": "NumPy user guide",
-              "url": "https://numpy.org/doc/stable/user/"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-1-stack-concat",
@@ -511,58 +532,106 @@
           "concept_ids": [
             "python.numpy.stacking"
           ],
+          "prompts": [
+            {
+              "id": "compare",
+              "kind": "what",
+              "label": "STACK OR CONCATENATE?",
+              "placeholder": "Reveal the axis behavior.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "op",
+                    "label": "Operation"
+                  },
+                  {
+                    "id": "axis",
+                    "label": "Axis behavior"
+                  },
+                  {
+                    "id": "example",
+                    "label": "Shape example"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "stack",
+                    "cells": {
+                      "op": "np.stack",
+                      "axis": "Creates a new axis",
+                      "example": "two (3,) arrays → (2, 3) with axis=0"
+                    }
+                  },
+                  {
+                    "id": "concat",
+                    "cells": {
+                      "op": "np.concatenate",
+                      "axis": "Joins along an existing axis",
+                      "example": "two (3,) arrays → (6,)"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "column",
+                  "initially_visible": {
+                    "column_ids": [
+                      "op"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "SEE THE SHAPES",
+              "placeholder": "Click both operations.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "stack_concat.py",
+                "language": "python",
+                "code": "import numpy as np\n\na = np.array([1, 2, 3])\nb = np.array([4, 5, 6])\n\nstacked = np.stack([a, b], axis=0)\njoined = np.concatenate([a, b], axis=0)\n\n# stacked.shape -> (2, 3)\n# joined.shape  -> (6,)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "stack",
+                    "anchor": {
+                      "line": 6,
+                      "text": "np.stack([a, b], axis=0)",
+                      "occurrence": 1
+                    },
+                    "title": "Add a new axis",
+                    "explanation": "stack creates a new leading dimension that identifies the source array.",
+                    "required": true
+                  },
+                  {
+                    "id": "concat",
+                    "anchor": {
+                      "line": 7,
+                      "text": "np.concatenate([a, b], axis=0)",
+                      "occurrence": 1
+                    },
+                    "title": "Join an existing axis",
+                    "explanation": "concatenate extends the existing one-dimensional axis.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-reshape"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.82
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`concatenate` joins along an __________ axis; `stack` creates a new axis.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`concatenate` joins along an existing axis; `stack` creates a new axis."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Two `(3,4)` arrays stacked on axis 0 become `(__________,3,4)`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Two `(3,4)` arrays stacked on axis 0 become `(2,3,4)`."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Concatenating those same arrays on axis 0 produces `(6,4)`, so it does __________ increase `ndim`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Concatenating those same arrays on axis 0 produces `(6,4)`, so it does not increase `ndim`."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "NumPy reference",
-              "url": "https://numpy.org/doc/stable/reference/"
-            },
-            {
-              "title": "NumPy user guide",
-              "url": "https://numpy.org/doc/stable/user/"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-1-broadcasting",
@@ -570,58 +639,54 @@
           "concept_ids": [
             "python.numpy.broadcasting"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ BROADCASTING BY SHAPE",
+              "placeholder": "Click reshape and the addition.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "broadcasting.py",
+                "language": "python",
+                "code": "import numpy as np\n\ndata = np.arange(12).reshape(3, 4)\noffset = np.array([10, 20, 30]).reshape(3, 1)\n\nadjusted = data + offset\n\n# data.shape     -> (3, 4)\n# offset.shape   -> (3, 1)\n# adjusted.shape -> (3, 4)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "reshape",
+                    "anchor": {
+                      "line": 4,
+                      "text": "reshape(3, 1)",
+                      "occurrence": 1
+                    },
+                    "title": "Create a broadcastable shape",
+                    "explanation": "The size-1 second dimension can expand across four columns.",
+                    "required": true
+                  },
+                  {
+                    "id": "add",
+                    "anchor": {
+                      "line": 6,
+                      "text": "data + offset",
+                      "occurrence": 1
+                    },
+                    "title": "Vectorized broadcast",
+                    "explanation": "Each row offset is applied across that row without a Python loop.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-stack-concat"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.82
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Broadcasting lets compatible shapes participate in elementwise operations without explicitly __________ the smaller array.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Broadcasting lets compatible shapes participate in elementwise operations without explicitly repeating the smaller array."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Column statistics with shape `(features,)` can broadcast across data with shape `(rows, __________)`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Column statistics with shape `(features,)` can broadcast across data with shape `(rows, features)`."
-              }
-            },
-            {
-              "id": "code",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Vectorized column standardization follows `(x - x.mean(axis=0)) / __________`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Vectorized column standardization follows `(x - x.mean(axis=0)) / x.std(axis=0)`."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "NumPy reference",
-              "url": "https://numpy.org/doc/stable/reference/"
-            },
-            {
-              "title": "NumPy user guide",
-              "url": "https://numpy.org/doc/stable/user/"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-fluency-learning-2026-09-19-v1",
+  "content_version": "python-fluency-learning-2026-09-19-v2",
   "certification_id": "ai-python-fluency",
   "certification_version": "python-fluency-v1",
   "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python documentation and selected AnyIO/HTTPX docs reviewed 2026-09-19.",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; progressively harder typed code recall provides the scored signal."
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code or table discoveries.",
+    "mastery_note": "Discovery progress is not mastery evidence; progressively harder retrieval and typed coding questions provide the scored signal."
   },
   "source_refs": [
     {
@@ -40,9 +40,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 10,
-    "prompt_count": 30
+    "prompt_count": 10
   },
-  "authoring_notes": "Python Fluency is practical coding retrieval, not beginner trivia or a certification. Questions use progressive recall depth: guided -> recall -> construct -> fluency. Short literals stay on one line where readable, unfamiliar data shapes and intent are explained, and most questions have one meaningful blank.",
+  "authoring_notes": "Updated for the learning-v2 renderer. Code examples are authored as first-class syntax-highlighted code_file reveals with clickable annotations instead of prose strings. Tables are used for contrasts that benefit from progressive reveal.",
   "modules": [
     {
       "id": "domain-2-task-2-1",
@@ -65,52 +65,52 @@
           "concept_ids": [
             "ai.python.defaultdict_factory"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.14
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ calls a factory to create a missing value automatically, which is useful when grouping or accumulating.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ THE FACTORY",
+              "placeholder": "Click defaultdict(list) and the append.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "collections.defaultdict calls a factory to create a missing value automatically, which is useful when grouping or accumulating."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________(list) lets groups[key].append(value) work without a separate initialization branch.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "defaultdict(list) lets groups[key].append(value) work without a separate initialization branch."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ the factory itself, such as list, not list(); calling it eagerly would pass a list object instead of a callable.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Pass the factory itself, such as list, not list(); calling it eagerly would pass a list object instead of a callable."
+                "type": "code_file",
+                "filename": "defaultdict_group.py",
+                "language": "python",
+                "code": "from collections import defaultdict\n\ngroups = defaultdict(list)\n\nfor name, team in [(\"Ada\", \"red\"), (\"Linus\", \"blue\"), (\"Grace\", \"red\")]:\n    groups[team].append(name)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "factory",
+                    "anchor": {
+                      "line": 3,
+                      "text": "defaultdict(list)",
+                      "occurrence": 1
+                    },
+                    "title": "Missing-value factory",
+                    "explanation": "list is called for a missing key, producing a fresh empty list.",
+                    "required": true
+                  },
+                  {
+                    "id": "append",
+                    "anchor": {
+                      "line": 6,
+                      "text": "groups[team].append(name)",
+                      "occurrence": 1
+                    },
+                    "title": "Group without a manual existence check",
+                    "explanation": "The missing list is created when needed, then the name is appended.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "collections — defaultdict",
-              "url": "https://docs.python.org/3/library/collections.html#collections.defaultdict"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-2-counter_most_common",
@@ -118,54 +118,54 @@
           "concept_ids": [
             "ai.python.counter_most_common"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "COUNT THEN RANK",
+              "placeholder": "Click Counter and most_common.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "counter.py",
+                "language": "python",
+                "code": "from collections import Counter\n\nevents = [\"ok\", \"error\", \"ok\", \"warn\", \"error\", \"ok\"]\ncounts = Counter(events)\ntop_two = counts.most_common(2)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "counter",
+                    "anchor": {
+                      "line": 4,
+                      "text": "Counter(events)",
+                      "occurrence": 1
+                    },
+                    "title": "Count hashable values",
+                    "explanation": "Counter builds a frequency mapping.",
+                    "required": true
+                  },
+                  {
+                    "id": "common",
+                    "anchor": {
+                      "line": 5,
+                      "text": "most_common(2)",
+                      "occurrence": 1
+                    },
+                    "title": "Get the top two",
+                    "explanation": "most_common returns the highest-frequency (value, count) pairs.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-defaultdict_factory"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.14
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ counts hashable values and most_common(n) returns the n most frequent element-count pairs.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "collections.Counter counts hashable values and most_common(n) returns the n most frequent element-count pairs."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________(events).most_common(2) is the direct idiom for the top two event types.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Counter(events).most_common(2) is the direct idiom for the top two event types."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ is a dict subclass; a missing key reads as zero, but zero-count entries can still remain stored.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Counter is a dict subclass; a missing key reads as zero, but zero-count entries can still remain stored."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "collections — Counter",
-              "url": "https://docs.python.org/3/library/collections.html#collections.Counter"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-2-deque_fifo",
@@ -173,54 +173,54 @@
           "concept_ids": [
             "ai.python.deque_fifo"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "FIFO FROM OPPOSITE ENDS",
+              "placeholder": "Click append and popleft.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "deque_fifo.py",
+                "language": "python",
+                "code": "from collections import deque\n\nqueue = deque()\nqueue.append(\"job-1\")\nqueue.append(\"job-2\")\nfirst = queue.popleft()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "append",
+                    "anchor": {
+                      "line": 4,
+                      "text": "append(\"job-1\")",
+                      "occurrence": 1
+                    },
+                    "title": "Enqueue right",
+                    "explanation": "append adds new work to the right side.",
+                    "required": true
+                  },
+                  {
+                    "id": "pop",
+                    "anchor": {
+                      "line": 6,
+                      "text": "popleft()",
+                      "occurrence": 1
+                    },
+                    "title": "Dequeue left",
+                    "explanation": "popleft removes the oldest queued item efficiently.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-counter_most_common"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.14
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ supports O(1)-style appends and pops from both ends and is a natural in-memory FIFO queue.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "collections.deque supports O(1)-style appends and pops from both ends and is a natural in-memory FIFO queue."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________(item) with queue.popleft() processes items in arrival order.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "queue.append(item) with queue.popleft() processes items in arrival order."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________(0) shifts remaining list elements; deque.popleft() is the usual choice for repeated front removals.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "list.pop(0) shifts remaining list elements; deque.popleft() is the usual choice for repeated front removals."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "collections — deque",
-              "url": "https://docs.python.org/3/library/collections.html#collections.deque"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-2-dict_setdefault",
@@ -228,54 +228,43 @@
           "concept_ids": [
             "ai.python.dict_setdefault"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "GROUP WITH SETDEFAULT",
+              "placeholder": "Click setdefault.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "setdefault_group.py",
+                "language": "python",
+                "code": "groups = {}\n\nfor name, team in [(\"Ada\", \"red\"), (\"Grace\", \"red\"), (\"Linus\", \"blue\")]:\n    groups.setdefault(team, []).append(name)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "setdefault",
+                    "anchor": {
+                      "line": 4,
+                      "text": "setdefault(team, [])",
+                      "occurrence": 1
+                    },
+                    "title": "Get or create a group",
+                    "explanation": "If team is absent, setdefault stores the empty list; otherwise it returns the existing list.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-deque_fifo"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.14
+            "x": 0.81,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(key, default) returns the existing value or inserts and returns the provided default when the key is absent.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "dict.setdefault(key, default) returns the existing value or inserts and returns the provided default when the key is absent."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________(team, []).append(user) is a compact grouping idiom when a defaultdict is not desired.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "groups.setdefault(team, []).append(user) is a compact grouping idiom when a defaultdict is not desired."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ default expression is evaluated before setdefault is called, so avoid expensive defaults in a hot path when they are usually unused.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The default expression is evaluated before setdefault is called, so avoid expensive defaults in a hot path when they are usually unused."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Mapping types — dict.setdefault",
-              "url": "https://docs.python.org/3/library/stdtypes.html#dict.setdefault"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -301,52 +290,52 @@
           "concept_ids": [
             "ai.python.minmax_key_default"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.36
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________() and max() accept key= for comparison logic, and the single-iterable form can accept default= for empty input.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "SELECT BY A DERIVED VALUE",
+              "placeholder": "Click key and default.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "min() and max() accept key= for comparison logic, and the single-iterable form can accept default= for empty input."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________(users, key=lambda u: u.score, default=None) returns the highest-scoring user or None when users is empty.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "max(users, key=lambda u: u.score, default=None) returns the highest-scoring user or None when users is empty."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________= is accepted only with the iterable form, not when passing multiple positional candidates.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "default= is accepted only with the iterable form, not when passing multiple positional candidates."
+                "type": "code_file",
+                "filename": "min_key_default.py",
+                "language": "python",
+                "code": "users = []\n\nyoungest = min(\n    users,\n    key=lambda user: user[\"age\"],\n    default=None,\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "key",
+                    "anchor": {
+                      "line": 5,
+                      "text": "key=lambda user: user[\"age\"]",
+                      "occurrence": 1
+                    },
+                    "title": "Comparison key",
+                    "explanation": "min compares derived ages while returning the original user.",
+                    "required": true
+                  },
+                  {
+                    "id": "default",
+                    "anchor": {
+                      "line": 6,
+                      "text": "default=None",
+                      "occurrence": 1
+                    },
+                    "title": "Empty-input fallback",
+                    "explanation": "default avoids ValueError when users is empty.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Built-in functions — max",
-              "url": "https://docs.python.org/3/library/functions.html#max"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-2-any_all_generators",
@@ -354,54 +343,54 @@
           "concept_ids": [
             "ai.python.any_all_generators"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "SHORT-CIRCUIT BOOLEAN SEARCH",
+              "placeholder": "Click any and all.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "any_all.py",
+                "language": "python",
+                "code": "values = [2, 4, 7, 10]\n\nhas_odd = any(value % 2 for value in values)\nall_positive = all(value > 0 for value in values)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "any",
+                    "anchor": {
+                      "line": 3,
+                      "text": "any(value % 2 for value in values)",
+                      "occurrence": 1
+                    },
+                    "title": "Stop at the first truthy item",
+                    "explanation": "any returns True as soon as one generated value is truthy.",
+                    "required": true
+                  },
+                  {
+                    "id": "all",
+                    "anchor": {
+                      "line": 4,
+                      "text": "all(value > 0 for value in values)",
+                      "occurrence": 1
+                    },
+                    "title": "Stop at the first false item",
+                    "explanation": "all returns False as soon as one generated value is false.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-minmax_key_default"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.36
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________() short-circuits when an item is truthy, while all() short-circuits when an item is falsy; generator expressions avoid building a temporary list.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "any() short-circuits when an item is truthy, while all() short-circuits when an item is falsy; generator expressions avoid building a temporary list."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________(user.active for user in users) verifies every user lazily.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "all(user.active for user in users) verifies every user lazily."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________([]) is True and any([]) is False, which matters when an empty collection should have different business meaning.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "all([]) is True and any([]) is False, which matters when an empty collection should have different business meaning."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Built-in functions — all",
-              "url": "https://docs.python.org/3/library/functions.html#all"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-2-dict_get_default",
@@ -409,54 +398,43 @@
           "concept_ids": [
             "ai.python.dict_get_default"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ WITH A FALLBACK",
+              "placeholder": "Click get on the missing key.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "dict_get.py",
+                "language": "python",
+                "code": "config = {\"host\": \"db.internal\"}\n\nhost = config.get(\"host\", \"localhost\")\nport = config.get(\"port\", 5432)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "get",
+                    "anchor": {
+                      "line": 4,
+                      "text": "config.get(\"port\", 5432)",
+                      "occurrence": 1
+                    },
+                    "title": "Missing-key fallback",
+                    "explanation": "Because port is absent, get returns 5432 without inserting it into config.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-any_all_generators"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.36
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(key, default) reads a value without raising KeyError and returns the supplied default when the key is absent.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "dict.get(key, default) reads a value without raising KeyError and returns the supplied default when the key is absent."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ = config.get('timeout', 30) keeps the fallback close to the lookup.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "timeout = config.get('timeout', 30) keeps the fallback close to the lookup."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________() cannot distinguish a missing key from a present key whose stored value equals the chosen default; use membership testing when that distinction matters.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "get() cannot distinguish a missing key from a present key whose stored value equals the chosen default; use membership testing when that distinction matters."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Mapping types — dict.get",
-              "url": "https://docs.python.org/3/library/stdtypes.html#dict.get"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -482,52 +460,41 @@
           "concept_ids": [
             "ai.python.str_partition"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.58
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(sep) always returns a three-tuple: text before the separator, the separator itself, and text after it.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "SPLIT ONCE AND KEEP THE SEPARATOR",
+              "placeholder": "Click partition.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "str.partition(sep) always returns a three-tuple: text before the separator, the separator itself, and text after it."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________, sep, rest = url.partition('://') is useful when the separator's presence also matters.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "scheme, sep, rest = url.partition('://') is useful when the separator's presence also matters."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ the separator is absent, partition returns (original, '', ''), unlike split() which returns a variable-length list.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "When the separator is absent, partition returns (original, '', ''), unlike split() which returns a variable-length list."
+                "type": "code_file",
+                "filename": "partition.py",
+                "language": "python",
+                "code": "header = \"Content-Type: application/json\"\n\nname, separator, value = header.partition(\":\")\nvalue = value.strip()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "partition",
+                    "anchor": {
+                      "line": 3,
+                      "text": "partition(\":\")",
+                      "occurrence": 1
+                    },
+                    "title": "Three-part split",
+                    "explanation": "partition returns (before, separator, after) using the first match.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Text sequence type — str.partition",
-              "url": "https://docs.python.org/3/library/stdtypes.html#str.partition"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-2-str_removeprefix",
@@ -535,54 +502,54 @@
           "concept_ids": [
             "ai.python.str_removeprefix"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "REMOVE EXACT AFFIXES",
+              "placeholder": "Click both methods.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "remove_affix.py",
+                "language": "python",
+                "code": "filename = \"backup-2026.csv\"\n\nyear_file = filename.removeprefix(\"backup-\")\nstem = year_file.removesuffix(\".csv\")",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "prefix",
+                    "anchor": {
+                      "line": 3,
+                      "text": "removeprefix(\"backup-\")",
+                      "occurrence": 1
+                    },
+                    "title": "Remove one exact prefix",
+                    "explanation": "The prefix is removed only when it appears at the start.",
+                    "required": true
+                  },
+                  {
+                    "id": "suffix",
+                    "anchor": {
+                      "line": 4,
+                      "text": "removesuffix(\".csv\")",
+                      "occurrence": 1
+                    },
+                    "title": "Remove one exact suffix",
+                    "explanation": "The suffix is removed only when it appears at the end.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-str_partition"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.58
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(prefix) and removesuffix(suffix) remove an exact affix when present without treating the argument as a set of characters.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "str.removeprefix(prefix) and removesuffix(suffix) remove an exact affix when present without treating the argument as a set of characters."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________('test_') removes only that literal prefix.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "name.removeprefix('test_') removes only that literal prefix."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________()/lstrip()/rstrip() remove characters from a set at an edge; they are not substitutes for removing an exact prefix or suffix.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "strip()/lstrip()/rstrip() remove characters from a set at an edge; they are not substitutes for removing an exact prefix or suffix."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Text sequence type",
-              "url": "https://docs.python.org/3/library/stdtypes.html#str.removeprefix"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-2-set_operations",
@@ -590,54 +557,65 @@
           "concept_ids": [
             "ai.python.set_operations"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ SET ALGEBRA",
+              "placeholder": "Click difference and intersection.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "set_ops.py",
+                "language": "python",
+                "code": "expected = {\"id\", \"name\", \"email\"}\nreceived = {\"id\", \"name\", \"phone\"}\n\nmissing = expected - received\nshared = expected & received\nunexpected = received - expected",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "missing",
+                    "anchor": {
+                      "line": 4,
+                      "text": "expected - received",
+                      "occurrence": 1
+                    },
+                    "title": "Difference",
+                    "explanation": "Members in expected but not received.",
+                    "required": true
+                  },
+                  {
+                    "id": "shared",
+                    "anchor": {
+                      "line": 5,
+                      "text": "expected & received",
+                      "occurrence": 1
+                    },
+                    "title": "Intersection",
+                    "explanation": "Members present in both sets.",
+                    "required": true
+                  },
+                  {
+                    "id": "unexpected",
+                    "anchor": {
+                      "line": 6,
+                      "text": "received - expected",
+                      "occurrence": 1
+                    },
+                    "title": "Reverse difference",
+                    "explanation": "Members received that were not expected.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-str_removeprefix"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.58
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ operators express membership relationships directly: & for intersection, | for union, - for difference, and ^ for symmetric difference.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Set operators express membership relationships directly: & for intersection, | for union, - for difference, and ^ for symmetric difference."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ = required_fields - payload.keys() finds required keys that are absent from a mapping.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "missing = required_fields - payload.keys() finds required keys that are absent from a mapping."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ operations discard ordering and duplicates; use another structure when either is semantically important.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Set operations discard ordering and duplicates; use another structure when either is semantically important."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Set types",
-              "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

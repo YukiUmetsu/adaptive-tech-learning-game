@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-fluency-learning-2026-09-19-v1",
+  "content_version": "python-fluency-learning-2026-09-19-v2",
   "certification_id": "ai-python-fluency",
   "certification_version": "python-fluency-v1",
   "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python documentation and selected AnyIO/HTTPX docs reviewed 2026-09-19.",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; progressively harder typed code recall provides the scored signal."
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code or table discoveries.",
+    "mastery_note": "Discovery progress is not mastery evidence; progressively harder retrieval and typed coding questions provide the scored signal."
   },
   "source_refs": [
     {
@@ -34,9 +34,9 @@
     ],
     "module_count": 2,
     "knowledge_node_count": 5,
-    "prompt_count": 15
+    "prompt_count": 5
   },
-  "authoring_notes": "Python Fluency is practical coding retrieval, not beginner trivia or a certification. Questions use progressive recall depth: guided -> recall -> construct -> fluency. Short literals stay on one line where readable, unfamiliar data shapes and intent are explained, and most questions have one meaningful blank.",
+  "authoring_notes": "Updated for the learning-v2 renderer. Code examples are authored as first-class syntax-highlighted code_file reveals with clickable annotations instead of prose strings. Tables are used for contrasts that benefit from progressive reveal.",
   "modules": [
     {
       "id": "domain-7-task-7-1",
@@ -58,52 +58,52 @@
           "concept_ids": [
             "ai.python.py310_match_mapping"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.14
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.10 structural pattern matching can destructure mappings, sequences, and class instances while binding selected values.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ A MAPPING PATTERN",
+              "placeholder": "Click the mapping pattern and wildcard.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Python 3.10 structural pattern matching can destructure mappings, sequences, and class instances while binding selected values."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ {'type': 'user', 'id': int(user_id)}: ... both checks the event shape and captures an integer id.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "case {'type': 'user', 'id': int(user_id)}: ... both checks the event shape and captures an integer id."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ capture name by itself matches almost anything; use literal/class/subpattern structure when validation is intended.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A capture name by itself matches almost anything; use literal/class/subpattern structure when validation is intended."
+                "type": "code_file",
+                "filename": "match_mapping.py",
+                "language": "python",
+                "code": "def route(event):\n    match event:\n        case {\"type\": \"user.created\", \"user_id\": user_id}:\n            return f\"created {user_id}\"\n        case {\"type\": \"user.deleted\", \"user_id\": user_id}:\n            return f\"deleted {user_id}\"\n        case _:\n            return \"ignored\"",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "pattern",
+                    "anchor": {
+                      "line": 3,
+                      "text": "case {\"type\": \"user.created\", \"user_id\": user_id}:",
+                      "occurrence": 1
+                    },
+                    "title": "Mapping pattern",
+                    "explanation": "The case requires matching keys/literal values and binds user_id.",
+                    "required": true
+                  },
+                  {
+                    "id": "wild",
+                    "anchor": {
+                      "line": 7,
+                      "text": "case _:",
+                      "occurrence": 1
+                    },
+                    "title": "Wildcard case",
+                    "explanation": "_ handles any value not matched by earlier cases.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "What's new in Python 3.10 — pattern matching",
-              "url": "https://docs.python.org/3.10/whatsnew/3.10.html#pep-634-structural-pattern-matching"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-7-py310_union_type",
@@ -111,54 +111,43 @@
           "concept_ids": [
             "ai.python.py310_union_type"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ THE UNION TYPE",
+              "placeholder": "Click str | None.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "union_type.py",
+                "language": "python",
+                "code": "def normalize(value: str | None) -> str:\n    if value is None:\n        return \"\"\n    return value.strip()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "union",
+                    "anchor": {
+                      "line": 1,
+                      "text": "str | None",
+                      "occurrence": 1
+                    },
+                    "title": "Union type expression",
+                    "explanation": "The parameter may be a str or None.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-7-py310_match_mapping"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.14
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.10 allows union types to be written with |, such as str | None, instead of typing.Optional or typing.Union.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Python 3.10 allows union types to be written with |, such as str | None, instead of typing.Optional or typing.Union."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ parse(value: str | bytes) -> str: ... uses the compact union syntax.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "def parse(value: str | bytes) -> str: ... uses the compact union syntax."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ | syntax is a type expression here; it should not be confused with the unrelated set/dict union operator used on runtime values.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The | syntax is a type expression here; it should not be confused with the unrelated set/dict union operator used on runtime values."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "What's new in Python 3.10 — union types",
-              "url": "https://docs.python.org/3.10/whatsnew/3.10.html#pep-604-new-type-union-operator"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-7-py310_parenthesized_context",
@@ -166,54 +155,54 @@
           "concept_ids": [
             "ai.python.py310_parenthesized_context"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "FORMAT MULTIPLE CONTEXT MANAGERS",
+              "placeholder": "Click each resource in the parenthesized with.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "parenthesized_with.py",
+                "language": "python",
+                "code": "with (\n    open(\"input.txt\") as source,\n    open(\"output.txt\", \"w\") as target,\n):\n    target.write(source.read())",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "source",
+                    "anchor": {
+                      "line": 2,
+                      "text": "open(\"input.txt\") as source,",
+                      "occurrence": 1
+                    },
+                    "title": "First context manager",
+                    "explanation": "The parenthesized syntax lets with-items span lines cleanly.",
+                    "required": true
+                  },
+                  {
+                    "id": "target",
+                    "anchor": {
+                      "line": 3,
+                      "text": "open(\"output.txt\", \"w\") as target,",
+                      "occurrence": 1
+                    },
+                    "title": "Second context manager",
+                    "explanation": "Both contexts are active in the same body.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-7-py310_union_type"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.14
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.10 officially supports grouping multiple context managers across lines inside parentheses after with.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Python 3.10 officially supports grouping multiple context managers across lines inside parentheses after with."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ (open(src) as inp, open(dst, 'w') as out): ... keeps a long multi-resource with statement readable.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "with (open(src) as inp, open(dst, 'w') as out): ... keeps a long multi-resource with statement readable."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ context managers are still entered left-to-right and exited in reverse order.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "All context managers are still entered left-to-right and exited in reverse order."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "What's new in Python 3.10",
-              "url": "https://docs.python.org/3.10/whatsnew/3.10.html#parenthesized-context-managers"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -238,52 +227,41 @@
           "concept_ids": [
             "ai.python.py310_zip_strict"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.36
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.10 added strict= to zip(); when true, a length mismatch raises ValueError instead of silently truncating.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "MAKE LENGTH MISMATCH AN ERROR",
+              "placeholder": "Click strict=True.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Python 3.10 added strict= to zip(); when true, a length mismatch raises ValueError instead of silently truncating."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________(zip(ids, scores, strict=True)) is a practical data-integrity pattern when each id must have exactly one score.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "dict(zip(ids, scores, strict=True)) is a practical data-integrity pattern when each id must have exactly one score."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________=True detects mismatched lengths during iteration, because zip itself remains lazy.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "strict=True detects mismatched lengths during iteration, because zip itself remains lazy."
+                "type": "code_file",
+                "filename": "zip_strict.py",
+                "language": "python",
+                "code": "names = [\"Ada\", \"Grace\"]\nscores = [98, 95]\n\npairs = list(zip(names, scores, strict=True))",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "strict",
+                    "anchor": {
+                      "line": 4,
+                      "text": "strict=True",
+                      "occurrence": 1
+                    },
+                    "title": "Require equal-length inputs",
+                    "explanation": "zip raises ValueError if one iterable is exhausted before the others.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Built-in functions — zip",
-              "url": "https://docs.python.org/3.10/library/functions.html#zip"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-7-py310_aiter_anext",
@@ -291,54 +269,54 @@
           "concept_ids": [
             "ai.python.py310_aiter_anext"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "USE ASYNC ITERATION BUILT-INS DIRECTLY",
+              "placeholder": "Click aiter and anext.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "aiter_anext.py",
+                "language": "python",
+                "code": "async def first(stream):\n    iterator = aiter(stream)\n    return await anext(iterator, None)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "aiter",
+                    "anchor": {
+                      "line": 2,
+                      "text": "aiter(stream)",
+                      "occurrence": 1
+                    },
+                    "title": "Get an async iterator",
+                    "explanation": "aiter invokes the asynchronous iterator protocol.",
+                    "required": true
+                  },
+                  {
+                    "id": "anext",
+                    "anchor": {
+                      "line": 3,
+                      "text": "anext(iterator, None)",
+                      "occurrence": 1
+                    },
+                    "title": "Await the next item",
+                    "explanation": "anext returns an awaitable; the optional default is used on exhaustion.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-7-py310_zip_strict"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.36
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.10 added built-in aiter() and anext() helpers for working directly with asynchronous iterators.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Python 3.10 added built-in aiter() and anext() helpers for working directly with asynchronous iterators."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ = aiter(source); item = await anext(iterator) mirrors iter()/next() for async iteration.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "iterator = aiter(source); item = await anext(iterator) mirrors iter()/next() for async iteration."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________() returns an awaitable; forgetting await does not retrieve the next asynchronous item.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "anext() returns an awaitable; forgetting await does not retrieve the next asynchronous item."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Built-in functions — aiter/anext",
-              "url": "https://docs.python.org/3.10/library/functions.html#aiter"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

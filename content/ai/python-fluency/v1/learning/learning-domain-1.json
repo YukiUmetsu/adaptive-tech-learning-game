@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-fluency-learning-2026-09-19-v1",
+  "content_version": "python-fluency-learning-2026-09-19-v2",
   "certification_id": "ai-python-fluency",
   "certification_version": "python-fluency-v1",
   "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python documentation and selected AnyIO/HTTPX docs reviewed 2026-09-19.",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; progressively harder typed code recall provides the scored signal."
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code or table discoveries.",
+    "mastery_note": "Discovery progress is not mastery evidence; progressively harder retrieval and typed coding questions provide the scored signal."
   },
   "source_refs": [
     {
@@ -41,9 +41,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 11,
-    "prompt_count": 33
+    "prompt_count": 12
   },
-  "authoring_notes": "Python Fluency is practical coding retrieval, not beginner trivia or a certification. Questions use progressive recall depth: guided -> recall -> construct -> fluency. Short literals stay on one line where readable, unfamiliar data shapes and intent are explained, and most questions have one meaningful blank.",
+  "authoring_notes": "Updated for the learning-v2 renderer. Code examples are authored as first-class syntax-highlighted code_file reveals with clickable annotations instead of prose strings. Tables are used for contrasts that benefit from progressive reveal.",
   "modules": [
     {
       "id": "domain-1-task-1-1",
@@ -65,52 +65,63 @@
           "concept_ids": [
             "ai.python.zip_parallel"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.14
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________() lazily pairs items from iterables in parallel; when equal lengths are required, strict=True turns a silent truncation bug into ValueError.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ PARALLEL ITERATION",
+              "placeholder": "Click the important parts. zip pairs items by position.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "zip() lazily pairs items from iterables in parallel; when equal lengths are required, strict=True turns a silent truncation bug into ValueError."
+                "type": "code_file",
+                "filename": "zip_parallel.py",
+                "language": "python",
+                "code": "names = [\"Ada\", \"Linus\", \"Grace\"]\nscores = [98, 91, 95]\n\nfor name, score in zip(names, scores):\n    print(f\"{name}: {score}\")",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "zip",
+                    "anchor": {
+                      "line": 4,
+                      "text": "zip(names, scores)",
+                      "occurrence": 1
+                    },
+                    "title": "Pair iterables by position",
+                    "explanation": "zip yields one tuple from the same position of each iterable.",
+                    "required": true
+                  },
+                  {
+                    "id": "unpack",
+                    "anchor": {
+                      "line": 4,
+                      "text": "for name, score",
+                      "occurrence": 1
+                    },
+                    "title": "Unpack each pair",
+                    "explanation": "The tuple from zip is unpacked directly into name and score.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ common safe mapping pattern is dict(zip(ids, values, strict=True)).",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A common safe mapping pattern is dict(zip(ids, values, strict=True))."
-              }
-            },
-            {
-              "id": "not_this",
+              "id": "limit",
               "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ zip() stops at the shortest iterable, which can hide missing data.",
+              "label": "KNOW THE DEFAULT STOP RULE",
+              "placeholder": "What happens when lengths differ?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Plain zip() stops at the shortest iterable, which can hide missing data."
+                "text": "By default, zip stops at the shortest iterable. Use strict=True when unequal lengths should be an error."
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Built-in functions — zip",
-              "url": "https://docs.python.org/3/library/functions.html#zip"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-1-unzip_star",
@@ -118,54 +129,54 @@
           "concept_ids": [
             "ai.python.unzip_star"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ THE TRANSPOSE IDIOM",
+              "placeholder": "Click *pairs and zip. Rows become arguments, then zip regroups by position.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "unzip.py",
+                "language": "python",
+                "code": "pairs = [(\"Ada\", 98), (\"Linus\", 91), (\"Grace\", 95)]\nnames, scores = zip(*pairs)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "star",
+                    "anchor": {
+                      "line": 2,
+                      "text": "*pairs",
+                      "occurrence": 1
+                    },
+                    "title": "Expand rows into arguments",
+                    "explanation": "* passes each pair as a separate positional argument to zip.",
+                    "required": true
+                  },
+                  {
+                    "id": "zip",
+                    "anchor": {
+                      "line": 2,
+                      "text": "zip(*pairs)",
+                      "occurrence": 1
+                    },
+                    "title": "Transpose the pairs",
+                    "explanation": "zip groups all first elements together and all second elements together.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-zip_parallel"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.14
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ *pairs to zip() expands the sequence of pairs into separate iterable arguments, effectively transposing rows into columns.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Passing *pairs to zip() expands the sequence of pairs into separate iterable arguments, effectively transposing rows into columns."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ points = [(1, 2), (3, 4)], xs, ys = zip(*points) produces separate x and y tuples.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "For points = [(1, 2), (3, 4)], xs, ys = zip(*points) produces separate x and y tuples."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________() returns tuples and is lazy; convert the outputs only when a concrete list is actually required.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "zip() returns tuples and is lazy; convert the outputs only when a concrete list is actually required."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Built-in functions — zip",
-              "url": "https://docs.python.org/3/library/functions.html#zip"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-1-enumerate_start",
@@ -173,54 +184,54 @@
           "concept_ids": [
             "ai.python.enumerate_start"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ INDEXED ITERATION",
+              "placeholder": "Click enumerate and start=1.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "enumerate_start.py",
+                "language": "python",
+                "code": "tasks = [\"download\", \"transform\", \"upload\"]\n\nfor step, task in enumerate(tasks, start=1):\n    print(step, task)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "enum",
+                    "anchor": {
+                      "line": 3,
+                      "text": "enumerate(tasks, start=1)",
+                      "occurrence": 1
+                    },
+                    "title": "Generate index-value pairs",
+                    "explanation": "enumerate yields an index together with each item.",
+                    "required": true
+                  },
+                  {
+                    "id": "start",
+                    "anchor": {
+                      "line": 3,
+                      "text": "start=1",
+                      "occurrence": 1
+                    },
+                    "title": "Choose the first index",
+                    "explanation": "The first generated index is 1 instead of the default 0.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-unzip_star"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.14
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(iterable, start) yields index-value pairs without maintaining a manual counter.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "enumerate(iterable, start) yields index-value pairs without maintaining a manual counter."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ enumerate(lines, start=1) when user-facing line numbers should begin at one.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use enumerate(lines, start=1) when user-facing line numbers should begin at one."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ start argument changes only the counter, not which elements are consumed.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The start argument changes only the counter, not which elements are consumed."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Built-in functions — enumerate",
-              "url": "https://docs.python.org/3/library/functions.html#enumerate"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -247,52 +258,52 @@
           "concept_ids": [
             "ai.python.nested_comprehension"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.36
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ a comprehension with multiple for clauses, the clauses appear in the same order as equivalent nested for loops.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "TRACE THE LOOP ORDER",
+              "placeholder": "Read the clauses left to right as nested loops.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "In a comprehension with multiple for clauses, the clauses appear in the same order as equivalent nested for loops."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "[__________ for batch in batches for x in batch if x > 0] flattens one level and filters in one expression.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "[x for batch in batches for x in batch if x > 0] flattens one level and filters in one expression."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ the for clauses from right to left is a common mistake; translate the comprehension back into nested loops to verify ordering.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Reading the for clauses from right to left is a common mistake; translate the comprehension back into nested loops to verify ordering."
+                "type": "code_file",
+                "filename": "nested_comprehension.py",
+                "language": "python",
+                "code": "matrix = [[1, 2], [3, 4], [5, 6]]\n\nflat = [\n    value\n    for row in matrix\n    for value in row\n]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "outer",
+                    "anchor": {
+                      "line": 5,
+                      "text": "for row in matrix",
+                      "occurrence": 1
+                    },
+                    "title": "Outer loop",
+                    "explanation": "The first for-clause iterates rows.",
+                    "required": true
+                  },
+                  {
+                    "id": "inner",
+                    "anchor": {
+                      "line": 6,
+                      "text": "for value in row",
+                      "occurrence": 1
+                    },
+                    "title": "Inner loop",
+                    "explanation": "For each row, the second clause iterates values.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Data structures — list comprehensions",
-              "url": "https://docs.python.org/3/tutorial/datastructures.html#list-comprehensions"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-1-dict_comprehension",
@@ -300,54 +311,54 @@
           "concept_ids": [
             "ai.python.dict_comprehension"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "BUILD KEY-VALUE PAIRS",
+              "placeholder": "Click the key:value expression and filter.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "dict_comprehension.py",
+                "language": "python",
+                "code": "words = [\"pear\", \"fig\", \"banana\", \"kiwi\"]\n\nlengths = {\n    word: len(word)\n    for word in words\n    if len(word) >= 4\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "pair",
+                    "anchor": {
+                      "line": 4,
+                      "text": "word: len(word)",
+                      "occurrence": 1
+                    },
+                    "title": "Key/value expression",
+                    "explanation": "This expression defines one dictionary entry for each kept item.",
+                    "required": true
+                  },
+                  {
+                    "id": "filter",
+                    "anchor": {
+                      "line": 6,
+                      "text": "if len(word) >= 4",
+                      "occurrence": 1
+                    },
+                    "title": "Optional filter",
+                    "explanation": "Only words satisfying the condition produce entries.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-nested_comprehension"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.36
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ dict comprehension writes key: value before the for clause and is useful for building lookup tables from objects.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A dict comprehension writes key: value before the for clause and is useful for building lookup tables from objects."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "{__________: user for user in users} creates a lookup where users_by_id[user_id] returns the matching User object.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "{user.id: user for user in users} creates a lookup where users_by_id[user_id] returns the matching User object."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ keys that are unique; repeated keys silently keep the last value encountered.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Choose keys that are unique; repeated keys silently keep the last value encountered."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Data structures — dictionaries",
-              "url": "https://docs.python.org/3/tutorial/datastructures.html#dictionaries"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-1-next_generator_default",
@@ -355,54 +366,54 @@
           "concept_ids": [
             "ai.python.next_generator_default"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "FIND THE FIRST MATCH SAFELY",
+              "placeholder": "Click the lazy generator and default.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "first_match.py",
+                "language": "python",
+                "code": "users = [\n    {\"name\": \"Ada\", \"active\": False},\n    {\"name\": \"Grace\", \"active\": True},\n]\n\nfirst_active = next(\n    (user for user in users if user[\"active\"]),\n    None,\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "gen",
+                    "anchor": {
+                      "line": 7,
+                      "text": "user for user in users if user[\"active\"]",
+                      "occurrence": 1
+                    },
+                    "title": "Lazy matching",
+                    "explanation": "The generator yields matching users one at a time.",
+                    "required": true
+                  },
+                  {
+                    "id": "default",
+                    "anchor": {
+                      "line": 8,
+                      "text": "None,",
+                      "occurrence": 1
+                    },
+                    "title": "Default value",
+                    "explanation": "If no match is yielded, next returns None instead of raising StopIteration.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-dict_comprehension"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.36
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(iterator, default) returns the next item or the default instead of raising StopIteration when the iterator is exhausted.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "next(iterator, default) returns the next item or the default instead of raising StopIteration when the iterator is exhausted."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________((user for user in users if user.active), None) is a compact first-match idiom.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "next((user for user in users if user.active), None) is a compact first-match idiom."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ the second argument, next() raises StopIteration when no match exists.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Without the second argument, next() raises StopIteration when no match exists."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Built-in functions — next",
-              "url": "https://docs.python.org/3/library/functions.html#next"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-1-assignment_expression",
@@ -410,54 +421,54 @@
           "concept_ids": [
             "ai.python.assignment_expression"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "ASSIGN WHILE TESTING",
+              "placeholder": "Click := and then see how the value is reused.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "walrus.py",
+                "language": "python",
+                "code": "line = \"ERROR: disk full\"\n\nif (message := line.removeprefix(\"ERROR: \")):\n    print(message)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "walrus",
+                    "anchor": {
+                      "line": 3,
+                      "text": ":=",
+                      "occurrence": 1
+                    },
+                    "title": "Assignment expression",
+                    "explanation": ":= both stores the expression result and yields it to the condition.",
+                    "required": true
+                  },
+                  {
+                    "id": "reuse",
+                    "anchor": {
+                      "line": 4,
+                      "text": "print(message)",
+                      "occurrence": 1
+                    },
+                    "title": "Reuse the bound value",
+                    "explanation": "The body can use message without recomputing the expression.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-next_generator_default"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.36
+            "x": 0.81,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ := operator assigns a value as part of an expression so a computed value can be tested and reused without calling the function twice.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The := operator assigns a value as part of an expression so a computed value can be tested and reused without calling the function twice."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ chunk := file.read(8192): process(chunk) reads once per loop iteration and stops on an empty result.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "while chunk := file.read(8192): process(chunk) reads once per loop iteration and stops on an empty result."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ assignment expressions when they reduce duplication; forcing them into already dense expressions can hurt readability.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use assignment expressions when they reduce duplication; forcing them into already dense expressions can hurt readability."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Assignment expressions",
-              "url": "https://docs.python.org/3/reference/expressions.html#assignment-expressions"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -484,52 +495,41 @@
           "concept_ids": [
             "ai.python.star_args_call"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.58
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ leading * in a call expands an iterable into positional arguments for the target callable.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "EXPAND POSITIONAL ARGUMENTS",
+              "placeholder": "Click *point.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A leading * in a call expands an iterable into positional arguments for the target callable."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ dimensions = (640, 480), resize(*dimensions) calls resize(640, 480).",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "If dimensions = (640, 480), resize(*dimensions) calls resize(640, 480)."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ expanded element count and order still need to match the callable's positional parameters.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The expanded element count and order still need to match the callable's positional parameters."
+                "type": "code_file",
+                "filename": "star_args.py",
+                "language": "python",
+                "code": "def distance(x, y):\n    return (x**2 + y**2) ** 0.5\n\npoint = (3, 4)\nresult = distance(*point)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "star",
+                    "anchor": {
+                      "line": 5,
+                      "text": "*point",
+                      "occurrence": 1
+                    },
+                    "title": "Positional unpacking",
+                    "explanation": "* expands the tuple so distance receives 3 as x and 4 as y.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Calls — expression reference",
-              "url": "https://docs.python.org/3/reference/expressions.html#calls"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-1-double_star_kwargs",
@@ -537,54 +537,43 @@
           "concept_ids": [
             "ai.python.double_star_kwargs"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "EXPAND KEYWORD ARGUMENTS",
+              "placeholder": "Click **options.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "kwargs.py",
+                "language": "python",
+                "code": "def connect(host, port, timeout=5):\n    return host, port, timeout\n\noptions = {\"host\": \"db.internal\", \"port\": 5432, \"timeout\": 2}\nconfig = connect(**options)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "kwargs",
+                    "anchor": {
+                      "line": 5,
+                      "text": "**options",
+                      "occurrence": 1
+                    },
+                    "title": "Keyword unpacking",
+                    "explanation": "Mapping keys become keyword names and mapping values become argument values.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-star_args_call"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.58
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ leading ** in a call expands a mapping into keyword arguments, and ** inside a dict display merges mapping entries from left to right.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A leading ** in a call expands a mapping into keyword arguments, and ** inside a dict display merges mapping entries from left to right."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________(*args, **options) combines stored positional and keyword arguments in one call.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "train_model(*args, **options) combines stored positional and keyword arguments in one call."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ names must be strings, and duplicate argument assignment can raise TypeError in function calls.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Keyword names must be strings, and duplicate argument assignment can raise TypeError in function calls."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Calls — expression reference",
-              "url": "https://docs.python.org/3/reference/expressions.html#calls"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-1-dict_unpack_precedence",
@@ -592,54 +581,54 @@
           "concept_ids": [
             "ai.python.dict_unpack_precedence"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ OVERRIDE ORDER",
+              "placeholder": "Click the later unpack. Later duplicate keys win.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "dict_unpack.py",
+                "language": "python",
+                "code": "defaults = {\"timeout\": 5, \"retries\": 2}\nenvironment = {\"timeout\": 10}\noverride = {\"retries\": 4}\n\nconfig = {\n    **defaults,\n    **environment,\n    **override,\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "env",
+                    "anchor": {
+                      "line": 7,
+                      "text": "**environment",
+                      "occurrence": 1
+                    },
+                    "title": "Later mapping overrides earlier duplicates",
+                    "explanation": "timeout becomes 10 because environment appears after defaults.",
+                    "required": true
+                  },
+                  {
+                    "id": "override",
+                    "anchor": {
+                      "line": 8,
+                      "text": "**override",
+                      "occurrence": 1
+                    },
+                    "title": "Last duplicate wins",
+                    "explanation": "retries becomes 4 because override is last.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-double_star_kwargs"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.58
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ displays can unpack mappings with **, and later entries override earlier values for the same key.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Dictionary displays can unpack mappings with **, and later entries override earlier values for the same key."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "{**__________, **environment} lets environment-specific values override defaults.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "{**defaults, **environment} lets environment-specific values override defaults."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ the unpack order reverses which mapping wins on duplicate keys.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Reversing the unpack order reverses which mapping wins on duplicate keys."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Dictionary displays — expression reference",
-              "url": "https://docs.python.org/3/reference/expressions.html#dictionary-displays"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-1-compound_sort_key",
@@ -647,54 +636,54 @@
           "concept_ids": [
             "ai.python.compound_sort_key"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "SORT BY MULTIPLE FIELDS",
+              "placeholder": "Click the tuple key.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "compound_sort.py",
+                "language": "python",
+                "code": "records = [\n    {\"team\": \"blue\", \"score\": 8},\n    {\"team\": \"red\", \"score\": 9},\n    {\"team\": \"blue\", \"score\": 10},\n]\n\nordered = sorted(\n    records,\n    key=lambda row: (row[\"team\"], -row[\"score\"]),\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "key",
+                    "anchor": {
+                      "line": 9,
+                      "text": "key=lambda row",
+                      "occurrence": 1
+                    },
+                    "title": "Key function",
+                    "explanation": "sorted compares the values returned by the key function.",
+                    "required": true
+                  },
+                  {
+                    "id": "tuple",
+                    "anchor": {
+                      "line": 9,
+                      "text": "(row[\"team\"], -row[\"score\"])",
+                      "occurrence": 1
+                    },
+                    "title": "Compound tuple key",
+                    "explanation": "Rows sort by team first, then by descending score within each team.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-1-dict_unpack_precedence"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.58
+            "x": 0.81,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(..., key=...) can return a tuple so Python compares multiple fields lexicographically in priority order.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "sorted(..., key=...) can return a tuple so Python compares multiple fields lexicographically in priority order."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________=lambda user: (user.team, -user.score) sorts team ascending and numeric score descending within each team.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "key=lambda user: (user.team, -user.score) sorts team ascending and numeric score descending within each team."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ works for numeric descending fields; for more complex mixed directions, a stable multi-pass sort can be clearer.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Negating works for numeric descending fields; for more complex mixed directions, a stable multi-pass sort can be clearer."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Sorting techniques",
-              "url": "https://docs.python.org/3/howto/sorting.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

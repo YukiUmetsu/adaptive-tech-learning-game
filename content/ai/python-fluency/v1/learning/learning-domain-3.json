@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-fluency-learning-2026-09-19-v1",
+  "content_version": "python-fluency-learning-2026-09-19-v2",
   "certification_id": "ai-python-fluency",
   "certification_version": "python-fluency-v1",
   "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python documentation and selected AnyIO/HTTPX docs reviewed 2026-09-19.",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; progressively harder typed code recall provides the scored signal."
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code or table discoveries.",
+    "mastery_note": "Discovery progress is not mastery evidence; progressively harder retrieval and typed coding questions provide the scored signal."
   },
   "source_refs": [
     {
@@ -39,9 +39,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 9,
-    "prompt_count": 27
+    "prompt_count": 10
   },
-  "authoring_notes": "Python Fluency is practical coding retrieval, not beginner trivia or a certification. Questions use progressive recall depth: guided -> recall -> construct -> fluency. Short literals stay on one line where readable, unfamiliar data shapes and intent are explained, and most questions have one meaningful blank.",
+  "authoring_notes": "Updated for the learning-v2 renderer. Code examples are authored as first-class syntax-highlighted code_file reveals with clickable annotations instead of prose strings. Tables are used for contrasts that benefit from progressive reveal.",
   "modules": [
     {
       "id": "domain-3-task-3-1",
@@ -63,52 +63,41 @@
           "concept_ids": [
             "ai.python.functools_wraps"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.14
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ copies important metadata from the wrapped function and exposes __wrapped__, making decorators friendlier to introspection and tooling.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "PRESERVE WRAPPED FUNCTION METADATA",
+              "placeholder": "Click @wraps.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "functools.wraps copies important metadata from the wrapped function and exposes __wrapped__, making decorators friendlier to introspection and tooling."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ the inner wrapper with @wraps(func) before returning it.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Decorate the inner wrapper with @wraps(func) before returning it."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ wraps, decorated functions commonly appear to have the wrapper's name and docstring instead of the original function's metadata.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Without wraps, decorated functions commonly appear to have the wrapper's name and docstring instead of the original function's metadata."
+                "type": "code_file",
+                "filename": "decorator.py",
+                "language": "python",
+                "code": "from functools import wraps\n\ndef trace(func):\n    @wraps(func)\n    def wrapper(*args, **kwargs):\n        print(f\"calling {func.__name__}\")\n        return func(*args, **kwargs)\n    return wrapper",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "wraps",
+                    "anchor": {
+                      "line": 4,
+                      "text": "@wraps(func)",
+                      "occurrence": 1
+                    },
+                    "title": "Preserve metadata",
+                    "explanation": "wraps copies important metadata and sets __wrapped__ to the original function.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "functools.wraps",
-              "url": "https://docs.python.org/3/library/functools.html#functools.wraps"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-3-functools_cache",
@@ -116,54 +105,54 @@
           "concept_ids": [
             "ai.python.functools_cache"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "MEMOIZE PURE CALLS",
+              "placeholder": "Click @cache.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "cache.py",
+                "language": "python",
+                "code": "from functools import cache\n\n@cache\ndef fibonacci(n):\n    if n < 2:\n        return n\n    return fibonacci(n - 1) + fibonacci(n - 2)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "cache",
+                    "anchor": {
+                      "line": 3,
+                      "text": "@cache",
+                      "occurrence": 1
+                    },
+                    "title": "Unbounded memoization",
+                    "explanation": "Repeated calls with the same hashable arguments reuse the stored result.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "bounded",
+              "kind": "when",
+              "label": "WHEN TO BOUND THE CACHE",
+              "placeholder": "What if the input space is large?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use lru_cache(maxsize=...) when you need bounded memoization and eviction."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-functools_wraps"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.14
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ memoizes calls without a size limit, while lru_cache(maxsize=...) bounds stored entries with least-recently-used eviction.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "functools.cache memoizes calls without a size limit, while lru_cache(maxsize=...) bounds stored entries with least-recently-used eviction."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "@__________ is concise for pure computations with hashable arguments when unbounded growth is acceptable.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "@cache is concise for pure computations with hashable arguments when unbounded growth is acceptable."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ arguments must be hashable, and caching functions with side effects or time-varying results can return stale behavior.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Cached arguments must be hashable, and caching functions with side effects or time-varying results can return stale behavior."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "functools.cache",
-              "url": "https://docs.python.org/3/library/functools.html#functools.cache"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-3-functools_partial",
@@ -171,54 +160,43 @@
           "concept_ids": [
             "ai.python.functools_partial"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "PRE-FILL SOME ARGUMENTS",
+              "placeholder": "Click partial.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "partial.py",
+                "language": "python",
+                "code": "from functools import partial\n\ndef request(method, url, timeout=5):\n    return method, url, timeout\n\nget = partial(request, \"GET\", timeout=2)\nresult = get(\"https://example.com\")",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "partial",
+                    "anchor": {
+                      "line": 6,
+                      "text": "partial(request, \"GET\", timeout=2)",
+                      "occurrence": 1
+                    },
+                    "title": "Bind arguments early",
+                    "explanation": "The new callable supplies method='GET' and timeout=2 while leaving url open.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-functools_cache"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.14
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ creates a new callable with selected positional or keyword arguments pre-filled.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "functools.partial creates a new callable with selected positional or keyword arguments pre-filled."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ = partial(int, base=2) creates a one-argument binary parser.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "parse_binary = partial(int, base=2) creates a one-argument binary parser."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ does not execute the function when it is created; it stores call configuration for later invocations.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "partial does not execute the function when it is created; it stores call configuration for later invocations."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "functools.partial",
-              "url": "https://docs.python.org/3/library/functools.html#functools.partial"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -244,52 +222,41 @@
           "concept_ids": [
             "ai.python.dataclass_default_factory"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.36
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(default_factory=...) creates a fresh default value for each instance, avoiding shared mutable defaults.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "CREATE A FRESH MUTABLE DEFAULT",
+              "placeholder": "Click default_factory.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "dataclasses.field(default_factory=...) creates a fresh default value for each instance, avoiding shared mutable defaults."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________: list[str] = field(default_factory=list) gives every instance its own list.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "tags: list[str] = field(default_factory=list) gives every instance its own list."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ tags: list[str] = [] as a mutable dataclass default is rejected because instances must not accidentally share one list.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Using tags: list[str] = [] as a mutable dataclass default is rejected because instances must not accidentally share one list."
+                "type": "code_file",
+                "filename": "dataclass_factory.py",
+                "language": "python",
+                "code": "from dataclasses import dataclass, field\n\n@dataclass\nclass Job:\n    name: str\n    tags: list[str] = field(default_factory=list)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "factory",
+                    "anchor": {
+                      "line": 6,
+                      "text": "field(default_factory=list)",
+                      "occurrence": 1
+                    },
+                    "title": "Per-instance list",
+                    "explanation": "Each Job gets a fresh list instead of sharing one mutable default.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "dataclasses.field",
-              "url": "https://docs.python.org/3/library/dataclasses.html#dataclasses.field"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-3-dataclass_replace",
@@ -297,54 +264,43 @@
           "concept_ids": [
             "ai.python.dataclass_replace"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "COPY WITH SELECTED CHANGES",
+              "placeholder": "Click replace.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "dataclass_replace.py",
+                "language": "python",
+                "code": "from dataclasses import dataclass, replace\n\n@dataclass(frozen=True)\nclass Config:\n    host: str\n    port: int\n\nprod = Config(\"db.prod\", 5432)\nlocal = replace(prod, host=\"localhost\")",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "replace",
+                    "anchor": {
+                      "line": 9,
+                      "text": "replace(prod, host=\"localhost\")",
+                      "occurrence": 1
+                    },
+                    "title": "Modified copy",
+                    "explanation": "A new Config is created with host replaced and the other fields preserved.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-dataclass_default_factory"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.36
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(instance, **changes) creates another instance of the same dataclass while changing selected fields.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "dataclasses.replace(instance, **changes) creates another instance of the same dataclass while changing selected fields."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ = replace(user, active=True) is a convenient immutable-style update.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "updated = replace(user, active=True) is a convenient immutable-style update."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________() runs the generated __init__ and __post_init__ path; fields declared init=False have special restrictions.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "replace() runs the generated __init__ and __post_init__ path; fields declared init=False have special restrictions."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "dataclasses.replace",
-              "url": "https://docs.python.org/3/library/dataclasses.html#dataclasses.replace"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-3-enum_auto",
@@ -352,54 +308,43 @@
           "concept_ids": [
             "ai.python.enum_auto"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "LET ENUM GENERATE VALUES",
+              "placeholder": "Click auto.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "enum_auto.py",
+                "language": "python",
+                "code": "from enum import Enum, auto\n\nclass State(Enum):\n    PENDING = auto()\n    RUNNING = auto()\n    COMPLETE = auto()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "auto",
+                    "anchor": {
+                      "line": 4,
+                      "text": "auto()",
+                      "occurrence": 1
+                    },
+                    "title": "Automatic member value",
+                    "explanation": "Enum generates the value according to its automatic-value rules.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-dataclass_replace"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.36
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________() asks the Enum machinery to generate a member value; the generated value depends on the enum type and _generate_next_value_.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "enum.auto() asks the Enum machinery to generate a member value; the generated value depends on the enum type and _generate_next_value_."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ StrEnum, auto() produces the lower-cased member name.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "For StrEnum, auto() produces the lower-cased member name."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ not assume auto() always produces integers; specialized Enum types can define different generated values.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not assume auto() always produces integers; specialized Enum types can define different generated values."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "enum.auto",
-              "url": "https://docs.python.org/3/library/enum.html#enum.auto"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -425,52 +370,63 @@
           "concept_ids": [
             "ai.python.contextlib_contextmanager"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.58
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "@__________ turns a generator function with exactly one yield into a context manager whose setup runs before yield and cleanup runs afterward.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "TURN A GENERATOR INTO A CONTEXT MANAGER",
+              "placeholder": "Click @contextmanager, yield, and finally.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "@contextmanager turns a generator function with exactly one yield into a context manager whose setup runs before yield and cleanup runs afterward."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ try/finally around yield when cleanup must happen even if the with-body raises.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use try/finally around yield when cleanup must happen even if the with-body raises."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ contextmanager generator must yield exactly once; forgetting yield or yielding multiple times breaks the protocol.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A contextmanager generator must yield exactly once; forgetting yield or yielding multiple times breaks the protocol."
+                "type": "code_file",
+                "filename": "contextmanager.py",
+                "language": "python",
+                "code": "from contextlib import contextmanager\n\n@contextmanager\ndef managed_connection(connect):\n    connection = connect()\n    try:\n        yield connection\n    finally:\n        connection.close()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "decorator",
+                    "anchor": {
+                      "line": 3,
+                      "text": "@contextmanager",
+                      "occurrence": 1
+                    },
+                    "title": "Adapter decorator",
+                    "explanation": "This generator-style function becomes usable in a with statement.",
+                    "required": true
+                  },
+                  {
+                    "id": "yield",
+                    "anchor": {
+                      "line": 7,
+                      "text": "yield connection",
+                      "occurrence": 1
+                    },
+                    "title": "Expose the resource",
+                    "explanation": "The yielded value is bound by the as-clause.",
+                    "required": true
+                  },
+                  {
+                    "id": "finally",
+                    "anchor": {
+                      "line": 8,
+                      "text": "finally:",
+                      "occurrence": 1
+                    },
+                    "title": "Cleanup path",
+                    "explanation": "Cleanup after yield belongs in finally so it also runs on exceptions.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "contextlib.contextmanager",
-              "url": "https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-3-contextlib_suppress",
@@ -478,54 +434,43 @@
           "concept_ids": [
             "ai.python.contextlib_suppress"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "IGNORE ONE EXPECTED EXCEPTION",
+              "placeholder": "Click suppress.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "suppress.py",
+                "language": "python",
+                "code": "from contextlib import suppress\nfrom pathlib import Path\n\nwith suppress(FileNotFoundError):\n    Path(\"cache.tmp\").unlink()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "suppress",
+                    "anchor": {
+                      "line": 4,
+                      "text": "suppress(FileNotFoundError)",
+                      "occurrence": 1
+                    },
+                    "title": "Suppress a specific exception",
+                    "explanation": "Only the listed exception type is ignored; unrelated exceptions still propagate.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-contextlib_contextmanager"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.58
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(*exceptions) is a small context manager for intentionally ignoring specific exception types around a narrow operation.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "contextlib.suppress(*exceptions) is a small context manager for intentionally ignoring specific exception types around a narrow operation."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ suppress(FileNotFoundError): path.unlink() expresses that a missing file is acceptable.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "with suppress(FileNotFoundError): path.unlink() expresses that a missing file is acceptable."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ suppress scopes narrow; broad exception suppression can hide programming errors and make failures difficult to diagnose.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Keep suppress scopes narrow; broad exception suppression can hide programming errors and make failures difficult to diagnose."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "contextlib.suppress",
-              "url": "https://docs.python.org/3/library/contextlib.html#contextlib.suppress"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-3-contextlib_nullcontext",
@@ -533,54 +478,43 @@
           "concept_ids": [
             "ai.python.contextlib_nullcontext"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "NORMALIZE OPTIONAL CONTEXT MANAGEMENT",
+              "placeholder": "Click nullcontext.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "nullcontext.py",
+                "language": "python",
+                "code": "from contextlib import nullcontext\n\ndef process(stream=None):\n    cm = open(\"input.txt\") if stream is None else nullcontext(stream)\n\n    with cm as source:\n        return source.read()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "null",
+                    "anchor": {
+                      "line": 4,
+                      "text": "nullcontext(stream)",
+                      "occurrence": 1
+                    },
+                    "title": "Do-nothing context manager",
+                    "explanation": "The caller-owned stream can share the same with structure without being opened here.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-contextlib_suppress"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.58
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ returns a context manager that performs no setup or cleanup, useful when code conditionally needs a real context manager.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "contextlib.nullcontext returns a context manager that performs no setup or cleanup, useful when code conditionally needs a real context manager."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ = open(path) if path else nullcontext(sys.stdin) lets one with-statement handle owned and borrowed resources.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "cm = open(path) if path else nullcontext(sys.stdin) lets one with-statement handle owned and borrowed resources."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ does not close or otherwise manage the object you pass as enter_result.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "nullcontext does not close or otherwise manage the object you pass as enter_result."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "contextlib.nullcontext",
-              "url": "https://docs.python.org/3/library/contextlib.html#contextlib.nullcontext"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

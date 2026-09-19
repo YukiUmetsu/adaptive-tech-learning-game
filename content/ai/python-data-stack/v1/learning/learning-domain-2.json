@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-data-stack-learning-2026-09-19-v1",
+  "content_version": "python-data-stack-learning-2026-09-19-v2",
   "certification_id": "python-data-stack",
   "certification_version": "python-data-stack-v1",
   "exam_guide_revision": "Practical Python data-stack curriculum reviewed against current official NumPy, pandas, Matplotlib, and Seaborn documentation on 2026-09-19.",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; retrieval questions and typed coding questions provide the scored signal."
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code or table discoveries.",
+    "mastery_note": "Discovery progress is not mastery evidence; progressively harder retrieval and typed coding questions provide the scored signal."
   },
   "source_refs": [
     {
@@ -44,9 +44,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 10,
-    "prompt_count": 30
+    "prompt_count": 12
   },
-  "authoring_notes": "Interactive first-pass learning for pandas. Emphasizes task-first API choice, visible DataFrame/result mental models, individual API mastery before long method-chain composition, and exact cloze reveals.",
+  "authoring_notes": "Updated for the learning-v2 renderer. Executable-looking material is shown as syntax-highlighted code_file content with clickable annotations. Low-difficulty examples include small concrete data and result comments so learners can connect code to shape/output.",
   "modules": [
     {
       "id": "domain-2-task-2-1",
@@ -69,56 +69,123 @@
             "python.pandas.selection",
             "python.pandas.function_selection"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.18
-          },
           "prompts": [
             {
-              "id": "what",
+              "id": "choose",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`loc` selects by labels or boolean conditions; `iloc` selects by integer __________.",
+              "label": "CHOOSE THE SELECTION TOOL",
+              "placeholder": "Reveal the tool after deciding what kind of selection you need.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "`loc` selects by labels or boolean conditions; `iloc` selects by integer positions."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Use `query` when a readable string expression is convenient for filtering __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use `query` when a readable string expression is convenient for filtering rows."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "goal",
+                    "label": "Goal"
+                  },
+                  {
+                    "id": "tool",
+                    "label": "Tool"
+                  },
+                  {
+                    "id": "example",
+                    "label": "Typical shape"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "labels",
+                    "cells": {
+                      "goal": "Select by row/column labels",
+                      "tool": ".loc",
+                      "example": "df.loc[mask, ['name', 'score']]"
+                    }
+                  },
+                  {
+                    "id": "positions",
+                    "cells": {
+                      "goal": "Select by integer positions",
+                      "tool": ".iloc",
+                      "example": "df.iloc[:5, :2]"
+                    }
+                  },
+                  {
+                    "id": "expr",
+                    "cells": {
+                      "goal": "Filter rows with an expression string",
+                      "tool": ".query",
+                      "example": "df.query('score > 80')"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "goal"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
               "id": "code",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Select rows with sales > 100 and only team/sales using `df.__________[mask, [\"team\", \"sales\"]]`.",
+              "kind": "look_for",
+              "label": "SEE ALL THREE ON ONE DATAFRAME",
+              "placeholder": "Click loc, iloc, and query.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Select rows with sales > 100 and only team/sales using `df.loc[mask, [\"team\", \"sales\"]]`."
+                "type": "code_file",
+                "filename": "selection.py",
+                "language": "python",
+                "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    \"name\": [\"Ada\", \"Linus\", \"Grace\"],\n    \"score\": [98, 72, 95],\n})\n\nhigh = df.loc[df[\"score\"] >= 90, [\"name\", \"score\"]]\nfirst_two = df.iloc[:2, :]\nhigh_query = df.query(\"score >= 90\")\n\n# high/high_query contain Ada and Grace\n# first_two contains Ada and Linus",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "loc",
+                    "anchor": {
+                      "line": 8,
+                      "text": "df.loc[df[\"score\"] >= 90, [\"name\", \"score\"]]",
+                      "occurrence": 1
+                    },
+                    "title": "Label-aware selection",
+                    "explanation": ".loc accepts a boolean row mask and named columns.",
+                    "required": true
+                  },
+                  {
+                    "id": "iloc",
+                    "anchor": {
+                      "line": 9,
+                      "text": "df.iloc[:2, :]",
+                      "occurrence": 1
+                    },
+                    "title": "Position-based selection",
+                    "explanation": ".iloc uses integer positions and Python-style slices.",
+                    "required": true
+                  },
+                  {
+                    "id": "query",
+                    "anchor": {
+                      "line": 10,
+                      "text": "df.query(\"score >= 90\")",
+                      "occurrence": 1
+                    },
+                    "title": "Expression filtering",
+                    "explanation": ".query evaluates the expression against DataFrame columns.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "pandas API reference",
-              "url": "https://pandas.pydata.org/docs/reference/index.html"
-            },
-            {
-              "title": "pandas user guide",
-              "url": "https://pandas.pydata.org/docs/user_guide/index.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-2-missing",
@@ -126,58 +193,54 @@
           "concept_ids": [
             "python.pandas.missing"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "FILL OR DROP BASED ON MEANING",
+              "placeholder": "Click fillna and dropna.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "missing.py",
+                "language": "python",
+                "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    \"name\": [\"Ada\", \"Linus\", \"Grace\"],\n    \"score\": [98, None, 95],\n})\n\nfilled = df[\"score\"].fillna(0)\ncomplete_rows = df.dropna(subset=[\"score\"])",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "fill",
+                    "anchor": {
+                      "line": 8,
+                      "text": "fillna(0)",
+                      "occurrence": 1
+                    },
+                    "title": "Replace missing values",
+                    "explanation": "Only fill with 0 when 0 has a defensible meaning for this variable.",
+                    "required": true
+                  },
+                  {
+                    "id": "drop",
+                    "anchor": {
+                      "line": 9,
+                      "text": "dropna(subset=[\"score\"])",
+                      "occurrence": 1
+                    },
+                    "title": "Remove rows missing a required value",
+                    "explanation": "Rows with missing score are removed from complete_rows.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-selection"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.18
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`fillna` replaces missing values; `dropna` __________ rows or columns containing them.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`fillna` replaces missing values; `dropna` removes rows or columns containing them."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Fill when a defensible replacement exists; drop when the missing observation should be __________ from the analysis.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Fill when a defensible replacement exists; drop when the missing observation should be excluded from the analysis."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Do not fill automatically: the replacement should match the variable's meaning and the analysis __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not fill automatically: the replacement should match the variable's meaning and the analysis goal."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "pandas API reference",
-              "url": "https://pandas.pydata.org/docs/reference/index.html"
-            },
-            {
-              "title": "pandas user guide",
-              "url": "https://pandas.pydata.org/docs/user_guide/index.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-2-sorting",
@@ -185,58 +248,54 @@
           "concept_ids": [
             "python.pandas.sorting"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "SORT BY MULTIPLE COLUMNS",
+              "placeholder": "Click by and ascending.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "sort_values.py",
+                "language": "python",
+                "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    \"team\": [\"blue\", \"red\", \"blue\"],\n    \"score\": [8, 9, 10],\n})\n\nordered = df.sort_values(\n    by=[\"team\", \"score\"],\n    ascending=[True, False],\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "by",
+                    "anchor": {
+                      "line": 9,
+                      "text": "by=[\"team\", \"score\"]",
+                      "occurrence": 1
+                    },
+                    "title": "Sort keys",
+                    "explanation": "team is the primary key; score breaks ties within team.",
+                    "required": true
+                  },
+                  {
+                    "id": "ascending",
+                    "anchor": {
+                      "line": 10,
+                      "text": "ascending=[True, False]",
+                      "occurrence": 1
+                    },
+                    "title": "Per-key directions",
+                    "explanation": "team ascends while score descends.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-missing"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.18
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`sort_values` orders rows using one or more __________ values.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`sort_values` orders rows using one or more column values."
-              }
-            },
-            {
-              "id": "code",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Highest sales first uses `df.sort_values(\"sales\", ascending=__________)`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Highest sales first uses `df.sort_values(\"sales\", ascending=False)`."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "`sort_index` orders by index labels; it is not the same as sorting by a data __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`sort_index` orders by index labels; it is not the same as sorting by a data column."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "pandas API reference",
-              "url": "https://pandas.pydata.org/docs/reference/index.html"
-            },
-            {
-              "title": "pandas user guide",
-              "url": "https://pandas.pydata.org/docs/user_guide/index.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -263,56 +322,52 @@
           "concept_ids": [
             "python.pandas.groupby"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.1,
-            "y": 0.5
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`groupby` partitions rows into groups based on one or more __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`groupby` partitions rows into groups based on one or more keys."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Think `split → __________ → combine`: define groups first, then compute something inside each group.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Think `split → apply → combine`: define groups first, then compute something inside each group."
-              }
-            },
-            {
               "id": "code",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Average sales per team starts with `df.__________(\"team\")[\"sales\"]...`.",
+              "kind": "look_for",
+              "label": "GROUP FIRST, THEN CHOOSE THE SUMMARY",
+              "placeholder": "Click groupby and mean.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Average sales per team starts with `df.groupby(\"team\")[\"sales\"]...`."
+                "type": "code_file",
+                "filename": "groupby.py",
+                "language": "python",
+                "code": "import pandas as pd\n\ndf = pd.DataFrame({\n    \"team\": [\"red\", \"red\", \"blue\"],\n    \"score\": [80, 100, 70],\n})\n\ngroups = df.groupby(\"team\")\nteam_mean = groups[\"score\"].mean()\n\n# blue -> 70.0\n# red  -> 90.0",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "group",
+                    "anchor": {
+                      "line": 8,
+                      "text": "df.groupby(\"team\")",
+                      "occurrence": 1
+                    },
+                    "title": "Split rows into groups",
+                    "explanation": "Rows sharing a team value belong to the same group.",
+                    "required": true
+                  },
+                  {
+                    "id": "mean",
+                    "anchor": {
+                      "line": 9,
+                      "text": "groups[\"score\"].mean()",
+                      "occurrence": 1
+                    },
+                    "title": "Aggregate each group",
+                    "explanation": "mean reduces each team's scores to one value.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "pandas API reference",
-              "url": "https://pandas.pydata.org/docs/reference/index.html"
-            },
-            {
-              "title": "pandas user guide",
-              "url": "https://pandas.pydata.org/docs/user_guide/index.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-2-aggregation",
@@ -320,58 +375,103 @@
           "concept_ids": [
             "python.pandas.aggregation"
           ],
-          "prerequisite_node_ids": [
-            "domain-2-groupby"
-          ],
-          "map_position": {
-            "x": 0.37,
-            "y": 0.5
-          },
           "prompts": [
             {
-              "id": "what",
+              "id": "compare",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "A grouped reduction returns fewer rows: usually one summary per __________.",
+              "label": "COUNT, SIZE, OR AGG?",
+              "placeholder": "Reveal one operation at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A grouped reduction returns fewer rows: usually one summary per group."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Use `agg` when one grouped operation should compute __________ named summaries.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use `agg` when one grouped operation should compute multiple named summaries."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "op",
+                    "label": "Operation"
+                  },
+                  {
+                    "id": "meaning",
+                    "label": "Meaning"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "mean",
+                    "cells": {
+                      "op": "mean",
+                      "meaning": "Numeric average; missing values are skipped by default."
+                    }
+                  },
+                  {
+                    "id": "count",
+                    "cells": {
+                      "op": "count",
+                      "meaning": "Counts non-missing values in the selected column(s)."
+                    }
+                  },
+                  {
+                    "id": "size",
+                    "cells": {
+                      "op": "size",
+                      "meaning": "Counts rows in each group, including rows whose measured value is missing."
+                    }
+                  },
+                  {
+                    "id": "agg",
+                    "cells": {
+                      "op": "agg",
+                      "meaning": "Compute one or more aggregations in one grouping pipeline."
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "op"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
               "id": "code",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Named aggregation can look like `grouped.agg(avg_sales=(\"sales\", \"__________\"))`.",
+              "kind": "look_for",
+              "label": "NAME MULTIPLE AGGREGATIONS",
+              "placeholder": "Click agg.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Named aggregation can look like `grouped.agg(avg_sales=(\"sales\", \"mean\"))`."
+                "type": "code_file",
+                "filename": "aggregation.py",
+                "language": "python",
+                "code": "summary = (\n    df.groupby(\"team\")\n      .agg(\n          average_score=(\"score\", \"mean\"),\n          players=(\"score\", \"size\"),\n      )\n)\n\n# columns -> average_score, players",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "agg",
+                    "anchor": {
+                      "line": 3,
+                      "text": ".agg(",
+                      "occurrence": 1
+                    },
+                    "title": "Named aggregation",
+                    "explanation": "Each keyword defines an output column from a source column and aggregation function.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "pandas API reference",
-              "url": "https://pandas.pydata.org/docs/reference/index.html"
-            },
-            {
-              "title": "pandas user guide",
-              "url": "https://pandas.pydata.org/docs/user_guide/index.html"
-            }
-          ]
+          "prerequisite_node_ids": [
+            "domain-2-groupby"
+          ],
+          "map_position": {
+            "x": 0.35,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-2-transform",
@@ -379,58 +479,43 @@
           "concept_ids": [
             "python.pandas.transform"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "RETURN ONE VALUE PER ORIGINAL ROW",
+              "placeholder": "Click transform.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "transform.py",
+                "language": "python",
+                "code": "df[\"team_mean\"] = (\n    df.groupby(\"team\")[\"score\"]\n      .transform(\"mean\")\n)\n\n# each original row stays present\n# team_mean repeats that row's team average",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "transform",
+                    "anchor": {
+                      "line": 3,
+                      "text": "transform(\"mean\")",
+                      "occurrence": 1
+                    },
+                    "title": "Aligned group result",
+                    "explanation": "transform returns output aligned to the original row index instead of collapsing groups.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-aggregation"
           ],
           "map_position": {
-            "x": 0.63,
-            "y": 0.5
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`transform` computes within groups but returns output aligned to the original row __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`transform` computes within groups but returns output aligned to the original row index."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Use `transform` when each original row needs its group's statistic, such as a team __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use `transform` when each original row needs its group's statistic, such as a team average."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "`agg` reduces groups; `transform` preserves the original number of __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`agg` reduces groups; `transform` preserves the original number of rows."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "pandas API reference",
-              "url": "https://pandas.pydata.org/docs/reference/index.html"
-            },
-            {
-              "title": "pandas user guide",
-              "url": "https://pandas.pydata.org/docs/user_guide/index.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-2-group-pipeline",
@@ -440,58 +525,65 @@
             "python.pandas.aggregation",
             "python.pandas.sorting"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ THE WHOLE PIPELINE",
+              "placeholder": "Click groupby, agg, and sort_values in order.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "group_pipeline.py",
+                "language": "python",
+                "code": "summary = (\n    df.groupby(\"team\", as_index=False)\n      .agg(\n          average_score=(\"score\", \"mean\"),\n          players=(\"score\", \"size\"),\n      )\n      .sort_values(\"average_score\", ascending=False)\n)\n\n# one row per team, highest average_score first",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "group",
+                    "anchor": {
+                      "line": 2,
+                      "text": "groupby(\"team\", as_index=False)",
+                      "occurrence": 1
+                    },
+                    "title": "Group rows",
+                    "explanation": "as_index=False keeps team as a regular output column.",
+                    "required": true
+                  },
+                  {
+                    "id": "agg",
+                    "anchor": {
+                      "line": 3,
+                      "text": ".agg(",
+                      "occurrence": 1
+                    },
+                    "title": "Collapse to summaries",
+                    "explanation": "Each team becomes one row with average_score and players.",
+                    "required": true
+                  },
+                  {
+                    "id": "sort",
+                    "anchor": {
+                      "line": 7,
+                      "text": "sort_values(\"average_score\", ascending=False)",
+                      "occurrence": 1
+                    },
+                    "title": "Rank summaries",
+                    "explanation": "The aggregated rows are ordered from highest to lowest average score.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-transform"
           ],
           "map_position": {
-            "x": 0.9,
-            "y": 0.5
+            "x": 0.81,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "sequence",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "A grouped summary pipeline often follows `__________ → agg → sort_values`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A grouped summary pipeline often follows `groupby → agg → sort_values`."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Compose these APIs only after the grouping, summary columns, and final ordering are all specified by the __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Compose these APIs only after the grouping, summary columns, and final ordering are all specified by the goal."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Do not start with a long chain if you cannot explain what intermediate __________ each step should produce.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not start with a long chain if you cannot explain what intermediate result each step should produce."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "pandas API reference",
-              "url": "https://pandas.pydata.org/docs/reference/index.html"
-            },
-            {
-              "title": "pandas user guide",
-              "url": "https://pandas.pydata.org/docs/user_guide/index.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -517,56 +609,52 @@
           "concept_ids": [
             "python.pandas.merge"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.82
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`merge` combines DataFrames by matching one or more key __________.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "JOIN TABLES ON A KEY",
+              "placeholder": "Click on and how.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "`merge` combines DataFrames by matching one or more key columns."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Use a left join when every row from the __________ DataFrame must remain even without a match.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use a left join when every row from the left DataFrame must remain even without a match."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "An inner join keeps only keys present on __________ sides.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "An inner join keeps only keys present on both sides."
+                "type": "code_file",
+                "filename": "merge.py",
+                "language": "python",
+                "code": "import pandas as pd\n\nusers = pd.DataFrame({\n    \"user_id\": [1, 2],\n    \"name\": [\"Ada\", \"Grace\"],\n})\n\norders = pd.DataFrame({\n    \"user_id\": [1, 1, 3],\n    \"total\": [20, 35, 50],\n})\n\njoined = users.merge(\n    orders,\n    on=\"user_id\",\n    how=\"left\",\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "on",
+                    "anchor": {
+                      "line": 15,
+                      "text": "on=\"user_id\"",
+                      "occurrence": 1
+                    },
+                    "title": "Join key",
+                    "explanation": "Rows match when user_id values are equal.",
+                    "required": true
+                  },
+                  {
+                    "id": "how",
+                    "anchor": {
+                      "line": 16,
+                      "text": "how=\"left\"",
+                      "occurrence": 1
+                    },
+                    "title": "Left join",
+                    "explanation": "All user rows remain even when no order matches.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "pandas API reference",
-              "url": "https://pandas.pydata.org/docs/reference/index.html"
-            },
-            {
-              "title": "pandas user guide",
-              "url": "https://pandas.pydata.org/docs/user_guide/index.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-2-pivot",
@@ -574,58 +662,76 @@
           "concept_ids": [
             "python.pandas.reshape"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "GROUP AND RESHAPE IN ONE CALL",
+              "placeholder": "Click index, columns, values, and aggfunc.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "pivot_table.py",
+                "language": "python",
+                "code": "pivot = df.pivot_table(\n    index=\"team\",\n    columns=\"quarter\",\n    values=\"revenue\",\n    aggfunc=\"sum\",\n    fill_value=0,\n)\n\n# rows: team\n# columns: quarter\n# cells: summed revenue",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "index",
+                    "anchor": {
+                      "line": 2,
+                      "text": "index=\"team\"",
+                      "occurrence": 1
+                    },
+                    "title": "Row keys",
+                    "explanation": "Unique team values become rows.",
+                    "required": true
+                  },
+                  {
+                    "id": "columns",
+                    "anchor": {
+                      "line": 3,
+                      "text": "columns=\"quarter\"",
+                      "occurrence": 1
+                    },
+                    "title": "Column keys",
+                    "explanation": "Unique quarter values become columns.",
+                    "required": true
+                  },
+                  {
+                    "id": "values",
+                    "anchor": {
+                      "line": 4,
+                      "text": "values=\"revenue\"",
+                      "occurrence": 1
+                    },
+                    "title": "Cell measure",
+                    "explanation": "Revenue is the value being summarized.",
+                    "required": true
+                  },
+                  {
+                    "id": "agg",
+                    "anchor": {
+                      "line": 5,
+                      "text": "aggfunc=\"sum\"",
+                      "occurrence": 1
+                    },
+                    "title": "Aggregation",
+                    "explanation": "Multiple rows for one team-quarter cell are summed.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-merge"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.82
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`pivot_table` places one field on rows, another on columns, and __________ a value field.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`pivot_table` places one field on rows, another on columns, and aggregates a value field."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Use it for spreadsheet-like summaries such as team × month with total __________ in each cell.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use it for spreadsheet-like summaries such as team × month with total sales in each cell."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "`pivot_table` can aggregate duplicates; plain `pivot` expects each index/column pair to be __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`pivot_table` can aggregate duplicates; plain `pivot` expects each index/column pair to be unique."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "pandas API reference",
-              "url": "https://pandas.pydata.org/docs/reference/index.html"
-            },
-            {
-              "title": "pandas user guide",
-              "url": "https://pandas.pydata.org/docs/user_guide/index.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-2-melt",
@@ -633,58 +739,54 @@
           "concept_ids": [
             "python.pandas.reshape"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "TURN REPEATED COLUMNS INTO ROWS",
+              "placeholder": "Click id_vars and value_vars.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "melt.py",
+                "language": "python",
+                "code": "import pandas as pd\n\nwide = pd.DataFrame({\n    \"name\": [\"Ada\", \"Grace\"],\n    \"q1\": [10, 12],\n    \"q2\": [11, 15],\n})\n\nlong = wide.melt(\n    id_vars=\"name\",\n    value_vars=[\"q1\", \"q2\"],\n    var_name=\"quarter\",\n    value_name=\"score\",\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "id",
+                    "anchor": {
+                      "line": 10,
+                      "text": "id_vars=\"name\"",
+                      "occurrence": 1
+                    },
+                    "title": "Keep identifier",
+                    "explanation": "name remains attached to each long-format row.",
+                    "required": true
+                  },
+                  {
+                    "id": "values",
+                    "anchor": {
+                      "line": 11,
+                      "text": "value_vars=[\"q1\", \"q2\"]",
+                      "occurrence": 1
+                    },
+                    "title": "Columns to unpivot",
+                    "explanation": "q1 and q2 become values of the new quarter column.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-2-pivot"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.82
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`melt` turns multiple value columns into a variable column plus a __________ column.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`melt` turns multiple value columns into a variable column plus a value column."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Use it when columns such as Q1, Q2, Q3, Q4 should become values in a single `__________` field.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use it when columns such as Q1, Q2, Q3, Q4 should become values in a single `quarter` field."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "`pivot_table` tends toward __________ data; `melt` tends toward long/tidy data.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`pivot_table` tends toward wide data; `melt` tends toward long/tidy data."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "pandas API reference",
-              "url": "https://pandas.pydata.org/docs/reference/index.html"
-            },
-            {
-              "title": "pandas user guide",
-              "url": "https://pandas.pydata.org/docs/user_guide/index.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-fluency-learning-2026-09-19-v1",
+  "content_version": "python-fluency-learning-2026-09-19-v2",
   "certification_id": "ai-python-fluency",
   "certification_version": "python-fluency-v1",
   "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python documentation and selected AnyIO/HTTPX docs reviewed 2026-09-19.",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; progressively harder typed code recall provides the scored signal."
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code or table discoveries.",
+    "mastery_note": "Discovery progress is not mastery evidence; progressively harder retrieval and typed coding questions provide the scored signal."
   },
   "source_refs": [
     {
@@ -33,9 +33,9 @@
     ],
     "module_count": 2,
     "knowledge_node_count": 4,
-    "prompt_count": 12
+    "prompt_count": 4
   },
-  "authoring_notes": "Python Fluency is practical coding retrieval, not beginner trivia or a certification. Questions use progressive recall depth: guided -> recall -> construct -> fluency. Short literals stay on one line where readable, unfamiliar data shapes and intent are explained, and most questions have one meaningful blank.",
+  "authoring_notes": "Updated for the learning-v2 renderer. Code examples are authored as first-class syntax-highlighted code_file reveals with clickable annotations instead of prose strings. Tables are used for contrasts that benefit from progressive reveal.",
   "modules": [
     {
       "id": "domain-10-task-10-1",
@@ -56,52 +56,41 @@
           "concept_ids": [
             "ai.python.py313_batched_strict"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.14
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.13 added strict= to itertools.batched; strict=True raises ValueError when the final batch is shorter than n.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "REQUIRE COMPLETE BATCHES",
+              "placeholder": "Click strict=True.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Python 3.13 added strict= to itertools.batched; strict=True raises ValueError when the final batch is shorter than n."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ batch in batched(records, 100, strict=True): ... enforces exact batch size.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "for batch in batched(records, 100, strict=True): ... enforces exact batch size."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ validation happens as the iterator is consumed, because batched is lazy.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The validation happens as the iterator is consumed, because batched is lazy."
+                "type": "code_file",
+                "filename": "batched_strict.py",
+                "language": "python",
+                "code": "from itertools import batched\n\nrecords = range(12)\ngroups = list(batched(records, 3, strict=True))",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "strict",
+                    "anchor": {
+                      "line": 4,
+                      "text": "strict=True",
+                      "occurrence": 1
+                    },
+                    "title": "Reject incomplete final batches",
+                    "explanation": "A shorter final batch raises ValueError instead of being yielded.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "What's new in Python 3.13 — itertools",
-              "url": "https://docs.python.org/3/whatsnew/3.13.html#itertools"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-10-py313_copy_replace",
@@ -109,54 +98,43 @@
           "concept_ids": [
             "ai.python.py313_copy_replace"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "COPY AN OBJECT WITH FIELD CHANGES",
+              "placeholder": "Click replace.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "copy_replace.py",
+                "language": "python",
+                "code": "from copy import replace\nfrom dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass Point:\n    x: int\n    y: int\n\nstart = Point(2, 3)\nmoved = replace(start, x=10)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "replace",
+                    "anchor": {
+                      "line": 10,
+                      "text": "replace(start, x=10)",
+                      "occurrence": 1
+                    },
+                    "title": "Create a modified copy",
+                    "explanation": "copy.replace returns a new supported record-like object with selected fields changed.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-10-py313_batched_strict"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.14
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.13 added copy.replace(obj, **changes), a common replacement protocol supported by dataclasses, named tuples, datetime types, and custom __replace__ implementations.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Python 3.13 added copy.replace(obj, **changes), a common replacement protocol supported by dataclasses, named tuples, datetime types, and custom __replace__ implementations."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ = copy.replace(config, retries=5) creates a modified copy without mutating the original.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "new_config = copy.replace(config, retries=5) creates a modified copy without mutating the original."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ is not a general deep copy; it constructs a replacement with selected fields changed.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "copy.replace is not a general deep copy; it constructs a replacement with selected fields changed."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "What's new in Python 3.13 — copy.replace",
-              "url": "https://docs.python.org/3/whatsnew/3.13.html#copy"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -181,52 +159,52 @@
           "concept_ids": [
             "ai.python.py313_queue_shutdown"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.36
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.13 added Queue.shutdown() and the ShutDown exception for explicit producer-consumer queue termination.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "SIGNAL A QUEUE TO STOP ACCEPTING WORK",
+              "placeholder": "Click shutdown and ShutDown.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Python 3.13 added Queue.shutdown() and the ShutDown exception for explicit producer-consumer queue termination."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________() prevents future growth while allowing already queued work to wind down normally by default.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "q.shutdown() prevents future growth while allowing already queued work to wind down normally by default."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________(immediate=True) breaks the usual join invariant by draining work immediately, so it should be used deliberately.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "shutdown(immediate=True) breaks the usual join invariant by draining work immediately, so it should be used deliberately."
+                "type": "code_file",
+                "filename": "queue_shutdown.py",
+                "language": "python",
+                "code": "from queue import Queue, ShutDown\n\nqueue = Queue()\nqueue.put(\"job\")\nqueue.shutdown()\n\ntry:\n    queue.put(\"late-job\")\nexcept ShutDown:\n    print(\"queue is closed\")",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "shutdown",
+                    "anchor": {
+                      "line": 5,
+                      "text": "queue.shutdown()",
+                      "occurrence": 1
+                    },
+                    "title": "Begin shutdown",
+                    "explanation": "The queue enters shutdown so new puts are rejected and blocked operations respond according to the API.",
+                    "required": true
+                  },
+                  {
+                    "id": "exception",
+                    "anchor": {
+                      "line": 9,
+                      "text": "except ShutDown:",
+                      "occurrence": 1
+                    },
+                    "title": "Observe queue shutdown",
+                    "explanation": "Queue operations can raise ShutDown so callers can handle the closed state.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "queue.Queue.shutdown",
-              "url": "https://docs.python.org/3.13/library/queue.html#queue.Queue.shutdown"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-10-py313_typeis",
@@ -234,54 +212,43 @@
           "concept_ids": [
             "ai.python.py313_typeis"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "TEACH THE TYPE CHECKER A NARROWING PREDICATE",
+              "placeholder": "Click TypeIs.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "typeis.py",
+                "language": "python",
+                "code": "from typing import TypeIs\n\ndef is_string(value: object) -> TypeIs[str]:\n    return isinstance(value, str)\n\ndef normalize(value: object) -> str:\n    if is_string(value):\n        return value.strip()\n    return str(value)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "typeis",
+                    "anchor": {
+                      "line": 3,
+                      "text": "-> TypeIs[str]",
+                      "occurrence": 1
+                    },
+                    "title": "User-defined narrowing",
+                    "explanation": "A true result tells the type checker value is str in the positive branch, with complementary narrowing where valid.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-10-py313_queue_shutdown"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.36
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.13 added typing.TypeIs for user-defined type-narrowing predicates whose true and false branches can both narrow more intuitively than TypeGuard.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Python 3.13 added typing.TypeIs for user-defined type-narrowing predicates whose true and false branches can both narrow more intuitively than TypeGuard."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ is_str(value: object) -> TypeIs[str]: return isinstance(value, str) communicates narrowing to a type checker.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "def is_str(value: object) -> TypeIs[str]: return isinstance(value, str) communicates narrowing to a type checker."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ is a typing contract: the function's runtime boolean logic must actually satisfy the type relationship it claims.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "TypeIs is a typing contract: the function's runtime boolean logic must actually satisfy the type relationship it claims."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "What's new in Python 3.13 — typing.TypeIs",
-              "url": "https://docs.python.org/3/whatsnew/3.13.html#typing"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

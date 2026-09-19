@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-fluency-learning-2026-09-19-v1",
+  "content_version": "python-fluency-learning-2026-09-19-v2",
   "certification_id": "ai-python-fluency",
   "certification_version": "python-fluency-v1",
   "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python documentation and selected AnyIO/HTTPX docs reviewed 2026-09-19.",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; progressively harder typed code recall provides the scored signal."
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code or table discoveries.",
+    "mastery_note": "Discovery progress is not mastery evidence; progressively harder retrieval and typed coding questions provide the scored signal."
   },
   "source_refs": [
     {
@@ -35,9 +35,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 5,
-    "prompt_count": 15
+    "prompt_count": 5
   },
-  "authoring_notes": "Python Fluency is practical coding retrieval, not beginner trivia or a certification. Questions use progressive recall depth: guided -> recall -> construct -> fluency. Short literals stay on one line where readable, unfamiliar data shapes and intent are explained, and most questions have one meaningful blank.",
+  "authoring_notes": "Updated for the learning-v2 renderer. Code examples are authored as first-class syntax-highlighted code_file reveals with clickable annotations instead of prose strings. Tables are used for contrasts that benefit from progressive reveal.",
   "modules": [
     {
       "id": "domain-8-task-8-1",
@@ -58,52 +58,52 @@
           "concept_ids": [
             "ai.python.py311_strenum"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.14
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.11 added enum.StrEnum, whose members are also strings and whose str() result is the underlying string value.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "ENUM MEMBERS THAT ARE ALSO STRINGS",
+              "placeholder": "Click StrEnum and auto.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Python 3.11 added enum.StrEnum, whose members are also strings and whose str() result is the underlying string value."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "[__________(status) for status in Status] produces plain string values when Status derives from StrEnum.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "[str(status) for status in Status] produces plain string values when Status derives from StrEnum."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ standard-library code checks type(x) == str rather than isinstance(x, str); str(member) is the compatibility escape hatch documented for those cases.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Some standard-library code checks type(x) == str rather than isinstance(x, str); str(member) is the compatibility escape hatch documented for those cases."
+                "type": "code_file",
+                "filename": "strenum.py",
+                "language": "python",
+                "code": "from enum import StrEnum, auto\n\nclass Color(StrEnum):\n    RED = auto()\n    BLUE = auto()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "strenum",
+                    "anchor": {
+                      "line": 1,
+                      "text": "StrEnum",
+                      "occurrence": 1
+                    },
+                    "title": "String enum base",
+                    "explanation": "StrEnum members are strings as well as enum members.",
+                    "required": true
+                  },
+                  {
+                    "id": "auto",
+                    "anchor": {
+                      "line": 4,
+                      "text": "auto()",
+                      "occurrence": 1
+                    },
+                    "title": "Automatic string value",
+                    "explanation": "For StrEnum, auto generates a lower-cased member name by default.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "enum.StrEnum",
-              "url": "https://docs.python.org/3.11/library/enum.html#enum.StrEnum"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-8-py311_typing_self",
@@ -111,54 +111,43 @@
           "concept_ids": [
             "ai.python.py311_typing_self"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "TYPE A FLUENT METHOD",
+              "placeholder": "Click -> Self.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "typing_self.py",
+                "language": "python",
+                "code": "from typing import Self\n\nclass Builder:\n    def add(self, value: str) -> Self:\n        self.values.append(value)\n        return self",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "self",
+                    "anchor": {
+                      "line": 4,
+                      "text": "-> Self",
+                      "occurrence": 1
+                    },
+                    "title": "Self return type",
+                    "explanation": "The return type follows the concrete type of the receiver, including subclasses.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-8-py311_strenum"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.14
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ expresses that a method returns an instance of its own class or subclass without introducing a separate TypeVar.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "typing.Self expresses that a method returns an instance of its own class or subclass without introducing a separate TypeVar."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ set_name(self, name: str) -> Self: ... is useful for fluent methods that return self.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "def set_name(self, name: str) -> Self: ... is useful for fluent methods that return self."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ refers to the current enclosing class, not an arbitrary unrelated type chosen by the caller.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Self refers to the current enclosing class, not an arbitrary unrelated type chosen by the caller."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "What's new in Python 3.11 — typing.Self",
-              "url": "https://docs.python.org/3.11/whatsnew/3.11.html#typing"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -183,52 +172,52 @@
           "concept_ids": [
             "ai.python.py311_except_star"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.36
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.11 added ExceptionGroup plus except* clauses so independent exceptions from concurrent work can be handled by type while preserving unhandled members.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "HANDLE PARTS OF AN EXCEPTION GROUP",
+              "placeholder": "Click ExceptionGroup and except*.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Python 3.11 added ExceptionGroup plus except* clauses so independent exceptions from concurrent work can be handled by type while preserving unhandled members."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________* ValueError as errors: ... handles matching ValueError members inside an exception group.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "except* ValueError as errors: ... handles matching ValueError members inside an exception group."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ and except* cannot be mixed in the same try statement, and except* semantics differ from catching one ordinary exception object.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "except and except* cannot be mixed in the same try statement, and except* semantics differ from catching one ordinary exception object."
+                "type": "code_file",
+                "filename": "except_star.py",
+                "language": "python",
+                "code": "try:\n    raise ExceptionGroup(\n        \"many failures\",\n        [ValueError(\"bad value\"), TypeError(\"bad type\")],\n    )\nexcept* ValueError as group:\n    print(\"value errors:\", group.exceptions)\nexcept* TypeError as group:\n    print(\"type errors:\", group.exceptions)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "group",
+                    "anchor": {
+                      "line": 2,
+                      "text": "ExceptionGroup(",
+                      "occurrence": 1
+                    },
+                    "title": "Grouped exceptions",
+                    "explanation": "ExceptionGroup carries multiple exception instances together.",
+                    "required": true
+                  },
+                  {
+                    "id": "except",
+                    "anchor": {
+                      "line": 6,
+                      "text": "except* ValueError as group:",
+                      "occurrence": 1
+                    },
+                    "title": "Handle a matching subgroup",
+                    "explanation": "except* selects matching exceptions from the group rather than treating the whole group as one ordinary exception.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "What's new in Python 3.11 — Exception Groups",
-              "url": "https://docs.python.org/3.11/whatsnew/3.11.html#pep-654-exception-groups-and-except"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-8-py311_asyncio_timeout",
@@ -236,54 +225,43 @@
           "concept_ids": [
             "ai.python.py311_asyncio_timeout"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "PUT A DEADLINE AROUND A BLOCK",
+              "placeholder": "Click asyncio.timeout.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "py311_timeout.py",
+                "language": "python",
+                "code": "import asyncio\n\nasync def request():\n    async with asyncio.timeout(1.5):\n        return await fetch()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "timeout",
+                    "anchor": {
+                      "line": 4,
+                      "text": "asyncio.timeout(1.5)",
+                      "occurrence": 1
+                    },
+                    "title": "Timeout context",
+                    "explanation": "The deadline applies to the enclosed async block.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-8-py311_except_star"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.36
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.11 added asyncio.timeout(), an async context manager for limiting the duration of async work.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Python 3.11 added asyncio.timeout(), an async context manager for limiting the duration of async work."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ with asyncio.timeout(5): await operation() scopes the deadline clearly around the awaited block.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "async with asyncio.timeout(5): await operation() scopes the deadline clearly around the awaited block."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ uses task cancellation internally; cancellation-aware cleanup still matters.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Timeout uses task cancellation internally; cancellation-aware cleanup still matters."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "What's new in Python 3.11 — asyncio",
-              "url": "https://docs.python.org/3.11/whatsnew/3.11.html#asyncio"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -307,52 +285,52 @@
           "concept_ids": [
             "ai.python.py311_tomllib"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.58
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.11 added tomllib for parsing TOML from the standard library.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ TOML WITH THE STANDARD LIBRARY",
+              "placeholder": "Click rb and tomllib.load.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Python 3.11 added tomllib for parsing TOML from the standard library."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ open('pyproject.toml', 'rb') as f: data = tomllib.load(f) parses TOML from a binary file object.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "with open('pyproject.toml', 'rb') as f: data = tomllib.load(f) parses TOML from a binary file object."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ is read-only; it parses TOML but does not provide a TOML writer.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "tomllib is read-only; it parses TOML but does not provide a TOML writer."
+                "type": "code_file",
+                "filename": "toml_read.py",
+                "language": "python",
+                "code": "import tomllib\n\nwith open(\"pyproject.toml\", \"rb\") as file:\n    data = tomllib.load(file)\n\nproject_name = data[\"project\"][\"name\"]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "binary",
+                    "anchor": {
+                      "line": 3,
+                      "text": "\"rb\"",
+                      "occurrence": 1
+                    },
+                    "title": "Binary mode",
+                    "explanation": "tomllib.load expects a binary file object.",
+                    "required": true
+                  },
+                  {
+                    "id": "load",
+                    "anchor": {
+                      "line": 4,
+                      "text": "tomllib.load(file)",
+                      "occurrence": 1
+                    },
+                    "title": "Parse TOML",
+                    "explanation": "The document becomes nested Python dictionaries/basic values.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "What's new in Python 3.11 — tomllib",
-              "url": "https://docs.python.org/3.11/whatsnew/3.11.html#tomllib"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         }
       ]
     }
