@@ -146,7 +146,16 @@ async fn catalog_marks_domains_with_learning_available() {
     let (status, body) = common::send(app, "GET", "/v1/certifications", None).await;
     assert_eq!(status, StatusCode::OK, "catalog failed: {body}");
 
-    let domains = body["certifications"][0]["versions"][0]["domains"]
+    // Look the certification up by id; embedded catalog order follows content
+    // file discovery order and is not a stable contract.
+    let certification = body["certifications"]
+        .as_array()
+        .expect("certifications")
+        .iter()
+        .find(|entry| entry["id"] == "aws-soa-c03")
+        .expect("SOA-C03 is in the catalog");
+
+    let domains = certification["versions"][0]["domains"]
         .as_array()
         .expect("domains");
     assert_eq!(domains.len(), 5);

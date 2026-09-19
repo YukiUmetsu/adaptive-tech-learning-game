@@ -101,6 +101,26 @@ describe("buildCatalog", () => {
     );
   });
 
+  it("offers the Python Data Stack certification under AI when content exists", () => {
+    const entries = CATALOG.flatMap((section) => section.certifications);
+    const entry = entries.find(
+      (candidate) => candidate.id === "python-data-stack",
+    );
+    expect(entry?.examCode).toBe("PY-DATA-STACK");
+    expect(entry?.wip).toBe(false);
+
+    const sections = buildCatalog(CATALOG, [
+      certification(
+        "python-data-stack",
+        "Python Data Stack: NumPy, pandas, Matplotlib & Seaborn",
+      ),
+    ]);
+    const cards = sections.flatMap((section) => section.cards);
+    expect(cards.find((card) => card.id === "python-data-stack")?.available).toBe(
+      true,
+    );
+  });
+
   it("offers the AWS Generative AI Developer certification and drops Linux", () => {
     const entries = CATALOG.flatMap((section) => section.certifications);
     const entry = entries.find((candidate) => candidate.id === "aws-aip-c01");

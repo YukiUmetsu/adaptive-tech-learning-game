@@ -37,6 +37,12 @@ export const CATALOG: CatalogCategory[] = [
         wip: false,
       },
       {
+        id: "python-data-stack",
+        name: "Python Data Stack: NumPy, pandas, Matplotlib & Seaborn",
+        examCode: "PY-DATA-STACK",
+        wip: false,
+      },
+      {
         id: "ai-pytorch-core",
         name: "PyTorch Core: Practical ML & Neural Networks",
         examCode: "PYTORCH-CORE",
