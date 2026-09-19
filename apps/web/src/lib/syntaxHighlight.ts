@@ -46,15 +46,17 @@ export function highlightCode(
   code: string,
   language: string,
 ): HighlightToken[][] {
+  // Normalize CRLF so a stray carriage return never lands in a rendered line.
+  const normalized = code.replace(/\r\n?/g, "\n");
   const grammar = prism?.languages?.[language];
   if (!prism || !grammar) {
-    return code
+    return normalized
       .split("\n")
       .map((line) => (line.length > 0 ? [{ content: line, types: ["plain"] }] : []));
   }
 
   const flat: HighlightToken[] = [];
-  const stream = prism.tokenize(code, grammar) as unknown as Array<
+  const stream = prism.tokenize(normalized, grammar) as unknown as Array<
     string | PrismTokenLike
   >;
   for (const token of stream) {

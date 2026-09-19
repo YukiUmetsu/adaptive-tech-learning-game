@@ -810,9 +810,13 @@ fn validate_typed_table(
 
 /// Extracts `{{slot_id}}` placeholders in order of appearance.
 ///
-/// Returns `Err(())` when the text contains an unmatched or malformed
+/// Returns `Err(())` when the text contains an unterminated or malformed
 /// placeholder, for example `{{` without a closing `}}`, an empty id, or an id
 /// containing whitespace or braces.
+///
+/// A bare `}}` that is not part of a placeholder is treated as literal text.
+/// Code templates legitimately contain closing braces (for example nested
+/// dictionaries or blocks), so flagging them would reject valid content.
 fn extract_typed_placeholders(text: &str) -> Result<Vec<String>, ()> {
     let mut placeholders = Vec::new();
     let mut rest = text;
@@ -833,11 +837,6 @@ fn extract_typed_placeholders(text: &str) -> Result<Vec<String>, ()> {
         }
         placeholders.push(id.to_owned());
         rest = &after[end + 2..];
-    }
-
-    // A stray closing delimiter is also malformed.
-    if rest.contains("}}") {
-        return Err(());
     }
 
     Ok(placeholders)

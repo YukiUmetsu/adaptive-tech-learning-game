@@ -2,7 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import type { QuestionView } from "../api/types";
+import type { FeedbackResponse, QuestionView } from "../api/types";
 import QuestionCard from "./QuestionCard";
 
 function base(overrides: Partial<QuestionView>): QuestionView {
@@ -405,5 +405,72 @@ describe("QuestionCard", () => {
     expect(onSubmit).toHaveBeenCalledWith({
       typed_answers: { zero: "zero_grad" },
     });
+  });
+
+  it("shows per-blank correctness from server feedback", async () => {
+    const onSubmit = vi.fn();
+    const question = base({
+      interaction_type: "typed_fill_blank",
+      assessment_mode: "recall",
+      interaction: {
+        type: "typed_fill_blank",
+        content: {
+          type: "code",
+          language: "python",
+          template: "optimizer.{{zero}}()\noptimizer.{{step}}()",
+        },
+        slots: [
+          { id: "zero", label: "Clear gradients", placeholder: "method" },
+          { id: "step", label: "Update parameters", placeholder: "method" },
+        ],
+      },
+    });
+
+    const feedback: FeedbackResponse = {
+      event_id: "e",
+      question_id: "q",
+      correct: false,
+      score: 0.5,
+      error_codes: ["typed_fill_blank_incorrect"],
+      bits_preview: 0,
+      explanation: "",
+      canonical_answer: {
+        type: "typed_fill_blank",
+        answers: {
+          zero: { accepted_answers: ["zero_grad"] },
+          step: { accepted_answers: ["step"] },
+        },
+      },
+      concepts: [],
+    };
+
+    const { container, rerender } = render(
+      <QuestionCard question={question} onSubmit={onSubmit} />,
+    );
+
+    await userEvent.type(
+      screen.getByRole("textbox", { name: "Clear gradients" }),
+      "zero_grad",
+    );
+    await userEvent.type(
+      screen.getByRole("textbox", { name: "Update parameters" }),
+      "backword",
+    );
+
+    // The learner's own values persist while the feedback prop arrives.
+    rerender(
+      <QuestionCard
+        question={question}
+        disabled
+        feedback={feedback}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    expect(container.querySelector(".typed-blank.correct")).not.toBeNull();
+    expect(container.querySelector(".typed-blank.incorrect")).not.toBeNull();
+    expect(screen.getByRole("textbox", { name: "Update parameters" })).toHaveValue(
+      "backword",
+    );
   });
 });

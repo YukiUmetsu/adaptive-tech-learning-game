@@ -104,6 +104,20 @@ describe("buildSentinelCode", () => {
       { kind: "text", text: "plain text" },
     ]);
   });
+
+  it("treats a bare closing brace in code as literal text", () => {
+    const template = 'd = {"a": {"b": {{value}}}}';
+    const { code, slotsBySentinel } = buildSentinelCode(template);
+
+    expect([...slotsBySentinel.values()]).toEqual(["value"]);
+    expect(code.endsWith("}}")).toBe(true);
+
+    expect(parseTypedText(template)).toEqual([
+      { kind: "text", text: 'd = {"a": {"b": ' },
+      { kind: "slot", slotId: "value" },
+      { kind: "text", text: "}}" },
+    ]);
+  });
 });
 
 describe("normalizeLanguage", () => {

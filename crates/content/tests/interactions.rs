@@ -1263,6 +1263,22 @@ fn rejects_empty_code_template() {
 }
 
 #[test]
+fn accepts_code_with_literal_closing_braces() {
+    // Nested dicts, JS/Rust blocks, and f-strings contain `}}` literally. That
+    // must not be mistaken for a malformed placeholder.
+    let mut value = pytorch_value();
+    let index = question_index(&value, "pytorch-typed-model-mode-001");
+    value["questions"][index]["interaction"]["content"]["template"] =
+        Value::from("value = model.{{mode}}()  # config: {\"a\": {\"b\": 1}}");
+
+    assert!(
+        validate_value(&value).is_ok(),
+        "literal closing braces in code must be treated as text: {:?}",
+        validate_value(&value)
+    );
+}
+
+#[test]
 fn rejects_duplicate_table_column_id() {
     let mut value = pytorch_value();
     let index = question_index(&value, "pytorch-typed-table-001");

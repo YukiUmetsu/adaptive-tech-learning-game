@@ -277,6 +277,24 @@ describe("TypedFillBlankInteraction — code", () => {
     expect(container.querySelector("pre.typed-code")).not.toBeNull();
     expect(screen.getByRole("textbox", { name: "Value" })).toBeInTheDocument();
   });
+
+  it("keeps literal closing braces in code while rendering the blank", () => {
+    render(
+      <TypedFillBlankInteraction
+        content={{
+          type: "code",
+          language: "python",
+          template: 'd = {"a": {"b": {{value}}}}',
+        }}
+        slots={[{ id: "value", label: "Value", placeholder: "value" }]}
+        value={{}}
+        onChange={() => undefined}
+      />,
+    );
+
+    expect(screen.getByRole("textbox", { name: "Value" })).toBeInTheDocument();
+    expect(lineLayout(lines()[0])).toBe('d = {"a": {"b": [blank]}}');
+  });
 });
 
 describe("TypedFillBlankInteraction — table", () => {

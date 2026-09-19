@@ -295,6 +295,10 @@ Blanks may sit inside function arguments, strings, or with punctuation touching
 them (`dim={{dim}}`). The blank is rendered exactly where `{{slot_id}}` appears
 inside the highlighted code, never as a separate field below it.
 
+A bare `}}` that is not part of a placeholder is treated as literal text, so
+code that naturally contains closing braces (nested dictionaries, blocks) is
+valid. Only an unterminated or malformed `{{...}}` is rejected.
+
 ### Table
 
 Tables render as real `<table>` markup. Each row must provide a cell for every
