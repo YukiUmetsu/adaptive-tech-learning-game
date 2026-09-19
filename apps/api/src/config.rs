@@ -96,8 +96,12 @@ pub struct WorkosConfig {
     pub client_id: String,
     /// Server-side WorkOS API key. Never exposed to the browser or logs.
     pub api_key: String,
-    /// Optional expected token issuer.
+    /// Optional expected token issuer. Defaults to `https://api.workos.com`;
+    /// set it to a custom AuthKit authentication domain when one is configured.
     pub issuer: Option<String>,
+    /// Optional explicit JWKS URL. Defaults to the provider's standard location
+    /// for the configured issuer.
+    pub jwks_url: Option<String>,
 }
 
 /// Validated runtime configuration.
@@ -221,6 +225,7 @@ impl Config {
                 client_id,
                 api_key,
                 issuer: raw("WORKOS_ISSUER"),
+                jwks_url: raw("WORKOS_JWKS_URL"),
             }),
             _ => return Err(ConfigError::IncompleteWorkos),
         };
@@ -438,6 +443,23 @@ mod tests {
         assert_eq!(
             workos.issuer.as_deref(),
             Some("https://example.authkit.app")
+        );
+        assert!(workos.jwks_url.is_none());
+    }
+
+    #[test]
+    fn workos_jwks_url_is_optional_and_loaded() {
+        let mut source = minimal();
+        source.push(("WORKOS_CLIENT_ID", "client_123"));
+        source.push(("WORKOS_API_KEY", "sk_test_123"));
+        source.push(("WORKOS_ISSUER", "https://example.authkit.app"));
+        source.push(("WORKOS_JWKS_URL", "https://example.authkit.app/oauth2/jwks"));
+        let config = Config::from_source(source).expect("valid config");
+
+        let workos = config.workos.expect("workos configured");
+        assert_eq!(
+            workos.jwks_url.as_deref(),
+            Some("https://example.authkit.app/oauth2/jwks")
         );
     }
 

@@ -77,10 +77,23 @@ absent in a clone without WorkOS credentials by design. To test the real flow:
    developer option disappears and `dev:` tokens are rejected (the modes are
    mutually exclusive).
 
-If `GET /v1/me` returns 401 after the redirect, it is almost always an issuer or
-client-id mismatch: set `WORKOS_ISSUER` to the exact `iss` claim (the default is
-`https://api.workos.com`) and make sure the API and web client ids match.
-`VITE_WORKOS_API_HOSTNAME` supports a custom AuthKit authentication domain.
+If `GET /v1/me` or a learning request returns 401 after the redirect, it is
+almost always an issuer or JWKS mismatch:
+
+- The default WorkOS API issuer is `https://api.workos.com`. WorkOS session
+  tokens from a client-only integration use a **client-scoped** issuer,
+  `https://api.workos.com/user_management/<client_id>`, and an environment with
+  an AuthKit authentication domain (for example
+  `https://your-app-staging.authkit.app`) issues tokens with that domain as
+  `iss`. The verifier accepts the default issuer, the client-scoped issuer, and
+  a configured issuer, but the signature must still validate against the JWKS
+  and the `client_id` claim must match `WORKOS_CLIENT_ID`.
+- Discover exact values from `{issuer}/.well-known/openid-configuration`; set
+  `WORKOS_ISSUER` when your environment deviates and `WORKOS_JWKS_URL` when the
+  issuer's JWKS is not at the default provider layout (`/sso/jwks/<client_id>`
+  for `api.workos.com`, `/oauth2/jwks` for an AuthKit domain).
+- `VITE_WORKOS_API_HOSTNAME` on the web side supports a custom AuthKit
+  authentication domain.
 
 The post-login redirect is handled client-side through React Router (not a full
 page reload). The AuthKit SDK only persists the session across reloads on

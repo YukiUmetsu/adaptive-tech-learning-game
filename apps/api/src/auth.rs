@@ -332,11 +332,21 @@ struct AccessTokenClaims {
 impl TokenVerifier for WorkosVerifier {
     fn verify<'a>(&'a self, token: &'a str) -> BoxFuture<'a, Result<VerifiedIdentity, AuthError>> {
         Box::pin(async move {
-            let header = decode_header(token).map_err(|_| AuthError::Invalid)?;
+            let header = match decode_header(token) {
+                Ok(header) => header,
+                Err(error) => {
+                    tracing::warn!(reason = %error, "workos token has an unreadable header");
+                    return Err(AuthError::Invalid);
+                }
+            };
             if header.alg != Algorithm::RS256 {
+                tracing::warn!(alg = ?header.alg, "workos token uses an unexpected algorithm");
                 return Err(AuthError::Invalid);
             }
-            let kid = header.kid.ok_or(AuthError::Invalid)?;
+            let Some(kid) = header.kid else {
+                tracing::warn!("workos token is missing a key id");
+                return Err(AuthError::Invalid);
+            };
             let key = self.decoding_key(&kid).await?;
 
             let mut validation = Validation::new(Algorithm::RS256);
@@ -346,20 +356,39 @@ impl TokenVerifier for WorkosVerifier {
             validation.validate_aud = false;
             validation.leeway = CLOCK_SKEW_SECONDS;
 
-            let data = decode::<AccessTokenClaims>(token, &key, &validation)
-                .map_err(|_| AuthError::Invalid)?;
+            let data = match decode::<AccessTokenClaims>(token, &key, &validation) {
+                Ok(data) => data,
+                Err(error) => {
+                    tracing::warn!(reason = %error, "workos token failed signature/claims validation");
+                    return Err(AuthError::Invalid);
+                }
+            };
             let claims = data.claims;
 
             if claims.sub.trim().is_empty() {
+                tracing::warn!("workos token has an empty subject");
                 return Err(AuthError::Invalid);
             }
             if claims.client_id.as_deref() != Some(self.client_id.as_str()) {
+                tracing::warn!(
+                    expected_client_id = %self.client_id,
+                    actual_client_id = ?claims.client_id,
+                    "workos token client_id mismatch"
+                );
                 return Err(AuthError::Invalid);
             }
 
-            let issuer = claims.iss.as_deref().ok_or(AuthError::Invalid)?;
+            let Some(issuer) = claims.iss.as_deref() else {
+                tracing::warn!("workos token is missing an issuer");
+                return Err(AuthError::Invalid);
+            };
             let issuer = issuer.trim_end_matches('/');
             if !self.accepted_issuers.iter().any(|known| known == issuer) {
+                tracing::warn!(
+                    accepted_issuers = ?self.accepted_issuers,
+                    actual_issuer = %issuer,
+                    "workos token issuer mismatch"
+                );
                 return Err(AuthError::Invalid);
             }
 
@@ -391,23 +420,66 @@ pub fn build_authenticator(config: &Config) -> Authenticator {
                 .workos
                 .as_ref()
                 .expect("validated: Workos auth mode always has credentials");
-            let issuer = workos
+            let configured_issuer = workos
                 .issuer
                 .as_deref()
-                .map(|value| value.trim_end_matches('/').to_owned())
-                .unwrap_or_else(|| WORKOS_ISSUER.to_owned());
-            let base = issuer.trim_end_matches('/');
-            let jwks_url = format!("{base}/sso/jwks/{}", workos.client_id);
+                .map(|value| value.trim_end_matches('/').to_owned());
+            let jwks_url = workos.jwks_url.clone().unwrap_or_else(|| {
+                default_jwks_url(
+                    configured_issuer.as_deref().unwrap_or(WORKOS_ISSUER),
+                    &workos.client_id,
+                )
+            });
             let source = Arc::new(WorkosJwks::new(jwks_url));
             Authenticator {
                 verifier: Arc::new(WorkosVerifier::new(
                     workos.client_id.clone(),
-                    vec![issuer],
+                    accepted_issuers(configured_issuer.as_deref(), &workos.client_id),
                     source,
                 )),
                 profile: Some(Arc::new(WorkosDirectory::new(workos.api_key.clone()))),
             }
         }
+    }
+}
+
+/// Issuers accepted for WorkOS access tokens.
+///
+/// WorkOS session tokens carry either the default API issuer, a client-scoped
+/// issuer (`https://api.workos.com/user_management/<client_id>`), or a custom
+/// AuthKit authentication domain. Signature and `client_id` validation remain
+/// the primary security gates; the issuer allowlist is an additional check.
+fn accepted_issuers(configured: Option<&str>, client_id: &str) -> Vec<String> {
+    let mut issuers = Vec::new();
+    if let Some(value) = configured {
+        let normalized = value.trim_end_matches('/');
+        if !normalized.is_empty() {
+            issuers.push(normalized.to_owned());
+        }
+    }
+    for candidate in [
+        WORKOS_ISSUER.to_owned(),
+        format!("{WORKOS_ISSUER}/user_management/{client_id}"),
+    ] {
+        if !issuers.contains(&candidate) {
+            issuers.push(candidate);
+        }
+    }
+    issuers
+}
+
+/// Default JWKS location for a WorkOS issuer.
+///
+/// The WorkOS API (including its client-scoped issuer) serves a per-application
+/// JWKS path. A custom AuthKit authentication domain (for example
+/// `https://example.authkit.app`) exposes the standard OIDC `oauth2/jwks`
+/// endpoint instead.
+fn default_jwks_url(issuer: &str, client_id: &str) -> String {
+    let base = issuer.trim_end_matches('/');
+    if base == WORKOS_ISSUER || base.starts_with(&format!("{WORKOS_ISSUER}/")) {
+        format!("{WORKOS_ISSUER}/sso/jwks/{client_id}")
+    } else {
+        format!("{base}/oauth2/jwks")
     }
 }
 
@@ -438,10 +510,13 @@ impl FromRequestParts<AppState> for AuthenticatedUser {
     ) -> Result<Self, Self::Rejection> {
         match resolve_user(parts, state).await {
             Ok(Some(user)) => Ok(user),
-            Ok(None) => Err(ApiError::Unauthorized),
+            Ok(None) => {
+                tracing::debug!("protected request without a bearer token");
+                Err(ApiError::Unauthorized)
+            }
             Err(AuthError::Unavailable) => Err(ApiError::Unavailable),
             Err(error) => {
-                tracing::debug!(error = %error, "authentication failed");
+                tracing::warn!(error = %error, "authentication failed");
                 Err(ApiError::Unauthorized)
             }
         }
@@ -604,6 +679,44 @@ INjFT9+ehEH8ohGHeB1QIw==
             vec![WORKOS_ISSUER.to_owned()],
             Arc::new(source),
         )
+    }
+
+    #[test]
+    fn default_jwks_url_matches_provider_layout() {
+        assert_eq!(
+            default_jwks_url(WORKOS_ISSUER, "client_1"),
+            "https://api.workos.com/sso/jwks/client_1"
+        );
+        assert_eq!(
+            default_jwks_url(
+                "https://api.workos.com/user_management/client_1",
+                "client_1"
+            ),
+            "https://api.workos.com/sso/jwks/client_1"
+        );
+        assert_eq!(
+            default_jwks_url("https://example.authkit.app/", "client_1"),
+            "https://example.authkit.app/oauth2/jwks"
+        );
+    }
+
+    #[test]
+    fn accepted_issuers_include_default_and_client_scoped() {
+        assert_eq!(
+            accepted_issuers(Some("https://example.authkit.app/"), "client_1"),
+            vec![
+                "https://example.authkit.app".to_owned(),
+                "https://api.workos.com".to_owned(),
+                "https://api.workos.com/user_management/client_1".to_owned(),
+            ]
+        );
+        assert_eq!(
+            accepted_issuers(None, "client_1"),
+            vec![
+                "https://api.workos.com".to_owned(),
+                "https://api.workos.com/user_management/client_1".to_owned(),
+            ]
+        );
     }
 
     #[derive(serde::Serialize)]
