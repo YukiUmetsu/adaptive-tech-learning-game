@@ -119,7 +119,7 @@ fn every_domain_resolves_by_version_and_id() {
 
     assert!(registry.learning_domain("soa-c03", "domain-9").is_none());
     assert!(registry.learning_domain("soa-c02", "domain-1").is_none());
-    assert!(!registry.learning_available("aws-saa-c03", "domain-1"));
+    assert!(!registry.learning_available("aws-nonexistent-c01", "domain-1"));
 }
 
 #[test]

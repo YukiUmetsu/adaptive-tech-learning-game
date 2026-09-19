@@ -46,13 +46,7 @@ export const CATALOG: CatalogCategory[] = [
         id: "aws-saa-c03",
         name: "AWS Certified Solutions Architect - Associate",
         examCode: "SAA-C03",
-        wip: true,
-      },
-      {
-        id: "aws-dva-c02",
-        name: "AWS Certified Developer - Associate",
-        examCode: "DVA-C02",
-        wip: true,
+        wip: false,
       },
     ],
   },
@@ -88,18 +82,6 @@ export const CATALOG: CatalogCategory[] = [
         id: "comptia-security-plus",
         name: "CompTIA Security+",
         examCode: "SY0-701",
-        wip: true,
-      },
-    ],
-  },
-  {
-    id: "ai-ml",
-    label: "AI / Machine Learning",
-    certifications: [
-      {
-        id: "aws-mla-c01",
-        name: "AWS Certified Machine Learning Engineer - Associate",
-        examCode: "MLA-C01",
         wip: true,
       },
     ],
