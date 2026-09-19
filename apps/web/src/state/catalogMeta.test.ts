@@ -51,4 +51,22 @@ describe("buildCatalog", () => {
     const sections = buildCatalog(CATALOG, []);
     expect(sections.length).toBeGreaterThan(3);
   });
+
+  it("offers the AWS Generative AI Developer certification and drops Linux", () => {
+    const entries = CATALOG.flatMap((section) => section.certifications);
+    const entry = entries.find((candidate) => candidate.id === "aws-aip-c01");
+    expect(entry?.examCode).toBe("AIP-C01");
+    expect(entry?.wip).toBe(false);
+
+    const sections = buildCatalog(CATALOG, [
+      certification(
+        "aws-aip-c01",
+        "AWS Certified Generative AI Developer - Professional",
+      ),
+    ]);
+    const cards = sections.flatMap((section) => section.cards);
+    expect(cards.find((card) => card.id === "aws-aip-c01")?.available).toBe(true);
+
+    expect(cards.map((card) => card.id)).not.toContain("lfcs");
+  });
 });

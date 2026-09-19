@@ -44,7 +44,9 @@ describe("App routing", () => {
     renderAt("/");
 
     expect(
-      screen.getByRole("heading", { name: "Adaptive Learning" }),
+      screen.getByRole("heading", {
+        name: /Cloud certification prep that finally keeps you engaged/i,
+      }),
     ).toBeInTheDocument();
   });
 

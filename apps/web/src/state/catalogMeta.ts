@@ -37,6 +37,12 @@ export const CATALOG: CatalogCategory[] = [
         wip: false,
       },
       {
+        id: "aws-aip-c01",
+        name: "AWS Certified Generative AI Developer - Professional",
+        examCode: "AIP-C01",
+        wip: false,
+      },
+      {
         id: "aws-saa-c03",
         name: "AWS Certified Solutions Architect - Associate",
         examCode: "SAA-C03",
@@ -70,30 +76,6 @@ export const CATALOG: CatalogCategory[] = [
         id: "gcp-ace",
         name: "Google Associate Cloud Engineer",
         examCode: "ACE",
-        wip: true,
-      },
-    ],
-  },
-  {
-    id: "cloud-native",
-    label: "Kubernetes & Cloud Native",
-    certifications: [
-      {
-        id: "cncf-cka",
-        name: "Certified Kubernetes Administrator",
-        examCode: "CKA",
-        wip: true,
-      },
-    ],
-  },
-  {
-    id: "linux-devops",
-    label: "Linux / DevOps",
-    certifications: [
-      {
-        id: "lfcs",
-        name: "Linux Foundation Certified System Administrator",
-        examCode: "LFCS",
         wip: true,
       },
     ],

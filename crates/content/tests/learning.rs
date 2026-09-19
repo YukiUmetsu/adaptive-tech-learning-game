@@ -14,22 +14,35 @@ fn registry() -> ContentRegistry {
     ContentRegistry::embedded().expect("embedded content must be valid")
 }
 
-fn learning_source_for(domain_id: &str) -> &'static str {
+fn learning_source_for(certification_id: &str, domain_id: &str) -> &'static str {
     EMBEDDED_LEARNING_SOURCES
         .iter()
         .copied()
         .find(|source| {
             serde_json::from_str::<Value>(source)
                 .ok()
-                .and_then(|value| value["domain"]["id"].as_str().map(str::to_owned))
-                .as_deref()
-                == Some(domain_id)
+                .is_some_and(|value| {
+                    value["certification_id"].as_str() == Some(certification_id)
+                        && value["domain"]["id"].as_str() == Some(domain_id)
+                })
         })
-        .unwrap_or_else(|| panic!("learning source for {domain_id} is embedded"))
+        .unwrap_or_else(|| panic!("learning source for {certification_id}/{domain_id} is embedded"))
 }
 
-fn learning_value(domain_id: &str) -> Value {
-    serde_json::from_str(learning_source_for(domain_id)).expect("learning source is valid json")
+fn learning_value(certification_id: &str, domain_id: &str) -> Value {
+    serde_json::from_str(learning_source_for(certification_id, domain_id))
+        .expect("learning source is valid json")
+}
+
+fn domains_for<'a>(
+    registry: &'a ContentRegistry,
+    certification_id: &str,
+) -> Vec<&'a LearningDomain> {
+    registry
+        .learning_domains()
+        .iter()
+        .filter(|domain| domain.certification_id == certification_id)
+        .collect()
 }
 
 fn validate_value(value: &Value) -> Result<(), Vec<ContentError>> {
@@ -49,7 +62,7 @@ fn expect_error(value: &Value, code: &str) {
 #[test]
 fn all_five_soa_c03_learning_domains_load() {
     let registry = registry();
-    let domains = registry.learning_domains();
+    let domains = domains_for(&registry, "aws-soa-c03");
     assert_eq!(domains.len(), 5);
 
     let ids: Vec<&str> = domains
@@ -61,8 +74,27 @@ fn all_five_soa_c03_learning_domains_load() {
         vec!["domain-1", "domain-2", "domain-3", "domain-4", "domain-5"]
     );
     for domain in domains {
-        assert_eq!(domain.certification_id, "aws-soa-c03");
         assert_eq!(domain.certification_version, "soa-c03");
+        assert!(!domain.modules.is_empty());
+    }
+}
+
+#[test]
+fn all_five_aip_c01_learning_domains_load() {
+    let registry = registry();
+    let domains = domains_for(&registry, "aws-aip-c01");
+    assert_eq!(domains.len(), 5);
+
+    let ids: Vec<&str> = domains
+        .iter()
+        .map(|domain| domain.domain.id.as_str())
+        .collect();
+    assert_eq!(
+        ids,
+        vec!["domain-1", "domain-2", "domain-3", "domain-4", "domain-5"]
+    );
+    for domain in domains {
+        assert_eq!(domain.certification_version, "aip-c01");
         assert!(!domain.modules.is_empty());
     }
 }
@@ -139,15 +171,23 @@ fn prerequisites_resolve_and_have_no_cycles() {
 #[test]
 fn concept_ids_reference_quiz_concepts() {
     let registry = registry();
-    let bundle = registry.bundle_for_version("soa-c03").expect("quiz bundle");
-    let concepts: std::collections::HashSet<&str> = bundle
-        .concepts
-        .iter()
-        .map(|concept| concept.id.as_str())
-        .collect();
-
     let mut checked = 0;
+
     for domain in registry.learning_domains() {
+        let bundle = registry
+            .bundle_for_version(&domain.certification_version)
+            .unwrap_or_else(|| {
+                panic!(
+                    "quiz bundle for {} is embedded",
+                    domain.certification_version
+                )
+            });
+        let concepts: std::collections::HashSet<&str> = bundle
+            .concepts
+            .iter()
+            .map(|concept| concept.id.as_str())
+            .collect();
+
         for node in domain.nodes() {
             for concept_id in &node.concept_ids {
                 checked += 1;
@@ -225,22 +265,26 @@ fn every_prompt_kind_maps_to_the_shared_vocabulary() {
 #[test]
 fn coverage_counts_match_the_authored_curriculum() {
     let registry = registry();
-    let mut modules = 0;
-    let mut nodes = 0;
-    let mut prompts = 0;
-    for domain in registry.learning_domains() {
-        modules += domain.coverage.module_count;
-        nodes += domain.coverage.knowledge_node_count;
-        prompts += domain.coverage.prompt_count;
-    }
-    assert_eq!(modules, 23);
-    assert_eq!(nodes, 138);
-    assert_eq!(prompts, 418);
+
+    let totals = |certification_id: &str| {
+        let mut modules = 0;
+        let mut nodes = 0;
+        let mut prompts = 0;
+        for domain in domains_for(&registry, certification_id) {
+            modules += domain.coverage.module_count;
+            nodes += domain.coverage.knowledge_node_count;
+            prompts += domain.coverage.prompt_count;
+        }
+        (modules, nodes, prompts)
+    };
+
+    assert_eq!(totals("aws-soa-c03"), (23, 138, 418));
+    assert_eq!(totals("aws-aip-c01"), (20, 98, 392));
 }
 
 #[test]
 fn rejects_unknown_prerequisite() {
-    let mut value = learning_value("domain-1");
+    let mut value = learning_value("aws-soa-c03", "domain-1");
     value["modules"][0]["nodes"][1]["prerequisite_node_ids"] = Value::from(vec!["ghost-node"]);
 
     expect_error(&value, "learning_node_prerequisite_unknown");
@@ -248,7 +292,7 @@ fn rejects_unknown_prerequisite() {
 
 #[test]
 fn rejects_self_prerequisite() {
-    let mut value = learning_value("domain-1");
+    let mut value = learning_value("aws-soa-c03", "domain-1");
     let node_id = value["modules"][0]["nodes"][0]["id"].clone();
     value["modules"][0]["nodes"][0]["prerequisite_node_ids"] = Value::from(vec![node_id]);
 
@@ -257,7 +301,7 @@ fn rejects_self_prerequisite() {
 
 #[test]
 fn rejects_dependency_cycle() {
-    let mut value = learning_value("domain-1");
+    let mut value = learning_value("aws-soa-c03", "domain-1");
     let dependent = value["modules"][0]["nodes"][1]["id"].clone();
     value["modules"][0]["nodes"][0]["prerequisite_node_ids"] = Value::from(vec![dependent]);
 
@@ -266,7 +310,7 @@ fn rejects_dependency_cycle() {
 
 #[test]
 fn rejects_duplicate_node_id() {
-    let mut value = learning_value("domain-1");
+    let mut value = learning_value("aws-soa-c03", "domain-1");
     let duplicate = value["modules"][0]["nodes"][0]["id"].clone();
     value["modules"][0]["nodes"][1]["id"] = duplicate;
 
@@ -275,7 +319,7 @@ fn rejects_duplicate_node_id() {
 
 #[test]
 fn rejects_duplicate_module_id() {
-    let mut value = learning_value("domain-1");
+    let mut value = learning_value("aws-soa-c03", "domain-1");
     let duplicate = value["modules"][0]["id"].clone();
     value["modules"][1]["id"] = duplicate;
 
@@ -284,7 +328,7 @@ fn rejects_duplicate_module_id() {
 
 #[test]
 fn rejects_invalid_map_position() {
-    let mut value = learning_value("domain-1");
+    let mut value = learning_value("aws-soa-c03", "domain-1");
     value["modules"][0]["nodes"][0]["map_position"]["x"] = Value::from(1.5);
 
     expect_error(&value, "learning_map_position_invalid");
@@ -292,7 +336,7 @@ fn rejects_invalid_map_position() {
 
 #[test]
 fn rejects_module_without_nodes() {
-    let mut value = learning_value("domain-1");
+    let mut value = learning_value("aws-soa-c03", "domain-1");
     value["modules"][0]["nodes"] = Value::from(Vec::<Value>::new());
 
     expect_error(&value, "learning_module_nodes_missing");
@@ -300,7 +344,7 @@ fn rejects_module_without_nodes() {
 
 #[test]
 fn rejects_coverage_mismatch() {
-    let mut value = learning_value("domain-1");
+    let mut value = learning_value("aws-soa-c03", "domain-1");
     let current = value["coverage"]["knowledge_node_count"].as_u64().unwrap();
     value["coverage"]["knowledge_node_count"] = Value::from(current + 1);
 
@@ -309,7 +353,7 @@ fn rejects_coverage_mismatch() {
 
 #[test]
 fn rejects_comparison_with_one_column() {
-    let mut value = learning_value("domain-1");
+    let mut value = learning_value("aws-soa-c03", "domain-1");
     let columns = value["modules"][0]["nodes"][0]["prompts"][0]["reveal"]["columns"]
         .as_array_mut()
         .expect("comparison columns");
@@ -320,7 +364,7 @@ fn rejects_comparison_with_one_column() {
 
 #[test]
 fn rejects_empty_required_prompt_set() {
-    let mut value = learning_value("domain-1");
+    let mut value = learning_value("aws-soa-c03", "domain-1");
     for prompt in value["modules"][0]["nodes"][0]["prompts"]
         .as_array_mut()
         .expect("prompts")
@@ -333,7 +377,7 @@ fn rejects_empty_required_prompt_set() {
 
 #[test]
 fn rejects_unknown_concept_against_quiz_bundle() {
-    let mut value = learning_value("domain-1");
+    let mut value = learning_value("aws-soa-c03", "domain-1");
     value["modules"][0]["nodes"][0]["concept_ids"] = Value::from(vec!["aws.does_not_exist"]);
     let mutated = serde_json::to_string(&value).expect("serialize mutation");
 
