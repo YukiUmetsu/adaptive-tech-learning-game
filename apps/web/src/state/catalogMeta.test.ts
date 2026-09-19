@@ -64,6 +64,26 @@ describe("buildCatalog", () => {
     expect(sections.length).toBeGreaterThan(3);
   });
 
+  it("offers the PyTorch Core certification under AI when content exists", () => {
+    const entries = CATALOG.flatMap((section) => section.certifications);
+    const entry = entries.find(
+      (candidate) => candidate.id === "ai-pytorch-core",
+    );
+    expect(entry?.examCode).toBe("PYTORCH-CORE");
+    expect(entry?.wip).toBe(false);
+
+    const sections = buildCatalog(CATALOG, [
+      certification(
+        "ai-pytorch-core",
+        "PyTorch Core: Practical ML & Neural Networks",
+      ),
+    ]);
+    const cards = sections.flatMap((section) => section.cards);
+    expect(cards.find((card) => card.id === "ai-pytorch-core")?.available).toBe(
+      true,
+    );
+  });
+
   it("offers the AWS Generative AI Developer certification and drops Linux", () => {
     const entries = CATALOG.flatMap((section) => section.certifications);
     const entry = entries.find((candidate) => candidate.id === "aws-aip-c01");

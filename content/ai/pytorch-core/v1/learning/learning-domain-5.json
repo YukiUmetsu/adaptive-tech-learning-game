@@ -1,0 +1,592 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "pytorch-core-learning-2026-09-19-v1",
+  "certification_id": "ai-pytorch-core",
+  "certification_version": "pytorch-core-v1",
+  "exam_guide_revision": "Not a certification. PyTorch stable documentation reviewed 2026-09-19 (current docs identified as 2.14).",
+  "domain": {
+    "id": "domain-5",
+    "name": "Losses, Optimizers & Learning-Rate Control",
+    "weight": 0.15
+  },
+  "learning_design": {
+    "progress_label": "Discovery Progress",
+    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
+    "mastery_note": "Discovery progress is not mastery evidence; typed recall and coding questions provide the scored retrieval signal."
+  },
+  "source_refs": [
+    {
+      "title": "PyTorch stable documentation",
+      "url": "https://docs.pytorch.org/docs/stable/"
+    },
+    {
+      "title": "PyTorch Learn the Basics",
+      "url": "https://docs.pytorch.org/tutorials/beginner/basics/"
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "5.1",
+      "5.2",
+      "5.3"
+    ],
+    "skill_ids": [
+      "5.1.01",
+      "5.1.02",
+      "5.1.03",
+      "5.1.04",
+      "5.2.01",
+      "5.2.02",
+      "5.2.03",
+      "5.3.01",
+      "5.3.02"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 27
+  },
+  "authoring_notes": "This is a practical learning track, not a certification. Domain weights are curriculum emphasis weights used for adaptive selection. Learning placeholders are exact cloze versions of their revealed text. Reviewed against PyTorch 2.14-era official documentation and the app's structured typed-fill code/table renderer on 2026-09-19.",
+  "modules": [
+    {
+      "id": "domain-5-task-5-1",
+      "title": "Choose and call common losses",
+      "order": 1,
+      "task_ids": [
+        "5.1"
+      ],
+      "skill_ids": [
+        "5.1.01",
+        "5.1.02",
+        "5.1.03",
+        "5.1.04"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-5-cross-entropy",
+          "title": "CrossEntropyLoss",
+          "concept_ids": [
+            "ai.pytorch.cross_entropy"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.16
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "`nn.CrossEntropyLoss` accepts __________ and, for the common class-index case, integer targets containing class indices.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`nn.CrossEntropyLoss` accepts unnormalized class logits and, for the common class-index case, integer targets containing class indices."
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "⌨️ CODE?",
+              "placeholder": "For logits shaped `[N, C]`, a common target shape is `__________` with class ids from 0 to C-1.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For logits shaped `[N, C]`, a common target shape is `[N]` with class ids from 0 to C-1."
+              }
+            },
+            {
+              "id": "not_this",
+              "kind": "not_this",
+              "label": "⚠️ GOTCHA",
+              "placeholder": "__________ to logits before CrossEntropyLoss; the loss expects logits directly.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Do not apply softmax to logits before CrossEntropyLoss; the loss expects logits directly."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "CrossEntropyLoss — PyTorch documentation",
+              "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-bce-logits",
+          "title": "BCEWithLogitsLoss",
+          "concept_ids": [
+            "ai.pytorch.bce_logits"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-cross-entropy"
+          ],
+          "map_position": {
+            "x": 0.373,
+            "y": 0.16
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "`nn.__________` combines sigmoid behavior with binary cross-entropy in a numerically stable formulation.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`nn.BCEWithLogitsLoss` combines sigmoid behavior with binary cross-entropy in a numerically stable formulation."
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "⌨️ CODE?",
+              "placeholder": "Use __________ as inputs rather than manually applying sigmoid first.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use raw logits as inputs rather than manually applying sigmoid first."
+              }
+            },
+            {
+              "id": "not_this",
+              "kind": "not_this",
+              "label": "⚠️ GOTCHA",
+              "placeholder": "For typical binary or multi-label use, targets are __________ values compatible with the input shape.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For typical binary or multi-label use, targets are floating-point values compatible with the input shape."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "BCEWithLogitsLoss — PyTorch documentation",
+              "url": "https://docs.pytorch.org/docs/stable/nn.html"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-mse-loss",
+          "title": "MSELoss",
+          "concept_ids": [
+            "ai.pytorch.mse_loss"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-bce-logits"
+          ],
+          "map_position": {
+            "x": 0.627,
+            "y": 0.16
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "`nn.__________` measures mean squared error between input and target values when using its default mean reduction.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`nn.MSELoss` measures mean squared error between input and target values when using its default mean reduction."
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "⌨️ CODE?",
+              "placeholder": "It is a common __________ loss when squared errors match the objective you want to optimize.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "It is a common regression loss when squared errors match the objective you want to optimize."
+              }
+            },
+            {
+              "id": "not_this",
+              "kind": "not_this",
+              "label": "⚠️ GOTCHA",
+              "placeholder": "Input and target shapes must be __________ for elementwise error calculation.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Input and target shapes must be compatible for elementwise error calculation."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MSELoss — PyTorch documentation",
+              "url": "https://docs.pytorch.org/docs/stable/nn.html"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-l1-loss",
+          "title": "L1Loss",
+          "concept_ids": [
+            "ai.pytorch.l1_loss"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-mse-loss"
+          ],
+          "map_position": {
+            "x": 0.88,
+            "y": 0.16
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "`nn.__________` measures absolute elementwise error and is less dominated by large individual errors than squared-error loss.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`nn.L1Loss` measures absolute elementwise error and is less dominated by large individual errors than squared-error loss."
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "⌨️ CODE?",
+              "placeholder": "Use it when mean __________ better matches the training objective.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use it when mean absolute error better matches the training objective."
+              }
+            },
+            {
+              "id": "not_this",
+              "kind": "not_this",
+              "label": "⚠️ GOTCHA",
+              "placeholder": "Choosing L1 versus MSE changes the __________; it is not just a reporting choice.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choosing L1 versus MSE changes the optimization objective; it is not just a reporting choice."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "L1Loss — PyTorch documentation",
+              "url": "https://docs.pytorch.org/docs/stable/nn.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-5-task-5-2",
+      "title": "Configure optimizers and regularization",
+      "order": 2,
+      "task_ids": [
+        "5.2"
+      ],
+      "skill_ids": [
+        "5.2.01",
+        "5.2.02",
+        "5.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-5-task-5-1"
+      ],
+      "nodes": [
+        {
+          "id": "domain-5-sgd",
+          "title": "SGD optimizer",
+          "concept_ids": [
+            "ai.pytorch.sgd"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.38
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "`__________` implements stochastic gradient descent and can add options such as momentum and weight decay.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`torch.optim.SGD` implements stochastic gradient descent and can add options such as momentum and weight decay."
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "⌨️ CODE?",
+              "placeholder": "Construct it with the parameters to optimize, for example `torch.optim.SGD(__________, lr=...)`.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Construct it with the parameters to optimize, for example `torch.optim.SGD(model.parameters(), lr=...)`."
+              }
+            },
+            {
+              "id": "not_this",
+              "kind": "not_this",
+              "label": "⚠️ GOTCHA",
+              "placeholder": "The optimizer __________ it was given; frozen or omitted parameters are not magically added later.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The optimizer only updates parameters it was given; frozen or omitted parameters are not magically added later."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "SGD optimizer — PyTorch documentation",
+              "url": "https://docs.pytorch.org/docs/stable/optim.html"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-adamw",
+          "title": "AdamW optimizer",
+          "concept_ids": [
+            "ai.pytorch.adamw"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-sgd"
+          ],
+          "map_position": {
+            "x": 0.5,
+            "y": 0.38
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "`torch.optim.__________` implements AdamW, where weight decay is decoupled from the momentum and variance updates.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`torch.optim.AdamW` implements AdamW, where weight decay is decoupled from the momentum and variance updates."
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "⌨️ CODE?",
+              "placeholder": "It is a common optimizer choice when you want Adam-style adaptive updates together with __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "It is a common optimizer choice when you want Adam-style adaptive updates together with decoupled weight decay."
+              }
+            },
+            {
+              "id": "not_this",
+              "kind": "not_this",
+              "label": "⚠️ GOTCHA",
+              "placeholder": "Do not assume AdamW removes the need to __________ and weight decay.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Do not assume AdamW removes the need to tune learning rate and weight decay."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AdamW optimizer — PyTorch documentation",
+              "url": "https://docs.pytorch.org/docs/main/generated/torch.optim.AdamW.html"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-weight-decay",
+          "title": "Weight decay",
+          "concept_ids": [
+            "ai.pytorch.weight_decay"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-adamw"
+          ],
+          "map_position": {
+            "x": 0.88,
+            "y": 0.38
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "`__________` is an optimizer regularization hyperparameter that penalizes large weights according to the optimizer algorithm.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`weight_decay` is an optimizer regularization hyperparameter that penalizes large weights according to the optimizer algorithm."
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "⌨️ CODE?",
+              "placeholder": "With AdamW, weight decay is applied __________ from the adaptive gradient moments.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "With AdamW, weight decay is applied separately from the adaptive gradient moments."
+              }
+            },
+            {
+              "id": "not_this",
+              "kind": "not_this",
+              "label": "⚠️ GOTCHA",
+              "placeholder": "Weight decay is __________ mechanism as Dropout even though both can serve regularization goals.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Weight decay is not the same mechanism as Dropout even though both can serve regularization goals."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Weight decay — PyTorch documentation",
+              "url": "https://docs.pytorch.org/docs/main/generated/torch.optim.AdamW.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-5-task-5-3",
+      "title": "Adjust learning rates during training",
+      "order": 3,
+      "task_ids": [
+        "5.3"
+      ],
+      "skill_ids": [
+        "5.3.01",
+        "5.3.02"
+      ],
+      "prerequisite_module_ids": [
+        "domain-5-task-5-2"
+      ],
+      "nodes": [
+        {
+          "id": "domain-5-scheduler-step",
+          "title": "Learning-rate schedulers",
+          "concept_ids": [
+            "ai.pytorch.scheduler_step"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.6
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "PyTorch __________ modify optimizer learning rates according to a schedule or monitored metric.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "PyTorch learning-rate schedulers modify optimizer learning rates according to a schedule or monitored metric."
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "⌨️ CODE?",
+              "placeholder": "Many epoch-based schedulers use `__________` after the intended training epoch boundary.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Many epoch-based schedulers use `scheduler.step()` after the intended training epoch boundary."
+              }
+            },
+            {
+              "id": "not_this",
+              "kind": "not_this",
+              "label": "⚠️ GOTCHA",
+              "placeholder": "Scheduler step timing __________; metric-based schedulers such as ReduceLROnPlateau need a metric value.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Scheduler step timing depends on the scheduler type; metric-based schedulers such as ReduceLROnPlateau need a metric value."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Learning-rate schedulers — PyTorch documentation",
+              "url": "https://docs.pytorch.org/docs/stable/optim.html"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-reduce-plateau",
+          "title": "ReduceLROnPlateau",
+          "concept_ids": [
+            "ai.pytorch.reduce_plateau"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-scheduler-step"
+          ],
+          "map_position": {
+            "x": 0.88,
+            "y": 0.6
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "`__________` lowers the learning rate when a monitored metric stops improving for the configured patience.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`ReduceLROnPlateau` lowers the learning rate when a monitored metric stops improving for the configured patience."
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "⌨️ CODE?",
+              "placeholder": "Call `__________` after computing the validation metric you want it to monitor.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Call `scheduler.step(metric)` after computing the validation metric you want it to monitor."
+              }
+            },
+            {
+              "id": "not_this",
+              "kind": "not_this",
+              "label": "⚠️ GOTCHA",
+              "placeholder": "Unlike simple epoch schedulers, ReduceLROnPlateau __________ passed to `step`.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Unlike simple epoch schedulers, ReduceLROnPlateau needs the monitored metric passed to `step`."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "ReduceLROnPlateau — PyTorch documentation",
+              "url": "https://docs.pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

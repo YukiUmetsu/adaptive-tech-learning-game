@@ -1,0 +1,2151 @@
+{
+  "certification": {
+    "id": "ai-pytorch-core",
+    "vendor": "PyTorch",
+    "name": "PyTorch Core: Practical ML & Neural Networks",
+    "exam_code": "PYTORCH-CORE",
+    "official_source_url": "https://docs.pytorch.org/docs/stable/",
+    "last_reviewed": "2026-09-19"
+  },
+  "version": {
+    "id": "pytorch-core-v1",
+    "exam_code": "PYTORCH-CORE",
+    "effective_date": "2026-09-19",
+    "content_version": "pytorch-core-content-2026-09-19-v2",
+    "domains": [
+      {
+        "id": "domain-1",
+        "name": "Tensor Fundamentals & Shape Fluency",
+        "weight": 0.19,
+        "tasks": []
+      },
+      {
+        "id": "domain-2",
+        "name": "Datasets & Data Pipelines",
+        "weight": 0.14,
+        "tasks": []
+      },
+      {
+        "id": "domain-3",
+        "name": "Models & Common Neural Network Layers",
+        "weight": 0.19,
+        "tasks": []
+      },
+      {
+        "id": "domain-4",
+        "name": "Autograd & Training Loops",
+        "weight": 0.19,
+        "tasks": [
+          {
+            "id": "4.1",
+            "name": "Understand autograd and gradients",
+            "question_ids": [
+              "requires-grad-typed-001",
+              "requires-grad-typed-002",
+              "backward-typed-001",
+              "backward-typed-002",
+              "grad-accumulation-typed-001",
+              "grad-accumulation-typed-002",
+              "detach-typed-001",
+              "detach-typed-002"
+            ]
+          },
+          {
+            "id": "4.2",
+            "name": "Write the core training loop",
+            "question_ids": [
+              "zero-grad-typed-001",
+              "zero-grad-typed-002",
+              "optimizer-step-typed-001",
+              "optimizer-step-typed-002",
+              "loss-item-typed-001",
+              "loss-item-typed-002",
+              "train-eval-typed-001",
+              "train-eval-typed-002"
+            ]
+          },
+          {
+            "id": "4.3",
+            "name": "Control gradient tracking and stability",
+            "question_ids": [
+              "no-grad-typed-001",
+              "no-grad-typed-002",
+              "inference-mode-typed-001",
+              "inference-mode-typed-002",
+              "freeze-parameters-typed-001",
+              "freeze-parameters-typed-002",
+              "clip-grad-norm-typed-001",
+              "clip-grad-norm-typed-002",
+              "grad-control-class-001",
+              "grad-control-class-002"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "domain-5",
+        "name": "Losses, Optimizers & Learning-Rate Control",
+        "weight": 0.15,
+        "tasks": []
+      },
+      {
+        "id": "domain-6",
+        "name": "Devices, Checkpoints & Performance",
+        "weight": 0.14,
+        "tasks": []
+      }
+    ]
+  },
+  "concepts": [
+    {
+      "id": "ai.pytorch.requires_grad",
+      "name": "`requires_grad`",
+      "description": "`requires_grad=True` tells autograd to track operations needed to compute gradients with respect to that tensor in normal grad mode."
+    },
+    {
+      "id": "ai.pytorch.backward",
+      "name": "`loss.backward()`",
+      "description": "`loss.backward()` computes gradients through the recorded graph and accumulates them into `.grad` fields of relevant leaf tensors."
+    },
+    {
+      "id": "ai.pytorch.grad_accumulation",
+      "name": "Gradient accumulation",
+      "description": "PyTorch accumulates parameter gradients by default, so each backward pass adds to existing `.grad` values."
+    },
+    {
+      "id": "ai.pytorch.detach",
+      "name": "`detach()`",
+      "description": "`tensor.detach()` returns a tensor detached from the current autograd graph."
+    },
+    {
+      "id": "ai.pytorch.zero_grad",
+      "name": "Clearing gradients",
+      "description": "`optimizer.zero_grad()` clears or resets gradients associated with parameters managed by the optimizer."
+    },
+    {
+      "id": "ai.pytorch.optimizer_step",
+      "name": "`optimizer.step()`",
+      "description": "`optimizer.step()` updates parameters using the gradients currently stored for the optimizer-managed parameters."
+    },
+    {
+      "id": "ai.pytorch.loss_item",
+      "name": "`loss.item()`",
+      "description": "`loss.item()` converts a one-element tensor such as a scalar loss into a standard Python number."
+    },
+    {
+      "id": "ai.pytorch.train_eval",
+      "name": "`model.train()` and `model.eval()`",
+      "description": "`model.train()` enables training behavior for mode-sensitive modules, while `model.eval()` switches them to evaluation behavior."
+    },
+    {
+      "id": "ai.pytorch.no_grad",
+      "name": "`torch.no_grad()`",
+      "description": "`torch.no_grad()` disables recording operations for reverse-mode gradient calculation inside its context."
+    },
+    {
+      "id": "ai.pytorch.inference_mode",
+      "name": "`torch.inference_mode()`",
+      "description": "`torch.inference_mode()` disables autograd recording and removes additional autograd-related overhead for computations that will not later participate in grad-mode graphs."
+    },
+    {
+      "id": "ai.pytorch.freeze_parameters",
+      "name": "Freezing parameters",
+      "description": "Setting a parameter or module to `requires_grad_(False)` excludes those parameters from gradient computation in normal grad mode."
+    },
+    {
+      "id": "ai.pytorch.clip_grad_norm",
+      "name": "Gradient clipping",
+      "description": "`torch.nn.utils.clip_grad_norm_` clips the total norm of parameter gradients in place to a specified maximum norm."
+    }
+  ],
+  "questions": [
+    {
+      "id": "requires-grad-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the tensor construction.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "w = torch.randn(10, requires_grad={{value}})"
+        },
+        "slots": [
+          {
+            "id": "value",
+            "label": "Value",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "value": {
+            "accepted_answers": [
+              "True",
+              "true"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.requires_grad",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "requires_grad=True tells autograd to track operations needed to compute gradients with respect to that tensor in normal grad mode. Model Parameters require gradients by default unless you explicitly freeze them. Setting requires_grad does not itself run backpropagation; gradients are populated after a backward computation.",
+      "hints": [
+        "Model Parameters require gradients by default unless you explicitly freeze them."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`requires_grad` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/notes/autograd.html"
+        }
+      ]
+    },
+    {
+      "id": "requires-grad-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "goal",
+              "label": "Goal"
+            },
+            {
+              "id": "flag",
+              "label": "Flag"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "goal": {
+                  "type": "text",
+                  "template": "Track gradients for a tensor"
+                },
+                "flag": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "requires_grad={{value}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "value",
+            "label": "Value",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "value": {
+            "accepted_answers": [
+              "True",
+              "true"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.requires_grad",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "requires_grad=True tells autograd to track operations needed to compute gradients with respect to that tensor in normal grad mode. Model Parameters require gradients by default unless you explicitly freeze them. Setting requires_grad does not itself run backpropagation; gradients are populated after a backward computation.",
+      "hints": [
+        "Model Parameters require gradients by default unless you explicitly freeze them."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`requires_grad` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/notes/autograd.html"
+        }
+      ]
+    },
+    {
+      "id": "backward-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the training step.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "loss = loss_fn(pred, y)\nloss.{{method}}()"
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "backward"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.backward",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "loss.backward() computes gradients through the recorded graph and accumulates them into .grad fields of relevant leaf tensors. Call backward after computing the scalar loss and before the optimizer update. Calling backward repeatedly without clearing parameter gradients accumulates additional gradient values.",
+      "hints": [
+        "Call backward after computing the scalar loss and before the optimizer update."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`loss.backward()` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/autograd.html"
+        }
+      ]
+    },
+    {
+      "id": "backward-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "operation",
+              "label": "Operation"
+            },
+            {
+              "id": "method",
+              "label": "Method"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "operation": {
+                  "type": "text",
+                  "template": "Backpropagate the loss"
+                },
+                "method": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "loss.{{method}}()"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "backward"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.backward",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "loss.backward() computes gradients through the recorded graph and accumulates them into .grad fields of relevant leaf tensors. Call backward after computing the scalar loss and before the optimizer update. Calling backward repeatedly without clearing parameter gradients accumulates additional gradient values.",
+      "hints": [
+        "Call backward after computing the scalar loss and before the optimizer update."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`loss.backward()` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/autograd.html"
+        }
+      ]
+    },
+    {
+      "id": "grad-accumulation-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the statement.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "text",
+          "template": "By default, repeated backward passes {{behavior}} parameter gradients instead of replacing them."
+        },
+        "slots": [
+          {
+            "id": "behavior",
+            "label": "Behavior",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "behavior": {
+            "accepted_answers": [
+              "accumulate",
+              "add to",
+              "sum into"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.grad_accumulation",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "PyTorch accumulates parameter gradients by default, so each backward pass adds to existing .grad values. Clear gradients once per optimizer update unless you intentionally implement gradient accumulation over multiple microbatches. Forgetting to clear gradients in a normal one-batch-per-step loop causes unintended accumulation.",
+      "hints": [
+        "Clear gradients once per optimizer update unless you intentionally implement gradient accumulation over multiple microbatches."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Gradient accumulation — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html"
+        }
+      ]
+    },
+    {
+      "id": "grad-accumulation-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "pattern",
+              "label": "Pattern"
+            },
+            {
+              "id": "clear-gradients-every-microbatch",
+              "label": "Clear gradients every microbatch?"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "pattern": {
+                  "type": "text",
+                  "template": "Intentional multi-microbatch gradient accumulation"
+                },
+                "clear-gradients-every-microbatch": {
+                  "type": "text",
+                  "template": "{{answer}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Answer",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "no",
+              "false"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.grad_accumulation",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "PyTorch accumulates parameter gradients by default, so each backward pass adds to existing .grad values. Clear gradients once per optimizer update unless you intentionally implement gradient accumulation over multiple microbatches. Forgetting to clear gradients in a normal one-batch-per-step loop causes unintended accumulation.",
+      "hints": [
+        "Clear gradients once per optimizer update unless you intentionally implement gradient accumulation over multiple microbatches."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Gradient accumulation — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html"
+        }
+      ]
+    },
+    {
+      "id": "detach-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the PyTorch code.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "features_for_logging = features.{{method}}()"
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "detach"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.detach",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "tensor.detach() returns a tensor detached from the current autograd graph. Use detaching when you need a value for logging or another computation that should not backpropagate through the original history. Detaching is different from copying; the detached tensor can share storage with the original tensor.",
+      "hints": [
+        "Use detaching when you need a value for logging or another computation that should not backpropagate through the original history."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`detach()` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/autograd.html"
+        }
+      ]
+    },
+    {
+      "id": "detach-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "need",
+              "label": "Need"
+            },
+            {
+              "id": "method",
+              "label": "Method"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "need": {
+                  "type": "text",
+                  "template": "Break autograd connection to current graph"
+                },
+                "method": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "x.{{method}}()"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "detach"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.detach",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "tensor.detach() returns a tensor detached from the current autograd graph. Use detaching when you need a value for logging or another computation that should not backpropagate through the original history. Detaching is different from copying; the detached tensor can share storage with the original tensor.",
+      "hints": [
+        "Use detaching when you need a value for logging or another computation that should not backpropagate through the original history."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`detach()` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/autograd.html"
+        }
+      ]
+    },
+    {
+      "id": "zero-grad-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the training code.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "optimizer.{{method}}()\npred = model(x)\nloss = loss_fn(pred, y)\nloss.backward()\noptimizer.step()"
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "zero_grad"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.zero_grad",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "optimizer.zero_grad() clears or resets gradients associated with parameters managed by the optimizer. A common step is zero gradients, run forward/loss, call backward, then call optimizer step. Skipping gradient clearing in an ordinary loop makes gradients accumulate across batches.",
+      "hints": [
+        "A common step is zero gradients, run forward/loss, call backward, then call optimizer step."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Clearing gradients — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html"
+        }
+      ]
+    },
+    {
+      "id": "zero-grad-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "purpose",
+              "label": "Purpose"
+            },
+            {
+              "id": "method",
+              "label": "Method"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "purpose": {
+                  "type": "text",
+                  "template": "Clear optimizer-managed gradients"
+                },
+                "method": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "optimizer.{{method}}()"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "zero_grad"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.zero_grad",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "optimizer.zero_grad() clears or resets gradients associated with parameters managed by the optimizer. A common step is zero gradients, run forward/loss, call backward, then call optimizer step. Skipping gradient clearing in an ordinary loop makes gradients accumulate across batches.",
+      "hints": [
+        "A common step is zero gradients, run forward/loss, call backward, then call optimizer step."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Clearing gradients — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html"
+        }
+      ]
+    },
+    {
+      "id": "optimizer-step-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the training code.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "loss.backward()\noptimizer.{{method}}()"
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "step"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.optimizer_step",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "optimizer.step() updates parameters using the gradients currently stored for the optimizer-managed parameters. Call it after backward has produced gradients for the current update. Calling step() before backward normally means the current batch gradients are not available for that update.",
+      "hints": [
+        "Call it after backward has produced gradients for the current update."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`optimizer.step()` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html"
+        }
+      ]
+    },
+    {
+      "id": "optimizer-step-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "purpose",
+              "label": "Purpose"
+            },
+            {
+              "id": "method",
+              "label": "Method"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "purpose": {
+                  "type": "text",
+                  "template": "Update parameters from gradients"
+                },
+                "method": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "optimizer.{{method}}()"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "step"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.optimizer_step",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "optimizer.step() updates parameters using the gradients currently stored for the optimizer-managed parameters. Call it after backward has produced gradients for the current update. Calling step() before backward normally means the current batch gradients are not available for that update.",
+      "hints": [
+        "Call it after backward has produced gradients for the current update."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`optimizer.step()` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html"
+        }
+      ]
+    },
+    {
+      "id": "loss-item-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the logging code.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "logger.info(\"loss=%f\", loss.{{method}}())"
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "item"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.loss_item",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "loss.item() converts a one-element tensor such as a scalar loss into a standard Python number. Use it when you need a numeric loss value for simple logging or aggregation outside tensor computation. Calling .item() removes the value from tensor/autograd computation, so do not use the returned Python number to continue the differentiable loss calculation.",
+      "hints": [
+        "Use it when you need a numeric loss value for simple logging or aggregation outside tensor computation."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`loss.item()` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.Tensor.item.html"
+        }
+      ]
+    },
+    {
+      "id": "loss-item-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "need",
+              "label": "Need"
+            },
+            {
+              "id": "method",
+              "label": "Method"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "need": {
+                  "type": "text",
+                  "template": "Convert scalar tensor to Python number"
+                },
+                "method": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "x.{{method}}()"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "item"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.loss_item",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "loss.item() converts a one-element tensor such as a scalar loss into a standard Python number. Use it when you need a numeric loss value for simple logging or aggregation outside tensor computation. Calling .item() removes the value from tensor/autograd computation, so do not use the returned Python number to continue the differentiable loss calculation.",
+      "hints": [
+        "Use it when you need a numeric loss value for simple logging or aggregation outside tensor computation."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`loss.item()` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.Tensor.item.html"
+        }
+      ]
+    },
+    {
+      "id": "train-eval-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Fill the missing mode calls.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "# training\nmodel.{{train_mode}}()\n\n# validation\nmodel.{{eval_mode}}()"
+        },
+        "slots": [
+          {
+            "id": "train_mode",
+            "label": "Train Mode",
+            "placeholder": "Type..."
+          },
+          {
+            "id": "eval_mode",
+            "label": "Eval Mode",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "train_mode": {
+            "accepted_answers": [
+              "train"
+            ]
+          },
+          "eval_mode": {
+            "accepted_answers": [
+              "eval"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.train_eval",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "model.train() enables training behavior for mode-sensitive modules, while model.eval() switches them to evaluation behavior. Use train() before training epochs and eval() before validation or inference. eval() does not disable autograd; pair it with no-grad or inference mode when gradient tracking is unnecessary.",
+      "hints": [
+        "Use train() before training epochs and eval() before validation or inference."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`model.train()` and `model.eval()` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/notes/autograd.html"
+        }
+      ]
+    },
+    {
+      "id": "train-eval-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "method",
+              "label": "Method"
+            },
+            {
+              "id": "disables-gradient-tracking",
+              "label": "Disables gradient tracking?"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "method": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "model.eval()"
+                },
+                "disables-gradient-tracking": {
+                  "type": "text",
+                  "template": "{{answer}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Answer",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "no",
+              "false"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.train_eval",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "model.train() enables training behavior for mode-sensitive modules, while model.eval() switches them to evaluation behavior. Use train() before training epochs and eval() before validation or inference. eval() does not disable autograd; pair it with no-grad or inference mode when gradient tracking is unnecessary.",
+      "hints": [
+        "Use train() before training epochs and eval() before validation or inference."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`model.train()` and `model.eval()` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/notes/autograd.html"
+        }
+      ]
+    },
+    {
+      "id": "no-grad-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the inference code.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "model.eval()\nwith torch.{{context}}():\n    pred = model(x)"
+        },
+        "slots": [
+          {
+            "id": "context",
+            "label": "Context",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "context": {
+            "accepted_answers": [
+              "no_grad"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.no_grad",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "torch.no_grad() disables recording operations for reverse-mode gradient calculation inside its context. Use it for validation or inference when you do not need backward and may later reuse resulting tensors in normal grad mode. No-grad mode is separate from model.eval(); one controls autograd recording and the other controls module training behavior.",
+      "hints": [
+        "Use it for validation or inference when you do not need backward and may later reuse resulting tensors in normal grad mode."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`torch.no_grad()` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.no_grad.html"
+        }
+      ]
+    },
+    {
+      "id": "no-grad-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "tool",
+              "label": "Tool"
+            },
+            {
+              "id": "main-effect",
+              "label": "Main effect"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "tool": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "torch.no_grad()"
+                },
+                "main-effect": {
+                  "type": "text",
+                  "template": "Disable {{thing}} recording"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "thing",
+            "label": "Thing",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "thing": {
+            "accepted_answers": [
+              "gradient",
+              "autograd",
+              "backward graph"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.no_grad",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "torch.no_grad() disables recording operations for reverse-mode gradient calculation inside its context. Use it for validation or inference when you do not need backward and may later reuse resulting tensors in normal grad mode. No-grad mode is separate from model.eval(); one controls autograd recording and the other controls module training behavior.",
+      "hints": [
+        "Use it for validation or inference when you do not need backward and may later reuse resulting tensors in normal grad mode."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`torch.no_grad()` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.no_grad.html"
+        }
+      ]
+    },
+    {
+      "id": "inference-mode-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the inference code.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "model.eval()\nwith torch.{{context}}():\n    pred = model(x)"
+        },
+        "slots": [
+          {
+            "id": "context",
+            "label": "Context",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "context": {
+            "accepted_answers": [
+              "inference_mode"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.inference_mode",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "torch.inference_mode() disables autograd recording and removes additional autograd-related overhead for computations that will not later participate in grad-mode graphs. Use it for pure inference paths when its stricter tensor-lifetime constraints fit your code. Tensors created in inference mode cannot later be used in computations that autograd needs to record.",
+      "hints": [
+        "Use it for pure inference paths when its stricter tensor-lifetime constraints fit your code."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`torch.inference_mode()` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.inference_mode.html"
+        }
+      ]
+    },
+    {
+      "id": "inference-mode-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "context",
+              "label": "Context"
+            },
+            {
+              "id": "extra-autograd-overhead-reduction-beyond-no-grad",
+              "label": "Extra autograd-overhead reduction beyond no-grad?"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "context": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "torch.inference_mode()"
+                },
+                "extra-autograd-overhead-reduction-beyond-no-grad": {
+                  "type": "text",
+                  "template": "{{answer}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Answer",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "yes",
+              "true"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.inference_mode",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "torch.inference_mode() disables autograd recording and removes additional autograd-related overhead for computations that will not later participate in grad-mode graphs. Use it for pure inference paths when its stricter tensor-lifetime constraints fit your code. Tensors created in inference mode cannot later be used in computations that autograd needs to record.",
+      "hints": [
+        "Use it for pure inference paths when its stricter tensor-lifetime constraints fit your code."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "`torch.inference_mode()` — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/generated/torch.inference_mode.html"
+        }
+      ]
+    },
+    {
+      "id": "freeze-parameters-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the freezing code.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "for p in model.backbone.parameters():\n    p.{{method}}(False)"
+        },
+        "slots": [
+          {
+            "id": "method",
+            "label": "Method",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "method": {
+            "accepted_answers": [
+              "requires_grad_"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.freeze_parameters",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Setting a parameter or module to requires_grad_(False) excludes those parameters from gradient computation in normal grad mode. Freezing a pretrained backbone is commonly done before training only a new head. Freezing gradients does not automatically switch Dropout or BatchNorm to evaluation mode.",
+      "hints": [
+        "Freezing a pretrained backbone is commonly done before training only a new head."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Freezing parameters — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/notes/autograd.html"
+        }
+      ]
+    },
+    {
+      "id": "freeze-parameters-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "goal",
+              "label": "Goal"
+            },
+            {
+              "id": "setting",
+              "label": "Setting"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "goal": {
+                  "type": "text",
+                  "template": "Freeze a parameter"
+                },
+                "setting": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "requires_grad={{value}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "value",
+            "label": "Value",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "value": {
+            "accepted_answers": [
+              "False",
+              "false"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.freeze_parameters",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Setting a parameter or module to requires_grad_(False) excludes those parameters from gradient computation in normal grad mode. Freezing a pretrained backbone is commonly done before training only a new head. Freezing gradients does not automatically switch Dropout or BatchNorm to evaluation mode.",
+      "hints": [
+        "Freezing a pretrained backbone is commonly done before training only a new head."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Freezing parameters — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/notes/autograd.html"
+        }
+      ]
+    },
+    {
+      "id": "clip-grad-norm-typed-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.42,
+      "prompt": "Complete the training code.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "loss.backward()\ntorch.nn.utils.{{function}}(model.parameters(), max_norm=1.0)\noptimizer.step()"
+        },
+        "slots": [
+          {
+            "id": "function",
+            "label": "Function",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "function": {
+            "accepted_answers": [
+              "clip_grad_norm_"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.clip_grad_norm",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "torch.nn.utils.clip_grad_norm_ clips the total norm of parameter gradients in place to a specified maximum norm. Apply gradient clipping after backward has produced gradients and before the optimizer step. Clipping before backward has nothing useful to clip for the current batch.",
+      "hints": [
+        "Apply gradient clipping after backward has produced gradients and before the optimizer step."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Gradient clipping — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/main/generated/torch.nn.utils.clip_grad_norm_.html"
+        }
+      ]
+    },
+    {
+      "id": "clip-grad-norm-typed-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Fill the missing table cell.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "goal",
+              "label": "Goal"
+            },
+            {
+              "id": "function",
+              "label": "Function"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "goal": {
+                  "type": "text",
+                  "template": "Bound total parameter-gradient norm"
+                },
+                "function": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "torch.nn.utils.{{fn}}"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "fn",
+            "label": "Fn",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "fn": {
+            "accepted_answers": [
+              "clip_grad_norm_"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.clip_grad_norm",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "torch.nn.utils.clip_grad_norm_ clips the total norm of parameter gradients in place to a specified maximum norm. Apply gradient clipping after backward has produced gradients and before the optimizer step. Clipping before backward has nothing useful to clip for the current batch.",
+      "hints": [
+        "Apply gradient clipping after backward has produced gradients and before the optimizer step."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Gradient clipping — PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/main/generated/torch.nn.utils.clip_grad_norm_.html"
+        }
+      ]
+    },
+    {
+      "id": "grad-control-class-001",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.46,
+      "prompt": "Classify each gradient/training-mode action.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "item-1",
+            "label": "Switch Dropout and BatchNorm behavior"
+          },
+          {
+            "id": "item-2",
+            "label": "Disable backward-graph recording for a reusable result"
+          },
+          {
+            "id": "item-3",
+            "label": "Stricter low-overhead pure inference context"
+          },
+          {
+            "id": "item-4",
+            "label": "Break one tensor from current autograd history"
+          }
+        ],
+        "categories": [
+          {
+            "id": "cat-1",
+            "label": "model.train/eval"
+          },
+          {
+            "id": "cat-2",
+            "label": "no_grad"
+          },
+          {
+            "id": "cat-3",
+            "label": "inference_mode"
+          },
+          {
+            "id": "cat-4",
+            "label": "detach"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "item-1": "cat-1",
+          "item-2": "cat-2",
+          "item-3": "cat-3",
+          "item-4": "cat-4"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.train_eval",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.no_grad",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.inference_mode",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.detach",
+          "weight": 0.25
+        }
+      ],
+      "explanation": "model.train() enables training behavior for mode-sensitive modules, while model.eval() switches them to evaluation behavior. torch.no_grad() disables recording operations for reverse-mode gradient calculation inside its context. torch.inference_mode() disables autograd recording and removes additional autograd-related overhead for computations that will not later participate in grad-mode graphs. tensor.detach() returns a tensor detached from the current autograd graph.",
+      "hints": [
+        "Focus on the operation each API performs, not merely whether it can appear in the same training program."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was matched to the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not classified."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/notes/autograd.html"
+        }
+      ]
+    },
+    {
+      "id": "grad-control-class-002",
+      "content_version": "pytorch-core-content-2026-09-19-v2",
+      "certification_version": "pytorch-core-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.58,
+      "prompt": "Classify each gradient/training-mode action. Use the second scenario set.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "item-1",
+            "label": "Does not itself disable autograd"
+          },
+          {
+            "id": "item-2",
+            "label": "Common validation context"
+          },
+          {
+            "id": "item-3",
+            "label": "Created tensors cannot later enter recorded grad computations"
+          },
+          {
+            "id": "item-4",
+            "label": "Useful before logging/storing intermediate features"
+          }
+        ],
+        "categories": [
+          {
+            "id": "cat-1",
+            "label": "model.train/eval"
+          },
+          {
+            "id": "cat-2",
+            "label": "no_grad"
+          },
+          {
+            "id": "cat-3",
+            "label": "inference_mode"
+          },
+          {
+            "id": "cat-4",
+            "label": "detach"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "item-1": "cat-1",
+          "item-2": "cat-2",
+          "item-3": "cat-3",
+          "item-4": "cat-4"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.pytorch.train_eval",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.no_grad",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.inference_mode",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "ai.pytorch.detach",
+          "weight": 0.25
+        }
+      ],
+      "explanation": "model.train() enables training behavior for mode-sensitive modules, while model.eval() switches them to evaluation behavior. torch.no_grad() disables recording operations for reverse-mode gradient calculation inside its context. torch.inference_mode() disables autograd recording and removes additional autograd-related overhead for computations that will not later participate in grad-mode graphs. tensor.detach() returns a tensor detached from the current autograd graph.",
+      "hints": [
+        "Focus on the operation each API performs, not merely whether it can appear in the same training program."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was matched to the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not classified."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "PyTorch documentation",
+          "url": "https://docs.pytorch.org/docs/stable/notes/autograd.html"
+        }
+      ]
+    }
+  ]
+}
