@@ -83,7 +83,7 @@ Use:
 
 - production project
 - staging branch/project
-- pooled connection string
+- pooled connection string for the API; direct (non-pooled) string for migrations
 - TLS
 - small SQLx pool per Cloud Run instance
 
@@ -96,7 +96,48 @@ CI tests
 -> deploy compatible API
 ```
 
-Destructive migrations require manual review and rollback plan.
+### Running migrations against Neon
+
+Prerequisite: the SQLx CLI, built with the same driver features the API uses.
+
+```bash
+cargo install sqlx-cli --no-default-features --features rustls,postgres
+```
+
+Run migrations from CI or a one-off, approved job — not implicitly from the
+long-running API service. Use Neon's **direct** (non-pooled) connection string
+and TLS. The pooled host runs PgBouncer in transaction mode, which is not
+appropriate for DDL or the migrator's advisory lock.
+
+```bash
+# Direct host: no "-pooler" suffix. Fix the region to match the project.
+export DATABASE_URL='postgresql://USER:PASSWORD@ep-xxxx.<region>.aws.neon.tech/neondb?sslmode=require'
+
+# Inspect pending vs applied migrations (and checksums), then apply the pending.
+sqlx migrate info --source crates/db/migrations
+sqlx migrate run  --source crates/db/migrations
+```
+
+SQLx records each applied migration, with its checksum, in `_sqlx_migrations`
+and takes a Postgres advisory lock while running. `migrate run` therefore applies
+only pending migrations and is safe to re-run; concurrent runs serialize. Never
+edit a migration that has already been applied — the checksum changes and later
+runs fail. Add a new migration instead.
+
+Keep `RUN_MIGRATIONS=false` on the deployed API so no cold start or scale-out
+event migrates.
+
+### Rollback
+
+Revert the most recently applied migration using its `*.down.sql`, then repeat to
+step further back:
+
+```bash
+sqlx migrate revert --source crates/db/migrations
+```
+
+Destructive migrations require manual review and a rollback plan. Branch the
+production Neon database (or confirm point-in-time restore) before applying them.
 
 ### Reliability gate
 

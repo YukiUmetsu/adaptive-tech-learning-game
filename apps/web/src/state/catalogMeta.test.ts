@@ -194,6 +194,30 @@ describe("buildCatalog", () => {
     );
   });
 
+  it("offers the HashiCorp Terraform Associate certification", () => {
+    const entries = CATALOG.flatMap((section) => section.certifications);
+    const entry = entries.find(
+      (candidate) => candidate.id === "hashicorp-terraform-associate-004",
+    );
+    expect(entry?.examCode).toBe("HCTA0-004");
+    expect(entry?.wip).toBe(false);
+
+    const sections = buildCatalog(CATALOG, [
+      certification(
+        "hashicorp-terraform-associate-004",
+        "HashiCorp Certified: Terraform Associate",
+      ),
+    ]);
+    const cards = sections.flatMap((section) => section.cards);
+    expect(
+      cards.find((card) => card.id === "hashicorp-terraform-associate-004")
+        ?.available,
+    ).toBe(true);
+
+    const hashicorp = sections.find((section) => section.id === "hashicorp");
+    expect(hashicorp?.kind).toBe("certification");
+  });
+
   it("offers the AWS Generative AI Developer certification and drops Linux", () => {
     const entries = CATALOG.flatMap((section) => section.certifications);
     const entry = entries.find((candidate) => candidate.id === "aws-aip-c01");

@@ -92,15 +92,15 @@ fn task_1_1_returns_questions_in_authored_order() {
         .iter()
         .map(|question| question.id.as_str())
         .collect();
-    assert_eq!(ids.len(), 20);
+    assert_eq!(ids.len(), 21);
     assert_eq!(
         &ids[..5],
         &[
             "monitoring-classification-001",
-            "monitoring-ordering-001",
-            "monitoring-connection-001",
-            "monitoring-classification-002",
-            "monitoring-connection-002",
+            "monitoring-typed-table-001",
+            "monitoring-classification-003",
+            "monitoring-classification-004",
+            "monitoring-classification-005",
         ]
     );
 }

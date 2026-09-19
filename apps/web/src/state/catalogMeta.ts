@@ -88,6 +88,20 @@ export const CATALOG: CatalogCategory[] = [
     ],
   },
   {
+    id: "hashicorp",
+    label: "HashiCorp",
+    kind: "certification",
+    certifications: [
+      {
+        id: "hashicorp-terraform-associate-004",
+        name: "HashiCorp Certified: Terraform Associate",
+        shortName: "Terraform Associate",
+        examCode: "HCTA0-004",
+        wip: false,
+      },
+    ],
+  },
+  {
     id: "azure",
     label: "Microsoft Azure",
     kind: "certification",

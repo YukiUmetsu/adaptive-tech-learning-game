@@ -187,6 +187,10 @@ sqlx migrate revert --source crates/db/migrations
 The migration test creates an isolated database, applies and reverts the
 migrations, then drops it.
 
+For staging/production Neon — including the direct (non-pooled) connection
+string, apply/inspect/rollback commands, and the `RUN_MIGRATIONS` guidance — see
+`docs/12-deployment.md`.
+
 ## API contract generation
 
 Rust response types are the source of truth for the HTTP contract. Regenerate

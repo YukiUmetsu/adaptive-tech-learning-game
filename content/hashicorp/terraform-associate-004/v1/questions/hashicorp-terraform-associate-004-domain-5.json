@@ -1,0 +1,1042 @@
+{
+  "certification": {
+    "id": "hashicorp-terraform-associate-004",
+    "vendor": "HashiCorp",
+    "name": "HashiCorp Certified: Terraform Associate",
+    "exam_code": "HCTA0-004",
+    "official_source_url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004",
+    "last_reviewed": "2026-09-19"
+  },
+  "version": {
+    "id": "terraform-associate-004",
+    "exam_code": "HCTA0-004",
+    "effective_date": "2026-09-19",
+    "content_version": "terraform-associate-004-content-v1",
+    "domains": [
+      {
+        "id": "domain-1",
+        "name": "Infrastructure as Code (IaC) with Terraform",
+        "weight": 0.125,
+        "tasks": []
+      },
+      {
+        "id": "domain-2",
+        "name": "Terraform fundamentals",
+        "weight": 0.125,
+        "tasks": []
+      },
+      {
+        "id": "domain-3",
+        "name": "Core Terraform workflow",
+        "weight": 0.125,
+        "tasks": []
+      },
+      {
+        "id": "domain-4",
+        "name": "Terraform configuration",
+        "weight": 0.125,
+        "tasks": []
+      },
+      {
+        "id": "domain-5",
+        "name": "Terraform modules",
+        "weight": 0.125,
+        "tasks": [
+          {
+            "id": "5a",
+            "name": "Explain how Terraform sources modules",
+            "question_ids": [
+              "d5-5a-source-types-001",
+              "d5-5a-init-modules-001"
+            ]
+          },
+          {
+            "id": "5b",
+            "name": "Describe variable scope within modules",
+            "question_ids": [
+              "d5-5b-scope-001",
+              "d5-5b-module-flow-reconstruct-001"
+            ]
+          },
+          {
+            "id": "5c",
+            "name": "Use modules in configuration",
+            "question_ids": [
+              "d5-5c-module-use-001",
+              "d5-5c-provider-pass-001",
+              "d5-5c-alias-child-001",
+              "d5-5c-legacy-provider-001"
+            ]
+          },
+          {
+            "id": "5d",
+            "name": "Manage module versions",
+            "question_ids": [
+              "d5-5d-lockfile-modules-001",
+              "d5-5d-reusable-version-001"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "domain-6",
+        "name": "Terraform state management",
+        "weight": 0.125,
+        "tasks": []
+      },
+      {
+        "id": "domain-7",
+        "name": "Maintain infrastructure with Terraform",
+        "weight": 0.125,
+        "tasks": []
+      },
+      {
+        "id": "domain-8",
+        "name": "HCP Terraform",
+        "weight": 0.125,
+        "tasks": []
+      }
+    ]
+  },
+  "concepts": [
+    {
+      "id": "tf.modules",
+      "name": "Terraform modules",
+      "description": "Modules package reusable Terraform configuration with explicit inputs and outputs."
+    },
+    {
+      "id": "tf.module.sources",
+      "name": "Module sources",
+      "description": "Modules can come from registries, local paths, Git, HTTP/object storage, and other supported sources."
+    },
+    {
+      "id": "tf.module.scope",
+      "name": "Module scope",
+      "description": "Child modules receive values through input variables and expose results through outputs."
+    },
+    {
+      "id": "tf.module.versions",
+      "name": "Module versioning",
+      "description": "Registry modules can use a version argument; non-registry sources use source-specific pinning such as Git ref."
+    },
+    {
+      "id": "tf.module.providers",
+      "name": "Providers in modules",
+      "description": "Each module declares provider requirements; provider configurations are usually defined in the root and inherited or explicitly passed."
+    },
+    {
+      "id": "tf.module.aliases",
+      "name": "Aliased providers in modules",
+      "description": "configuration_aliases and a module providers map pass aliased provider configurations to children."
+    }
+  ],
+  "questions": [
+    {
+      "id": "d5-5a-source-types-001",
+      "content_version": "terraform-associate-004-content-v1",
+      "certification_version": "terraform-associate-004",
+      "domain_id": "domain-5",
+      "task_id": "5a",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.22,
+      "prompt": "Classify how module versions are pinned.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "registry",
+            "label": "source = \"hashicorp/consul/aws\""
+          },
+          {
+            "id": "git",
+            "label": "source = \"git::https://example/repo.git?ref=v1.2.0\""
+          },
+          {
+            "id": "local",
+            "label": "source = \"./modules/network\""
+          }
+        ],
+        "categories": [
+          {
+            "id": "version_arg",
+            "label": "Registry module may use module `version` argument"
+          },
+          {
+            "id": "source_pin",
+            "label": "Pin through source address/ref"
+          },
+          {
+            "id": "local_code",
+            "label": "No module version argument; local files are used directly"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "registry": "version_arg",
+          "git": "source_pin",
+          "local": "local_code"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "tf.module.sources",
+          "weight": 0.5
+        },
+        {
+          "concept_id": "tf.module.versions",
+          "weight": 0.5
+        }
+      ],
+      "explanation": "The module `version` argument is for registry modules. Git is pinned with a ref in the source URL, while local paths use the local module code directly.",
+      "hints": [
+        "Classify by the primary Terraform behavior, not by a keyword that merely appears in the option."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Terraform Associate 004 — official exam content",
+          "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+        },
+        {
+          "title": "Modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules"
+        },
+        {
+          "title": "Module block",
+          "url": "https://developer.hashicorp.com/terraform/language/block/module"
+        },
+        {
+          "title": "Providers within modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules/develop/providers"
+        }
+      ]
+    },
+    {
+      "id": "d5-5c-module-use-001",
+      "content_version": "terraform-associate-004-content-v1",
+      "certification_version": "terraform-associate-004",
+      "domain_id": "domain-5",
+      "task_id": "5c",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.3,
+      "prompt": "Complete the module call and output reference.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "hcl",
+          "template": "module \"network\" {\n  source = \"./modules/network\"\n  cidr   = var.vpc_cidr\n}\n\noutput \"vpc_id\" {\n  value = module.network.{{out}}\n}"
+        },
+        "slots": [
+          {
+            "id": "out",
+            "label": "Child output name",
+            "placeholder": "output"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "out": {
+            "accepted_answers": [
+              "vpc_id"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "tf.modules",
+          "weight": 0.5
+        },
+        {
+          "concept_id": "tf.module.scope",
+          "weight": 0.5
+        }
+      ],
+      "explanation": "A child module receives values through declared inputs and exposes results through outputs. Callers reference an output as `module.<name>.<output>`.",
+      "hints": [
+        "Use the exact Terraform/HCL/CLI term that makes the snippet valid."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "At least one typed blank is incorrect."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "At least one typed blank is empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Terraform Associate 004 — official exam content",
+          "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+        },
+        {
+          "title": "Modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules"
+        },
+        {
+          "title": "Module block",
+          "url": "https://developer.hashicorp.com/terraform/language/block/module"
+        },
+        {
+          "title": "Providers within modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules/develop/providers"
+        }
+      ]
+    },
+    {
+      "id": "d5-5b-scope-001",
+      "content_version": "terraform-associate-004-content-v1",
+      "certification_version": "terraform-associate-004",
+      "domain_id": "domain-5",
+      "task_id": "5b",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.36,
+      "prompt": "Classify module visibility.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "parent_var",
+            "label": "A child reads an arbitrary parent local without it being passed"
+          },
+          {
+            "id": "input",
+            "label": "A child receives a value through an input variable"
+          },
+          {
+            "id": "output",
+            "label": "A parent reads module.network.vpc_id"
+          }
+        ],
+        "categories": [
+          {
+            "id": "valid",
+            "label": "Normal module data flow"
+          },
+          {
+            "id": "invalid",
+            "label": "Not automatically in child scope"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "parent_var": "invalid",
+          "input": "valid",
+          "output": "valid"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "tf.module.scope",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Module scope is explicit. Child modules do not automatically see arbitrary parent values; pass inputs and return results through outputs.",
+      "hints": [
+        "Classify by the primary Terraform behavior, not by a keyword that merely appears in the option."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Terraform Associate 004 — official exam content",
+          "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+        },
+        {
+          "title": "Modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules"
+        },
+        {
+          "title": "Module block",
+          "url": "https://developer.hashicorp.com/terraform/language/block/module"
+        },
+        {
+          "title": "Providers within modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules/develop/providers"
+        }
+      ]
+    },
+    {
+      "id": "d5-5d-lockfile-modules-001",
+      "content_version": "terraform-associate-004-content-v1",
+      "certification_version": "terraform-associate-004",
+      "domain_id": "domain-5",
+      "task_id": "5d",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.44,
+      "prompt": "Mark the incorrect statement about module versioning.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "p",
+            "label": "`.terraform.lock.hcl` locks provider selections and checksums."
+          },
+          {
+            "id": "m",
+            "label": "`.terraform.lock.hcl` also locks every remote module version."
+          },
+          {
+            "id": "r",
+            "label": "Registry modules can use a `version` argument."
+          },
+          {
+            "id": "g",
+            "label": "Git module sources can pin a tag/commit with `?ref=`."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "m"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "tf.module.versions",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The dependency lock file tracks providers, not modules. Registry module versions are controlled by the module block, and non-registry sources require source-specific pinning.",
+      "hints": [
+        "Inspect semantics, not formatting. More than one element may be wrong."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not selected."
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "At least one correct element was incorrectly marked faulty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Terraform Associate 004 — official exam content",
+          "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+        },
+        {
+          "title": "Modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules"
+        },
+        {
+          "title": "Module block",
+          "url": "https://developer.hashicorp.com/terraform/language/block/module"
+        },
+        {
+          "title": "Providers within modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules/develop/providers"
+        }
+      ]
+    },
+    {
+      "id": "d5-5a-init-modules-001",
+      "content_version": "terraform-associate-004-content-v1",
+      "certification_version": "terraform-associate-004",
+      "domain_id": "domain-5",
+      "task_id": "5a",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.48,
+      "prompt": "Classify the normal module installation behavior.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "init",
+            "label": "terraform init"
+          },
+          {
+            "id": "get",
+            "label": "terraform get -update"
+          }
+        ],
+        "categories": [
+          {
+            "id": "normal",
+            "label": "Normal workflow installs modules and providers"
+          },
+          {
+            "id": "module_update",
+            "label": "Module-specific update path"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "init": "normal",
+          "get": "module_update"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "tf.module.sources",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`terraform init` is the normal initialization path and installs required modules. `terraform get -update` exists as a module-specific update command but is not the normal replacement for init.",
+      "hints": [
+        "Classify by the primary Terraform behavior, not by a keyword that merely appears in the option."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Terraform Associate 004 — official exam content",
+          "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+        },
+        {
+          "title": "Modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules"
+        },
+        {
+          "title": "Module block",
+          "url": "https://developer.hashicorp.com/terraform/language/block/module"
+        },
+        {
+          "title": "Providers within modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules/develop/providers"
+        }
+      ]
+    },
+    {
+      "id": "d5-5c-provider-pass-001",
+      "content_version": "terraform-associate-004-content-v1",
+      "certification_version": "terraform-associate-004",
+      "domain_id": "domain-5",
+      "task_id": "5c",
+      "assessment_mode": "application",
+      "interaction_type": "configuration_builder",
+      "difficulty_prior": 0.56,
+      "prompt": "A child expects its default `aws` provider to use the root alias `aws.west`. Assign the pieces.",
+      "interaction": {
+        "type": "configuration_builder",
+        "slots": [
+          {
+            "id": "requirement",
+            "label": "Child module provider requirement"
+          },
+          {
+            "id": "mapping",
+            "label": "Root module providers mapping"
+          }
+        ],
+        "pieces": [
+          {
+            "id": "child_req",
+            "label": "Child declares `aws = { source = \"hashicorp/aws\" }` in required_providers"
+          },
+          {
+            "id": "map",
+            "label": "providers = { aws = aws.west }"
+          },
+          {
+            "id": "nested",
+            "label": "Child defines its own credentialed provider block"
+          },
+          {
+            "id": "string",
+            "label": "providers = { aws = \"aws.west\" }"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "configuration_builder",
+        "assignments": {
+          "requirement": "child_req",
+          "mapping": "map"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "tf.module.providers",
+          "weight": 0.5
+        },
+        {
+          "concept_id": "tf.module.aliases",
+          "weight": 0.5
+        }
+      ],
+      "explanation": "Every module declares provider requirements. Provider configurations are normally supplied by the root; to use an alias, pass the provider reference in the module `providers` map rather than a string.",
+      "hints": [
+        "Assign each component to the role where Terraform expects it; leave distractors unused."
+      ],
+      "error_codes": [
+        {
+          "code": "config_missing_required",
+          "description": "A required role was not assigned."
+        },
+        {
+          "code": "config_wrong_assignment",
+          "description": "A required component was assigned to the wrong role."
+        },
+        {
+          "code": "config_unnecessary_component",
+          "description": "An unnecessary component was assigned."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Terraform Associate 004 — official exam content",
+          "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+        },
+        {
+          "title": "Modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules"
+        },
+        {
+          "title": "Module block",
+          "url": "https://developer.hashicorp.com/terraform/language/block/module"
+        },
+        {
+          "title": "Providers within modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules/develop/providers"
+        }
+      ]
+    },
+    {
+      "id": "d5-5b-module-flow-reconstruct-001",
+      "content_version": "terraform-associate-004-content-v1",
+      "certification_version": "terraform-associate-004",
+      "domain_id": "domain-5",
+      "task_id": "5b",
+      "assessment_mode": "structural_reconstruction",
+      "interaction_type": "reconstruction",
+      "difficulty_prior": 0.62,
+      "prompt": "Rebuild the normal data flow through a child module. The root caller is provided at the start and the parent consumer is provided at the end.",
+      "interaction": {
+        "type": "reconstruction",
+        "layout": "linear",
+        "fixed_nodes": [
+          {
+            "id": "root",
+            "label": "Root module call",
+            "position": "start"
+          },
+          {
+            "id": "parent",
+            "label": "Parent consumes child result",
+            "position": "end"
+          }
+        ],
+        "pieces": [
+          {
+            "id": "input",
+            "label": "Child input variable"
+          },
+          {
+            "id": "resource",
+            "label": "Child resources/expressions"
+          },
+          {
+            "id": "output",
+            "label": "Child output value"
+          },
+          {
+            "id": "provider",
+            "label": "A random unrelated provider lock entry"
+          }
+        ],
+        "slots": [
+          {
+            "id": "slot1"
+          },
+          {
+            "id": "slot2"
+          },
+          {
+            "id": "slot3"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "reconstruction",
+        "placements": {
+          "slot1": "input",
+          "slot2": "resource",
+          "slot3": "output"
+        },
+        "edges": []
+      },
+      "concepts": [
+        {
+          "concept_id": "tf.modules",
+          "weight": 0.5
+        },
+        {
+          "concept_id": "tf.module.scope",
+          "weight": 0.5
+        }
+      ],
+      "explanation": "A caller passes values into declared child inputs; child configuration uses those values; the child exposes selected results through outputs; the parent references those outputs. Child modules do not automatically read arbitrary parent locals/resources just because they are nearby in the directory tree.",
+      "hints": [
+        "Think in terms of the module interface: input → internal implementation → output."
+      ],
+      "error_codes": [
+        {
+          "code": "reconstruction_unfilled_slot",
+          "description": "At least one required slot is empty."
+        },
+        {
+          "code": "reconstruction_wrong_position",
+          "description": "A required component is in the wrong position."
+        },
+        {
+          "code": "reconstruction_wrong_component",
+          "description": "A non-required component was used."
+        },
+        {
+          "code": "reconstruction_missing_component",
+          "description": "A required component is missing."
+        },
+        {
+          "code": "reconstruction_missing_relationship",
+          "description": "A required relationship is missing."
+        },
+        {
+          "code": "reconstruction_invalid_relationship",
+          "description": "An invalid relationship was added."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Terraform Associate 004 — official exam content",
+          "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+        },
+        {
+          "title": "Modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules"
+        },
+        {
+          "title": "Manage values in modules",
+          "url": "https://developer.hashicorp.com/terraform/language/values"
+        }
+      ]
+    },
+    {
+      "id": "d5-5c-alias-child-001",
+      "content_version": "terraform-associate-004-content-v1",
+      "certification_version": "terraform-associate-004",
+      "domain_id": "domain-5",
+      "task_id": "5c",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.68,
+      "prompt": "Complete the child requirement so callers may pass an aliased provider configuration named `aws.replica`.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "hcl",
+          "template": "terraform {\n  required_providers {\n    aws = {\n      source = \"hashicorp/aws\"\n      {{aliases}} = [aws.replica]\n    }\n  }\n}"
+        },
+        "slots": [
+          {
+            "id": "aliases",
+            "label": "Alias declaration attribute",
+            "placeholder": "attribute"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "aliases": {
+            "accepted_answers": [
+              "configuration_aliases"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "tf.module.aliases",
+          "weight": 0.5
+        },
+        {
+          "concept_id": "tf.module.providers",
+          "weight": 0.5
+        }
+      ],
+      "explanation": "A child module declares expected alias names with `configuration_aliases`. The root then maps those names to actual provider configurations in the module block.",
+      "hints": [
+        "Use the exact Terraform/HCL/CLI term that makes the snippet valid."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "At least one typed blank is incorrect."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "At least one typed blank is empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Terraform Associate 004 — official exam content",
+          "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+        },
+        {
+          "title": "Modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules"
+        },
+        {
+          "title": "Module block",
+          "url": "https://developer.hashicorp.com/terraform/language/block/module"
+        },
+        {
+          "title": "Providers within modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules/develop/providers"
+        }
+      ]
+    },
+    {
+      "id": "d5-5c-legacy-provider-001",
+      "content_version": "terraform-associate-004-content-v1",
+      "certification_version": "terraform-associate-004",
+      "domain_id": "domain-5",
+      "task_id": "5c",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.72,
+      "prompt": "A reusable child module will be instantiated with `for_each`. Mark the legacy design problem.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "req",
+            "label": "Child has required_providers with source/version constraints"
+          },
+          {
+            "id": "prov",
+            "label": "Child defines its own `provider \"aws\" { region = ... }` block"
+          },
+          {
+            "id": "inputs",
+            "label": "Child receives region and IDs through input variables"
+          },
+          {
+            "id": "outputs",
+            "label": "Child exposes useful IDs as outputs"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "prov"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "tf.module.providers",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Reusable child modules should declare requirements but normally receive provider configurations from callers. Nested provider configuration blocks are a legacy pattern and conflict with module-level `for_each`, `count`, and `depends_on` use.",
+      "hints": [
+        "Inspect semantics, not formatting. More than one element may be wrong."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not selected."
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "At least one correct element was incorrectly marked faulty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Terraform Associate 004 — official exam content",
+          "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+        },
+        {
+          "title": "Modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules"
+        },
+        {
+          "title": "Module block",
+          "url": "https://developer.hashicorp.com/terraform/language/block/module"
+        },
+        {
+          "title": "Providers within modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules/develop/providers"
+        }
+      ]
+    },
+    {
+      "id": "d5-5d-reusable-version-001",
+      "content_version": "terraform-associate-004-content-v1",
+      "certification_version": "terraform-associate-004",
+      "domain_id": "domain-5",
+      "task_id": "5d",
+      "assessment_mode": "application",
+      "interaction_type": "scenario_choice_chain",
+      "difficulty_prior": 0.78,
+      "prompt": "You publish a reusable registry module used by many root configurations. Choose a version-constraint strategy.",
+      "interaction": {
+        "type": "scenario_choice_chain",
+        "start_step_id": "s1",
+        "steps": [
+          {
+            "id": "s1",
+            "prompt": "How tight should the child module provider requirement normally be?",
+            "stage": "action",
+            "choices": [
+              {
+                "id": "minimum",
+                "label": "Declare the minimum compatible provider version/range without unnecessarily tight upper bounds"
+              },
+              {
+                "id": "exact",
+                "label": "Pin one exact provider build in every reusable child"
+              },
+              {
+                "id": "none",
+                "label": "Omit required_providers entirely"
+              }
+            ],
+            "next_step_by_choice": {
+              "minimum": "s2",
+              "exact": "s2",
+              "none": "s2"
+            }
+          },
+          {
+            "id": "s2",
+            "prompt": "Who should own the concrete locked provider selection for a deployment?",
+            "stage": "verification",
+            "choices": [
+              {
+                "id": "root",
+                "label": "The root configuration/working directory and its lock file"
+              },
+              {
+                "id": "child",
+                "label": "The child module lock file distributed to callers"
+              },
+              {
+                "id": "registry",
+                "label": "The module registry chooses it independently"
+              }
+            ],
+            "next_step_by_choice": {}
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "scenario_choice_chain",
+        "correct_choice_ids": {
+          "s1": [
+            "minimum"
+          ],
+          "s2": [
+            "root"
+          ]
+        },
+        "expected_path": [
+          "minimum",
+          "root"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "tf.module.versions",
+          "weight": 0.5
+        },
+        {
+          "concept_id": "tf.module.providers",
+          "weight": 0.5
+        }
+      ],
+      "explanation": "Reusable modules should be broadly compatible enough for callers, while root configurations set deployment policy and commit the provider lock selection. This reduces constraint conflicts across module dependencies.",
+      "hints": [
+        "At each step choose the action that changes the correct layer: configuration, state, or remote infrastructure."
+      ],
+      "error_codes": [
+        {
+          "code": "scenario_choice_wrong_diagnosis",
+          "description": "A diagnosis choice was incorrect."
+        },
+        {
+          "code": "scenario_choice_wrong_next_action",
+          "description": "A next-action choice was incorrect."
+        },
+        {
+          "code": "scenario_choice_wrong_remediation",
+          "description": "A remediation choice was incorrect."
+        },
+        {
+          "code": "scenario_choice_wrong_verification",
+          "description": "A verification choice was incorrect."
+        },
+        {
+          "code": "scenario_choice_incomplete_path",
+          "description": "The scenario path ended before all required decisions."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Terraform Associate 004 — official exam content",
+          "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+        },
+        {
+          "title": "Modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules"
+        },
+        {
+          "title": "Module block",
+          "url": "https://developer.hashicorp.com/terraform/language/block/module"
+        },
+        {
+          "title": "Providers within modules",
+          "url": "https://developer.hashicorp.com/terraform/language/modules/develop/providers"
+        }
+      ]
+    }
+  ]
+}
