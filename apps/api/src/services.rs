@@ -15,9 +15,9 @@ use uuid::Uuid;
 
 use crate::dto::{
     AnswerPayload, AnswerRequest, CatalogResponse, CertificationDto, CertificationVersionDto,
-    CompleteMissionResponse, DomainDto, FeedbackResponse, IssueMissionRequest, MissionResponse,
-    QuestionView, SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, TaskDto,
-    WalletResponse,
+    CompleteMissionResponse, ConceptDto, DomainDto, FeedbackResponse, IssueMissionRequest,
+    MissionResponse, QuestionView, SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse,
+    TaskDto, WalletResponse,
 };
 use crate::error::ApiError;
 use crate::selection::{self, Candidate, HistoryEntry};
@@ -64,6 +64,14 @@ pub fn catalog(state: &AppState) -> CatalogResponse {
                                 question_count: task.question_ids.len(),
                             })
                             .collect(),
+                    })
+                    .collect(),
+                concepts: bundle
+                    .concepts
+                    .iter()
+                    .map(|concept| ConceptDto {
+                        id: concept.id.clone(),
+                        name: concept.name.clone(),
                     })
                     .collect(),
             }],

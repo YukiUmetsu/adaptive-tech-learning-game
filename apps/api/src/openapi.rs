@@ -7,7 +7,7 @@ use utoipa::OpenApi;
 
 use crate::dto::{
     AnswerPayload, AnswerRequest, CatalogResponse, CertificationDto, CertificationVersionDto,
-    CompleteMissionRequest, CompleteMissionResponse, DomainDto, FeedbackResponse,
+    CompleteMissionRequest, CompleteMissionResponse, ConceptDto, DomainDto, FeedbackResponse,
     IssueMissionRequest, MissionResponse, QuestionView, ReconstructionAnswerPayload,
     SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, TaskDto, WalletResponse,
 };
@@ -42,6 +42,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         CertificationVersionDto,
         DomainDto,
         TaskDto,
+        ConceptDto,
         IssueMissionRequest,
         MissionResponse,
         WalletResponse,

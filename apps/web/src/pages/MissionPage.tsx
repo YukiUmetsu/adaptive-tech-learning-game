@@ -1,8 +1,9 @@
 import { Link, useParams } from "react-router-dom";
 
+import BitsIcon from "../components/BitsIcon";
 import FeedbackPanel from "../components/FeedbackPanel";
-import MissionSummary from "../components/MissionSummary";
 import QuestionCard from "../components/QuestionCard";
+import QuizCompletionSummary from "../components/QuizCompletionSummary";
 import { useCatalog } from "../hooks/useCatalog";
 import { useMissionRunner } from "../hooks/useMissionRunner";
 import { quizModeLabel } from "../state/quizModes";
@@ -32,7 +33,7 @@ export default function MissionPage() {
 
   if (runner.phase === "summary") {
     return (
-      <MissionSummary
+      <QuizCompletionSummary
         mission={runner.mission}
         attempts={runner.attempts}
         syncState={runner.syncState}
@@ -61,7 +62,7 @@ export default function MissionPage() {
             Question {runner.currentIndex + 1} of {runner.total}
           </span>
           <span className="mission-bits" aria-label={`${bits} Bits`}>
-            <span aria-hidden="true">◇</span> {bits.toLocaleString()}
+            <BitsIcon className="bits-icon" /> {bits.toLocaleString()}
           </span>
         </div>
         <h1>{runner.question.prompt}</h1>

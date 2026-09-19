@@ -22,7 +22,7 @@ test("E2E 1 — basic learning journey", async ({ page }) => {
   await answerMissionCorrectly(page);
 
   await expect(
-    page.getByRole("heading", { name: "Mission summary" }),
+    page.getByRole("heading", { name: "Mission Complete" }),
   ).toBeVisible();
   await expect(page.getByTestId("summary-completed")).toHaveText(
     `${TOTAL_QUESTIONS} / ${TOTAL_QUESTIONS}`,
@@ -57,7 +57,7 @@ test("E2E 2 — incorrect attempt, explanation, and recovery", async ({
   await answerRemainingCorrectly(page);
 
   await expect(
-    page.getByRole("heading", { name: "Mission summary" }),
+    page.getByRole("heading", { name: "Mission Complete" }),
   ).toBeVisible();
   // The recovered question must not be reported as first-attempt success.
   await expect(page.getByTestId("summary-first-attempt")).toHaveText(
@@ -105,9 +105,9 @@ test("E2E 5 — unsynced events stay pending until sync succeeds", async ({
   );
 
   await page.unroute("**/v1/sync");
-  await page.getByRole("button", { name: "Retry sync" }).click();
+  await page.getByRole("button", { name: "Retry Sync" }).click();
 
-  await expect(page.getByText("All learning events synced.")).toBeVisible();
+  await expect(page.getByText(/Progress saved/)).toBeVisible();
 });
 
 test("E2E 6 — dragging from a node does not move it and creates a connection", async ({

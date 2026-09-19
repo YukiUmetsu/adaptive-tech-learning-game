@@ -81,7 +81,42 @@ function audioContextCtor():
   return globalWindow.AudioContext ?? globalWindow.webkitAudioContext ?? null;
 }
 
-function play(name: "correct" | "wrong"): void {
+type SoundName = "correct" | "wrong" | "complete";
+
+interface SoundShape {
+  notes: number[];
+  noteDuration: number;
+  peak: number;
+  spacing: number;
+  wave: OscillatorType;
+}
+
+const SOUNDS: Record<SoundName, SoundShape> = {
+  correct: {
+    notes: [523.25, 659.25, 783.99],
+    noteDuration: 0.18,
+    peak: 0.16,
+    spacing: 0.09,
+    wave: "triangle",
+  },
+  wrong: {
+    notes: [220, 174.61],
+    noteDuration: 0.22,
+    peak: 0.1,
+    spacing: 0.09,
+    wave: "sine",
+  },
+  // A slightly longer rising arpeggio reserved for finishing a whole mission.
+  complete: {
+    notes: [392.0, 523.25, 659.25, 783.99],
+    noteDuration: 0.22,
+    peak: 0.18,
+    spacing: 0.11,
+    wave: "triangle",
+  },
+};
+
+function play(name: SoundName): void {
   if (muted) {
     return;
   }
@@ -102,16 +137,14 @@ function play(name: "correct" | "wrong"): void {
       void context.resume();
     }
 
-    const notes = name === "correct" ? [523.25, 659.25, 783.99] : [220, 174.61];
-    const noteDuration = name === "correct" ? 0.18 : 0.22;
-    const peak = name === "correct" ? 0.16 : 0.1;
+    const { notes, noteDuration, peak, spacing, wave } = SOUNDS[name];
     const start = context.currentTime;
 
     notes.forEach((frequency, index) => {
       const oscillator = context!.createOscillator();
       const gain = context!.createGain();
-      const noteStart = start + index * 0.09;
-      oscillator.type = name === "correct" ? "triangle" : "sine";
+      const noteStart = start + index * spacing;
+      oscillator.type = wave;
       oscillator.frequency.value = frequency;
       gain.gain.setValueAtTime(0.0001, noteStart);
       gain.gain.exponentialRampToValueAtTime(peak, noteStart + 0.02);
@@ -133,4 +166,9 @@ export function playCorrect(): void {
 /** Short soft boop for an incorrect or partial answer. */
 export function playWrong(): void {
   play("wrong");
+}
+
+/** Celebratory chime played once when a quiz is completed. */
+export function playMissionComplete(): void {
+  play("complete");
 }

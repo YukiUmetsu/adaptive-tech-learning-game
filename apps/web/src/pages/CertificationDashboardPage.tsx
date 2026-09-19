@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import type { DomainDto, QuizMode } from "../api/types";
+import BitsHud from "../components/BitsHud";
 import { useCatalog } from "../hooks/useCatalog";
 import { certificationQuestionCount, domainQuestionCount } from "../state/demo";
 import { startMission } from "../state/mission";
@@ -13,7 +14,7 @@ import {
   quizModeLabel,
   type QuizModePresentation,
 } from "../state/quizModes";
-import { refreshWallet, useBitsBalance } from "../state/wallet";
+import { refreshWallet } from "../state/wallet";
 
 interface Launch {
   mode: QuizMode;
@@ -25,7 +26,6 @@ export default function CertificationDashboardPage() {
   const { certificationId } = useParams();
   const { state } = useCatalog();
   const navigate = useNavigate();
-  const bits = useBitsBalance();
   const [starting, setStarting] = useState<string | null>(null);
   const [choosingDomain, setChoosingDomain] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,10 +87,12 @@ export default function CertificationDashboardPage() {
 
   const modeCard = (presentation: QuizModePresentation, onStart: () => void, key: string) => (
     <article className={`mode-card mode-${presentation.key}`}>
-      <span className="mode-icon" aria-hidden="true">
-        {presentation.icon}
-      </span>
-      <h3>{presentation.label}</h3>
+      <div className="mode-card-heading">
+        <span className="mode-icon" aria-hidden="true">
+          {presentation.icon}
+        </span>
+        <h3>{presentation.label}</h3>
+      </div>
       <p>{presentation.questionLabel}</p>
       <p className="muted">{presentation.duration}</p>
       <p className="mode-horizon muted">{presentation.horizon}</p>
@@ -133,13 +135,7 @@ export default function CertificationDashboardPage() {
           </p>
           <h1>{certification.name}</h1>
         </div>
-        <div className="bits-hud" aria-label={`${bits} Bits`}>
-          <span className="bits-icon" aria-hidden="true">
-            ◇
-          </span>
-          <span className="bits-amount">{bits.toLocaleString()}</span>
-          <span className="bits-label">Bits</span>
-        </div>
+        <BitsHud />
       </header>
 
       {resumable ? (

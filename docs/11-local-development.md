@@ -131,6 +131,11 @@ POST /v1/sync
 GET  /v1/wallet?device_id=...
 ```
 
+`GET /v1/certifications` also returns each version's domains, tasks, and
+learner-facing concept names, so the shared end-of-quiz completion summary can
+show friendly knowledge labels without ever rendering a raw concept id such as
+`aws.cloudformation.changesets`.
+
 Learners see three quiz modes (Quick Quiz, Domain Quiz, Full Practice) from the
 certification dashboard; the server selects questions per mode and settles Bits
 on sync. The web routes are `/certifications` (category catalog) and

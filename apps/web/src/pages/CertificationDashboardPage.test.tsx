@@ -126,7 +126,7 @@ describe("CertificationDashboardPage", () => {
 
     // Bits balance from the API.
     await waitFor(() =>
-      expect(screen.getByLabelText("1240 Bits")).toBeInTheDocument(),
+      expect(screen.getByLabelText("1,240 Bits")).toBeInTheDocument(),
     );
 
     // Domain metadata from the API content.

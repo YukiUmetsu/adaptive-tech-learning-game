@@ -50,6 +50,52 @@ export const QUIZ_MODES: QuizModePresentation[] = [
   FULL_PRACTICE,
 ];
 
+/** Completion-screen identity for a quiz mode. */
+export interface QuizCompletionPresentation {
+  /** CSS-safe mode key. */
+  key: string;
+  icon: string;
+  title: string;
+  /** Full practice gets the strongest hero treatment. */
+  heroVariant: "standard" | "celebration";
+}
+
+/** Presentation for the shared completion screen. */
+export function quizCompletionPresentation(
+  mode: string | null | undefined,
+): QuizCompletionPresentation {
+  switch (mode) {
+    case "quick_adaptive":
+      return {
+        key: "quick_adaptive",
+        icon: "⚡",
+        title: "Quick Quiz Complete",
+        heroVariant: "standard",
+      };
+    case "domain_quiz":
+      return {
+        key: "domain_quiz",
+        icon: "🎯",
+        title: "Domain Quiz Complete",
+        heroVariant: "standard",
+      };
+    case "full_practice":
+      return {
+        key: "full_practice",
+        icon: "🏆",
+        title: "Full Practice Complete",
+        heroVariant: "celebration",
+      };
+    default:
+      return {
+        key: "task_practice",
+        icon: "✦",
+        title: "Mission Complete",
+        heroVariant: "standard",
+      };
+  }
+}
+
 /** Human label for a mission's stored mode. */
 export function quizModeLabel(mode: string | null | undefined): string {
   switch (mode) {

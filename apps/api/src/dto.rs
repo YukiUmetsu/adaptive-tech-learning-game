@@ -53,6 +53,20 @@ pub struct CertificationVersionDto {
     pub content_version: String,
     /// Domains with authored tasks.
     pub domains: Vec<DomainDto>,
+    /// Learner-facing knowledge concepts referenced by this version.
+    ///
+    /// Mission payloads carry only concept ids; the catalog supplies the names so
+    /// summaries never have to render a raw identifier.
+    pub concepts: Vec<ConceptDto>,
+}
+
+/// A learner-facing knowledge concept.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ConceptDto {
+    /// Stable concept identifier, for example `aws.cloudformation.changesets`.
+    pub id: String,
+    /// Short learner-facing name, for example `CloudFormation change sets`.
+    pub name: String,
 }
 
 /// A content domain.

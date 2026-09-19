@@ -47,18 +47,35 @@ export function reconcileBits(serverBalance: number): void {
   emit();
 }
 
-/** Fetches the authoritative balance. Failures leave the cache untouched. */
-export async function refreshWallet(): Promise<void> {
-  try {
-    const result = await api.GET("/v1/wallet", {
-      params: { query: { device_id: getDeviceId() } },
-    });
-    if (result.data) {
-      reconcileBits(result.data.bits_balance);
-    }
-  } catch {
-    // Offline: keep showing the cached balance.
+let inFlight: Promise<void> | null = null;
+
+/**
+ * Fetches the authoritative balance. Failures leave the cache untouched.
+ *
+ * Concurrent callers (for example the app shell and a dashboard mounting
+ * together) share a single request.
+ */
+export function refreshWallet(): Promise<void> {
+  if (inFlight) {
+    return inFlight;
   }
+
+  inFlight = (async () => {
+    try {
+      const result = await api.GET("/v1/wallet", {
+        params: { query: { device_id: getDeviceId() } },
+      });
+      if (result.data) {
+        reconcileBits(result.data.bits_balance);
+      }
+    } catch {
+      // Offline: keep showing the cached balance.
+    } finally {
+      inFlight = null;
+    }
+  })();
+
+  return inFlight;
 }
 
 function subscribe(listener: () => void): () => void {
@@ -71,4 +88,14 @@ function subscribe(listener: () => void): () => void {
 /** React binding for the displayed Bits balance. */
 export function useBitsBalance(): number {
   return useSyncExternalStore(subscribe, getDisplayBits, getDisplayBits);
+}
+
+/**
+ * React binding for the settled, server-authoritative balance only.
+ *
+ * Used to celebrate increases that survived reconciliation rather than
+ * optimistic client previews.
+ */
+export function useSettledBits(): number {
+  return useSyncExternalStore(subscribe, getSettledBits, getSettledBits);
 }

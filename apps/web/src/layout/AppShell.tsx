@@ -1,9 +1,16 @@
+import { useEffect } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 
+import BitsHud from "../components/BitsHud";
 import { toggleSoundMuted, useSoundMuted } from "../state/sound";
+import { refreshWallet } from "../state/wallet";
 
 export default function AppShell() {
   const muted = useSoundMuted();
+
+  useEffect(() => {
+    void refreshWallet();
+  }, []);
 
   return (
     <div className="app-shell">
@@ -17,6 +24,7 @@ export default function AppShell() {
           </NavLink>
           <NavLink to="/certifications">Certifications</NavLink>
           <NavLink to="/demo">Demo</NavLink>
+          <BitsHud size="sm" />
           <button
             type="button"
             className="sound-toggle"

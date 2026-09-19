@@ -13,8 +13,26 @@ function renderAt(path: string) {
   );
 }
 
+function jsonResponse(payload: unknown, status = 200): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
 beforeEach(() => {
   clearCatalogCache();
+  // The app shell refreshes the authoritative Bits balance on mount.
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/v1/wallet")) {
+        return jsonResponse({ device_id: "device", bits_balance: 0 });
+      }
+      return jsonResponse({ certifications: [] });
+    }),
+  );
 });
 
 afterEach(() => {
@@ -31,17 +49,6 @@ describe("App routing", () => {
   });
 
   it("renders the demo page at /demo", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        async () =>
-          new Response(JSON.stringify({ certifications: [] }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          }),
-      ),
-    );
-
     renderAt("/demo");
 
     expect(

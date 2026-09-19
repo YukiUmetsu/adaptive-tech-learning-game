@@ -344,6 +344,13 @@ export interface components {
         };
         /** @description A versioned exam blueprint. */
         CertificationVersionDto: {
+            /**
+             * @description Learner-facing knowledge concepts referenced by this version.
+             *
+             *     Mission payloads carry only concept ids; the catalog supplies the names so
+             *     summaries never have to render a raw identifier.
+             */
+            concepts: components["schemas"]["ConceptDto"][];
             /** @description Immutable content version. */
             content_version: string;
             /** @description Domains with authored tasks. */
@@ -384,6 +391,13 @@ export interface components {
             id: string;
             /** @description New status. */
             status: components["schemas"]["MissionStatus"];
+        };
+        /** @description A learner-facing knowledge concept. */
+        ConceptDto: {
+            /** @description Stable concept identifier, for example `aws.cloudformation.changesets`. */
+            id: string;
+            /** @description Short learner-facing name, for example `CloudFormation change sets`. */
+            name: string;
         };
         /** @description A concept mapped to a question, with its share of the evidence. */
         ConceptWeight: {

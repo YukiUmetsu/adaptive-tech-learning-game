@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import type { MissionResponse, QuestionView } from "../api/types";
 import type { AttemptRecord } from "./persistence";
-import { computeSummary, formatDuration } from "./summary";
+import {
+  completionMessage,
+  computeSummary,
+  formatDuration,
+  type MissionSummary,
+} from "./summary";
 
 function question(id: string, concepts: string[]): QuestionView {
   return {
@@ -79,7 +84,7 @@ describe("computeSummary", () => {
     expect(summary.recoveredAttempts).toBe(0);
   });
 
-  it("sums Bits and reports per-domain coverage", () => {
+  it("sums Bits and reports per-domain and per-task coverage", () => {
     const summary = computeSummary(
       mission,
       [
@@ -94,6 +99,51 @@ describe("computeSummary", () => {
     expect(summary.domains).toEqual([
       { domainId: "domain-1", totalQuestions: 2, firstAttemptCorrect: 1 },
     ]);
+    expect(summary.tasks).toEqual([
+      {
+        taskId: "1.1",
+        domainId: "domain-1",
+        totalQuestions: 2,
+        firstAttemptCorrect: 1,
+      },
+    ]);
+  });
+});
+
+function summaryWith(
+  firstAttemptCorrect: number,
+  recoveredAttempts: number,
+  completed: number,
+): MissionSummary {
+  return {
+    totalQuestions: completed,
+    questionsCompleted: completed,
+    firstAttemptCorrect,
+    recoveredAttempts,
+    conceptsPracticed: [],
+    studyTimeMs: 0,
+    pendingEvents: 0,
+    bitsEarned: 0,
+    domains: [],
+    tasks: [],
+  };
+}
+
+describe("completionMessage", () => {
+  it("celebrates a flawless run", () => {
+    expect(completionMessage(summaryWith(10, 0, 10))).toBe("Flawless run!");
+  });
+
+  it("celebrates an excellent run", () => {
+    expect(completionMessage(summaryWith(9, 1, 10))).toBe("Excellent run!");
+  });
+
+  it("celebrates several recoveries as successful learning", () => {
+    expect(completionMessage(summaryWith(3, 3, 10))).toBe("Strong recovery!");
+  });
+
+  it("falls back to a neutral positive message", () => {
+    expect(completionMessage(summaryWith(2, 1, 10))).toBe("Quiz complete!");
   });
 });
 
