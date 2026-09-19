@@ -84,6 +84,23 @@ describe("buildCatalog", () => {
     );
   });
 
+  it("offers the Python Fluency certification under AI when content exists", () => {
+    const entries = CATALOG.flatMap((section) => section.certifications);
+    const entry = entries.find(
+      (candidate) => candidate.id === "ai-python-fluency",
+    );
+    expect(entry?.examCode).toBe("PYTHON-FLUENCY");
+    expect(entry?.wip).toBe(false);
+
+    const sections = buildCatalog(CATALOG, [
+      certification("ai-python-fluency", "Python Fluency"),
+    ]);
+    const cards = sections.flatMap((section) => section.cards);
+    expect(cards.find((card) => card.id === "ai-python-fluency")?.available).toBe(
+      true,
+    );
+  });
+
   it("offers the AWS Generative AI Developer certification and drops Linux", () => {
     const entries = CATALOG.flatMap((section) => section.certifications);
     const entry = entries.find((candidate) => candidate.id === "aws-aip-c01");

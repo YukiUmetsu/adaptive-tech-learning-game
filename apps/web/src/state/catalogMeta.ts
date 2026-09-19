@@ -31,6 +31,12 @@ export const CATALOG: CatalogCategory[] = [
     label: "AI & Machine Learning",
     certifications: [
       {
+        id: "ai-python-fluency",
+        name: "Python Fluency",
+        examCode: "PYTHON-FLUENCY",
+        wip: false,
+      },
+      {
         id: "ai-pytorch-core",
         name: "PyTorch Core: Practical ML & Neural Networks",
         examCode: "PYTORCH-CORE",

@@ -1,0 +1,859 @@
+{
+  "certification": {
+    "id": "ai-python-fluency",
+    "vendor": "Python Software Foundation",
+    "name": "Python Fluency",
+    "exam_code": "PYTHON-FLUENCY",
+    "official_source_url": "https://docs.python.org/3/",
+    "last_reviewed": "2026-09-19"
+  },
+  "version": {
+    "id": "python-fluency-v1",
+    "exam_code": "PYTHON-FLUENCY",
+    "effective_date": "2026-09-19",
+    "content_version": "python-fluency-content-2026-09-19-v1",
+    "domains": [
+      {
+        "id": "domain-1",
+        "name": "Iteration, Comprehensions & Unpacking",
+        "weight": 0.14,
+        "tasks": []
+      },
+      {
+        "id": "domain-2",
+        "name": "Mappings, Collections & Built-ins",
+        "weight": 0.11,
+        "tasks": []
+      },
+      {
+        "id": "domain-3",
+        "name": "Functions, Objects & Practical Syntax",
+        "weight": 0.1,
+        "tasks": []
+      },
+      {
+        "id": "domain-4",
+        "name": "Asyncio & Structured Concurrency",
+        "weight": 0.18,
+        "tasks": []
+      },
+      {
+        "id": "domain-5",
+        "name": "Threads, Processes & Parallel Work",
+        "weight": 0.12,
+        "tasks": [
+          {
+            "id": "5.1",
+            "name": "Use executor pools",
+            "question_ids": [
+              "threadpool-submit-001",
+              "threadpool-map-002",
+              "processpool-map-001",
+              "processpool-submit-002",
+              "as-completed-001",
+              "table-concurrency-001"
+            ]
+          },
+          {
+            "id": "5.2",
+            "name": "Coordinate threads and work queues",
+            "question_ids": [
+              "thread-event-001",
+              "thread-lock-001",
+              "queue-thread-001"
+            ]
+          },
+          {
+            "id": "5.3",
+            "name": "Choose process-based parallelism safely",
+            "question_ids": [
+              "mp-context-001",
+              "mp-context-processpool-002"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "domain-6",
+        "name": "Practical Standard Library",
+        "weight": 0.1,
+        "tasks": []
+      },
+      {
+        "id": "domain-7",
+        "name": "Python 3.10",
+        "weight": 0.07,
+        "tasks": []
+      },
+      {
+        "id": "domain-8",
+        "name": "Python 3.11",
+        "weight": 0.07,
+        "tasks": []
+      },
+      {
+        "id": "domain-9",
+        "name": "Python 3.12",
+        "weight": 0.05,
+        "tasks": []
+      },
+      {
+        "id": "domain-10",
+        "name": "Python 3.13",
+        "weight": 0.03,
+        "tasks": []
+      },
+      {
+        "id": "domain-11",
+        "name": "Python 3.14",
+        "weight": 0.03,
+        "tasks": []
+      }
+    ]
+  },
+  "concepts": [
+    {
+      "id": "ai.python.threadpool_executor",
+      "name": "ThreadPoolExecutor",
+      "description": "ThreadPoolExecutor runs callables concurrently in a pool of OS threads and is commonly useful for overlapping blocking I/O."
+    },
+    {
+      "id": "ai.python.processpool_executor",
+      "name": "ProcessPoolExecutor",
+      "description": "ProcessPoolExecutor runs work in separate processes, allowing CPU-bound Python code to use multiple cores."
+    },
+    {
+      "id": "ai.python.futures_as_completed",
+      "name": "concurrent.futures.as_completed",
+      "description": "as_completed(futures) yields Future objects as each finishes, which is useful when processing results in completion order instead of submission order."
+    },
+    {
+      "id": "ai.python.threading_event",
+      "name": "threading.Event",
+      "description": "threading.Event is a thread-safe flag used to signal one or many waiting threads that a condition has occurred."
+    },
+    {
+      "id": "ai.python.threading_lock",
+      "name": "threading.Lock",
+      "description": "threading.Lock provides mutual exclusion between threads; a with lock: block acquires and releases it safely."
+    },
+    {
+      "id": "ai.python.queue_queue",
+      "name": "queue.Queue for threads",
+      "description": "queue.Queue is a synchronized producer-consumer queue for threads and supports blocking put/get plus task_done/join tracking."
+    },
+    {
+      "id": "ai.python.multiprocessing_context",
+      "name": "Explicit multiprocessing start context",
+      "description": "multiprocessing.get_context(name) lets code explicitly choose a process start method instead of depending on a platform/version default."
+    }
+  ],
+  "questions": [
+    {
+      "id": "threadpool-submit-001",
+      "content_version": "python-fluency-content-2026-09-19-v1",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.58,
+      "prompt": "Submit each blocking fetch to the existing thread pool.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "with ThreadPoolExecutor(max_workers=8) as pool:\n    futures = [{{answer}} for url in urls]"
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Missing code",
+            "placeholder": "type code"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "pool.submit(fetch, url)"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.threadpool_executor",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "ThreadPoolExecutor runs callables concurrently in a pool of OS threads and is commonly useful for overlapping blocking I/O. with ThreadPoolExecutor() as pool: futures = [pool.submit(fetch, url) for url in urls] submits independent calls. Threads do not normally provide multi-core speedups for CPU-bound pure Python because of the regular CPython GIL.",
+      "hints": [
+        "Use the surrounding code and comment to identify the Python idiom being requested."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "concurrent.futures — ThreadPoolExecutor",
+          "url": "https://docs.python.org/3/library/concurrent.futures.html#threadpoolexecutor"
+        }
+      ]
+    },
+    {
+      "id": "threadpool-map-002",
+      "content_version": "python-fluency-content-2026-09-19-v1",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.68,
+      "prompt": "Run the blocking function concurrently and collect results in input order.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "with ThreadPoolExecutor(max_workers=8) as pool:\n    results = {{answer}}"
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Missing code",
+            "placeholder": "type code"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "list(pool.map(fetch, urls))"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.threadpool_executor",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "ThreadPoolExecutor runs callables concurrently in a pool of OS threads and is commonly useful for overlapping blocking I/O. with ThreadPoolExecutor() as pool: futures = [pool.submit(fetch, url) for url in urls] submits independent calls. Threads do not normally provide multi-core speedups for CPU-bound pure Python because of the regular CPython GIL.",
+      "hints": [
+        "Use the surrounding code and comment to identify the Python idiom being requested."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "concurrent.futures — ThreadPoolExecutor",
+          "url": "https://docs.python.org/3/library/concurrent.futures.html#threadpoolexecutor"
+        }
+      ]
+    },
+    {
+      "id": "processpool-map-001",
+      "content_version": "python-fluency-content-2026-09-19-v1",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.58,
+      "prompt": "Use the process pool to evaluate CPU-heavy records in parallel.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "with ProcessPoolExecutor() as pool:\n    scores = {{answer}}"
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Missing code",
+            "placeholder": "type code"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "list(pool.map(score_record, records))"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.processpool_executor",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "ProcessPoolExecutor runs work in separate processes, allowing CPU-bound Python code to use multiple cores. with ProcessPoolExecutor() as pool: results = list(pool.map(score, records)) is a high-level parallel map pattern. Submitted callables and arguments generally need to be picklable, and __main__ must be importable by worker processes.",
+      "hints": [
+        "Use the surrounding code and comment to identify the Python idiom being requested."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "concurrent.futures — ProcessPoolExecutor",
+          "url": "https://docs.python.org/3/library/concurrent.futures.html#processpoolexecutor"
+        }
+      ]
+    },
+    {
+      "id": "processpool-submit-002",
+      "content_version": "python-fluency-content-2026-09-19-v1",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.71,
+      "prompt": "Submit one CPU-bound task and keep the Future for later.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "with ProcessPoolExecutor() as pool:\n    future = {{answer}}\n    # do other work...\n    result = future.result()"
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Missing code",
+            "placeholder": "type code"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "pool.submit(compute_features, batch)"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.processpool_executor",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "ProcessPoolExecutor runs work in separate processes, allowing CPU-bound Python code to use multiple cores. with ProcessPoolExecutor() as pool: results = list(pool.map(score, records)) is a high-level parallel map pattern. Submitted callables and arguments generally need to be picklable, and __main__ must be importable by worker processes.",
+      "hints": [
+        "Use the surrounding code and comment to identify the Python idiom being requested."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "concurrent.futures — ProcessPoolExecutor",
+          "url": "https://docs.python.org/3/library/concurrent.futures.html#processpoolexecutor"
+        }
+      ]
+    },
+    {
+      "id": "as-completed-001",
+      "content_version": "python-fluency-content-2026-09-19-v1",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.61,
+      "prompt": "Process completed futures as soon as each one finishes.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "from concurrent.futures import as_completed\n\nfor future in {{answer}}:\n    handle(future.result())"
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Missing code",
+            "placeholder": "type code"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "as_completed(futures)"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.futures_as_completed",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "as_completed(futures) yields Future objects as each finishes, which is useful when processing results in completion order instead of submission order. for future in as_completed(futures): result = future.result() handles fast results without waiting for earlier slow submissions. Calling result() re-raises the worker exception; completion order does not imply submission order.",
+      "hints": [
+        "Use the surrounding code and comment to identify the Python idiom being requested."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "concurrent.futures.as_completed",
+          "url": "https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.as_completed"
+        }
+      ]
+    },
+    {
+      "id": "thread-event-001",
+      "content_version": "python-fluency-content-2026-09-19-v1",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Stop the worker loop when another thread signals the event.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "stop_event = threading.Event()\n\ndef worker():\n    while {{answer}}:\n        poll_once()"
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Missing code",
+            "placeholder": "type code"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "not stop_event.is_set()"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.threading_event",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "threading.Event is a thread-safe flag used to signal one or many waiting threads that a condition has occurred. worker loops often use while not stop_event.is_set(): ... and another thread calls stop_event.set(). Event is signaling, not mutual exclusion; use Lock when shared mutable state itself needs serialized access.",
+      "hints": [
+        "Use the surrounding code and comment to identify the Python idiom being requested."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "threading.Event",
+          "url": "https://docs.python.org/3/library/threading.html#event-objects"
+        }
+      ]
+    },
+    {
+      "id": "thread-lock-001",
+      "content_version": "python-fluency-content-2026-09-19-v1",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.53,
+      "prompt": "Use the existing thread lock around the shared update.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "lock = threading.Lock()\n\ndef increment():\n    {{answer}}\n        counters['jobs'] += 1"
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Missing code",
+            "placeholder": "type code"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "with lock:"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.threading_lock",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "threading.Lock provides mutual exclusion between threads; a with lock: block acquires and releases it safely. Use with lock: around the smallest shared-state critical section that must be atomic across threads. A Lock does not make compound operations automatically atomic unless those operations actually run while the lock is held.",
+      "hints": [
+        "Use the surrounding code and comment to identify the Python idiom being requested."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "threading.Lock",
+          "url": "https://docs.python.org/3/library/threading.html#lock-objects"
+        }
+      ]
+    },
+    {
+      "id": "queue-thread-001",
+      "content_version": "python-fluency-content-2026-09-19-v1",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.61,
+      "prompt": "Take the next job from the synchronized thread queue.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "def worker(q):\n    while True:\n        job = {{answer}}\n        try:\n            process(job)\n        finally:\n            q.task_done()"
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Missing code",
+            "placeholder": "type code"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "q.get()"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.queue_queue",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "queue.Queue is a synchronized producer-consumer queue for threads and supports blocking put/get plus task_done/join tracking. worker threads usually call item = q.get(), then q.task_done() in a finally block after processing. queue.Queue is for thread coordination; asyncio.Queue is the corresponding event-loop-oriented primitive.",
+      "hints": [
+        "Use the surrounding code and comment to identify the Python idiom being requested."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "queue — synchronized queue",
+          "url": "https://docs.python.org/3/library/queue.html"
+        }
+      ]
+    },
+    {
+      "id": "mp-context-001",
+      "content_version": "python-fluency-content-2026-09-19-v1",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.63,
+      "prompt": "Explicitly request spawn semantics instead of relying on the platform default.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "import multiprocessing\nctx = {{answer}}"
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Missing code",
+            "placeholder": "type code"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "multiprocessing.get_context('spawn')"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.multiprocessing_context",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "multiprocessing.get_context(name) lets code explicitly choose a process start method instead of depending on a platform/version default. ctx = multiprocessing.get_context('spawn') can be passed to APIs that accept an mp_context. Start-method defaults differ across platforms and changed again on POSIX in Python 3.14, so code requiring a specific method should request it explicitly.",
+      "hints": [
+        "Use the surrounding code and comment to identify the Python idiom being requested."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "multiprocessing contexts",
+          "url": "https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods"
+        }
+      ]
+    },
+    {
+      "id": "mp-context-processpool-002",
+      "content_version": "python-fluency-content-2026-09-19-v1",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.77,
+      "prompt": "Pass an explicit spawn context to the process pool.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "ctx = multiprocessing.get_context('spawn')\nwith ProcessPoolExecutor({{answer}}) as pool:\n    results = list(pool.map(work, items))"
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Missing code",
+            "placeholder": "type code"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "mp_context=ctx"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.multiprocessing_context",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "multiprocessing.get_context(name) lets code explicitly choose a process start method instead of depending on a platform/version default. ctx = multiprocessing.get_context('spawn') can be passed to APIs that accept an mp_context. Start-method defaults differ across platforms and changed again on POSIX in Python 3.14, so code requiring a specific method should request it explicitly.",
+      "hints": [
+        "Use the surrounding code and comment to identify the Python idiom being requested."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "multiprocessing contexts",
+          "url": "https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods"
+        }
+      ]
+    },
+    {
+      "id": "table-concurrency-001",
+      "content_version": "python-fluency-content-2026-09-19-v1",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.66,
+      "prompt": "Complete the iterator used for completion-order processing.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "table",
+          "columns": [
+            {
+              "id": "need",
+              "label": "Requirement"
+            },
+            {
+              "id": "code",
+              "label": "Python"
+            }
+          ],
+          "rows": [
+            {
+              "id": "row-1",
+              "cells": {
+                "need": {
+                  "type": "text",
+                  "template": "Handle futures as each finishes, not submission order"
+                },
+                "code": {
+                  "type": "code",
+                  "language": "python",
+                  "template": "for future in {{answer}}:"
+                }
+              }
+            }
+          ]
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Missing code",
+            "placeholder": "type code"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "as_completed(futures)"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.futures_as_completed",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "as_completed(futures) yields Future objects as each finishes, which is useful when processing results in completion order instead of submission order. for future in as_completed(futures): result = future.result() handles fast results without waiting for earlier slow submissions. Calling result() re-raises the worker exception; completion order does not imply submission order.",
+      "hints": [
+        "Use the row description to reconstruct the exact Python expression."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "concurrent.futures.as_completed",
+          "url": "https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.as_completed"
+        }
+      ]
+    }
+  ]
+}
