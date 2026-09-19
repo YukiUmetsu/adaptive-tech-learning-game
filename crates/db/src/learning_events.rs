@@ -12,6 +12,7 @@ use crate::wallets::{self, BitTransaction};
 #[derive(sqlx::FromRow)]
 struct LearningEventRow {
     event_id: Uuid,
+    user_id: Option<Uuid>,
     device_id: Uuid,
     mission_instance_id: Uuid,
     certification_id: String,
@@ -37,6 +38,7 @@ impl TryFrom<LearningEventRow> for LearningEvent {
     fn try_from(row: LearningEventRow) -> Result<Self, Self::Error> {
         Ok(Self {
             event_id: row.event_id,
+            user_id: row.user_id,
             device_id: row.device_id,
             mission_instance_id: row.mission_instance_id,
             certification_id: row.certification_id,
@@ -60,7 +62,7 @@ impl TryFrom<LearningEventRow> for LearningEvent {
 
 /// One recent accepted event, summarized for adaptive question selection.
 #[derive(Debug, Clone, PartialEq)]
-pub struct DeviceHistoryEntry {
+pub struct UserHistoryEntry {
     /// Question that was answered.
     pub question_id: String,
     /// Accepted partial score in `[0, 1]`.
@@ -85,6 +87,9 @@ struct HistoryRow {
 /// The mission row is locked so concurrent syncs cannot assign the same attempt
 /// number. Returns the attempt number when the event was newly inserted, or
 /// `None` when the `event_id` already existed (idempotent retry).
+///
+/// Anonymous demo events (`user_id = None`) are recorded as evidence but never
+/// settle a wallet: there is no account to own the Bits.
 pub async fn accept_answer(
     pool: &PgPool,
     event: &LearningEvent,
@@ -106,15 +111,16 @@ pub async fn accept_answer(
 
     let inserted = sqlx::query_scalar::<_, Uuid>(
         "INSERT INTO learning_events
-            (event_id, device_id, mission_instance_id, certification_id, certification_version,
-             domain_id, task_id, question_id, content_version, concepts, assessment_mode,
-             interaction_type, score, attempt_number, hint_count, response_ms,
+            (event_id, user_id, device_id, mission_instance_id, certification_id,
+             certification_version, domain_id, task_id, question_id, content_version, concepts,
+             assessment_mode, interaction_type, score, attempt_number, hint_count, response_ms,
              structured_error_codes, occurred_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
          ON CONFLICT (event_id) DO NOTHING
          RETURNING event_id",
     )
     .bind(event.event_id)
+    .bind(event.user_id)
     .bind(event.device_id)
     .bind(event.mission_instance_id)
     .bind(&event.certification_id)
@@ -140,41 +146,47 @@ pub async fn accept_answer(
         return Ok(None);
     }
 
-    let amount = reward_bits(attempt_number, event.score, difficulty_prior);
-    let reason = if attempt_number <= 1 {
-        "first_attempt"
-    } else {
-        "recovery"
-    };
-    let transaction = BitTransaction {
-        device_id: event.device_id,
-        event_id: event.event_id,
-        mission_instance_id: event.mission_instance_id,
-        question_id: event.question_id.clone(),
-        amount,
-        reason: reason.to_owned(),
-    };
-    wallets::settle(&mut tx, &transaction).await?;
+    // Settlement requires an owning account. Anonymous demo attempts only
+    // produce evidence.
+    if let Some(user_id) = event.user_id {
+        let amount = reward_bits(attempt_number, event.score, difficulty_prior);
+        let reason = if attempt_number <= 1 {
+            "first_attempt"
+        } else {
+            "recovery"
+        };
+        let transaction = BitTransaction {
+            user_id,
+            device_id: Some(event.device_id),
+            event_id: event.event_id,
+            mission_instance_id: event.mission_instance_id,
+            question_id: event.question_id.clone(),
+            amount,
+            reason: reason.to_owned(),
+        };
+        wallets::settle(&mut tx, &transaction).await?;
+    }
 
     tx.commit().await?;
     Ok(Some(attempt_number))
 }
 
-/// Returns a device's recent accepted events for a certification, newest first.
-pub async fn recent_for_device(
+/// Returns a learner's recent accepted events for a certification, newest
+/// first, combining every device the learner has signed in on.
+pub async fn recent_for_user(
     pool: &PgPool,
-    device_id: Uuid,
+    user_id: Uuid,
     certification_id: &str,
     limit: i64,
-) -> Result<Vec<DeviceHistoryEntry>, DbError> {
+) -> Result<Vec<UserHistoryEntry>, DbError> {
     let rows = sqlx::query_as::<_, HistoryRow>(
         "SELECT question_id, score, occurred_at, concepts
          FROM learning_events
-         WHERE device_id = $1 AND certification_id = $2
+         WHERE user_id = $1 AND certification_id = $2
          ORDER BY received_at DESC
          LIMIT $3",
     )
-    .bind(device_id)
+    .bind(user_id)
     .bind(certification_id)
     .bind(limit)
     .fetch_all(pool)
@@ -182,7 +194,7 @@ pub async fn recent_for_device(
 
     Ok(rows
         .into_iter()
-        .map(|row| DeviceHistoryEntry {
+        .map(|row| UserHistoryEntry {
             question_id: row.question_id,
             score: row.score,
             occurred_at: row.occurred_at,
@@ -197,9 +209,9 @@ pub async fn list_for_mission(
     mission_instance_id: Uuid,
 ) -> Result<Vec<LearningEvent>, DbError> {
     let rows = sqlx::query_as::<_, LearningEventRow>(
-        "SELECT event_id, device_id, mission_instance_id, certification_id, certification_version,
-                domain_id, task_id, question_id, content_version, concepts, assessment_mode,
-                interaction_type, score, attempt_number, hint_count, response_ms,
+        "SELECT event_id, user_id, device_id, mission_instance_id, certification_id,
+                certification_version, domain_id, task_id, question_id, content_version, concepts,
+                assessment_mode, interaction_type, score, attempt_number, hint_count, response_ms,
                 structured_error_codes, occurred_at
          FROM learning_events
          WHERE mission_instance_id = $1

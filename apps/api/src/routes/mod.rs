@@ -1,6 +1,7 @@
 pub mod certifications;
 pub mod health;
 pub mod learning;
+pub mod me;
 pub mod missions;
 pub mod openapi;
 pub mod sync;

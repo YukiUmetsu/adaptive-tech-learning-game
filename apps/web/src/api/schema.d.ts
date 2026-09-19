@@ -75,9 +75,31 @@ export interface paths {
          * Returns the pre-quiz learning content for a certification domain.
          * @description This is the Knowledge Map curriculum: modules, knowledge nodes, and
          *     progressive reveals. It is a discovery mechanic, not a scored assessment, so
-         *     it is deliberately separate from mission issuance and scoring.
+         *     it is deliberately separate from mission issuance and scoring. Learning
+         *     content requires an authenticated account.
          */
         get: operations["get_learning_domain"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns safe application account data for the authenticated learner.
+         * @description Used to confirm server-side auth and to power the account UI. It never
+         *     returns tokens, secrets, or provider internals.
+         */
+        get: operations["get_me"];
         put?: never;
         post?: never;
         delete?: never;
@@ -95,7 +117,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Issues a deterministic mission for a task. */
+        /**
+         * Issues a mission for a quiz mode.
+         * @description Authenticated callers get a user-owned mission. Anonymous callers may issue
+         *     public demo task-practice missions only.
+         */
         post: operations["issue_mission"];
         delete?: never;
         options?: never;
@@ -129,7 +155,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Marks a mission completed. */
+        /** Marks a mission completed for its owner. */
         post: operations["complete_mission"];
         delete?: never;
         options?: never;
@@ -146,7 +172,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Reconciles a batch of attempts, re-scoring each against canonical content. */
+        /**
+         * Reconciles a batch of attempts, re-scoring each against canonical content.
+         * @description The authenticated user is inferred from the bearer token; ownership of every
+         *     referenced mission is checked server-side. Anonymous demo events are
+         *     accepted for demo missions but never settle Bits.
+         */
         post: operations["sync"];
         delete?: never;
         options?: never;
@@ -161,7 +192,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Returns a device's settled Bits balance. */
+        /**
+         * Returns the authenticated user's settled Bits balance.
+         * @description The wallet is identified by the verified token, never by a query parameter,
+         *     so a caller can only read their own balance.
+         */
         get: operations["get_wallet"];
         put?: never;
         post?: never;
@@ -222,9 +257,9 @@ export interface components {
             content_version: string;
             /**
              * Format: uuid
-             * @description Client device identifier.
+             * @description Device/install context. Not an authorization proof.
              */
-            device_id: string;
+            device_id?: string | null;
             /**
              * Format: uuid
              * @description Stable event identifier for this attempt.
@@ -391,13 +426,17 @@ export interface components {
             /** @description Learner-facing label. */
             label: string;
         };
-        /** @description Request to complete a mission. */
+        /**
+         * @description Request to complete a mission.
+         *
+         *     The owner is taken from the verified token, so no identity is required here.
+         */
         CompleteMissionRequest: {
             /**
              * Format: uuid
-             * @description Device that owns the mission.
+             * @description Device/install context. Not an authorization proof.
              */
-            device_id: string;
+            device_id?: string | null;
         };
         /** @description Completion result. */
         CompleteMissionResponse: {
@@ -660,9 +699,10 @@ export interface components {
             certification_version: string;
             /**
              * Format: uuid
-             * @description Client device identifier.
+             * @description Device/install context. Ownership always comes from the authenticated
+             *     user; this value is never used as an authorization proof.
              */
-            device_id: string;
+            device_id?: string | null;
             /** @description Domain to scope a domain quiz to. Ignored for other modes. */
             domain_id?: string | null;
             /** @description Quiz mode deciding how the server selects questions. */
@@ -812,6 +852,18 @@ export interface components {
              * @description Vertical position in `0..=1`.
              */
             y: number;
+        };
+        /** @description Safe application account data for the signed-in learner. */
+        MeResponse: {
+            /** @description Always `true`; the endpoint requires authentication. */
+            authenticated: boolean;
+            /** @description Email known for the account, when the provider supplied one. */
+            email?: string | null;
+            /**
+             * Format: uuid
+             * @description Internal application user id. The stable ownership key.
+             */
+            id: string;
         };
         /** @description A server-issued mission with its questions. */
         MissionResponse: {
@@ -1069,9 +1121,9 @@ export interface components {
         SyncRequest: {
             /**
              * Format: uuid
-             * @description Client device identifier.
+             * @description Device/install context. Ownership comes from the authenticated user.
              */
-            device_id: string;
+            device_id?: string | null;
             /** @description Attempts to reconcile. */
             events: components["schemas"]["SyncEventRequest"][];
         };
@@ -1094,7 +1146,12 @@ export interface components {
             /** @description Number of authored questions available. */
             question_count: number;
         };
-        /** @description A device's settled Bits balance. */
+        /**
+         * @description A learner's settled Bits balance.
+         *
+         *     The wallet is owned by the authenticated user, so it is read from the token
+         *     rather than from a client-supplied identifier.
+         */
         WalletResponse: {
             /**
              * Format: int64
@@ -1103,9 +1160,9 @@ export interface components {
             bits_balance: number;
             /**
              * Format: uuid
-             * @description Device the wallet belongs to.
+             * @description Owning account.
              */
-            device_id: string;
+            user_id: string;
         };
     };
     responses: never;
@@ -1206,12 +1263,50 @@ export interface operations {
                     "application/json": components["schemas"]["LearningDomainResponse"];
                 };
             };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
             /** @description No learning content for this domain */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    get_me: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated account */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
             };
         };
     };
@@ -1239,6 +1334,15 @@ export interface operations {
             };
             /** @description Invalid request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1291,7 +1395,16 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Mission belongs to another device */
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Mission belongs to another account */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1345,7 +1458,16 @@ export interface operations {
                     "application/json": components["schemas"]["CompleteMissionResponse"];
                 };
             };
-            /** @description Mission belongs to another device */
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Mission belongs to another account */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1396,14 +1518,20 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     get_wallet: {
         parameters: {
-            query: {
-                /** @description Client device identifier. */
-                device_id: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -1417,6 +1545,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WalletResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };

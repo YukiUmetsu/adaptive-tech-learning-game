@@ -84,7 +84,7 @@
           "learning"
         ],
         "summary": "Returns the pre-quiz learning content for a certification domain.",
-        "description": "This is the Knowledge Map curriculum: modules, knowledge nodes, and\nprogressive reveals. It is a discovery mechanic, not a scored assessment, so\nit is deliberately separate from mission issuance and scoring.",
+        "description": "This is the Knowledge Map curriculum: modules, knowledge nodes, and\nprogressive reveals. It is a discovery mechanic, not a scored assessment, so\nit is deliberately separate from mission issuance and scoring. Learning\ncontent requires an authenticated account.",
         "operationId": "get_learning_domain",
         "parameters": [
           {
@@ -117,10 +117,62 @@
               }
             }
           },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "404": {
             "description": "No learning content for this domain"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Returns safe application account data for the authenticated learner.",
+        "description": "Used to confirm server-side auth and to power the account UI. It never\nreturns tokens, secrets, or provider internals.",
+        "operationId": "get_me",
+        "responses": {
+          "200": {
+            "description": "Authenticated account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/v1/missions/issue": {
@@ -128,7 +180,8 @@
         "tags": [
           "missions"
         ],
-        "summary": "Issues a deterministic mission for a task.",
+        "summary": "Issues a mission for a quiz mode.",
+        "description": "Authenticated callers get a user-owned mission. Anonymous callers may issue\npublic demo task-practice missions only.",
         "operationId": "issue_mission",
         "requestBody": {
           "content": {
@@ -161,6 +214,16 @@
               }
             }
           },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Unknown certification or task",
             "content": {
@@ -171,7 +234,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/v1/missions/{mission_id}/answers": {
@@ -224,8 +292,18 @@
               }
             }
           },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "403": {
-            "description": "Mission belongs to another device",
+            "description": "Mission belongs to another account",
             "content": {
               "application/json": {
                 "schema": {
@@ -254,7 +332,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/v1/missions/{mission_id}/complete": {
@@ -262,7 +345,7 @@
         "tags": [
           "missions"
         ],
-        "summary": "Marks a mission completed.",
+        "summary": "Marks a mission completed for its owner.",
         "operationId": "complete_mission",
         "parameters": [
           {
@@ -297,8 +380,18 @@
               }
             }
           },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "403": {
-            "description": "Mission belongs to another device",
+            "description": "Mission belongs to another account",
             "content": {
               "application/json": {
                 "schema": {
@@ -317,7 +410,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/v1/sync": {
@@ -326,6 +424,7 @@
           "sync"
         ],
         "summary": "Reconciles a batch of attempts, re-scoring each against canonical content.",
+        "description": "The authenticated user is inferred from the bearer token; ownership of every\nreferenced mission is checked server-side. Anonymous demo events are\naccepted for demo missions but never settle Bits.",
         "operationId": "sync",
         "requestBody": {
           "content": {
@@ -357,8 +456,23 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/v1/wallet": {
@@ -366,20 +480,9 @@
         "tags": [
           "wallet"
         ],
-        "summary": "Returns a device's settled Bits balance.",
+        "summary": "Returns the authenticated user's settled Bits balance.",
+        "description": "The wallet is identified by the verified token, never by a query parameter,\nso a caller can only read their own balance.",
         "operationId": "get_wallet",
-        "parameters": [
-          {
-            "name": "device_id",
-            "in": "query",
-            "description": "Client device identifier.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Settled Bits balance",
@@ -390,8 +493,23 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     }
   },
@@ -536,7 +654,6 @@
         "type": "object",
         "description": "Request to score one attempt.",
         "required": [
-          "device_id",
           "event_id",
           "question_id",
           "content_version",
@@ -561,9 +678,12 @@
             "description": "Content version the client believes it is answering."
           },
           "device_id": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid",
-            "description": "Client device identifier."
+            "description": "Device/install context. Not an authorization proof."
           },
           "event_id": {
             "type": "string",
@@ -1069,15 +1189,15 @@
       },
       "CompleteMissionRequest": {
         "type": "object",
-        "description": "Request to complete a mission.",
-        "required": [
-          "device_id"
-        ],
+        "description": "Request to complete a mission.\n\nThe owner is taken from the verified token, so no identity is required here.",
         "properties": {
           "device_id": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid",
-            "description": "Device that owns the mission."
+            "description": "Device/install context. Not an authorization proof."
           }
         }
       },
@@ -1791,7 +1911,6 @@
         "type": "object",
         "description": "Request to issue a mission for a quiz mode.",
         "required": [
-          "device_id",
           "certification_id",
           "certification_version",
           "mode"
@@ -1806,9 +1925,12 @@
             "description": "Certification version identifier."
           },
           "device_id": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid",
-            "description": "Client device identifier."
+            "description": "Device/install context. Ownership always comes from the authenticated\nuser; this value is never used as an authorization proof."
           },
           "domain_id": {
             "type": [
@@ -2215,6 +2337,32 @@
             "type": "number",
             "format": "double",
             "description": "Vertical position in `0..=1`."
+          }
+        }
+      },
+      "MeResponse": {
+        "type": "object",
+        "description": "Safe application account data for the signed-in learner.",
+        "required": [
+          "id",
+          "authenticated"
+        ],
+        "properties": {
+          "authenticated": {
+            "type": "boolean",
+            "description": "Always `true`; the endpoint requires authentication."
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Email known for the account, when the provider supplied one."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Internal application user id. The stable ownership key."
           }
         }
       },
@@ -2745,14 +2893,16 @@
         "type": "object",
         "description": "Request to sync a batch of evaluated attempts.",
         "required": [
-          "device_id",
           "events"
         ],
         "properties": {
           "device_id": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid",
-            "description": "Client device identifier."
+            "description": "Device/install context. Ownership comes from the authenticated user."
           },
           "events": {
             "type": "array",
@@ -2811,9 +2961,9 @@
       },
       "WalletResponse": {
         "type": "object",
-        "description": "A device's settled Bits balance.",
+        "description": "A learner's settled Bits balance.\n\nThe wallet is owned by the authenticated user, so it is read from the token\nrather than from a client-supplied identifier.",
         "required": [
-          "device_id",
+          "user_id",
           "bits_balance"
         ],
         "properties": {
@@ -2822,12 +2972,19 @@
             "format": "int64",
             "description": "Settled Bits balance."
           },
-          "device_id": {
+          "user_id": {
             "type": "string",
             "format": "uuid",
-            "description": "Device the wallet belongs to."
+            "description": "Owning account."
           }
         }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   },
@@ -2855,6 +3012,10 @@
     {
       "name": "wallet",
       "description": "Server-authoritative Bits balance"
+    },
+    {
+      "name": "account",
+      "description": "Authenticated learner account"
     }
   ]
 }

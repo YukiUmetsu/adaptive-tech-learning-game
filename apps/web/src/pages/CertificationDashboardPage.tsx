@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import type { DomainDto, QuizMode } from "../api/types";
+import { useAuth } from "../auth/context";
 import BitsHud from "../components/BitsHud";
 import { useCatalog } from "../hooks/useCatalog";
 import { certificationQuestionCount, domainQuestionCount } from "../state/demo";
@@ -26,6 +27,8 @@ export default function CertificationDashboardPage() {
   const { certificationId } = useParams();
   const { state } = useCatalog();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { status } = useAuth();
   const [starting, setStarting] = useState<string | null>(null);
   const [choosingDomain, setChoosingDomain] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +71,13 @@ export default function CertificationDashboardPage() {
       : null;
 
   const launch = async ({ mode, domainId, key }: Launch) => {
+    // Scored missions are user-owned, so an anonymous learner is sent to sign
+    // in first and returned to this dashboard afterwards.
+    if (status !== "authenticated") {
+      const returnTo = `${location.pathname}${location.search}`;
+      navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`);
+      return;
+    }
     setStarting(key);
     setError(null);
     try {

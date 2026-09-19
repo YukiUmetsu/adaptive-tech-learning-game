@@ -12,14 +12,96 @@ Initial methods:
 
 WorkOS currently provides AuthKit free up to 1M MAU and has official React and Rust SDKs.
 
-## Phase 0 status
+## Implementation status
 
-Phase 0 defines the configuration boundary only. `WORKOS_CLIENT_ID`,
-`WORKOS_API_KEY`, and optional `WORKOS_ISSUER` are loaded and validated at API
-startup (`apps/api/src/config.rs`), and are required to be set together or not
-at all. No route requires a token and no auth middleware is installed yet.
-Token verification, JWKS handling, and the first authenticated route arrive with
-the first protected endpoint in a later phase.
+Authentication is implemented. The API verifies WorkOS AuthKit access tokens
+and derives ownership from the verified internal `users.id`, never from a
+client-supplied `device_id`.
+
+- `apps/api/src/auth.rs` holds the token verifier and the `AuthenticatedUser` /
+  `OptionalUser` extractors. Routes never parse JWTs themselves.
+- Signature verification uses the provider JWKS at
+  `https://api.workos.com/sso/jwks/<clientId>`. Keys are cached with a TTL and
+  refreshed when an unknown `kid` appears, so no WorkOS call happens on the hot
+  path. `exp`, `iss`, and the `client_id` claim are validated. WorkOS access
+  tokens identify the application with `client_id` rather than `aud`, so
+  `client_id` is checked explicitly.
+- The first authenticated request upserts a `users` row keyed by
+  `(auth_provider, auth_subject)` using the partial unique index, so concurrent
+  first logins resolve to one account. Email is profile data, not identity: it
+  comes from a one-time provider profile lookup when the account has none yet,
+  a changed email updates the existing row, and it never creates a second
+  account.
+- `device_id` survives as device/install/session context (`devices` table and
+  telemetry columns). It is never an authorization boundary.
+- Protected routes: `POST /v1/missions/issue` (scored modes),
+  `POST /v1/missions/{id}/answers`, `POST /v1/missions/{id}/complete`,
+  `POST /v1/sync`, `GET /v1/wallet`, `GET /v1/me`, and
+  `GET /v1/certifications/{certification_id}/domains/{domain_id}/learning`
+  (pre-quiz knowledge-map content).
+- Public routes: `GET /health`, `GET /openapi.json`, and
+  `GET /v1/certifications` (the catalog). Anonymous task-practice missions are
+  allowed only for the `*-demo` certification and never settle Bits.
+
+### Local development without credentials
+
+`APP_ENV=local` or `test` without WorkOS configuration enables an explicit
+`Authorization: Bearer dev:<subject>` mode. It is impossible to enable
+accidentally in staging or production: those environments fail startup unless
+`WORKOS_CLIENT_ID` and `WORKOS_API_KEY` are set. There is no `X-User-Id` header
+and no production bypass. On the web side, `VITE_WORKOS_CLIENT_ID` selects the
+official AuthKit SDK; without it the **Continue as local developer** option is
+offered on `/login` in dev builds and on localhost hostnames (including a
+production build served with `vite preview`), or anywhere with an explicit
+`VITE_AUTH_DEV_MODE=true`.
+
+### Testing real Google sign-in locally
+
+The Google button only appears when `VITE_WORKOS_CLIENT_ID` is set, so it is
+absent in a clone without WorkOS credentials by design. To test the real flow:
+
+1. Create a WorkOS **Staging** environment (it can use WorkOS's default Google
+   credentials, so no Google Cloud project is required) and an AuthKit
+   application. Note the `client_...` id and `sk_test_...` key.
+2. In the WorkOS dashboard:
+   - Applications → Redirects: `http://localhost:5173` and initiate login URI
+     `http://localhost:5173/login`.
+   - Authentication → allowed origins: `http://localhost:5173`. This is
+     required and easy to miss: the callback exchanges the code with a browser
+     `fetch` to `api.workos.com`, so a missing origin fails the exchange (a CORS
+     error in the console) even though Google itself succeeded.
+   - Authentication → OAuth providers → Google: enable it.
+3. Set `WORKOS_CLIENT_ID` and `WORKOS_API_KEY` in the root `.env`, and
+   `VITE_WORKOS_CLIENT_ID` in `apps/web/.env.local`.
+4. Restart both servers. `/login` then shows **Continue with Google**; the local
+   developer option disappears and `dev:` tokens are rejected (the modes are
+   mutually exclusive).
+
+If `GET /v1/me` or a learning request returns 401 after the redirect, it is
+almost always an issuer or JWKS mismatch:
+
+- The default WorkOS API issuer is `https://api.workos.com`. WorkOS session
+  tokens from a client-only integration use a **client-scoped** issuer,
+  `https://api.workos.com/user_management/<client_id>`, and an environment with
+  an AuthKit authentication domain (for example
+  `https://your-app-staging.authkit.app`) issues tokens with that domain as
+  `iss`. The verifier accepts the default issuer, the client-scoped issuer, and
+  a configured issuer, but the signature must still validate against the JWKS
+  and the `client_id` claim must match `WORKOS_CLIENT_ID`.
+- Discover exact values from `{issuer}/.well-known/openid-configuration`; set
+  `WORKOS_ISSUER` when your environment deviates and `WORKOS_JWKS_URL` when the
+  issuer's JWKS is not at the default provider layout (`/sso/jwks/<client_id>`
+  for `api.workos.com`, `/oauth2/jwks` for an AuthKit domain).
+- `VITE_WORKOS_API_HOSTNAME` on the web side supports a custom AuthKit
+  authentication domain.
+
+The post-login redirect is handled client-side through React Router (not a full
+page reload). The AuthKit SDK only persists the session across reloads on
+`localhost`/`127.0.0.1`, so a forced reload on any other host would drop the
+session and leave the UI looking signed out. If the header still shows “Sign in”
+after Google, open the browser console: a `[auth]` warning means the OAuth code
+could not be exchanged, usually because the registered redirect URI does not
+exactly match `window.location.origin` or sign-in was not started from the app.
 
 ## Why code instead of magic link
 

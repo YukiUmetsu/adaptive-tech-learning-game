@@ -65,4 +65,12 @@ describe("App routing", () => {
       screen.getByRole("heading", { name: "Not found" }),
     ).toBeInTheDocument();
   });
+
+  it("requires sign-in for learning pages", async () => {
+    renderAt("/certifications/aws-soa-c03/domains/domain-1/learn");
+
+    expect(
+      await screen.findByRole("heading", { name: "Welcome back" }),
+    ).toBeInTheDocument();
+  });
 });

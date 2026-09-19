@@ -1,8 +1,9 @@
 use axum::Json;
 use axum::extract::{Path, State};
 
+use crate::auth::AuthenticatedUser;
 use crate::dto::LearningDomainResponse;
-use crate::error::ApiError;
+use crate::error::{ApiError, ErrorResponse};
 use crate::services;
 use crate::state::AppState;
 
@@ -19,7 +20,8 @@ pub struct LearningDomainPath {
 ///
 /// This is the Knowledge Map curriculum: modules, knowledge nodes, and
 /// progressive reveals. It is a discovery mechanic, not a scored assessment, so
-/// it is deliberately separate from mission issuance and scoring.
+/// it is deliberately separate from mission issuance and scoring. Learning
+/// content requires an authenticated account.
 #[utoipa::path(
     get,
     path = "/v1/certifications/{certification_id}/domains/{domain_id}/learning",
@@ -27,11 +29,14 @@ pub struct LearningDomainPath {
     params(LearningDomainPath),
     responses(
         (status = 200, description = "Domain learning content", body = LearningDomainResponse),
+        (status = 401, description = "Authentication required", body = ErrorResponse),
         (status = 404, description = "No learning content for this domain")
-    )
+    ),
+    security(("bearerAuth" = []))
 )]
 pub async fn get_learning_domain(
     State(state): State<AppState>,
+    _user: AuthenticatedUser,
     path: Result<Path<LearningDomainPath>, axum::extract::rejection::PathRejection>,
 ) -> Result<Json<LearningDomainResponse>, ApiError> {
     let Path(path) = path.map_err(|rejection| {

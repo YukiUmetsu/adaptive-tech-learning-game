@@ -57,3 +57,52 @@ pub async fn find_by_id(pool: &PgPool, id: Uuid) -> Result<Option<User>, DbError
 
     Ok(row.map(Into::into))
 }
+
+/// Looks up a user by the stable `(provider, subject)` external identity.
+pub async fn find_by_auth_subject(
+    pool: &PgPool,
+    auth_provider: &str,
+    auth_subject: &str,
+) -> Result<Option<User>, DbError> {
+    let row = sqlx::query_as::<_, UserRow>(
+        "SELECT id, auth_provider, auth_subject, email, created_at
+         FROM users
+         WHERE auth_provider = $1 AND auth_subject = $2",
+    )
+    .bind(auth_provider)
+    .bind(auth_subject)
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(row.map(Into::into))
+}
+
+/// Resolves the internal user for a verified external identity, creating it on
+/// first login.
+///
+/// Identity is `(auth_provider, auth_subject)`. Email is advisory profile data:
+/// a changed email updates the existing row instead of creating a second
+/// account, and a missing email never clears a known one. The partial unique
+/// index on `(auth_provider, auth_subject)` makes this safe under concurrent
+/// first-login requests, so two racing requests both resolve to one row.
+pub async fn upsert_by_auth_subject(
+    pool: &PgPool,
+    auth_provider: &str,
+    auth_subject: &str,
+    email: Option<&str>,
+) -> Result<User, DbError> {
+    let row = sqlx::query_as::<_, UserRow>(
+        "INSERT INTO users (auth_provider, auth_subject, email)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (auth_provider, auth_subject) WHERE auth_subject IS NOT NULL
+         DO UPDATE SET email = COALESCE(EXCLUDED.email, users.email)
+         RETURNING id, auth_provider, auth_subject, email, created_at",
+    )
+    .bind(auth_provider)
+    .bind(auth_subject)
+    .bind(email)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(row.into())
+}

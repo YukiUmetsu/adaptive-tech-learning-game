@@ -11,6 +11,7 @@ export type MissionResponse = components["schemas"]["MissionResponse"];
 export type IssueMissionRequest = components["schemas"]["IssueMissionRequest"];
 export type QuizMode = components["schemas"]["QuizMode"];
 export type WalletResponse = components["schemas"]["WalletResponse"];
+export type MeResponse = components["schemas"]["MeResponse"];
 export type QuestionView = components["schemas"]["QuestionView"];
 export type Interaction = components["schemas"]["Interaction"];
 export type Choice = components["schemas"]["Choice"];
