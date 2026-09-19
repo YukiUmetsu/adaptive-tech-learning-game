@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.0.0",
-  "content_version": "terraform-associate-004-learning-2026-09-19-v1",
+  "schema_version": "2.0.0",
+  "content_version": "terraform-associate-004-learning-2026-09-19-v2",
   "certification_id": "hashicorp-terraform-associate-004",
   "certification_version": "terraform-associate-004",
   "exam_guide_revision": "004 / Terraform 1.12",
@@ -11,16 +11,16 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Exploration progress is not mastery evidence; quiz attempts remain the scored retrieval signal."
+    "unlock_rule": "Reveal the required explanations and required code annotations to unlock each knowledge node.",
+    "mastery_note": "Discovery builds the model first; quiz attempts provide the scored retrieval and application evidence."
   },
   "source_refs": [
     {
-      "title": "Terraform Associate 004 — official exam content",
+      "title": "Terraform Associate 004 - official exam content",
       "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
     },
     {
-      "title": "Terraform Associate 004 — official learning path",
+      "title": "Terraform Associate 004 - official learning path",
       "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004"
     }
   ],
@@ -43,98 +43,139 @@
       "3f.1",
       "3g.1"
     ],
-    "module_count": 2,
-    "knowledge_node_count": 7,
-    "prompt_count": 21
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 17
   },
-  "authoring_notes": "Domain weight 0.125 is an internal planning weight used because the repository schema requires weights summing to 1.0; HashiCorp does not publish objective percentages. Content targets Terraform 1.12 / Associate 004.",
+  "authoring_notes": "Targets Terraform Associate 004 / Terraform 1.12. Domain weight 0.125 is an internal planning weight because HashiCorp does not publish objective percentages. This v2 learning content uses real tables and interactive syntax-highlighted code_file reveals; generic exam-clue and generic mental-model prompts were intentionally removed.",
   "modules": [
     {
       "id": "d3-module-1",
-      "title": "Core Terraform workflow: Part 1",
+      "title": "Build the workflow model",
       "order": 1,
       "task_ids": [
         "3a",
-        "3b",
-        "3c",
-        "3d"
+        "3b"
       ],
       "skill_ids": [
         "3a.1",
-        "3b.1",
-        "3c.1",
-        "3d.1"
+        "3b.1"
       ],
       "prerequisite_module_ids": [],
       "nodes": [
         {
-          "id": "d3-workflow",
-          "title": "Core workflow",
+          "id": "d3-core-loop",
+          "title": "The core workflow is Write -> Plan -> Apply",
           "concept_ids": [
             "tf.workflow"
           ],
           "prerequisite_node_ids": [],
           "map_position": {
             "x": 0.12,
-            "y": 0.18
+            "y": 0.22
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "core-three",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Core workflow → __________",
+              "label": "CORE WORKFLOW",
+              "placeholder": "What are the three conceptual stages HashiCorp uses to describe the Terraform workflow?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Write → init → validate/fmt → plan → review → apply."
-              }
-            },
-            {
-              "id": "exam",
-              "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Look for __________",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The exam cares about command side effects and when remote objects change."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Connect this to the Terraform layer: __________",
-              "required": true,
-              "reveal": {
-                "type": "keywords",
+                "type": "sequence",
                 "items": [
-                  "workflow",
-                  "configuration → state → remote reality"
+                  "WRITE - author or change infrastructure configuration",
+                  "PLAN - preview the actions Terraform proposes",
+                  "APPLY - execute the approved actions against real infrastructure"
+                ]
+              }
+            },
+            {
+              "id": "concept-vs-tools",
+              "kind": "connects_to",
+              "label": "CONCEPT VS SUPPORTING COMMANDS",
+              "placeholder": "Where do init, fmt, and validate fit if the conceptual workflow is only Write, Plan, Apply?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "concept",
+                    "label": "Conceptual stage"
+                  },
+                  {
+                    "id": "support",
+                    "label": "Useful supporting activity"
+                  },
+                  {
+                    "id": "purpose",
+                    "label": "Purpose"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "concept": "Write",
+                      "support": "terraform fmt",
+                      "purpose": "Normalize Terraform source formatting"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "concept": "Write",
+                      "support": "terraform validate",
+                      "purpose": "Check syntax and internal consistency"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "concept": "Working-directory setup",
+                      "support": "terraform init",
+                      "purpose": "Prepare backend, providers, and modules before planning/applying"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "concept": "Plan",
+                      "support": "terraform plan",
+                      "purpose": "Produce an explicit preview for review"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "concept": "Apply",
+                      "support": "terraform apply",
+                      "purpose": "Perform the selected changes"
+                    }
+                  }
                 ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Terraform Associate 004 — official objective map",
-              "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+              "title": "Core Terraform workflow",
+              "url": "https://developer.hashicorp.com/terraform/intro/core-workflow"
             },
             {
-              "title": "HashiCorp Terraform documentation",
+              "title": "Terraform Associate 004 learning path",
               "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004"
             }
           ]
         },
         {
-          "id": "d3-init",
-          "title": "terraform init",
+          "id": "d3-practical-loop",
+          "title": "A practical local working-directory loop",
           "concept_ids": [
-            "tf.cli.init"
+            "tf.workflow",
+            "tf.cli.init",
+            "tf.cli.validate",
+            "tf.cli.fmt",
+            "tf.cli.plan",
+            "tf.cli.apply"
           ],
           "prerequisite_node_ids": [
-            "d3-workflow"
+            "d3-core-loop"
           ],
           "map_position": {
             "x": 0.34,
@@ -142,176 +183,205 @@
           },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "terraform init → __________",
+              "id": "first-run",
+              "kind": "action",
+              "label": "READ THE PRACTICAL LOOP",
+              "placeholder": "This is a sensible first-run sequence, but each command has a different job. Click every command to understand why it is present.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Initialize backend and install modules/providers."
-              }
-            },
-            {
-              "id": "exam",
-              "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Look for __________",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Know -upgrade, -migrate-state, -reconfigure, and -backend=false."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Connect this to the Terraform layer: __________",
-              "required": true,
-              "reveal": {
-                "type": "keywords",
-                "items": [
-                  "init",
-                  "configuration → state → remote reality"
+                "type": "code_file",
+                "filename": "first-run.sh",
+                "language": "bash",
+                "code": "terraform init\nterraform fmt\nterraform validate\nterraform plan\nterraform apply",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "init",
+                    "anchor": {
+                      "line": 1,
+                      "text": "terraform init",
+                      "occurrence": 1
+                    },
+                    "title": "Prepare the working directory",
+                    "explanation": "Initializes backend settings and installs required providers/modules. Rerun it when those dependencies or backend settings change.",
+                    "required": true
+                  },
+                  {
+                    "id": "fmt",
+                    "anchor": {
+                      "line": 2,
+                      "text": "terraform fmt",
+                      "occurrence": 1
+                    },
+                    "title": "Format configuration",
+                    "explanation": "Rewrites Terraform files into canonical style. It is a style tool, not semantic validation.",
+                    "required": true
+                  },
+                  {
+                    "id": "validate",
+                    "anchor": {
+                      "line": 3,
+                      "text": "terraform validate",
+                      "occurrence": 1
+                    },
+                    "title": "Validate configuration",
+                    "explanation": "Checks syntax and internal consistency. It does not prove that provider APIs will accept the planned changes.",
+                    "required": true
+                  },
+                  {
+                    "id": "plan",
+                    "anchor": {
+                      "line": 4,
+                      "text": "terraform plan",
+                      "occurrence": 1
+                    },
+                    "title": "Preview changes",
+                    "explanation": "Builds an execution plan so you can review creates, updates, replacements, and destroys before modifying remote infrastructure.",
+                    "required": true
+                  },
+                  {
+                    "id": "apply",
+                    "anchor": {
+                      "line": 5,
+                      "text": "terraform apply",
+                      "occurrence": 1
+                    },
+                    "title": "Execute changes",
+                    "explanation": "Without a saved plan argument, apply generates a fresh plan, asks for approval, and then performs the approved actions.",
+                    "required": true
+                  }
                 ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Terraform Associate 004 — official objective map",
-              "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+              "title": "Core Terraform workflow",
+              "url": "https://developer.hashicorp.com/terraform/intro/core-workflow"
             },
             {
-              "title": "HashiCorp Terraform documentation",
-              "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004"
+              "title": "terraform init",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/init"
             }
           ]
         },
         {
-          "id": "d3-validate-fmt",
-          "title": "Validate vs fmt",
+          "id": "d3-init",
+          "title": "terraform init prepares dependencies",
           "concept_ids": [
-            "tf.cli.validate",
-            "tf.cli.fmt"
+            "tf.cli.init"
           ],
           "prerequisite_node_ids": [
-            "d3-init"
+            "d3-practical-loop"
           ],
           "map_position": {
             "x": 0.56,
-            "y": 0.18
+            "y": 0.28
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "init-jobs",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Validate vs fmt → __________",
+              "label": "WHAT INIT PREPARES",
+              "placeholder": "What does terraform init prepare in a working directory?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "validate checks consistency; fmt rewrites style."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "area",
+                    "label": "Area"
+                  },
+                  {
+                    "id": "behavior",
+                    "label": "What init does"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "area": "Backend",
+                      "behavior": "Initializes or reconfigures state storage settings"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "area": "Providers",
+                      "behavior": "Selects and installs provider plugins, consulting the dependency lock file"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "area": "Modules",
+                      "behavior": "Downloads child modules referenced by source addresses"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "area": "Working directory",
+                      "behavior": "Creates local initialization data under .terraform as needed"
+                    }
+                  }
+                ]
               }
             },
             {
-              "id": "exam",
-              "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Look for __________",
+              "id": "init-flags",
+              "kind": "when",
+              "label": "COMMON INIT VARIANTS",
+              "placeholder": "When backend or dependency behavior changes, which init option fits the intent?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Formatting is not semantic validation."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Connect this to the Terraform layer: __________",
-              "required": true,
-              "reveal": {
-                "type": "keywords",
-                "items": [
-                  "validate",
-                  "fmt",
-                  "configuration → state → remote reality"
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "command",
+                    "label": "Command"
+                  },
+                  {
+                    "id": "use",
+                    "label": "Use it when"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "command": "terraform init",
+                      "use": "Normal initialization or safe rerun"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "command": "terraform init -upgrade",
+                      "use": "Reselect newer providers/modules within configured constraints"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "command": "terraform init -migrate-state",
+                      "use": "Backend configuration changed and existing state should migrate"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "command": "terraform init -reconfigure",
+                      "use": "Forget prior backend initialization and use the current backend settings without automatic migration"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "command": "terraform init -backend=false",
+                      "use": "Prepare modules/providers while intentionally skipping backend initialization"
+                    }
+                  }
                 ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Terraform Associate 004 — official objective map",
-              "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
-            },
-            {
-              "title": "HashiCorp Terraform documentation",
-              "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004"
-            }
-          ]
-        },
-        {
-          "id": "d3-plan",
-          "title": "terraform plan",
-          "concept_ids": [
-            "tf.cli.plan"
-          ],
-          "prerequisite_node_ids": [
-            "d3-validate-fmt"
-          ],
-          "map_position": {
-            "x": 0.78,
-            "y": 0.18
-          },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "terraform plan → __________",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Refresh by default, compare desired/state/remote, propose changes."
-              }
-            },
-            {
-              "id": "exam",
-              "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Look for __________",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Plan itself does not change remote infrastructure."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Connect this to the Terraform layer: __________",
-              "required": true,
-              "reveal": {
-                "type": "keywords",
-                "items": [
-                  "plan",
-                  "configuration → state → remote reality"
-                ]
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Terraform Associate 004 — official objective map",
-              "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
-            },
-            {
-              "title": "HashiCorp Terraform documentation",
-              "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004"
+              "title": "terraform init",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/init"
             }
           ]
         }
@@ -319,16 +389,16 @@
     },
     {
       "id": "d3-module-2",
-      "title": "Core Terraform workflow: Part 2",
+      "title": "Validate and plan safely",
       "order": 2,
       "task_ids": [
-        "3e",
-        "3f",
+        "3c",
+        "3d",
         "3g"
       ],
       "skill_ids": [
-        "3e.1",
-        "3f.1",
+        "3c.1",
+        "3d.1",
         "3g.1"
       ],
       "prerequisite_module_ids": [
@@ -336,68 +406,399 @@
       ],
       "nodes": [
         {
-          "id": "d3-saved-plan",
-          "title": "Saved plans",
+          "id": "d3-fmt-validate",
+          "title": "Formatting and validation solve different problems",
           "concept_ids": [
-            "tf.saved.plan"
+            "tf.cli.fmt",
+            "tf.cli.validate"
           ],
           "prerequisite_node_ids": [],
           "map_position": {
             "x": 0.12,
+            "y": 0.22
+          },
+          "prompts": [
+            {
+              "id": "fmt-validate",
+              "kind": "not_this",
+              "label": "FMT IS NOT VALIDATE",
+              "placeholder": "Which command should you use for style versus configuration correctness?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "need",
+                    "label": "Need"
+                  },
+                  {
+                    "id": "command",
+                    "label": "Command"
+                  },
+                  {
+                    "id": "effect",
+                    "label": "Effect"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "need": "Rewrite files to canonical style",
+                      "command": "terraform fmt",
+                      "effect": "Modifies formatting in-place"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "need": "Check formatting in CI",
+                      "command": "terraform fmt -check",
+                      "effect": "Reports files needing formatting without rewriting them"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "need": "Check syntax and internal consistency",
+                      "command": "terraform validate",
+                      "effect": "Validates the configuration without planning infrastructure changes"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "validate-limit",
+              "kind": "not_this",
+              "label": "VALIDATE HAS LIMITS",
+              "placeholder": "Does terraform validate prove that a remote API will accept your configuration?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "No. validate checks the configuration itself. Provider/API behavior, permissions, quotas, and current remote conditions are evaluated later during planning or applying."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "terraform fmt",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/fmt"
+            },
+            {
+              "title": "terraform validate",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/validate"
+            }
+          ]
+        },
+        {
+          "id": "d3-plan",
+          "title": "terraform plan is a proposal, not a change",
+          "concept_ids": [
+            "tf.cli.plan"
+          ],
+          "prerequisite_node_ids": [
+            "d3-fmt-validate"
+          ],
+          "map_position": {
+            "x": 0.34,
             "y": 0.18
           },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Saved plans → __________",
+              "id": "plan-inputs",
+              "kind": "connects_to",
+              "label": "WHAT PLAN COMPARES",
+              "placeholder": "What information does a normal plan bring together before proposing actions?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "-out creates an executable, potentially sensitive plan artifact."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "input",
+                    "label": "Input"
+                  },
+                  {
+                    "id": "role",
+                    "label": "Role in planning"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "input": "Configuration",
+                      "role": "Desired infrastructure"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "input": "Prior state",
+                      "role": "Tracked addresses, object bindings, and prior known values"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "input": "Refreshed remote objects",
+                      "role": "Current real-world values read through providers"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "input": "Dependency graph",
+                      "role": "Orders and relates operations based on references and explicit dependencies"
+                    }
+                  }
+                ]
               }
             },
             {
-              "id": "exam",
-              "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Look for __________",
+              "id": "plan-symbols",
+              "kind": "look_for",
+              "label": "READ THE ACTIONS",
+              "placeholder": "What kind of infrastructure change should you look for while reviewing a plan?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Applying a saved plan executes it without a new approval prompt."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "action",
+                    "label": "Plan action"
+                  },
+                  {
+                    "id": "meaning",
+                    "label": "Meaning"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "action": "Create",
+                      "meaning": "A configured object is not currently managed/present and Terraform proposes creation"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "action": "Update in-place",
+                      "meaning": "An existing object can be changed without replacement"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "action": "Replace",
+                      "meaning": "A change requires destroying/recreating the managed object"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "action": "Destroy",
+                      "meaning": "Terraform proposes deleting a managed remote object"
+                    }
+                  }
+                ]
               }
             },
             {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Connect this to the Terraform layer: __________",
+              "id": "plan-no-change",
+              "kind": "not_this",
+              "label": "NO REMOTE MODIFICATION",
+              "placeholder": "What is the critical safety property of terraform plan?",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "plan",
-                  "configuration → state → remote reality"
+                "type": "text",
+                "text": "It proposes actions but does not perform the planned infrastructure changes. Review the plan before apply, especially replacements and destroys."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "terraform plan",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/plan"
+            }
+          ]
+        },
+        {
+          "id": "d3-plan-modes",
+          "title": "Useful plan modes for CI and drift",
+          "concept_ids": [
+            "tf.cli.plan"
+          ],
+          "prerequisite_node_ids": [
+            "d3-plan"
+          ],
+          "map_position": {
+            "x": 0.56,
+            "y": 0.28
+          },
+          "prompts": [
+            {
+              "id": "modes",
+              "kind": "when",
+              "label": "PLAN MODES",
+              "placeholder": "Which plan option changes the question Terraform is answering?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "mode",
+                    "label": "Mode"
+                  },
+                  {
+                    "id": "purpose",
+                    "label": "Purpose"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "mode": "terraform plan",
+                      "purpose": "Normal reconciliation toward configuration"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "mode": "terraform plan -refresh-only",
+                      "purpose": "Preview accepting current remote reality into state/outputs without changing remote objects"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "mode": "terraform plan -destroy",
+                      "purpose": "Preview destroying all managed objects"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "mode": "terraform plan -refresh=false",
+                      "purpose": "Skip refreshing remote objects; faster in some cases but can miss drift"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "mode": "terraform plan -detailed-exitcode",
+                      "purpose": "Return 0 for no changes, 1 for error, 2 for successful plan with changes"
+                    }
+                  }
                 ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Terraform Associate 004 — official objective map",
-              "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+              "title": "terraform plan",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/plan"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d3-module-3",
+      "title": "Apply, recover, and destroy",
+      "order": 3,
+      "task_ids": [
+        "3e",
+        "3f"
+      ],
+      "skill_ids": [
+        "3e.1",
+        "3f.1"
+      ],
+      "prerequisite_module_ids": [
+        "d3-module-2"
+      ],
+      "nodes": [
+        {
+          "id": "d3-saved-plan",
+          "title": "Saved plans separate review from execution",
+          "concept_ids": [
+            "tf.saved.plan",
+            "tf.cli.plan",
+            "tf.cli.apply"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.22
+          },
+          "prompts": [
+            {
+              "id": "saved-plan-code",
+              "kind": "action",
+              "label": "SAVED PLAN WORKFLOW",
+              "placeholder": "This sequence creates one concrete plan artifact, inspects it, and then applies that exact plan. Click each command.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "release.sh",
+                "language": "bash",
+                "code": "terraform plan -out=tfplan\nterraform show tfplan\nterraform apply tfplan",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "save",
+                    "anchor": {
+                      "line": 1,
+                      "text": "terraform plan -out=tfplan",
+                      "occurrence": 1
+                    },
+                    "title": "Save the concrete plan",
+                    "explanation": "-out writes a saved plan containing the proposed actions and values for later execution.",
+                    "required": true
+                  },
+                  {
+                    "id": "show",
+                    "anchor": {
+                      "line": 2,
+                      "text": "terraform show tfplan",
+                      "occurrence": 1
+                    },
+                    "title": "Inspect the saved plan",
+                    "explanation": "terraform show can render a saved plan for human inspection before execution.",
+                    "required": true
+                  },
+                  {
+                    "id": "apply",
+                    "anchor": {
+                      "line": 3,
+                      "text": "terraform apply tfplan",
+                      "occurrence": 1
+                    },
+                    "title": "Apply exactly that plan",
+                    "explanation": "Supplying a saved plan executes it directly without creating a new plan or asking for the normal approval prompt.",
+                    "required": true
+                  }
+                ]
+              }
             },
             {
-              "title": "HashiCorp Terraform documentation",
-              "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004"
+              "id": "saved-risk",
+              "kind": "not_this",
+              "label": "TREAT THE FILE AS SENSITIVE",
+              "placeholder": "What should you remember about a saved plan artifact?",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "It can contain sensitive configuration and planned values.",
+                  "Protect it like other deployment artifacts.",
+                  "You cannot add new planning options or variable values while applying the already-saved plan.",
+                  "If reality or configuration changes materially, generate a fresh plan rather than assuming an old one remains appropriate."
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "terraform plan",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/plan"
+            },
+            {
+              "title": "terraform apply",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/apply"
             }
           ]
         },
         {
           "id": "d3-apply",
-          "title": "terraform apply",
+          "title": "Apply executes real changes and can partially succeed",
           "concept_ids": [
             "tf.cli.apply"
           ],
@@ -410,56 +811,73 @@
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "apply-modes",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "terraform apply → __________",
+              "label": "APPLY BEHAVIOR",
+              "placeholder": "How does normal apply differ from applying a saved plan?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Execute changes; successful operations persist even if a later one fails."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "form",
+                    "label": "Command form"
+                  },
+                  {
+                    "id": "planning",
+                    "label": "Planning behavior"
+                  },
+                  {
+                    "id": "approval",
+                    "label": "Approval behavior"
+                  }
+                ],
+                "rows": [
+                  {
+                    "cells": {
+                      "form": "terraform apply",
+                      "planning": "Creates a fresh plan first",
+                      "approval": "Prompts for approval unless explicitly configured otherwise"
+                    }
+                  },
+                  {
+                    "cells": {
+                      "form": "terraform apply tfplan",
+                      "planning": "Uses the previously saved plan",
+                      "approval": "Executes the saved plan without the normal approval prompt"
+                    }
+                  }
+                ]
               }
             },
             {
-              "id": "exam",
-              "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Look for __________",
+              "id": "partial-failure",
+              "kind": "when",
+              "label": "IF APPLY FAILS PARTWAY",
+              "placeholder": "Terraform created some resources successfully and then a later API call failed. What is the safe recovery model?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "No automatic transactional rollback."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Connect this to the Terraform layer: __________",
-              "required": true,
-              "reveal": {
-                "type": "keywords",
+                "type": "sequence",
                 "items": [
-                  "apply",
-                  "configuration → state → remote reality"
+                  "Keep the state updates Terraform successfully recorded",
+                  "Read the actual error and inspect current remote reality",
+                  "Fix configuration, credentials, quota, or provider/API issue",
+                  "Generate a fresh plan from the new current state",
+                  "Apply the remaining intended changes"
                 ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Terraform Associate 004 — official objective map",
-              "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
-            },
-            {
-              "title": "HashiCorp Terraform documentation",
-              "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004"
+              "title": "terraform apply",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/apply"
             }
           ]
         },
         {
           "id": "d3-destroy",
-          "title": "terraform destroy",
+          "title": "Destroy is still a plan-and-apply operation",
           "concept_ids": [
             "tf.cli.destroy"
           ],
@@ -468,54 +886,67 @@
           ],
           "map_position": {
             "x": 0.56,
-            "y": 0.18
+            "y": 0.28
           },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "terraform destroy → __________",
+              "id": "destroy-code",
+              "kind": "action",
+              "label": "DESTRUCTION COMMANDS",
+              "placeholder": "Both commands are about remote destruction, not merely forgetting state. Click them before treating them as equivalent to state removal.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Convenience destroy plan + apply flow."
-              }
-            },
-            {
-              "id": "exam",
-              "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Look for __________",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Destroy changes remote infrastructure; state-only commands are different."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Connect this to the Terraform layer: __________",
-              "required": true,
-              "reveal": {
-                "type": "keywords",
-                "items": [
-                  "destroy",
-                  "configuration → state → remote reality"
+                "type": "code_file",
+                "filename": "destroy.sh",
+                "language": "bash",
+                "code": "terraform plan -destroy\nterraform destroy",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "destroy-plan",
+                    "anchor": {
+                      "line": 1,
+                      "text": "terraform plan -destroy",
+                      "occurrence": 1
+                    },
+                    "title": "Preview full destruction",
+                    "explanation": "Creates a destroy-mode plan so you can review what Terraform would delete without performing the deletes.",
+                    "required": true
+                  },
+                  {
+                    "id": "destroy-command",
+                    "anchor": {
+                      "line": 2,
+                      "text": "terraform destroy",
+                      "occurrence": 1
+                    },
+                    "title": "Plan and apply destruction",
+                    "explanation": "Convenience command that plans destruction of managed objects and, after approval, performs it.",
+                    "required": true
+                  }
                 ]
+              }
+            },
+            {
+              "id": "state-not-destroy",
+              "kind": "not_this",
+              "label": "STATE REMOVAL IS DIFFERENT",
+              "placeholder": "Is terraform state rm the same as terraform destroy?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "No. destroy asks providers to delete remote objects. state rm only removes Terraform’s binding, leaving the remote object in place but unmanaged."
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Terraform Associate 004 — official objective map",
-              "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-review-004"
+              "title": "terraform destroy",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/destroy"
             },
             {
-              "title": "HashiCorp Terraform documentation",
-              "url": "https://developer.hashicorp.com/terraform/tutorials/certification-004/associate-study-004"
+              "title": "State remove",
+              "url": "https://developer.hashicorp.com/terraform/cli/commands/state/rm"
             }
           ]
         }
