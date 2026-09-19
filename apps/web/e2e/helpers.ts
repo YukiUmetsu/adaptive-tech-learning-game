@@ -190,7 +190,7 @@ export async function startMission(page: Page): Promise<void> {
   const certificationId = content.certification.id;
   const taskId = firstAuthoredTaskId(content);
 
-  await page.goto(`/certifications/${certificationId}/tasks/${taskId}`);
+  await page.goto(`/tracks/${certificationId}/tasks/${taskId}`);
   await expect(
     page.getByRole("heading", { name: new RegExp(`Task ${taskId}`) }),
   ).toBeVisible();

@@ -25,7 +25,7 @@ export default function MissionPage() {
         <h1>Mission unavailable</h1>
         <p>This mission is not stored on this device.</p>
         <p>
-          <Link to="/certifications">Back to certifications</Link>
+          <Link to="/tracks">Back to learning tracks</Link>
         </p>
       </section>
     );

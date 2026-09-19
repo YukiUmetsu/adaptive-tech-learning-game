@@ -1,19 +1,21 @@
 import { Link } from "react-router-dom";
 
 import { useCatalog } from "../hooks/useCatalog";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { CATALOG, buildCatalog } from "../state/catalogMeta";
 
 export default function CertificationsPage() {
+  useDocumentTitle("Learning Tracks · Adaptive Learning");
   const { state, reload } = useCatalog();
 
   if (state.status === "loading") {
-    return <p role="status">Loading certifications…</p>;
+    return <p role="status">Loading learning tracks…</p>;
   }
 
   if (state.status === "error") {
     return (
       <div role="alert">
-        <p>Could not load certifications: {state.message}</p>
+        <p>Could not load learning tracks: {state.message}</p>
         <button type="button" onClick={() => void reload()}>
           Retry
         </button>
@@ -25,10 +27,10 @@ export default function CertificationsPage() {
 
   return (
     <section className="catalog">
-      <h1>Certifications</h1>
+      <h1>Learning Tracks</h1>
       <p className="muted">
-        Choose a certification to study. Cards marked WIP are planned and not
-        available yet.
+        Choose a certification or learning track to study. Cards marked WIP are
+        planned and not available yet.
       </p>
 
       {sections.map((section) => (
@@ -44,9 +46,11 @@ export default function CertificationsPage() {
                 {card.available ? (
                   <Link
                     className="cert-card available"
-                    to={`/certifications/${card.id}`}
+                    to={`/tracks/${card.id}`}
                   >
-                    <span className="cert-vendor">{card.examCode}</span>
+                    {section.kind === "certification" ? (
+                      <span className="cert-vendor">{card.examCode}</span>
+                    ) : null}
                     <span className="cert-name">{card.name}</span>
                     <span className="cert-go" aria-hidden="true">
                       →
@@ -54,7 +58,9 @@ export default function CertificationsPage() {
                   </Link>
                 ) : (
                   <div className="cert-card wip" aria-disabled="true">
-                    <span className="cert-vendor">{card.examCode}</span>
+                    {section.kind === "certification" ? (
+                      <span className="cert-vendor">{card.examCode}</span>
+                    ) : null}
                     <span className="cert-name">{card.name}</span>
                     <span className="badge wip-badge">WIP</span>
                   </div>

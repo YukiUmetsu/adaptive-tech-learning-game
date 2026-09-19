@@ -54,7 +54,7 @@ export default function CertificationDashboardPage() {
       <section>
         <h1>Certification not found</h1>
         <p>
-          <Link to="/certifications">Back to certifications</Link>
+          <Link to="/tracks">Back to learning tracks</Link>
         </p>
       </section>
     );
@@ -149,7 +149,7 @@ export default function CertificationDashboardPage() {
         {domain.learning_available ? (
           <Link
             className="primary domain-explore"
-            to={`/certifications/${certification.id}/domains/${domain.id}/learn`}
+            to={`/tracks/${certification.id}/domains/${domain.id}/learn`}
             aria-label={`Explore Domain: ${domain.name}`}
           >
             Explore Domain

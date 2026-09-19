@@ -100,10 +100,10 @@ function renderDashboard() {
   };
   return render(
     <AuthContext.Provider value={auth}>
-      <MemoryRouter initialEntries={["/certifications/aws-soa-c03"]}>
+      <MemoryRouter initialEntries={["/tracks/aws-soa-c03"]}>
         <Routes>
           <Route
-            path="/certifications/:certificationId"
+            path="/tracks/:certificationId"
             element={<CertificationDashboardPage />}
           />
           <Route path="/missions/:missionId" element={<p>Mission runner</p>} />
@@ -213,7 +213,7 @@ describe("CertificationDashboardPage", () => {
     });
     expect(explore).toHaveAttribute(
       "href",
-      "/certifications/aws-soa-c03/domains/domain-1/learn",
+      "/tracks/aws-soa-c03/domains/domain-1/learn",
     );
 
     expect(
@@ -226,10 +226,10 @@ describe("CertificationDashboardPage", () => {
   it("sends anonymous learners to sign in before starting a scored quiz", async () => {
     // No auth provider: the default context is anonymous.
     render(
-      <MemoryRouter initialEntries={["/certifications/aws-soa-c03"]}>
+      <MemoryRouter initialEntries={["/tracks/aws-soa-c03"]}>
         <Routes>
           <Route
-            path="/certifications/:certificationId"
+            path="/tracks/:certificationId"
             element={<CertificationDashboardPage />}
           />
           <Route path="/login" element={<p>Sign in page</p>} />

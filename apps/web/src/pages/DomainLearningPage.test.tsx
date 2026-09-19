@@ -79,11 +79,11 @@ afterEach(() => {
 function renderPage() {
   return render(
     <MemoryRouter
-      initialEntries={["/certifications/test-cert/domains/domain-1/learn"]}
+      initialEntries={["/tracks/test-cert/domains/domain-1/learn"]}
     >
       <Routes>
         <Route
-          path="/certifications/:certificationId/domains/:domainId/learn"
+          path="/tracks/:certificationId/domains/:domainId/learn"
           element={<DomainLearningPage />}
         />
         <Route path="/missions/:missionId" element={<p>Mission runner</p>} />

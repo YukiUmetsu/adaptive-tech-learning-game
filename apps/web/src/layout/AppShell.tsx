@@ -5,6 +5,7 @@ import { useAuth } from "../auth/context";
 import BitsHud from "../components/BitsHud";
 import { toggleSoundMuted, useSoundMuted } from "../state/sound";
 import { refreshWallet, resetWallet } from "../state/wallet";
+import LearningTracksNav from "./LearningTracksNav";
 
 /** Generic account glyph used when the provider has no profile picture. */
 function AccountIcon() {
@@ -50,7 +51,7 @@ export default function AppShell() {
           <NavLink to="/" end>
             Home
           </NavLink>
-          <NavLink to="/certifications">Certifications</NavLink>
+          <LearningTracksNav />
           <NavLink to="/demo">Demo</NavLink>
           {status === "authenticated" ? (
             <>
@@ -115,7 +116,7 @@ export default function AppShell() {
           <NavLink to="/" end>
             Home
           </NavLink>
-          <NavLink to="/certifications">Certifications</NavLink>
+          <NavLink to="/tracks">Learning Tracks</NavLink>
           <NavLink to="/demo">Demo</NavLink>
         </nav>
         <p className="app-footer-copy">

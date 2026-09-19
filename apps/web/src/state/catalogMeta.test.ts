@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { CertificationDto } from "../api/types";
-import { CATALOG, buildCatalog } from "./catalogMeta";
+import { CATALOG, buildCatalog, selectTrackGroups } from "./catalogMeta";
 
 function certification(id: string, name: string): CertificationDto {
   return {
@@ -14,6 +14,79 @@ function certification(id: string, name: string): CertificationDto {
     versions: [],
   };
 }
+
+describe("selectTrackGroups", () => {
+  it("returns available tracks grouped by catalog category", () => {
+    const groups = selectTrackGroups(CATALOG, [
+      certification("aws-soa-c03", "AWS Certified CloudOps Engineer - Associate"),
+      certification("ai-pytorch-core", "PyTorch Core: Practical ML & Neural Networks"),
+    ]);
+
+    const aws = groups.find((group) => group.id === "aws");
+    expect(aws?.tracks.map((track) => track.id)).toEqual(["aws-soa-c03"]);
+
+    const ai = groups.find((group) => group.id === "ai");
+    expect(ai?.tracks.map((track) => track.id)).toContain("ai-pytorch-core");
+  });
+
+  it("includes non-certification tracks as well as certifications", () => {
+    const groups = selectTrackGroups(CATALOG, [
+      certification("aws-soa-c03", "AWS Certified CloudOps Engineer - Associate"),
+      certification("python-data-stack", "Python Data Stack"),
+    ]);
+
+    const ids = groups.flatMap((group) => group.tracks.map((track) => track.id));
+    expect(ids).toContain("aws-soa-c03");
+    expect(ids).toContain("python-data-stack");
+  });
+
+  it("omits planned tracks with no content and empty groups", () => {
+    const groups = selectTrackGroups(CATALOG, []);
+
+    expect(groups).toEqual([]);
+  });
+
+  it("lists certification groups before non-certification tracks", () => {
+    const groups = selectTrackGroups(CATALOG, [
+      certification("aws-soa-c03", "AWS Certified CloudOps Engineer - Associate"),
+      certification("ai-pytorch-core", "PyTorch Core"),
+    ]);
+
+    expect(groups.map((group) => group.kind)).toEqual(["certification", "track"]);
+    expect(groups.map((group) => group.id)).toEqual(["aws", "ai"]);
+  });
+
+  it("marks certification tracks and only they carry an exam code", () => {
+    const groups = selectTrackGroups(CATALOG, [
+      certification("aws-soa-c03", "AWS Certified CloudOps Engineer - Associate"),
+      certification("ai-pytorch-core", "PyTorch Core"),
+    ]);
+
+    const aws = groups.find((group) => group.id === "aws");
+    const ai = groups.find((group) => group.id === "ai");
+
+    expect(aws?.tracks[0].certification).toBe(true);
+    expect(aws?.tracks[0].examCode).toBe("SOA-C03");
+    expect(ai?.tracks[0].certification).toBe(false);
+  });
+
+  it("uses the authored short name and falls back to the full name", () => {
+    const groups = selectTrackGroups(CATALOG, [
+      certification("aws-soa-c03", "AWS Certified CloudOps Engineer - Associate"),
+      certification("ai-pytorch-core", "PyTorch Core: Practical ML & Neural Networks"),
+    ]);
+
+    const aws = groups.find((group) => group.id === "aws");
+    const ai = groups.find((group) => group.id === "ai");
+
+    // Authored compact name drops the category vendor.
+    expect(aws?.tracks[0].shortName).toBe("CloudOps Engineer - Associate");
+    // No compact name authored: the full display name is used.
+    expect(ai?.tracks[0].shortName).toBe(
+      "PyTorch Core: Practical ML & Neural Networks",
+    );
+  });
+});
 
 describe("buildCatalog", () => {
   it("marks a metadata entry available when the API has matching content", () => {
@@ -137,5 +210,18 @@ describe("buildCatalog", () => {
     expect(cards.find((card) => card.id === "aws-aip-c01")?.available).toBe(true);
 
     expect(cards.map((card) => card.id)).not.toContain("lfcs");
+  });
+
+  it("orders certification sections before non-certification track sections", () => {
+    const sections = buildCatalog(CATALOG, []);
+
+    const kinds = sections.map((section) => section.kind);
+    const firstTrack = kinds.indexOf("track");
+    expect(firstTrack).toBeGreaterThan(-1);
+    // Every certification section precedes every track section.
+    expect(kinds.slice(0, firstTrack).every((kind) => kind === "certification")).toBe(
+      true,
+    );
+    expect(kinds.slice(firstTrack).every((kind) => kind === "track")).toBe(true);
   });
 });

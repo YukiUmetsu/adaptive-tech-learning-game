@@ -28,7 +28,7 @@ describe("HomePage", () => {
     );
     expect(
       screen.getByRole("link", { name: "Try a Quick Quiz" }),
-    ).toHaveAttribute("href", "/certifications");
+    ).toHaveAttribute("href", "/tracks");
   });
 
   it("explains the three-step loop", () => {
@@ -67,10 +67,10 @@ describe("HomePage", () => {
 
     expect(
       screen.getByRole("link", { name: /AWS Certified CloudOps Engineer/ }),
-    ).toHaveAttribute("href", "/certifications/aws-soa-c03");
+    ).toHaveAttribute("href", "/tracks/aws-soa-c03");
     expect(
       screen.getByRole("link", { name: /AWS Certified Generative AI Developer/ }),
-    ).toHaveAttribute("href", "/certifications/aws-aip-c01");
+    ).toHaveAttribute("href", "/tracks/aws-aip-c01");
     expect(screen.getAllByText("WIP").length).toBeGreaterThan(0);
   });
 
