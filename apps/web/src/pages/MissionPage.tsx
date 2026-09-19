@@ -21,7 +21,7 @@ export default function MissionPage() {
 
   if (runner.phase === "missing" || !runner.mission || !runner.question) {
     return (
-      <section>
+      <section className="mission-page">
         <h1>Mission unavailable</h1>
         <p>This mission is not stored on this device.</p>
         <p>
@@ -33,12 +33,14 @@ export default function MissionPage() {
 
   if (runner.phase === "summary") {
     return (
-      <QuizCompletionSummary
-        mission={runner.mission}
-        attempts={runner.attempts}
-        syncState={runner.syncState}
-        onRetrySync={() => void runner.sync()}
-      />
+      <div className="mission-page">
+        <QuizCompletionSummary
+          mission={runner.mission}
+          attempts={runner.attempts}
+          syncState={runner.syncState}
+          onRetrySync={() => void runner.sync()}
+        />
+      </div>
     );
   }
 
@@ -53,7 +55,7 @@ export default function MissionPage() {
       : undefined;
 
   return (
-    <section>
+    <section className="mission-page">
       <header className="mission-header" data-testid="mission-header">
         <div className="mission-meta">
           <span className="badge">{quizModeLabel(runner.mission.mode)}</span>

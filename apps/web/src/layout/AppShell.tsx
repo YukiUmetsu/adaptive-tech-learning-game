@@ -40,7 +40,22 @@ export default function AppShell() {
         <Outlet />
       </main>
       <footer className="app-footer">
-        Phase 1 · AWS SOA-C03 · free demo available
+        <div className="app-footer-brand">
+          <span className="app-footer-name">Adaptive Learning</span>
+          <span className="app-footer-tagline">
+            Build knowledge. Unlock opportunity.
+          </span>
+        </div>
+        <nav className="app-footer-nav" aria-label="Footer">
+          <NavLink to="/" end>
+            Home
+          </NavLink>
+          <NavLink to="/certifications">Certifications</NavLink>
+          <NavLink to="/demo">Demo</NavLink>
+        </nav>
+        <p className="app-footer-copy">
+          © {new Date().getFullYear()} Adaptive Learning. All rights reserved.
+        </p>
       </footer>
     </div>
   );
