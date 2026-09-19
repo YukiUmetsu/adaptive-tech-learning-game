@@ -152,12 +152,15 @@ Interactions are authored as Serde-tagged JSON. `interaction` and
 | `configuration_builder` | application | assign components to named roles |
 | `two_dimensional_placement` | application | place items on a two-axis conceptual map |
 | `command_assembly` | procedural_recall | assemble an ordered statement from tokens |
+| `typed_fill_blank` | recall | type missing text into inline sentence blanks |
 
 Design constraints:
 
 - `interaction` never contains the answer key; `canonical_answer` is only
   returned after server-side scoring.
-- Answer values are ids, never free text. No runtime LLM grading is used.
+- Answer values are ids, never free text, except `typed_fill_blank`. That type
+  grades free text deterministically against explicitly authored aliases; every
+  other interaction submits ids. No runtime LLM grading is used.
 - Component pools, options, and evidence lists may contain distractors.
   Learner-facing labels must never encode answer metadata such as
   `(distractor)`, `(correct)`, or `(wrong)`.
@@ -202,6 +205,105 @@ Scoring is server-authoritative and partial where it produces useful evidence:
   item-axis pairs, using tolerant canonical regions rather than exact points.
 - `command_assembly`: correct slots / slots, with separate codes for wrong
   tokens, missing tokens, and tokens in the wrong position.
+- `typed_fill_blank`: correct blanks / blanks. A blank is correct only when its
+  normalized typed answer exactly matches one of the authored accepted answers.
+  All blanks must be correct for the whole question to be correct. Error codes
+  are `typed_fill_blank_incorrect` and `typed_fill_blank_incomplete`.
+
+## Typed fill in the blank
+
+`typed_fill_blank` tests active recall: the learner types the missing word,
+phrase, AWS service, concept, or value directly into one or more blanks inside a
+sentence. Use `assessment_mode: "recall"`.
+
+Place blanks with `{{slot_id}}` inside `interaction.text`. Every placeholder
+must reference a declared slot, every slot must appear exactly once in the text,
+and `canonical_answer.answers` must contain exactly those slot ids.
+
+Single blank:
+
+```json
+{
+  "assessment_mode": "recall",
+  "interaction_type": "typed_fill_blank",
+  "prompt": "Complete the statement.",
+  "interaction": {
+    "type": "typed_fill_blank",
+    "text": "An explicit {{policy_result}} overrides an Allow during IAM policy evaluation.",
+    "slots": [
+      {
+        "id": "policy_result",
+        "label": "Policy result",
+        "placeholder": "Type your answer"
+      }
+    ]
+  },
+  "canonical_answer": {
+    "type": "typed_fill_blank",
+    "answers": {
+      "policy_result": { "accepted_answers": ["deny", "explicit deny"] }
+    }
+  }
+}
+```
+
+Multiple blanks:
+
+```json
+{
+  "interaction": {
+    "type": "typed_fill_blank",
+    "text": "Security groups are {{sg_behavior}}, while network ACLs are {{nacl_behavior}}.",
+    "slots": [
+      { "id": "sg_behavior", "label": "Security group behavior", "placeholder": "Type..." },
+      { "id": "nacl_behavior", "label": "Network ACL behavior", "placeholder": "Type..." }
+    ]
+  },
+  "canonical_answer": {
+    "type": "typed_fill_blank",
+    "answers": {
+      "sg_behavior": { "accepted_answers": ["stateful"] },
+      "nacl_behavior": { "accepted_answers": ["stateless"] }
+    }
+  }
+}
+```
+
+`placeholder` is optional; when omitted the UI falls back to a generic hint.
+The order blanks are displayed follows their position in `interaction.text`, not
+the order of the `slots` array.
+
+### Normalization and matching
+
+Answers are authored and matched deterministically, never by an LLM:
+
+- Trim leading/trailing whitespace.
+- Lowercase with Unicode-aware case folding.
+- Collapse repeated internal whitespace.
+- Ignore harmless trailing punctuation (`.`, `,`, `;`, `:`, `!`, `?`).
+
+A blank is correct only when the normalized typed answer equals a normalized
+accepted answer. There is no edit-distance or semantic matching, so textually
+similar but technically different answers stay distinct: `SQS` does **not**
+match `SNS`, and `ALB` does **not** match `NLB`. Aliases such as `Amazon SQS`,
+`SQS`, and `Amazon Simple Queue Service` must be authored explicitly in
+`accepted_answers`; they are never inferred.
+
+### Validation
+
+A bundle is rejected when:
+
+- a `{{slot}}` placeholder has no matching slot definition;
+- a declared slot is never referenced in the text (or is referenced twice);
+- a placeholder is malformed, for example an unclosed `{{` or an id containing
+  whitespace or braces;
+- slot ids are duplicated;
+- the canonical answer is missing a slot, or references an unknown slot;
+- `accepted_answers` is empty, or an alias is empty or whitespace-only;
+- the interaction and canonical-answer types do not match;
+- `interaction_type` and `interaction.type` do not match.
+
+Hints come from the shared `hints` list and never reveal an accepted answer.
 
 
 

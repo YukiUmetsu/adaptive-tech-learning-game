@@ -201,6 +201,8 @@ pub struct AnswerPayload {
     pub positions: Option<BTreeMap<String, PlacementPoint>>,
     /// Slot id to token id values for command assembly.
     pub token_values: Option<BTreeMap<String, String>>,
+    /// Slot id to raw typed text for typed fill-in-the-blank.
+    pub typed_answers: Option<BTreeMap<String, String>>,
 }
 
 /// Reconstruction answer primitives.

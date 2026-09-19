@@ -293,4 +293,40 @@ describe("QuestionCard", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({ placements: { cpu: "metric" } });
   });
+
+  it("submits typed fill blank answers inline", async () => {
+    const onSubmit = vi.fn();
+    const question = base({
+      interaction_type: "typed_fill_blank",
+      assessment_mode: "recall",
+      interaction: {
+        type: "typed_fill_blank",
+        text: "Security groups are {{sg}}, while network ACLs are {{nacl}}.",
+        slots: [
+          { id: "sg", label: "Security group behavior", placeholder: "Type..." },
+          { id: "nacl", label: "NACL behavior", placeholder: "Type..." },
+        ],
+      },
+    });
+
+    render(<QuestionCard question={question} onSubmit={onSubmit} />);
+
+    // Submit is blocked until every blank is filled.
+    const submitButton = screen.getByRole("button", { name: "Submit answer" });
+    expect(submitButton).toBeDisabled();
+
+    await userEvent.type(
+      screen.getByRole("textbox", { name: "Security group behavior" }),
+      "stateful",
+    );
+    await userEvent.type(
+      screen.getByRole("textbox", { name: "NACL behavior" }),
+      "stateless",
+    );
+    await submit();
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      typed_answers: { sg: "stateful", nacl: "stateless" },
+    });
+  });
 });

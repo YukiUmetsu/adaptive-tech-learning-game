@@ -56,6 +56,8 @@ pub enum InteractionType {
     TwoDimensionalPlacement,
     /// Assemble an ordered command or configuration statement from tokens.
     CommandAssembly,
+    /// Type the missing word, phrase, service, concept, or value into inline blanks.
+    TypedFillBlank,
 }
 
 impl AssessmentMode {
@@ -107,6 +109,7 @@ impl InteractionType {
             Self::ConfigurationBuilder => "configuration_builder",
             Self::TwoDimensionalPlacement => "two_dimensional_placement",
             Self::CommandAssembly => "command_assembly",
+            Self::TypedFillBlank => "typed_fill_blank",
         }
     }
 }
@@ -128,6 +131,7 @@ impl TryFrom<&str> for InteractionType {
             "configuration_builder" => Ok(Self::ConfigurationBuilder),
             "two_dimensional_placement" => Ok(Self::TwoDimensionalPlacement),
             "command_assembly" => Ok(Self::CommandAssembly),
+            "typed_fill_blank" => Ok(Self::TypedFillBlank),
             _ => Err(DomainError::invalid(
                 "interaction_type",
                 "unknown interaction type",

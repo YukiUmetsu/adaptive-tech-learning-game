@@ -38,6 +38,8 @@ pub enum SubmittedAnswer {
     TwoDimensionalPlacement(BTreeMap<String, crate::model::PlacementPoint>),
     /// Slot id to token id values.
     CommandAssembly(BTreeMap<String, String>),
+    /// Slot id to raw typed text for inline blanks.
+    TypedFillBlank(BTreeMap<String, String>),
 }
 
 /// The outcome of scoring one attempt.
@@ -189,6 +191,9 @@ pub fn score(question: &Question, answer: &SubmittedAnswer) -> Result<ScoredAnsw
             Interaction::CommandAssembly { slots, tokens },
             SubmittedAnswer::CommandAssembly(values),
         ) => score_command_assembly(question, slots, tokens, values),
+        (Interaction::TypedFillBlank { slots, .. }, SubmittedAnswer::TypedFillBlank(values)) => {
+            score_typed_fill_blank(question, slots, values)
+        }
         _ => Err(ScoringError::InteractionMismatch),
     }
 }
@@ -932,6 +937,91 @@ fn score_command_assembly(
     }
     if token_wrong {
         error_codes.push("command_token_wrong".to_owned());
+    }
+
+    Ok(ScoredAnswer {
+        correct: score >= 1.0,
+        score,
+        error_codes,
+        canonical: question.canonical_answer.clone(),
+    })
+}
+
+/// Normalizes a typed answer for deterministic comparison.
+///
+/// Steps: collapse all whitespace runs (which also trims), strip harmless
+/// trailing punctuation, then lowercase with Unicode-aware case folding.
+///
+/// This is intentionally not fuzzy. `SQS` and `SNS`, or `ALB` and `NLB`, stay
+/// distinct because correctness requires an exact normalized match.
+pub fn normalize_typed_answer(raw: &str) -> String {
+    raw.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .trim_end_matches(['.', ',', ';', ':', '!', '?'])
+        .trim_end()
+        .to_lowercase()
+}
+
+fn score_typed_fill_blank(
+    question: &Question,
+    slots: &[crate::model::TypedBlankSlot],
+    values: &BTreeMap<String, String>,
+) -> Result<ScoredAnswer, ScoringError> {
+    let slot_ids: HashSet<&str> = slots.iter().map(|slot| slot.id.as_str()).collect();
+
+    for slot_id in values.keys() {
+        if !slot_ids.contains(slot_id.as_str()) {
+            return Err(ScoringError::UnknownSlot(slot_id.clone()));
+        }
+    }
+
+    let CanonicalAnswer::TypedFillBlank { answers } = &question.canonical_answer else {
+        return Err(ScoringError::InteractionMismatch);
+    };
+
+    let mut correct_count = 0_usize;
+    let mut incorrect = false;
+    let mut incomplete = false;
+
+    for slot in slots {
+        let normalized = values
+            .get(&slot.id)
+            .map(|raw| normalize_typed_answer(raw))
+            .unwrap_or_default();
+
+        if normalized.is_empty() {
+            incomplete = true;
+            continue;
+        }
+
+        let Some(answer) = answers.get(&slot.id) else {
+            return Err(ScoringError::InteractionMismatch);
+        };
+
+        if answer
+            .accepted_answers
+            .iter()
+            .any(|accepted| normalize_typed_answer(accepted) == normalized)
+        {
+            correct_count += 1;
+        } else {
+            incorrect = true;
+        }
+    }
+
+    let score = if slots.is_empty() {
+        0.0
+    } else {
+        correct_count as f64 / slots.len() as f64
+    };
+
+    let mut error_codes = Vec::new();
+    if incorrect {
+        error_codes.push("typed_fill_blank_incorrect".to_owned());
+    }
+    if incomplete {
+        error_codes.push("typed_fill_blank_incomplete".to_owned());
     }
 
     Ok(ScoredAnswer {
@@ -2074,6 +2164,180 @@ mod tests {
                 )])),
             ),
             Err(ScoringError::UnknownToken("ghost".to_owned()))
+        );
+    }
+
+    fn typed_question() -> Question {
+        question(
+            Interaction::TypedFillBlank {
+                text: "Security groups are {{sg}} and NACLs are {{nacl}}.".to_owned(),
+                slots: vec![
+                    crate::model::TypedBlankSlot {
+                        id: "sg".to_owned(),
+                        label: "Security group behavior".to_owned(),
+                        placeholder: "Type...".to_owned(),
+                    },
+                    crate::model::TypedBlankSlot {
+                        id: "nacl".to_owned(),
+                        label: "NACL behavior".to_owned(),
+                        placeholder: String::new(),
+                    },
+                ],
+            },
+            CanonicalAnswer::TypedFillBlank {
+                answers: BTreeMap::from([
+                    (
+                        "sg".to_owned(),
+                        crate::model::TypedBlankAnswer {
+                            accepted_answers: vec!["stateful".to_owned()],
+                        },
+                    ),
+                    (
+                        "nacl".to_owned(),
+                        crate::model::TypedBlankAnswer {
+                            accepted_answers: vec!["stateless".to_owned()],
+                        },
+                    ),
+                ]),
+            },
+        )
+    }
+
+    #[test]
+    fn typed_normalization_is_whitespace_and_case_insensitive() {
+        assert_eq!(normalize_typed_answer("  Deny "), "deny");
+        assert_eq!(normalize_typed_answer("DENY"), "deny");
+        assert_eq!(normalize_typed_answer("deny."), "deny");
+        assert_eq!(normalize_typed_answer("deny?!"), "deny");
+        assert_eq!(normalize_typed_answer("deny  ."), "deny");
+        assert_eq!(
+            normalize_typed_answer("amazon   simple queue service"),
+            "amazon simple queue service"
+        );
+        assert_eq!(normalize_typed_answer("   "), "");
+    }
+
+    #[test]
+    fn typed_normalization_keeps_similar_service_names_distinct() {
+        assert_ne!(normalize_typed_answer("SQS"), normalize_typed_answer("SNS"));
+        assert_ne!(normalize_typed_answer("ALB"), normalize_typed_answer("NLB"));
+    }
+
+    #[test]
+    fn typed_fill_blank_grades_every_slot() {
+        let q = typed_question();
+
+        let perfect = score(
+            &q,
+            &SubmittedAnswer::TypedFillBlank(BTreeMap::from([
+                ("sg".to_owned(), " Stateful ".to_owned()),
+                ("nacl".to_owned(), "stateless.".to_owned()),
+            ])),
+        )
+        .expect("score");
+        assert!(perfect.correct);
+        assert_eq!(perfect.score, 1.0);
+        assert!(perfect.error_codes.is_empty());
+
+        // One correct, one incorrect means the whole question is incorrect.
+        let partial = score(
+            &q,
+            &SubmittedAnswer::TypedFillBlank(BTreeMap::from([
+                ("sg".to_owned(), "stateful".to_owned()),
+                ("nacl".to_owned(), "statefull".to_owned()),
+            ])),
+        )
+        .expect("score");
+        assert!(!partial.correct);
+        assert_eq!(partial.score, 0.5);
+        assert_eq!(partial.error_codes, vec!["typed_fill_blank_incorrect"]);
+
+        // A missing blank is incomplete, not incorrect.
+        let incomplete = score(
+            &q,
+            &SubmittedAnswer::TypedFillBlank(BTreeMap::from([(
+                "sg".to_owned(),
+                "stateful".to_owned(),
+            )])),
+        )
+        .expect("score");
+        assert_eq!(incomplete.score, 0.5);
+        assert_eq!(incomplete.error_codes, vec!["typed_fill_blank_incomplete"]);
+
+        // An empty string is treated as incomplete.
+        let blank = score(
+            &q,
+            &SubmittedAnswer::TypedFillBlank(BTreeMap::from([
+                ("sg".to_owned(), "stateful".to_owned()),
+                ("nacl".to_owned(), "   ".to_owned()),
+            ])),
+        )
+        .expect("score");
+        assert_eq!(blank.error_codes, vec!["typed_fill_blank_incomplete"]);
+    }
+
+    #[test]
+    fn typed_fill_blank_accepts_authored_aliases_only() {
+        let q = question(
+            Interaction::TypedFillBlank {
+                text: "Amazon {{service}} is a queue.".to_owned(),
+                slots: vec![crate::model::TypedBlankSlot {
+                    id: "service".to_owned(),
+                    label: "Service".to_owned(),
+                    placeholder: String::new(),
+                }],
+            },
+            CanonicalAnswer::TypedFillBlank {
+                answers: BTreeMap::from([(
+                    "service".to_owned(),
+                    crate::model::TypedBlankAnswer {
+                        accepted_answers: vec![
+                            "SQS".to_owned(),
+                            "Amazon SQS".to_owned(),
+                            "Amazon Simple Queue Service".to_owned(),
+                        ],
+                    },
+                )]),
+            },
+        );
+
+        for accepted in ["sqs", "Amazon SQS", "amazon   simple queue service"] {
+            let scored = score(
+                &q,
+                &SubmittedAnswer::TypedFillBlank(BTreeMap::from([(
+                    "service".to_owned(),
+                    accepted.to_owned(),
+                )])),
+            )
+            .expect("score");
+            assert!(scored.correct, "expected {accepted:?} to be accepted");
+        }
+
+        // A textually similar service is not an authored alias.
+        let wrong = score(
+            &q,
+            &SubmittedAnswer::TypedFillBlank(BTreeMap::from([(
+                "service".to_owned(),
+                "SNS".to_owned(),
+            )])),
+        )
+        .expect("score");
+        assert!(!wrong.correct);
+        assert_eq!(wrong.score, 0.0);
+    }
+
+    #[test]
+    fn typed_fill_blank_rejects_unknown_slots() {
+        let q = typed_question();
+        assert_eq!(
+            score(
+                &q,
+                &SubmittedAnswer::TypedFillBlank(BTreeMap::from([(
+                    "ghost".to_owned(),
+                    "value".to_owned(),
+                )])),
+            ),
+            Err(ScoringError::UnknownSlot("ghost".to_owned()))
         );
     }
 }

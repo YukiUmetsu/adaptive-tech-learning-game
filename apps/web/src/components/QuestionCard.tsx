@@ -16,6 +16,7 @@ import OrderingInteraction from "./OrderingInteraction";
 import ReconstructionInteraction from "./ReconstructionInteraction";
 import SpotTheFaultInteraction from "./SpotTheFaultInteraction";
 import TwoDimensionalPlacementInteraction from "./TwoDimensionalPlacementInteraction";
+import TypedFillBlankInteraction from "./TypedFillBlankInteraction";
 
 interface QuestionCardProps {
   question: QuestionView;
@@ -79,6 +80,10 @@ export default function QuestionCard({
         return choices.length > 0;
       case "two_dimensional_placement":
         return question.interaction.items.every((item) => positions[item.id]);
+      case "typed_fill_blank":
+        return question.interaction.slots.every(
+          (slot) => (slots[slot.id] ?? "").trim().length > 0,
+        );
     }
   })();
 
@@ -117,6 +122,9 @@ export default function QuestionCard({
         return;
       case "two_dimensional_placement":
         onSubmit({ positions });
+        return;
+      case "typed_fill_blank":
+        onSubmit({ typed_answers: slots });
     }
   };
 
@@ -222,6 +230,16 @@ export default function QuestionCard({
           value={positions}
           disabled={disabled}
           onChange={setPositions}
+        />
+      ) : null}
+
+      {question.interaction.type === "typed_fill_blank" ? (
+        <TypedFillBlankInteraction
+          text={question.interaction.text}
+          slots={question.interaction.slots}
+          value={slots}
+          disabled={disabled}
+          onChange={setSlots}
         />
       ) : null}
 

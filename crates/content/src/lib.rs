@@ -15,5 +15,5 @@ pub use embedded::{EMBEDDED_LEARNING_SOURCES, EMBEDDED_SOURCES};
 pub use learning::*;
 pub use model::*;
 pub use registry::ContentRegistry;
-pub use scoring::{ScoredAnswer, ScoringError, SubmittedAnswer, score};
+pub use scoring::{ScoredAnswer, ScoringError, SubmittedAnswer, normalize_typed_answer, score};
 pub use validate::{ContentError, validate};

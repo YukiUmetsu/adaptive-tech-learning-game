@@ -208,6 +208,10 @@ export interface components {
             token_values?: {
                 [key: string]: string;
             } | null;
+            /** @description Slot id to raw typed text for typed fill-in-the-blank. */
+            typed_answers?: {
+                [key: string]: string;
+            } | null;
         };
         /** @description Request to score one attempt. */
         AnswerRequest: {
@@ -341,6 +345,13 @@ export interface components {
             values: {
                 [key: string]: string;
             };
+        } | {
+            /** @description Slot id to the authored accepted answers. */
+            answers: {
+                [key: string]: components["schemas"]["TypedBlankAnswer"];
+            };
+            /** @enum {string} */
+            type: "typed_fill_blank";
         };
         /** @description Response for the certification catalog. */
         CatalogResponse: {
@@ -646,12 +657,19 @@ export interface components {
             tokens: components["schemas"]["Choice"][];
             /** @enum {string} */
             type: "command_assembly";
+        } | {
+            /** @description Blanks referenced by the text, in declaration order. */
+            slots: components["schemas"]["TypedBlankSlot"][];
+            /** @description Sentence or statement containing `{{slot_id}}` placeholders. */
+            text: string;
+            /** @enum {string} */
+            type: "typed_fill_blank";
         };
         /**
          * @description The tactile interaction family a question uses.
          * @enum {string}
          */
-        InteractionType: "classification" | "ordering" | "node_connection" | "reconstruction" | "evidence_selection" | "spot_the_fault" | "fill_slots" | "troubleshooting" | "scenario_choice_chain" | "configuration_builder" | "two_dimensional_placement" | "command_assembly";
+        InteractionType: "classification" | "ordering" | "node_connection" | "reconstruction" | "evidence_selection" | "spot_the_fault" | "fill_slots" | "troubleshooting" | "scenario_choice_chain" | "configuration_builder" | "two_dimensional_placement" | "command_assembly" | "typed_fill_blank";
         /** @description Request to issue a mission for a quiz mode. */
         IssueMissionRequest: {
             /** @description Certification identifier. */
@@ -1093,6 +1111,29 @@ export interface components {
             name: string;
             /** @description Number of authored questions available. */
             question_count: number;
+        };
+        /**
+         * @description Accepted typed answers for one blank.
+         *
+         *     Matching is deterministic: the normalized typed answer must equal one of the
+         *     explicitly authored aliases. There is no semantic or fuzzy matching.
+         */
+        TypedBlankAnswer: {
+            /** @description Authored answers that are accepted for this blank. */
+            accepted_answers: string[];
+        };
+        /**
+         * @description A blank the learner fills by typing free text.
+         *
+         *     The slot's `id` is referenced as `{{id}}` inside the interaction text.
+         */
+        TypedBlankSlot: {
+            /** @description Stable identifier within the question, used as the `{{id}}` placeholder. */
+            id: string;
+            /** @description Learner-facing label for the blank, for example `Policy result`. */
+            label: string;
+            /** @description Optional hint text shown inside the empty input. */
+            placeholder?: string;
         };
         /** @description A device's settled Bits balance. */
         WalletResponse: {

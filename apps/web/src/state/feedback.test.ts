@@ -471,4 +471,79 @@ describe("reviewDetails", () => {
       },
     ]);
   });
+
+  it("describes typed fill blanks with accepted aliases", () => {
+    const question: QuestionView = {
+      ...base,
+      interaction_type: "typed_fill_blank",
+      assessment_mode: "recall",
+      interaction: {
+        type: "typed_fill_blank",
+        text: "Amazon {{service}} is a queue.",
+        slots: [{ id: "service", label: "Service" }],
+      },
+    };
+
+    // A normalized match is not reported.
+    expect(
+      reviewDetails(
+        question,
+        { typed_answers: { service: " amazon   sqs. " } },
+        {
+          type: "typed_fill_blank",
+          answers: {
+            service: {
+              accepted_answers: ["SQS", "Amazon SQS", "Amazon Simple Queue Service"],
+            },
+          },
+        },
+      ),
+    ).toEqual([]);
+
+    const details = reviewDetails(
+      question,
+      { typed_answers: { service: "SNS" } },
+      {
+        type: "typed_fill_blank",
+        answers: {
+          service: {
+            accepted_answers: ["SQS", "Amazon SQS", "Amazon Simple Queue Service"],
+          },
+        },
+      },
+    );
+
+    expect(details).toEqual([
+      {
+        kind: "wrong",
+        text: "Service — “SNS”, expected “SQS / Amazon SQS / Amazon Simple Queue Service”",
+      },
+    ]);
+  });
+
+  it("reports an empty typed blank as missing", () => {
+    const question: QuestionView = {
+      ...base,
+      interaction_type: "typed_fill_blank",
+      assessment_mode: "recall",
+      interaction: {
+        type: "typed_fill_blank",
+        text: "An explicit {{result}} overrides an Allow.",
+        slots: [{ id: "result", label: "Result" }],
+      },
+    };
+
+    const details = reviewDetails(
+      question,
+      { typed_answers: {} },
+      {
+        type: "typed_fill_blank",
+        answers: { result: { accepted_answers: ["deny"] } },
+      },
+    );
+
+    expect(details).toEqual([
+      { kind: "missing", text: "Result — expected “deny”" },
+    ]);
+  });
 });

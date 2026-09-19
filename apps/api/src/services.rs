@@ -589,6 +589,7 @@ fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError> {
         assignments,
         positions,
         token_values,
+        typed_answers,
     } = payload;
 
     let shapes = usize::from(placements.is_some())
@@ -601,7 +602,8 @@ fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError> {
         + usize::from(choice_path.is_some())
         + usize::from(assignments.is_some())
         + usize::from(positions.is_some())
-        + usize::from(token_values.is_some());
+        + usize::from(token_values.is_some())
+        + usize::from(typed_answers.is_some());
 
     if shapes != 1 {
         return Err(ApiError::BadRequest(
@@ -644,6 +646,9 @@ fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError> {
     }
     if let Some(token_values) = token_values {
         return Ok(SubmittedAnswer::CommandAssembly(token_values));
+    }
+    if let Some(typed_answers) = typed_answers {
+        return Ok(SubmittedAnswer::TypedFillBlank(typed_answers));
     }
 
     Err(ApiError::BadRequest(
@@ -709,6 +714,7 @@ mod tests {
             assignments: None,
             positions: None,
             token_values: None,
+            typed_answers: None,
         });
         assert!(empty.is_err());
 
@@ -724,6 +730,7 @@ mod tests {
             assignments: None,
             positions: None,
             token_values: None,
+            typed_answers: None,
         });
         assert!(two_shapes.is_err());
     }
@@ -742,6 +749,7 @@ mod tests {
             assignments: None,
             positions: None,
             token_values: None,
+            typed_answers: None,
         });
         assert!(bad.is_err());
 
@@ -757,6 +765,7 @@ mod tests {
             assignments: None,
             positions: None,
             token_values: None,
+            typed_answers: None,
         });
         assert_eq!(
             good.expect("valid edge"),
@@ -784,6 +793,7 @@ mod tests {
             assignments: None,
             positions: None,
             token_values: None,
+            typed_answers: None,
         })
         .expect("valid reconstruction");
 
@@ -813,6 +823,7 @@ mod tests {
             assignments: None,
             positions: None,
             token_values: None,
+            typed_answers: None,
         })
         .expect("valid evidence");
         assert_eq!(
@@ -832,6 +843,7 @@ mod tests {
             assignments: None,
             positions: None,
             token_values: None,
+            typed_answers: None,
         })
         .expect("valid fault selection");
         assert_eq!(
@@ -853,9 +865,36 @@ mod tests {
             assignments: None,
             positions: None,
             token_values: None,
+            typed_answers: None,
         })
         .expect("valid slots");
         assert_eq!(slots, SubmittedAnswer::FillSlots(values));
+
+        let typed = to_submitted(AnswerPayload {
+            placements: None,
+            ordered_ids: None,
+            edges: None,
+            reconstruction: None,
+            evidence_ids: None,
+            faulty_ids: None,
+            slot_values: None,
+            choice_path: None,
+            assignments: None,
+            positions: None,
+            token_values: None,
+            typed_answers: Some(std::collections::BTreeMap::from([(
+                "policy_result".to_owned(),
+                "Deny".to_owned(),
+            )])),
+        })
+        .expect("valid typed answers");
+        assert_eq!(
+            typed,
+            SubmittedAnswer::TypedFillBlank(std::collections::BTreeMap::from([(
+                "policy_result".to_owned(),
+                "Deny".to_owned(),
+            )]))
+        );
     }
 
     #[test]

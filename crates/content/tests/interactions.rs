@@ -24,6 +24,7 @@ fn interaction_kind(interaction: &Interaction) -> &'static str {
         Interaction::ConfigurationBuilder { .. } => "configuration_builder",
         Interaction::TwoDimensionalPlacement { .. } => "two_dimensional_placement",
         Interaction::CommandAssembly { .. } => "command_assembly",
+        Interaction::TypedFillBlank { .. } => "typed_fill_blank",
     }
 }
 
@@ -41,6 +42,7 @@ fn canonical_kind(answer: &CanonicalAnswer) -> &'static str {
         CanonicalAnswer::ConfigurationBuilder { .. } => "configuration_builder",
         CanonicalAnswer::TwoDimensionalPlacement { .. } => "two_dimensional_placement",
         CanonicalAnswer::CommandAssembly { .. } => "command_assembly",
+        CanonicalAnswer::TypedFillBlank { .. } => "typed_fill_blank",
     }
 }
 
@@ -110,6 +112,9 @@ fn demo_bundle_deserializes_into_typed_interactions() {
         ("demo-config-nat-001", "configuration_builder"),
         ("demo-command-presign-001", "command_assembly"),
         ("demo-placement-dr-001", "two_dimensional_placement"),
+        ("demo-typed-deny-001", "typed_fill_blank"),
+        ("demo-typed-sg-nacl-001", "typed_fill_blank"),
+        ("demo-typed-sqs-001", "typed_fill_blank"),
     ];
 
     for (id, kind) in expected {
@@ -538,6 +543,86 @@ fn command_assembly_scores_tokens_and_order() {
 }
 
 #[test]
+fn typed_fill_blank_scores_all_slots_and_normalizes() {
+    let deny = demo_question("demo-typed-deny-001");
+    let mut answers = std::collections::BTreeMap::new();
+    answers.insert("policy_result".to_owned(), "  DENY. ".to_owned());
+    let scored = score(&deny, &SubmittedAnswer::TypedFillBlank(answers)).expect("score");
+    assert!(scored.correct);
+    assert_eq!(scored.score, 1.0);
+
+    let multi = demo_question("demo-typed-sg-nacl-001");
+    let partial = score(
+        &multi,
+        &SubmittedAnswer::TypedFillBlank(
+            [
+                ("sg_behavior".to_owned(), "stateful".to_owned()),
+                ("nacl_behavior".to_owned(), "statefull".to_owned()),
+            ]
+            .into_iter()
+            .collect(),
+        ),
+    )
+    .expect("score");
+    assert!(!partial.correct);
+    assert_eq!(partial.score, 0.5);
+    assert!(
+        partial
+            .error_codes
+            .contains(&"typed_fill_blank_incorrect".to_owned())
+    );
+
+    // SQS must not accept SNS through fuzzy matching.
+    let sqs = demo_question("demo-typed-sqs-001");
+    let wrong = score(
+        &sqs,
+        &SubmittedAnswer::TypedFillBlank(
+            [("service".to_owned(), "SNS".to_owned())]
+                .into_iter()
+                .collect(),
+        ),
+    )
+    .expect("score");
+    assert_eq!(wrong.score, 0.0);
+    assert!(
+        wrong
+            .error_codes
+            .contains(&"typed_fill_blank_incorrect".to_owned())
+    );
+}
+
+#[test]
+fn typed_fill_blank_serializes_with_expected_discriminator() {
+    let question = demo_question("demo-typed-sg-nacl-001");
+    let interaction = serde_json::to_value(&question.interaction).expect("serialize");
+    assert_eq!(interaction["type"], serde_json::json!("typed_fill_blank"));
+    assert!(interaction["text"].as_str().is_some());
+    assert_eq!(interaction["slots"].as_array().map(Vec::len), Some(2));
+
+    let canonical = serde_json::to_value(&question.canonical_answer).expect("serialize");
+    assert_eq!(canonical["type"], serde_json::json!("typed_fill_blank"));
+
+    let decoded: Interaction = serde_json::from_value(interaction).expect("deserialize");
+    assert_eq!(decoded, question.interaction);
+}
+
+#[test]
+fn typed_fill_blank_rejects_unknown_slot_in_submission() {
+    let question = demo_question("demo-typed-deny-001");
+    assert_eq!(
+        score(
+            &question,
+            &SubmittedAnswer::TypedFillBlank(
+                [("ghost".to_owned(), "deny".to_owned())]
+                    .into_iter()
+                    .collect(),
+            ),
+        ),
+        Err(ScoringError::UnknownSlot("ghost".to_owned()))
+    );
+}
+
+#[test]
 fn malformed_submissions_are_rejected() {
     let reconstruction = demo_question("demo-reconstruction-cloudwatch-001");
     assert_eq!(
@@ -863,6 +948,120 @@ fn rejects_canonical_command_missing_slot() {
         .remove("expiry_value");
 
     expect_error(&value, "canonical_command_slots_incomplete");
+}
+
+#[test]
+fn rejects_typed_placeholder_for_unknown_slot() {
+    let mut value = demo_value();
+    let index = question_index(&value, "demo-typed-sg-nacl-001");
+    value["questions"][index]["interaction"]["text"] =
+        Value::from("Security groups are {{sg_behavior}} and {{ghost}}.");
+
+    expect_error(&value, "typed_placeholder_unknown_slot");
+}
+
+#[test]
+fn rejects_typed_slot_never_referenced_in_text() {
+    let mut value = demo_value();
+    let index = question_index(&value, "demo-typed-sg-nacl-001");
+    value["questions"][index]["interaction"]["text"] =
+        Value::from("Security groups are {{sg_behavior}}.");
+
+    expect_error(&value, "typed_slot_not_referenced");
+}
+
+#[test]
+fn rejects_typed_duplicate_placeholder() {
+    let mut value = demo_value();
+    let index = question_index(&value, "demo-typed-sg-nacl-001");
+    value["questions"][index]["interaction"]["text"] =
+        Value::from("{{sg_behavior}} and {{sg_behavior}}.");
+
+    expect_error(&value, "typed_duplicate_placeholder");
+}
+
+#[test]
+fn rejects_malformed_typed_placeholder() {
+    let mut value = demo_value();
+    let index = question_index(&value, "demo-typed-deny-001");
+    value["questions"][index]["interaction"]["text"] =
+        Value::from("An explicit {{policy_result overrides an Allow.");
+
+    expect_error(&value, "typed_placeholder_malformed");
+}
+
+#[test]
+fn rejects_duplicate_typed_slot_id() {
+    let mut value = demo_value();
+    let index = question_index(&value, "demo-typed-deny-001");
+    let slot = value["questions"][index]["interaction"]["slots"][0].clone();
+    value["questions"][index]["interaction"]["slots"]
+        .as_array_mut()
+        .expect("slots")
+        .push(slot);
+
+    expect_error(&value, "duplicate_slot_id");
+}
+
+#[test]
+fn rejects_typed_canonical_answer_missing_slot() {
+    let mut value = demo_value();
+    let index = question_index(&value, "demo-typed-sg-nacl-001");
+    value["questions"][index]["canonical_answer"]["answers"]
+        .as_object_mut()
+        .expect("answers")
+        .remove("nacl_behavior");
+
+    expect_error(&value, "canonical_typed_answer_missing");
+}
+
+#[test]
+fn rejects_typed_canonical_answer_unknown_slot() {
+    let mut value = demo_value();
+    let index = question_index(&value, "demo-typed-deny-001");
+    value["questions"][index]["canonical_answer"]["answers"]["ghost"] =
+        serde_json::json!({ "accepted_answers": ["nope"] });
+
+    expect_error(&value, "canonical_typed_unknown_slot");
+}
+
+#[test]
+fn rejects_typed_canonical_answer_empty_alias_list() {
+    let mut value = demo_value();
+    let index = question_index(&value, "demo-typed-deny-001");
+    value["questions"][index]["canonical_answer"]["answers"]["policy_result"]["accepted_answers"] =
+        serde_json::json!([]);
+
+    expect_error(&value, "canonical_typed_answer_empty");
+}
+
+#[test]
+fn rejects_typed_canonical_answer_blank_alias() {
+    let mut value = demo_value();
+    let index = question_index(&value, "demo-typed-deny-001");
+    value["questions"][index]["canonical_answer"]["answers"]["policy_result"]["accepted_answers"] =
+        serde_json::json!(["deny", "   "]);
+
+    expect_error(&value, "canonical_typed_answer_blank");
+}
+
+#[test]
+fn rejects_typed_canonical_answer_type_mismatch() {
+    let mut value = demo_value();
+    let index = question_index(&value, "demo-typed-deny-001");
+    value["questions"][index]["canonical_answer"] =
+        serde_json::json!({ "type": "fill_slots", "values": {} });
+
+    expect_error(&value, "canonical_answer_mismatch");
+}
+
+#[test]
+fn rejects_typed_interaction_type_mismatch() {
+    let mut value = demo_value();
+    let index = question_index(&value, "demo-typed-deny-001");
+    value["questions"][index]["interaction_type"] = Value::from("fill_slots");
+
+    expect_error(&value, "interaction_type_mismatch");
 }
 
 #[test]

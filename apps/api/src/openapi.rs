@@ -68,6 +68,8 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         adaptive_learn_content::ScenarioStage,
         adaptive_learn_content::ScenarioStep,
         adaptive_learn_content::ConfigSlot,
+        adaptive_learn_content::TypedBlankSlot,
+        adaptive_learn_content::TypedBlankAnswer,
         adaptive_learn_content::PlacementAxis,
         adaptive_learn_content::PlacementRegion,
         adaptive_learn_content::PlacementPoint,

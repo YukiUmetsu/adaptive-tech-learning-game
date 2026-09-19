@@ -3,6 +3,7 @@ import type {
   CanonicalAnswer,
   QuestionView,
 } from "../api/types";
+import { typedAnswerMatches } from "../lib/typedBlank";
 
 export type ReviewKind = "missing" | "invalid" | "wrong";
 
@@ -492,6 +493,37 @@ export function reviewDetails(
         kind: chosen ? "wrong" : "missing",
         text: `${slot.label} — “${chosenLabel}”, should be “${expectedLabel}”`,
       });
+    }
+
+    return details;
+  }
+
+  if (
+    interaction.type === "typed_fill_blank" &&
+    canonical.type === "typed_fill_blank"
+  ) {
+    const values = submitted.typed_answers;
+    if (!values) {
+      return [];
+    }
+
+    const details: ReviewDetail[] = [];
+
+    for (const slot of interaction.slots) {
+      const accepted = canonical.answers[slot.id]?.accepted_answers ?? [];
+      const typed = values[slot.id] ?? "";
+      if (typedAnswerMatches(typed, accepted)) {
+        continue;
+      }
+      const expected = accepted.join(" / ");
+      details.push(
+        typed.trim().length > 0
+          ? {
+              kind: "wrong",
+              text: `${slot.label} — “${typed.trim()}”, expected “${expected}”`,
+            }
+          : { kind: "missing", text: `${slot.label} — expected “${expected}”` },
+      );
     }
 
     return details;

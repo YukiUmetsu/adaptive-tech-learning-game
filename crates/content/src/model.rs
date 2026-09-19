@@ -130,6 +130,30 @@ pub struct FillSlot {
     pub label: String,
 }
 
+/// A blank the learner fills by typing free text.
+///
+/// The slot's `id` is referenced as `{{id}}` inside the interaction text.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct TypedBlankSlot {
+    /// Stable identifier within the question, used as the `{{id}}` placeholder.
+    pub id: String,
+    /// Learner-facing label for the blank, for example `Policy result`.
+    pub label: String,
+    /// Optional hint text shown inside the empty input.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub placeholder: String,
+}
+
+/// Accepted typed answers for one blank.
+///
+/// Matching is deterministic: the normalized typed answer must equal one of the
+/// explicitly authored aliases. There is no semantic or fuzzy matching.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct TypedBlankAnswer {
+    /// Authored answers that are accepted for this blank.
+    pub accepted_answers: Vec<String>,
+}
+
 /// The operational stage a branching-scenario decision belongs to.
 ///
 /// The stage is used only to attach a structured error code to a poor decision;
@@ -338,6 +362,13 @@ pub enum Interaction {
         /// Tokens the learner may use. May contain distractors.
         tokens: Vec<Choice>,
     },
+    /// Fill inline blanks inside a sentence by typing the missing text.
+    TypedFillBlank {
+        /// Sentence or statement containing `{{slot_id}}` placeholders.
+        text: String,
+        /// Blanks referenced by the text, in declaration order.
+        slots: Vec<TypedBlankSlot>,
+    },
 }
 
 /// The canonical answer for a question.
@@ -410,6 +441,11 @@ pub enum CanonicalAnswer {
     CommandAssembly {
         /// Slot id to token id.
         values: std::collections::BTreeMap<String, String>,
+    },
+    /// Accepted typed answers for each inline blank.
+    TypedFillBlank {
+        /// Slot id to the authored accepted answers.
+        answers: std::collections::BTreeMap<String, TypedBlankAnswer>,
     },
 }
 

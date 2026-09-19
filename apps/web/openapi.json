@@ -529,6 +529,19 @@
             "propertyNames": {
               "type": "string"
             }
+          },
+          "typed_answers": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Slot id to raw typed text for typed fill-in-the-blank.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
           }
         }
       },
@@ -937,6 +950,32 @@
                 "propertyNames": {
                   "type": "string"
                 }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Accepted typed answers for each inline blank.",
+            "required": [
+              "answers",
+              "type"
+            ],
+            "properties": {
+              "answers": {
+                "type": "object",
+                "description": "Slot id to the authored accepted answers.",
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/TypedBlankAnswer"
+                },
+                "propertyNames": {
+                  "type": "string"
+                }
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "typed_fill_blank"
+                ]
               }
             }
           }
@@ -1765,6 +1804,34 @@
                 ]
               }
             }
+          },
+          {
+            "type": "object",
+            "description": "Fill inline blanks inside a sentence by typing the missing text.",
+            "required": [
+              "text",
+              "slots",
+              "type"
+            ],
+            "properties": {
+              "slots": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TypedBlankSlot"
+                },
+                "description": "Blanks referenced by the text, in declaration order."
+              },
+              "text": {
+                "type": "string",
+                "description": "Sentence or statement containing `{{slot_id}}` placeholders."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "typed_fill_blank"
+                ]
+              }
+            }
           }
         ],
         "description": "Interaction definition shown to the learner. Contains no answer key."
@@ -1784,7 +1851,8 @@
           "scenario_choice_chain",
           "configuration_builder",
           "two_dimensional_placement",
-          "command_assembly"
+          "command_assembly",
+          "typed_fill_blank"
         ]
       },
       "IssueMissionRequest": {
@@ -2806,6 +2874,44 @@
             "type": "integer",
             "description": "Number of authored questions available.",
             "minimum": 0
+          }
+        }
+      },
+      "TypedBlankAnswer": {
+        "type": "object",
+        "description": "Accepted typed answers for one blank.\n\nMatching is deterministic: the normalized typed answer must equal one of the\nexplicitly authored aliases. There is no semantic or fuzzy matching.",
+        "required": [
+          "accepted_answers"
+        ],
+        "properties": {
+          "accepted_answers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Authored answers that are accepted for this blank."
+          }
+        }
+      },
+      "TypedBlankSlot": {
+        "type": "object",
+        "description": "A blank the learner fills by typing free text.\n\nThe slot's `id` is referenced as `{{id}}` inside the interaction text.",
+        "required": [
+          "id",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable identifier within the question, used as the `{{id}}` placeholder."
+          },
+          "label": {
+            "type": "string",
+            "description": "Learner-facing label for the blank, for example `Policy result`."
+          },
+          "placeholder": {
+            "type": "string",
+            "description": "Optional hint text shown inside the empty input."
           }
         }
       },
