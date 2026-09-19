@@ -647,6 +647,19 @@
             "propertyNames": {
               "type": "string"
             }
+          },
+          "typed_answers": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Slot id to raw typed text for typed fill-in-the-blank.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
           }
         }
       },
@@ -1057,6 +1070,32 @@
                 "propertyNames": {
                   "type": "string"
                 }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Accepted typed answers for each inline blank.",
+            "required": [
+              "answers",
+              "type"
+            ],
+            "properties": {
+              "answers": {
+                "type": "object",
+                "description": "Slot id to the authored accepted answers.",
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/TypedBlankAnswer"
+                },
+                "propertyNames": {
+                  "type": "string"
+                }
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "typed_fill_blank"
+                ]
               }
             }
           }
@@ -1885,6 +1924,34 @@
                 ]
               }
             }
+          },
+          {
+            "type": "object",
+            "description": "Fill inline blanks inside a sentence by typing the missing text.",
+            "required": [
+              "content",
+              "slots",
+              "type"
+            ],
+            "properties": {
+              "content": {
+                "$ref": "#/components/schemas/TypedFillContent",
+                "description": "Presentation context (prose, code, or table)."
+              },
+              "slots": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TypedBlankSlot"
+                },
+                "description": "Blanks referenced anywhere in the content, in declaration order."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "typed_fill_blank"
+                ]
+              }
+            }
           }
         ],
         "description": "Interaction definition shown to the learner. Contains no answer key."
@@ -1904,7 +1971,8 @@
           "scenario_choice_chain",
           "configuration_builder",
           "two_dimensional_placement",
-          "command_assembly"
+          "command_assembly",
+          "typed_fill_blank"
         ]
       },
       "IssueMissionRequest": {
@@ -2956,6 +3024,217 @@
             "type": "integer",
             "description": "Number of authored questions available.",
             "minimum": 0
+          }
+        }
+      },
+      "TypedBlankAnswer": {
+        "type": "object",
+        "description": "Accepted typed answers for one blank.\n\nMatching is deterministic: the normalized typed answer must equal one of the\nexplicitly authored aliases. There is no semantic or fuzzy matching.",
+        "required": [
+          "accepted_answers"
+        ],
+        "properties": {
+          "accepted_answers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Authored answers that are accepted for this blank."
+          }
+        }
+      },
+      "TypedBlankSlot": {
+        "type": "object",
+        "description": "A blank the learner fills by typing free text.\n\nThe slot's `id` is referenced as `{{id}}` inside a content template.",
+        "required": [
+          "id",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable identifier within the question, used as the `{{id}}` placeholder."
+          },
+          "label": {
+            "type": "string",
+            "description": "Learner-facing label for the blank, for example `Policy result`."
+          },
+          "placeholder": {
+            "type": "string",
+            "description": "Optional hint text shown inside the empty input."
+          }
+        }
+      },
+      "TypedFillContent": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "A sentence or short prose statement containing `{{slot_id}}` placeholders.",
+            "required": [
+              "template",
+              "type"
+            ],
+            "properties": {
+              "template": {
+                "type": "string",
+                "description": "Template text containing `{{slot_id}}` placeholders."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "text"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A syntax-highlighted source-code sample containing `{{slot_id}}` placeholders.",
+            "required": [
+              "language",
+              "template",
+              "type"
+            ],
+            "properties": {
+              "language": {
+                "type": "string",
+                "description": "Highlighting language, for example `python`."
+              },
+              "template": {
+                "type": "string",
+                "description": "Code template containing `{{slot_id}}` placeholders. Newlines and\nindentation are significant."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "code"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A table whose cells may contain text or code templates.",
+            "required": [
+              "columns",
+              "rows",
+              "type"
+            ],
+            "properties": {
+              "columns": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TypedFillTableColumn"
+                },
+                "description": "Columns in presentation order."
+              },
+              "rows": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TypedFillTableRow"
+                },
+                "description": "Rows in presentation order."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "table"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Presentation context for a typed fill-in-the-blank interaction.\n\nPresentation is explicit and tagged, so the renderer never has to guess\nwhether authored content is prose, source code, or a table. Blank positions\nare always marked with `{{slot_id}}` inside a `template`."
+      },
+      "TypedFillTableCell": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "A text template containing `{{slot_id}}` placeholders.",
+            "required": [
+              "template",
+              "type"
+            ],
+            "properties": {
+              "template": {
+                "type": "string",
+                "description": "Cell text containing `{{slot_id}}` placeholders."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "text"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A syntax-highlighted code template containing `{{slot_id}}` placeholders.",
+            "required": [
+              "language",
+              "template",
+              "type"
+            ],
+            "properties": {
+              "language": {
+                "type": "string",
+                "description": "Highlighting language, for example `python`."
+              },
+              "template": {
+                "type": "string",
+                "description": "Code template containing `{{slot_id}}` placeholders."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "code"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Presentation of one typed fill-in-the-blank table cell."
+      },
+      "TypedFillTableColumn": {
+        "type": "object",
+        "description": "A column in a typed fill-in-the-blank table.",
+        "required": [
+          "id",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable identifier within the interaction."
+          },
+          "label": {
+            "type": "string",
+            "description": "Learner-facing column heading."
+          }
+        }
+      },
+      "TypedFillTableRow": {
+        "type": "object",
+        "description": "A row in a typed fill-in-the-blank table.",
+        "required": [
+          "id",
+          "cells"
+        ],
+        "properties": {
+          "cells": {
+            "type": "object",
+            "description": "Column id to the cell presented in that column.",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TypedFillTableCell"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable identifier within the interaction."
           }
         }
       },

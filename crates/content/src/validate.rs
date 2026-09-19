@@ -578,6 +578,290 @@ fn validate_interaction(question: &Question, errors: &mut Vec<ContentError>) {
             ensure_unique_slot_ids(question, slots, errors);
             ensure_unique_choice_ids(question, tokens, "command token", errors);
         }
+        Interaction::TypedFillBlank { content, slots } => {
+            validate_typed_fill_blank(question, content, slots, errors);
+        }
+    }
+}
+
+/// Validates the templates, table structure, and slot definitions of a typed
+/// fill-in-the-blank interaction.
+fn validate_typed_fill_blank(
+    question: &Question,
+    content: &crate::model::TypedFillContent,
+    slots: &[crate::model::TypedBlankSlot],
+    errors: &mut Vec<ContentError>,
+) {
+    if slots.is_empty() {
+        errors.push(ContentError::new(
+            "typed_fill_blank_incomplete",
+            format!("question {} needs at least one blank slot", question.id),
+        ));
+    }
+
+    ensure_unique_typed_slots(question, slots, errors);
+
+    // Collect every authored template so placeholder consistency can be checked
+    // across the whole interaction, including all table cells.
+    let mut templates: Vec<String> = Vec::new();
+    match content {
+        crate::model::TypedFillContent::Text { template } => {
+            push_typed_text_template(question, template, &mut templates, errors);
+        }
+        crate::model::TypedFillContent::Code { language, template } => {
+            push_typed_code_template(question, language, template, &mut templates, errors);
+        }
+        crate::model::TypedFillContent::Table { columns, rows } => {
+            validate_typed_table(question, columns, rows, &mut templates, errors);
+        }
+    }
+
+    let mut placeholders = Vec::new();
+    let mut malformed = false;
+    for template in &templates {
+        match extract_typed_placeholders(template) {
+            Ok(ids) => placeholders.extend(ids),
+            Err(()) => malformed = true,
+        }
+    }
+    if malformed {
+        errors.push(ContentError::new(
+            "typed_placeholder_malformed",
+            format!(
+                "question {} has a malformed placeholder; expected {{{{slot_id}}}}",
+                question.id
+            ),
+        ));
+    }
+
+    let mut seen = HashSet::new();
+    for placeholder in &placeholders {
+        if !seen.insert(placeholder.as_str()) {
+            errors.push(ContentError::new(
+                "typed_duplicate_placeholder",
+                format!(
+                    "question {} references {{{{{placeholder}}}}} more than once",
+                    question.id
+                ),
+            ));
+        }
+    }
+
+    let slot_ids: HashSet<&str> = slots.iter().map(|slot| slot.id.as_str()).collect();
+    let placeholder_ids: HashSet<&str> = placeholders.iter().map(String::as_str).collect();
+
+    for placeholder in &placeholder_ids {
+        if !slot_ids.contains(placeholder) {
+            errors.push(ContentError::new(
+                "typed_placeholder_unknown_slot",
+                format!(
+                    "question {} text references {{{{{placeholder}}}}} but no such slot is defined",
+                    question.id
+                ),
+            ));
+        }
+    }
+    for slot_id in &slot_ids {
+        if !placeholder_ids.contains(slot_id) {
+            errors.push(ContentError::new(
+                "typed_slot_not_referenced",
+                format!(
+                    "question {} defines slot {slot_id} but no template references {{{{{slot_id}}}}}",
+                    question.id
+                ),
+            ));
+        }
+    }
+}
+
+/// Validates a non-empty text template and records it for placeholder checking.
+fn push_typed_text_template(
+    question: &Question,
+    template: &str,
+    templates: &mut Vec<String>,
+    errors: &mut Vec<ContentError>,
+) {
+    if template.trim().is_empty() {
+        errors.push(ContentError::new(
+            "typed_template_empty",
+            format!("question {} has an empty typed-fill template", question.id),
+        ));
+        return;
+    }
+    templates.push(template.to_owned());
+}
+
+/// Validates a code template's language and records the template.
+fn push_typed_code_template(
+    question: &Question,
+    language: &str,
+    template: &str,
+    templates: &mut Vec<String>,
+    errors: &mut Vec<ContentError>,
+) {
+    if language.trim().is_empty() {
+        errors.push(ContentError::new(
+            "typed_code_language_missing",
+            format!(
+                "question {} has a code template with an empty language",
+                question.id
+            ),
+        ));
+    }
+    push_typed_text_template(question, template, templates, errors);
+}
+
+/// Validates a typed fill-in-the-blank table's columns, rows, and cell templates.
+fn validate_typed_table(
+    question: &Question,
+    columns: &[crate::model::TypedFillTableColumn],
+    rows: &[crate::model::TypedFillTableRow],
+    templates: &mut Vec<String>,
+    errors: &mut Vec<ContentError>,
+) {
+    if columns.is_empty() {
+        errors.push(ContentError::new(
+            "typed_table_columns_missing",
+            format!("question {} table needs at least one column", question.id),
+        ));
+    }
+    if rows.is_empty() {
+        errors.push(ContentError::new(
+            "typed_table_rows_missing",
+            format!("question {} table needs at least one row", question.id),
+        ));
+    }
+
+    let mut column_ids = HashSet::new();
+    for column in columns {
+        if column.id.trim().is_empty() || column.label.trim().is_empty() {
+            errors.push(ContentError::new(
+                "typed_table_column_field_missing",
+                format!(
+                    "question {} has a table column with an empty id or label",
+                    question.id
+                ),
+            ));
+        }
+        if !column_ids.insert(column.id.as_str()) {
+            errors.push(ContentError::new(
+                "duplicate_typed_table_column_id",
+                format!(
+                    "question {} has duplicate table column id {}",
+                    question.id, column.id
+                ),
+            ));
+        }
+    }
+
+    let mut row_ids = HashSet::new();
+    for row in rows {
+        if row.id.trim().is_empty() {
+            errors.push(ContentError::new(
+                "typed_table_row_field_missing",
+                format!("question {} has a table row with an empty id", question.id),
+            ));
+        }
+        if !row_ids.insert(row.id.as_str()) {
+            errors.push(ContentError::new(
+                "duplicate_typed_table_row_id",
+                format!(
+                    "question {} has duplicate table row id {}",
+                    question.id, row.id
+                ),
+            ));
+        }
+
+        for column_id in &column_ids {
+            if !row.cells.contains_key(*column_id) {
+                errors.push(ContentError::new(
+                    "typed_table_row_column_missing",
+                    format!(
+                        "question {} table row {} is missing a cell for column {column_id}",
+                        question.id, row.id
+                    ),
+                ));
+            }
+        }
+        for cell_column_id in row.cells.keys() {
+            if !column_ids.contains(cell_column_id.as_str()) {
+                errors.push(ContentError::new(
+                    "typed_table_unknown_cell",
+                    format!(
+                        "question {} table row {} has a cell for unknown column {cell_column_id}",
+                        question.id, row.id
+                    ),
+                ));
+            }
+        }
+
+        for cell in row.cells.values() {
+            match cell {
+                crate::model::TypedFillTableCell::Text { template } => {
+                    push_typed_text_template(question, template, templates, errors);
+                }
+                crate::model::TypedFillTableCell::Code { language, template } => {
+                    push_typed_code_template(question, language, template, templates, errors);
+                }
+            }
+        }
+    }
+}
+
+/// Extracts `{{slot_id}}` placeholders in order of appearance.
+///
+/// Returns `Err(())` when the text contains an unterminated or malformed
+/// placeholder, for example `{{` without a closing `}}`, an empty id, or an id
+/// containing whitespace or braces.
+///
+/// A bare `}}` that is not part of a placeholder is treated as literal text.
+/// Code templates legitimately contain closing braces (for example nested
+/// dictionaries or blocks), so flagging them would reject valid content.
+fn extract_typed_placeholders(text: &str) -> Result<Vec<String>, ()> {
+    let mut placeholders = Vec::new();
+    let mut rest = text;
+
+    while let Some(start) = rest.find("{{") {
+        let after = &rest[start + 2..];
+        let Some(end) = after.find("}}") else {
+            return Err(());
+        };
+        let id = &after[..end];
+        if id.is_empty()
+            || id != id.trim()
+            || id.chars().any(|c| c.is_whitespace())
+            || id.contains('{')
+            || id.contains('}')
+        {
+            return Err(());
+        }
+        placeholders.push(id.to_owned());
+        rest = &after[end + 2..];
+    }
+
+    Ok(placeholders)
+}
+
+/// Validates typed blank slot ids and labels, and rejects duplicate ids.
+fn ensure_unique_typed_slots(
+    question: &Question,
+    slots: &[crate::model::TypedBlankSlot],
+    errors: &mut Vec<ContentError>,
+) {
+    let mut seen = HashSet::new();
+    for slot in slots {
+        if slot.id.trim().is_empty() || slot.label.trim().is_empty() {
+            errors.push(ContentError::new(
+                "slot_field_missing",
+                format!("question {} has an empty slot id or label", question.id),
+            ));
+        }
+        if !seen.insert(slot.id.as_str()) {
+            errors.push(ContentError::new(
+                "duplicate_slot_id",
+                format!("question {} has duplicate slot id {}", question.id, slot.id),
+            ));
+        }
     }
 }
 
@@ -1347,6 +1631,59 @@ fn validate_canonical_answer(question: &Question, errors: &mut Vec<ContentError>
                 }
             }
         }
+        (
+            Interaction::TypedFillBlank { slots, .. },
+            CanonicalAnswer::TypedFillBlank { answers },
+        ) => {
+            let slot_ids: BTreeSet<&str> = slots.iter().map(|slot| slot.id.as_str()).collect();
+            let answer_ids: BTreeSet<&str> = answers.keys().map(String::as_str).collect();
+
+            for slot_id in &slot_ids {
+                if !answer_ids.contains(slot_id) {
+                    errors.push(ContentError::new(
+                        "canonical_typed_answer_missing",
+                        format!(
+                            "question {} canonical answer is missing a value for slot {slot_id}",
+                            question.id
+                        ),
+                    ));
+                }
+            }
+            for slot_id in &answer_ids {
+                if !slot_ids.contains(slot_id) {
+                    errors.push(ContentError::new(
+                        "canonical_typed_unknown_slot",
+                        format!(
+                            "question {} canonical answer references unknown slot {slot_id}",
+                            question.id
+                        ),
+                    ));
+                }
+            }
+
+            for (slot_id, answer) in answers {
+                if answer.accepted_answers.is_empty() {
+                    errors.push(ContentError::new(
+                        "canonical_typed_answer_empty",
+                        format!(
+                            "question {} slot {slot_id} must declare at least one accepted answer",
+                            question.id
+                        ),
+                    ));
+                }
+                for accepted in &answer.accepted_answers {
+                    if accepted.trim().is_empty() {
+                        errors.push(ContentError::new(
+                            "canonical_typed_answer_blank",
+                            format!(
+                                "question {} slot {slot_id} has an empty accepted answer",
+                                question.id
+                            ),
+                        ));
+                    }
+                }
+            }
+        }
         _ => errors.push(ContentError::new(
             "canonical_answer_mismatch",
             format!(
@@ -1503,6 +1840,10 @@ fn interaction_matches(question: &Question) -> bool {
             | (
                 InteractionType::CommandAssembly,
                 Interaction::CommandAssembly { .. }
+            )
+            | (
+                InteractionType::TypedFillBlank,
+                Interaction::TypedFillBlank { .. }
             )
     )
 }

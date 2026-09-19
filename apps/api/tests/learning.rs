@@ -59,6 +59,18 @@ fn correct_answer(question: &Question) -> Value {
             json!({ "positions": positions })
         }
         CanonicalAnswer::CommandAssembly { values } => json!({ "token_values": values }),
+        CanonicalAnswer::TypedFillBlank { answers } => {
+            let typed: serde_json::Map<String, Value> = answers
+                .iter()
+                .map(|(slot_id, answer)| {
+                    (
+                        slot_id.clone(),
+                        json!(answer.accepted_answers.first().cloned().unwrap_or_default()),
+                    )
+                })
+                .collect();
+            json!({ "typed_answers": typed })
+        }
     }
 }
 
@@ -1005,6 +1017,92 @@ async fn command_assembly_and_placement_score_through_the_api() {
             .iter()
             .any(|code| code == "command_token_wrong")
     );
+}
+
+#[tokio::test]
+async fn typed_fill_blank_scores_through_the_api() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let registry = registry();
+    let device = Uuid::new_v4();
+    let mission = issue_task(&app, device, "aws-soa-c03-demo", "soa-c03-demo", "D2.2").await;
+    let mission_id = mission["id"].as_str().expect("mission id");
+
+    let question = version_question(&registry, "soa-c03-demo", "demo-typed-sg-nacl-001");
+
+    // Messy whitespace and trailing punctuation normalize to a full score.
+    let (status, body) = common::send(
+        app.clone(),
+        "POST",
+        &format!("/v1/missions/{mission_id}/answers"),
+        Some(answer_body(
+            device,
+            mission_id,
+            &question.id,
+            "soa-c03-demo-content-v1",
+            Uuid::new_v4(),
+            json!({
+                "typed_answers": {
+                    "sg_behavior": " Stateful. ",
+                    "nacl_behavior": "STATELESS"
+                }
+            }),
+        )),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "typed failed: {body}");
+    assert_eq!(body["score"], 1.0);
+
+    // One wrong blank makes the whole question incorrect.
+    let (status, body) = common::send(
+        app.clone(),
+        "POST",
+        &format!("/v1/missions/{mission_id}/answers"),
+        Some(answer_body(
+            device,
+            mission_id,
+            &question.id,
+            "soa-c03-demo-content-v1",
+            Uuid::new_v4(),
+            json!({
+                "typed_answers": {
+                    "sg_behavior": "stateful",
+                    "nacl_behavior": "stateful"
+                }
+            }),
+        )),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "typed failed: {body}");
+    assert_eq!(body["score"], 0.5);
+    assert!(
+        body["error_codes"]
+            .as_array()
+            .expect("error codes")
+            .iter()
+            .any(|code| code == "typed_fill_blank_incorrect")
+    );
+
+    // A similar-looking service name is not accepted through fuzzy matching.
+    let sqs = version_question(&registry, "soa-c03-demo", "demo-typed-sqs-001");
+    let (status, body) = common::send(
+        app.clone(),
+        "POST",
+        &format!("/v1/missions/{mission_id}/answers"),
+        Some(answer_body(
+            device,
+            mission_id,
+            &sqs.id,
+            "soa-c03-demo-content-v1",
+            Uuid::new_v4(),
+            json!({ "typed_answers": { "service": "SNS" } }),
+        )),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "typed failed: {body}");
+    assert_eq!(body["score"], 0.0);
 }
 
 #[tokio::test]

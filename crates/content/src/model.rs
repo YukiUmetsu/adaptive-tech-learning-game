@@ -130,6 +130,96 @@ pub struct FillSlot {
     pub label: String,
 }
 
+/// A blank the learner fills by typing free text.
+///
+/// The slot's `id` is referenced as `{{id}}` inside a content template.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct TypedBlankSlot {
+    /// Stable identifier within the question, used as the `{{id}}` placeholder.
+    pub id: String,
+    /// Learner-facing label for the blank, for example `Policy result`.
+    pub label: String,
+    /// Optional hint text shown inside the empty input.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub placeholder: String,
+}
+
+/// Accepted typed answers for one blank.
+///
+/// Matching is deterministic: the normalized typed answer must equal one of the
+/// explicitly authored aliases. There is no semantic or fuzzy matching.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct TypedBlankAnswer {
+    /// Authored answers that are accepted for this blank.
+    pub accepted_answers: Vec<String>,
+}
+
+/// Presentation context for a typed fill-in-the-blank interaction.
+///
+/// Presentation is explicit and tagged, so the renderer never has to guess
+/// whether authored content is prose, source code, or a table. Blank positions
+/// are always marked with `{{slot_id}}` inside a `template`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum TypedFillContent {
+    /// A sentence or short prose statement containing `{{slot_id}}` placeholders.
+    Text {
+        /// Template text containing `{{slot_id}}` placeholders.
+        template: String,
+    },
+    /// A syntax-highlighted source-code sample containing `{{slot_id}}` placeholders.
+    Code {
+        /// Highlighting language, for example `python`.
+        language: String,
+        /// Code template containing `{{slot_id}}` placeholders. Newlines and
+        /// indentation are significant.
+        template: String,
+    },
+    /// A table whose cells may contain text or code templates.
+    Table {
+        /// Columns in presentation order.
+        columns: Vec<TypedFillTableColumn>,
+        /// Rows in presentation order.
+        rows: Vec<TypedFillTableRow>,
+    },
+}
+
+/// A column in a typed fill-in-the-blank table.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct TypedFillTableColumn {
+    /// Stable identifier within the interaction.
+    pub id: String,
+    /// Learner-facing column heading.
+    pub label: String,
+}
+
+/// A row in a typed fill-in-the-blank table.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct TypedFillTableRow {
+    /// Stable identifier within the interaction.
+    pub id: String,
+    /// Column id to the cell presented in that column.
+    pub cells: std::collections::BTreeMap<String, TypedFillTableCell>,
+}
+
+/// Presentation of one typed fill-in-the-blank table cell.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum TypedFillTableCell {
+    /// A text template containing `{{slot_id}}` placeholders.
+    Text {
+        /// Cell text containing `{{slot_id}}` placeholders.
+        template: String,
+    },
+    /// A syntax-highlighted code template containing `{{slot_id}}` placeholders.
+    Code {
+        /// Highlighting language, for example `python`.
+        language: String,
+        /// Code template containing `{{slot_id}}` placeholders.
+        template: String,
+    },
+}
+
 /// The operational stage a branching-scenario decision belongs to.
 ///
 /// The stage is used only to attach a structured error code to a poor decision;
@@ -338,6 +428,13 @@ pub enum Interaction {
         /// Tokens the learner may use. May contain distractors.
         tokens: Vec<Choice>,
     },
+    /// Fill inline blanks inside a sentence by typing the missing text.
+    TypedFillBlank {
+        /// Presentation context (prose, code, or table).
+        content: TypedFillContent,
+        /// Blanks referenced anywhere in the content, in declaration order.
+        slots: Vec<TypedBlankSlot>,
+    },
 }
 
 /// The canonical answer for a question.
@@ -410,6 +507,11 @@ pub enum CanonicalAnswer {
     CommandAssembly {
         /// Slot id to token id.
         values: std::collections::BTreeMap<String, String>,
+    },
+    /// Accepted typed answers for each inline blank.
+    TypedFillBlank {
+        /// Slot id to the authored accepted answers.
+        answers: std::collections::BTreeMap<String, TypedBlankAnswer>,
     },
 }
 

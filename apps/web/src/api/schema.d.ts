@@ -243,6 +243,10 @@ export interface components {
             token_values?: {
                 [key: string]: string;
             } | null;
+            /** @description Slot id to raw typed text for typed fill-in-the-blank. */
+            typed_answers?: {
+                [key: string]: string;
+            } | null;
         };
         /** @description Request to score one attempt. */
         AnswerRequest: {
@@ -376,6 +380,13 @@ export interface components {
             values: {
                 [key: string]: string;
             };
+        } | {
+            /** @description Slot id to the authored accepted answers. */
+            answers: {
+                [key: string]: components["schemas"]["TypedBlankAnswer"];
+            };
+            /** @enum {string} */
+            type: "typed_fill_blank";
         };
         /** @description Response for the certification catalog. */
         CatalogResponse: {
@@ -685,12 +696,19 @@ export interface components {
             tokens: components["schemas"]["Choice"][];
             /** @enum {string} */
             type: "command_assembly";
+        } | {
+            /** @description Presentation context (prose, code, or table). */
+            content: components["schemas"]["TypedFillContent"];
+            /** @description Blanks referenced anywhere in the content, in declaration order. */
+            slots: components["schemas"]["TypedBlankSlot"][];
+            /** @enum {string} */
+            type: "typed_fill_blank";
         };
         /**
          * @description The tactile interaction family a question uses.
          * @enum {string}
          */
-        InteractionType: "classification" | "ordering" | "node_connection" | "reconstruction" | "evidence_selection" | "spot_the_fault" | "fill_slots" | "troubleshooting" | "scenario_choice_chain" | "configuration_builder" | "two_dimensional_placement" | "command_assembly";
+        InteractionType: "classification" | "ordering" | "node_connection" | "reconstruction" | "evidence_selection" | "spot_the_fault" | "fill_slots" | "troubleshooting" | "scenario_choice_chain" | "configuration_builder" | "two_dimensional_placement" | "command_assembly" | "typed_fill_blank";
         /** @description Request to issue a mission for a quiz mode. */
         IssueMissionRequest: {
             /** @description Certification identifier. */
@@ -1145,6 +1163,89 @@ export interface components {
             name: string;
             /** @description Number of authored questions available. */
             question_count: number;
+        };
+        /**
+         * @description Accepted typed answers for one blank.
+         *
+         *     Matching is deterministic: the normalized typed answer must equal one of the
+         *     explicitly authored aliases. There is no semantic or fuzzy matching.
+         */
+        TypedBlankAnswer: {
+            /** @description Authored answers that are accepted for this blank. */
+            accepted_answers: string[];
+        };
+        /**
+         * @description A blank the learner fills by typing free text.
+         *
+         *     The slot's `id` is referenced as `{{id}}` inside a content template.
+         */
+        TypedBlankSlot: {
+            /** @description Stable identifier within the question, used as the `{{id}}` placeholder. */
+            id: string;
+            /** @description Learner-facing label for the blank, for example `Policy result`. */
+            label: string;
+            /** @description Optional hint text shown inside the empty input. */
+            placeholder?: string;
+        };
+        /**
+         * @description Presentation context for a typed fill-in-the-blank interaction.
+         *
+         *     Presentation is explicit and tagged, so the renderer never has to guess
+         *     whether authored content is prose, source code, or a table. Blank positions
+         *     are always marked with `{{slot_id}}` inside a `template`.
+         */
+        TypedFillContent: {
+            /** @description Template text containing `{{slot_id}}` placeholders. */
+            template: string;
+            /** @enum {string} */
+            type: "text";
+        } | {
+            /** @description Highlighting language, for example `python`. */
+            language: string;
+            /**
+             * @description Code template containing `{{slot_id}}` placeholders. Newlines and
+             *     indentation are significant.
+             */
+            template: string;
+            /** @enum {string} */
+            type: "code";
+        } | {
+            /** @description Columns in presentation order. */
+            columns: components["schemas"]["TypedFillTableColumn"][];
+            /** @description Rows in presentation order. */
+            rows: components["schemas"]["TypedFillTableRow"][];
+            /** @enum {string} */
+            type: "table";
+        };
+        /** @description Presentation of one typed fill-in-the-blank table cell. */
+        TypedFillTableCell: {
+            /** @description Cell text containing `{{slot_id}}` placeholders. */
+            template: string;
+            /** @enum {string} */
+            type: "text";
+        } | {
+            /** @description Highlighting language, for example `python`. */
+            language: string;
+            /** @description Code template containing `{{slot_id}}` placeholders. */
+            template: string;
+            /** @enum {string} */
+            type: "code";
+        };
+        /** @description A column in a typed fill-in-the-blank table. */
+        TypedFillTableColumn: {
+            /** @description Stable identifier within the interaction. */
+            id: string;
+            /** @description Learner-facing column heading. */
+            label: string;
+        };
+        /** @description A row in a typed fill-in-the-blank table. */
+        TypedFillTableRow: {
+            /** @description Column id to the cell presented in that column. */
+            cells: {
+                [key: string]: components["schemas"]["TypedFillTableCell"];
+            };
+            /** @description Stable identifier within the interaction. */
+            id: string;
         };
         /**
          * @description A learner's settled Bits balance.

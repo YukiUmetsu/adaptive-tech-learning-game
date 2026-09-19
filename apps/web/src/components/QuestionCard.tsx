@@ -2,11 +2,13 @@ import { useState } from "react";
 
 import type {
   AnswerPayload,
+  FeedbackResponse,
   PlacementPoint,
   QuestionView,
   ReconstructionAnswerPayload,
 } from "../api/types";
 import { shuffledOrder } from "../lib/shuffle";
+import { typedBlankStatuses } from "../lib/typedBlank";
 import BranchingScenarioInteraction from "./BranchingScenarioInteraction";
 import ClassificationInteraction from "./ClassificationInteraction";
 import EvidenceSelectionInteraction from "./EvidenceSelectionInteraction";
@@ -16,16 +18,20 @@ import OrderingInteraction from "./OrderingInteraction";
 import ReconstructionInteraction from "./ReconstructionInteraction";
 import SpotTheFaultInteraction from "./SpotTheFaultInteraction";
 import TwoDimensionalPlacementInteraction from "./TwoDimensionalPlacementInteraction";
+import TypedFillBlankInteraction from "./TypedFillBlankInteraction";
 
 interface QuestionCardProps {
   question: QuestionView;
   disabled?: boolean;
+  /** Server feedback for this question, used for per-blank presentation state. */
+  feedback?: FeedbackResponse | null;
   onSubmit: (answer: AnswerPayload) => void;
 }
 
 export default function QuestionCard({
   question,
   disabled = false,
+  feedback = null,
   onSubmit,
 }: QuestionCardProps) {
   const [classification, setClassification] = useState<Record<string, string>>(
@@ -51,6 +57,11 @@ export default function QuestionCard({
   const [positions, setPositions] = useState<Record<string, PlacementPoint>>(
     {},
   );
+
+  const typedStatuses =
+    question.interaction.type === "typed_fill_blank"
+      ? typedBlankStatuses(question.interaction.slots, slots, feedback)
+      : undefined;
 
   const canSubmit = (() => {
     switch (question.interaction.type) {
@@ -79,6 +90,10 @@ export default function QuestionCard({
         return choices.length > 0;
       case "two_dimensional_placement":
         return question.interaction.items.every((item) => positions[item.id]);
+      case "typed_fill_blank":
+        return question.interaction.slots.every(
+          (slot) => (slots[slot.id] ?? "").trim().length > 0,
+        );
     }
   })();
 
@@ -117,6 +132,9 @@ export default function QuestionCard({
         return;
       case "two_dimensional_placement":
         onSubmit({ positions });
+        return;
+      case "typed_fill_blank":
+        onSubmit({ typed_answers: slots });
     }
   };
 
@@ -222,6 +240,17 @@ export default function QuestionCard({
           value={positions}
           disabled={disabled}
           onChange={setPositions}
+        />
+      ) : null}
+
+      {question.interaction.type === "typed_fill_blank" ? (
+        <TypedFillBlankInteraction
+          content={question.interaction.content}
+          slots={question.interaction.slots}
+          value={slots}
+          disabled={disabled}
+          statuses={typedStatuses}
+          onChange={setSlots}
         />
       ) : null}
 

@@ -50,6 +50,15 @@
               "demo-config-nat-001",
               "demo-placement-dr-001"
             ]
+          },
+          {
+            "id": "D2.2",
+            "name": "Recall core security group, IAM, and messaging facts.",
+            "question_ids": [
+              "demo-typed-deny-001",
+              "demo-typed-sg-nacl-001",
+              "demo-typed-sqs-001"
+            ]
           }
         ]
       }
@@ -115,6 +124,26 @@
       "id": "aws.eventbridge",
       "name": "Amazon EventBridge",
       "description": "Routes events to targets by matching rules on event buses."
+    },
+    {
+      "id": "aws.iam.policy_evaluation",
+      "name": "IAM policy evaluation",
+      "description": "How AWS combines and prioritizes identity and resource policies."
+    },
+    {
+      "id": "aws.vpc.security_groups",
+      "name": "Security groups",
+      "description": "Stateful virtual firewalls attached to resources."
+    },
+    {
+      "id": "aws.vpc.nacl",
+      "name": "Network ACLs",
+      "description": "Stateless subnet-level rules that allow or deny traffic."
+    },
+    {
+      "id": "aws.sqs",
+      "name": "Amazon SQS",
+      "description": "Managed queues for asynchronous message delivery."
     }
   ],
   "questions": [
@@ -1063,6 +1092,183 @@
         {
           "title": "Disaster recovery options in the cloud",
           "url": "https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-typed-deny-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-2",
+      "task_id": "D2.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Complete the statement.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "text",
+          "template": "An explicit {{policy_result}} overrides an Allow during IAM policy evaluation."
+        },
+        "slots": [
+          {
+            "id": "policy_result",
+            "label": "Policy result",
+            "placeholder": "Type your answer"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "policy_result": {
+            "accepted_answers": ["deny", "explicit deny"]
+          }
+        }
+      },
+      "concepts": [{ "concept_id": "aws.iam.policy_evaluation", "weight": 1.0 }],
+      "explanation": "An explicit Deny takes precedence over an Allow when AWS evaluates applicable policies.",
+      "hints": [
+        "Think about which policy result has the highest precedence."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "The typed answer does not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Policy evaluation logic",
+          "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-typed-sg-nacl-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-2",
+      "task_id": "D2.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.5,
+      "prompt": "Complete the comparison.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "text",
+          "template": "Security groups are {{sg_behavior}}, while network ACLs are {{nacl_behavior}}."
+        },
+        "slots": [
+          {
+            "id": "sg_behavior",
+            "label": "Security group behavior",
+            "placeholder": "Type..."
+          },
+          {
+            "id": "nacl_behavior",
+            "label": "Network ACL behavior",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "sg_behavior": {
+            "accepted_answers": ["stateful"]
+          },
+          "nacl_behavior": {
+            "accepted_answers": ["stateless"]
+          }
+        }
+      },
+      "concepts": [
+        { "concept_id": "aws.vpc.security_groups", "weight": 0.5 },
+        { "concept_id": "aws.vpc.nacl", "weight": 0.5 }
+      ],
+      "explanation": "Security groups are stateful: return traffic is automatically allowed. Network ACLs are stateless and must allow both directions explicitly.",
+      "hints": [
+        "One of them remembers connections; the other evaluates each direction on its own."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "The typed answer does not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Control traffic to resources using security groups",
+          "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html"
+        },
+        {
+          "title": "Control subnet traffic with network access control lists",
+          "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html"
+        }
+      ]
+    },
+    {
+      "id": "demo-typed-sqs-001",
+      "content_version": "soa-c03-demo-content-v1",
+      "certification_version": "soa-c03-demo",
+      "domain_id": "domain-2",
+      "task_id": "D2.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.4,
+      "prompt": "Complete the statement about decoupling.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "text",
+          "template": "Amazon {{service}} is commonly used as an asynchronous message queue."
+        },
+        "slots": [
+          {
+            "id": "service",
+            "label": "Service",
+            "placeholder": "Type..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "service": {
+            "accepted_answers": ["SQS", "Amazon SQS", "Amazon Simple Queue Service"]
+          }
+        }
+      },
+      "concepts": [{ "concept_id": "aws.sqs", "weight": 1.0 }],
+      "explanation": "Amazon Simple Queue Service (SQS) decouples producers from consumers with durable, asynchronous queues.",
+      "hints": [
+        "The service name is an acronym for a simple queue."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "The typed answer does not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "What is Amazon Simple Queue Service?",
+          "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html"
         }
       ]
     }
