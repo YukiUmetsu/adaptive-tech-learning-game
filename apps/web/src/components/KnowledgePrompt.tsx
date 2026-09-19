@@ -9,25 +9,34 @@ import RevealContent from "./RevealContent";
 interface KnowledgePromptProps {
   prompt: KnowledgePromptData;
   revealed: boolean;
+  /** Annotation ids already opened for this prompt's code file. */
+  revealedAnnotationIds?: readonly string[];
   /** Reveal is disabled while the node is locked or the map is busy. */
   disabled?: boolean;
   onReveal: (promptId: string) => void;
+  /** Reveals one annotation inside a code file. Never scored. */
+  onRevealAnnotation?: (promptId: string, annotationId: string) => void;
 }
 
 /**
  * One progressive-reveal prompt on a knowledge card.
  *
  * Before reveal the learner sees the prompt and its blank; activating the blank
- * reveals the authored information. No grading happens here.
+ * reveals the authored information. `code_file` is the exception: the file is
+ * rendered immediately and the learner reveals individual annotations. No
+ * grading happens here.
  */
 export default function KnowledgePrompt({
   prompt,
   revealed,
+  revealedAnnotationIds,
   disabled = false,
   onReveal,
+  onRevealAnnotation,
 }: KnowledgePromptProps) {
   const meta = PROMPT_KIND_META[prompt.kind];
   const accessibleName = promptAccessibleName(prompt);
+  const isCodeFile = prompt.reveal.type === "code_file";
   // A comparison prompt mirrors its columns in the blank, so show the blank as
   // aligned column cells instead of one running line.
   const columnSegments =
@@ -55,7 +64,24 @@ export default function KnowledgePrompt({
         </span>
       </div>
 
-      {revealed ? (
+      {isCodeFile ? (
+        <>
+          {prompt.placeholder.trim().length > 0 ? (
+            <p className="knowledge-prompt-context">{prompt.placeholder}</p>
+          ) : null}
+          <RevealContent
+            reveal={prompt.reveal}
+            codeInteraction={{
+              revealedAnnotationIds: revealedAnnotationIds ?? [],
+              onRevealAnnotation: (annotationId) =>
+                onRevealAnnotation?.(prompt.id, annotationId),
+              disabled,
+              complete: revealed,
+              onComplete: () => onReveal(prompt.id),
+            }}
+          />
+        </>
+      ) : revealed ? (
         <RevealContent reveal={prompt.reveal} />
       ) : (
         <button

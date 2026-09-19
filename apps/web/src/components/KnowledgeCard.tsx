@@ -1,5 +1,10 @@
+import { useMemo } from "react";
+
 import type { KnowledgeNode } from "../api/types";
-import type { NodeState } from "../state/learningProgress";
+import {
+  isPromptComplete,
+  type NodeState,
+} from "../state/learningProgress";
 import KnowledgePrompt from "./KnowledgePrompt";
 
 interface KnowledgeCardProps {
@@ -7,9 +12,12 @@ interface KnowledgeCardProps {
   moduleTitle: string;
   state: NodeState;
   revealedPromptIds: readonly string[];
+  /** Prompt id to revealed code-annotation ids for this node. */
+  revealedAnnotationIds: Readonly<Record<string, readonly string[]>>;
   nextNode: KnowledgeNode | null;
   reducedMotion: boolean;
   onReveal: (promptId: string) => void;
+  onRevealAnnotation: (promptId: string, annotationId: string) => void;
   onClose: () => void;
   onDiscoverNext: (nodeId: string) => void;
 }
@@ -26,16 +34,27 @@ export default function KnowledgeCard({
   moduleTitle,
   state,
   revealedPromptIds,
+  revealedAnnotationIds,
   nextNode,
   reducedMotion,
   onReveal,
+  onRevealAnnotation,
   onClose,
   onDiscoverNext,
 }: KnowledgeCardProps) {
-  const revealed = new Set(revealedPromptIds);
+  const annotationSets = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const [promptId, ids] of Object.entries(revealedAnnotationIds)) {
+      map.set(promptId, new Set(ids));
+    }
+    return map;
+  }, [revealedAnnotationIds]);
+  const revealed = useMemo(() => new Set(revealedPromptIds), [revealedPromptIds]);
+  const promptComplete = (prompt: KnowledgeNode["prompts"][number]) =>
+    isPromptComplete(prompt, revealed, annotationSets.get(prompt.id));
   const requiredPrompts = node.prompts.filter((prompt) => prompt.required !== false);
   const counted = requiredPrompts.length > 0 ? requiredPrompts : node.prompts;
-  const revealedCount = counted.filter((prompt) => revealed.has(prompt.id)).length;
+  const revealedCount = counted.filter(promptComplete).length;
   const total = counted.length;
   const unlocked = state === "unlocked";
 
@@ -80,8 +99,10 @@ export default function KnowledgeCard({
           <KnowledgePrompt
             key={prompt.id}
             prompt={prompt}
-            revealed={revealed.has(prompt.id)}
+            revealed={promptComplete(prompt)}
+            revealedAnnotationIds={revealedAnnotationIds[prompt.id] ?? []}
             onReveal={onReveal}
+            onRevealAnnotation={onRevealAnnotation}
           />
         ))}
       </ul>

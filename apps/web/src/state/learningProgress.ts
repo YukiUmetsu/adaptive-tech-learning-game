@@ -1,5 +1,6 @@
 import type {
   KnowledgeNode,
+  KnowledgePrompt,
   LearningDomainResponse,
   LearningModule,
 } from "../api/types";
@@ -9,14 +10,19 @@ import type {
  *
  * This is deliberately separate from scored learning evidence. A card reveal is
  * not mastery and never becomes a `learning_event`; it only tracks which
- * prompts a learner has explored so the map can show what is unlocked.
+ * prompts and code annotations a learner has explored so the map can show what
+ * is unlocked.
  *
- * Only revealed prompt ids are stored. Node and module state are derived from
- * them, so progress cannot drift out of sync with the curriculum.
+ * Only revealed prompt ids and revealed code-annotation ids are stored. Node
+ * and module state are derived from them, so progress cannot drift out of sync
+ * with the curriculum.
  */
 
 /** Versioned storage key so a future schema can migrate cleanly. */
-export const LEARNING_PROGRESS_KEY = "adaptive-learn.learning-progress.v1";
+export const LEARNING_PROGRESS_KEY = "adaptive-learn.learning-progress.v2";
+
+/** Previous storage key, read once and migrated into v2. */
+export const LEGACY_LEARNING_PROGRESS_KEY = "adaptive-learn.learning-progress.v1";
 
 /** A node's derived state on the map. */
 export type NodeState = "locked" | "ready" | "in_progress" | "unlocked";
@@ -31,12 +37,19 @@ export interface DomainLearningProgress {
   contentVersion: string;
   /** Knowledge node id to the prompt ids the learner has revealed. */
   revealedPromptIds: Record<string, string[]>;
+  /**
+   * Knowledge node id -> prompt id -> revealed code annotation ids.
+   *
+   * Kept beside prompt progress because a code-file prompt is completed by its
+   * required annotations rather than by one whole-prompt reveal.
+   */
+  revealedAnnotationIds: Record<string, Record<string, string[]>>;
   /** Last update time, ISO-8601. */
   updatedAt: string;
 }
 
 interface LearningProgressStore {
-  version: 1;
+  version: 2;
   domains: Record<string, DomainLearningProgress>;
 }
 
@@ -53,6 +66,7 @@ export interface ModuleProgress {
 export interface DerivedLearningState {
   nodeState: Record<string, NodeState>;
   revealedPromptIds: Record<string, string[]>;
+  revealedAnnotationIds: Record<string, Record<string, string[]>>;
   moduleProgress: Record<string, ModuleProgress>;
   unlockedNodeIds: Set<string>;
   unlockedCount: number;
@@ -63,29 +77,140 @@ export interface DerivedLearningState {
 }
 
 function emptyStore(): LearningProgressStore {
-  return { version: 1, domains: {} };
+  return { version: 2, domains: {} };
 }
 
 function domainKey(certificationVersion: string, domainId: string): string {
   return `${certificationVersion}::${domainId}`;
 }
 
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function sanitizePromptMap(value: unknown): Record<string, string[]> {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+  const result: Record<string, string[]> = {};
+  for (const [key, ids] of Object.entries(value as Record<string, unknown>)) {
+    if (isStringArray(ids)) {
+      result[key] = ids;
+    }
+  }
+  return result;
+}
+
+function sanitizeAnnotationMap(
+  value: unknown,
+): Record<string, Record<string, string[]>> {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+  const result: Record<string, Record<string, string[]>> = {};
+  for (const [nodeId, prompts] of Object.entries(
+    value as Record<string, unknown>,
+  )) {
+    if (!prompts || typeof prompts !== "object") {
+      continue;
+    }
+    const promptMap: Record<string, string[]> = {};
+    for (const [promptId, ids] of Object.entries(
+      prompts as Record<string, unknown>,
+    )) {
+      if (isStringArray(ids)) {
+        promptMap[promptId] = ids;
+      }
+    }
+    result[nodeId] = promptMap;
+  }
+  return result;
+}
+
+function normalizeDomain(value: unknown): DomainLearningProgress | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+  const domain = value as Partial<DomainLearningProgress>;
+  if (typeof domain.domainId !== "string") {
+    return null;
+  }
+  return {
+    certificationVersion:
+      typeof domain.certificationVersion === "string"
+        ? domain.certificationVersion
+        : "",
+    domainId: domain.domainId,
+    contentVersion:
+      typeof domain.contentVersion === "string" ? domain.contentVersion : "",
+    revealedPromptIds: sanitizePromptMap(domain.revealedPromptIds),
+    revealedAnnotationIds: sanitizeAnnotationMap(domain.revealedAnnotationIds),
+    updatedAt:
+      typeof domain.updatedAt === "string"
+        ? domain.updatedAt
+        : new Date(0).toISOString(),
+  };
+}
+
+function normalizeStore(domains: unknown): LearningProgressStore {
+  const store = emptyStore();
+  if (!domains || typeof domains !== "object") {
+    return store;
+  }
+  for (const [key, value] of Object.entries(
+    domains as Record<string, unknown>,
+  )) {
+    const domain = normalizeDomain(value);
+    if (domain) {
+      store.domains[key] = domain;
+    }
+  }
+  return store;
+}
+
+/**
+ * Reads the v2 store, migrating a legacy v1 store on first read.
+ *
+ * V1 kept only `revealedPromptIds`; converting it preserves every prompt reveal
+ * (including unknown/stale ids, which stay ignored downstream) and starts the
+ * annotation map empty. The legacy key is removed after a successful write so
+ * the migration runs once.
+ */
 function readStore(): LearningProgressStore {
   try {
     const raw = window.localStorage.getItem(LEARNING_PROGRESS_KEY);
-    if (!raw) {
+    if (raw) {
+      const parsed = JSON.parse(raw) as { version?: unknown; domains?: unknown };
+      if (
+        parsed &&
+        parsed.version === 2 &&
+        parsed.domains &&
+        typeof parsed.domains === "object"
+      ) {
+        return normalizeStore(parsed.domains);
+      }
       return emptyStore();
     }
-    const parsed = JSON.parse(raw) as LearningProgressStore;
-    if (
-      !parsed ||
-      parsed.version !== 1 ||
-      typeof parsed.domains !== "object" ||
-      parsed.domains === null
-    ) {
+
+    const legacyRaw = window.localStorage.getItem(LEGACY_LEARNING_PROGRESS_KEY);
+    if (!legacyRaw) {
       return emptyStore();
     }
-    return parsed;
+    const legacy = JSON.parse(legacyRaw) as {
+      version?: unknown;
+      domains?: unknown;
+    };
+    if (legacy?.version !== 1 || !legacy.domains) {
+      return emptyStore();
+    }
+    const migrated = normalizeStore(legacy.domains);
+    writeStore(migrated);
+    try {
+      window.localStorage.removeItem(LEGACY_LEARNING_PROGRESS_KEY);
+    } catch {
+      // Leaving the legacy key behind is safe: it is only read when v2 is absent.
+    }
+    return migrated;
   } catch {
     return emptyStore();
   }
@@ -115,6 +240,7 @@ export function loadDomainProgress(
 }
 
 const EMPTY_REVEALS: string[] = [];
+const EMPTY_REVEALS_SET: ReadonlySet<string> = new Set();
 
 /**
  * Reveals one prompt and persists it.
@@ -145,6 +271,50 @@ export function revealPrompt(
         ...(existing?.revealedPromptIds ?? {}),
         [nodeId]: [...revealed],
       },
+      revealedAnnotationIds: existing?.revealedAnnotationIds ?? {},
+      updatedAt: new Date().toISOString(),
+    };
+    writeStore(store);
+  }
+
+  return store.domains[key];
+}
+
+/**
+ * Reveals one annotation inside a code file and persists it.
+ *
+ * Annotation reveals are discovery actions, not mastery evidence. Idempotent so
+ * an unlock transition can be detected reliably.
+ */
+export function revealAnnotation(
+  certificationVersion: string,
+  domainId: string,
+  contentVersion: string,
+  nodeId: string,
+  promptId: string,
+  annotationId: string,
+): DomainLearningProgress {
+  const store = readStore();
+  const key = domainKey(certificationVersion, domainId);
+  const existing = store.domains[key];
+  const nodeAnnotations = existing?.revealedAnnotationIds[nodeId] ?? {};
+  const revealed = new Set(nodeAnnotations[promptId] ?? EMPTY_REVEALS);
+  const alreadyRevealed = revealed.has(annotationId);
+  revealed.add(annotationId);
+
+  if (!alreadyRevealed || !existing || existing.contentVersion !== contentVersion) {
+    store.domains[key] = {
+      certificationVersion,
+      domainId,
+      contentVersion,
+      revealedPromptIds: existing?.revealedPromptIds ?? {},
+      revealedAnnotationIds: {
+        ...(existing?.revealedAnnotationIds ?? {}),
+        [nodeId]: {
+          ...nodeAnnotations,
+          [promptId]: [...revealed],
+        },
+      },
       updatedAt: new Date().toISOString(),
     };
     writeStore(store);
@@ -164,6 +334,7 @@ export function emptyDomainProgress(
     domainId,
     contentVersion,
     revealedPromptIds: {},
+    revealedAnnotationIds: {},
     updatedAt: new Date(0).toISOString(),
   };
 }
@@ -185,36 +356,87 @@ function requiredPromptIds(node: KnowledgeNode): string[] {
   );
 }
 
-/** Whether every required prompt on a node has been revealed. */
+/**
+ * Whether one prompt counts as completed.
+ *
+ * A code file with required annotations completes when every required
+ * annotation is revealed; optional annotations never block it. A code file
+ * without required annotations (including an empty list) completes on an
+ * explicit mark-as-reviewed reveal. Every other reveal completes on its own
+ * prompt reveal.
+ */
+export function isPromptComplete(
+  prompt: KnowledgePrompt,
+  revealedPromptIds: ReadonlySet<string>,
+  revealedAnnotationIds: ReadonlySet<string> = EMPTY_REVEALS_SET,
+): boolean {
+  if (
+    prompt.reveal.type === "code_file" &&
+    (prompt.reveal.annotations ?? []).some((annotation) => annotation.required === true)
+  ) {
+    return (prompt.reveal.annotations ?? [])
+      .filter((annotation) => annotation.required === true)
+      .every((annotation) => revealedAnnotationIds.has(annotation.id));
+  }
+  return revealedPromptIds.has(prompt.id);
+}
+
+/** Whether every required prompt on a node has been completed. */
 export function isNodeUnlocked(
   node: KnowledgeNode,
   revealed: ReadonlySet<string>,
+  revealedAnnotations: ReadonlyMap<string, ReadonlySet<string>> = new Map(),
 ): boolean {
   const required = requiredPromptIds(node);
-  return required.length > 0 && required.every((id) => revealed.has(id));
+  return (
+    required.length > 0 &&
+    required.every((id) => {
+      const prompt = node.prompts.find((candidate) => candidate.id === id);
+      if (!prompt) {
+        return false;
+      }
+      return isPromptComplete(
+        prompt,
+        revealed,
+        revealedAnnotations.get(id) ?? EMPTY_REVEALS_SET,
+      );
+    })
+  );
 }
 
 /**
- * Derives per-node, per-module, and per-domain state from revealed prompt ids.
+ * Derives per-node, per-module, and per-domain state from revealed prompt and
+ * annotation ids.
  *
- * Unknown stored node or prompt ids are ignored, so progress recorded against a
- * previous content revision never breaks a newer map.
+ * Unknown stored node, prompt, or annotation ids are ignored, so progress
+ * recorded against a previous content revision never breaks a newer map.
  */
 export function deriveLearningState(
   domain: Pick<LearningDomainResponse, "modules">,
   progress: DomainLearningProgress | null,
 ): DerivedLearningState {
   const revealedPromptIds = progress?.revealedPromptIds ?? {};
+  const revealedAnnotationIds = progress?.revealedAnnotationIds ?? {};
 
   const nodeState: Record<string, NodeState> = {};
   const unlockedNodeIds = new Set<string>();
   const revealedByNode = new Map<string, Set<string>>();
+  const annotationsByNode = new Map<string, Map<string, Set<string>>>();
 
   for (const module of domain.modules) {
     for (const node of module.nodes) {
       const revealed = new Set(revealedPromptIds[node.id] ?? EMPTY_REVEALS);
       revealedByNode.set(node.id, revealed);
-      if (isNodeUnlocked(node, revealed)) {
+
+      const annotationSets = new Map<string, Set<string>>();
+      for (const [promptId, ids] of Object.entries(
+        revealedAnnotationIds[node.id] ?? {},
+      )) {
+        annotationSets.set(promptId, new Set(ids));
+      }
+      annotationsByNode.set(node.id, annotationSets);
+
+      if (isNodeUnlocked(node, revealed, annotationSets)) {
         unlockedNodeIds.add(node.id);
       }
     }
@@ -259,6 +481,10 @@ export function deriveLearningState(
         unlockedNodeIds.has(id),
       );
       const revealed = revealedByNode.get(node.id) ?? new Set<string>();
+      const annotationSets = annotationsByNode.get(node.id) ?? new Map();
+      const hasAnnotationProgress = [...annotationSets.values()].some(
+        (set) => set.size > 0,
+      );
       const unlocked = unlockedNodeIds.has(node.id);
 
       let state: NodeState;
@@ -266,7 +492,7 @@ export function deriveLearningState(
         state = "unlocked";
       } else if (!moduleReady || !prerequisitesUnlocked) {
         state = "locked";
-      } else if (revealed.size > 0) {
+      } else if (revealed.size > 0 || hasAnnotationProgress) {
         state = "in_progress";
       } else {
         state = "ready";
@@ -282,6 +508,7 @@ export function deriveLearningState(
   return {
     nodeState,
     revealedPromptIds,
+    revealedAnnotationIds,
     moduleProgress,
     unlockedNodeIds,
     unlockedCount: unlockedNodeIds.size,

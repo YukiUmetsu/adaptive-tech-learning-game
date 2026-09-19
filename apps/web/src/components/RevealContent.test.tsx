@@ -55,6 +55,48 @@ describe("RevealContent", () => {
     expect(screen.getByText("Metrics / logs")).toBeInTheDocument();
   });
 
+  it("renders a table reveal with accessible column headers", () => {
+    render(
+      <RevealContent
+        reveal={{
+          type: "table",
+          columns: [
+            { id: "constraint", label: "Constraint" },
+            { id: "allows", label: "Allows" },
+            { id: "rejects", label: "Rejects" },
+            { id: "meaning", label: "Meaning" },
+          ],
+          rows: [
+            {
+              cells: {
+                constraint: "~> 1.2.3",
+                allows: "1.2.9",
+                rejects: "1.3.0",
+                meaning: "Patch updates within 1.2",
+              },
+            },
+            {
+              cells: {
+                constraint: "= 1.2.3",
+                allows: "1.2.3",
+                rejects: "1.2.4",
+                meaning: "Exact version",
+              },
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("columnheader").map((header) => header.textContent),
+    ).toEqual(["Constraint", "Allows", "Rejects", "Meaning"]);
+    expect(screen.getAllByRole("row")).toHaveLength(3);
+    expect(screen.getByText("~> 1.2.3")).toBeInTheDocument();
+    expect(screen.getByText("Exact version")).toBeInTheDocument();
+  });
+
   it("scales the comparison grid by column count", () => {
     const columns = (count: number) =>
       Array.from({ length: count }, (_, index) => ({

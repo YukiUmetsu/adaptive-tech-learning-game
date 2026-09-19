@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import KnowledgePrompt from "./KnowledgePrompt";
@@ -87,5 +87,43 @@ describe("KnowledgePrompt", () => {
 
     expect(container.querySelector(".knowledge-prompt-blank--columns")).toBeNull();
     expect(container.querySelectorAll(".knowledge-prompt-blank-cell")).toHaveLength(0);
+  });
+
+  it("renders a code_file immediately and keeps explanations hidden", () => {
+    const { container } = render(
+      <KnowledgePrompt
+        prompt={{
+          id: "versions",
+          kind: "look_for",
+          label: "🔍 LOOK FOR",
+          placeholder: "Inspect this file.",
+          required: true,
+          reveal: {
+            type: "code_file",
+            filename: "versions.tf",
+            language: "hcl",
+            code: 'terraform {\n  required_version = "~> 1.12.0"\n}',
+            line_numbers: true,
+            annotations: [
+              {
+                id: "terraform-version",
+                anchor: { line: 2, text: "required_version" },
+                title: "Terraform CLI version",
+                explanation: "constrains the CLI.",
+                required: true,
+              },
+            ],
+          },
+        }}
+        revealed={false}
+        revealedAnnotationIds={[]}
+        onReveal={() => {}}
+        onRevealAnnotation={() => {}}
+      />,
+    );
+
+    expect(container.querySelector(".knowledge-prompt-blank")).toBeNull();
+    expect(screen.getByText("versions.tf")).toBeInTheDocument();
+    expect(screen.queryByText("Terraform CLI version")).toBeNull();
   });
 });

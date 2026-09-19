@@ -10,7 +10,7 @@
 //! The JSON under `content/**/learning/` is the curriculum; this module only
 //! validates and transports it.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -223,6 +223,32 @@ pub enum LearningReveal {
         /// Comparison columns.
         columns: Vec<RevealColumn>,
     },
+    /// A real table: typed column ids with one row per record.
+    Table {
+        /// Table columns in display order.
+        columns: Vec<RevealTableColumn>,
+        /// Table rows. Every row must fill every column.
+        rows: Vec<RevealTableRow>,
+    },
+    /// A read-only, syntax-highlighted file with clickable annotations.
+    ///
+    /// The `code` string is the verbatim file. Annotation anchors point into it
+    /// by line and text so authors never hand-count character offsets, and the
+    /// raw source stays valid and copyable.
+    CodeFile {
+        /// Display filename shown in the header bar.
+        filename: String,
+        /// Highlighting language, for example `hcl`.
+        language: String,
+        /// Verbatim file contents. Never marked up or executed.
+        code: String,
+        /// Whether to render a line-number gutter.
+        #[serde(default = "default_true")]
+        line_numbers: bool,
+        /// Clickable regions that reveal explanations.
+        #[serde(default)]
+        annotations: Vec<CodeAnnotation>,
+    },
 }
 
 /// One titled column of a comparison reveal.
@@ -234,8 +260,56 @@ pub struct RevealColumn {
     pub items: Vec<String>,
 }
 
+/// One column of a table reveal.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct RevealTableColumn {
+    /// Stable identifier used to key every row's cells.
+    pub id: String,
+    /// Learner-facing column heading.
+    pub label: String,
+}
+
+/// One row of a table reveal.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct RevealTableRow {
+    /// Column id to cell text. Every authored column must be present.
+    pub cells: BTreeMap<String, String>,
+}
+
+/// A clickable region inside a `code_file` reveal.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct CodeAnnotation {
+    /// Stable annotation identifier, also the persisted progress key.
+    pub id: String,
+    /// Where the clickable region starts.
+    pub anchor: CodeAnnotationAnchor,
+    /// Short learner-facing title shown with the explanation.
+    pub title: String,
+    /// Explanation revealed when the region is clicked.
+    pub explanation: String,
+    /// Whether revealing this annotation is needed to complete the prompt.
+    #[serde(default)]
+    pub required: bool,
+}
+
+/// An author-friendly anchor that avoids absolute character offsets.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct CodeAnnotationAnchor {
+    /// 1-based line number the target text occurs on.
+    pub line: usize,
+    /// Exact text that must occur on that line.
+    pub text: String,
+    /// 1-based occurrence of `text` on the line. Defaults to the first.
+    #[serde(default = "default_one")]
+    pub occurrence: usize,
+}
+
 fn default_true() -> bool {
     true
+}
+
+fn default_one() -> usize {
+    1
 }
 
 impl LearningDomain {
@@ -560,7 +634,221 @@ fn validate_reveal(node: &KnowledgeNode, prompt: &KnowledgePrompt, errors: &mut 
                 }
             }
         }
+        LearningReveal::Table { columns, rows } => {
+            validate_table(node, prompt, columns, rows, errors);
+        }
+        LearningReveal::CodeFile {
+            filename,
+            language,
+            code,
+            line_numbers: _,
+            annotations,
+        } => {
+            validate_code_file(node, prompt, filename, language, code, annotations, errors);
+        }
     }
+}
+
+/// Validates a `table` reveal: known, unique columns; at least one row; and a
+/// value in every row for every column.
+fn validate_table(
+    node: &KnowledgeNode,
+    prompt: &KnowledgePrompt,
+    columns: &[RevealTableColumn],
+    rows: &[RevealTableRow],
+    errors: &mut Vec<ContentError>,
+) {
+    let invalid = |message: String| {
+        ContentError::new(
+            "learning_reveal_incomplete",
+            format!("knowledge node {} prompt {} {message}", node.id, prompt.id),
+        )
+    };
+
+    if columns.is_empty() {
+        errors.push(invalid("table reveal needs at least one column".to_owned()));
+    }
+    if rows.is_empty() {
+        errors.push(invalid("table reveal needs at least one row".to_owned()));
+    }
+
+    let mut column_ids = HashSet::new();
+    for column in columns {
+        if column.id.trim().is_empty() || column.label.trim().is_empty() {
+            errors.push(invalid(
+                "table column id and label must not be empty".to_owned(),
+            ));
+        }
+        if !column_ids.insert(column.id.as_str()) {
+            errors.push(invalid(format!("duplicate table column id {}", column.id)));
+        }
+    }
+
+    for row in rows {
+        for (column_id, cell) in &row.cells {
+            if !column_ids.contains(column_id.as_str()) {
+                errors.push(invalid(format!(
+                    "table row references unknown column {column_id}"
+                )));
+            }
+            if cell.trim().is_empty() {
+                errors.push(invalid(format!(
+                    "table cell for column {column_id} must not be empty"
+                )));
+            }
+        }
+        for column in columns {
+            if !row.cells.contains_key(&column.id) {
+                errors.push(invalid(format!(
+                    "table row is missing a cell for column {}",
+                    column.id
+                )));
+            }
+        }
+    }
+}
+
+/// Validates a `code_file` reveal and every annotation anchor.
+///
+/// Anchors are resolved against the authored source so a target that does not
+/// exist, a line out of range, or an out-of-range occurrence fails loudly at
+/// load time rather than silently losing its explanation in the UI.
+fn validate_code_file(
+    node: &KnowledgeNode,
+    prompt: &KnowledgePrompt,
+    filename: &str,
+    language: &str,
+    code: &str,
+    annotations: &[CodeAnnotation],
+    errors: &mut Vec<ContentError>,
+) {
+    let invalid = |message: String| {
+        ContentError::new(
+            "learning_code_file_invalid",
+            format!("knowledge node {} prompt {} {message}", node.id, prompt.id),
+        )
+    };
+    let annotation_error = |error_code: &'static str, message: String| {
+        ContentError::new(
+            error_code,
+            format!("knowledge node {} prompt {} {message}", node.id, prompt.id),
+        )
+    };
+
+    if filename.trim().is_empty() {
+        errors.push(invalid("code_file filename must not be empty".to_owned()));
+    }
+    if language.trim().is_empty() {
+        errors.push(invalid("code_file language must not be empty".to_owned()));
+    }
+    if code.is_empty() {
+        errors.push(invalid("code_file code must not be empty".to_owned()));
+    }
+
+    let normalized = code.replace("\r\n", "\n").replace('\r', "\n");
+    let lines: Vec<&str> = normalized.split('\n').collect();
+
+    let mut seen_ids = HashSet::new();
+    let mut seen_anchors = HashSet::new();
+    for annotation in annotations {
+        if annotation.id.trim().is_empty() {
+            errors.push(annotation_error(
+                "learning_code_annotation_field_missing",
+                "code annotation id must not be empty".to_owned(),
+            ));
+        } else if !seen_ids.insert(annotation.id.as_str()) {
+            errors.push(annotation_error(
+                "learning_code_annotation_duplicate_id",
+                format!("duplicate code annotation id {}", annotation.id),
+            ));
+        }
+        if annotation.title.trim().is_empty() {
+            errors.push(annotation_error(
+                "learning_code_annotation_field_missing",
+                format!("code annotation {} title must not be empty", annotation.id),
+            ));
+        }
+        if annotation.explanation.trim().is_empty() {
+            errors.push(annotation_error(
+                "learning_code_annotation_field_missing",
+                format!(
+                    "code annotation {} explanation must not be empty",
+                    annotation.id
+                ),
+            ));
+        }
+
+        let anchor = &annotation.anchor;
+        if anchor.text.is_empty() {
+            errors.push(annotation_error(
+                "learning_code_annotation_target_missing",
+                format!(
+                    "code annotation {} target text must not be empty",
+                    annotation.id
+                ),
+            ));
+            continue;
+        }
+        if anchor.line == 0 || anchor.line > lines.len() {
+            errors.push(annotation_error(
+                "learning_code_annotation_line_invalid",
+                format!(
+                    "code annotation {} line {} is outside the {} authored lines",
+                    annotation.id,
+                    anchor.line,
+                    lines.len()
+                ),
+            ));
+            continue;
+        }
+
+        let line = lines[anchor.line - 1];
+        let occurrences = count_occurrences(line, &anchor.text);
+        if occurrences == 0 {
+            errors.push(annotation_error(
+                "learning_code_annotation_target_missing",
+                format!(
+                    "code annotation {} target {:?} does not occur on line {}",
+                    annotation.id, anchor.text, anchor.line
+                ),
+            ));
+        } else if anchor.occurrence == 0 || anchor.occurrence > occurrences {
+            errors.push(annotation_error(
+                "learning_code_annotation_occurrence_invalid",
+                format!(
+                    "code annotation {} occurrence {} is invalid for {:?} on line {} ({} found)",
+                    annotation.id, anchor.occurrence, anchor.text, anchor.line, occurrences
+                ),
+            ));
+        } else if !seen_anchors.insert((anchor.line, anchor.text.as_str(), anchor.occurrence)) {
+            errors.push(annotation_error(
+                "learning_code_annotation_duplicate_anchor",
+                format!(
+                    "code annotation {} duplicates the anchor line {} occurrence {}",
+                    annotation.id, anchor.line, anchor.occurrence
+                ),
+            ));
+        }
+    }
+}
+
+/// Counts non-overlapping occurrences of `needle` in `haystack`.
+fn count_occurrences(haystack: &str, needle: &str) -> usize {
+    if needle.is_empty() {
+        return 0;
+    }
+    let mut count = 0;
+    let mut search_from = 0;
+    while search_from <= haystack.len() {
+        match haystack[search_from..].find(needle) {
+            Some(index) => {
+                count += 1;
+                search_from += index + needle.len();
+            }
+            None => break,
+        }
+    }
+    count
 }
 
 fn validate_source_refs(source_refs: &[SourceRef], errors: &mut Vec<ContentError>) {

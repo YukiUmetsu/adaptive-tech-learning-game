@@ -205,7 +205,15 @@ fn concept_ids_reference_quiz_concepts() {
 #[test]
 fn every_authored_reveal_type_is_supported() {
     let registry = registry();
-    let supported = ["text", "sequence", "comparison", "keywords", "bullets"];
+    let supported = [
+        "text",
+        "sequence",
+        "comparison",
+        "keywords",
+        "bullets",
+        "table",
+        "code_file",
+    ];
 
     let mut seen = std::collections::BTreeSet::new();
     for domain in registry.learning_domains() {
@@ -217,6 +225,8 @@ fn every_authored_reveal_type_is_supported() {
                     LearningReveal::Comparison { .. } => "comparison",
                     LearningReveal::Keywords { .. } => "keywords",
                     LearningReveal::Bullets { .. } => "bullets",
+                    LearningReveal::Table { .. } => "table",
+                    LearningReveal::CodeFile { .. } => "code_file",
                 };
                 seen.insert(kind);
             }
@@ -226,7 +236,11 @@ fn every_authored_reveal_type_is_supported() {
     for kind in &seen {
         assert!(supported.contains(kind), "no renderer for reveal {kind}");
     }
-    assert_eq!(seen.len(), supported.len(), "all reveal types are authored");
+    // The original reveal vocabulary must stay authored. New primitives can be
+    // introduced without every existing domain immediately using them.
+    for kind in ["text", "sequence", "comparison", "keywords", "bullets"] {
+        assert!(seen.contains(kind), "curriculum should still author {kind}");
+    }
 }
 
 #[test]
@@ -389,6 +403,327 @@ fn rejects_unknown_concept_against_quiz_bundle() {
             .any(|error| error.code == "learning_unknown_concept"),
         "got {errors:?}"
     );
+}
+
+/// The Terraform example from the learning-content design, line for line.
+const TERRAFORM_CODE: &str = "terraform {\n  required_version = \"~> 1.12.0\"\n\n  required_providers {\n    aws = {\n      source  = \"hashicorp/aws\"\n      version = \"~> 5.80\"\n    }\n  }\n}";
+
+fn set_first_prompt_reveal(value: &mut Value, reveal: Value) {
+    value["modules"][0]["nodes"][0]["prompts"][0]["reveal"] = reveal;
+}
+
+fn valid_table_reveal() -> Value {
+    serde_json::json!({
+        "type": "table",
+        "columns": [
+            { "id": "constraint", "label": "Constraint" },
+            { "id": "allows", "label": "Allows" },
+            { "id": "rejects", "label": "Rejects" },
+            { "id": "meaning", "label": "Meaning" }
+        ],
+        "rows": [
+            {
+                "cells": {
+                    "constraint": "~> 1.2.3",
+                    "allows": "1.2.9",
+                    "rejects": "1.3.0",
+                    "meaning": "Patch updates within 1.2"
+                }
+            },
+            {
+                "cells": {
+                    "constraint": "= 1.2.3",
+                    "allows": "1.2.3",
+                    "rejects": "1.2.4",
+                    "meaning": "Exact version"
+                }
+            }
+        ]
+    })
+}
+
+#[test]
+fn accepts_valid_table_reveal() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    set_first_prompt_reveal(&mut value, valid_table_reveal());
+
+    assert!(
+        validate_value(&value).is_ok(),
+        "a well-formed table reveal must validate"
+    );
+}
+
+#[test]
+fn rejects_table_without_rows() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    let mut reveal = valid_table_reveal();
+    reveal["rows"] = Value::from(Vec::<Value>::new());
+    set_first_prompt_reveal(&mut value, reveal);
+
+    expect_error(&value, "learning_reveal_incomplete");
+}
+
+#[test]
+fn rejects_table_row_with_unknown_column() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    let mut reveal = valid_table_reveal();
+    reveal["rows"][0]["cells"]["ghost"] = Value::from("surprise");
+    set_first_prompt_reveal(&mut value, reveal);
+
+    expect_error(&value, "learning_reveal_incomplete");
+}
+
+#[test]
+fn rejects_table_row_missing_a_column() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    let mut reveal = valid_table_reveal();
+    reveal["rows"][0]["cells"]
+        .as_object_mut()
+        .expect("cells object")
+        .remove("meaning");
+    set_first_prompt_reveal(&mut value, reveal);
+
+    expect_error(&value, "learning_reveal_incomplete");
+}
+
+#[test]
+fn rejects_table_with_duplicate_column_id() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    let mut reveal = valid_table_reveal();
+    reveal["columns"][1]["id"] = Value::from("constraint");
+    set_first_prompt_reveal(&mut value, reveal);
+
+    expect_error(&value, "learning_reveal_incomplete");
+}
+
+#[test]
+fn accepts_valid_code_file_reveal() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    set_first_prompt_reveal(
+        &mut value,
+        serde_json::json!({
+            "type": "code_file",
+            "filename": "versions.tf",
+            "language": "hcl",
+            "code": TERRAFORM_CODE,
+            "line_numbers": true,
+            "annotations": [
+                {
+                    "id": "terraform-version",
+                    "anchor": { "line": 2, "text": "required_version" },
+                    "title": "Terraform CLI version",
+                    "explanation": "constrains the Terraform CLI.",
+                    "required": true
+                },
+                {
+                    "id": "provider-source",
+                    "anchor": { "line": 6, "text": "source" },
+                    "title": "Provider source address",
+                    "explanation": "where the provider plugin comes from.",
+                    "required": true
+                },
+                {
+                    "id": "provider-version",
+                    "anchor": { "line": 7, "text": "version" },
+                    "title": "Provider version constraint",
+                    "explanation": "constrains the provider plugin version.",
+                    "required": true
+                }
+            ]
+        }),
+    );
+
+    assert!(
+        validate_value(&value).is_ok(),
+        "a well-formed code_file reveal must validate"
+    );
+}
+
+#[test]
+fn accepts_code_file_reveal_without_annotations() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    set_first_prompt_reveal(
+        &mut value,
+        serde_json::json!({
+            "type": "code_file",
+            "filename": "main.tf",
+            "language": "hcl",
+            "code": TERRAFORM_CODE
+        }),
+    );
+
+    assert!(
+        validate_value(&value).is_ok(),
+        "line_numbers and annotations are optional"
+    );
+}
+
+#[test]
+fn rejects_code_annotation_on_missing_line() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    set_first_prompt_reveal(
+        &mut value,
+        serde_json::json!({
+            "type": "code_file",
+            "filename": "versions.tf",
+            "language": "hcl",
+            "code": TERRAFORM_CODE,
+            "annotations": [{
+                "id": "off-the-end",
+                "anchor": { "line": 99, "text": "version" },
+                "title": "Out of range",
+                "explanation": "no such line.",
+                "required": true
+            }]
+        }),
+    );
+
+    expect_error(&value, "learning_code_annotation_line_invalid");
+}
+
+#[test]
+fn rejects_code_annotation_target_that_does_not_exist() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    set_first_prompt_reveal(
+        &mut value,
+        serde_json::json!({
+            "type": "code_file",
+            "filename": "versions.tf",
+            "language": "hcl",
+            "code": TERRAFORM_CODE,
+            "annotations": [{
+                "id": "ghost",
+                "anchor": { "line": 2, "text": "does_not_exist" },
+                "title": "Missing target",
+                "explanation": "target is not on the line.",
+                "required": true
+            }]
+        }),
+    );
+
+    expect_error(&value, "learning_code_annotation_target_missing");
+}
+
+#[test]
+fn rejects_duplicate_code_annotation_id() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    set_first_prompt_reveal(
+        &mut value,
+        serde_json::json!({
+            "type": "code_file",
+            "filename": "versions.tf",
+            "language": "hcl",
+            "code": TERRAFORM_CODE,
+            "annotations": [
+                {
+                    "id": "same",
+                    "anchor": { "line": 2, "text": "required_version" },
+                    "title": "First",
+                    "explanation": "first.",
+                    "required": true
+                },
+                {
+                    "id": "same",
+                    "anchor": { "line": 7, "text": "version" },
+                    "title": "Second",
+                    "explanation": "second.",
+                    "required": true
+                }
+            ]
+        }),
+    );
+
+    expect_error(&value, "learning_code_annotation_duplicate_id");
+}
+
+#[test]
+fn rejects_code_annotation_occurrence_that_is_out_of_range() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    set_first_prompt_reveal(
+        &mut value,
+        serde_json::json!({
+            "type": "code_file",
+            "filename": "versions.tf",
+            "language": "hcl",
+            "code": TERRAFORM_CODE,
+            "annotations": [{
+                "id": "second-version",
+                "anchor": { "line": 2, "text": "version", "occurrence": 2 },
+                "title": "Second occurrence",
+                "explanation": "there is only one.",
+                "required": true
+            }]
+        }),
+    );
+
+    expect_error(&value, "learning_code_annotation_occurrence_invalid");
+}
+
+#[test]
+fn accepts_code_annotation_with_a_valid_second_occurrence() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    set_first_prompt_reveal(
+        &mut value,
+        serde_json::json!({
+            "type": "code_file",
+            "filename": "repeat.tf",
+            "language": "hcl",
+            "code": "a = foo foo\nb = foo\n",
+            "annotations": [
+                {
+                    "id": "second-foo",
+                    "anchor": { "line": 1, "text": "foo", "occurrence": 2 },
+                    "title": "Second foo",
+                    "explanation": "the second occurrence.",
+                    "required": true
+                },
+                {
+                    "id": "third-line-foo",
+                    "anchor": { "line": 2, "text": "foo" },
+                    "title": "Other line",
+                    "explanation": "defaults to the first occurrence.",
+                    "required": false
+                }
+            ]
+        }),
+    );
+
+    assert!(
+        validate_value(&value).is_ok(),
+        "an explicit occurrence and a default occurrence must both validate"
+    );
+}
+
+#[test]
+fn rejects_duplicate_code_annotation_anchor() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    set_first_prompt_reveal(
+        &mut value,
+        serde_json::json!({
+            "type": "code_file",
+            "filename": "versions.tf",
+            "language": "hcl",
+            "code": TERRAFORM_CODE,
+            "annotations": [
+                {
+                    "id": "one",
+                    "anchor": { "line": 7, "text": "version" },
+                    "title": "One",
+                    "explanation": "one.",
+                    "required": true
+                },
+                {
+                    "id": "two",
+                    "anchor": { "line": 7, "text": "version", "occurrence": 1 },
+                    "title": "Two",
+                    "explanation": "two.",
+                    "required": true
+                }
+            ]
+        }),
+    );
+
+    expect_error(&value, "learning_code_annotation_duplicate_anchor");
 }
 
 #[test]

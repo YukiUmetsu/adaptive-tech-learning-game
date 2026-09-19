@@ -437,6 +437,28 @@ export interface components {
             /** @description Learner-facing label. */
             label: string;
         };
+        /** @description A clickable region inside a `code_file` reveal. */
+        CodeAnnotation: {
+            /** @description Where the clickable region starts. */
+            anchor: components["schemas"]["CodeAnnotationAnchor"];
+            /** @description Explanation revealed when the region is clicked. */
+            explanation: string;
+            /** @description Stable annotation identifier, also the persisted progress key. */
+            id: string;
+            /** @description Whether revealing this annotation is needed to complete the prompt. */
+            required?: boolean;
+            /** @description Short learner-facing title shown with the explanation. */
+            title: string;
+        };
+        /** @description An author-friendly anchor that avoids absolute character offsets. */
+        CodeAnnotationAnchor: {
+            /** @description 1-based line number the target text occurs on. */
+            line: number;
+            /** @description 1-based occurrence of `text` on the line. Defaults to the first. */
+            occurrence?: number;
+            /** @description Exact text that must occur on that line. */
+            text: string;
+        };
         /**
          * @description Request to complete a mission.
          *
@@ -857,6 +879,26 @@ export interface components {
             columns: components["schemas"]["RevealColumn"][];
             /** @enum {string} */
             type: "comparison";
+        } | {
+            /** @description Table columns in display order. */
+            columns: components["schemas"]["RevealTableColumn"][];
+            /** @description Table rows. Every row must fill every column. */
+            rows: components["schemas"]["RevealTableRow"][];
+            /** @enum {string} */
+            type: "table";
+        } | {
+            /** @description Clickable regions that reveal explanations. */
+            annotations?: components["schemas"]["CodeAnnotation"][];
+            /** @description Verbatim file contents. Never marked up or executed. */
+            code: string;
+            /** @description Display filename shown in the header bar. */
+            filename: string;
+            /** @description Highlighting language, for example `hcl`. */
+            language: string;
+            /** @description Whether to render a line-number gutter. */
+            line_numbers?: boolean;
+            /** @enum {string} */
+            type: "code_file";
         };
         /** @description Normalized position on the knowledge map. */
         MapPosition: {
@@ -1048,6 +1090,20 @@ export interface components {
             items: string[];
             /** @description Column heading. */
             title: string;
+        };
+        /** @description One column of a table reveal. */
+        RevealTableColumn: {
+            /** @description Stable identifier used to key every row's cells. */
+            id: string;
+            /** @description Learner-facing column heading. */
+            label: string;
+        };
+        /** @description One row of a table reveal. */
+        RevealTableRow: {
+            /** @description Column id to cell text. Every authored column must be present. */
+            cells: {
+                [key: string]: string;
+            };
         };
         /**
          * @description The operational stage a branching-scenario decision belongs to.
