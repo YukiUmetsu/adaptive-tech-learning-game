@@ -4,7 +4,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use adaptive_learn_api::{AppState, build_router, config::Config};
+use adaptive_learn_api::auth::{Authenticator, DevVerifier, ProfileDirectory};
+use adaptive_learn_api::{AppState, auth, build_router, config::Config};
 use adaptive_learn_content::ContentRegistry;
 use adaptive_learn_db::PgPool;
 use axum::Router;
@@ -12,6 +13,9 @@ use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
 use serde_json::Value;
 use tower::ServiceExt;
+
+/// Default local/test identity used by [`send`].
+pub const DEFAULT_SUBJECT: &str = "test-user";
 
 pub fn content() -> Arc<ContentRegistry> {
     Arc::new(ContentRegistry::embedded().expect("embedded content is valid"))
@@ -33,12 +37,30 @@ pub fn unreachable_pool() -> PgPool {
         .expect("build lazy pool")
 }
 
+fn state(pool: PgPool) -> AppState {
+    let config = test_config();
+    let authenticator = auth::build_authenticator(&config);
+    AppState::new(pool, content(), authenticator)
+}
+
 pub fn app_without_database() -> Router {
-    build_router(AppState::new(unreachable_pool(), content()), &test_config())
+    let config = test_config();
+    build_router(state(unreachable_pool()), &config)
 }
 
 pub fn app_with_pool(pool: PgPool) -> Router {
-    build_router(AppState::new(pool, content()), &test_config())
+    let config = test_config();
+    build_router(state(pool), &config)
+}
+
+/// Builds an app whose dev auth uses a fixed provider profile directory.
+pub fn app_with_profile(pool: PgPool, profile: Arc<dyn ProfileDirectory>) -> Router {
+    let config = test_config();
+    let authenticator = Authenticator {
+        verifier: Arc::new(DevVerifier),
+        profile: Some(profile),
+    };
+    build_router(AppState::new(pool, content(), authenticator), &config)
 }
 
 /// Returns a connected, migrated pool when `DATABASE_URL` is configured.
@@ -66,16 +88,53 @@ pub async fn database_pool() -> Option<PgPool> {
     Some(pool)
 }
 
+/// Sends a request authenticated as the default test identity.
 pub async fn send(
     app: Router,
     method: &str,
     uri: &str,
     body: Option<Value>,
 ) -> (StatusCode, Value) {
-    let request = Request::builder()
+    send_as(app, DEFAULT_SUBJECT, method, uri, body).await
+}
+
+/// Sends a request authenticated as `dev:<subject>`.
+pub async fn send_as(
+    app: Router,
+    subject: &str,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> (StatusCode, Value) {
+    send_with_token(app, Some(format!("dev:{subject}")), method, uri, body).await
+}
+
+/// Sends a request with no `Authorization` header.
+pub async fn send_anonymous(
+    app: Router,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> (StatusCode, Value) {
+    send_with_token(app, None, method, uri, body).await
+}
+
+/// Sends a request with a raw `Authorization: Bearer` value.
+pub async fn send_with_token(
+    app: Router,
+    token: Option<String>,
+    method: &str,
+    uri: &str,
+    body: Option<Value>,
+) -> (StatusCode, Value) {
+    let mut builder = Request::builder()
         .method(method)
         .uri(uri)
-        .header("content-type", "application/json")
+        .header("content-type", "application/json");
+    if let Some(token) = token {
+        builder = builder.header("authorization", format!("Bearer {token}"));
+    }
+    let request = builder
         .body(match body {
             Some(value) => Body::from(serde_json::to_vec(&value).expect("serialize body")),
             None => Body::empty(),

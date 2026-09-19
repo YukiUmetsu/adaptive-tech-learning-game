@@ -55,8 +55,8 @@ async fn malformed_json_returns_a_structured_error() {
 }
 
 #[tokio::test]
-async fn issue_mission_rejects_unknown_task() {
-    let (status, body) = common::send(
+async fn issue_mission_requires_auth_for_non_demo_content() {
+    let (status, body) = common::send_anonymous(
         common::app_without_database(),
         "POST",
         "/v1/missions/issue",
@@ -70,6 +70,6 @@ async fn issue_mission_rejects_unknown_task() {
     )
     .await;
 
-    assert_eq!(status, StatusCode::NOT_FOUND);
-    assert_eq!(body["error"]["code"], "not_found");
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(body["error"]["code"], "unauthorized");
 }

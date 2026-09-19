@@ -9,6 +9,7 @@ use crate::DbError;
 #[derive(sqlx::FromRow)]
 struct MissionRow {
     id: Uuid,
+    user_id: Option<Uuid>,
     device_id: Uuid,
     certification_id: String,
     certification_version: String,
@@ -29,6 +30,7 @@ impl TryFrom<MissionRow> for MissionInstance {
     fn try_from(row: MissionRow) -> Result<Self, Self::Error> {
         Ok(Self {
             id: row.id,
+            user_id: row.user_id,
             device_id: row.device_id,
             certification_id: row.certification_id,
             certification_version: row.certification_version,
@@ -49,13 +51,14 @@ impl TryFrom<MissionRow> for MissionInstance {
 pub async fn insert(pool: &PgPool, mission: &MissionInstance) -> Result<MissionInstance, DbError> {
     let row = sqlx::query_as::<_, MissionRow>(
         "INSERT INTO mission_instances
-            (id, device_id, certification_id, certification_version, content_version,
+            (id, user_id, device_id, certification_id, certification_version, content_version,
              mode, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-         RETURNING id, device_id, certification_id, certification_version, content_version,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         RETURNING id, user_id, device_id, certification_id, certification_version, content_version,
                    mode, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at",
     )
     .bind(mission.id)
+    .bind(mission.user_id)
     .bind(mission.device_id)
     .bind(&mission.certification_id)
     .bind(&mission.certification_version)
@@ -74,10 +77,10 @@ pub async fn insert(pool: &PgPool, mission: &MissionInstance) -> Result<MissionI
     row.try_into()
 }
 
-/// Loads a mission by id.
+/// Loads a mission by id, regardless of owner.
 pub async fn find_by_id(pool: &PgPool, id: Uuid) -> Result<Option<MissionInstance>, DbError> {
     let row = sqlx::query_as::<_, MissionRow>(
-        "SELECT id, device_id, certification_id, certification_version, content_version,
+        "SELECT id, user_id, device_id, certification_id, certification_version, content_version,
                 mode, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at
          FROM mission_instances
          WHERE id = $1",
@@ -105,8 +108,33 @@ where
     Ok(())
 }
 
-/// Marks a mission completed when it belongs to the given device.
+/// Marks a mission completed when it belongs to the given authenticated user.
 pub async fn mark_completed(
+    pool: &PgPool,
+    id: Uuid,
+    user_id: Uuid,
+) -> Result<Option<MissionInstance>, DbError> {
+    let row = sqlx::query_as::<_, MissionRow>(
+        "UPDATE mission_instances
+         SET status = 'completed', completed_at = now()
+         WHERE id = $1 AND user_id = $2
+         RETURNING id, user_id, device_id, certification_id, certification_version, content_version,
+                   mode, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at",
+    )
+    .bind(id)
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await?;
+
+    row.map(TryInto::try_into).transpose()
+}
+
+/// Marks an anonymous demo mission completed when it still belongs to the
+/// issuing device.
+///
+/// This only ever matches missions with no owning account, so it cannot be used
+/// to complete a user-owned mission. Callers additionally authorize the request.
+pub async fn mark_completed_anonymous_device(
     pool: &PgPool,
     id: Uuid,
     device_id: Uuid,
@@ -114,8 +142,8 @@ pub async fn mark_completed(
     let row = sqlx::query_as::<_, MissionRow>(
         "UPDATE mission_instances
          SET status = 'completed', completed_at = now()
-         WHERE id = $1 AND device_id = $2
-         RETURNING id, device_id, certification_id, certification_version, content_version,
+         WHERE id = $1 AND user_id IS NULL AND device_id = $2
+         RETURNING id, user_id, device_id, certification_id, certification_version, content_version,
                    mode, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at",
     )
     .bind(id)

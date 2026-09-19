@@ -4,6 +4,7 @@
 //! map results to transport types. Business rules belong in domain/application
 //! services as later phases add them.
 
+pub mod auth;
 pub mod config;
 pub mod dto;
 pub mod error;
@@ -57,6 +58,7 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
         )
         .route("/v1/sync", post(routes::sync::sync))
         .route("/v1/wallet", get(routes::wallet::get_wallet))
+        .route("/v1/me", get(routes::me::get_me))
         .layer(TraceLayer::new_for_http())
         .layer(TimeoutLayer::with_status_code(
             StatusCode::REQUEST_TIMEOUT,
@@ -73,6 +75,10 @@ fn build_cors(config: &Config) -> CorsLayer {
     CorsLayer::new()
         .allow_origin(AllowOrigin::list(config.cors_allowed_origins.clone()))
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
-        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
+        .allow_headers([
+            header::CONTENT_TYPE,
+            header::AUTHORIZATION,
+            axum::http::HeaderName::from_static(crate::auth::DEVICE_HEADER),
+        ])
         .max_age(Duration::from_secs(600))
 }

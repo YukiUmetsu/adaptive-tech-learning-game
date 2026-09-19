@@ -1,5 +1,7 @@
 import createClient from "openapi-fetch";
 
+import { getAccessTokenForRequest } from "../auth/token";
+import { getDeviceId } from "../state/persistence";
 import type { paths } from "./schema";
 
 /**
@@ -29,4 +31,26 @@ export const apiBaseUrl =
 export const api = createClient<paths>({
   baseUrl: apiBaseUrl,
   fetch: (request) => globalThis.fetch(request),
+});
+
+/**
+ * Centralized auth injection.
+ *
+ * Every request gets the current bearer token (when a session exists) and the
+ * device/install context header. Components never set these themselves, and
+ * tokens are never placed in query strings or persisted by the client.
+ */
+api.use({
+  async onRequest({ request }) {
+    const token = await getAccessTokenForRequest();
+    if (token) {
+      request.headers.set("Authorization", `Bearer ${token}`);
+    }
+    try {
+      request.headers.set("X-Device-Id", getDeviceId());
+    } catch {
+      // Storage unavailable; device context is optional.
+    }
+    return request;
+  },
 });

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { AuthContext, type AuthContextValue } from "../auth/context";
 import { clearCatalogCache } from "../hooks/useCatalog";
 import CertificationDashboardPage from "./CertificationDashboardPage";
 
@@ -87,16 +88,27 @@ afterEach(() => {
 });
 
 function renderDashboard() {
+  const auth: AuthContextValue = {
+    status: "authenticated",
+    user: { id: "user-1", email: "learner@example.com" },
+    configured: true,
+    devSignIn: false,
+    signIn: vi.fn(async () => {}),
+    signOut: vi.fn(async () => {}),
+    getAccessToken: vi.fn(async () => "token"),
+  };
   return render(
-    <MemoryRouter initialEntries={["/certifications/aws-soa-c03"]}>
-      <Routes>
-        <Route
-          path="/certifications/:certificationId"
-          element={<CertificationDashboardPage />}
-        />
-        <Route path="/missions/:missionId" element={<p>Mission runner</p>} />
-      </Routes>
-    </MemoryRouter>,
+    <AuthContext.Provider value={auth}>
+      <MemoryRouter initialEntries={["/certifications/aws-soa-c03"]}>
+        <Routes>
+          <Route
+            path="/certifications/:certificationId"
+            element={<CertificationDashboardPage />}
+          />
+          <Route path="/missions/:missionId" element={<p>Mission runner</p>} />
+        </Routes>
+      </MemoryRouter>
+    </AuthContext.Provider>,
   );
 }
 
@@ -208,5 +220,30 @@ describe("CertificationDashboardPage", () => {
         name: /Explore Domain: Reliability and Business Continuity/,
       }),
     ).not.toBeInTheDocument();
+  });
+
+  it("sends anonymous learners to sign in before starting a scored quiz", async () => {
+    // No auth provider: the default context is anonymous.
+    render(
+      <MemoryRouter initialEntries={["/certifications/aws-soa-c03"]}>
+        <Routes>
+          <Route
+            path="/certifications/:certificationId"
+            element={<CertificationDashboardPage />}
+          />
+          <Route path="/login" element={<p>Sign in page</p>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await ready();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Start Quick Quiz" }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("Sign in page")).toBeInTheDocument(),
+    );
+    expect(posted).toHaveLength(0);
   });
 });

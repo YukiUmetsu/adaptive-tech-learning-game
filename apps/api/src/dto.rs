@@ -101,8 +101,9 @@ pub struct TaskDto {
 /// Request to issue a mission for a quiz mode.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct IssueMissionRequest {
-    /// Client device identifier.
-    pub device_id: Uuid,
+    /// Device/install context. Ownership always comes from the authenticated
+    /// user; this value is never used as an authorization proof.
+    pub device_id: Option<Uuid>,
     /// Certification identifier.
     pub certification_id: String,
     /// Certification version identifier.
@@ -142,11 +143,14 @@ pub struct MissionResponse {
     pub questions: Vec<QuestionView>,
 }
 
-/// A device's settled Bits balance.
+/// A learner's settled Bits balance.
+///
+/// The wallet is owned by the authenticated user, so it is read from the token
+/// rather than from a client-supplied identifier.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct WalletResponse {
-    /// Device the wallet belongs to.
-    pub device_id: Uuid,
+    /// Owning account.
+    pub user_id: Uuid,
     /// Settled Bits balance.
     pub bits_balance: i64,
 }
@@ -216,8 +220,8 @@ pub struct ReconstructionAnswerPayload {
 /// Request to score one attempt.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct AnswerRequest {
-    /// Client device identifier.
-    pub device_id: Uuid,
+    /// Device/install context. Not an authorization proof.
+    pub device_id: Option<Uuid>,
     /// Stable event identifier for this attempt.
     pub event_id: Uuid,
     /// Question being answered.
@@ -264,8 +268,8 @@ pub struct FeedbackResponse {
 /// Request to sync a batch of evaluated attempts.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct SyncRequest {
-    /// Client device identifier.
-    pub device_id: Uuid,
+    /// Device/install context. Ownership comes from the authenticated user.
+    pub device_id: Option<Uuid>,
     /// Attempts to reconcile.
     pub events: Vec<SyncEventRequest>,
 }
@@ -316,10 +320,24 @@ pub struct SyncEventResult {
 }
 
 /// Request to complete a mission.
+///
+/// The owner is taken from the verified token, so no identity is required here.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct CompleteMissionRequest {
-    /// Device that owns the mission.
-    pub device_id: Uuid,
+    /// Device/install context. Not an authorization proof.
+    #[serde(default)]
+    pub device_id: Option<Uuid>,
+}
+
+/// Safe application account data for the signed-in learner.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct MeResponse {
+    /// Internal application user id. The stable ownership key.
+    pub id: Uuid,
+    /// Email known for the account, when the provider supplied one.
+    pub email: Option<String>,
+    /// Always `true`; the endpoint requires authentication.
+    pub authenticated: bool,
 }
 
 /// Completion result.

@@ -1,16 +1,29 @@
 import { useEffect } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
+import { useAuth } from "../auth/context";
 import BitsHud from "../components/BitsHud";
 import { toggleSoundMuted, useSoundMuted } from "../state/sound";
-import { refreshWallet } from "../state/wallet";
+import { refreshWallet, resetWallet } from "../state/wallet";
 
 export default function AppShell() {
   const muted = useSoundMuted();
+  const { status, user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    void refreshWallet();
-  }, []);
+    if (status === "authenticated") {
+      void refreshWallet();
+    } else if (status === "anonymous") {
+      resetWallet();
+    }
+  }, [status]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    resetWallet();
+    navigate("/");
+  };
 
   return (
     <div className="app-shell">
@@ -24,7 +37,31 @@ export default function AppShell() {
           </NavLink>
           <NavLink to="/certifications">Certifications</NavLink>
           <NavLink to="/demo">Demo</NavLink>
-          <BitsHud size="sm" />
+          {status === "authenticated" ? (
+            <>
+              <BitsHud size="sm" />
+              <div className="account-menu">
+                <NavLink to="/account" className="account-email">
+                  {user?.email ?? "Account"}
+                </NavLink>
+                <button
+                  type="button"
+                  className="account-signout"
+                  onClick={() => void handleSignOut()}
+                >
+                  Sign out
+                </button>
+              </div>
+            </>
+          ) : status === "loading" ? (
+            <span className="muted auth-loading" role="status">
+              Checking session…
+            </span>
+          ) : (
+            <NavLink to="/login" className="auth-sign-in">
+              Sign in
+            </NavLink>
+          )}
           <button
             type="button"
             className="sound-toggle"

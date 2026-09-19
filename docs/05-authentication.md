@@ -12,14 +12,44 @@ Initial methods:
 
 WorkOS currently provides AuthKit free up to 1M MAU and has official React and Rust SDKs.
 
-## Phase 0 status
+## Implementation status
 
-Phase 0 defines the configuration boundary only. `WORKOS_CLIENT_ID`,
-`WORKOS_API_KEY`, and optional `WORKOS_ISSUER` are loaded and validated at API
-startup (`apps/api/src/config.rs`), and are required to be set together or not
-at all. No route requires a token and no auth middleware is installed yet.
-Token verification, JWKS handling, and the first authenticated route arrive with
-the first protected endpoint in a later phase.
+Authentication is implemented. The API verifies WorkOS AuthKit access tokens
+and derives ownership from the verified internal `users.id`, never from a
+client-supplied `device_id`.
+
+- `apps/api/src/auth.rs` holds the token verifier and the `AuthenticatedUser` /
+  `OptionalUser` extractors. Routes never parse JWTs themselves.
+- Signature verification uses the provider JWKS at
+  `https://api.workos.com/sso/jwks/<clientId>`. Keys are cached with a TTL and
+  refreshed when an unknown `kid` appears, so no WorkOS call happens on the hot
+  path. `exp`, `iss`, and the `client_id` claim are validated. WorkOS access
+  tokens identify the application with `client_id` rather than `aud`, so
+  `client_id` is checked explicitly.
+- The first authenticated request upserts a `users` row keyed by
+  `(auth_provider, auth_subject)` using the partial unique index, so concurrent
+  first logins resolve to one account. Email is profile data, not identity: it
+  comes from a one-time provider profile lookup when the account has none yet,
+  a changed email updates the existing row, and it never creates a second
+  account.
+- `device_id` survives as device/install/session context (`devices` table and
+  telemetry columns). It is never an authorization boundary.
+- Protected routes: `POST /v1/missions/issue` (scored modes),
+  `POST /v1/missions/{id}/answers`, `POST /v1/missions/{id}/complete`,
+  `POST /v1/sync`, `GET /v1/wallet`, `GET /v1/me`.
+- Public routes: `GET /health`, `GET /openapi.json`, `GET /v1/certifications`,
+  and learning-domain content. Anonymous task-practice missions are allowed only
+  for the `*-demo` certification and never settle Bits.
+
+### Local development without credentials
+
+`APP_ENV=local` or `test` without WorkOS configuration enables an explicit
+`Authorization: Bearer dev:<subject>` mode. It is impossible to enable
+accidentally in staging or production: those environments fail startup unless
+`WORKOS_CLIENT_ID` and `WORKOS_API_KEY` are set. There is no `X-User-Id` header
+and no production bypass. On the web side, `VITE_WORKOS_CLIENT_ID` selects the
+official AuthKit SDK; without it the app stays anonymous, and the local dev
+identity is only offered in dev builds (or with explicit `VITE_AUTH_DEV_MODE`).
 
 ## Why code instead of magic link
 

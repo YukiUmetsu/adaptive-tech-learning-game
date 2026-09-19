@@ -4,6 +4,8 @@ use std::time::Instant;
 use adaptive_learn_content::ContentRegistry;
 use adaptive_learn_db::PgPool;
 
+use crate::auth::{Authenticator, ProfileDirectory, TokenVerifier};
+
 /// Shared application state passed to handlers.
 #[derive(Clone)]
 pub struct AppState {
@@ -11,6 +13,10 @@ pub struct AppState {
     pub pool: PgPool,
     /// Immutable, validated content registry.
     pub content: Arc<ContentRegistry>,
+    /// Verifies bearer tokens into internal user identities.
+    pub auth: Arc<dyn TokenVerifier>,
+    /// Optional provider profile lookup for advisory account data.
+    pub profile: Option<Arc<dyn ProfileDirectory>>,
     /// Process start time, used to report uptime.
     started_at: Instant,
     service_name: &'static str,
@@ -19,10 +25,12 @@ pub struct AppState {
 
 impl AppState {
     /// Builds state for a running API process.
-    pub fn new(pool: PgPool, content: Arc<ContentRegistry>) -> Self {
+    pub fn new(pool: PgPool, content: Arc<ContentRegistry>, authenticator: Authenticator) -> Self {
         Self {
             pool,
             content,
+            auth: authenticator.verifier,
+            profile: authenticator.profile,
             started_at: Instant::now(),
             service_name: env!("CARGO_PKG_NAME"),
             version: env!("CARGO_PKG_VERSION"),

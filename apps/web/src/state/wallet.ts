@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 import { api } from "../api/client";
-import { getDeviceId, loadCachedBits, saveCachedBits } from "./persistence";
+import { loadCachedBits, saveCachedBits } from "./persistence";
 
 /**
  * Shared Bits balance store.
@@ -47,6 +47,18 @@ export function reconcileBits(serverBalance: number): void {
   emit();
 }
 
+/**
+ * Clears the cached wallet, for example on sign-out.
+ *
+ * The next signed-in session fetches its own authoritative balance.
+ */
+export function resetWallet(): void {
+  settled = 0;
+  pendingPreview = 0;
+  saveCachedBits(0);
+  emit();
+}
+
 let inFlight: Promise<void> | null = null;
 
 /**
@@ -62,9 +74,7 @@ export function refreshWallet(): Promise<void> {
 
   inFlight = (async () => {
     try {
-      const result = await api.GET("/v1/wallet", {
-        params: { query: { device_id: getDeviceId() } },
-      });
+      const result = await api.GET("/v1/wallet");
       if (result.data) {
         reconcileBits(result.data.bits_balance);
       }
