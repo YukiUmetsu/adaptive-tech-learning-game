@@ -1,0 +1,1920 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "soa-c03-learning-2026-09-18",
+  "certification_id": "aws-soa-c03",
+  "certification_version": "soa-c03",
+  "exam_guide_revision": "1.1",
+  "domain": {
+    "id": "domain-1",
+    "name": "Monitoring, Logging, Analysis, Remediation, and Performance Optimization",
+    "weight": 0.22
+  },
+  "learning_design": {
+    "progress_label": "Discovery Progress",
+    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
+    "mastery_note": "Exploration progress is not mastery evidence; quiz attempts remain the scored retrieval signal."
+  },
+  "modules": [
+    {
+      "id": "d1-observability-foundations",
+      "title": "Observability Foundations",
+      "order": 1,
+      "task_ids": [
+        "1.1"
+      ],
+      "skill_ids": [
+        "1.1.1",
+        "1.1.2"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "d1-operational-signals",
+          "title": "Operational signals",
+          "concept_ids": [
+            "aws.monitoring_vs_logging"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.1,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Metrics = ___; logs = ___; events = ___",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Metrics",
+                    "items": [
+                      "numeric time series"
+                    ]
+                  },
+                  {
+                    "title": "Logs",
+                    "items": [
+                      "detailed records"
+                    ]
+                  },
+                  {
+                    "title": "Events",
+                    "items": [
+                      "something happened"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "CPU spike? API actor? application error?",
+              "required": true,
+              "reveal": {
+                "type": "keywords",
+                "items": [
+                  "CPU/latency trend → metrics",
+                  "request/error detail → logs",
+                  "who changed a resource → CloudTrail",
+                  "state change → events"
+                ]
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "One telemetry source answers __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "No single source answers every operational question; correlate signals."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "CloudWatch",
+              "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+            },
+            {
+              "title": "CloudTrail",
+              "url": "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-user-guide.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-cloudwatch-metrics",
+          "title": "CloudWatch metrics",
+          "concept_ids": [
+            "aws.cloudwatch",
+            "aws.cloudwatch.metrics"
+          ],
+          "prerequisite_node_ids": [
+            "d1-operational-signals"
+          ],
+          "map_position": {
+            "x": 0.3,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "________________________",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Time-series measurements for AWS resources and custom workloads."
+              }
+            },
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Namespace → metric → __________",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Namespace",
+                  "Metric",
+                  "Dimensions",
+                  "Data points"
+                ]
+              }
+            },
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "A graph needs to separate instances by __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use dimensions such as InstanceId to identify a specific resource or slice."
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "“Track a value that AWS does not publish by default” → __________",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Publish a custom metric or collect it with an agent/integration."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "CloudWatch metrics",
+              "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-cloudwatch-agent",
+          "title": "CloudWatch agent",
+          "concept_ids": [
+            "aws.cloudwatch.agent"
+          ],
+          "prerequisite_node_ids": [
+            "d1-cloudwatch-metrics"
+          ],
+          "map_position": {
+            "x": 0.5,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Collect host-level __________ and __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Collect system metrics and logs from supported workloads, including EC2 and container environments."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "CloudWatch Agent ≠ __________ Agent",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "CloudWatch agent",
+                    "items": [
+                      "telemetry"
+                    ]
+                  },
+                  {
+                    "title": "SSM Agent",
+                    "items": [
+                      "Systems Manager control channel"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "⚡ ACTION",
+              "placeholder": "Need memory/disk metrics from EC2 → __________",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Install/configure the CloudWatch agent and send the chosen metrics."
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "“Memory utilization” on EC2 is a clue for __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Guest OS metrics usually require an agent; standard EC2 metrics do not include every OS value."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "CloudWatch agent",
+              "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-prometheus",
+          "title": "Managed Service for Prometheus",
+          "concept_ids": [
+            "aws.amp"
+          ],
+          "prerequisite_node_ids": [
+            "d1-cloudwatch-agent"
+          ],
+          "map_position": {
+            "x": 0.7,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Managed backend for __________ metrics.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A managed Prometheus-compatible service for ingesting, querying, and alerting on Prometheus metrics."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Best fit for __________ style observability.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Prometheus/OpenTelemetry-style metrics, often with containerized and Kubernetes workloads."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Not a replacement for __________ audit history.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use CloudTrail for AWS API activity and audit history."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Amazon Managed Service for Prometheus",
+              "url": "https://docs.aws.amazon.com/prometheus/latest/userguide/what-is-Amazon-Managed-Service-Prometheus.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-cloudtrail",
+          "title": "CloudTrail",
+          "concept_ids": [
+            "aws.cloudtrail"
+          ],
+          "prerequisite_node_ids": [
+            "d1-operational-signals"
+          ],
+          "map_position": {
+            "x": 0.3,
+            "y": 0.32
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Records AWS __________ activity.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Records activity performed through AWS APIs and related account activity."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Use it to answer “who __________ this resource?”",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use CloudTrail to investigate which identity performed an AWS action and when."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "CloudTrail is not primarily __________ monitoring.",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "CloudTrail",
+                    "items": [
+                      "API/audit activity"
+                    ]
+                  },
+                  {
+                    "title": "CloudWatch",
+                    "items": [
+                      "metrics, logs, alarms"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "“Which identity called Delete/Put/Modify…?” → __________",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Think CloudTrail event history or trail data."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "CloudTrail",
+              "url": "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-user-guide.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d1-alarms-notifications",
+      "title": "Alarms, Filters, Dashboards, and Notifications",
+      "order": 2,
+      "task_ids": [
+        "1.1"
+      ],
+      "skill_ids": [
+        "1.1.3",
+        "1.1.4",
+        "1.1.5"
+      ],
+      "prerequisite_module_ids": [
+        "d1-observability-foundations"
+      ],
+      "nodes": [
+        {
+          "id": "d1-alarms",
+          "title": "CloudWatch alarms",
+          "concept_ids": [
+            "aws.cloudwatch.alarm",
+            "aws.cloudwatch.alarm_actions"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Metric + threshold + evaluation periods → __________",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "An alarm evaluates metric data and changes state when its configured condition is met."
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "⚡ ACTION",
+              "placeholder": "Alarm action can notify or invoke __________.",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Amazon SNS",
+                  "supported Auto Scaling actions",
+                  "supported EC2 actions",
+                  "other supported direct targets or EventBridge workflows"
+                ]
+              }
+            },
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "No data should be treated as __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Configure missing-data behavior deliberately; it can affect whether an alarm enters ALARM, OK, or stays unchanged."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "CloudWatch alarms",
+              "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-composite-alarms",
+          "title": "Composite alarms",
+          "concept_ids": [
+            "aws.cloudwatch.composite_alarm"
+          ],
+          "prerequisite_node_ids": [
+            "d1-alarms"
+          ],
+          "map_position": {
+            "x": 0.34,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Combine multiple alarm states using __________ logic.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Composite alarms combine other alarms with Boolean-style rules."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Use them to reduce __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use composite alarms to suppress noisy symptoms and alert only when a meaningful combination is true."
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "“Alert only when CPU is high AND unhealthy hosts exist” → __________",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A composite alarm is a strong fit."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "CloudWatch composite alarms",
+              "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-metric-filters",
+          "title": "CloudWatch Logs metric filters",
+          "concept_ids": [
+            "aws.cloudwatch.metric_filter",
+            "aws.cloudwatch.logs"
+          ],
+          "prerequisite_node_ids": [
+            "d1-alarms"
+          ],
+          "map_position": {
+            "x": 0.56,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Log pattern → __________ → alarm",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Log event",
+                  "Metric filter",
+                  "CloudWatch metric",
+                  "Alarm"
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Use when a log contains a countable __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Turn matching log patterns, such as errors, into metric data you can graph or alarm on."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "A metric filter does not replace __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "It extracts metric values from logs; it does not provide general log searching by itself."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "CloudWatch Logs",
+              "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-dashboards",
+          "title": "CloudWatch dashboards",
+          "concept_ids": [
+            "aws.cloudwatch.dashboard"
+          ],
+          "prerequisite_node_ids": [
+            "d1-cloudwatch-metrics"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Shared visual view of __________ and __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Dashboards display metrics, alarms, text, and other operational widgets."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Useful for cross-__________ / cross-__________ visibility.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "CloudWatch supports centralized dashboards and cross-account/cross-Region observability patterns."
+              }
+            },
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Dashboard = __________, alarm = __________.",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Dashboard",
+                    "items": [
+                      "human visibility"
+                    ]
+                  },
+                  {
+                    "title": "Alarm",
+                    "items": [
+                      "automated state evaluation"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "CloudWatch dashboards",
+              "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-sns",
+          "title": "Amazon SNS notifications",
+          "concept_ids": [
+            "aws.sns",
+            "aws.cloudwatch.alarm_actions"
+          ],
+          "prerequisite_node_ids": [
+            "d1-alarms"
+          ],
+          "map_position": {
+            "x": 0.34,
+            "y": 0.35
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Publisher → topic → __________",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "SNS fans a message out to configured subscribers/endpoints."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Use for __________ notifications from alarms and services.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use SNS when an AWS service needs to publish notifications to one or more subscribers."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "SNS is not a durable work queue like __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "SQS is designed for queued message consumption; SNS is pub/sub fan-out."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Amazon SNS",
+              "url": "https://docs.aws.amazon.com/sns/latest/dg/welcome.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d1-event-remediation",
+      "title": "Event-Driven Remediation",
+      "order": 3,
+      "task_ids": [
+        "1.2"
+      ],
+      "skill_ids": [
+        "1.2.1",
+        "1.2.2",
+        "1.2.3"
+      ],
+      "prerequisite_module_ids": [
+        "d1-alarms-notifications"
+      ],
+      "nodes": [
+        {
+          "id": "d1-eventbridge",
+          "title": "EventBridge routing",
+          "concept_ids": [
+            "aws.eventbridge",
+            "aws.eventbridge.rules"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.1,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Event → rule → __________",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "EventBridge matches events against rules and sends matched events to targets."
+              }
+            },
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "Rule not firing? Check __________.",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "event bus",
+                  "event pattern",
+                  "permissions/target policy",
+                  "target failures/retries"
+                ]
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "“When this AWS event happens, invoke…” → __________",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "EventBridge is a common event-routing answer."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Amazon EventBridge",
+              "url": "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-eventbridge-transform",
+          "title": "Event transformation",
+          "concept_ids": [
+            "aws.eventbridge.transform"
+          ],
+          "prerequisite_node_ids": [
+            "d1-eventbridge"
+          ],
+          "map_position": {
+            "x": 0.32,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Change event payload before the __________ receives it.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Input transformers can extract and reshape event data for a target."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Useful when target expects a smaller or differently shaped __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Transform the event instead of adding a separate function only to reshape fields."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Transformation is not the same as __________ filtering.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The event pattern decides whether a rule matches; transformation changes what is delivered."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "EventBridge input transformation",
+              "url": "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-eventbridge-reliability",
+          "title": "Event retries, DLQs, archive/replay",
+          "concept_ids": [
+            "aws.eventbridge.retry_dlq",
+            "aws.eventbridge.archive_replay"
+          ],
+          "prerequisite_node_ids": [
+            "d1-eventbridge"
+          ],
+          "map_position": {
+            "x": 0.54,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Delivery failure → retry → __________",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "After retries are exhausted, supported configurations can send failed events to a dead-letter queue."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Archive + replay helps with __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Retesting or recovering event processing by replaying previously archived events."
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "“Target was unavailable; do not lose failed events” → __________",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Think retry policy plus a dead-letter queue."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "EventBridge reliability",
+              "url": "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-ssm-automation",
+          "title": "Systems Manager Automation",
+          "concept_ids": [
+            "aws.systems_manager.automation",
+            "aws.systems_manager.runbook"
+          ],
+          "prerequisite_node_ids": [
+            "d1-eventbridge"
+          ],
+          "map_position": {
+            "x": 0.76,
+            "y": 0.12
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Runbook = ordered operational __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Automation runbooks define repeatable steps that Systems Manager can execute."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Use for repeatable __________ and remediation.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Good for standardized operational actions such as restart, patch, snapshot, or configuration remediation."
+              }
+            },
+            {
+              "id": "connect",
+              "kind": "connects_to",
+              "label": "🔗 CONNECTS TO?",
+              "placeholder": "EventBridge → __________ → remediation",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "EventBridge",
+                  "Systems Manager Automation",
+                  "AWS resource"
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Systems Manager Automation",
+              "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/automation.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-automation-controls",
+          "title": "Automation targets and rate controls",
+          "concept_ids": [
+            "aws.systems_manager.rate_controls"
+          ],
+          "prerequisite_node_ids": [
+            "d1-ssm-automation"
+          ],
+          "map_position": {
+            "x": 0.28,
+            "y": 0.36
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Target resources by IDs, tags, or __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Automation can target groups of managed resources using supported target selectors."
+              }
+            },
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "Limit concurrency and __________ to reduce blast radius.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Rate controls let you cap concurrency and error tolerance for large-scale automation."
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "“Run remediation across hundreds of instances safely” → __________",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use Automation targeting with rate controls."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Systems Manager Automation",
+              "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/automation.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-run-command",
+          "title": "Systems Manager Run Command",
+          "concept_ids": [
+            "aws.systems_manager.run_command"
+          ],
+          "prerequisite_node_ids": [
+            "d1-ssm-automation"
+          ],
+          "map_position": {
+            "x": 0.5,
+            "y": 0.36
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Remote command execution without opening inbound __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Run Command executes approved commands on managed nodes through Systems Manager."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Run Command vs Automation",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Run Command",
+                    "items": [
+                      "execute commands/documents"
+                    ]
+                  },
+                  {
+                    "title": "Automation",
+                    "items": [
+                      "multi-step operational workflow"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Use for fleet-wide shell/PowerShell command __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Run commands across selected managed nodes and collect command status/output."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Systems Manager",
+              "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-lambda-remediation",
+          "title": "Lambda remediation",
+          "concept_ids": [
+            "aws.lambda.remediation"
+          ],
+          "prerequisite_node_ids": [
+            "d1-eventbridge"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.36
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Event → Lambda → AWS SDK/API → __________",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A Lambda function can implement custom remediation logic against AWS resources."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Use when remediation logic is __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use Lambda when the action needs custom code or service API orchestration not covered by a simpler built-in action/runbook."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Do not add Lambda just to __________ an event payload if EventBridge transformation is enough.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Prefer the simpler native mechanism when it meets the requirement."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Lambda",
+              "url": "https://docs.aws.amazon.com/lambda/latest/dg/welcome.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-ai-ops",
+          "title": "Kiro and AWS DevOps Agent",
+          "concept_ids": [
+            "aws.kiro",
+            "aws.devops_agent"
+          ],
+          "prerequisite_node_ids": [
+            "d1-lambda-remediation"
+          ],
+          "map_position": {
+            "x": 0.5,
+            "y": 0.6
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "AI-assisted tools can help investigate operational __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Current SOA-C03 scope includes Kiro and AWS DevOps Agent as examples in analysis/remediation workflows."
+              }
+            },
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Use AI assistance with __________, not instead of observability evidence.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Treat telemetry, permissions, change history, and runbooks as the operational source material for investigation."
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "Names Kiro or AWS DevOps Agent in an incident-analysis scenario → know their __________ role.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Recognize them as current AI-assisted operations/development tools, not replacements for CloudWatch, CloudTrail, or Systems Manager."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS DevOps Agent",
+              "url": "https://docs.aws.amazon.com/devopsagent/latest/userguide/about-aws-devops-agent.html"
+            },
+            {
+              "title": "Kiro",
+              "url": "https://kiro.dev/docs/"
+            },
+            {
+              "title": "SOA-C03 revisions",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/soa-03-revisions.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d1-performance-optimization",
+      "title": "Performance Optimization",
+      "order": 4,
+      "task_ids": [
+        "1.3"
+      ],
+      "skill_ids": [
+        "1.3.1",
+        "1.3.2",
+        "1.3.3",
+        "1.3.4",
+        "1.3.5",
+        "1.3.6"
+      ],
+      "prerequisite_module_ids": [
+        "d1-event-remediation"
+      ],
+      "nodes": [
+        {
+          "id": "d1-compute-optimizer",
+          "title": "AWS Compute Optimizer",
+          "concept_ids": [
+            "aws.compute_optimizer",
+            "aws.resource_tags"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.08,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Analyzes utilization to recommend __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Compute Optimizer produces rightsizing and optimization recommendations for supported resources."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Use when you need evidence for __________ or under-provisioned resources.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use recommendations alongside workload knowledge to identify over- or under-provisioning."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Recommendation ≠ automatic __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Treat recommendations as input to an operational decision; validate workload constraints before changing resources."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Compute Optimizer",
+              "url": "https://docs.aws.amazon.com/compute-optimizer/latest/ug/what-is-compute-optimizer.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-ec2-performance",
+          "title": "EC2 performance triage",
+          "concept_ids": [
+            "aws.ec2.performance"
+          ],
+          "prerequisite_node_ids": [
+            "d1-compute-optimizer"
+          ],
+          "map_position": {
+            "x": 0.25,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "CPU, network, disk, status checks, and __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Correlate instance metrics with EBS, networking, application logs, and instance health signals."
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "⚡ ACTION",
+              "placeholder": "Bottleneck first → then __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Identify the constrained resource before resizing or changing architecture."
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "“High CPU sustained” vs “low CPU but slow I/O” require __________ actions.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choose the optimization that matches the bottleneck, not a generic larger instance."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Amazon EC2",
+              "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-placement-groups",
+          "title": "EC2 placement groups",
+          "concept_ids": [
+            "aws.ec2.placement_groups",
+            "aws.ec2.networking_performance"
+          ],
+          "prerequisite_node_ids": [
+            "d1-ec2-performance"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Cluster / partition / spread = different __________ tradeoffs.",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Cluster",
+                    "items": [
+                      "low-latency/high-throughput placement"
+                    ]
+                  },
+                  {
+                    "title": "Partition",
+                    "items": [
+                      "fault-isolated partitions"
+                    ]
+                  },
+                  {
+                    "title": "Spread",
+                    "items": [
+                      "small number of distinct hardware placements"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Choose based on latency vs __________ isolation.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Placement strategy should match the workload’s network-performance and failure-isolation needs."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Placement groups do not replace Multi-AZ __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "They influence EC2 placement; high availability still requires an architecture that tolerates failures."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "EC2 placement groups",
+              "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-ebs-performance",
+          "title": "EBS performance and volume types",
+          "concept_ids": [
+            "aws.ebs.performance",
+            "aws.ebs.volume_types"
+          ],
+          "prerequisite_node_ids": [
+            "d1-ec2-performance"
+          ],
+          "map_position": {
+            "x": 0.59,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Performance = IOPS + throughput + latency + __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Queue depth and workload I/O pattern also matter when diagnosing EBS performance."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "gp3 vs io2 vs st1/sc1",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "gp3",
+                    "items": [
+                      "general SSD; tune IOPS/throughput"
+                    ]
+                  },
+                  {
+                    "title": "io2",
+                    "items": [
+                      "high IOPS/durability SSD"
+                    ]
+                  },
+                  {
+                    "title": "st1/sc1",
+                    "items": [
+                      "throughput-oriented HDD families"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "Volume or instance-side limits can both __________ throughput.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Check the EBS volume characteristics and the EC2 instance’s EBS bandwidth/IOPS capabilities."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "EBS volume types",
+              "url": "https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-s3-performance",
+          "title": "S3 performance patterns",
+          "concept_ids": [
+            "aws.s3.performance",
+            "aws.s3.multipart"
+          ],
+          "prerequisite_node_ids": [
+            "d1-ec2-performance"
+          ],
+          "map_position": {
+            "x": 0.76,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "Large object transfer → use __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Multipart upload improves resiliency and parallelism for large uploads."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Long-distance uploads to S3 may benefit from __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "S3 Transfer Acceleration can improve transfers over long geographic distances when appropriate."
+              }
+            },
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "Performance is affected by request parallelism, object size, and __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Design access patterns and transfer approach for the workload rather than relying on one universal tuning knob."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "S3 performance",
+              "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/optimizing-performance.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-s3-transfer-lifecycle",
+          "title": "S3 transfer and lifecycle optimization",
+          "concept_ids": [
+            "aws.s3.transfer_acceleration",
+            "aws.s3.lifecycle",
+            "aws.datasync"
+          ],
+          "prerequisite_node_ids": [
+            "d1-s3-performance"
+          ],
+          "map_position": {
+            "x": 0.2,
+            "y": 0.34
+          },
+          "prompts": [
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Transfer Acceleration / DataSync / Lifecycle",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Transfer Acceleration",
+                    "items": [
+                      "internet path optimization for S3 transfers"
+                    ]
+                  },
+                  {
+                    "title": "DataSync",
+                    "items": [
+                      "managed data movement"
+                    ]
+                  },
+                  {
+                    "title": "Lifecycle",
+                    "items": [
+                      "automatic storage transition/expiration"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Move large datasets repeatedly between storage locations → __________",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "DataSync is a managed transfer/orchestration option for supported sources and destinations."
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "“Reduce storage cost as objects age” → __________",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "S3 Lifecycle rules."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS DataSync",
+              "url": "https://docs.aws.amazon.com/datasync/latest/userguide/what-is-datasync.html"
+            },
+            {
+              "title": "Amazon S3",
+              "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-shared-storage",
+          "title": "Shared storage choice",
+          "concept_ids": [
+            "aws.efs.performance",
+            "aws.fsx",
+            "aws.s3_files"
+          ],
+          "prerequisite_node_ids": [
+            "d1-s3-transfer-lifecycle"
+          ],
+          "map_position": {
+            "x": 0.4,
+            "y": 0.34
+          },
+          "prompts": [
+            {
+              "id": "mental",
+              "kind": "mental_model",
+              "label": "🧠 MENTAL MODEL",
+              "placeholder": "EFS / FSx / S3 Files solve different __________ needs.",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "EFS",
+                    "items": [
+                      "managed NFS-style elastic file system"
+                    ]
+                  },
+                  {
+                    "title": "FSx",
+                    "items": [
+                      "managed file systems for specific protocols/workloads"
+                    ]
+                  },
+                  {
+                    "title": "S3 Files",
+                    "items": [
+                      "file access backed by S3 capabilities/use cases"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Choose based on protocol, workload semantics, performance, and __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Also consider availability, integration, cost, and lifecycle requirements."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Shared file storage ≠ EBS block storage.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "EBS is block storage attached to EC2; shared file services expose file semantics."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Amazon EFS",
+              "url": "https://docs.aws.amazon.com/efs/latest/ug/whatisefs.html"
+            },
+            {
+              "title": "Amazon FSx",
+              "url": "https://docs.aws.amazon.com/fsx/latest/WindowsGuide/what-is.html"
+            },
+            {
+              "title": "Amazon S3 Files",
+              "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-files.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-efs-lifecycle",
+          "title": "EFS performance and lifecycle",
+          "concept_ids": [
+            "aws.efs.performance",
+            "aws.efs.lifecycle"
+          ],
+          "prerequisite_node_ids": [
+            "d1-shared-storage"
+          ],
+          "map_position": {
+            "x": 0.58,
+            "y": 0.34
+          },
+          "prompts": [
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "Throughput/performance mode + access pattern + __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Evaluate EFS performance settings and lifecycle/storage-class behavior for the workload."
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "⚡ ACTION",
+              "placeholder": "Cold files → lifecycle transition → lower-cost __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "EFS lifecycle management can move infrequently accessed data to lower-cost storage classes."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "Do not choose EFS solely because multiple instances need __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Protocol, latency, throughput, OS/workload fit, and cost still matter."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Amazon EFS",
+              "url": "https://docs.aws.amazon.com/efs/latest/ug/whatisefs.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-rds-monitoring",
+          "title": "RDS monitoring",
+          "concept_ids": [
+            "aws.rds.monitoring",
+            "aws.rds.performance_insights"
+          ],
+          "prerequisite_node_ids": [
+            "d1-compute-optimizer"
+          ],
+          "map_position": {
+            "x": 0.76,
+            "y": 0.34
+          },
+          "prompts": [
+            {
+              "id": "look",
+              "kind": "look_for",
+              "label": "🔍 LOOK FOR",
+              "placeholder": "CPU, connections, storage/I/O, memory pressure, and database __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Correlate CloudWatch metrics with database-level performance information and workload behavior."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Need to identify database load contributors → __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use RDS performance tooling/insights to investigate database load and bottlenecks."
+              }
+            },
+            {
+              "id": "not",
+              "kind": "not_this",
+              "label": "🚫 NOT THIS",
+              "placeholder": "High DB latency does not automatically mean __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Identify whether the bottleneck is query load, connections, I/O, locks, CPU, or another constraint before resizing."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Amazon RDS monitoring",
+              "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Welcome.html"
+            }
+          ]
+        },
+        {
+          "id": "d1-rds-proxy",
+          "title": "RDS Proxy and recommendations",
+          "concept_ids": [
+            "aws.rds.proxy",
+            "aws.rds.recommendations"
+          ],
+          "prerequisite_node_ids": [
+            "d1-rds-monitoring"
+          ],
+          "map_position": {
+            "x": 0.9,
+            "y": 0.34
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "❓ WHAT?",
+              "placeholder": "RDS Proxy pools/manages database __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "RDS Proxy helps applications use database connections more efficiently and improves connection resilience for supported engines."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "⏱️ WHEN?",
+              "placeholder": "Useful with bursty/serverless clients creating many __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Connection pooling can reduce connection churn and pressure on the database."
+              }
+            },
+            {
+              "id": "exam",
+              "kind": "exam_clue",
+              "label": "🎯 EXAM CLUE",
+              "placeholder": "“Too many short-lived DB connections” → consider __________.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "RDS Proxy is a strong clue for supported RDS/Aurora workloads."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Amazon RDS Proxy",
+              "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy.html"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "source_refs": [
+    {
+      "title": "Official SOA-C03 Domain 1 exam guide",
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03-domain1.html"
+    },
+    {
+      "title": "SOA-C03 revisions (exam guide version 1.1)",
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/soa-03-revisions.html"
+    },
+    {
+      "title": "AWS Well-Architected Framework",
+      "url": "https://aws.amazon.com/architecture/well-architected/"
+    },
+    {
+      "title": "SOA-C03 in-scope AWS services",
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/soa-03-in-scope-services.html"
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "1.1",
+      "1.2",
+      "1.3"
+    ],
+    "skill_ids": [
+      "1.1.1",
+      "1.1.2",
+      "1.1.3",
+      "1.1.4",
+      "1.1.5",
+      "1.2.1",
+      "1.2.2",
+      "1.2.3",
+      "1.3.1",
+      "1.3.2",
+      "1.3.3",
+      "1.3.4",
+      "1.3.5",
+      "1.3.6"
+    ],
+    "module_count": 4,
+    "knowledge_node_count": 28,
+    "prompt_count": 87
+  },
+  "authoring_notes": "Original learning content. Official SOA-C03 exam guide revision 1.1 is the scope authority; the supplied May 2026 study guide was used as a supplementary coverage check and was not copied."
+}
