@@ -56,8 +56,8 @@ function Harness({
     <CodeFile
       reveal={revealValue}
       interaction={{
-        revealedAnnotationIds: revealed,
-        onRevealAnnotation: (id) => setRevealed((prev) => [...prev, id]),
+        revealedElementIds: revealed,
+        onRevealElement: (id) => setRevealed((prev) => [...prev, id]),
       }}
     />
   );
@@ -159,8 +159,8 @@ describe("CodeFile completion", () => {
       <CodeFile
         reveal={reveal({ annotations: [annotations[2]] })}
         interaction={{
-          revealedAnnotationIds: [],
-          onRevealAnnotation: () => {},
+          revealedElementIds: [],
+          onRevealElement: () => {},
           complete: false,
           onComplete,
         }}
@@ -177,8 +177,8 @@ describe("CodeFile completion", () => {
       <CodeFile
         reveal={reveal()}
         interaction={{
-          revealedAnnotationIds: ["terraform-version", "provider-source"],
-          onRevealAnnotation: () => {},
+          revealedElementIds: ["terraform-version", "provider-source"],
+          onRevealElement: () => {},
           complete: true,
           onComplete: () => {},
         }}

@@ -59,18 +59,18 @@ const node: KnowledgeNode = {
   ],
 };
 
-function renderCard(revealedAnnotationIds: Record<string, string[]>) {
+function renderCard(revealedElementIds: Record<string, string[]>) {
   return render(
     <KnowledgeCard
       node={node}
       moduleTitle="Foundations"
       state="in_progress"
       revealedPromptIds={["what"]}
-      revealedAnnotationIds={revealedAnnotationIds}
+      revealedElementIds={revealedElementIds}
       nextNode={null}
       reducedMotion
       onReveal={() => {}}
-      onRevealAnnotation={() => {}}
+      onRevealElement={() => {}}
       onClose={() => {}}
       onDiscoverNext={() => {}}
     />,
@@ -79,7 +79,7 @@ function renderCard(revealedAnnotationIds: Record<string, string[]>) {
 
 describe("KnowledgeCard charge", () => {
   it("does not count a code file until its required annotations are revealed", () => {
-    renderCard({ versions: ["required-a"] });
+    renderCard({ versions: ["annotation:required-a"] });
 
     expect(
       screen.getByLabelText("1 of 2 prompts revealed"),
@@ -87,7 +87,9 @@ describe("KnowledgeCard charge", () => {
   });
 
   it("counts the code file once every required annotation is revealed", () => {
-    renderCard({ versions: ["required-a", "required-b"] });
+    renderCard({
+      versions: ["annotation:required-a", "annotation:required-b"],
+    });
 
     expect(
       screen.getByLabelText("2 of 2 prompts revealed"),
@@ -95,7 +97,7 @@ describe("KnowledgeCard charge", () => {
   });
 
   it("ignores optional annotations when counting completion", () => {
-    renderCard({ versions: ["optional-c"] });
+    renderCard({ versions: ["annotation:optional-c"] });
 
     expect(
       screen.getByLabelText("1 of 2 prompts revealed"),

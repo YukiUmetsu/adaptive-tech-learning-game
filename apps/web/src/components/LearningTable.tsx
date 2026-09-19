@@ -1,7 +1,4 @@
-import type { LearningReveal } from "../api/types";
-
-/** The `table` arm of the shared reveal union. */
-export type LearningTableReveal = Extract<LearningReveal, { type: "table" }>;
+import type { LearningTableReveal } from "../lib/learningElements";
 
 /**
  * Renders a real table reveal with accessible HTML table semantics.
@@ -9,6 +6,9 @@ export type LearningTableReveal = Extract<LearningReveal, { type: "table" }>;
  * Headers use `<th scope="col">` and rows read column-by-column, so a screen
  * reader announces each cell with its column. The wrapper scrolls horizontally
  * on narrow screens instead of squeezing the columns.
+ *
+ * This is the static, whole-table reveal. Progressive tables render through
+ * `ProgressiveLearningTable`.
  */
 export default function LearningTable({ columns, rows }: LearningTableReveal) {
   return (

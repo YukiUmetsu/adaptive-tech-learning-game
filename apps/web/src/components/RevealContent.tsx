@@ -1,7 +1,11 @@
 import type { LearningReveal } from "../api/types";
 import { comparisonGridClass } from "../lib/comparison";
+import { isProgressiveTable } from "../lib/learningElements";
 import CodeFile, { type CodeFileInteraction } from "./CodeFile";
 import LearningTable from "./LearningTable";
+import ProgressiveLearningTable, {
+  type ProgressiveTableInteraction,
+} from "./ProgressiveLearningTable";
 
 interface RevealContentProps {
   reveal: LearningReveal;
@@ -10,6 +14,11 @@ interface RevealContentProps {
    * interaction-free code file renders read-only with no clickable regions.
    */
   codeInteraction?: CodeFileInteraction;
+  /**
+   * Discovery state for a progressive `table` reveal. A table without
+   * `progressive_reveal` ignores it and uses the static whole-table reveal.
+   */
+  tableInteraction?: ProgressiveTableInteraction;
 }
 
 /**
@@ -23,6 +32,7 @@ interface RevealContentProps {
 export default function RevealContent({
   reveal,
   codeInteraction,
+  tableInteraction,
 }: RevealContentProps) {
   switch (reveal.type) {
     case "text":
@@ -83,7 +93,14 @@ export default function RevealContent({
     case "table":
       return (
         <div className="reveal reveal-table">
-          <LearningTable {...reveal} />
+          {isProgressiveTable(reveal) ? (
+            <ProgressiveLearningTable
+              reveal={reveal}
+              interaction={tableInteraction}
+            />
+          ) : (
+            <LearningTable {...reveal} />
+          )}
         </div>
       );
     case "code_file":

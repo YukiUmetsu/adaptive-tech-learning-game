@@ -229,6 +229,10 @@ pub enum LearningReveal {
         columns: Vec<RevealTableColumn>,
         /// Table rows. Every row must fill every column.
         rows: Vec<RevealTableRow>,
+        /// Optional progressive reveal configuration. When omitted the table is
+        /// revealed as a whole exactly as before.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        progressive_reveal: Option<TableProgressiveReveal>,
     },
     /// A read-only, syntax-highlighted file with clickable annotations.
     ///
@@ -272,8 +276,90 @@ pub struct RevealTableColumn {
 /// One row of a table reveal.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
 pub struct RevealTableRow {
+    /// Stable row identifier. Optional so existing static tables stay valid,
+    /// but required by progressive row and cell reveals.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     /// Column id to cell text. Every authored column must be present.
     pub cells: BTreeMap<String, String>,
+}
+
+/// Progressive reveal configuration for a `table` reveal.
+///
+/// The table itself is always rendered immediately. Discovery is limited to the
+/// reveal units selected by `mode`, minus anything already exposed through
+/// `initially_visible`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct TableProgressiveReveal {
+    /// Whether the learner reveals whole rows, whole columns, or single cells.
+    pub mode: TableRevealMode,
+    /// Information shown from the beginning, before any reveal.
+    #[serde(default)]
+    pub initially_visible: TableInitialVisibility,
+}
+
+/// The unit a learner reveals in a progressive table.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum TableRevealMode {
+    /// Reveal one row at a time.
+    Row,
+    /// Reveal one column at a time.
+    Column,
+    /// Reveal one cell at a time.
+    Cell,
+}
+
+/// Information that is visible before the learner reveals anything.
+///
+/// A cell is initially visible when its column, its row, or its derived cell id
+/// (`row_id:column_id`) is listed. The three lists combine, so authors can give
+/// away a column, an entire row, and one extra cell in one table.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct TableInitialVisibility {
+    /// Column ids whose cells are all visible from the start.
+    #[serde(default)]
+    pub column_ids: Vec<String>,
+    /// Row ids whose cells are all visible from the start.
+    #[serde(default)]
+    pub row_ids: Vec<String>,
+    /// Individually visible cells, keyed as `row_id:column_id`.
+    #[serde(default)]
+    pub cell_ids: Vec<String>,
+}
+
+impl TableProgressiveReveal {
+    /// Derived cell id for a row and column. Authors never hand-write these.
+    pub fn cell_id(row_id: &str, column_id: &str) -> String {
+        format!("{row_id}:{column_id}")
+    }
+
+    /// Whether a cell is visible before any reveal.
+    ///
+    /// A cell is visible when its column, its row, or its derived cell id is
+    /// listed. `row_id` is `None` only for a static table without row ids, in
+    /// which case row and cell rules cannot match.
+    pub fn is_cell_initially_visible(&self, row_id: Option<&str>, column_id: &str) -> bool {
+        if self
+            .initially_visible
+            .column_ids
+            .iter()
+            .any(|id| id == column_id)
+        {
+            return true;
+        }
+        let Some(row_id) = row_id else {
+            return false;
+        };
+        if self.initially_visible.row_ids.iter().any(|id| id == row_id) {
+            return true;
+        }
+        let cell_id = Self::cell_id(row_id, column_id);
+        self.initially_visible
+            .cell_ids
+            .iter()
+            .any(|id| id == &cell_id)
+    }
 }
 
 /// A clickable region inside a `code_file` reveal.
@@ -634,8 +720,19 @@ fn validate_reveal(node: &KnowledgeNode, prompt: &KnowledgePrompt, errors: &mut 
                 }
             }
         }
-        LearningReveal::Table { columns, rows } => {
-            validate_table(node, prompt, columns, rows, errors);
+        LearningReveal::Table {
+            columns,
+            rows,
+            progressive_reveal,
+        } => {
+            validate_table(
+                node,
+                prompt,
+                columns,
+                rows,
+                progressive_reveal.as_ref(),
+                errors,
+            );
         }
         LearningReveal::CodeFile {
             filename,
@@ -651,11 +748,16 @@ fn validate_reveal(node: &KnowledgeNode, prompt: &KnowledgePrompt, errors: &mut 
 
 /// Validates a `table` reveal: known, unique columns; at least one row; and a
 /// value in every row for every column.
+///
+/// When `progressive_reveal` is present it additionally validates stable row
+/// ids, the flexible initial-visibility lists, and that at least one reveal
+/// unit remains.
 fn validate_table(
     node: &KnowledgeNode,
     prompt: &KnowledgePrompt,
     columns: &[RevealTableColumn],
     rows: &[RevealTableRow],
+    progressive_reveal: Option<&TableProgressiveReveal>,
     errors: &mut Vec<ContentError>,
 ) {
     let invalid = |message: String| {
@@ -706,6 +808,172 @@ fn validate_table(
             }
         }
     }
+
+    validate_table_row_ids(rows, errors, &invalid);
+
+    if let Some(progressive) = progressive_reveal {
+        validate_progressive_reveal(progressive, columns, rows, &column_ids, errors, &invalid);
+    }
+}
+
+/// Validates optional row ids: non-empty, unique, and present when a
+/// progressive reveal needs stable row identity.
+fn validate_table_row_ids(
+    rows: &[RevealTableRow],
+    errors: &mut Vec<ContentError>,
+    invalid: &impl Fn(String) -> ContentError,
+) {
+    let mut row_ids = HashSet::new();
+    for row in rows {
+        let Some(id) = row.id.as_deref() else {
+            continue;
+        };
+        if id.trim().is_empty() {
+            errors.push(invalid("table row id must not be empty".to_owned()));
+        } else if !row_ids.insert(id) {
+            errors.push(invalid(format!("duplicate table row id {id}")));
+        }
+    }
+}
+
+/// Validates a progressive table's mode, initial visibility, and reveal units.
+fn validate_progressive_reveal(
+    progressive: &TableProgressiveReveal,
+    columns: &[RevealTableColumn],
+    rows: &[RevealTableRow],
+    column_ids: &HashSet<&str>,
+    errors: &mut Vec<ContentError>,
+    invalid: &impl Fn(String) -> ContentError,
+) {
+    let mut row_ids = HashSet::new();
+    for row in rows {
+        if let Some(id) = row.id.as_deref() {
+            row_ids.insert(id);
+        }
+    }
+
+    // Rows need stable ids whenever the reveal unit or initial visibility
+    // references them. Column mode can omit row ids when it only exposes
+    // columns.
+    let requires_row_ids = matches!(
+        progressive.mode,
+        TableRevealMode::Row | TableRevealMode::Cell
+    ) || !progressive.initially_visible.row_ids.is_empty()
+        || !progressive.initially_visible.cell_ids.is_empty();
+    if requires_row_ids && row_ids.len() != rows.len() {
+        for row in rows {
+            if row.id.as_deref().map(str::trim).unwrap_or("").is_empty() {
+                errors.push(invalid(
+                    "progressive table requires a non-empty id on every row".to_owned(),
+                ));
+            }
+        }
+    }
+
+    let mut seen: HashSet<(&str, &str)> = HashSet::new();
+    for id in &progressive.initially_visible.column_ids {
+        if !column_ids.contains(id.as_str()) {
+            errors.push(invalid(format!(
+                "initially visible column {id} does not exist"
+            )));
+        }
+        if !seen.insert(("column", id.as_str())) {
+            errors.push(invalid(format!("duplicate initially visible column {id}")));
+        }
+    }
+    for id in &progressive.initially_visible.row_ids {
+        if !row_ids.contains(id.as_str()) {
+            errors.push(invalid(format!(
+                "initially visible row {id} does not exist"
+            )));
+        }
+        if !seen.insert(("row", id.as_str())) {
+            errors.push(invalid(format!("duplicate initially visible row {id}")));
+        }
+    }
+
+    let mut derived_cells = HashSet::new();
+    for row in rows {
+        if let Some(row_id) = row.id.as_deref() {
+            for column in columns {
+                derived_cells.insert(TableProgressiveReveal::cell_id(row_id, &column.id));
+            }
+        }
+    }
+    for id in &progressive.initially_visible.cell_ids {
+        if !derived_cells.contains(id) {
+            errors.push(invalid(format!(
+                "initially visible cell {id} does not resolve to a row and column"
+            )));
+        }
+        if !seen.insert(("cell", id.as_str())) {
+            errors.push(invalid(format!("duplicate initially visible cell {id}")));
+        }
+    }
+
+    let units = progressive_reveal_units(progressive, columns, rows);
+    let unique: HashSet<&str> = units.iter().map(String::as_str).collect();
+    if unique.len() != units.len() {
+        errors.push(invalid("generated reveal-unit ids collide".to_owned()));
+    }
+    if units.is_empty() {
+        errors.push(invalid(
+            "progressive table has no revealable units; remove progressive_reveal or leave some content hidden"
+                .to_owned(),
+        ));
+    }
+}
+
+/// The stable reveal-unit ids a progressive table still needs the learner to
+/// explore, mirroring the learner-facing completion rule.
+///
+/// - row mode: rows with at least one hidden cell
+/// - column mode: columns with at least one hidden cell
+/// - cell mode: every hidden cell
+fn progressive_reveal_units(
+    progressive: &TableProgressiveReveal,
+    columns: &[RevealTableColumn],
+    rows: &[RevealTableRow],
+) -> Vec<String> {
+    let mut units = Vec::new();
+    match progressive.mode {
+        TableRevealMode::Row => {
+            for row in rows {
+                if let Some(row_id) = row.id.as_deref() {
+                    let any_hidden = columns.iter().any(|column| {
+                        !progressive.is_cell_initially_visible(Some(row_id), &column.id)
+                    });
+                    if any_hidden {
+                        units.push(format!("row:{row_id}"));
+                    }
+                }
+            }
+        }
+        TableRevealMode::Column => {
+            for column in columns {
+                let any_hidden = rows.iter().any(|row| {
+                    !progressive.is_cell_initially_visible(row.id.as_deref(), &column.id)
+                });
+                if any_hidden {
+                    units.push(format!("column:{}", column.id));
+                }
+            }
+        }
+        TableRevealMode::Cell => {
+            for row in rows {
+                for column in columns {
+                    if !progressive.is_cell_initially_visible(row.id.as_deref(), &column.id) {
+                        let row_id = row.id.as_deref().unwrap_or("");
+                        units.push(format!(
+                            "cell:{}",
+                            TableProgressiveReveal::cell_id(row_id, &column.id)
+                        ));
+                    }
+                }
+            }
+        }
+    }
+    units
 }
 
 /// Validates a `code_file` reveal and every annotation anchor.

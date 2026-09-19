@@ -12,7 +12,7 @@ import {
   deriveLearningState,
   loadDomainProgress,
   nextModuleAfter,
-  revealAnnotation as revealAnnotationInProgress,
+  revealElement as revealElementInProgress,
   revealPrompt,
   type DomainLearningProgress,
 } from "../state/learningProgress";
@@ -218,21 +218,21 @@ export default function DomainLearningPage() {
     [data, derived, commitProgress],
   );
 
-  const revealAnnotation = useCallback(
-    (node: KnowledgeNode, promptId: string, annotationId: string) => {
+  const revealElement = useCallback(
+    (node: KnowledgeNode, promptId: string, elementId: string) => {
       if (!data || !derived) {
         return;
       }
       if (derived.nodeState[node.id] === "locked") {
         return;
       }
-      const updated = revealAnnotationInProgress(
+      const updated = revealElementInProgress(
         data.certification_version,
         data.domain.id,
         data.content_version,
         node.id,
         promptId,
-        annotationId,
+        elementId,
       );
       commitProgress(updated, node);
     },
@@ -328,12 +328,12 @@ export default function DomainLearningPage() {
           moduleTitle={moduleForSelected.title}
           state={derived.nodeState[selectedNode.id] ?? "locked"}
           revealedPromptIds={derived.revealedPromptIds[selectedNode.id] ?? []}
-          revealedAnnotationIds={derived.revealedAnnotationIds[selectedNode.id] ?? {}}
+          revealedElementIds={derived.revealedElementIds[selectedNode.id] ?? {}}
           nextNode={nextNode}
           reducedMotion={reducedMotion}
           onReveal={(promptId) => reveal(selectedNode, promptId)}
-          onRevealAnnotation={(promptId, annotationId) =>
-            revealAnnotation(selectedNode, promptId, annotationId)
+          onRevealElement={(promptId, elementId) =>
+            revealElement(selectedNode, promptId, elementId)
           }
           onClose={() => setSelectedNodeId(null)}
           onDiscoverNext={selectNode}

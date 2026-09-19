@@ -1,19 +1,22 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { elementId } from "../lib/learningElements";
 import {
   LEARNING_PROGRESS_KEY,
   LEGACY_LEARNING_PROGRESS_KEY,
+  V2_LEARNING_PROGRESS_KEY,
   clearDomainProgress,
   deriveLearningState,
   emptyDomainProgress,
   isNodeUnlocked,
   isPromptComplete,
   loadDomainProgress,
-  revealAnnotation,
+  revealElement,
   revealPrompt,
 } from "./learningProgress";
 import { learningFixture } from "../test/learningFixture";
 import { codeLearningFixture } from "../test/codeLearningFixture";
+import { progressiveTableFixture } from "../test/progressiveTableFixture";
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -153,7 +156,7 @@ describe("discovery persistence", () => {
   });
 });
 
-describe("v1 to v2 migration", () => {
+describe("v1 to v3 migration", () => {
   it("converts legacy prompt progress and drops the legacy key", () => {
     window.localStorage.setItem(
       LEGACY_LEARNING_PROGRESS_KEY,
@@ -173,20 +176,20 @@ describe("v1 to v2 migration", () => {
 
     const loaded = loadDomainProgress("v1", "domain-1");
     expect(loaded?.revealedPromptIds.n1).toEqual(["what", "look"]);
-    expect(loaded?.revealedAnnotationIds).toEqual({});
+    expect(loaded?.revealedElementIds).toEqual({});
     expect(window.localStorage.getItem(LEGACY_LEARNING_PROGRESS_KEY)).toBeNull();
 
     const stored = JSON.parse(
       window.localStorage.getItem(LEARNING_PROGRESS_KEY) ?? "{}",
     );
-    expect(stored.version).toBe(2);
+    expect(stored.version).toBe(3);
 
     const state = deriveLearningState(learningFixture, loaded);
     expect(state.nodeState.n1).toBe("unlocked");
     expect(state.unlockedNodeIds.has("ghost-node")).toBe(false);
   });
 
-  it("prefers existing v2 progress without rereading v1", () => {
+  it("prefers existing v3 progress without rereading v1", () => {
     revealPrompt("v1", "domain-1", "test-content-v1", "n1", "what");
     window.localStorage.setItem(
       LEGACY_LEARNING_PROGRESS_KEY,
@@ -198,15 +201,75 @@ describe("v1 to v2 migration", () => {
   });
 });
 
+describe("v2 to v3 migration", () => {
+  it("preserves prompts and namespaces code annotations", () => {
+    window.localStorage.setItem(
+      V2_LEARNING_PROGRESS_KEY,
+      JSON.stringify({
+        version: 2,
+        domains: {
+          "v1::domain-code": {
+            certificationVersion: "v1",
+            domainId: "domain-code",
+            contentVersion: "test-code-v1",
+            revealedPromptIds: { "n-code": ["read"] },
+            revealedAnnotationIds: {
+              "n-code": { versions: ["terraform-version", "provider-source"] },
+            },
+            updatedAt: "2024-01-01T00:00:00.000Z",
+          },
+        },
+      }),
+    );
+
+    const loaded = loadDomainProgress("v1", "domain-code");
+    expect(loaded?.revealedPromptIds["n-code"]).toEqual(["read"]);
+    expect(loaded?.revealedElementIds["n-code"]["versions"]).toEqual([
+      "annotation:terraform-version",
+      "annotation:provider-source",
+    ]);
+    expect(window.localStorage.getItem(V2_LEARNING_PROGRESS_KEY)).toBeNull();
+
+    const stored = JSON.parse(
+      window.localStorage.getItem(LEARNING_PROGRESS_KEY) ?? "{}",
+    );
+    expect(stored.version).toBe(3);
+  });
+
+  it("is idempotent when migration runs twice", () => {
+    const seed = JSON.stringify({
+      version: 2,
+      domains: {
+        "v1::domain-code": {
+          certificationVersion: "v1",
+          domainId: "domain-code",
+          contentVersion: "test-code-v1",
+          revealedPromptIds: {},
+          revealedAnnotationIds: { "n-code": { versions: ["terraform-version"] } },
+          updatedAt: "2024-01-01T00:00:00.000Z",
+        },
+      },
+    });
+    window.localStorage.setItem(V2_LEARNING_PROGRESS_KEY, seed);
+    loadDomainProgress("v1", "domain-code");
+
+    // A second read sees v3 and never re-migrates or duplicates ids.
+    const loaded = loadDomainProgress("v1", "domain-code");
+    expect(loaded?.revealedElementIds["n-code"]["versions"]).toEqual([
+      "annotation:terraform-version",
+    ]);
+  });
+});
+
 describe("code annotation progress", () => {
   const seed = (annotationId: string) =>
-    revealAnnotation(
+    revealElement(
       "v1",
       "domain-code",
       "test-code-v1",
       "n-code",
       "versions",
-      annotationId,
+      elementId.annotation(annotationId),
     );
 
   it("persists revealed annotation ids per node and prompt", () => {
@@ -215,9 +278,9 @@ describe("code annotation progress", () => {
     seed("terraform-version"); // idempotent
 
     const stored = loadDomainProgress("v1", "domain-code");
-    expect(stored?.revealedAnnotationIds["n-code"]["versions"]).toEqual([
-      "terraform-version",
-      "provider-source",
+    expect(stored?.revealedElementIds["n-code"]["versions"]).toEqual([
+      "annotation:terraform-version",
+      "annotation:provider-source",
     ]);
   });
 
@@ -227,21 +290,28 @@ describe("code annotation progress", () => {
 
     const stored = loadDomainProgress("v1", "domain-code");
     expect(stored?.revealedPromptIds["n-code"]).toEqual(["versions"]);
-    expect(stored?.revealedAnnotationIds["n-code"]["versions"]).toEqual([
-      "terraform-version",
+    expect(stored?.revealedElementIds["n-code"]["versions"]).toEqual([
+      "annotation:terraform-version",
     ]);
   });
 
   it("completes a code-file prompt when every required annotation is revealed", () => {
     const prompt = codeLearningFixture.modules[0].nodes[0].prompts[0];
     expect(
-      isPromptComplete(prompt, new Set(), new Set(["terraform-version"])),
+      isPromptComplete(
+        prompt,
+        new Set(),
+        new Set(["annotation:terraform-version"]),
+      ),
     ).toBe(false);
     expect(
       isPromptComplete(
         prompt,
         new Set(),
-        new Set(["terraform-version", "provider-source"]),
+        new Set([
+          "annotation:terraform-version",
+          "annotation:provider-source",
+        ]),
       ),
     ).toBe(true);
   });
@@ -292,11 +362,105 @@ describe("code annotation progress", () => {
     expect(state.nodeState["n-read"]).toBe("unlocked");
   });
 
-  it("treats a table prompt as an ordinary prompt reveal", () => {
+  it("treats a static table prompt as an ordinary prompt reveal", () => {
     const tablePrompt = codeLearningFixture.modules[1].nodes[0].prompts[0];
     expect(
       isPromptComplete(tablePrompt, new Set(["constraints"]), new Set()),
     ).toBe(true);
     expect(isPromptComplete(tablePrompt, new Set(), new Set())).toBe(false);
+  });
+});
+
+describe("progressive table progress", () => {
+  const promptFor = (nodeId: string) =>
+    progressiveTableFixture.modules[0].nodes.find(
+      (node) => node.id === nodeId,
+    )!.prompts[0];
+
+  it("counts row units as required and ignores given rows", () => {
+    const prompt = promptFor("n-row");
+    // The service column is given; both rows still have hidden cells.
+    expect(
+      isPromptComplete(prompt, new Set(), new Set(["row:cloudwatch"])),
+    ).toBe(false);
+    expect(
+      isPromptComplete(
+        prompt,
+        new Set(),
+        new Set(["row:cloudwatch", "row:cloudtrail"]),
+      ),
+    ).toBe(true);
+  });
+
+  it("counts column units and excludes initially visible columns", () => {
+    const prompt = promptFor("n-column");
+    expect(
+      isPromptComplete(prompt, new Set(), new Set(["column:stateful"])),
+    ).toBe(false);
+    expect(
+      isPromptComplete(
+        prompt,
+        new Set(),
+        new Set(["column:stateful", "column:rules"]),
+      ),
+    ).toBe(true);
+  });
+
+  it("counts every hidden cell and excludes explicitly given cells", () => {
+    const prompt = promptFor("n-cell");
+    const required = [
+      "cell:weighted:basis",
+      "cell:weighted:health",
+      "cell:latency:basis",
+      "cell:latency:health",
+      "cell:latency:use",
+    ];
+    expect(isPromptComplete(prompt, new Set(), new Set(required.slice(0, 4)))).toBe(
+      false,
+    );
+    expect(isPromptComplete(prompt, new Set(), new Set(required))).toBe(true);
+  });
+
+  it("persists row, column, and cell progress and unlocks nodes", () => {
+    const row = (id: string) =>
+      revealElement(
+        "v1",
+        "domain-progressive",
+        "test-progressive-v1",
+        "n-row",
+        "rows",
+        `row:${id}`,
+      );
+    row("cloudwatch");
+    let state = deriveLearningState(
+      progressiveTableFixture,
+      loadDomainProgress("v1", "domain-progressive"),
+    );
+    expect(state.nodeState["n-row"]).toBe("in_progress");
+
+    row("cloudtrail");
+    state = deriveLearningState(
+      progressiveTableFixture,
+      loadDomainProgress("v1", "domain-progressive"),
+    );
+    expect(state.nodeState["n-row"]).toBe("unlocked");
+    expect(state.nodeState["n-column"]).toBe("ready");
+  });
+
+  it("ignores stale element ids safely", () => {
+    revealElement(
+      "v1",
+      "domain-progressive",
+      "test-progressive-v1",
+      "n-row",
+      "rows",
+      "row:no-longer-exists",
+    );
+    const state = deriveLearningState(
+      progressiveTableFixture,
+      loadDomainProgress("v1", "domain-progressive"),
+    );
+    expect(state.nodeState["n-row"]).toBe("in_progress");
+    expect(state.unlockedNodeIds.has("n-row")).toBe(false);
   });
 });

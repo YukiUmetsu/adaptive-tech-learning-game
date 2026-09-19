@@ -2457,6 +2457,17 @@
                 },
                 "description": "Table columns in display order."
               },
+              "progressive_reveal": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TableProgressiveReveal",
+                    "description": "Optional progressive reveal configuration. When omitted the table is\nrevealed as a whole exactly as before."
+                  }
+                ]
+              },
               "rows": {
                 "type": "array",
                 "items": {
@@ -2958,6 +2969,13 @@
             "propertyNames": {
               "type": "string"
             }
+          },
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Stable row identifier. Optional so existing static tables stay valid,\nbut required by progressive row and cell reveals."
           }
         }
       },
@@ -3167,6 +3185,59 @@
             "description": "Per-event results."
           }
         }
+      },
+      "TableInitialVisibility": {
+        "type": "object",
+        "description": "Information that is visible before the learner reveals anything.\n\nA cell is initially visible when its column, its row, or its derived cell id\n(`row_id:column_id`) is listed. The three lists combine, so authors can give\naway a column, an entire row, and one extra cell in one table.",
+        "properties": {
+          "cell_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Individually visible cells, keyed as `row_id:column_id`."
+          },
+          "column_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Column ids whose cells are all visible from the start."
+          },
+          "row_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Row ids whose cells are all visible from the start."
+          }
+        }
+      },
+      "TableProgressiveReveal": {
+        "type": "object",
+        "description": "Progressive reveal configuration for a `table` reveal.\n\nThe table itself is always rendered immediately. Discovery is limited to the\nreveal units selected by `mode`, minus anything already exposed through\n`initially_visible`.",
+        "required": [
+          "mode"
+        ],
+        "properties": {
+          "initially_visible": {
+            "$ref": "#/components/schemas/TableInitialVisibility",
+            "description": "Information shown from the beginning, before any reveal."
+          },
+          "mode": {
+            "$ref": "#/components/schemas/TableRevealMode",
+            "description": "Whether the learner reveals whole rows, whole columns, or single cells."
+          }
+        }
+      },
+      "TableRevealMode": {
+        "type": "string",
+        "description": "The unit a learner reveals in a progressive table.",
+        "enum": [
+          "row",
+          "column",
+          "cell"
+        ]
       },
       "TaskDto": {
         "type": "object",

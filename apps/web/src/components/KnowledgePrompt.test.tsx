@@ -116,9 +116,9 @@ describe("KnowledgePrompt", () => {
           },
         }}
         revealed={false}
-        revealedAnnotationIds={[]}
+        revealedElementIds={[]}
         onReveal={() => {}}
-        onRevealAnnotation={() => {}}
+        onRevealElement={() => {}}
       />,
     );
 

@@ -12,12 +12,12 @@ interface KnowledgeCardProps {
   moduleTitle: string;
   state: NodeState;
   revealedPromptIds: readonly string[];
-  /** Prompt id to revealed code-annotation ids for this node. */
-  revealedAnnotationIds: Readonly<Record<string, readonly string[]>>;
+  /** Prompt id to revealed namespaced discovery element ids for this node. */
+  revealedElementIds: Readonly<Record<string, readonly string[]>>;
   nextNode: KnowledgeNode | null;
   reducedMotion: boolean;
   onReveal: (promptId: string) => void;
-  onRevealAnnotation: (promptId: string, annotationId: string) => void;
+  onRevealElement: (promptId: string, elementId: string) => void;
   onClose: () => void;
   onDiscoverNext: (nodeId: string) => void;
 }
@@ -34,24 +34,24 @@ export default function KnowledgeCard({
   moduleTitle,
   state,
   revealedPromptIds,
-  revealedAnnotationIds,
+  revealedElementIds,
   nextNode,
   reducedMotion,
   onReveal,
-  onRevealAnnotation,
+  onRevealElement,
   onClose,
   onDiscoverNext,
 }: KnowledgeCardProps) {
-  const annotationSets = useMemo(() => {
+  const elementSets = useMemo(() => {
     const map = new Map<string, Set<string>>();
-    for (const [promptId, ids] of Object.entries(revealedAnnotationIds)) {
+    for (const [promptId, ids] of Object.entries(revealedElementIds)) {
       map.set(promptId, new Set(ids));
     }
     return map;
-  }, [revealedAnnotationIds]);
+  }, [revealedElementIds]);
   const revealed = useMemo(() => new Set(revealedPromptIds), [revealedPromptIds]);
   const promptComplete = (prompt: KnowledgeNode["prompts"][number]) =>
-    isPromptComplete(prompt, revealed, annotationSets.get(prompt.id));
+    isPromptComplete(prompt, revealed, elementSets.get(prompt.id));
   const requiredPrompts = node.prompts.filter((prompt) => prompt.required !== false);
   const counted = requiredPrompts.length > 0 ? requiredPrompts : node.prompts;
   const revealedCount = counted.filter(promptComplete).length;
@@ -100,9 +100,9 @@ export default function KnowledgeCard({
             key={prompt.id}
             prompt={prompt}
             revealed={promptComplete(prompt)}
-            revealedAnnotationIds={revealedAnnotationIds[prompt.id] ?? []}
+            revealedElementIds={revealedElementIds[prompt.id] ?? []}
             onReveal={onReveal}
-            onRevealAnnotation={onRevealAnnotation}
+            onRevealElement={onRevealElement}
           />
         ))}
       </ul>

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
 import type { LearningReveal } from "../api/types";
+import { elementId } from "../lib/learningElements";
 import {
   annotateCodeLines,
   tokenClassName,
@@ -12,10 +13,10 @@ export type CodeFileReveal = Extract<LearningReveal, { type: "code_file" }>;
 
 /** Discovery state and callbacks for one interactive code file. */
 export interface CodeFileInteraction {
-  /** Annotation ids the learner has already opened. */
-  revealedAnnotationIds: readonly string[];
+  /** Namespaced element ids the learner has already opened. */
+  revealedElementIds: readonly string[];
   /** Reveals one annotation explanation. Never scored. */
-  onRevealAnnotation: (annotationId: string) => void;
+  onRevealElement: (elementId: string) => void;
   /** Disables interaction while the node is locked or busy. */
   disabled?: boolean;
   /** Whether the prompt is complete (all required annotations revealed). */
@@ -39,8 +40,13 @@ interface CodeFileProps {
  */
 export default function CodeFile({ reveal, interaction }: CodeFileProps) {
   const revealed = useMemo(
-    () => new Set(interaction?.revealedAnnotationIds ?? []),
-    [interaction?.revealedAnnotationIds],
+    () =>
+      new Set(
+        (interaction?.revealedElementIds ?? []).map((id) =>
+          id.startsWith("annotation:") ? id : elementId.annotation(id),
+        ),
+      ),
+    [interaction?.revealedElementIds],
   );
   const targets = useMemo<CodeAnnotationTarget[]>(
     () =>
@@ -67,7 +73,9 @@ export default function CodeFile({ reveal, interaction }: CodeFileProps) {
     !hasRequiredAnnotations &&
     Boolean(interaction?.onComplete) &&
     !interaction?.complete;
-  const revealedAnnotations = annotations.filter((a) => revealed.has(a.id));
+  const revealedAnnotations = annotations.filter((a) =>
+    revealed.has(elementId.annotation(a.id)),
+  );
   const lineNumbers = reveal.line_numbers !== false;
 
   return (
@@ -97,7 +105,9 @@ export default function CodeFile({ reveal, interaction }: CodeFileProps) {
                   );
                 }
                 const annotation = annotationById.get(item.annotationId);
-                const isRevealed = revealed.has(item.annotationId);
+                const isRevealed = revealed.has(
+                  elementId.annotation(item.annotationId),
+                );
                 const label = annotation
                   ? `${annotation.title}: show explanation`
                   : "Show explanation";
@@ -111,7 +121,11 @@ export default function CodeFile({ reveal, interaction }: CodeFileProps) {
                     aria-label={label}
                     aria-expanded={isRevealed}
                     disabled={interaction?.disabled}
-                    onClick={() => interaction?.onRevealAnnotation(item.annotationId)}
+                    onClick={() =>
+                      interaction?.onRevealElement(
+                        elementId.annotation(item.annotationId),
+                      )
+                    }
                   >
                     {item.parts.map((part, partIndex) => (
                       <span
