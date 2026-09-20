@@ -4,7 +4,7 @@ import {
   loadPendingAuxiliary,
   loadPendingDiscovery,
   markAuxiliarySynced,
-  markDiscoverySynced,
+  markDiscoverySent,
   type PendingAuxiliaryEvent,
   type PendingDiscoveryUpdate,
 } from "./auxiliaryQueue";
@@ -60,7 +60,7 @@ export async function flushAuxiliary(): Promise<void> {
       return;
     }
     if (result.data.discovery?.accepted) {
-      markDiscoverySynced(discovery.map((entry) => entry.trackVersion));
+      markDiscoverySent(discovery);
     }
     if (result.data.auxiliary?.accepted) {
       markAuxiliarySynced(auxiliary.map((entry) => entry.id));
@@ -74,16 +74,25 @@ export async function flushAuxiliary(): Promise<void> {
  * Loads server-persisted discovery for a track.
  *
  * Best-effort: any failure returns `null` and the caller keeps using local
- * progress. This is an enhancement, never a prerequisite for rendering.
+ * progress. This is an enhancement, never a prerequisite for rendering. When
+ * `expectedTrackVersion` is provided, a response for a different version is
+ * ignored so a multi-version track can never merge the wrong version's progress.
  */
 export async function loadServerDiscovery(
   trackId: string,
+  expectedTrackVersion?: string,
 ): Promise<DomainDiscoveryInput[] | null> {
   try {
     const result = await api.GET("/v1/tracks/{track_id}/discovery", {
       params: { path: { track_id: trackId } },
     });
     if (result.error || !result.data) {
+      return null;
+    }
+    if (
+      expectedTrackVersion &&
+      result.data.track_version !== expectedTrackVersion
+    ) {
       return null;
     }
     return result.data.domains ?? [];

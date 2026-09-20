@@ -198,7 +198,7 @@ function DailyNodeActivity({
       return;
     }
     let cancelled = false;
-    void loadServerDiscovery(data.certification_id).then((server) => {
+    void loadServerDiscovery(data.certification_id, data.certification_version).then((server) => {
       if (cancelled || !server) {
         return;
       }

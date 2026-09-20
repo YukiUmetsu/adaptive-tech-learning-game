@@ -6,7 +6,8 @@ import {
   loadPendingAuxiliary,
   loadPendingDiscovery,
   markAuxiliarySynced,
-  markDiscoverySynced,
+  markDiscoverySent,
+  MAX_PENDING_AUXILIARY_EVENTS,
   PENDING_AUXILIARY_KEY,
   PENDING_DISCOVERY_KEY,
 } from "./auxiliaryQueue";
@@ -65,20 +66,79 @@ describe("auxiliaryQueue", () => {
     expect(loadPendingDiscovery()).toHaveLength(2);
   });
 
-  it("removes only synced track versions", () => {
+  it("removes only the sent reveals and keeps a track's other work", () => {
     enqueueDiscovery({
       trackVersion: "v1",
       contentVersion: "c1",
-      domains: [{ domain_id: "d1", revealed_prompt_ids: {}, revealed_element_ids: {} }],
+      domains: [
+        {
+          domain_id: "d1",
+          revealed_prompt_ids: { n1: ["p1"] },
+          revealed_element_ids: {},
+        },
+      ],
     });
     enqueueDiscovery({
       trackVersion: "v2",
       contentVersion: "c1",
-      domains: [{ domain_id: "d1", revealed_prompt_ids: {}, revealed_element_ids: {} }],
+      domains: [
+        {
+          domain_id: "d1",
+          revealed_prompt_ids: { n1: ["p1"] },
+          revealed_element_ids: {},
+        },
+      ],
     });
 
-    markDiscoverySynced(["v1"]);
+    markDiscoverySent([
+      {
+        trackVersion: "v1",
+        contentVersion: "c1",
+        domains: [
+          {
+            domain_id: "d1",
+            revealed_prompt_ids: { n1: ["p1"] },
+            revealed_element_ids: {},
+          },
+        ],
+      },
+    ]);
     expect(loadPendingDiscovery().map((entry) => entry.trackVersion)).toEqual(["v2"]);
+  });
+
+  it("keeps a reveal added while a sync was in flight", () => {
+    enqueueDiscovery({
+      trackVersion: "v1",
+      contentVersion: "c1",
+      domains: [
+        {
+          domain_id: "d1",
+          revealed_prompt_ids: { n1: ["p1"] },
+          revealed_element_ids: {},
+        },
+      ],
+    });
+    // Snapshot exactly what would be sent.
+    const sent = loadPendingDiscovery();
+
+    // A reveal lands after the snapshot but before the response is applied.
+    enqueueDiscovery({
+      trackVersion: "v1",
+      contentVersion: "c1",
+      domains: [
+        {
+          domain_id: "d1",
+          revealed_prompt_ids: { n1: ["p2"] },
+          revealed_element_ids: {},
+        },
+      ],
+    });
+
+    markDiscoverySent(sent);
+
+    const remaining = loadPendingDiscovery();
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].domains[0].revealed_prompt_ids).toEqual({ n1: ["p2"] });
   });
 
   it("deduplicates telemetry by recommendation, event, and target", () => {
@@ -130,5 +190,29 @@ describe("auxiliaryQueue", () => {
     window.localStorage.setItem(PENDING_AUXILIARY_KEY, JSON.stringify([{ bad: true }]));
     expect(loadPendingDiscovery()).toEqual([]);
     expect(loadPendingAuxiliary()).toEqual([]);
+  });
+
+  it("bounds the pending telemetry queue by dropping the oldest", () => {
+    for (let index = 0; index < MAX_PENDING_AUXILIARY_EVENTS + 10; index += 1) {
+      enqueueAuxiliaryEvent({
+        trackId: "track",
+        recommendationId: `rec-${index}`,
+        event: "shown",
+        action: null,
+        domainId: null,
+        nodeId: `n-${index}`,
+        questionId: null,
+      });
+    }
+
+    const pending = loadPendingAuxiliary();
+    expect(pending).toHaveLength(MAX_PENDING_AUXILIARY_EVENTS);
+    expect(pending.some((event) => event.recommendationId === "rec-0")).toBe(false);
+    expect(
+      pending.some(
+        (event) =>
+          event.recommendationId === `rec-${MAX_PENDING_AUXILIARY_EVENTS + 9}`,
+      ),
+    ).toBe(true);
   });
 });

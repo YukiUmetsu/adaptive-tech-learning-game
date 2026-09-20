@@ -2009,12 +2009,31 @@ async fn persist_discovery_best_effort(
 
     let mut accepted = true;
     for update in updates {
+        // Only persist progress for content the server actually knows about, so a
+        // client cannot accumulate arbitrary `(track, domain)` rows in hot
+        // Postgres. Unknown domains are dropped; the Knowledge Map derivation
+        // ignores unknown ids anyway.
+        let domains: Vec<DomainDiscoveryInput> = update
+            .domains
+            .iter()
+            .filter(|domain| {
+                state
+                    .content
+                    .learning_domain(&update.track_version, &domain.domain_id)
+                    .is_some()
+            })
+            .cloned()
+            .collect();
+        if domains.is_empty() {
+            continue;
+        }
+
         if let Err(error) = db::discovery::merge(
             &state.pool,
             user.id,
             &update.track_version,
             &update.content_version,
-            &update.domains,
+            &domains,
         )
         .await
         {
@@ -2611,6 +2630,63 @@ mod tests {
             now,
         )
         .await;
+    }
+
+    #[tokio::test]
+    async fn discovery_persistence_failure_is_swallowed() {
+        use crate::auth::{Authenticator, DevVerifier};
+        use std::sync::Arc;
+
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .max_connections(1)
+            .acquire_timeout(std::time::Duration::from_millis(50))
+            .connect_lazy("postgres://app:app@127.0.0.1:1/app")
+            .expect("lazy pool");
+        let content = Arc::new(
+            adaptive_learn_content::ContentRegistry::embedded().expect("embedded content"),
+        );
+        let state = AppState::new(
+            pool,
+            content,
+            Authenticator {
+                verifier: Arc::new(DevVerifier),
+                profile: None,
+            },
+        );
+        let user = AuthenticatedUser {
+            id: Uuid::new_v4(),
+            auth_subject: "test".to_owned(),
+            email: None,
+        };
+
+        // A valid, known domain against an unreachable database: the helper
+        // reports failure without panicking or propagating.
+        let update = DiscoveryUpdateRequest {
+            track_version: "soa-c03".to_owned(),
+            content_version: "soa-c03-content-v1".to_owned(),
+            domains: vec![DomainDiscoveryInput {
+                domain_id: "domain-1".to_owned(),
+                revealed_prompt_ids: BTreeMap::from([("n1".to_owned(), vec!["p1".to_owned()])]),
+                revealed_element_ids: BTreeMap::new(),
+            }],
+        };
+        let result =
+            persist_discovery_best_effort(&state, Some(&user), std::slice::from_ref(&update)).await;
+        assert!(!result.accepted);
+
+        // An unknown domain is dropped before any database work, so it cannot
+        // accumulate arbitrary rows and is not reported as a failure.
+        let unknown = DiscoveryUpdateRequest {
+            track_version: "soa-c03".to_owned(),
+            content_version: "soa-c03-content-v1".to_owned(),
+            domains: vec![DomainDiscoveryInput {
+                domain_id: "does-not-exist".to_owned(),
+                revealed_prompt_ids: BTreeMap::from([("n1".to_owned(), vec!["p1".to_owned()])]),
+                revealed_element_ids: BTreeMap::new(),
+            }],
+        };
+        let result = persist_discovery_best_effort(&state, Some(&user), &[unknown]).await;
+        assert!(result.accepted);
     }
 
     fn concept_weight(concept_id: &str) -> ConceptWeight {

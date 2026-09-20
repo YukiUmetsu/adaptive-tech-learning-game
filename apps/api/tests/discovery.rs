@@ -307,9 +307,9 @@ async fn auxiliary_failure_does_not_reject_accepted_learning_events() {
         .clone();
     let answer = canonical_answer_value(&question);
 
-    // The discovery update has a blank domain id (violates a DB check) and the
-    // telemetry event has a blank track id (violates a DB check). Both auxiliary
-    // sections must fail without rejecting the valid learning event.
+    // The telemetry event has a blank track id (violates a DB check) so the
+    // auxiliary section fails. The valid discovery update still lands, and the
+    // accepted learning event must survive both.
     let (status, body) = common::send_as(
         app,
         &subject,
@@ -331,7 +331,7 @@ async fn auxiliary_failure_does_not_reject_accepted_learning_events() {
             "discovery_updates": [{
                 "track_version": "soa-c03",
                 "content_version": "soa-c03-content-v1",
-                "domains": [{ "domain_id": "", "revealed_prompt_ids": {}, "revealed_element_ids": {} }]
+                "domains": [{ "domain_id": "domain-1", "revealed_prompt_ids": { "n1": ["p1"] }, "revealed_element_ids": {} }]
             }],
             "auxiliary_events": [{
                 "event_id": Uuid::new_v4(),
@@ -344,7 +344,7 @@ async fn auxiliary_failure_does_not_reject_accepted_learning_events() {
     .await;
     assert_eq!(status, StatusCode::OK, "{body}");
     assert_eq!(body["results"][0]["accepted"], true, "{body}");
-    assert_eq!(body["discovery"]["accepted"], false, "{body}");
+    assert_eq!(body["discovery"]["accepted"], true, "{body}");
     assert_eq!(body["auxiliary"]["accepted"], false, "{body}");
 
     // The accepted event really was persisted.
@@ -597,10 +597,9 @@ fn app_with_internal_config(pool: db::PgPool, enabled: bool, token: Option<&str>
 
 #[tokio::test]
 async fn internal_evaluation_is_hidden_when_disabled() {
-    let Some(pool) = common::database_pool().await else {
-        return;
-    };
-    let app = app_with_internal_config(pool, false, None);
+    // No database is needed: a disabled endpoint is not mounted at all, so it
+    // returns 404 before authentication is attempted.
+    let app = app_with_internal_config(common::unreachable_pool(), false, None);
     let (status, _) = send_with_internal_token(app, None, "/internal/model-evaluation").await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }

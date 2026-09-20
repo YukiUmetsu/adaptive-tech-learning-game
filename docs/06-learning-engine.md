@@ -482,7 +482,10 @@ Each section has its own disposition. A failure in `discovery_updates` or
 `auxiliary_events` never rejects or rolls back accepted `events`. The client
 retains only the failed auxiliary section for a later retry; accepted learning
 events are never resent because an auxiliary section failed. Sections are not
-placed in one atomic database transaction.
+placed in one atomic database transaction. Malformed auxiliary entries are
+dropped server-side, and queued telemetry is bounded (oldest dropped on
+overflow), so a malformed or abusive client cannot grow the sync payload without
+limit or block authoritative learning.
 
 ## Cold start: no diagnostic onboarding
 

@@ -4,7 +4,7 @@ import type {
   RecommendationEventKind,
 } from "../api/types";
 import { newId } from "../lib/id";
-import { mergeDiscoveryLists } from "./discovery";
+import { mergeDiscoveryLists, subtractDiscoveryLists } from "./discovery";
 
 /**
  * Local pending queue for auxiliary work that is batched into `/v1/sync`.
@@ -40,6 +40,13 @@ export interface PendingAuxiliaryEvent {
 
 export const PENDING_DISCOVERY_KEY = "adaptive-learn.pending-discovery.v1";
 export const PENDING_AUXILIARY_KEY = "adaptive-learn.pending-auxiliary.v1";
+
+/**
+ * Upper bound on queued telemetry. Telemetry is non-authoritative, so the oldest
+ * events are dropped on overflow rather than letting the queue grow without
+ * bound and inflate every future sync request.
+ */
+export const MAX_PENDING_AUXILIARY_EVENTS = 200;
 
 function readJson<T>(key: string): T | null {
   try {
@@ -120,12 +127,21 @@ export function enqueueDiscovery(update: PendingDiscoveryUpdate): boolean {
   return writeJson(PENDING_DISCOVERY_KEY, pending);
 }
 
-/** Removes synced discovery entries from the pending queue. */
-export function markDiscoverySynced(trackVersions: string[]): void {
-  const synced = new Set(trackVersions);
-  const remaining = loadPendingDiscovery().filter(
-    (entry) => !synced.has(entry.trackVersion),
-  );
+/** Removes exactly the reveals that were sent, keeping later local reveals. */
+export function markDiscoverySent(sent: PendingDiscoveryUpdate[]): void {
+  const sentByTrack = new Map(sent.map((entry) => [entry.trackVersion, entry]));
+  const remaining: PendingDiscoveryUpdate[] = [];
+  for (const entry of loadPendingDiscovery()) {
+    const sentEntry = sentByTrack.get(entry.trackVersion);
+    if (!sentEntry) {
+      remaining.push(entry);
+      continue;
+    }
+    const domains = subtractDiscoveryLists(entry.domains, sentEntry.domains);
+    if (domains.length > 0) {
+      remaining.push({ ...entry, domains });
+    }
+  }
   writeJson(PENDING_DISCOVERY_KEY, remaining);
 }
 
@@ -204,7 +220,11 @@ export function enqueueAuxiliaryEvent(
     nodeId: event.nodeId ?? null,
     questionId: event.questionId ?? null,
   });
-  return writeJson(PENDING_AUXILIARY_KEY, pending);
+  const bounded =
+    pending.length > MAX_PENDING_AUXILIARY_EVENTS
+      ? pending.slice(pending.length - MAX_PENDING_AUXILIARY_EVENTS)
+      : pending;
+  return writeJson(PENDING_AUXILIARY_KEY, bounded);
 }
 
 /** Removes synced telemetry events from the pending queue. */

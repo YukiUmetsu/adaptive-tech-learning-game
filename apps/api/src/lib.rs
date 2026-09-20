@@ -38,7 +38,7 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
     let cors = build_cors(config);
     let timeout = Duration::from_secs(config.request_timeout_seconds);
 
-    Router::new()
+    let mut router = Router::new()
         .route("/health", get(routes::health::health))
         .route("/openapi.json", get(routes::openapi::openapi_json))
         .route(
@@ -88,11 +88,19 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
         )
         .route("/v1/sync", post(routes::sync::sync))
         .route("/v1/wallet", get(routes::wallet::get_wallet))
-        .route("/v1/me", get(routes::me::get_me))
-        .route(
+        .route("/v1/me", get(routes::me::get_me));
+
+    // The internal evaluation endpoint is only mounted when explicitly enabled,
+    // so a normal deployment returns 404 for it to every caller (including
+    // unauthenticated ones) rather than revealing that it exists via a 401.
+    if config.internal_evaluation_enabled {
+        router = router.route(
             "/internal/model-evaluation",
             get(routes::internal::get_model_evaluation),
-        )
+        );
+    }
+
+    router
         .layer(Extension(config.internal_access()))
         .layer(TraceLayer::new_for_http())
         .layer(TimeoutLayer::with_status_code(

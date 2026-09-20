@@ -123,10 +123,12 @@ V1 uses earned-only gacha. Any paid randomized items require separate legal/app-
 ### Internal endpoints
 
 `/internal/model-evaluation` is an operator/developer surface, not a learner
-route. It is disabled outside local/test by default. When explicitly enabled
-outside local/test it requires an `X-Internal-Token` shared secret, and a normal
-authenticated learner token is never sufficient. It returns aggregate metrics
-only and never per-user data.
+route. It is disabled outside local/test by default, and when disabled the route
+is not mounted at all, so it returns 404 to every caller rather than revealing
+its existence through a 401. When explicitly enabled outside local/test it
+requires an `X-Internal-Token` shared secret, and a normal authenticated learner
+token is never sufficient. It returns aggregate metrics only and never per-user
+data.
 
 ## Database
 

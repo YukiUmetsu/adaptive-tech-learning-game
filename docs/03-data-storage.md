@@ -110,8 +110,11 @@ Merging is a monotonic set-union: the stored prompt/element sets are unioned wit
 each incoming batch. An older device can never remove a newer reveal, duplicate
 batches are idempotent, and concurrent multi-device writes are serialized per
 `(user, track, domain)` with a row lock, so there is no last-write-wins conflict.
-The frontend is local-first: it renders from `localStorage` immediately, merges
-the persisted response asynchronously, and keeps working if persistence fails.
+Only domains the server's content registry knows about are persisted; unknown or
+blank domains are dropped, so a client cannot accumulate arbitrary
+`(track, domain)` rows in hot Postgres. The frontend is local-first: it renders
+from `localStorage` immediately, merges the persisted response asynchronously,
+and keeps working if persistence fails.
 
 ## Auxiliary recommendation history
 

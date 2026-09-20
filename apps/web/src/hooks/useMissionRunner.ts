@@ -12,7 +12,7 @@ import {
   loadPendingAuxiliary,
   loadPendingDiscovery,
   markAuxiliarySynced,
-  markDiscoverySynced,
+  markDiscoverySent,
 } from "../state/auxiliaryQueue";
 import {
   appendPendingEvent,
@@ -155,7 +155,7 @@ export function useMissionRunner(missionId: string): MissionRunner {
         .map((entry) => entry.event_id);
       markEventsSynced(accepted);
       if (result.data.discovery?.accepted) {
-        markDiscoverySynced(discovery.map((entry) => entry.trackVersion));
+        markDiscoverySent(discovery);
       }
       if (result.data.auxiliary?.accepted) {
         markAuxiliarySynced(auxiliary.map((entry) => entry.id));

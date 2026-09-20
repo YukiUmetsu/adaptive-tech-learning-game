@@ -85,3 +85,73 @@ export function mergeDiscoveryLists(
     a.domain_id.localeCompare(b.domain_id),
   );
 }
+
+function subtractIds(base: string[], remove: string[]): string[] {
+  const removed = new Set(remove);
+  return base.filter((id) => !removed.has(id));
+}
+
+/**
+ * Removes the reveals in `sent` from `base`, leaving reveals added later.
+ *
+ * Used after a successful sync so a reveal made while the request was in flight
+ * is never dropped along with the values that were actually sent.
+ */
+export function subtractDiscovery(
+  base: DomainDiscoveryInput,
+  sent: DomainDiscoveryInput,
+): DomainDiscoveryInput {
+  const revealedPromptIds: Record<string, string[]> = {};
+  for (const [nodeId, ids] of Object.entries(base.revealed_prompt_ids ?? {})) {
+    const remaining = subtractIds(
+      ids,
+      sent.revealed_prompt_ids?.[nodeId] ?? [],
+    );
+    if (remaining.length > 0) {
+      revealedPromptIds[nodeId] = remaining;
+    }
+  }
+
+  const revealedElementIds: Record<string, Record<string, string[]>> = {};
+  for (const [nodeId, prompts] of Object.entries(
+    base.revealed_element_ids ?? {},
+  )) {
+    const promptMap: Record<string, string[]> = {};
+    for (const [promptId, ids] of Object.entries(prompts)) {
+      const remaining = subtractIds(
+        ids,
+        sent.revealed_element_ids?.[nodeId]?.[promptId] ?? [],
+      );
+      if (remaining.length > 0) {
+        promptMap[promptId] = remaining;
+      }
+    }
+    if (Object.keys(promptMap).length > 0) {
+      revealedElementIds[nodeId] = promptMap;
+    }
+  }
+
+  return {
+    domain_id: base.domain_id,
+    revealed_prompt_ids: revealedPromptIds,
+    revealed_element_ids: revealedElementIds,
+  };
+}
+
+/** Subtracts sent reveals from a list of domains, dropping emptied domains. */
+export function subtractDiscoveryLists(
+  base: DomainDiscoveryInput[],
+  sent: DomainDiscoveryInput[],
+): DomainDiscoveryInput[] {
+  const sentByDomain = new Map(sent.map((domain) => [domain.domain_id, domain]));
+  return base
+    .map((domain) => {
+      const sentDomain = sentByDomain.get(domain.domain_id);
+      return sentDomain ? subtractDiscovery(domain, sentDomain) : domain;
+    })
+    .filter(
+      (domain) =>
+        Object.keys(domain.revealed_prompt_ids ?? {}).length > 0 ||
+        Object.keys(domain.revealed_element_ids ?? {}).length > 0,
+    );
+}

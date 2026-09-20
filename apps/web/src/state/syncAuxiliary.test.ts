@@ -195,6 +195,23 @@ describe("loadServerDiscovery", () => {
     expect(domains?.[0].domain_id).toBe("d1");
   });
 
+  it("ignores a response for a different track version", async () => {
+    stubFetch(() =>
+      jsonResponse({
+        track_version: "v2",
+        domains: [
+          {
+            domain_id: "d1",
+            revealed_prompt_ids: { n1: ["p1"] },
+            revealed_element_ids: {},
+          },
+        ],
+      }),
+    );
+
+    expect(await loadServerDiscovery("track", "v1")).toBeNull();
+  });
+
   it("returns null on failure so callers keep local progress", async () => {
     stubFetch(() => jsonResponse({ error: { code: "internal" } }, 500));
     expect(await loadServerDiscovery("track")).toBeNull();
