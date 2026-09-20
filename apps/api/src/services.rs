@@ -24,8 +24,8 @@ use crate::dto::{
     AnswerPayload, AnswerRequest, CatalogResponse, CertificationDto, CertificationVersionDto,
     CompleteMissionResponse, ConceptDto, DomainDto, FeedbackResponse, IssueMissionRequest,
     LearningDomainResponse, MissionResponse, QuestionView, RecommendationEventRequest,
-    RecommendationEventResponse, RecommendationResponse, SyncEventRequest, SyncEventResult,
-    SyncRequest, SyncResponse, TaskDto, WalletResponse,
+    RecommendationEventResponse, RecommendationResponse, StudySessionRequest, StudySessionResponse,
+    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, TaskDto, WalletResponse,
 };
 use crate::error::ApiError;
 use crate::planner::{
@@ -122,19 +122,20 @@ pub fn learning_domain(
     })
 }
 
-/// Builds a best-effort next-action recommendation for a learning track.
-///
-/// The planner is pure and track-agnostic; this function only assembles its
-/// input from content, derived concept state, accepted history, and optional
-/// discovery progress. Discovery is derived with the same rules as the frontend
-/// Knowledge Map so the planner never targets a map-locked node. Auxiliary
-/// logging is best-effort and never fails the recommendation or learning flow.
-pub async fn recommendation(
+/// Shared planner inputs assembled from content, learner state, and discovery.
+struct PlannerContext {
+    track_version: String,
+    input: PlannerInput,
+    history: Vec<HistoryEntry>,
+}
+
+/// Builds the shared planner input for a learning track.
+async fn planner_context(
     state: &AppState,
     user: &AuthenticatedUser,
     track_id: &str,
     discovery: &[DomainDiscoveryInput],
-) -> Result<RecommendationResponse, ApiError> {
+) -> Result<PlannerContext, ApiError> {
     let bundle = state
         .content
         .bundle_for_certification(track_id)
@@ -142,8 +143,18 @@ pub async fn recommendation(
     let track_version = bundle.version.id.clone();
 
     let states = db::concept_state::list_for_user(&state.pool, user.id, &track_version).await?;
-    let history =
-        db::learning_events::recent_for_user(&state.pool, user.id, track_id, HISTORY_LIMIT).await?;
+    let history: Vec<HistoryEntry> =
+        db::learning_events::recent_for_user(&state.pool, user.id, track_id, HISTORY_LIMIT)
+            .await?
+            .into_iter()
+            .map(|entry| HistoryEntry {
+                question_id: entry.question_id,
+                score: entry.score,
+                assessment_mode: entry.assessment_mode,
+                occurred_at: entry.occurred_at,
+                concepts: entry.concepts,
+            })
+            .collect();
 
     let domains: Vec<PlannerDomain> = bundle
         .version
@@ -164,6 +175,8 @@ pub async fn recommendation(
         .map(|question| PlannerQuestion {
             id: question.id.clone(),
             domain_id: question.domain_id.clone(),
+            task_id: question.task_id.clone(),
+            interaction_type: question.interaction_type,
             assessment_mode: question.assessment_mode,
             difficulty_prior: question.difficulty_prior,
             concepts: concept_weights(question),
@@ -193,10 +206,34 @@ pub async fn recommendation(
         explored_node_ids: discovery_state.explored_node_ids,
         unlocked_node_ids: discovery_state.unlocked_node_ids,
         completed_module_ids: discovery_state.completed_module_ids,
-        recent_question_ids: history.into_iter().map(|entry| entry.question_id).collect(),
+        recent_question_ids: history
+            .iter()
+            .map(|entry| entry.question_id.clone())
+            .collect(),
     };
 
-    let recommendation = planner::recommend(&input);
+    Ok(PlannerContext {
+        track_version,
+        input,
+        history,
+    })
+}
+
+/// Builds a best-effort next-action recommendation for a learning track.
+///
+/// The planner is pure and track-agnostic; this function only assembles its
+/// input from content, derived concept state, accepted history, and optional
+/// discovery progress. Discovery is derived with the same rules as the frontend
+/// Knowledge Map so the planner never targets a map-locked node. Auxiliary
+/// logging is best-effort and never fails the recommendation or learning flow.
+pub async fn recommendation(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    track_id: &str,
+    discovery: &[DomainDiscoveryInput],
+) -> Result<RecommendationResponse, ApiError> {
+    let context = planner_context(state, user, track_id, discovery).await?;
+    let recommendation = planner::recommend(&context.input);
 
     // Generate a stable id for lifecycle telemetry even if the best-effort
     // generation log write fails below.
@@ -207,7 +244,7 @@ pub async fn recommendation(
             recommendation_id: id,
             user_id: user.id,
             track_id: &choice.track_id,
-            track_version: &track_version,
+            track_version: &context.track_version,
             action: choice.action.as_str(),
             reason: choice.reason.as_str(),
             domain_id: Some(choice.domain_id.as_str()),
@@ -222,6 +259,77 @@ pub async fn recommendation(
         recommendation_id,
         recommendation,
     })
+}
+
+/// Builds a deterministic study session for a learning track.
+///
+/// The planner reuses the next-action concept model. Session logging is
+/// best-effort: a persistence failure never prevents the session from being
+/// returned. A successful request is not proof the learner saw the session.
+pub async fn study_session(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    track_id: &str,
+    request: StudySessionRequest,
+) -> Result<StudySessionResponse, ApiError> {
+    let context = planner_context(state, user, track_id, &request.discovery).await?;
+
+    let available_minutes = normalize_available_minutes(request.available_minutes);
+    let session = planner::session::plan_session(&planner::session::SessionPlannerInput {
+        planner: context.input,
+        available_minutes,
+        preference: request.preference,
+        history: context.history,
+    });
+
+    let Some(session) = session else {
+        return Ok(StudySessionResponse {
+            session_id: Uuid::new_v4(),
+            track_id: track_id.to_owned(),
+            estimated_minutes: 0,
+            activities: Vec::new(),
+        });
+    };
+
+    // The id is generated regardless of whether the auxiliary write lands.
+    let session_id = Uuid::new_v4();
+    log_study_session(
+        &state.pool,
+        &db::sessions::StudySessionLogEntry {
+            session_id,
+            user_id: user.id,
+            track_id,
+            track_version: &context.track_version,
+            available_minutes,
+            preference: request.preference.as_str(),
+            estimated_minutes: session.estimated_minutes,
+            activity_count: session.activities.len() as i32,
+        },
+    )
+    .await;
+
+    Ok(StudySessionResponse {
+        session_id,
+        track_id: session.track_id,
+        estimated_minutes: session.estimated_minutes,
+        activities: session.activities,
+    })
+}
+
+/// Clamps a requested session length into a sane range.
+fn normalize_available_minutes(requested: u32) -> u32 {
+    if requested == 0 {
+        20
+    } else {
+        requested.clamp(5, 180)
+    }
+}
+
+/// Logs a study session without ever letting a persistence problem escape.
+async fn log_study_session(pool: &db::PgPool, entry: &db::sessions::StudySessionLogEntry<'_>) {
+    if let Err(error) = db::sessions::log(pool, entry).await {
+        tracing::debug!(error = %error, "could not log study session");
+    }
 }
 
 /// Records one recommendation lifecycle event, best-effort.
@@ -1233,6 +1341,28 @@ mod tests {
         // propagating, so the caller can continue normally.
         let response = record_event_best_effort(&pool, &entry).await;
         assert!(!response.recorded);
+    }
+
+    #[tokio::test]
+    async fn study_session_logging_failure_is_swallowed() {
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .max_connections(1)
+            .acquire_timeout(std::time::Duration::from_millis(50))
+            .connect_lazy("postgres://app:app@127.0.0.1:1/app")
+            .expect("lazy pool");
+        let entry = db::sessions::StudySessionLogEntry {
+            session_id: Uuid::new_v4(),
+            user_id: Uuid::new_v4(),
+            track_id: "track",
+            track_version: "track-v1",
+            available_minutes: 20,
+            preference: "balanced",
+            estimated_minutes: 18,
+            activity_count: 4,
+        };
+
+        // Auxiliary persistence must never panic or propagate.
+        log_study_session(&pool, &entry).await;
     }
 
     #[test]

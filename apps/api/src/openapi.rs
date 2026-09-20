@@ -11,8 +11,8 @@ use crate::dto::{
     CompleteMissionRequest, CompleteMissionResponse, ConceptDto, DomainDto, FeedbackResponse,
     IssueMissionRequest, LearningDomainResponse, MeResponse, MissionResponse, QuestionView,
     RecommendationEventRequest, RecommendationEventResponse, RecommendationRequest,
-    RecommendationResponse, ReconstructionAnswerPayload, SyncEventRequest, SyncEventResult,
-    SyncRequest, SyncResponse, TaskDto, WalletResponse,
+    RecommendationResponse, ReconstructionAnswerPayload, StudySessionRequest, StudySessionResponse,
+    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, TaskDto, WalletResponse,
 };
 use crate::error::{ErrorBody, ErrorResponse};
 use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
@@ -31,6 +31,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         crate::routes::learning::get_learning_domain,
         crate::routes::recommendations::create_recommendation,
         crate::routes::recommendations::record_recommendation_event,
+        crate::routes::sessions::create_study_session,
         crate::routes::missions::issue_mission,
         crate::routes::missions::answer_mission,
         crate::routes::missions::complete_mission,
@@ -71,6 +72,12 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         RecommendationEventRequest,
         RecommendationEventResponse,
         crate::dto::RecommendationEventKind,
+        StudySessionRequest,
+        StudySessionResponse,
+        crate::planner::session::SessionPreference,
+        crate::planner::session::SessionActivity,
+        crate::planner::session::SessionActivityKind,
+        crate::planner::session::StudySession,
         adaptive_learn_content::DomainDiscoveryInput,
         crate::planner::Recommendation,
         crate::planner::PlannerAction,

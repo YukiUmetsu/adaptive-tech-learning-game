@@ -241,6 +241,40 @@ async fn telemetry_failure_does_not_affect_mission_persistence() {
 }
 
 #[tokio::test]
+async fn study_session_log_accepts_valid_rows_and_rejects_bad_preferences() {
+    let Some(pool) = pool().await else {
+        return;
+    };
+
+    let user_id = insert_user(&pool).await;
+    let session_id = Uuid::new_v4();
+    let valid = db::sessions::StudySessionLogEntry {
+        session_id,
+        user_id,
+        track_id: "track",
+        track_version: "v1",
+        available_minutes: 20,
+        preference: "balanced",
+        estimated_minutes: 18,
+        activity_count: 4,
+    };
+    db::sessions::log(&pool, &valid)
+        .await
+        .expect("valid session log");
+
+    let invalid = db::sessions::StudySessionLogEntry {
+        preference: "nonsense",
+        ..valid
+    };
+    assert!(
+        db::sessions::log(&pool, &invalid).await.is_err(),
+        "an invalid preference must fail on its own"
+    );
+
+    delete_user(&pool, user_id).await;
+}
+
+#[tokio::test]
 async fn migrations_apply_and_revert_in_an_isolated_database() {
     let Some(admin_url) = database_url() else {
         return;

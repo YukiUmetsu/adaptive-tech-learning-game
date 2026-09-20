@@ -118,10 +118,21 @@ Exit: scheduler selects plausible sessions and is evaluated separately from the 
 > auxiliary telemetry. A recommendation request is not treated as "shown", and
 > telemetry is never learning evidence.
 >
+> A short session planner now composes several of these actions into one
+> deterministic study session (`apps/api/src/planner/session.rs`), exposed at
+> `POST /v1/tracks/{track_id}/session` with `available_minutes` and a preference
+> (`balanced`, `more_practice`, `more_learning`). Sessions order learning and
+> prerequisite activities before retrieval practice, keep practice questions
+> server-selected, and stay near the requested time. The frontend shows an
+> optional "Your study session" section with small overrides (shorter, more
+> practice, more learning, regenerate) and, if adaptive planning fails for any
+> reason, falls back to a standard non-adaptive session built from already-loaded
+> track content. Session logging is auxiliary.
+>
 > It remains a heuristic: exam-date goals, availability constraints, the full
-> "why this plan?" surface, alternatives, overrides, and separate teaching-policy
-> evaluation are still to come. Recommendation and telemetry failures never block
-> the dashboard, knowledge maps, quizzes, missions, or sync.
+> "why this plan?" surface, and separate teaching-policy evaluation are still to
+> come. Recommendation, session, and telemetry failures never block the
+> dashboard, knowledge maps, quizzes, missions, or sync.
 
 ## Phase 5 — Economy
 

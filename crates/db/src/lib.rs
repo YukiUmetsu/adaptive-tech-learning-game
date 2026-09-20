@@ -10,6 +10,7 @@ pub mod error;
 pub mod learning_events;
 pub mod missions;
 pub mod recommendations;
+pub mod sessions;
 pub mod sync_batches;
 pub mod users;
 pub mod wallets;

@@ -470,3 +470,33 @@ pub struct RecommendationEventResponse {
     /// Whether the event was persisted.
     pub recorded: bool,
 }
+
+/// Request body for an adaptive study session.
+///
+/// Session planning is optional; a failed request never blocks the dashboard.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct StudySessionRequest {
+    /// Requested approximate session length in minutes. Clamped to a sane range.
+    #[serde(default)]
+    pub available_minutes: u32,
+    /// How to balance learning and retrieval practice.
+    #[serde(default)]
+    pub preference: crate::planner::session::SessionPreference,
+    /// Raw Knowledge Map discovery progress for the track, if available.
+    #[serde(default)]
+    pub discovery: Vec<adaptive_learn_content::DomainDiscoveryInput>,
+}
+
+/// A planned study session.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct StudySessionResponse {
+    /// Stable id for this session, used by auxiliary telemetry.
+    pub session_id: Uuid,
+    /// Learning track the session belongs to.
+    pub track_id: String,
+    /// Estimated total minutes.
+    pub estimated_minutes: u32,
+    /// Ordered activities. Empty when nothing is actionable; the client then
+    /// builds a standard non-adaptive session.
+    pub activities: Vec<crate::planner::session::SessionActivity>,
+}

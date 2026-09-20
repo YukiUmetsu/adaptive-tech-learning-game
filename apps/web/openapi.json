@@ -631,6 +631,84 @@
         ]
       }
     },
+    "/v1/tracks/{track_id}/session": {
+      "post": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Builds an optional adaptive study session for a learning track.",
+        "description": "Session planning is optional and best-effort: the client falls back to a\nstandard non-adaptive session when this fails. The server selects all\npractice questions. Requires an authenticated account.",
+        "operationId": "create_study_session",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `ai-python-fluency`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudySessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Planned study session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudySessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown learning track",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/wallet": {
       "get": {
         "tags": [
@@ -3456,6 +3534,90 @@
           }
         }
       },
+      "SessionActivity": {
+        "type": "object",
+        "description": "One planned activity.",
+        "required": [
+          "kind",
+          "domain_id",
+          "domain_name",
+          "question_ids",
+          "concept_ids",
+          "title",
+          "estimated_minutes"
+        ],
+        "properties": {
+          "concept_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Concepts the activity targets."
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "Owning domain/topic."
+          },
+          "domain_name": {
+            "type": "string",
+            "description": "Learner-facing domain name."
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Estimated minutes for this activity.",
+            "minimum": 0
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SessionActivityKind",
+            "description": "Activity kind."
+          },
+          "node_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Knowledge node, for node activities."
+          },
+          "node_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Learner-facing node title, for node activities."
+          },
+          "question_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Server-selected questions, for `practice` activities. The client never\nsupplies these; it only anchors the mission on the first one."
+          },
+          "title": {
+            "type": "string",
+            "description": "Short learner-facing title, for example `Review VPC route tables`."
+          }
+        }
+      },
+      "SessionActivityKind": {
+        "type": "string",
+        "description": "What one session activity asks the learner to do.",
+        "enum": [
+          "learn_node",
+          "review_node",
+          "practice",
+          "practice_domain"
+        ]
+      },
+      "SessionPreference": {
+        "type": "string",
+        "description": "How the learner wants a session balanced.",
+        "enum": [
+          "balanced",
+          "more_practice",
+          "more_learning"
+        ]
+      },
       "SourceRef": {
         "type": "object",
         "description": "A reference to the official source of a content unit.",
@@ -3471,6 +3633,91 @@
           "url": {
             "type": "string",
             "description": "URL."
+          }
+        }
+      },
+      "StudySession": {
+        "type": "object",
+        "description": "A planned study session.",
+        "required": [
+          "track_id",
+          "estimated_minutes",
+          "activities"
+        ],
+        "properties": {
+          "activities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionActivity"
+            },
+            "description": "Ordered activities."
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Estimated total minutes.",
+            "minimum": 0
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track the session belongs to."
+          }
+        }
+      },
+      "StudySessionRequest": {
+        "type": "object",
+        "description": "Request body for an adaptive study session.\n\nSession planning is optional; a failed request never blocks the dashboard.",
+        "properties": {
+          "available_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Requested approximate session length in minutes. Clamped to a sane range.",
+            "minimum": 0
+          },
+          "discovery": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDiscoveryInput"
+            },
+            "description": "Raw Knowledge Map discovery progress for the track, if available."
+          },
+          "preference": {
+            "$ref": "#/components/schemas/SessionPreference",
+            "description": "How to balance learning and retrieval practice."
+          }
+        }
+      },
+      "StudySessionResponse": {
+        "type": "object",
+        "description": "A planned study session.",
+        "required": [
+          "session_id",
+          "track_id",
+          "estimated_minutes",
+          "activities"
+        ],
+        "properties": {
+          "activities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionActivity"
+            },
+            "description": "Ordered activities. Empty when nothing is actionable; the client then\nbuilds a standard non-adaptive session."
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Estimated total minutes.",
+            "minimum": 0
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Stable id for this session, used by auxiliary telemetry."
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track the session belongs to."
           }
         }
       },

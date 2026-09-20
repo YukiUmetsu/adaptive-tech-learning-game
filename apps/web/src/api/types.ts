@@ -75,3 +75,9 @@ export type RecommendationEventKind =
   components["schemas"]["RecommendationEventKind"];
 export type DomainDiscoveryInput =
   components["schemas"]["DomainDiscoveryInput"];
+export type StudySessionRequest = components["schemas"]["StudySessionRequest"];
+export type StudySessionResponse =
+  components["schemas"]["StudySessionResponse"];
+export type SessionActivity = components["schemas"]["SessionActivity"];
+export type SessionActivityKind = components["schemas"]["SessionActivityKind"];
+export type SessionPreference = components["schemas"]["SessionPreference"];

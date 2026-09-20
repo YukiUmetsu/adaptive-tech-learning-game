@@ -244,6 +244,40 @@ never shares a transaction with learning-event persistence, and a failure can
 never block the dashboard, knowledge maps, quizzes, mission creation, answer
 submission, or sync. Only accepted, scored learning events change concept state.
 
+## V1 session planning
+
+Beyond a single next action, the same concept model plans a short study session:
+an ordered list of activities for a Learning Track. The pure core is
+`planner::session::plan_session` (`apps/api/src/planner/session.rs`), exposed at
+`POST /v1/tracks/{track_id}/session` with `available_minutes` and a preference
+(`balanced`, `more_practice`, `more_learning`).
+
+Activities reuse existing execution paths:
+
+- `learn_node` / `review_node` open the exact Knowledge Node.
+- `practice` carries server-selected `question_ids`; the client only anchors a
+  `recommended_practice` mission on the first one. The client never submits
+  arbitrary question ids.
+- `practice_domain` starts the normal adaptive domain quiz.
+
+V1 is deterministic. It orders learning/prerequisite activities before retrieval
+and finishes with retrieval practice, balances weak concepts, forgetting risk,
+difficulty fit, domain coverage, interaction variety, and recent-question
+avoidance, and trims the plan to stay near the requested time. The single
+"Recommended next" feature is unchanged and independent.
+
+Session planning is optional. If the endpoint fails, times out, returns malformed
+data, or returns nothing usable, the frontend builds a **standard non-adaptive
+session** from already-loaded track content (domains in authored order, mixing
+domain learning and practice). The fallback never calls the adaptive API and
+never needs learner state, so a learner can always start a session. Adaptive
+sessions can be adjusted with small planning overrides (shorter, more practice,
+more learning, regenerate) that are preferences, not mastery evidence.
+
+`study_session_log` records generated sessions as auxiliary telemetry; it is not
+learning evidence and a persistence failure never prevents a session from being
+returned.
+
 ## Plan explanation
 
 Example:

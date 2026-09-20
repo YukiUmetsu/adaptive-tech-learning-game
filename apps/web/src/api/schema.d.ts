@@ -228,6 +228,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tracks/{track_id}/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Builds an optional adaptive study session for a learning track.
+         * @description Session planning is optional and best-effort: the client falls back to a
+         *     standard non-adaptive session when this fails. The server selects all
+         *     practice questions. Requires an authenticated account.
+         */
+        post: operations["create_study_session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/wallet": {
         parameters: {
             query?: never;
@@ -1291,12 +1313,97 @@ export interface components {
             /** @description What kind of decision this step represents. */
             stage: components["schemas"]["ScenarioStage"];
         };
+        /** @description One planned activity. */
+        SessionActivity: {
+            /** @description Concepts the activity targets. */
+            concept_ids: string[];
+            /** @description Owning domain/topic. */
+            domain_id: string;
+            /** @description Learner-facing domain name. */
+            domain_name: string;
+            /**
+             * Format: int32
+             * @description Estimated minutes for this activity.
+             */
+            estimated_minutes: number;
+            /** @description Activity kind. */
+            kind: components["schemas"]["SessionActivityKind"];
+            /** @description Knowledge node, for node activities. */
+            node_id?: string | null;
+            /** @description Learner-facing node title, for node activities. */
+            node_title?: string | null;
+            /**
+             * @description Server-selected questions, for `practice` activities. The client never
+             *     supplies these; it only anchors the mission on the first one.
+             */
+            question_ids: string[];
+            /** @description Short learner-facing title, for example `Review VPC route tables`. */
+            title: string;
+        };
+        /**
+         * @description What one session activity asks the learner to do.
+         * @enum {string}
+         */
+        SessionActivityKind: "learn_node" | "review_node" | "practice" | "practice_domain";
+        /**
+         * @description How the learner wants a session balanced.
+         * @enum {string}
+         */
+        SessionPreference: "balanced" | "more_practice" | "more_learning";
         /** @description A reference to the official source of a content unit. */
         SourceRef: {
             /** @description Display title. */
             title: string;
             /** @description URL. */
             url: string;
+        };
+        /** @description A planned study session. */
+        StudySession: {
+            /** @description Ordered activities. */
+            activities: components["schemas"]["SessionActivity"][];
+            /**
+             * Format: int32
+             * @description Estimated total minutes.
+             */
+            estimated_minutes: number;
+            /** @description Learning track the session belongs to. */
+            track_id: string;
+        };
+        /**
+         * @description Request body for an adaptive study session.
+         *
+         *     Session planning is optional; a failed request never blocks the dashboard.
+         */
+        StudySessionRequest: {
+            /**
+             * Format: int32
+             * @description Requested approximate session length in minutes. Clamped to a sane range.
+             */
+            available_minutes?: number;
+            /** @description Raw Knowledge Map discovery progress for the track, if available. */
+            discovery?: components["schemas"]["DomainDiscoveryInput"][];
+            /** @description How to balance learning and retrieval practice. */
+            preference?: components["schemas"]["SessionPreference"];
+        };
+        /** @description A planned study session. */
+        StudySessionResponse: {
+            /**
+             * @description Ordered activities. Empty when nothing is actionable; the client then
+             *     builds a standard non-adaptive session.
+             */
+            activities: components["schemas"]["SessionActivity"][];
+            /**
+             * Format: int32
+             * @description Estimated total minutes.
+             */
+            estimated_minutes: number;
+            /**
+             * Format: uuid
+             * @description Stable id for this session, used by auxiliary telemetry.
+             */
+            session_id: string;
+            /** @description Learning track the session belongs to. */
+            track_id: string;
         };
         /** @description One attempt in a sync batch. */
         SyncEventRequest: {
@@ -1992,6 +2099,60 @@ export interface operations {
             };
             /** @description Authentication required */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_study_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Learning track identifier, for example `ai-python-fluency`. */
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudySessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Planned study session */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudySessionResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown learning track */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

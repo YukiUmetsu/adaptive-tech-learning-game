@@ -55,6 +55,7 @@ gacha_rolls
 model_versions
 recommendation_log
 recommendation_events
+study_session_log
 deletion_tombstones
 ```
 
@@ -108,6 +109,10 @@ request is not proof the learner saw anything: `shown` is a separate client
 event, and concept state is never updated because a recommendation was shown,
 clicked, started, or completed. Only accepted, scored learning events change
 knowledge state.
+
+`study_session_log` is the matching auxiliary log for generated adaptive study
+sessions. It stores the requested length and preference plus the produced
+estimate; it is never learning evidence and writes are best-effort.
 
 Ownership is user-based: `mission_instances`, `learning_events`, and wallet
 state carry an owning `user_id`. `device_wallets` is the legacy pre-auth table

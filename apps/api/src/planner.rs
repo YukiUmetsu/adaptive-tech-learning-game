@@ -17,10 +17,14 @@
 
 use std::collections::{HashMap, HashSet};
 
-use adaptive_learn_domain::{AssessmentMode, ConceptWeight, PRIOR_ESTIMATE, retrievability};
+use adaptive_learn_domain::{
+    AssessmentMode, ConceptWeight, InteractionType, PRIOR_ESTIMATE, retrievability,
+};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+
+pub mod session;
 
 /// Estimate at or below which a concept is treated as weak.
 const WEAK_ESTIMATE: f64 = 0.55;
@@ -158,6 +162,10 @@ pub struct PlannerQuestion {
     pub id: String,
     /// Owning domain/topic.
     pub domain_id: String,
+    /// Owning task.
+    pub task_id: String,
+    /// Interaction family, used for session interaction variety.
+    pub interaction_type: InteractionType,
     /// Evidence mode the question measures.
     pub assessment_mode: AssessmentMode,
     /// Prior difficulty in `[0, 1]`.
@@ -1038,6 +1046,8 @@ mod tests {
         PlannerQuestion {
             id: id.to_owned(),
             domain_id: domain_id.to_owned(),
+            task_id: format!("{domain_id}-task"),
+            interaction_type: InteractionType::Ordering,
             assessment_mode: mode,
             difficulty_prior: difficulty,
             concepts,

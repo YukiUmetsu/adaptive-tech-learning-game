@@ -317,4 +317,47 @@ describe("CertificationDashboardPage", () => {
       screen.queryByText("Recommended next"),
     ).not.toBeInTheDocument();
   });
+
+  it("falls back to a standard study session when adaptive planning fails", async () => {
+    // Default mock returns 404 for the session endpoint (unknown URL).
+    renderDashboard();
+    await ready();
+
+    expect(
+      await screen.findByText("Standard study session"),
+    ).toBeInTheDocument();
+    // Existing controls remain usable alongside the fallback.
+    expect(
+      screen.getByRole("button", { name: "Start Quick Quiz" }),
+    ).toBeInTheDocument();
+  });
+
+  it("stays usable when both session and recommendation requests fail", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = requestUrl(input);
+        if (url.includes("/v1/certifications")) {
+          return jsonResponse(catalog);
+        }
+        if (url.includes("/v1/wallet")) {
+          return jsonResponse({ device_id: "device", bits_balance: 1240 });
+        }
+        if (url.includes("/recommendation") || url.endsWith("/session")) {
+          throw new Error("adaptive services unavailable");
+        }
+        return jsonResponse({ error: { code: "not_found" } }, 404);
+      }),
+    );
+
+    renderDashboard();
+    await ready();
+
+    expect(
+      await screen.findByText("Standard study session"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Start Quick Quiz" }),
+    ).toBeInTheDocument();
+  });
 });

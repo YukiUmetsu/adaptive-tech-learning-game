@@ -5,6 +5,7 @@ pub mod me;
 pub mod missions;
 pub mod openapi;
 pub mod recommendations;
+pub mod sessions;
 pub mod sync;
 pub mod wallet;
 

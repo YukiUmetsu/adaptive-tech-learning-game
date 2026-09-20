@@ -56,6 +56,10 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
             "/v1/tracks/{track_id}/recommendations/{recommendation_id}/events",
             post(routes::recommendations::record_recommendation_event),
         )
+        .route(
+            "/v1/tracks/{track_id}/session",
+            post(routes::sessions::create_study_session),
+        )
         .route("/v1/missions/issue", post(routes::missions::issue_mission))
         .route(
             "/v1/missions/{mission_id}/answers",

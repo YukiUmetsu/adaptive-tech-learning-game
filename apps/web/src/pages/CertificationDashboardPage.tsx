@@ -5,6 +5,7 @@ import type { DomainDto, QuizMode } from "../api/types";
 import { useAuth } from "../auth/context";
 import BitsHud from "../components/BitsHud";
 import RecommendedNext from "../components/RecommendedNext";
+import StudySessionCard from "../components/StudySessionCard";
 import { useCatalog } from "../hooks/useCatalog";
 import { certificationQuestionCount, domainQuestionCount } from "../state/demo";
 import { startMission } from "../state/mission";
@@ -199,6 +200,14 @@ export default function CertificationDashboardPage() {
       <RecommendedNext
         trackId={certification.id}
         trackVersion={version.id}
+        enabled={status === "authenticated"}
+      />
+
+      {/* Optional adaptive session with a standard fallback; never required. */}
+      <StudySessionCard
+        trackId={certification.id}
+        trackVersion={version.id}
+        domains={domains}
         enabled={status === "authenticated"}
       />
 

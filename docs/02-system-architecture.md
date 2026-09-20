@@ -162,6 +162,7 @@ POST /v1/missions/:id/answers
 POST /v1/sync
 POST /v1/tracks/:id/recommendation
 POST /v1/tracks/:id/recommendations/:rid/events
+POST /v1/tracks/:id/session
 POST /v1/uploads/authorize
 POST /v1/gacha/roll
 POST /v1/game/action
