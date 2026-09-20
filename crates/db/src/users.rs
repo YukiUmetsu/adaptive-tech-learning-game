@@ -106,3 +106,32 @@ pub async fn upsert_by_auth_subject(
 
     Ok(row.into())
 }
+
+/// Returns the learner's persisted IANA timezone, if one was captured.
+pub async fn timezone(pool: &PgPool, user_id: Uuid) -> Result<Option<String>, DbError> {
+    let timezone =
+        sqlx::query_scalar::<_, Option<String>>("SELECT timezone FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_optional(pool)
+            .await?;
+
+    Ok(timezone.flatten())
+}
+
+/// Stores the learner's IANA timezone only when none is set yet.
+///
+/// Captured once so the Daily Mission day boundary stays stable; a later
+/// timezone change cannot move the boundary or farm extra missions.
+pub async fn set_timezone_if_absent(
+    pool: &PgPool,
+    user_id: Uuid,
+    timezone: &str,
+) -> Result<(), DbError> {
+    sqlx::query("UPDATE users SET timezone = $2 WHERE id = $1 AND timezone IS NULL")
+        .bind(user_id)
+        .bind(timezone)
+        .execute(pool)
+        .await?;
+
+    Ok(())
+}

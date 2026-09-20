@@ -166,6 +166,7 @@ POST /v1/tracks/:id/session
 POST /v1/tracks/:id/daily-mission
 POST /v1/daily-missions/:id/items/:position/start
 POST /v1/daily-missions/:id/items/:position/complete
+GET  /internal/model-evaluation
 POST /v1/uploads/authorize
 POST /v1/gacha/roll
 POST /v1/game/action

@@ -671,3 +671,59 @@ pub struct DailyItemCompleteResponse {
     /// The updated Daily Mission.
     pub mission: DailyMissionResponse,
 }
+
+/// One calibration bucket in an internal evaluation summary.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CalibrationBucketDto {
+    /// Bucket label, for example `0.6-0.8`.
+    pub bucket: String,
+    /// Number of samples in the bucket.
+    pub count: usize,
+    /// Mean predicted probability in the bucket.
+    pub mean_prediction: f64,
+    /// Mean observed score in the bucket.
+    pub mean_observed: f64,
+}
+
+/// Metrics for one slice of the evaluation set.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct EvaluationSliceDto {
+    /// Slice dimension, for example `assessment_mode`.
+    pub dimension: String,
+    /// Slice key within the dimension, for example `recall`.
+    pub key: String,
+    /// Number of samples in the slice.
+    pub samples: usize,
+    /// Brier score for the slice.
+    pub brier_score: Option<f64>,
+    /// Log loss for the slice.
+    pub log_loss: Option<f64>,
+    /// Mean predicted probability for the slice.
+    pub mean_prediction: Option<f64>,
+    /// Mean observed score for the slice.
+    pub mean_observed: Option<f64>,
+}
+
+/// Internal calibration summary for one model version.
+///
+/// Analytics only: no per-user data is exposed.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ModelEvaluationResponse {
+    /// Model version evaluated, for example `heuristic-v1`.
+    pub model_version: String,
+    /// Number of resolved prediction/outcome pairs.
+    pub samples: usize,
+    /// Brier score over all samples.
+    pub brier_score: Option<f64>,
+    /// Log loss over all samples.
+    pub log_loss: Option<f64>,
+    /// Mean predicted probability.
+    pub mean_prediction: Option<f64>,
+    /// Mean observed score.
+    pub mean_observed: Option<f64>,
+    /// Calibration buckets.
+    pub calibration: Vec<CalibrationBucketDto>,
+    /// Metrics sliced by assessment mode, source, track, domain, difficulty,
+    /// spacing, and delayed-retrieval flag.
+    pub slices: Vec<EvaluationSliceDto>,
+}

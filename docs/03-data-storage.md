@@ -58,6 +58,8 @@ recommendation_events
 study_session_log
 daily_missions
 daily_mission_items
+prediction_snapshots
+prediction_outcomes
 deletion_tombstones
 ```
 
@@ -125,14 +127,33 @@ domain, node, title, estimate, server-selected practice context) plus per-item
 status. `mission_instances.daily_mission_id` / `daily_item_position` link a
 scored mission back to the item it executes.
 
-The day boundary is a single canonical **UTC** day. The client IANA timezone is
-stored as metadata only, so changing the timezone cannot create a second
-reward-bearing mission for the same day. The plan is generated once and never
-recomputed; only real timed-out requests for a new day create a new plan.
+The day boundary is the learner's **persisted IANA timezone** (`users.timezone`),
+captured once on the first Daily Mission request. The local `day_key` is derived
+from that timezone, so a mission stays stable for the learner's local day and a
+later browser-timezone change cannot move the boundary or mint additional
+reward-bearing missions. A new mission is only created for a `day_key` strictly
+later than the most recent one. The plan is generated once and never recomputed.
 
 Daily Mission completion is not learning evidence. The completion bonus is a
 single idempotent ledger event (`daily_mission_complete`, `event_id` =
 mission id), so retries and concurrent requests can never award it twice.
+
+## Prediction measurement (analytics only)
+
+`prediction_snapshots` captures the `heuristic-v1` prediction **before** a
+question is answered: per-concept estimate, evidence mass, retrievability,
+uncertainty, and forgetting risk, plus the authored `ConceptWeight` mappings,
+assessment mode, difficulty, model version, practice source, and whether the
+item was spaced delayed retrieval. Snapshots are immutable; the answer never
+modifies them.
+
+`prediction_outcomes` links an accepted event to its prediction, append-only and
+idempotent per `(prediction_id, event_id)`. `learning_events` remain
+authoritative for actual outcomes; unresolved snapshots (abandoned questions)
+simply have no outcome and are excluded from evaluation. Prediction and outcome
+rows never feed scoring, rewards, or concept state, and every write is
+best-effort: measurement can never block mission issuance, answer acceptance,
+reward settlement, or concept-state updates.
 
 Ownership is user-based: `mission_instances`, `learning_events`, and wallet
 state carry an owning `user_id`. `device_wallets` is the legacy pre-auth table

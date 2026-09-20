@@ -93,3 +93,7 @@ export type DailyItemCompleteRequest =
   components["schemas"]["DailyItemCompleteRequest"];
 export type DailyItemCompleteResponse =
   components["schemas"]["DailyItemCompleteResponse"];
+export type ModelEvaluationResponse =
+  components["schemas"]["ModelEvaluationResponse"];
+export type CalibrationBucketDto = components["schemas"]["CalibrationBucketDto"];
+export type EvaluationSliceDto = components["schemas"]["EvaluationSliceDto"];

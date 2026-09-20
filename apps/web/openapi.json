@@ -42,6 +42,64 @@
         }
       }
     },
+    "/internal/model-evaluation": {
+      "get": {
+        "tags": [
+          "internal"
+        ],
+        "summary": "Internal calibration summary for a model version.",
+        "description": "Analytics only: returns aggregate metrics, never per-user data. Requires an\nauthenticated account and is not part of the learner-facing surface.",
+        "operationId": "get_model_evaluation",
+        "parameters": [
+          {
+            "name": "model_version",
+            "in": "query",
+            "description": "Model version to evaluate. Defaults to the current model.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bucket_count",
+            "in": "query",
+            "description": "Number of calibration buckets (1-20). Defaults to 5.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Evaluation summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelEvaluationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/openapi.json": {
       "get": {
         "tags": [
@@ -1244,6 +1302,37 @@
           "procedural_recall"
         ]
       },
+      "CalibrationBucketDto": {
+        "type": "object",
+        "description": "One calibration bucket in an internal evaluation summary.",
+        "required": [
+          "bucket",
+          "count",
+          "mean_prediction",
+          "mean_observed"
+        ],
+        "properties": {
+          "bucket": {
+            "type": "string",
+            "description": "Bucket label, for example `0.6-0.8`."
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of samples in the bucket.",
+            "minimum": 0
+          },
+          "mean_observed": {
+            "type": "number",
+            "format": "double",
+            "description": "Mean observed score in the bucket."
+          },
+          "mean_prediction": {
+            "type": "number",
+            "format": "double",
+            "description": "Mean predicted probability in the bucket."
+          }
+        }
+      },
       "CanonicalAnswer": {
         "oneOf": [
           {
@@ -2240,6 +2329,62 @@
           "error": {
             "$ref": "#/components/schemas/ErrorBody",
             "description": "Error payload."
+          }
+        }
+      },
+      "EvaluationSliceDto": {
+        "type": "object",
+        "description": "Metrics for one slice of the evaluation set.",
+        "required": [
+          "dimension",
+          "key",
+          "samples"
+        ],
+        "properties": {
+          "brier_score": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Brier score for the slice."
+          },
+          "dimension": {
+            "type": "string",
+            "description": "Slice dimension, for example `assessment_mode`."
+          },
+          "key": {
+            "type": "string",
+            "description": "Slice key within the dimension, for example `recall`."
+          },
+          "log_loss": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Log loss for the slice."
+          },
+          "mean_observed": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Mean observed score for the slice."
+          },
+          "mean_prediction": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Mean predicted probability for the slice."
+          },
+          "samples": {
+            "type": "integer",
+            "description": "Number of samples in the slice.",
+            "minimum": 0
           }
         }
       },
@@ -3458,6 +3603,73 @@
           "issued",
           "completed"
         ]
+      },
+      "ModelEvaluationResponse": {
+        "type": "object",
+        "description": "Internal calibration summary for one model version.\n\nAnalytics only: no per-user data is exposed.",
+        "required": [
+          "model_version",
+          "samples",
+          "calibration",
+          "slices"
+        ],
+        "properties": {
+          "brier_score": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Brier score over all samples."
+          },
+          "calibration": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalibrationBucketDto"
+            },
+            "description": "Calibration buckets."
+          },
+          "log_loss": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Log loss over all samples."
+          },
+          "mean_observed": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Mean observed score."
+          },
+          "mean_prediction": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Mean predicted probability."
+          },
+          "model_version": {
+            "type": "string",
+            "description": "Model version evaluated, for example `heuristic-v1`."
+          },
+          "samples": {
+            "type": "integer",
+            "description": "Number of resolved prediction/outcome pairs.",
+            "minimum": 0
+          },
+          "slices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvaluationSliceDto"
+            },
+            "description": "Metrics sliced by assessment mode, source, track, domain, difficulty,\nspacing, and delayed-retrieval flag."
+          }
+        }
       },
       "Node": {
         "type": "object",
@@ -4727,6 +4939,10 @@
     {
       "name": "daily-missions",
       "description": "Immutable daily study missions and their progress"
+    },
+    {
+      "name": "internal",
+      "description": "Internal, aggregate-only analytics"
     },
     {
       "name": "missions",

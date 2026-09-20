@@ -14,22 +14,23 @@ use adaptive_learn_content::{
 };
 use adaptive_learn_db as db;
 use adaptive_learn_domain::{
-    ConceptWeight, DAILY_MISSION_BONUS_BITS, LearningEvent, MissionInstance, MissionStatus,
-    QuizMode, reward_bits,
+    ConceptWeight, DAILY_MISSION_BONUS_BITS, LearningEvent, MODEL_VERSION, MissionInstance,
+    MissionStatus, PredictionSample, QuizMode, evaluate, predict_question, retrievability,
+    reward_bits,
 };
-use chrono::{Duration, Utc};
+use chrono::{DateTime, Duration, NaiveDate, Utc};
 use uuid::Uuid;
 
 use crate::auth::AuthenticatedUser;
 use crate::dto::{
-    AnswerPayload, AnswerRequest, CatalogResponse, CertificationDto, CertificationVersionDto,
-    CompleteMissionResponse, ConceptDto, DailyItemCompleteRequest, DailyItemCompleteResponse,
-    DailyMissionItemDto, DailyMissionItemKind, DailyMissionItemStatus, DailyMissionPlanType,
-    DailyMissionRequest, DailyMissionResponse, DailyMissionStatus, DomainDto, FeedbackResponse,
-    IssueMissionRequest, LearningDomainResponse, MissionResponse, QuestionView,
-    RecommendationEventRequest, RecommendationEventResponse, RecommendationResponse,
-    StudySessionRequest, StudySessionResponse, SyncEventRequest, SyncEventResult, SyncRequest,
-    SyncResponse, TaskDto, WalletResponse,
+    AnswerPayload, AnswerRequest, CalibrationBucketDto, CatalogResponse, CertificationDto,
+    CertificationVersionDto, CompleteMissionResponse, ConceptDto, DailyItemCompleteRequest,
+    DailyItemCompleteResponse, DailyMissionItemDto, DailyMissionItemKind, DailyMissionItemStatus,
+    DailyMissionPlanType, DailyMissionRequest, DailyMissionResponse, DailyMissionStatus, DomainDto,
+    EvaluationSliceDto, FeedbackResponse, IssueMissionRequest, LearningDomainResponse,
+    MissionResponse, ModelEvaluationResponse, QuestionView, RecommendationEventRequest,
+    RecommendationEventResponse, RecommendationResponse, StudySessionRequest, StudySessionResponse,
+    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, TaskDto, WalletResponse,
 };
 use crate::error::ApiError;
 use crate::planner::{
@@ -336,6 +337,373 @@ async fn log_study_session(pool: &db::PgPool, entry: &db::sessions::StudySession
     }
 }
 
+/// Maximum resolved samples loaded for one internal evaluation summary.
+const EVALUATION_SAMPLE_LIMIT: i64 = 20_000;
+/// Evidence mass below which a concept is too lightly practiced to review.
+const DELAYED_DUE_EVIDENCE_MASS: f64 = 2.0;
+/// Retrievability below which a practiced concept counts as due for review.
+const DELAYED_DUE_RETRIEVABILITY: f64 = 0.5;
+/// Questions in one delayed-retrieval activity.
+const DELAYED_RETRIEVAL_MAX_QUESTIONS: usize = 3;
+/// Minimum spacing before a concept can be revisited as delayed retrieval.
+const DELAYED_MIN_SPACING_SECONDS: i64 = 12 * 60 * 60;
+
+/// Resolves the local calendar day for a Daily Mission.
+fn local_day(now: DateTime<Utc>, timezone: &str) -> NaiveDate {
+    timezone
+        .parse::<chrono_tz::Tz>()
+        .map(|tz| now.with_timezone(&tz).date_naive())
+        .unwrap_or_else(|_| now.date_naive())
+}
+
+/// Maps a quiz mode to the analytics practice source.
+fn mission_practice_source(mode: QuizMode, has_recommendation: bool) -> &'static str {
+    if has_recommendation {
+        return "recommended_practice";
+    }
+    match mode {
+        QuizMode::QuickAdaptive => "quick_quiz",
+        QuizMode::DomainQuiz => "domain_quiz",
+        QuizMode::FullPractice => "full_practice",
+        QuizMode::TaskPractice => "task_practice",
+        QuizMode::RecommendedPractice => "recommended_practice",
+    }
+}
+
+/// Captures pre-answer prediction snapshots for a just-issued mission.
+///
+/// Measurement only: it reads concept state that exists before any answer and
+/// never touches the answer outcome. It is called after the mission is
+/// persisted and any failure is logged and ignored.
+async fn log_predictions_best_effort(
+    state: &AppState,
+    user: Option<&AuthenticatedUser>,
+    mission: &MissionInstance,
+    practice_source: &str,
+    delayed_retrieval: bool,
+) {
+    let Some(user) = user else {
+        return;
+    };
+    let now = Utc::now();
+    let states = match db::concept_state::list_for_user(
+        &state.pool,
+        user.id,
+        &mission.certification_version,
+    )
+    .await
+    {
+        Ok(states) => states,
+        Err(error) => {
+            tracing::debug!(error = %error, "could not load concept state for prediction");
+            return;
+        }
+    };
+
+    struct Pending {
+        concepts: Vec<ConceptWeight>,
+        concept_detail: serde_json::Value,
+        predicted_score: f64,
+        seconds_since_previous_practice: Option<i32>,
+    }
+
+    let mut questions = Vec::new();
+    let mut pending = Vec::new();
+    for question_id in &mission.question_ids {
+        let Some(question) = state
+            .content
+            .question(&mission.certification_version, question_id)
+        else {
+            continue;
+        };
+        let concepts = concept_weights(question);
+        let prediction = predict_question(&concepts, question.assessment_mode, &states, now);
+        let detail = serde_json::to_value(&prediction.concepts)
+            .unwrap_or_else(|_| serde_json::Value::Array(Vec::new()));
+        questions.push(question);
+        pending.push(Pending {
+            concepts,
+            concept_detail: detail,
+            predicted_score: prediction.predicted_score,
+            seconds_since_previous_practice: prediction
+                .seconds_since_previous_practice
+                .map(|seconds| seconds.clamp(0, i32::MAX as i64) as i32),
+        });
+    }
+
+    let snapshots: Vec<db::predictions::NewPredictionSnapshot<'_>> = pending
+        .iter()
+        .zip(questions.iter())
+        .map(
+            |(pending, question)| db::predictions::NewPredictionSnapshot {
+                user_id: user.id,
+                mission_instance_id: mission.id,
+                question_id: &question.id,
+                track_id: &mission.certification_id,
+                track_version: &mission.certification_version,
+                content_version: &question.content_version,
+                domain_id: &question.domain_id,
+                assessment_mode: question.assessment_mode.as_str(),
+                interaction_type: question.interaction_type.as_str(),
+                difficulty_prior: question.difficulty_prior,
+                concepts: &pending.concepts,
+                concept_detail: pending.concept_detail.clone(),
+                predicted_score: pending.predicted_score,
+                model_version: MODEL_VERSION,
+                practice_source,
+                delayed_retrieval,
+                seconds_since_previous_practice: pending.seconds_since_previous_practice,
+            },
+        )
+        .collect();
+
+    if snapshots.is_empty() {
+        return;
+    }
+    if let Err(error) = db::predictions::insert_snapshots(&state.pool, &snapshots).await {
+        tracing::debug!(error = %error, "could not persist prediction snapshots");
+    }
+}
+
+/// Links an accepted event to its prediction, ignoring any failure.
+async fn record_prediction_outcome_best_effort(
+    state: &AppState,
+    mission: &MissionInstance,
+    question_id: &str,
+    event_id: Uuid,
+    attempt_number: i32,
+    observed_score: f64,
+    observed_at: DateTime<Utc>,
+) {
+    let entry = db::predictions::OutcomeEntry {
+        mission_instance_id: mission.id,
+        question_id: question_id.to_owned(),
+        model_version: MODEL_VERSION.to_owned(),
+        event_id,
+        attempt_number,
+        observed_score,
+        observed_at,
+    };
+    if let Err(error) = db::predictions::record_outcome(&state.pool, &entry).await {
+        tracing::debug!(error = %error, "could not record prediction outcome");
+    }
+}
+
+/// Builds an internal calibration summary for one model version.
+pub async fn model_evaluation(
+    state: &AppState,
+    model_version: &str,
+    bucket_count: usize,
+) -> Result<ModelEvaluationResponse, ApiError> {
+    let samples =
+        db::predictions::list_resolved(&state.pool, model_version, EVALUATION_SAMPLE_LIMIT).await?;
+
+    let pairs: Vec<PredictionSample> = samples
+        .iter()
+        .map(|sample| PredictionSample::new(sample.predicted_score, sample.observed_score))
+        .collect();
+    let summary = evaluate(&pairs, bucket_count);
+
+    let mut slices = Vec::new();
+    push_slices(&mut slices, "practice_source", &samples, |sample| {
+        sample.practice_source.clone()
+    });
+    push_slices(&mut slices, "assessment_mode", &samples, |sample| {
+        sample.assessment_mode.clone()
+    });
+    push_slices(&mut slices, "track", &samples, |sample| {
+        sample.track_id.clone()
+    });
+    push_slices(&mut slices, "domain", &samples, |sample| {
+        format!("{}::{}", sample.track_id, sample.domain_id)
+    });
+    push_slices(&mut slices, "difficulty", &samples, |sample| {
+        difficulty_band(sample.difficulty_prior)
+    });
+    push_slices(&mut slices, "spacing", &samples, |sample| {
+        spacing_band(sample.seconds_since_previous_practice)
+    });
+    push_slices(&mut slices, "delayed_retrieval", &samples, |sample| {
+        if sample.delayed_retrieval {
+            "delayed".to_owned()
+        } else {
+            "immediate".to_owned()
+        }
+    });
+
+    Ok(ModelEvaluationResponse {
+        model_version: model_version.to_owned(),
+        samples: summary.samples,
+        brier_score: summary.brier_score,
+        log_loss: summary.log_loss,
+        mean_prediction: summary.mean_prediction,
+        mean_observed: summary.mean_observed,
+        calibration: summary
+            .calibration
+            .iter()
+            .map(|bucket| CalibrationBucketDto {
+                bucket: bucket.label(),
+                count: bucket.count,
+                mean_prediction: bucket.mean_prediction,
+                mean_observed: bucket.mean_observed,
+            })
+            .collect(),
+        slices,
+    })
+}
+
+/// Groups samples by a key function and appends one slice per group.
+fn push_slices(
+    out: &mut Vec<EvaluationSliceDto>,
+    dimension: &str,
+    samples: &[db::predictions::ResolvedSample],
+    key: impl Fn(&db::predictions::ResolvedSample) -> String,
+) {
+    let mut groups: std::collections::BTreeMap<String, Vec<PredictionSample>> =
+        std::collections::BTreeMap::new();
+    for sample in samples {
+        groups
+            .entry(key(sample))
+            .or_default()
+            .push(PredictionSample::new(
+                sample.predicted_score,
+                sample.observed_score,
+            ));
+    }
+    for (key, group) in groups {
+        let summary = evaluate(&group, 0);
+        out.push(EvaluationSliceDto {
+            dimension: dimension.to_owned(),
+            key,
+            samples: summary.samples,
+            brier_score: summary.brier_score,
+            log_loss: summary.log_loss,
+            mean_prediction: summary.mean_prediction,
+            mean_observed: summary.mean_observed,
+        });
+    }
+}
+
+/// Buckets a difficulty prior into equal 0.2 bands for slicing.
+fn difficulty_band(difficulty: f64) -> String {
+    let lower = (difficulty.clamp(0.0, 1.0) * 5.0).floor() / 5.0;
+    let upper = (lower + 0.2).min(1.0);
+    format!("{lower:.1}-{upper:.1}")
+}
+
+/// Buckets time since previous practice for slicing.
+fn spacing_band(seconds: Option<i32>) -> String {
+    const DAY: i64 = 24 * 60 * 60;
+    match seconds.map(i64::from) {
+        None => "unknown".to_owned(),
+        Some(seconds) if seconds < DAY => "under_1d".to_owned(),
+        Some(seconds) if seconds < 3 * DAY => "1_3d".to_owned(),
+        Some(seconds) if seconds < 7 * DAY => "3_7d".to_owned(),
+        Some(seconds) if seconds < 30 * DAY => "7_30d".to_owned(),
+        Some(_) => "30d_plus".to_owned(),
+    }
+}
+
+/// Builds a delayed-retrieval practice item when a practiced concept is due.
+///
+/// Simple deterministic spacing: a concept is due when it has enough evidence
+/// and its `heuristic-v1` retrievability has decayed below the due threshold.
+/// At most one item is added per mission, and never when the session is full.
+fn delayed_retrieval_item(
+    context: &PlannerContext,
+    existing: &[PlannedDailyItem],
+    now: DateTime<Utc>,
+) -> Option<PlannedDailyItem> {
+    let mut due: Vec<(&ConceptStateView, f64)> = context
+        .input
+        .states
+        .iter()
+        .filter(|state| state.evidence_mass >= DELAYED_DUE_EVIDENCE_MASS)
+        .filter_map(|state| {
+            let last = state.last_practiced_at?;
+            let elapsed = (now - last).num_seconds();
+            if elapsed < DELAYED_MIN_SPACING_SECONDS {
+                return None;
+            }
+            let retrieval = retrievability(state.evidence_mass, state.last_practiced_at, now);
+            (retrieval < DELAYED_DUE_RETRIEVABILITY).then_some((state, retrieval))
+        })
+        .collect();
+    due.sort_by(|a, b| {
+        a.1.partial_cmp(&b.1)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.0.concept_id.cmp(&b.0.concept_id))
+            .then_with(|| {
+                a.0.assessment_mode
+                    .as_str()
+                    .cmp(b.0.assessment_mode.as_str())
+            })
+    });
+    let (due_state, _) = due.first()?;
+
+    let candidates: Vec<Candidate> = context
+        .input
+        .questions
+        .iter()
+        .filter(|question| question.assessment_mode == due_state.assessment_mode)
+        .filter(|question| {
+            question
+                .concepts
+                .iter()
+                .any(|concept| concept.concept_id == due_state.concept_id)
+        })
+        .map(candidate_from_planner_question)
+        .collect();
+    if candidates.is_empty() {
+        return None;
+    }
+
+    let used_ids: HashSet<String> = existing
+        .iter()
+        .flat_map(|item| practice_question_ids(&item.practice_context))
+        .collect();
+    let anchor = candidates.iter().find(|candidate| {
+        !used_ids.contains(&candidate.id)
+            && !context.input.recent_question_ids.contains(&candidate.id)
+    })?;
+
+    let question_ids = selection::recommended_practice(
+        anchor,
+        &candidates,
+        &context.history,
+        DELAYED_RETRIEVAL_MAX_QUESTIONS,
+    );
+    if question_ids.is_empty() {
+        return None;
+    }
+
+    Some(PlannedDailyItem {
+        position: existing.len() as i32,
+        kind: "practice",
+        domain_id: anchor.domain_id.clone(),
+        node_id: None,
+        title: "Delayed retrieval".to_owned(),
+        estimated_minutes: (question_ids.len() as i32) * 2,
+        practice_context: serde_json::json!({
+            "question_ids": question_ids,
+            "delayed_retrieval": true,
+        }),
+    })
+}
+
+/// Maps a planner question into a selection candidate.
+fn candidate_from_planner_question(question: &PlannerQuestion) -> Candidate {
+    Candidate {
+        id: question.id.clone(),
+        domain_id: question.domain_id.clone(),
+        task_id: question.task_id.clone(),
+        interaction_type: question.interaction_type,
+        assessment_mode: question.assessment_mode,
+        difficulty_prior: question.difficulty_prior,
+        concepts: question.concepts.clone(),
+    }
+}
+
 /// Requested Daily Mission length in minutes.
 const DAILY_MISSION_MINUTES: u32 = 20;
 /// Maximum items in one Daily Mission.
@@ -375,10 +743,29 @@ pub async fn daily_mission(
         .bundle_for_certification(track_id)
         .ok_or(ApiError::NotFound)?;
     let track_version = bundle.version.id.clone();
-    // Canonical UTC day boundary: timezone changes cannot create a second
-    // reward-bearing mission for the same day.
-    let day_key = Utc::now().date_naive();
-    let timezone = sanitize_timezone(request.timezone.as_deref());
+    let now = Utc::now();
+
+    // Capture the learner's IANA timezone once. Later timezone changes cannot
+    // move the day boundary or produce additional reward-bearing missions.
+    if let Some(requested) = sanitize_timezone(request.timezone.as_deref()) {
+        if let Err(error) =
+            db::users::set_timezone_if_absent(&state.pool, user.id, &requested).await
+        {
+            tracing::debug!(error = %error, "could not persist learner timezone");
+        }
+    }
+    let stored_timezone = match db::users::timezone(&state.pool, user.id).await {
+        Ok(timezone) => timezone,
+        Err(error) => {
+            tracing::debug!(error = %error, "could not read learner timezone");
+            None
+        }
+    };
+    let effective_timezone = stored_timezone
+        .clone()
+        .or_else(|| sanitize_timezone(request.timezone.as_deref()))
+        .unwrap_or_else(|| "UTC".to_owned());
+    let day_key = local_day(now, &effective_timezone);
 
     if let Some(existing) =
         db::daily_missions::find_for_day(&state.pool, user.id, track_id, day_key).await?
@@ -388,6 +775,21 @@ pub async fn daily_mission(
             .await?
             .unwrap_or(existing);
         return Ok(daily_response(&bundle.version.domains, &current));
+    }
+
+    // Abuse guard: a new mission may only be created for a strictly later day
+    // than the most recent one. A timezone shift that yields an earlier or equal
+    // local day returns the existing mission instead.
+    if let Some(latest) =
+        db::daily_missions::find_latest_for_user_track(&state.pool, user.id, track_id).await?
+    {
+        if day_key <= latest.day_key {
+            settle_completed_reward(state, &latest).await;
+            let current = db::daily_missions::find_by_id(&state.pool, latest.id)
+                .await?
+                .unwrap_or(latest);
+            return Ok(daily_response(&bundle.version.domains, &current));
+        }
     }
 
     let generated =
@@ -416,7 +818,7 @@ pub async fn daily_mission(
         track_id,
         track_version: &track_version,
         day_key,
-        timezone: timezone.as_deref(),
+        timezone: Some(effective_timezone.as_str()),
         plan_type: plan_type.as_str(),
         reward_bits: DAILY_MISSION_BONUS_BITS as i32,
     };
@@ -440,13 +842,13 @@ async fn generate_daily_items(
         Ok(context) => {
             if let Some(session) =
                 planner::session::plan_session(&planner::session::SessionPlannerInput {
-                    planner: context.input,
+                    planner: context.input.clone(),
                     available_minutes: DAILY_MISSION_MINUTES,
                     preference: planner::session::SessionPreference::Balanced,
-                    history: context.history,
+                    history: context.history.clone(),
                 })
             {
-                let items: Vec<PlannedDailyItem> = session
+                let mut items: Vec<PlannedDailyItem> = session
                     .activities
                     .into_iter()
                     .take(DAILY_MISSION_MAX_ITEMS)
@@ -475,6 +877,15 @@ async fn generate_daily_items(
                         }
                     })
                     .collect();
+
+                // At most one spaced delayed-retrieval item, and only when the
+                // session has room. This keeps new-learning balance.
+                if items.len() < DAILY_MISSION_MAX_ITEMS {
+                    if let Some(delayed) = delayed_retrieval_item(&context, &items, Utc::now()) {
+                        items.push(delayed);
+                    }
+                }
+
                 if !items.is_empty() {
                     return GeneratedDailyItems {
                         adaptive: true,
@@ -687,6 +1098,14 @@ pub async fn start_daily_item(
         completed_at: None,
     };
     let stored = db::missions::insert(&state.pool, &mission).await?;
+
+    let delayed = item
+        .practice_context
+        .get("delayed_retrieval")
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false);
+    log_predictions_best_effort(state, Some(user), &stored, "daily_mission", delayed).await;
+
     Ok(mission_response(state, stored))
 }
 
@@ -1106,6 +1525,15 @@ pub async fn issue_mission(
         )
         .await;
     }
+
+    log_predictions_best_effort(
+        state,
+        user,
+        &stored,
+        mission_practice_source(stored.mode, recommendation_id.is_some()),
+        false,
+    )
+    .await;
 
     if let (Some(user), Some(device)) = (user, request.device_id) {
         if let Err(error) = db::devices::upsert(&state.pool, device, user.id).await {
@@ -1646,6 +2074,9 @@ async fn apply_event(
         .map_err(|error| SyncRejection::Rejected(error.code().to_owned()))?;
     let scored = score(question, &submitted)
         .map_err(|error| SyncRejection::Rejected(error.code().to_owned()))?;
+    let event_id = event.event_id;
+    let question_id = event.question_id.clone();
+    let occurred_at = event.occurred_at;
 
     // Domain and task come from the actual question, not the mission: mixed
     // missions have no single task, and analytics must stay per-question.
@@ -1679,6 +2110,21 @@ async fn apply_event(
     let attempt = db::learning_events::accept_answer(&state.pool, &learning_event)
         .await
         .map_err(|error| SyncRejection::Fatal(error.into()))?;
+
+    // Measurement only: link the accepted event to its pre-answer prediction.
+    // Failure here is ignored and never affects scoring or rewards.
+    if let Some(attempt_number) = attempt {
+        record_prediction_outcome_best_effort(
+            state,
+            mission,
+            &question_id,
+            event_id,
+            attempt_number,
+            scored.score,
+            occurred_at,
+        )
+        .await;
+    }
 
     Ok(match attempt {
         Some(attempt_number) if owned_by_user => {
@@ -1934,6 +2380,252 @@ mod tests {
 
         // Auxiliary persistence must never panic or propagate.
         log_study_session(&pool, &entry).await;
+    }
+
+    #[tokio::test]
+    async fn prediction_logging_failure_is_swallowed() {
+        use crate::auth::{Authenticator, DevVerifier};
+        use std::sync::Arc;
+
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .acquire_timeout(std::time::Duration::from_millis(50))
+            .connect_lazy("postgres://app:app@127.0.0.1:1/app")
+            .expect("lazy pool");
+        let content = Arc::new(
+            adaptive_learn_content::ContentRegistry::embedded().expect("embedded content"),
+        );
+        let state = AppState::new(
+            pool,
+            content,
+            Authenticator {
+                verifier: Arc::new(DevVerifier),
+                profile: None,
+            },
+        );
+        let user = AuthenticatedUser {
+            id: Uuid::new_v4(),
+            auth_subject: "test".to_owned(),
+            email: None,
+        };
+        let now = Utc::now();
+        let mission = MissionInstance {
+            id: Uuid::new_v4(),
+            user_id: Some(user.id),
+            device_id: Uuid::new_v4(),
+            certification_id: "aws-soa-c03".to_owned(),
+            certification_version: "soa-c03".to_owned(),
+            content_version: "soa-c03-content-v1".to_owned(),
+            mode: QuizMode::TaskPractice,
+            recommendation_id: None,
+            daily_mission_id: None,
+            daily_item_position: None,
+            domain_id: Some("domain-1".to_owned()),
+            task_id: Some("1.1".to_owned()),
+            question_ids: vec!["monitoring-classification-001".to_owned()],
+            status: MissionStatus::Issued,
+            issued_at: now,
+            expires_at: now + Duration::minutes(60),
+            completed_at: None,
+        };
+
+        // Unreachable database: prediction measurement must never panic or
+        // propagate into mission issuance.
+        log_predictions_best_effort(&state, Some(&user), &mission, "task_practice", false).await;
+        record_prediction_outcome_best_effort(
+            &state,
+            &mission,
+            "monitoring-classification-001",
+            Uuid::new_v4(),
+            1,
+            1.0,
+            now,
+        )
+        .await;
+    }
+
+    fn concept_weight(concept_id: &str) -> ConceptWeight {
+        ConceptWeight {
+            concept_id: concept_id.to_owned(),
+            weight: 1.0,
+        }
+    }
+
+    fn state_view(
+        concept_id: &str,
+        mode: adaptive_learn_domain::AssessmentMode,
+        estimate: f64,
+        mass: f64,
+        last: Option<DateTime<Utc>>,
+    ) -> ConceptStateView {
+        ConceptStateView {
+            concept_id: concept_id.to_owned(),
+            assessment_mode: mode,
+            estimate,
+            evidence_mass: mass,
+            exposure_count: 1,
+            last_practiced_at: last,
+        }
+    }
+
+    fn planner_question(
+        id: &str,
+        mode: adaptive_learn_domain::AssessmentMode,
+        concept_ids: &[&str],
+    ) -> PlannerQuestion {
+        PlannerQuestion {
+            id: id.to_owned(),
+            domain_id: "d1".to_owned(),
+            task_id: "t1".to_owned(),
+            interaction_type: adaptive_learn_domain::InteractionType::Ordering,
+            assessment_mode: mode,
+            difficulty_prior: 0.5,
+            concepts: concept_ids.iter().map(|id| concept_weight(id)).collect(),
+        }
+    }
+
+    fn planner_context(
+        states: Vec<ConceptStateView>,
+        questions: Vec<PlannerQuestion>,
+        recent: HashSet<String>,
+    ) -> PlannerContext {
+        PlannerContext {
+            track_version: "v1".to_owned(),
+            input: PlannerInput {
+                track_id: "track".to_owned(),
+                track_version: "v1".to_owned(),
+                now: Utc::now(),
+                states,
+                domains: vec![PlannerDomain {
+                    id: "d1".to_owned(),
+                    name: "D1".to_owned(),
+                    weight: 1.0,
+                }],
+                nodes: Vec::new(),
+                questions,
+                explored_node_ids: HashSet::new(),
+                unlocked_node_ids: HashSet::new(),
+                completed_module_ids: HashSet::new(),
+                recent_question_ids: recent,
+            },
+            history: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn delayed_retrieval_prefers_the_most_stale_concept() {
+        use adaptive_learn_domain::AssessmentMode;
+        let now = Utc::now();
+        let context = planner_context(
+            vec![
+                state_view("c-fresh", AssessmentMode::Recall, 0.9, 6.0, Some(now)),
+                state_view(
+                    "c-stale",
+                    AssessmentMode::Recall,
+                    0.3,
+                    3.0,
+                    Some(now - Duration::days(20)),
+                ),
+            ],
+            vec![
+                planner_question("q-fresh", AssessmentMode::Recall, &["c-fresh"]),
+                planner_question("q-stale", AssessmentMode::Recall, &["c-stale"]),
+            ],
+            HashSet::new(),
+        );
+
+        let item = delayed_retrieval_item(&context, &[], now).expect("delayed item");
+        assert_eq!(item.kind, "practice");
+        assert_eq!(item.title, "Delayed retrieval");
+        assert_eq!(
+            item.practice_context["delayed_retrieval"],
+            serde_json::json!(true)
+        );
+        let ids = practice_question_ids(&item.practice_context);
+        assert!(ids.contains(&"q-stale".to_owned()));
+    }
+
+    #[test]
+    fn delayed_retrieval_skips_recent_and_underevidenced_concepts() {
+        use adaptive_learn_domain::AssessmentMode;
+        let now = Utc::now();
+
+        // The only due question was just practiced.
+        let recent = HashSet::from(["q-stale".to_owned()]);
+        let context = planner_context(
+            vec![state_view(
+                "c-stale",
+                AssessmentMode::Recall,
+                0.3,
+                3.0,
+                Some(now - Duration::days(20)),
+            )],
+            vec![planner_question(
+                "q-stale",
+                AssessmentMode::Recall,
+                &["c-stale"],
+            )],
+            recent,
+        );
+        assert!(delayed_retrieval_item(&context, &[], now).is_none());
+
+        // Too little evidence to be worth spacing.
+        let context = planner_context(
+            vec![state_view(
+                "c-thin",
+                AssessmentMode::Recall,
+                0.3,
+                1.0,
+                Some(now - Duration::days(20)),
+            )],
+            vec![planner_question(
+                "q-thin",
+                AssessmentMode::Recall,
+                &["c-thin"],
+            )],
+            HashSet::new(),
+        );
+        assert!(delayed_retrieval_item(&context, &[], now).is_none());
+
+        // Practiced too recently to be due.
+        let context = planner_context(
+            vec![state_view(
+                "c-recent",
+                AssessmentMode::Recall,
+                0.3,
+                6.0,
+                Some(now - Duration::hours(1)),
+            )],
+            vec![planner_question(
+                "q-recent",
+                AssessmentMode::Recall,
+                &["c-recent"],
+            )],
+            HashSet::new(),
+        );
+        assert!(delayed_retrieval_item(&context, &[], now).is_none());
+    }
+
+    #[test]
+    fn delayed_retrieval_keeps_assessment_modes_separate() {
+        use adaptive_learn_domain::AssessmentMode;
+        let now = Utc::now();
+        // The stale state is recognition, but only an application question exists.
+        let context = planner_context(
+            vec![state_view(
+                "c-stale",
+                AssessmentMode::Recognition,
+                0.3,
+                3.0,
+                Some(now - Duration::days(20)),
+            )],
+            vec![planner_question(
+                "q-app",
+                AssessmentMode::Application,
+                &["c-stale"],
+            )],
+            HashSet::new(),
+        );
+        assert!(delayed_retrieval_item(&context, &[], now).is_none());
     }
 
     #[tokio::test]

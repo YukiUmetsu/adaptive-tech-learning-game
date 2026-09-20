@@ -10,6 +10,7 @@ pub mod devices;
 pub mod error;
 pub mod learning_events;
 pub mod missions;
+pub mod predictions;
 pub mod recommendations;
 pub mod sessions;
 pub mod sync_batches;

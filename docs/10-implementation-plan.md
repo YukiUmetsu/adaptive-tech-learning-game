@@ -87,6 +87,15 @@ Deliver:
 
 Exit: recall predictions are measured, calibrated, and reproducible.
 
+> Phase 3 implementation note: the measurement foundation is in place while
+> `heuristic-v1` remains the production model. Pre-answer prediction snapshots
+> are captured at question issuance and linked to accepted learning events, with
+> pure Brier/log-loss/calibration metrics, slicing, and an internal
+> aggregate-only evaluation endpoint. Daily Missions can include a bounded,
+> tagged delayed-retrieval item for due concepts. HLR/FSRS/DAS3H training and
+> calibration dashboards are still to come, and will be benchmarked against the
+> same dataset.
+
 ## Phase 4 — Adaptive planning
 
 Deliver:

@@ -315,7 +315,43 @@ most once even under retries or concurrent requests. Daily Mission completion is
 never concept/mastery evidence; only scored learning events change knowledge
 state.
 
-## Plan explanation
+## Measuring `heuristic-v1`
+
+`heuristic-v1` remains the production model. This layer measures whether it
+predicts future performance; it does not replace it.
+
+- **Prediction before the answer.** When a question is issued, a prediction
+  snapshot is persisted from the learner's concept state at that moment. It
+  never reads the answer, the score, structured errors, response time, or
+  post-answer state, so there is no target leakage.
+- **Deterministic aggregation.** A question's predicted score is the
+  authored-weight average of the mode-specific concept estimates. A concept with
+  no state in the question's assessment mode contributes the neutral prior, so
+  recognition and recall stay separate. Per-concept detail (estimate, evidence
+  mass, retrievability, uncertainty, forgetting risk) is stored for later
+  analysis.
+- **Outcome linkage.** When the accepted learning event arrives (immediately or
+  after offline sync), it is linked to the prediction. The snapshot is never
+  mutated, duplicates cannot double-link, repeated attempts are distinguishable
+  by attempt number, and abandoned questions simply have no outcome.
+  `learning_events` remain authoritative for the actual score.
+- **Metrics.** Pure functions compute Brier score, log loss, mean predicted and
+  observed scores, and calibration buckets, with slices by assessment mode,
+  source, track, domain, difficulty band, spacing, and delayed-retrieval flag.
+  An internal aggregate-only endpoint exposes the summary; no per-user analytics
+  are surfaced in learner APIs. Later models (HLR, FSRS, DAS3H, deep KT) are
+  benchmarked against this same prediction/outcome dataset.
+- **Delayed retrieval.** Daily Missions may include at most one spaced
+  retrieval item for a practiced concept whose `heuristic-v1` retrievability has
+  decayed below a due threshold and whose spacing exceeds a minimum window.
+  These items are tagged so analytics can separate delayed retrieval from
+  immediate practice. This is a simple deterministic spacing heuristic, not
+  FSRS/HLR.
+- **Auxiliary and resilient.** Prediction, outcome, and analytics writes are
+  best-effort and never share a transaction with mission issuance, answer
+  acceptance, reward settlement, or concept-state updates. A measurement failure
+  is logged and ignored; learning always continues.
+
 
 Example:
 

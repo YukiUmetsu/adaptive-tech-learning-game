@@ -25,6 +25,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/model-evaluation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Internal calibration summary for a model version.
+         * @description Analytics only: returns aggregate metrics, never per-user data. Requires an
+         *     authenticated account and is not part of the learner-facing surface.
+         */
+        get: operations["get_model_evaluation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/openapi.json": {
         parameters: {
             query?: never;
@@ -417,6 +438,23 @@ export interface components {
          * @enum {string}
          */
         AssessmentMode: "recognition" | "recall" | "application" | "structural_reconstruction" | "relationship_recall" | "procedural_recall";
+        /** @description One calibration bucket in an internal evaluation summary. */
+        CalibrationBucketDto: {
+            /** @description Bucket label, for example `0.6-0.8`. */
+            bucket: string;
+            /** @description Number of samples in the bucket. */
+            count: number;
+            /**
+             * Format: double
+             * @description Mean observed score in the bucket.
+             */
+            mean_observed: number;
+            /**
+             * Format: double
+             * @description Mean predicted probability in the bucket.
+             */
+            mean_prediction: number;
+        };
         /** @description The canonical answer for a question. */
         CanonicalAnswer: {
             /** @description Item id to category id. */
@@ -789,6 +827,35 @@ export interface components {
         ErrorResponse: {
             /** @description Error payload. */
             error: components["schemas"]["ErrorBody"];
+        };
+        /** @description Metrics for one slice of the evaluation set. */
+        EvaluationSliceDto: {
+            /**
+             * Format: double
+             * @description Brier score for the slice.
+             */
+            brier_score?: number | null;
+            /** @description Slice dimension, for example `assessment_mode`. */
+            dimension: string;
+            /** @description Slice key within the dimension, for example `recall`. */
+            key: string;
+            /**
+             * Format: double
+             * @description Log loss for the slice.
+             */
+            log_loss?: number | null;
+            /**
+             * Format: double
+             * @description Mean observed score for the slice.
+             */
+            mean_observed?: number | null;
+            /**
+             * Format: double
+             * @description Mean predicted probability for the slice.
+             */
+            mean_prediction?: number | null;
+            /** @description Number of samples in the slice. */
+            samples: number;
         };
         /** @description Feedback for one scored attempt. */
         FeedbackResponse: {
@@ -1227,6 +1294,44 @@ export interface components {
          * @enum {string}
          */
         MissionStatus: "issued" | "completed";
+        /**
+         * @description Internal calibration summary for one model version.
+         *
+         *     Analytics only: no per-user data is exposed.
+         */
+        ModelEvaluationResponse: {
+            /**
+             * Format: double
+             * @description Brier score over all samples.
+             */
+            brier_score?: number | null;
+            /** @description Calibration buckets. */
+            calibration: components["schemas"]["CalibrationBucketDto"][];
+            /**
+             * Format: double
+             * @description Log loss over all samples.
+             */
+            log_loss?: number | null;
+            /**
+             * Format: double
+             * @description Mean observed score.
+             */
+            mean_observed?: number | null;
+            /**
+             * Format: double
+             * @description Mean predicted probability.
+             */
+            mean_prediction?: number | null;
+            /** @description Model version evaluated, for example `heuristic-v1`. */
+            model_version: string;
+            /** @description Number of resolved prediction/outcome pairs. */
+            samples: number;
+            /**
+             * @description Metrics sliced by assessment mode, source, track, domain, difficulty,
+             *     spacing, and delayed-retrieval flag.
+             */
+            slices: components["schemas"]["EvaluationSliceDto"][];
+        };
         /** @description A node in a connection graph. */
         Node: {
             /** @description Stable identifier within the question. */
@@ -1843,6 +1948,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    get_model_evaluation: {
+        parameters: {
+            query?: {
+                /** @description Model version to evaluate. Defaults to the current model. */
+                model_version?: string;
+                /** @description Number of calibration buckets (1-20). Defaults to 5. */
+                bucket_count?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Evaluation summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelEvaluationResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };

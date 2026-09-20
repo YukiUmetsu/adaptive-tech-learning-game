@@ -240,6 +240,34 @@ async fn load_with_items(
     Ok(mission)
 }
 
+/// Loads the learner's most recent Daily Mission for a track, if any.
+///
+/// Used to keep the local-day boundary stable and to prevent timezone changes
+/// from producing additional reward-bearing missions.
+pub async fn find_latest_for_user_track(
+    pool: &PgPool,
+    user_id: Uuid,
+    track_id: &str,
+) -> Result<Option<StoredDailyMission>, DbError> {
+    let row = sqlx::query_as::<_, MissionRow>(
+        "SELECT id, user_id, track_id, track_version, day_key, timezone, plan_type,
+                status, reward_bits, reward_settled_at, created_at, completed_at
+         FROM daily_missions
+         WHERE user_id = $1 AND track_id = $2
+         ORDER BY day_key DESC, created_at DESC
+         LIMIT 1",
+    )
+    .bind(user_id)
+    .bind(track_id)
+    .fetch_optional(pool)
+    .await?;
+
+    match row {
+        Some(row) => load_with_items(pool, row.into()).await.map(Some),
+        None => Ok(None),
+    }
+}
+
 async fn load_items(
     pool: &PgPool,
     mission_id: Uuid,

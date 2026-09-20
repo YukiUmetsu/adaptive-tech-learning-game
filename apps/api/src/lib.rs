@@ -84,6 +84,10 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
         .route("/v1/sync", post(routes::sync::sync))
         .route("/v1/wallet", get(routes::wallet::get_wallet))
         .route("/v1/me", get(routes::me::get_me))
+        .route(
+            "/internal/model-evaluation",
+            get(routes::internal::get_model_evaluation),
+        )
         .layer(TraceLayer::new_for_http())
         .layer(TimeoutLayer::with_status_code(
             StatusCode::REQUEST_TIMEOUT,
