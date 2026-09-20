@@ -508,16 +508,25 @@ announcing a loss.
 ## Track Hub UX and study settings
 
 The Learning Track hub is organized around one domain's Knowledge Map at a
-time, with a compact domain switcher so the map never becomes an overwhelming
-wall of nodes. Nodes align on their signal circle regardless of label length,
-grow subtly on hover, and the recommended node carries a small "Next" marker
-(explained in the map legend).
+time, with a compact domain switcher (short domain labels plus a small progress
+bar) so the map never becomes an overwhelming wall of nodes. Authored domain
+names are precise but long; the UI shows a short label while keeping the full
+name in accessible labels and detail panels. Nodes align on their signal circle
+regardless of label length, grow subtly on hover, and the recommended node
+carries a small "Next" marker (explained in the map legend). The node detail
+panel hides evidence/review rows entirely when there is not enough data, and
+leads with a reward hook so exploring feels worthwhile.
 
 The Daily Mission is embedded in the hub as a view, using the same runner as the
 standalone `/tracks/:id/daily` route (kept for deep links), so it no longer feels
-like a separate page. Completed Daily Mission items can be **reviewed read-only**:
-learning-node material is shown fully revealed with no clicks, and practice
-questions are shown with their canonical answers and the learner's attempts via
+like a separate page. The runner marks items complete locally the moment the
+server confirms them, and the hub refreshes the streak and Daily Mission at
+natural boundaries (opening the track, switching to the mission view, returning
+to the tab, or after a mission completes) — never on a poll.
+
+Completed Daily Mission items can be **reviewed read-only**: learning-node
+material is shown fully revealed with no clicks, and practice questions are shown
+with their canonical answers and the learner's attempts via
 `GET /v1/daily-missions/:id/items/:position/review` (or
 `GET /v1/missions/:id/review`). Canonical answers are only returned after the
 mission is complete, so in-progress work never leaks them.

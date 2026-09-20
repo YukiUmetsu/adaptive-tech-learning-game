@@ -10,10 +10,8 @@ import type {
 import { formatCanonicalAnswer, labelIndex } from "../lib/canonicalAnswer";
 import { prefersReducedMotion } from "../lib/motion";
 import {
-  completedItemCount,
   completeDailyNodeItem,
   dailyActivityPresentation,
-  firstIncompleteItem,
 } from "../state/dailyMission";
 import {
   deriveLearningState,
@@ -51,11 +49,47 @@ export default function DailyMissionRunner({
   onRefresh,
 }: DailyMissionRunnerProps) {
   const [reviewItem, setReviewItem] = useState<DailyMissionItemDto | null>(null);
-  const completed = completedItemCount(mission.items);
+  // Positions completed in this session, before the mission is refetched. This
+  // lets the checklist and header reflect progress immediately without
+  // auto-advancing the card the learner is reading.
+  const [locallyCompleted, setLocallyCompleted] = useState<Set<number>>(new Set());
+  const [displayedPosition, setDisplayedPosition] = useState<number | null>(null);
+
+  const isDone = useCallback(
+    (item: DailyMissionItemDto) =>
+      item.status === "completed" || locallyCompleted.has(item.position),
+    [locallyCompleted],
+  );
+  const completed = mission.items.filter(isDone).length;
   const total = mission.items.length;
-  const current = firstIncompleteItem(mission.items);
-  const done = mission.status === "completed";
+  const current = mission.items.find((item) => !isDone(item)) ?? null;
+  const displayed =
+    displayedPosition != null
+      ? mission.items.find((item) => item.position === displayedPosition) ?? current
+      : current;
+  const done =
+    mission.status === "completed" ||
+    (mission.items.length > 0 && mission.items.every(isDone));
   const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+  const markCompleted = useCallback((position: number) => {
+    // Keep the completed card visible (with its celebration and "Next task"
+    // action) instead of auto-advancing, while the checklist updates.
+    setDisplayedPosition(position);
+    setLocallyCompleted((previous) => {
+      if (previous.has(position)) {
+        return previous;
+      }
+      const next = new Set(previous);
+      next.add(position);
+      return next;
+    });
+  }, []);
+
+  const advance = useCallback(() => {
+    setDisplayedPosition(null);
+    void onRefresh();
+  }, [onRefresh]);
 
   return (
     <section className="daily-runner">
@@ -101,21 +135,22 @@ export default function DailyMissionRunner({
             onBack={() => setReviewItem(null)}
           />
         )
-      ) : current ? (
-        current.kind === "learn_node" || current.kind === "review_node" ? (
+      ) : displayed ? (
+        displayed.kind === "learn_node" || displayed.kind === "review_node" ? (
           <DailyNodeActivity
-            key={`node-${current.position}`}
+            key={`node-${displayed.position}`}
             trackId={trackId}
             missionId={mission.id}
-            item={current}
-            onAdvanced={() => void onRefresh()}
+            item={displayed}
+            onCompleted={() => markCompleted(displayed.position)}
+            onAdvanced={advance}
           />
         ) : (
           <DailyPracticeActivity
-            key={`practice-${current.position}`}
+            key={`practice-${displayed.position}`}
             trackId={trackId}
             missionId={mission.id}
-            item={current}
+            item={displayed}
           />
         )
       ) : (
@@ -131,9 +166,10 @@ export default function DailyMissionRunner({
           <DailyStep
             key={item.position}
             item={item}
-            current={current?.position === item.position}
+            done={isDone(item)}
+            current={displayed?.position === item.position}
             onReview={
-              item.status === "completed" ? () => setReviewItem(item) : undefined
+              isDone(item) ? () => setReviewItem(item) : undefined
             }
           />
         ))}
@@ -146,14 +182,15 @@ export default function DailyMissionRunner({
 function DailyStep({
   item,
   current,
+  done,
   onReview,
 }: {
   item: DailyMissionItemDto;
   current: boolean;
+  done: boolean;
   onReview?: () => void;
 }) {
   const presentation = dailyActivityPresentation(item);
-  const done = item.status === "completed";
   return (
     <li
       className={`daily-runner-step${done ? " daily-runner-step-done" : ""}${
@@ -191,11 +228,13 @@ function DailyNodeActivity({
   trackId,
   missionId,
   item,
+  onCompleted,
   onAdvanced,
 }: {
   trackId: string;
   missionId: string;
   item: DailyMissionItemDto;
+  onCompleted: () => void;
   onAdvanced: () => void;
 }) {
   const { state } = useLearningDomain(trackId, item.domain_id);
@@ -279,6 +318,7 @@ function DailyNodeActivity({
       .then((response) => {
         if (response.item_completed) {
           setCompleted(true);
+          onCompleted();
           // Persist any pending discovery/telemetry now that this Daily Mission
           // transition is a natural synchronization boundary.
           void flushAuxiliary();
@@ -291,7 +331,7 @@ function DailyNodeActivity({
         submitted.current = false;
         setError("Could not update your Daily Mission. Try again.");
       });
-  }, [data, node, unlocked, missionId, item.position]);
+  }, [data, node, unlocked, missionId, item.position, onCompleted]);
 
   const reveal = useCallback(
     (promptId: string) => {

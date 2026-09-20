@@ -186,6 +186,9 @@ export function useMissionRunner(missionId: string): MissionRunner {
       body: { device_id: getDeviceId() },
     });
     void sync();
+    // Notify the app that authoritative study state may have changed so the
+    // Track Hub can refresh the streak and Daily Mission at this boundary.
+    window.dispatchEvent(new Event("adaptive-learn:study-updated"));
   }, [phase, progress, sync]);
 
   const submit = useCallback(

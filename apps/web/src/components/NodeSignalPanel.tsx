@@ -116,16 +116,22 @@ export default function NodeSignalPanel({
         </p>
       )}
 
-      <div className="node-panel-stats">
-        <span className="node-panel-stat">
-          <span className="node-panel-stat-label">Evidence</span>
-          <span className="node-panel-stat-value">{evidenceLabel(visual.evidence)}</span>
-        </span>
-        <span className="node-panel-stat">
-          <span className="node-panel-stat-label">Review</span>
-          <span className="node-panel-stat-value">{freshnessLabel(visual.freshness)}</span>
-        </span>
-      </div>
+      {hasData ? (
+        <div className="node-panel-stats">
+          <span className="node-panel-stat">
+            <span className="node-panel-stat-label">Evidence</span>
+            <span className="node-panel-stat-value">
+              {evidenceLabel(visual.evidence)}
+            </span>
+          </span>
+          <span className="node-panel-stat">
+            <span className="node-panel-stat-label">Review</span>
+            <span className="node-panel-stat-value">
+              {freshnessLabel(visual.freshness)}
+            </span>
+          </span>
+        </div>
+      ) : null}
 
       <div className="node-panel-rewards">
         <span className="node-panel-reward">

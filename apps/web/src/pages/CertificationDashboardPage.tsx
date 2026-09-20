@@ -40,6 +40,8 @@ import {
 import { loadTrackMap } from "../state/trackMap";
 import { loadTrackProgress, signalIndex } from "../state/trackProgress";
 import { refreshWallet } from "../state/wallet";
+import { shortDomainName } from "../state/domainNames";
+import { ANSWER_REWARD_RANGE } from "../state/rewards";
 import DailyMissionRunner from "../components/DailyMissionRunner";
 
 interface Launch {
@@ -175,6 +177,38 @@ export default function CertificationDashboardPage() {
       cancelled = true;
     };
   }, [authenticated, certificationId]);
+
+  // Refresh account + Daily Mission at natural boundaries: returning to the tab
+  // or after a mission completes elsewhere. No polling.
+  useEffect(() => {
+    if (!authenticated) {
+      return;
+    }
+    const refresh = () => {
+      void loadAccount(true).then((account) => {
+        if (account) {
+          setStreak(account.streak);
+          setSettings(account.settings);
+        }
+      });
+      // Do not auto-advance the runner the learner is currently reading; the
+      // mission reloads when they advance or switch views.
+      if (view !== "daily") {
+        void reloadDaily();
+      }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        refresh();
+      }
+    };
+    window.addEventListener("adaptive-learn:study-updated", refresh);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("adaptive-learn:study-updated", refresh);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [authenticated, reloadDaily, view]);
 
   // Keep the visible domain on a valid one as the map loads or the track changes.
   useEffect(() => {
@@ -401,7 +435,8 @@ export default function CertificationDashboardPage() {
         <p className="muted">{presentation.duration}</p>
         <p className="mode-horizon muted">{presentation.horizon}</p>
         <span className="hub-mode-reward">
-          <span aria-hidden="true">💰</span> Bits for every correct answer
+          <span aria-hidden="true">💰</span> Earn {ANSWER_REWARD_RANGE} Bits per
+          correct answer
         </span>
         <button
           type="button"
@@ -464,7 +499,9 @@ export default function CertificationDashboardPage() {
         <li key={domain.id}>
           <div className="hub-fallback-domain">
             <div>
-              <p className="hub-fallback-name">{domain.name}</p>
+              <p className="hub-fallback-name" title={domain.name}>
+                {shortDomainName(domain.name)}
+              </p>
               <p className="muted">
                 {Math.round(domain.weight * 100)}% · {domainQuestionCount(domain)} questions
               </p>
@@ -524,7 +561,10 @@ export default function CertificationDashboardPage() {
           <button
             type="button"
             aria-current={view === "daily" ? "page" : undefined}
-            onClick={() => setView("daily")}
+            onClick={() => {
+              setView("daily");
+              void reloadDaily();
+            }}
           >
             <span aria-hidden="true">🧭</span> Daily Mission
           </button>
@@ -570,16 +610,28 @@ export default function CertificationDashboardPage() {
                         active ? " hub-domain-pill--active" : ""
                       }${complete ? " hub-domain-pill--complete" : ""}`}
                       aria-current={active ? "true" : undefined}
+                      aria-label={`${domain.domain.name}, ${unlocked} of ${total} nodes explored`}
+                      title={domain.domain.name}
                       onClick={() => {
                         setActiveDomainId(domain.domain.id);
                         setSelectedNodeId(null);
                       }}
                     >
-                      <span className="hub-domain-pill-name">
-                        {domain.domain.name}
+                      <span className="hub-domain-pill-top">
+                        <span className="hub-domain-pill-name">
+                          {shortDomainName(domain.domain.name)}
+                        </span>
+                        <span className="hub-domain-pill-progress" aria-hidden="true">
+                          {unlocked}/{total}
+                        </span>
                       </span>
-                      <span className="hub-domain-pill-progress" aria-hidden="true">
-                        {unlocked}/{total}
+                      <span className="hub-domain-pill-bar" aria-hidden="true">
+                        <span
+                          className="hub-domain-pill-bar-fill"
+                          style={{
+                            width: `${total > 0 ? (unlocked / total) * 100 : 0}%`,
+                          }}
+                        />
                       </span>
                     </button>
                   );
@@ -611,7 +663,7 @@ export default function CertificationDashboardPage() {
             {selected && selectedVisual ? (
               <NodeSignalPanel
                 node={selected.node}
-                domainName={selected.domain.domain.name}
+                domainName={shortDomainName(selected.domain.domain.name)}
                 moduleTitle={selected.module.title}
                 visual={selectedVisual}
                 onExplore={() =>
@@ -702,7 +754,10 @@ export default function CertificationDashboardPage() {
           <button
             type="button"
             className="primary hub-daily-cta"
-            onClick={() => setView("daily")}
+            onClick={() => {
+              setView("daily");
+              void reloadDaily();
+            }}
           >
             <span aria-hidden="true">🧭</span>
             {dailyMission.status === "completed"
