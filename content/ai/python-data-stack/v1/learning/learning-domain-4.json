@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-data-stack-learning-2026-09-19-v1",
+  "content_version": "python-data-stack-learning-2026-09-19-v2",
   "certification_id": "python-data-stack",
   "certification_version": "python-data-stack-v1",
   "exam_guide_revision": "Practical Python data-stack curriculum reviewed against current official NumPy, pandas, Matplotlib, and Seaborn documentation on 2026-09-19.",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; retrieval questions and typed coding questions provide the scored signal."
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code or table discoveries.",
+    "mastery_note": "Discovery progress is not mastery evidence; progressively harder retrieval and typed coding questions provide the scored signal."
   },
   "source_refs": [
     {
@@ -43,9 +43,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 9,
-    "prompt_count": 27
+    "prompt_count": 10
   },
-  "authoring_notes": "Interactive first-pass learning for Seaborn. Emphasizes plot selection, DataFrame variable roles, semantic mappings, and preparing/aggregating data before composing statistical visualizations.",
+  "authoring_notes": "Updated for the learning-v2 renderer. Executable-looking material is shown as syntax-highlighted code_file content with clickable annotations. Low-difficulty examples include small concrete data and result comments so learners can connect code to shape/output.",
   "modules": [
     {
       "id": "domain-4-task-4-1",
@@ -66,56 +66,81 @@
           "concept_ids": [
             "python.seaborn.plot_selection"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.25,
-            "y": 0.18
-          },
           "prompts": [
             {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Start with the analysis question and the column __________, then choose the plot family.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Start with the analysis question and the column types, then choose the plot family."
-              }
-            },
-            {
-              "id": "what",
+              "id": "choose",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Numeric vs numeric → `scatterplot`; one numeric distribution → `histplot`; numeric distribution by category → `__________`.",
+              "label": "VARIABLE ROLES → PLOT",
+              "placeholder": "Reveal one goal at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Numeric vs numeric → `scatterplot`; one numeric distribution → `histplot`; numeric distribution by category → `boxplot`."
-              }
-            },
-            {
-              "id": "what2",
-              "kind": "look_for",
-              "label": "👀 LOOK FOR",
-              "placeholder": "Category counts → `countplot`; matrix values by color → `heatmap`; ordered trend → `__________`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Category counts → `countplot`; matrix values by color → `heatmap`; ordered trend → `lineplot`."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "goal",
+                    "label": "Goal"
+                  },
+                  {
+                    "id": "plot",
+                    "label": "Good starting plot"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "rel",
+                    "cells": {
+                      "goal": "Relationship between two numeric variables",
+                      "plot": "sns.scatterplot"
+                    }
+                  },
+                  {
+                    "id": "trend",
+                    "cells": {
+                      "goal": "Ordered numeric trend, often split by group",
+                      "plot": "sns.lineplot"
+                    }
+                  },
+                  {
+                    "id": "dist",
+                    "cells": {
+                      "goal": "Distribution of one numeric variable",
+                      "plot": "sns.histplot"
+                    }
+                  },
+                  {
+                    "id": "box",
+                    "cells": {
+                      "goal": "Compare numeric distributions across categories",
+                      "plot": "sns.boxplot"
+                    }
+                  },
+                  {
+                    "id": "count",
+                    "cells": {
+                      "goal": "Count observations per category",
+                      "plot": "sns.countplot"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "goal"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Seaborn API",
-              "url": "https://seaborn.pydata.org/api.html"
-            },
-            {
-              "title": "Seaborn tutorial",
-              "url": "https://seaborn.pydata.org/tutorial.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-4-semantic-mapping",
@@ -123,58 +148,65 @@
           "concept_ids": [
             "python.seaborn.semantic_mapping"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "MAP VARIABLES TO VISUAL CHANNELS",
+              "placeholder": "Click hue, style, and size.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "semantic_mapping.py",
+                "language": "python",
+                "code": "import seaborn as sns\n\nsns.scatterplot(\n    data=df,\n    x=\"engine_size\",\n    y=\"mpg\",\n    hue=\"origin\",\n    style=\"fuel_type\",\n    size=\"weight\",\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "hue",
+                    "anchor": {
+                      "line": 7,
+                      "text": "hue=\"origin\"",
+                      "occurrence": 1
+                    },
+                    "title": "Color mapping",
+                    "explanation": "hue maps origin values to color.",
+                    "required": true
+                  },
+                  {
+                    "id": "style",
+                    "anchor": {
+                      "line": 8,
+                      "text": "style=\"fuel_type\"",
+                      "occurrence": 1
+                    },
+                    "title": "Marker-style mapping",
+                    "explanation": "style maps another variable to marker shape/style.",
+                    "required": true
+                  },
+                  {
+                    "id": "size",
+                    "anchor": {
+                      "line": 9,
+                      "text": "size=\"weight\"",
+                      "occurrence": 1
+                    },
+                    "title": "Size mapping",
+                    "explanation": "size maps a variable to marker size.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-4-plot-selection"
           ],
           "map_position": {
-            "x": 0.75,
-            "y": 0.18
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`hue` maps a variable to color, `style` maps to marker/line style, and `size` maps to visual __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`hue` maps a variable to color, `style` maps to marker/line style, and `size` maps to visual size."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Use a semantic mapping when x/y answer the main relationship but another variable should remain visually __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use a semantic mapping when x/y answer the main relationship but another variable should remain visually distinguishable."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Do not encode too many variables at once: additional semantics can make a plot harder to __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not encode too many variables at once: additional semantics can make a plot harder to read."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Seaborn API",
-              "url": "https://seaborn.pydata.org/api.html"
-            },
-            {
-              "title": "Seaborn tutorial",
-              "url": "https://seaborn.pydata.org/tutorial.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -200,56 +232,52 @@
           "concept_ids": [
             "python.seaborn.relational"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.5
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`scatterplot` shows individual x/y observations; `lineplot` emphasizes an ordered __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`scatterplot` shows individual x/y observations; `lineplot` emphasizes an ordered trend."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Age vs income → scatter; month vs revenue → __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Age vs income → scatter; month vs revenue → line."
-              }
-            },
-            {
               "id": "code",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Color a scatter by segment with `sns.scatterplot(..., __________=\"segment\")`.",
+              "kind": "look_for",
+              "label": "CHOOSE SCATTER VS LINE",
+              "placeholder": "Click both Seaborn calls.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Color a scatter by segment with `sns.scatterplot(..., hue=\"segment\")`."
+                "type": "code_file",
+                "filename": "relational.py",
+                "language": "python",
+                "code": "import matplotlib.pyplot as plt\nimport seaborn as sns\n\nfig, axes = plt.subplots(1, 2)\n\nsns.scatterplot(\n    data=df,\n    x=\"height\",\n    y=\"weight\",\n    hue=\"group\",\n    ax=axes[0],\n)\n\nsns.lineplot(\n    data=df,\n    x=\"date\",\n    y=\"temperature\",\n    hue=\"city\",\n    ax=axes[1],\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "scatter",
+                    "anchor": {
+                      "line": 6,
+                      "text": "sns.scatterplot(",
+                      "occurrence": 1
+                    },
+                    "title": "Observation relationship",
+                    "explanation": "scatterplot shows paired observations and can encode groups with semantics.",
+                    "required": true
+                  },
+                  {
+                    "id": "line",
+                    "anchor": {
+                      "line": 14,
+                      "text": "sns.lineplot(",
+                      "occurrence": 1
+                    },
+                    "title": "Ordered trend",
+                    "explanation": "lineplot emphasizes change across ordered x values and can encode groups.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Seaborn API",
-              "url": "https://seaborn.pydata.org/api.html"
-            },
-            {
-              "title": "Seaborn tutorial",
-              "url": "https://seaborn.pydata.org/tutorial.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-4-distribution",
@@ -257,58 +285,54 @@
           "concept_ids": [
             "python.seaborn.distribution"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "SHOW A DISTRIBUTION",
+              "placeholder": "Click histplot and hue.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "histplot.py",
+                "language": "python",
+                "code": "import seaborn as sns\n\nsns.histplot(\n    data=df,\n    x=\"response_time_ms\",\n    hue=\"region\",\n    bins=30,\n    element=\"step\",\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "hist",
+                    "anchor": {
+                      "line": 3,
+                      "text": "sns.histplot(",
+                      "occurrence": 1
+                    },
+                    "title": "Histogram",
+                    "explanation": "histplot bins numeric x values and displays their frequency or configured statistic.",
+                    "required": true
+                  },
+                  {
+                    "id": "hue",
+                    "anchor": {
+                      "line": 6,
+                      "text": "hue=\"region\"",
+                      "occurrence": 1
+                    },
+                    "title": "Compare groups",
+                    "explanation": "hue separates the distribution by region using color.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-4-relational"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.5
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`histplot` groups numeric observations into __________ and displays how many/frequent values fall in them.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`histplot` groups numeric observations into bins and displays how many/frequent values fall in them."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Use it to inspect skew, multiple peaks, gaps, and the overall __________ of a numeric variable.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use it to inspect skew, multiple peaks, gaps, and the overall shape of a numeric variable."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "`countplot` counts categorical levels; it is not a replacement for a histogram of __________ data.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`countplot` counts categorical levels; it is not a replacement for a histogram of continuous numeric data."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Seaborn API",
-              "url": "https://seaborn.pydata.org/api.html"
-            },
-            {
-              "title": "Seaborn tutorial",
-              "url": "https://seaborn.pydata.org/tutorial.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-4-categorical",
@@ -316,58 +340,107 @@
           "concept_ids": [
             "python.seaborn.categorical"
           ],
+          "prompts": [
+            {
+              "id": "compare",
+              "kind": "what",
+              "label": "BOXPLOT OR COUNTPLOT?",
+              "placeholder": "The question and plot are shown. Reveal why each plot fits.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "question",
+                    "label": "Question"
+                  },
+                  {
+                    "id": "plot",
+                    "label": "Plot"
+                  },
+                  {
+                    "id": "reason",
+                    "label": "Reason"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "box",
+                    "cells": {
+                      "question": "How does salary distribution differ by department?",
+                      "plot": "boxplot",
+                      "reason": "Numeric distribution grouped by category."
+                    }
+                  },
+                  {
+                    "id": "count",
+                    "cells": {
+                      "question": "How many rows belong to each department?",
+                      "plot": "countplot",
+                      "reason": "Counts categorical observations directly."
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "question",
+                      "plot"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "SEE THE API SHAPE",
+              "placeholder": "Click boxplot and countplot.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "categorical.py",
+                "language": "python",
+                "code": "import matplotlib.pyplot as plt\nimport seaborn as sns\n\nfig, axes = plt.subplots(1, 2)\n\nsns.boxplot(data=df, x=\"department\", y=\"salary\", ax=axes[0])\nsns.countplot(data=df, x=\"department\", ax=axes[1])",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "box",
+                    "anchor": {
+                      "line": 6,
+                      "text": "sns.boxplot(data=df, x=\"department\", y=\"salary\"",
+                      "occurrence": 1
+                    },
+                    "title": "Numeric distribution by category",
+                    "explanation": "salary supplies numeric observations summarized within each department.",
+                    "required": true
+                  },
+                  {
+                    "id": "count",
+                    "anchor": {
+                      "line": 7,
+                      "text": "sns.countplot(data=df, x=\"department\"",
+                      "occurrence": 1
+                    },
+                    "title": "Category counts",
+                    "explanation": "countplot counts DataFrame rows for each department.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-4-distribution"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.5
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`boxplot` compares a numeric distribution across categories; `countplot` shows how many __________ belong to each category.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`boxplot` compares a numeric distribution across categories; `countplot` shows how many rows belong to each category."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Income by segment → boxplot; number of customers in each segment → __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Income by segment → boxplot; number of customers in each segment → countplot."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "A box plot summarizes distribution; it does not show every individual observation unless another layer is __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A box plot summarizes distribution; it does not show every individual observation unless another layer is added."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Seaborn API",
-              "url": "https://seaborn.pydata.org/api.html"
-            },
-            {
-              "title": "Seaborn tutorial",
-              "url": "https://seaborn.pydata.org/tutorial.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -394,56 +467,66 @@
           "concept_ids": [
             "python.seaborn.figure_axes_level"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.1,
-            "y": 0.82
-          },
           "prompts": [
             {
-              "id": "what",
+              "id": "compare",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`scatterplot`, `lineplot`, and `histplot` are Axes-level; `relplot`, `displot`, and `catplot` are __________-level.",
+              "label": "AXES-LEVEL OR FIGURE-LEVEL?",
+              "placeholder": "Reveal one property column at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "`scatterplot`, `lineplot`, and `histplot` are Axes-level; `relplot`, `displot`, and `catplot` are figure-level."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Use an Axes-level function when drawing into an existing Matplotlib subplot via `__________=`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use an Axes-level function when drawing into an existing Matplotlib subplot via `ax=`."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Figure-level functions manage their own grid/figure, so they do not drop into an existing Axes layout in the same __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Figure-level functions manage their own grid/figure, so they do not drop into an existing Axes layout in the same way."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "family",
+                    "label": "Function family"
+                  },
+                  {
+                    "id": "returns",
+                    "label": "Manages"
+                  },
+                  {
+                    "id": "examples",
+                    "label": "Examples"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "axes",
+                    "cells": {
+                      "family": "Axes-level",
+                      "returns": "Draws on one Matplotlib Axes; usually accepts ax=",
+                      "examples": "scatterplot, lineplot, histplot, boxplot"
+                    }
+                  },
+                  {
+                    "id": "figure",
+                    "cells": {
+                      "family": "Figure-level",
+                      "returns": "Creates/manages a figure or facet grid",
+                      "examples": "relplot, displot, catplot, pairplot"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "column",
+                  "initially_visible": {
+                    "column_ids": [
+                      "family"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Seaborn API",
-              "url": "https://seaborn.pydata.org/api.html"
-            },
-            {
-              "title": "Seaborn tutorial",
-              "url": "https://seaborn.pydata.org/tutorial.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-4-heatmap",
@@ -451,58 +534,65 @@
           "concept_ids": [
             "python.seaborn.heatmap"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "PREPARE THE MATRIX BEFORE PLOTTING",
+              "placeholder": "Click corr, heatmap, and annot.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "heatmap.py",
+                "language": "python",
+                "code": "import seaborn as sns\n\nnumeric = df[[\"age\", \"income\", \"score\"]]\ncorrelation = numeric.corr()\n\nsns.heatmap(\n    correlation,\n    annot=True,\n    cmap=\"coolwarm\",\n    vmin=-1,\n    vmax=1,\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "corr",
+                    "anchor": {
+                      "line": 4,
+                      "text": "numeric.corr()",
+                      "occurrence": 1
+                    },
+                    "title": "Compute the matrix",
+                    "explanation": "corr transforms selected numeric columns into a square correlation matrix.",
+                    "required": true
+                  },
+                  {
+                    "id": "heatmap",
+                    "anchor": {
+                      "line": 6,
+                      "text": "sns.heatmap(",
+                      "occurrence": 1
+                    },
+                    "title": "Visualize matrix values",
+                    "explanation": "heatmap maps matrix cells to color.",
+                    "required": true
+                  },
+                  {
+                    "id": "annot",
+                    "anchor": {
+                      "line": 8,
+                      "text": "annot=True",
+                      "occurrence": 1
+                    },
+                    "title": "Show numbers",
+                    "explanation": "annot writes correlation values inside the cells.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-4-axes-figure"
           ],
           "map_position": {
-            "x": 0.37,
-            "y": 0.82
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`heatmap` maps matrix cell values to __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`heatmap` maps matrix cell values to color."
-              }
-            },
-            {
-              "id": "code",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "A common correlation workflow is `corr = df.corr(numeric_only=True)` then `sns.__________(corr, annot=True)`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A common correlation workflow is `corr = df.corr(numeric_only=True)` then `sns.heatmap(corr, annot=True)`."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "A correlation matrix should be built from appropriate numeric variables; arbitrary category codes can create __________ correlations.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A correlation matrix should be built from appropriate numeric variables; arbitrary category codes can create misleading correlations."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Seaborn API",
-              "url": "https://seaborn.pydata.org/api.html"
-            },
-            {
-              "title": "Seaborn tutorial",
-              "url": "https://seaborn.pydata.org/tutorial.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-4-pairplot",
@@ -511,58 +601,65 @@
             "python.seaborn.figure_axes_level",
             "python.seaborn.semantic_mapping"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "EXPLORE MANY VARIABLE PAIRS",
+              "placeholder": "Click vars, hue, and corner.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "pairplot.py",
+                "language": "python",
+                "code": "import seaborn as sns\n\nsns.pairplot(\n    data=df,\n    vars=[\"height\", \"weight\", \"age\"],\n    hue=\"group\",\n    corner=True,\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "vars",
+                    "anchor": {
+                      "line": 5,
+                      "text": "vars=[\"height\", \"weight\", \"age\"]",
+                      "occurrence": 1
+                    },
+                    "title": "Variables in the grid",
+                    "explanation": "pairplot builds pairwise views among the selected columns.",
+                    "required": true
+                  },
+                  {
+                    "id": "hue",
+                    "anchor": {
+                      "line": 6,
+                      "text": "hue=\"group\"",
+                      "occurrence": 1
+                    },
+                    "title": "Semantic grouping",
+                    "explanation": "Observations are colored by group across the grid.",
+                    "required": true
+                  },
+                  {
+                    "id": "corner",
+                    "anchor": {
+                      "line": 7,
+                      "text": "corner=True",
+                      "occurrence": 1
+                    },
+                    "title": "Remove mirrored duplicates",
+                    "explanation": "Only one triangular half of the symmetric pair grid is shown.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-4-heatmap"
           ],
           "map_position": {
-            "x": 0.63,
-            "y": 0.82
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`pairplot` creates a matrix of pairwise plots for multiple __________ variables.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`pairplot` creates a matrix of pairwise plots for multiple numeric variables."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Use it for exploratory overview when several numeric columns may relate to each other and a category can be mapped with __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use it for exploratory overview when several numeric columns may relate to each other and a category can be mapped with hue."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Pair plots become visually expensive with many variables because the number of panels grows roughly with the __________ of variable count.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Pair plots become visually expensive with many variables because the number of panels grows roughly with the square of variable count."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Seaborn API",
-              "url": "https://seaborn.pydata.org/api.html"
-            },
-            {
-              "title": "Seaborn tutorial",
-              "url": "https://seaborn.pydata.org/tutorial.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-4-compose",
@@ -571,58 +668,65 @@
             "python.seaborn.relational",
             "python.seaborn.semantic_mapping"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "PREPARE → SUMMARIZE → PLOT",
+              "placeholder": "Click groupby, agg, and lineplot.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "compose_seaborn.py",
+                "language": "python",
+                "code": "import seaborn as sns\n\nsummary = (\n    df.groupby([\"month\", \"region\"], as_index=False)\n      .agg(revenue=(\"revenue\", \"sum\"))\n)\n\nsns.lineplot(\n    data=summary,\n    x=\"month\",\n    y=\"revenue\",\n    hue=\"region\",\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "group",
+                    "anchor": {
+                      "line": 4,
+                      "text": "df.groupby([\"month\", \"region\"], as_index=False)",
+                      "occurrence": 1
+                    },
+                    "title": "Prepare grouping keys",
+                    "explanation": "The DataFrame is grouped into the units the chart should compare.",
+                    "required": true
+                  },
+                  {
+                    "id": "agg",
+                    "anchor": {
+                      "line": 5,
+                      "text": ".agg(revenue=(\"revenue\", \"sum\"))",
+                      "occurrence": 1
+                    },
+                    "title": "Build the plotted measure",
+                    "explanation": "One revenue value is produced per month-region pair.",
+                    "required": true
+                  },
+                  {
+                    "id": "plot",
+                    "anchor": {
+                      "line": 8,
+                      "text": "sns.lineplot(",
+                      "occurrence": 1
+                    },
+                    "title": "Plot tidy summarized data",
+                    "explanation": "With month, revenue, and region explicit, the plotting call stays simple.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-4-pairplot"
           ],
           "map_position": {
-            "x": 0.9,
-            "y": 0.82
+            "x": 0.81,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "sequence",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "A real plotting workflow often follows `inspect schema → clean/derive → aggregate if needed → choose plot → map x/y/semantics → __________`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A real plotting workflow often follows `inspect schema → clean/derive → aggregate if needed → choose plot → map x/y/semantics → label/interpret`."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "If the question asks for monthly averages by region, compute the monthly-region __________ before plotting.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "If the question asks for monthly averages by region, compute the monthly-region summary before plotting."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Do not let a plotting function hide an unclear analysis goal; first decide what each output point, line, bar, or box should __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not let a plotting function hide an unclear analysis goal; first decide what each output point, line, bar, or box should represent."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Seaborn API",
-              "url": "https://seaborn.pydata.org/api.html"
-            },
-            {
-              "title": "Seaborn tutorial",
-              "url": "https://seaborn.pydata.org/tutorial.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

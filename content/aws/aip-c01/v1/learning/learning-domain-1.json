@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.0.0",
-  "content_version": "aip-c01-learning-2026-09-19-v1-domain1",
+  "schema_version": "2.0.0",
+  "content_version": "aip-c01-learning-2026-09-19-v2-domain1",
   "certification_id": "aws-aip-c01",
   "certification_version": "aip-c01",
   "domain": {
@@ -10,7 +10,7 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
+    "unlock_rule": "Reveal the required explanations, progressive table units, and required code annotations to unlock each knowledge node.",
     "mastery_note": "Exploration progress is not mastery evidence; quiz attempts remain the scored retrieval signal."
   },
   "source_refs": [
@@ -66,7 +66,7 @@
     "knowledge_node_count": 28,
     "prompt_count": 112
   },
-  "authoring_notes": "Authored from the AWS AIP-C01 standard exam guide and official service documentation. Explanations are paraphrased; questions are original exam-style practice, not recalled exam content.",
+  "authoring_notes": "Authored from the AWS AIP-C01 standard exam guide and official service documentation. Explanations are paraphrased; questions are original exam-style practice, not recalled exam content. Updated for the learning-v2 renderer: selected high-value concepts now use progressive tables and annotated syntax-highlighted code files while preserving the original concept/task coverage and prompt counts.",
   "modules": [
     {
       "id": "d1-task-1-1",
@@ -193,15 +193,60 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "INSPECT A BEDROCK CALL",
+              "placeholder": "Read a minimal Bedrock Converse request. Click the client, message, and invocation pieces to see what each part contributes.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "Amazon Bedrock",
-                  "proof of concept",
-                  "model playground/testing"
+                "type": "code_file",
+                "filename": "bedrock_converse.py",
+                "language": "python",
+                "code": "import boto3\n\nclient = boto3.client(\"bedrock-runtime\")\nmessages = [{\"role\": \"user\", \"content\": [{\"text\": \"Summarize this incident.\"}]}]\nresponse = client.converse(\n    modelId=model_id,\n    messages=messages,\n    inferenceConfig={\"maxTokens\": 300, \"temperature\": 0.2},\n)\ntext = response[\"output\"][\"message\"][\"content\"][0][\"text\"]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "runtime-client",
+                    "anchor": {
+                      "line": 3,
+                      "text": "bedrock-runtime",
+                      "occurrence": 1
+                    },
+                    "title": "Bedrock Runtime client",
+                    "explanation": "Model inference is invoked through the Bedrock Runtime client rather than the Bedrock control-plane client.",
+                    "required": true
+                  },
+                  {
+                    "id": "messages",
+                    "anchor": {
+                      "line": 4,
+                      "text": "messages =",
+                      "occurrence": 1
+                    },
+                    "title": "Conversation messages",
+                    "explanation": "The Converse API accepts role/content message objects, keeping the application interface consistent across supported models.",
+                    "required": true
+                  },
+                  {
+                    "id": "converse",
+                    "anchor": {
+                      "line": 5,
+                      "text": "client.converse",
+                      "occurrence": 1
+                    },
+                    "title": "Converse invocation",
+                    "explanation": "Converse is the synchronous conversational inference API. The model identifier, messages, and inference configuration are supplied explicitly.",
+                    "required": true
+                  },
+                  {
+                    "id": "inference-config",
+                    "anchor": {
+                      "line": 8,
+                      "text": "inferenceConfig",
+                      "occurrence": 1
+                    },
+                    "title": "Inference configuration",
+                    "explanation": "Generation controls such as maximum output tokens and temperature belong in inferenceConfig; tune them deliberately for quality, latency, and determinism.",
+                    "required": true
+                  }
                 ]
               }
             },
@@ -506,16 +551,69 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "RESILIENCE OPTIONS",
+              "placeholder": "The mechanisms solve different failure modes. Keep the mechanism visible, then reveal what it protects against and the common mistake.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "Step Functions",
-                  "cross-Region inference",
-                  "graceful degradation"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "mechanism",
+                    "label": "Mechanism"
+                  },
+                  {
+                    "id": "best_for",
+                    "label": "Best for"
+                  },
+                  {
+                    "id": "trap",
+                    "label": "Common trap"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "backoff",
+                    "cells": {
+                      "mechanism": "Exponential backoff + jitter",
+                      "best_for": "Transient throttling or retryable service errors",
+                      "trap": "Immediate synchronized retries can amplify pressure"
+                    }
+                  },
+                  {
+                    "id": "cross-region",
+                    "cells": {
+                      "mechanism": "Cross-Region inference",
+                      "best_for": "Capacity and availability across supported Regions",
+                      "trap": "Do not assume every model/profile is available everywhere"
+                    }
+                  },
+                  {
+                    "id": "fallback",
+                    "cells": {
+                      "mechanism": "Fallback / graceful degradation",
+                      "best_for": "Keeping a user path available when the preferred model or feature is unavailable",
+                      "trap": "The fallback must still satisfy minimum safety and quality requirements"
+                    }
+                  },
+                  {
+                    "id": "provisioned",
+                    "cells": {
+                      "mechanism": "Provisioned Throughput",
+                      "best_for": "Predictable reserved model capacity for sustained workloads",
+                      "trap": "It is not a substitute for application-level error handling"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "mechanism"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -1374,16 +1472,69 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "CHUNKING TRADEOFFS",
+              "placeholder": "Start from the strategy name. Reveal the document fit and the retrieval tradeoff one row at a time.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "fixed-size chunking",
-                  "hierarchical chunking",
-                  "semantic chunking"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "strategy",
+                    "label": "Strategy"
+                  },
+                  {
+                    "id": "fit",
+                    "label": "Good fit"
+                  },
+                  {
+                    "id": "tradeoff",
+                    "label": "Tradeoff"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "fixed",
+                    "cells": {
+                      "strategy": "Fixed-size",
+                      "fit": "Simple, regular text with predictable chunk sizing",
+                      "tradeoff": "May split logical sections or mix unrelated text at boundaries"
+                    }
+                  },
+                  {
+                    "id": "hierarchical",
+                    "cells": {
+                      "strategy": "Hierarchical",
+                      "fit": "Long structured documents where parent context matters",
+                      "tradeoff": "Adds parent/child structure and can return broader context"
+                    }
+                  },
+                  {
+                    "id": "semantic",
+                    "cells": {
+                      "strategy": "Semantic",
+                      "fit": "Documents where meaning-based boundaries are more useful than fixed length",
+                      "tradeoff": "More processing and tuning than a fixed split"
+                    }
+                  },
+                  {
+                    "id": "none",
+                    "cells": {
+                      "strategy": "No chunking",
+                      "fit": "Already-small, atomic documents or records",
+                      "tradeoff": "Large documents can become too coarse for precise retrieval"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "strategy"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -1596,16 +1747,69 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "RETRIEVAL MODES",
+              "placeholder": "Reveal what each retrieval approach contributes. Product codes and natural-language meaning do not behave the same way.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "semantic search",
-                  "hybrid search",
-                  "reranking"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "approach",
+                    "label": "Approach"
+                  },
+                  {
+                    "id": "strength",
+                    "label": "Strength"
+                  },
+                  {
+                    "id": "use",
+                    "label": "Use when"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "semantic",
+                    "cells": {
+                      "approach": "Semantic / vector",
+                      "strength": "Finds meaning-similar content even with different wording",
+                      "use": "Natural-language concepts and paraphrases dominate"
+                    }
+                  },
+                  {
+                    "id": "lexical",
+                    "cells": {
+                      "approach": "Lexical / keyword",
+                      "strength": "Preserves exact-token matching",
+                      "use": "Identifiers, product codes, names, and exact terms matter"
+                    }
+                  },
+                  {
+                    "id": "hybrid",
+                    "cells": {
+                      "approach": "Hybrid",
+                      "strength": "Combines lexical and semantic evidence",
+                      "use": "The corpus contains both exact identifiers and conceptual language"
+                    }
+                  },
+                  {
+                    "id": "rerank",
+                    "cells": {
+                      "approach": "Reranking",
+                      "strength": "Reorders an initial candidate set using a stronger relevance model",
+                      "use": "Recall is acceptable but top-result ordering needs improvement"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "approach"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -2133,16 +2337,69 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "PROMPT PATTERNS",
+              "placeholder": "Reveal the purpose of each pattern. Use structure because downstream behavior needs it, not simply because the prompt can be longer.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "structured output",
-                  "JSON schema",
-                  "few-shot examples"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "pattern",
+                    "label": "Pattern"
+                  },
+                  {
+                    "id": "purpose",
+                    "label": "Purpose"
+                  },
+                  {
+                    "id": "risk",
+                    "label": "Watch for"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "schema",
+                    "cells": {
+                      "pattern": "Structured output / schema",
+                      "purpose": "Make downstream parsing and validation predictable",
+                      "risk": "Still validate model output before acting on it"
+                    }
+                  },
+                  {
+                    "id": "fewshot",
+                    "cells": {
+                      "pattern": "Few-shot examples",
+                      "purpose": "Demonstrate desired format, style, or decision boundary",
+                      "risk": "Poor or biased examples can teach the wrong behavior"
+                    }
+                  },
+                  {
+                    "id": "sections",
+                    "cells": {
+                      "pattern": "Explicit sections / delimiters",
+                      "purpose": "Separate instructions, context, retrieved data, and user input",
+                      "risk": "Delimiters do not make untrusted content authoritative"
+                    }
+                  },
+                  {
+                    "id": "constraints",
+                    "cells": {
+                      "pattern": "Explicit constraints",
+                      "purpose": "State allowed behavior, limits, and required fields",
+                      "risk": "Prompt constraints are not a replacement for external authorization or validation"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "column",
+                  "initially_visible": {
+                    "column_ids": [
+                      "pattern"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {

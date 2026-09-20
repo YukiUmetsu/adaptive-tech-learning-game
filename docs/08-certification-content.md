@@ -107,18 +107,73 @@ other. `ContentRegistry` validates and exposes both; it does not merge them.
 Each `LearningDomain` contains ordered `LearningModule`s of `KnowledgeNode`s.
 A node carries `concept_ids` (the bridge to quiz evidence), authored
 `prerequisite_node_ids` and `map_position`, and progressive `prompts` whose
-`reveal` is one of `text`, `sequence`, `bullets`, `keywords`, or `comparison`.
+`reveal` is one of `text`, `sequence`, `bullets`, `keywords`, `comparison`,
+`table`, or `code_file`.
+
+`table` is a real table with typed column ids and one row per record; every row
+must fill every column. `code_file` is a read-only, syntax-highlighted file with
+clickable annotation regions. Annotation anchors use a 1-based `line`, the exact
+`text` on that line, and an optional 1-based `occurrence`, so authors never
+hand-count offsets and the raw `code` stays valid and copyable. A code file is
+never editable or executed. See `crates/content/src/learning.rs` for the
+authoritative schema and validation.
+
+A `table` may carry optional `progressive_reveal` to reveal discovery one row,
+one column, or one cell at a time. Its `initially_visible` lists combine: a cell
+is visible before any reveal when its column, its row, or its derived cell id
+(`row_id:column_id`) is listed. The table renders immediately and already
+visible cells never become reveal controls. A progressive table must set
+`progressive_reveal.mode`; `row` and `cell` modes require every row to have a
+stable `id`. Static tables omit `progressive_reveal` and keep the whole-table
+reveal.
+
+Example:
+
+```json
+{
+  "type": "table",
+  "columns": [
+    { "id": "service", "label": "Service" },
+    { "id": "purpose", "label": "Best for" }
+  ],
+  "rows": [
+    { "id": "cloudwatch", "cells": { "service": "CloudWatch", "purpose": "Operational monitoring" } },
+    { "id": "cloudtrail", "cells": { "service": "CloudTrail", "purpose": "API auditing" } }
+  ],
+  "progressive_reveal": {
+    "mode": "cell",
+    "initially_visible": {
+      "column_ids": ["service"],
+      "row_ids": [],
+      "cell_ids": ["cloudtrail:purpose"]
+    }
+  }
+}
+```
 
 Rules:
 
 - Learning is a discovery layer before retrieval practice, not a fourth quiz
-  mode. Reveals are **never** scored and do not create `learning_event` rows.
-- Discovery progress (`adaptive-learn.learning-progress.v1` in local storage)
-  stores only revealed prompt ids. Node and module state are derived, so
+  mode. Reveals are **never** scored and do not create `learning_event` rows,
+  including individual code-annotation reveals.
+- Discovery progress (`adaptive-learn.learning-progress.v3` in local storage)
+  stores revealed prompt ids and generic element-discovery ids. Code
+  annotations and progressive-table rows, columns, and cells share one
+  namespaced structure: `annotation:<id>`, `row:<id>`, `column:<id>`,
+  `cell:<row_id>:<column_id>`. A one-time, idempotent migration converts the v2
+  key (prompt progress plus raw code-annotation ids, re-prefixed as
+  `annotation:`) and the v1 key (prompt progress only) without losing discovery
+  progress, then drops the legacy key. Node and module state are derived, so
   progress cannot drift from the curriculum and stale ids are ignored.
-- A node is `unlocked` when every required prompt is revealed. `ready`,
-  `in_progress`, and `locked` are derived from node prerequisites, module
-  prerequisites, and reveals.
+- A node is `unlocked` when every required prompt is completed. A `code_file`
+  prompt completes when every annotation flagged `required` is revealed;
+  optional annotations never block completion. A `code_file` with no required
+  annotations (including an empty list) completes on an explicit mark-as-reviewed
+  action. A progressive `table` completes when every non-given reveal unit is
+  explored: hidden rows in `row` mode, hidden columns in `column` mode, or
+  hidden cells in `cell` mode. Static tables complete on the whole-prompt
+  reveal. `ready`, `in_progress`, and `locked` are derived from node
+  prerequisites, module prerequisites, and reveals.
 - Vocabulary stays game-like: Knowledge Map, Knowledge Node, Locked, Ready,
   Discover, Unlocked, Path Unlocked, Module Complete, Continue Exploring,
   Discovery Progress. Do not say "Mastered" for exploration.
@@ -131,7 +186,15 @@ Validation fails loudly on malformed maps: duplicate module/node/prompt ids,
 unknown or self prerequisites, dependency cycles, invalid map positions,
 missing required prompts, incomplete reveal payloads, coverage counts that do
 not match the authored shape, and concept/task ids that do not exist in the
-quiz bundle for the same certification version.
+quiz bundle for the same certification version. For `table` reveals it rejects
+empty columns/rows, duplicate column ids, unknown columns referenced by a row,
+and rows missing a column. For progressive tables it also rejects duplicate or
+empty needed row ids, unknown or duplicate `initially_visible` entries, cell ids
+that do not resolve to a row and column, colliding reveal-unit ids, and a table
+whose initial visibility leaves nothing to reveal. For `code_file` reveals it
+rejects empty filename/language/code, duplicate annotation ids, duplicate
+anchors, missing titles/explanations, anchors on lines outside the code, target
+text that does not occur on its line, and out-of-range occurrences.
 
 ## Interaction schema
 

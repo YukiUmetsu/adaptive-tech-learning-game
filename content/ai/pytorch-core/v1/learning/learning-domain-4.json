@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "pytorch-core-learning-2026-09-19-v1",
+  "content_version": "pytorch-core-learning-2026-09-19-v2",
   "certification_id": "ai-pytorch-core",
   "certification_version": "pytorch-core-v1",
   "exam_guide_revision": "Not a certification. PyTorch stable documentation reviewed 2026-09-19 (current docs identified as 2.14).",
@@ -11,7 +11,7 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code and table discoveries.",
     "mastery_note": "Discovery progress is not mastery evidence; typed recall and coding questions provide the scored retrieval signal."
   },
   "source_refs": [
@@ -46,9 +46,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 12,
-    "prompt_count": 36
+    "prompt_count": 19
   },
-  "authoring_notes": "This is a practical learning track, not a certification. Domain weights are curriculum emphasis weights used for adaptive selection. Learning placeholders are exact cloze versions of their revealed text. Reviewed against PyTorch 2.14-era official documentation and the app's structured typed-fill code/table renderer on 2026-09-19.",
+  "authoring_notes": "Updated for the learning-v2 renderer. PyTorch code is displayed as syntax-highlighted code_file material with clickable annotations instead of inline prose. Progressive tables are used for shape reasoning and concept comparisons while preserving the existing curriculum scope.",
   "modules": [
     {
       "id": "domain-4-task-4-1",
@@ -71,52 +71,74 @@
           "concept_ids": [
             "ai.pytorch.requires_grad"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.16
-          },
           "prompts": [
             {
-              "id": "what",
+              "id": "code",
+              "kind": "look_for",
+              "label": "TURN GRADIENT TRACKING ON FOR A TENSOR",
+              "placeholder": "Click requires_grad and inspect .grad before and after backward.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "requires_grad.py",
+                "language": "python",
+                "code": "import torch\n\nx = torch.tensor(3.0, requires_grad=True)\ny = x**2 + 2 * x\n\ny.backward()\n\nprint(x.grad)  # 8",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "requires",
+                    "anchor": {
+                      "line": 3,
+                      "text": "requires_grad=True",
+                      "occurrence": 1
+                    },
+                    "title": "Track operations for gradients",
+                    "explanation": "In normal grad mode, PyTorch records operations needed to compute derivatives with respect to x.",
+                    "required": true
+                  },
+                  {
+                    "id": "backward",
+                    "anchor": {
+                      "line": 6,
+                      "text": "y.backward()",
+                      "occurrence": 1
+                    },
+                    "title": "Run reverse-mode differentiation",
+                    "explanation": "Backward traverses the recorded graph and accumulates gradients into relevant leaf tensors.",
+                    "required": true
+                  },
+                  {
+                    "id": "grad",
+                    "anchor": {
+                      "line": 8,
+                      "text": "x.grad",
+                      "occurrence": 1
+                    },
+                    "title": "Leaf gradient storage",
+                    "explanation": "After backward, x.grad contains dy/dx evaluated at x=3.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "parameters",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` tells autograd to track operations needed to compute gradients with respect to that tensor in normal grad mode.",
+              "label": "MODEL PARAMETERS REQUIRE GRADIENTS BY DEFAULT",
+              "placeholder": "Do nn.Parameter objects normally need requires_grad=True set manually?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "`requires_grad=True` tells autograd to track operations needed to compute gradients with respect to that tensor in normal grad mode."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Model Parameters __________ by default unless you explicitly freeze them.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Model Parameters require gradients by default unless you explicitly freeze them."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Setting `requires_grad` __________ backpropagation; gradients are populated after a backward computation.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Setting `requires_grad` does not itself run backpropagation; gradients are populated after a backward computation."
+                "text": "No. Model Parameters require gradients by default unless you explicitly freeze them."
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "`requires_grad` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/notes/autograd.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "source_refs": []
         },
         {
           "id": "domain-4-backward",
@@ -124,54 +146,65 @@
           "concept_ids": [
             "ai.pytorch.backward"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "SEE WHERE backward FITS",
+              "placeholder": "Click loss.backward and inspect the parameter gradient.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "backward.py",
+                "language": "python",
+                "code": "import torch\nimport torch.nn as nn\n\nmodel = nn.Linear(4, 1)\nx = torch.randn(8, 4)\ntarget = torch.randn(8, 1)\n\nprediction = model(x)\nloss = nn.MSELoss()(prediction, target)\n\nloss.backward()\n\nprint(model.weight.grad.shape)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "loss",
+                    "anchor": {
+                      "line": 9,
+                      "text": "loss = nn.MSELoss()",
+                      "occurrence": 1
+                    },
+                    "title": "Build a scalar loss",
+                    "explanation": "The loss connects model outputs to trainable parameters through the recorded computation graph.",
+                    "required": true
+                  },
+                  {
+                    "id": "backward",
+                    "anchor": {
+                      "line": 11,
+                      "text": "loss.backward()",
+                      "occurrence": 1
+                    },
+                    "title": "Populate parameter gradients",
+                    "explanation": "Backward accumulates gradients in the .grad fields of trainable leaf Parameters.",
+                    "required": true
+                  },
+                  {
+                    "id": "grad",
+                    "anchor": {
+                      "line": 13,
+                      "text": "model.weight.grad",
+                      "occurrence": 1
+                    },
+                    "title": "Inspect the result",
+                    "explanation": "The weight gradient has the same shape as the weight parameter.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-4-requires-grad"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.16
+            "x": 0.35,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` computes gradients through the recorded graph and accumulates them into `.grad` fields of relevant leaf tensors.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`loss.backward()` computes gradients through the recorded graph and accumulates them into `.grad` fields of relevant leaf tensors."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Call backward after computing the scalar loss and __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Call backward after computing the scalar loss and before the optimizer update."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Calling backward repeatedly without clearing parameter gradients __________ additional gradient values.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Calling backward repeatedly without clearing parameter gradients accumulates additional gradient values."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "`loss.backward()` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/autograd.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-4-grad-accumulation",
@@ -179,54 +212,76 @@
           "concept_ids": [
             "ai.pytorch.grad_accumulation"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "INTENTIONALLY ACCUMULATE MICRO-BATCH GRADIENTS",
+              "placeholder": "Click zero_grad and the repeated backward call.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "gradient_accumulation.py",
+                "language": "python",
+                "code": "optimizer.zero_grad()\n\nfor X, y in microbatches:\n    logits = model(X)\n    loss = loss_fn(logits, y) / len(microbatches)\n    loss.backward()\n\noptimizer.step()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "zero",
+                    "anchor": {
+                      "line": 1,
+                      "text": "optimizer.zero_grad()",
+                      "occurrence": 1
+                    },
+                    "title": "Clear once before accumulation",
+                    "explanation": "Gradients start empty for this optimizer update.",
+                    "required": true
+                  },
+                  {
+                    "id": "backward",
+                    "anchor": {
+                      "line": 6,
+                      "text": "loss.backward()",
+                      "occurrence": 1
+                    },
+                    "title": "Accumulate into existing .grad",
+                    "explanation": "Each backward adds another microbatch contribution to the same parameter gradients.",
+                    "required": true
+                  },
+                  {
+                    "id": "step",
+                    "anchor": {
+                      "line": 8,
+                      "text": "optimizer.step()",
+                      "occurrence": 1
+                    },
+                    "title": "Update once after accumulation",
+                    "explanation": "The optimizer uses the accumulated gradients for one parameter update.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "gotcha",
+              "kind": "not_this",
+              "label": "ACCUMULATION IS THE DEFAULT BEHAVIOR",
+              "placeholder": "What happens if you forget to clear gradients in an ordinary one-batch-per-step loop?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "PyTorch accumulates parameter gradients by default, so forgetting to clear them causes unintended accumulation across batches."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-4-backward"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.16
+            "x": 0.58,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "PyTorch __________ parameter gradients by default, so each backward pass adds to existing `.grad` values.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "PyTorch accumulates parameter gradients by default, so each backward pass adds to existing `.grad` values."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Clear gradients once per optimizer update unless you intentionally implement gradient accumulation over __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Clear gradients once per optimizer update unless you intentionally implement gradient accumulation over multiple microbatches."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Forgetting to clear gradients in a normal one-batch-per-step loop causes __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Forgetting to clear gradients in a normal one-batch-per-step loop causes unintended accumulation."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Gradient accumulation — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-4-detach",
@@ -234,54 +289,54 @@
           "concept_ids": [
             "ai.pytorch.detach"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "BREAK THE AUTOGRAD CONNECTION",
+              "placeholder": "Click detach and compare requires_grad.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "detach.py",
+                "language": "python",
+                "code": "import torch\n\nx = torch.tensor([1.0, 2.0], requires_grad=True)\ny = x * 3\n\nlogged = y.detach()\n\nprint(y.requires_grad)       # True\nprint(logged.requires_grad)  # False",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "detach",
+                    "anchor": {
+                      "line": 6,
+                      "text": "y.detach()",
+                      "occurrence": 1
+                    },
+                    "title": "Detach from the current graph",
+                    "explanation": "The returned tensor shares data history/storage semantics with y but is not connected to the current autograd graph.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "storage",
+              "kind": "not_this",
+              "label": "DETACH IS NOT THE SAME AS COPY",
+              "placeholder": "Can a detached tensor share storage with the original?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Yes. Detaching changes autograd history, not necessarily storage ownership. Clone when you specifically need copied tensor data."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-4-grad-accumulation"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.16
+            "x": 0.81,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` returns a tensor detached from the current autograd graph.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`tensor.detach()` returns a tensor detached from the current autograd graph."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Use detaching when you need a value for logging or another computation that __________ through the original history.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use detaching when you need a value for logging or another computation that should not backpropagate through the original history."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Detaching is different from copying; the detached tensor can __________ with the original tensor.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Detaching is different from copying; the detached tensor can share storage with the original tensor."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "`detach()` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/autograd.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -308,52 +363,63 @@
           "concept_ids": [
             "ai.pytorch.zero_grad"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.38
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` clears or resets gradients associated with parameters managed by the optimizer.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ THE TRAINING STEP IN ORDER",
+              "placeholder": "Click zero_grad and notice that it happens before forward/backward for the next update.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "`optimizer.zero_grad()` clears or resets gradients associated with parameters managed by the optimizer."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "A common step is __________, run forward/loss, call backward, then call optimizer step.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A common step is zero gradients, run forward/loss, call backward, then call optimizer step."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Skipping gradient clearing in an ordinary loop makes gradients __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Skipping gradient clearing in an ordinary loop makes gradients accumulate across batches."
+                "type": "code_file",
+                "filename": "training_step.py",
+                "language": "python",
+                "code": "optimizer.zero_grad()\n\nlogits = model(X)\nloss = loss_fn(logits, y)\n\nloss.backward()\noptimizer.step()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "zero",
+                    "anchor": {
+                      "line": 1,
+                      "text": "optimizer.zero_grad()",
+                      "occurrence": 1
+                    },
+                    "title": "Clear old parameter gradients",
+                    "explanation": "A normal one-batch-per-step loop clears gradients before computing the next update.",
+                    "required": true
+                  },
+                  {
+                    "id": "backward",
+                    "anchor": {
+                      "line": 6,
+                      "text": "loss.backward()",
+                      "occurrence": 1
+                    },
+                    "title": "Compute current gradients",
+                    "explanation": "Backward writes/accumulates gradients for the current loss.",
+                    "required": true
+                  },
+                  {
+                    "id": "step",
+                    "anchor": {
+                      "line": 7,
+                      "text": "optimizer.step()",
+                      "occurrence": 1
+                    },
+                    "title": "Update parameters",
+                    "explanation": "The optimizer reads the current gradients and updates its managed parameters.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Clearing gradients — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "source_refs": []
         },
         {
           "id": "domain-4-optimizer-step",
@@ -361,54 +427,87 @@
           "concept_ids": [
             "ai.pytorch.optimizer_step"
           ],
+          "prompts": [
+            {
+              "id": "order",
+              "kind": "what",
+              "label": "KEEP THE CORE UPDATE ORDER STRAIGHT",
+              "placeholder": "Reveal each stage after predicting what it does.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "stage",
+                    "label": "Stage"
+                  },
+                  {
+                    "id": "purpose",
+                    "label": "Purpose"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "zero",
+                    "cells": {
+                      "stage": "zero_grad",
+                      "purpose": "Clear/reset gradients from the previous update"
+                    }
+                  },
+                  {
+                    "id": "forward",
+                    "cells": {
+                      "stage": "forward + loss",
+                      "purpose": "Build predictions and the scalar training objective"
+                    }
+                  },
+                  {
+                    "id": "backward",
+                    "cells": {
+                      "stage": "backward",
+                      "purpose": "Compute and accumulate current gradients"
+                    }
+                  },
+                  {
+                    "id": "step",
+                    "cells": {
+                      "stage": "optimizer.step",
+                      "purpose": "Use current gradients to update parameters"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "stage"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "gotcha",
+              "kind": "not_this",
+              "label": "step() NEEDS CURRENT GRADIENTS",
+              "placeholder": "What is wrong with calling optimizer.step() before backward in a normal training step?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The current batch gradients have not been produced yet, so the optimizer cannot perform the intended update from that batch."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-4-zero-grad"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.38
+            "x": 0.35,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` updates parameters using the gradients currently stored for the optimizer-managed parameters.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`optimizer.step()` updates parameters using the gradients currently stored for the optimizer-managed parameters."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Call it __________ has produced gradients for the current update.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Call it after backward has produced gradients for the current update."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Calling `step()` __________ normally means the current batch gradients are not available for that update.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Calling `step()` before backward normally means the current batch gradients are not available for that update."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "`optimizer.step()` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-4-loss-item",
@@ -416,54 +515,54 @@
           "concept_ids": [
             "ai.pytorch.loss_item"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "MOVE A SCALAR LOSS INTO ORDINARY PYTHON",
+              "placeholder": "Click .item() and compare the tensor loss with the logged number.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "loss_item.py",
+                "language": "python",
+                "code": "loss = loss_fn(logits, y)\n\nloss.backward()\n\nlogged_loss = loss.item()\nrunning_loss += logged_loss",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "item",
+                    "anchor": {
+                      "line": 5,
+                      "text": "loss.item()",
+                      "occurrence": 1
+                    },
+                    "title": "Extract a Python scalar",
+                    "explanation": ".item() converts a one-element tensor to an ordinary Python number, which is useful for logging.",
+                    "required": true
+                  },
+                  {
+                    "id": "backward",
+                    "anchor": {
+                      "line": 3,
+                      "text": "loss.backward()",
+                      "occurrence": 1
+                    },
+                    "title": "Keep tensor loss for differentiation",
+                    "explanation": "Backward must operate on the tensor computation, not on the Python number returned by item().",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-4-optimizer-step"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.38
+            "x": 0.58,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` converts a one-element tensor such as a scalar loss into a standard Python number.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`loss.item()` converts a one-element tensor such as a scalar loss into a standard Python number."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Use it when you need a numeric loss value for simple __________ or aggregation outside tensor computation.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use it when you need a numeric loss value for simple logging or aggregation outside tensor computation."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Calling `.item()` removes the value from tensor/autograd computation, so __________ the returned Python number to continue the differentiable loss calculation.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Calling `.item()` removes the value from tensor/autograd computation, so do not use the returned Python number to continue the differentiable loss calculation."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "`loss.item()` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.Tensor.item.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-4-train-eval",
@@ -471,54 +570,85 @@
           "concept_ids": [
             "ai.pytorch.train_eval"
           ],
+          "prompts": [
+            {
+              "id": "modes",
+              "kind": "what",
+              "label": "TRAIN MODE OR EVAL MODE?",
+              "placeholder": "Reveal the behavior differences for mode-sensitive modules.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "mode",
+                    "label": "Mode"
+                  },
+                  {
+                    "id": "dropout",
+                    "label": "Dropout"
+                  },
+                  {
+                    "id": "batchnorm",
+                    "label": "BatchNorm"
+                  },
+                  {
+                    "id": "autograd",
+                    "label": "Autograd"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "train",
+                    "cells": {
+                      "mode": "model.train()",
+                      "dropout": "Active stochastic masking",
+                      "batchnorm": "Training-mode statistics behavior",
+                      "autograd": "Not controlled by train()"
+                    }
+                  },
+                  {
+                    "id": "eval",
+                    "cells": {
+                      "mode": "model.eval()",
+                      "dropout": "Identity behavior",
+                      "batchnorm": "Evaluation-mode running-stat behavior",
+                      "autograd": "Not disabled by eval()"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "column",
+                  "initially_visible": {
+                    "column_ids": [
+                      "mode"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "separate",
+              "kind": "not_this",
+              "label": "EVAL MODE AND GRAD MODE ARE SEPARATE",
+              "placeholder": "Does model.eval() disable autograd?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "No. model.eval() changes mode-sensitive module behavior. Pair it with torch.no_grad() or torch.inference_mode() when gradient recording is unnecessary."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-4-loss-item"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.38
+            "x": 0.81,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` enables training behavior for mode-sensitive modules, while `model.eval()` switches them to evaluation behavior.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`model.train()` enables training behavior for mode-sensitive modules, while `model.eval()` switches them to evaluation behavior."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Use `train()` before training epochs and `__________` before validation or inference.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use `train()` before training epochs and `eval()` before validation or inference."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "`eval()` __________; pair it with no-grad or inference mode when gradient tracking is unnecessary.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`eval()` does not disable autograd; pair it with no-grad or inference mode when gradient tracking is unnecessary."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "`model.train()` and `model.eval()` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/notes/autograd.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -545,52 +675,52 @@
           "concept_ids": [
             "ai.pytorch.no_grad"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.6
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` disables recording operations for reverse-mode gradient calculation inside its context.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "DISABLE GRADIENT RECORDING FOR VALIDATION",
+              "placeholder": "Click eval and no_grad. They solve different problems.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "`torch.no_grad()` disables recording operations for reverse-mode gradient calculation inside its context."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Use it for __________ when you do not need backward and may later reuse resulting tensors in normal grad mode.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use it for validation or inference when you do not need backward and may later reuse resulting tensors in normal grad mode."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "No-grad mode is __________ `model.eval()`; one controls autograd recording and the other controls module training behavior.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "No-grad mode is separate from `model.eval()`; one controls autograd recording and the other controls module training behavior."
+                "type": "code_file",
+                "filename": "no_grad.py",
+                "language": "python",
+                "code": "model.eval()\n\nwith torch.no_grad():\n    logits = model(validation_X)\n    validation_loss = loss_fn(logits, validation_y)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "eval",
+                    "anchor": {
+                      "line": 1,
+                      "text": "model.eval()",
+                      "occurrence": 1
+                    },
+                    "title": "Evaluation module behavior",
+                    "explanation": "eval switches Dropout, BatchNorm, and other mode-sensitive modules to evaluation behavior.",
+                    "required": true
+                  },
+                  {
+                    "id": "nograd",
+                    "anchor": {
+                      "line": 3,
+                      "text": "with torch.no_grad():",
+                      "occurrence": 1
+                    },
+                    "title": "Disable reverse-mode recording",
+                    "explanation": "no_grad avoids recording operations for backward inside the context.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "`torch.no_grad()` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.no_grad.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "source_refs": []
         },
         {
           "id": "domain-4-inference-mode",
@@ -598,54 +728,101 @@
           "concept_ids": [
             "ai.pytorch.inference_mode"
           ],
+          "prompts": [
+            {
+              "id": "compare",
+              "kind": "what",
+              "label": "no_grad OR inference_mode?",
+              "placeholder": "Reveal one property at a time.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "mode",
+                    "label": "Mode"
+                  },
+                  {
+                    "id": "recording",
+                    "label": "Autograd recording"
+                  },
+                  {
+                    "id": "overhead",
+                    "label": "Autograd overhead"
+                  },
+                  {
+                    "id": "reuse",
+                    "label": "Later grad-mode reuse"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "no_grad",
+                    "cells": {
+                      "mode": "torch.no_grad()",
+                      "recording": "Disabled",
+                      "overhead": "Reduced",
+                      "reuse": "Produced tensors can more readily participate later in normal grad-mode workflows"
+                    }
+                  },
+                  {
+                    "id": "inference",
+                    "cells": {
+                      "mode": "torch.inference_mode()",
+                      "recording": "Disabled",
+                      "overhead": "Can remove additional autograd overhead",
+                      "reuse": "Stricter inference-tensor constraints"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "column",
+                  "initially_visible": {
+                    "column_ids": [
+                      "mode"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "USE inference_mode FOR A PURE INFERENCE PATH",
+              "placeholder": "Click inference_mode.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "inference_mode.py",
+                "language": "python",
+                "code": "model.eval()\n\nwith torch.inference_mode():\n    predictions = model(inputs)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "mode",
+                    "anchor": {
+                      "line": 3,
+                      "text": "with torch.inference_mode():",
+                      "occurrence": 1
+                    },
+                    "title": "Inference-only execution context",
+                    "explanation": "inference_mode disables autograd recording and additional autograd bookkeeping for suitable pure inference code.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-4-no-grad"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.6
+            "x": 0.35,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` disables autograd recording and removes additional autograd-related overhead for computations that will not later participate in grad-mode graphs.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`torch.inference_mode()` disables autograd recording and removes additional autograd-related overhead for computations that will not later participate in grad-mode graphs."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Use it for __________ paths when its stricter tensor-lifetime constraints fit your code.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use it for pure inference paths when its stricter tensor-lifetime constraints fit your code."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Tensors created in inference mode __________ in computations that autograd needs to record.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Tensors created in inference mode cannot later be used in computations that autograd needs to record."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "`torch.inference_mode()` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.inference_mode.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-4-freeze-parameters",
@@ -653,54 +830,65 @@
           "concept_ids": [
             "ai.pytorch.freeze_parameters"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "FREEZE A PRETRAINED BACKBONE",
+              "placeholder": "Click requires_grad_(False) and inspect the new head.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "freeze_backbone.py",
+                "language": "python",
+                "code": "for parameter in model.backbone.parameters():\n    parameter.requires_grad_(False)\n\nmodel.head = nn.Linear(model.head.in_features, num_classes)\n\noptimizer = torch.optim.AdamW(\n    model.head.parameters(),\n    lr=1e-3,\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "freeze",
+                    "anchor": {
+                      "line": 2,
+                      "text": "parameter.requires_grad_(False)",
+                      "occurrence": 1
+                    },
+                    "title": "Exclude frozen parameters from gradient computation",
+                    "explanation": "Frozen backbone Parameters no longer require gradients in normal grad mode.",
+                    "required": true
+                  },
+                  {
+                    "id": "optimizer",
+                    "anchor": {
+                      "line": 7,
+                      "text": "model.head.parameters()",
+                      "occurrence": 1
+                    },
+                    "title": "Optimize only the trainable head",
+                    "explanation": "The optimizer is constructed explicitly from the new head parameters.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "mode",
+              "kind": "not_this",
+              "label": "FREEZING DOES NOT CHANGE TRAIN/EVAL MODE",
+              "placeholder": "Does freezing a BatchNorm or Dropout parameter switch that module to evaluation behavior?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "No. Gradient requirements and module train/eval mode are separate controls."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-4-inference-mode"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.6
+            "x": 0.58,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Setting a parameter or module to `__________` excludes those parameters from gradient computation in normal grad mode.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Setting a parameter or module to `requires_grad_(False)` excludes those parameters from gradient computation in normal grad mode."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Freezing a __________ is commonly done before training only a new head.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Freezing a pretrained backbone is commonly done before training only a new head."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Freezing gradients __________ Dropout or BatchNorm to evaluation mode.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Freezing gradients does not automatically switch Dropout or BatchNorm to evaluation mode."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Freezing parameters — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/notes/autograd.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-4-clip-grad-norm",
@@ -708,54 +896,65 @@
           "concept_ids": [
             "ai.pytorch.clip_grad_norm"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "CLIP AFTER backward, BEFORE step",
+              "placeholder": "Click backward, clip_grad_norm_, and step in order.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "clip_grad.py",
+                "language": "python",
+                "code": "optimizer.zero_grad()\nlogits = model(X)\nloss = loss_fn(logits, y)\n\nloss.backward()\n\ntorch.nn.utils.clip_grad_norm_(\n    model.parameters(),\n    max_norm=1.0,\n)\n\noptimizer.step()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "backward",
+                    "anchor": {
+                      "line": 5,
+                      "text": "loss.backward()",
+                      "occurrence": 1
+                    },
+                    "title": "Create gradients first",
+                    "explanation": "Clipping needs gradients to already exist.",
+                    "required": true
+                  },
+                  {
+                    "id": "clip",
+                    "anchor": {
+                      "line": 7,
+                      "text": "torch.nn.utils.clip_grad_norm_(",
+                      "occurrence": 1
+                    },
+                    "title": "Clip total gradient norm",
+                    "explanation": "clip_grad_norm_ modifies parameter gradients in place so their total norm does not exceed the configured maximum.",
+                    "required": true
+                  },
+                  {
+                    "id": "step",
+                    "anchor": {
+                      "line": 12,
+                      "text": "optimizer.step()",
+                      "occurrence": 1
+                    },
+                    "title": "Update with clipped gradients",
+                    "explanation": "The optimizer uses the clipped gradients for the parameter update.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-4-freeze-parameters"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.6
+            "x": 0.81,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`torch.nn.utils.__________` clips the total norm of parameter gradients in place to a specified maximum norm.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`torch.nn.utils.clip_grad_norm_` clips the total norm of parameter gradients in place to a specified maximum norm."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Apply gradient clipping __________ has produced gradients and before the optimizer step.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Apply gradient clipping after backward has produced gradients and before the optimizer step."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Clipping __________ has nothing useful to clip for the current batch.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Clipping before backward has nothing useful to clip for the current batch."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Gradient clipping — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/main/generated/torch.nn.utils.clip_grad_norm_.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

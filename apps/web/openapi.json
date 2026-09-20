@@ -1226,6 +1226,62 @@
           }
         }
       },
+      "CodeAnnotation": {
+        "type": "object",
+        "description": "A clickable region inside a `code_file` reveal.",
+        "required": [
+          "id",
+          "anchor",
+          "title",
+          "explanation"
+        ],
+        "properties": {
+          "anchor": {
+            "$ref": "#/components/schemas/CodeAnnotationAnchor",
+            "description": "Where the clickable region starts."
+          },
+          "explanation": {
+            "type": "string",
+            "description": "Explanation revealed when the region is clicked."
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable annotation identifier, also the persisted progress key."
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether revealing this annotation is needed to complete the prompt."
+          },
+          "title": {
+            "type": "string",
+            "description": "Short learner-facing title shown with the explanation."
+          }
+        }
+      },
+      "CodeAnnotationAnchor": {
+        "type": "object",
+        "description": "An author-friendly anchor that avoids absolute character offsets.",
+        "required": [
+          "line",
+          "text"
+        ],
+        "properties": {
+          "line": {
+            "type": "integer",
+            "description": "1-based line number the target text occurs on.",
+            "minimum": 0
+          },
+          "occurrence": {
+            "type": "integer",
+            "description": "1-based occurrence of `text` on the line. Defaults to the first.",
+            "minimum": 0
+          },
+          "text": {
+            "type": "string",
+            "description": "Exact text that must occur on that line."
+          }
+        }
+      },
       "CompleteMissionRequest": {
         "type": "object",
         "description": "Request to complete a mission.\n\nThe owner is taken from the verified token, so no identity is required here.",
@@ -2384,6 +2440,89 @@
                 ]
               }
             }
+          },
+          {
+            "type": "object",
+            "description": "A real table: typed column ids with one row per record.",
+            "required": [
+              "columns",
+              "rows",
+              "type"
+            ],
+            "properties": {
+              "columns": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/RevealTableColumn"
+                },
+                "description": "Table columns in display order."
+              },
+              "progressive_reveal": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TableProgressiveReveal",
+                    "description": "Optional progressive reveal configuration. When omitted the table is\nrevealed as a whole exactly as before."
+                  }
+                ]
+              },
+              "rows": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/RevealTableRow"
+                },
+                "description": "Table rows. Every row must fill every column."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "table"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A read-only, syntax-highlighted file with clickable annotations.\n\nThe `code` string is the verbatim file. Annotation anchors point into it\nby line and text so authors never hand-count character offsets, and the\nraw source stays valid and copyable.",
+            "required": [
+              "filename",
+              "language",
+              "code",
+              "type"
+            ],
+            "properties": {
+              "annotations": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CodeAnnotation"
+                },
+                "description": "Clickable regions that reveal explanations."
+              },
+              "code": {
+                "type": "string",
+                "description": "Verbatim file contents. Never marked up or executed."
+              },
+              "filename": {
+                "type": "string",
+                "description": "Display filename shown in the header bar."
+              },
+              "language": {
+                "type": "string",
+                "description": "Highlighting language, for example `hcl`."
+              },
+              "line_numbers": {
+                "type": "boolean",
+                "description": "Whether to render a line-number gutter."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "code_file"
+                ]
+              }
+            }
           }
         ],
         "description": "How a revealed prompt renders. Deliberately not a plain string: the\ncurriculum distinguishes prose, sequences, comparisons, and keyword clues."
@@ -2796,6 +2935,50 @@
           }
         }
       },
+      "RevealTableColumn": {
+        "type": "object",
+        "description": "One column of a table reveal.",
+        "required": [
+          "id",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable identifier used to key every row's cells."
+          },
+          "label": {
+            "type": "string",
+            "description": "Learner-facing column heading."
+          }
+        }
+      },
+      "RevealTableRow": {
+        "type": "object",
+        "description": "One row of a table reveal.",
+        "required": [
+          "cells"
+        ],
+        "properties": {
+          "cells": {
+            "type": "object",
+            "description": "Column id to cell text. Every authored column must be present.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Stable row identifier. Optional so existing static tables stay valid,\nbut required by progressive row and cell reveals."
+          }
+        }
+      },
       "ScenarioStage": {
         "type": "string",
         "description": "The operational stage a branching-scenario decision belongs to.\n\nThe stage is used only to attach a structured error code to a poor decision;\nit is not a measure of overall mastery.",
@@ -3002,6 +3185,59 @@
             "description": "Per-event results."
           }
         }
+      },
+      "TableInitialVisibility": {
+        "type": "object",
+        "description": "Information that is visible before the learner reveals anything.\n\nA cell is initially visible when its column, its row, or its derived cell id\n(`row_id:column_id`) is listed. The three lists combine, so authors can give\naway a column, an entire row, and one extra cell in one table.",
+        "properties": {
+          "cell_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Individually visible cells, keyed as `row_id:column_id`."
+          },
+          "column_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Column ids whose cells are all visible from the start."
+          },
+          "row_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Row ids whose cells are all visible from the start."
+          }
+        }
+      },
+      "TableProgressiveReveal": {
+        "type": "object",
+        "description": "Progressive reveal configuration for a `table` reveal.\n\nThe table itself is always rendered immediately. Discovery is limited to the\nreveal units selected by `mode`, minus anything already exposed through\n`initially_visible`.",
+        "required": [
+          "mode"
+        ],
+        "properties": {
+          "initially_visible": {
+            "$ref": "#/components/schemas/TableInitialVisibility",
+            "description": "Information shown from the beginning, before any reveal."
+          },
+          "mode": {
+            "$ref": "#/components/schemas/TableRevealMode",
+            "description": "Whether the learner reveals whole rows, whole columns, or single cells."
+          }
+        }
+      },
+      "TableRevealMode": {
+        "type": "string",
+        "description": "The unit a learner reveals in a progressive table.",
+        "enum": [
+          "row",
+          "column",
+          "cell"
+        ]
       },
       "TaskDto": {
         "type": "object",

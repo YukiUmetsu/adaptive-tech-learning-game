@@ -1,9 +1,9 @@
 {
-  "schema_version": "1.0.0",
-  "content_version": "saa-c03-learning-2026-09-19-v1",
+  "schema_version": "2.0.0",
+  "content_version": "saa-c03-learning-2026-09-19-v2-interactive",
   "certification_id": "aws-saa-c03",
   "certification_version": "saa-c03",
-  "exam_guide_revision": "AWS exam guide reviewed 2026-09-19",
+  "exam_guide_revision": "SAA-C03 / reviewed 2026-09-19",
   "domain": {
     "id": "domain-2",
     "name": "Design Resilient Architectures",
@@ -11,17 +11,13 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; quiz attempts remain the scored retrieval signal."
+    "unlock_rule": "Reveal the required explanations, progressive table units, and required code annotations to unlock each knowledge node.",
+    "mastery_note": "Discovery builds the mental model first; quiz attempts provide scored recall and architecture-application evidence."
   },
   "source_refs": [
     {
       "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
       "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
-    },
-    {
-      "title": "SAA-C03 in-scope AWS services",
-      "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/saa-03-in-scope-services.html"
     }
   ],
   "coverage": {
@@ -49,12 +45,12 @@
     ],
     "module_count": 2,
     "knowledge_node_count": 16,
-    "prompt_count": 64
+    "prompt_count": 48
   },
-  "authoring_notes": "Original study content. The attached 2026 SAA course PDF was used only as a breadth/coverage cross-check; wording was independently authored and current AWS documentation was used for verification.",
+  "authoring_notes": "Interactive v2 refresh. Uses progressive tables for service/trade-off comparisons and annotated code files where reading a real policy/configuration improves understanding.",
   "modules": [
     {
-      "id": "domain-2-task-2-1",
+      "id": "domain-2-module-1",
       "title": "Design scalable and loosely coupled architectures",
       "order": 1,
       "task_ids": [
@@ -86,10 +82,10 @@
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "stateless-scaling-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Stateless application tiers keep session state __________ individual compute instances so capacity can scale out and replace instances safely.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -97,47 +93,119 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use __________ behind a load balancer when demand changes and the application can add or remove interchangeable workers.",
+              "id": "stateless-scaling-task-table",
+              "kind": "connects_to",
+              "label": "TASK MAP",
+              "placeholder": "Reveal each row and compare neighboring architecture choices.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use horizontal scaling behind a load balancer when demand changes and the application can add or remove interchangeable workers."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "choice",
+                    "label": "Choice / concept"
+                  },
+                  {
+                    "id": "best_for",
+                    "label": "What distinguishes it"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "r1",
+                    "cells": {
+                      "choice": "horizontal scaling",
+                      "best_for": "Stateless application tiers keep session state outside individual compute instances so capacity can scale out and replace instances safely."
+                    }
+                  },
+                  {
+                    "id": "r2",
+                    "cells": {
+                      "choice": "Auto Scaling group",
+                      "best_for": "Elastic Load Balancing distributes requests across healthy targets, and EC2 Auto Scaling adjusts the number of instances to match demand."
+                    }
+                  },
+                  {
+                    "id": "r3",
+                    "cells": {
+                      "choice": "Amazon SQS",
+                      "best_for": "Amazon SQS stores messages durably so producers and consumers can operate at different rates without a direct synchronous dependency."
+                    }
+                  },
+                  {
+                    "id": "r4",
+                    "cells": {
+                      "choice": "Amazon SNS",
+                      "best_for": "Amazon SNS publishes one message to multiple subscribers or downstream endpoints through a topic."
+                    }
+                  },
+                  {
+                    "id": "r5",
+                    "cells": {
+                      "choice": "Amazon EventBridge",
+                      "best_for": "Amazon EventBridge routes events from AWS services, custom applications, and partners to targets by matching event patterns."
+                    }
+                  },
+                  {
+                    "id": "r6",
+                    "cells": {
+                      "choice": "AWS Step Functions",
+                      "best_for": "AWS Step Functions coordinates multi-step workflows with explicit states, branching, retries, timeouts, and service integrations."
+                    }
+                  },
+                  {
+                    "id": "r7",
+                    "cells": {
+                      "choice": "AWS Lambda",
+                      "best_for": "AWS Lambda runs event-driven code without managing servers and scales concurrent execution in response to incoming work within service limits."
+                    }
+                  },
+                  {
+                    "id": "r8",
+                    "cells": {
+                      "choice": "AWS Fargate",
+                      "best_for": "Amazon ECS and Amazon EKS orchestrate containers, while AWS Fargate supplies serverless container compute for supported ECS and EKS workloads."
+                    }
+                  },
+                  {
+                    "id": "r9",
+                    "cells": {
+                      "choice": "Amazon API Gateway",
+                      "best_for": "Amazon API Gateway provides managed endpoints for REST, HTTP, and WebSocket APIs and integrates with backends such as Lambda or private services."
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "choice"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not store irreplaceable __________ only on one EC2 instance if that instance can be terminated by Auto Scaling.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not store irreplaceable session state only on one EC2 instance if that instance can be terminated by Auto Scaling."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "stateless-scaling-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "An Auto Scaling web tier is easier to make resilient when sessions live in a __________ rather than local memory.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "An Auto Scaling web tier is easier to make resilient when sessions live in a shared store rather than local memory."
+                "type": "keywords",
+                "items": [
+                  "horizontal scaling",
+                  "Stateless services and horizontal scaling"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design scalable and loosely coupled architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "Stateless services and horizontal scaling — AWS documentation",
-              "url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -151,15 +219,15 @@
             "domain-2-stateless-scaling"
           ],
           "map_position": {
-            "x": 0.215,
+            "x": 0.36,
             "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "alb-asg-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Elastic Load Balancing distributes requests across __________, and EC2 Auto Scaling adjusts the number of instances to match demand.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -167,47 +235,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "alb-asg-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use __________ with a load balancer and Auto Scaling group for an elastic web tier that can replace unhealthy instances.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use multiple Availability Zones with a load balancer and Auto Scaling group for an elastic web tier that can replace unhealthy instances."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Elastic Load Balancing distributes requests across healthy targets, and EC2 Auto Scaling adjusts the number of instances to match demand.",
+                  "Key retrieval phrase: Auto Scaling group."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not use a __________ instance when the requirement explicitly calls for automatic horizontal scale and instance replacement.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not use a single fixed instance when the requirement explicitly calls for automatic horizontal scale and instance replacement."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "alb-asg-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Unpredictable HTTP traffic plus automatic scale-out usually points to an __________ with an Auto Scaling group.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Unpredictable HTTP traffic plus automatic scale-out usually points to an ALB with an Auto Scaling group."
+                "type": "keywords",
+                "items": [
+                  "Auto Scaling group",
+                  "Load balancing with Auto Scaling"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design scalable and loosely coupled architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "Load balancing with Auto Scaling — AWS documentation",
-              "url": "https://docs.aws.amazon.com/autoscaling/ec2/userguide/what-is-amazon-ec2-auto-scaling.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -221,15 +280,15 @@
             "domain-2-alb-asg"
           ],
           "map_position": {
-            "x": 0.31,
+            "x": 0.6,
             "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "sqs-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Amazon SQS stores messages durably so producers and consumers can operate at __________ without a direct synchronous dependency.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -237,47 +296,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "sqs-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use a queue to __________, retry failed work, and let worker fleets scale independently from request producers.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use a queue to absorb bursts, retry failed work, and let worker fleets scale independently from request producers."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Amazon SQS stores messages durably so producers and consumers can operate at different rates without a direct synchronous dependency.",
+                  "Key retrieval phrase: Amazon SQS."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not require producers to __________ for every background worker to finish when asynchronous processing is acceptable.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not require producers to wait for every background worker to finish when asynchronous processing is acceptable."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "sqs-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A bursty producer overwhelming a slower worker tier is a classic __________ buffering scenario.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A bursty producer overwhelming a slower worker tier is a classic SQS buffering scenario."
+                "type": "keywords",
+                "items": [
+                  "Amazon SQS",
+                  "Amazon SQS decoupling"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design scalable and loosely coupled architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "Amazon SQS decoupling — AWS documentation",
-              "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -291,15 +341,15 @@
             "domain-2-sqs"
           ],
           "map_position": {
-            "x": 0.405,
+            "x": 0.84,
             "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "sns-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Amazon SNS publishes one message to __________ or downstream endpoints through a topic.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -307,47 +357,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "sns-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use SNS when one event must __________ to several consumers, such as SQS queues, Lambda functions, or notification endpoints.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use SNS when one event must fan out to several consumers, such as SQS queues, Lambda functions, or notification endpoints."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Amazon SNS publishes one message to multiple subscribers or downstream endpoints through a topic.",
+                  "Key retrieval phrase: Amazon SNS."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not choose a __________ when every independent consumer must receive its own copy of each event.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not choose a single SQS queue when every independent consumer must receive its own copy of each event."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "sns-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "One event delivered to multiple independent consumers points to an __________ topic, often with SQS subscriptions.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "One event delivered to multiple independent consumers points to an SNS topic, often with SQS subscriptions."
+                "type": "keywords",
+                "items": [
+                  "Amazon SNS",
+                  "Amazon SNS fan-out"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design scalable and loosely coupled architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "Amazon SNS fan-out — AWS documentation",
-              "url": "https://docs.aws.amazon.com/sns/latest/dg/welcome.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -361,15 +402,15 @@
             "domain-2-sns"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.16
+            "x": 0.12,
+            "y": 0.44
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "eventbridge-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Amazon EventBridge routes events from AWS services, custom applications, and partners to targets by matching __________.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -377,47 +418,62 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use it when consumers should react to __________ without tight coupling to the event producer.",
+              "id": "eventbridge-code",
+              "kind": "look_for",
+              "label": "READ THE CONFIG",
+              "placeholder": "Click the important parts of this configuration before revealing the explanation.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use it when consumers should react to selected events without tight coupling to the event producer."
+                "type": "code_file",
+                "filename": "event-pattern.json",
+                "language": "json",
+                "code": "{\n  \"source\": [\"aws.ec2\"],\n  \"detail-type\": [\"EC2 Instance State-change Notification\"],\n  \"detail\": {\"state\": [\"stopped\"]}\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "a1",
+                    "anchor": {
+                      "line": 2,
+                      "text": "\"source\"",
+                      "occurrence": 1
+                    },
+                    "title": "Match event source",
+                    "explanation": "EventBridge rules filter events by fields in the event envelope.",
+                    "required": true
+                  },
+                  {
+                    "id": "a2",
+                    "anchor": {
+                      "line": 4,
+                      "text": "\"state\"",
+                      "occurrence": 1
+                    },
+                    "title": "Match event detail",
+                    "explanation": "Narrow the pattern to the state transition the architecture actually needs.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not use EventBridge as block storage or as a substitute for a durable __________ that needs explicit consumer polling semantics.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not use EventBridge as block storage or as a substitute for a durable work queue that needs explicit consumer polling semantics."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "eventbridge-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Rule-based routing of AWS service events to Lambda, Step Functions, or other targets points to __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Rule-based routing of AWS service events to Lambda, Step Functions, or other targets points to EventBridge."
+                "type": "keywords",
+                "items": [
+                  "Amazon EventBridge",
+                  "Amazon EventBridge routing"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design scalable and loosely coupled architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "Amazon EventBridge routing — AWS documentation",
-              "url": "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -431,15 +487,15 @@
             "domain-2-eventbridge"
           ],
           "map_position": {
-            "x": 0.595,
-            "y": 0.16
+            "x": 0.36,
+            "y": 0.44
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "step-functions-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "AWS Step Functions coordinates multi-step workflows with explicit states, __________, retries, timeouts, and service integrations.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -447,47 +503,73 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use it when a business process needs __________ across multiple Lambda functions or AWS services.",
+              "id": "step-functions-code",
+              "kind": "look_for",
+              "label": "READ THE CONFIG",
+              "placeholder": "Click the important parts of this configuration before revealing the explanation.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use it when a business process needs durable orchestration across multiple Lambda functions or AWS services."
+                "type": "code_file",
+                "filename": "state-machine.json",
+                "language": "json",
+                "code": "{\n  \"StartAt\": \"Charge\",\n  \"States\": {\n    \"Charge\": {\n      \"Type\": \"Task\",\n      \"Next\": \"Ship\",\n      \"Retry\": [{\"ErrorEquals\": [\"States.ALL\"], \"MaxAttempts\": 3}]\n    },\n    \"Ship\": {\"Type\": \"Task\", \"End\": true}\n  }\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "a1",
+                    "anchor": {
+                      "line": 2,
+                      "text": "\"StartAt\"",
+                      "occurrence": 1
+                    },
+                    "title": "Explicit workflow entry",
+                    "explanation": "A state machine has an explicit starting state.",
+                    "required": true
+                  },
+                  {
+                    "id": "a2",
+                    "anchor": {
+                      "line": 6,
+                      "text": "\"Next\"",
+                      "occurrence": 1
+                    },
+                    "title": "Explicit transition",
+                    "explanation": "Next makes workflow sequencing visible rather than burying orchestration in application code.",
+                    "required": true
+                  },
+                  {
+                    "id": "a3",
+                    "anchor": {
+                      "line": 7,
+                      "text": "\"Retry\"",
+                      "occurrence": 1
+                    },
+                    "title": "Built-in retry policy",
+                    "explanation": "Step Functions can declaratively retry failed task states.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not embed a long and failure-prone orchestration state machine entirely inside __________ invocation when Step Functions fits the workflow.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not embed a long and failure-prone orchestration state machine entirely inside one Lambda invocation when Step Functions fits the workflow."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "step-functions-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A visual workflow with retries, branches, and several service calls points to __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A visual workflow with retries, branches, and several service calls points to Step Functions."
+                "type": "keywords",
+                "items": [
+                  "AWS Step Functions",
+                  "AWS Step Functions"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design scalable and loosely coupled architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "AWS Step Functions — AWS documentation",
-              "url": "https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -501,15 +583,15 @@
             "domain-2-step-functions"
           ],
           "map_position": {
-            "x": 0.69,
-            "y": 0.16
+            "x": 0.6,
+            "y": 0.44
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "lambda-serverless-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "AWS Lambda runs event-driven code __________ and scales concurrent execution in response to incoming work within service limits.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -517,47 +599,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "lambda-serverless-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use Lambda for __________ event handlers, APIs, stream processing, and automation when server management is unnecessary.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use Lambda for short-lived event handlers, APIs, stream processing, and automation when server management is unnecessary."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: AWS Lambda runs event-driven code without managing servers and scales concurrent execution in response to incoming work within service limits.",
+                  "Key retrieval phrase: AWS Lambda."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not choose Lambda for a single invocation that must run longer than the service's __________ execution duration.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not choose Lambda for a single invocation that must run longer than the service's maximum execution duration."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "lambda-serverless-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Event-driven code with unpredictable traffic and minimal infrastructure management is a __________ clue.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Event-driven code with unpredictable traffic and minimal infrastructure management is a Lambda clue."
+                "type": "keywords",
+                "items": [
+                  "AWS Lambda",
+                  "Lambda serverless compute"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design scalable and loosely coupled architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "Lambda serverless compute — AWS documentation",
-              "url": "https://docs.aws.amazon.com/lambda/latest/dg/welcome.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -571,15 +644,15 @@
             "domain-2-lambda-serverless"
           ],
           "map_position": {
-            "x": 0.785,
-            "y": 0.16
+            "x": 0.84,
+            "y": 0.44
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "containers-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Amazon ECS and Amazon EKS __________, while AWS Fargate supplies serverless container compute for supported ECS and EKS workloads.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -587,47 +660,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "containers-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use ECS when AWS-native container orchestration fits, EKS when __________ compatibility is required, and Fargate when you want to avoid managing worker nodes.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use ECS when AWS-native container orchestration fits, EKS when Kubernetes compatibility is required, and Fargate when you want to avoid managing worker nodes."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Amazon ECS and Amazon EKS orchestrate containers, while AWS Fargate supplies serverless container compute for supported ECS and EKS workloads.",
+                  "Key retrieval phrase: AWS Fargate."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not select EKS __________ because containers are present if the workload does not require Kubernetes APIs or ecosystem compatibility.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not select EKS solely because containers are present if the workload does not require Kubernetes APIs or ecosystem compatibility."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "containers-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Kubernetes requirement points to __________; containers without node management can point to Fargate.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Kubernetes requirement points to EKS; containers without node management can point to Fargate."
+                "type": "keywords",
+                "items": [
+                  "AWS Fargate",
+                  "ECS, EKS, and Fargate"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design scalable and loosely coupled architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "ECS, EKS, and Fargate — AWS documentation",
-              "url": "https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -641,15 +705,15 @@
             "domain-2-containers"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.16
+            "x": 0.12,
+            "y": 0.72
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "api-gateway-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Amazon API Gateway provides __________ for REST, HTTP, and WebSocket APIs and integrates with backends such as Lambda or private services.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -657,54 +721,45 @@
               }
             },
             {
-              "id": "when",
+              "id": "api-gateway-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use it to expose managed APIs with features such as authentication integration, __________, stages, and request routing.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use it to expose managed APIs with features such as authentication integration, throttling, stages, and request routing."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Amazon API Gateway provides managed endpoints for REST, HTTP, and WebSocket APIs and integrates with backends such as Lambda or private services.",
+                  "Key retrieval phrase: Amazon API Gateway."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not deploy and operate __________ only to obtain standard managed API-front-door capabilities.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not deploy and operate custom proxy servers only to obtain standard managed API-front-door capabilities."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "api-gateway-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A serverless REST API in front of Lambda with throttling requirements points to __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A serverless REST API in front of Lambda with throttling requirements points to API Gateway."
+                "type": "keywords",
+                "items": [
+                  "Amazon API Gateway",
+                  "API Gateway for loosely coupled APIs"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design scalable and loosely coupled architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "API Gateway for loosely coupled APIs — AWS documentation",
-              "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         }
       ]
     },
     {
-      "id": "domain-2-task-2-2",
+      "id": "domain-2-module-2",
       "title": "Design highly available and/or fault-tolerant architectures",
       "order": 2,
       "task_ids": [
@@ -720,7 +775,7 @@
         "2.2.07"
       ],
       "prerequisite_module_ids": [
-        "domain-2-task-2-1"
+        "domain-2-module-1"
       ],
       "nodes": [
         {
@@ -732,14 +787,14 @@
           "prerequisite_node_ids": [],
           "map_position": {
             "x": 0.12,
-            "y": 0.38
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "multi-az-read-replica-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "RDS Multi-AZ deployments primarily improve __________ with failover, while read replicas primarily scale read traffic and can support some disaster-recovery patterns.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -747,47 +802,82 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use Multi-AZ when the main requirement is database availability, and add read replicas when __________ must scale independently.",
+              "id": "multi-az-read-replica-table",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "The choices are visible. Reveal the differences one cell at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use Multi-AZ when the main requirement is database availability, and add read replicas when read throughput must scale independently."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "choice",
+                    "label": "Choice"
+                  },
+                  {
+                    "id": "property",
+                    "label": "Primary property"
+                  },
+                  {
+                    "id": "behavior",
+                    "label": "Behavior / trade-off"
+                  },
+                  {
+                    "id": "use",
+                    "label": "Typical fit"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "r1",
+                    "cells": {
+                      "choice": "RDS Multi-AZ",
+                      "property": "Availability/failover",
+                      "behavior": "Synchronous standby path",
+                      "use": "Not the primary read-scaling feature"
+                    }
+                  },
+                  {
+                    "id": "r2",
+                    "cells": {
+                      "choice": "Read replica",
+                      "property": "Read scaling / some DR",
+                      "behavior": "Asynchronous replication",
+                      "use": "Can serve reads"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "choice"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not choose a read replica as the direct __________ for a Multi-AZ standby when automatic high-availability failover is the requirement.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not choose a read replica as the direct substitute for a Multi-AZ standby when automatic high-availability failover is the requirement."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "multi-az-read-replica-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "High availability points to __________; read scaling points to read replicas.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "High availability points to Multi-AZ; read scaling points to read replicas."
+                "type": "keywords",
+                "items": [
+                  "Multi-AZ",
+                  "RDS Multi-AZ vs read replicas"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design highly available and/or fault-tolerant architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "RDS Multi-AZ vs read replicas — AWS documentation",
-              "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZ.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -801,15 +891,15 @@
             "domain-2-multi-az-read-replica"
           ],
           "map_position": {
-            "x": 0.247,
-            "y": 0.38
+            "x": 0.36,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "failure-domains-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Availability Zones are __________ within a Region, and using multiple AZs reduces exposure to a single-AZ failure.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -817,47 +907,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "failure-domains-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use multiple AZs for high availability inside a Region and __________ when business requirements demand regional disaster recovery or locality.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use multiple AZs for high availability inside a Region and multiple Regions when business requirements demand regional disaster recovery or locality."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Availability Zones are isolated locations within a Region, and using multiple AZs reduces exposure to a single-AZ failure.",
+                  "Key retrieval phrase: Availability Zone."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not place every redundant component in __________ and call the architecture highly available across AZ failures.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not place every redundant component in one Availability Zone and call the architecture highly available across AZ failures."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "failure-domains-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "An AZ-outage requirement means redundant components must span more than one Availability __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "An AZ-outage requirement means redundant components must span more than one Availability Zone."
+                "type": "keywords",
+                "items": [
+                  "Availability Zone",
+                  "Availability Zones and Regions as failure domains"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design highly available and/or fault-tolerant architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "Availability Zones and Regions as failure domains — AWS documentation",
-              "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-fault-isolation-boundaries/availability-zones.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -871,15 +952,15 @@
             "domain-2-failure-domains"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.38
+            "x": 0.6,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "route53-failover-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Amazon Route 53 __________ can direct users among endpoints, and health-aware policies can stop returning unhealthy targets when configured appropriately.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -887,47 +968,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "route53-failover-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use __________ for active-passive patterns and latency-based routing when users should be sent to a low-latency healthy Region.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use failover routing for active-passive patterns and latency-based routing when users should be sent to a low-latency healthy Region."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Amazon Route 53 routing policies can direct users among endpoints, and health-aware policies can stop returning unhealthy targets when configured appropriately.",
+                  "Key retrieval phrase: Route 53 failover."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not expect DNS failover to preserve __________ that already reached a failed endpoint.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not expect DNS failover to preserve in-flight connections that already reached a failed endpoint."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "route53-failover-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "DNS-level active-passive failover between endpoints points to __________ failover routing with health evaluation.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "DNS-level active-passive failover between endpoints points to Route 53 failover routing with health evaluation."
+                "type": "keywords",
+                "items": [
+                  "Route 53 failover",
+                  "Route 53 health checks and failover"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design highly available and/or fault-tolerant architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "Route 53 health checks and failover — AWS documentation",
-              "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -941,15 +1013,15 @@
             "domain-2-route53-failover"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.38
+            "x": 0.84,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "dr-strategies-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Backup and restore, pilot light, warm standby, and multi-site __________ trade cost and complexity for progressively faster recovery.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -957,47 +1029,100 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Select a disaster-recovery strategy from business __________ requirements rather than choosing the most complex pattern by default.",
+              "id": "dr-strategies-table",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "The choices are visible. Reveal the differences one cell at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Select a disaster-recovery strategy from business RPO and RTO requirements rather than choosing the most complex pattern by default."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "choice",
+                    "label": "Choice"
+                  },
+                  {
+                    "id": "property",
+                    "label": "Primary property"
+                  },
+                  {
+                    "id": "behavior",
+                    "label": "Behavior / trade-off"
+                  },
+                  {
+                    "id": "use",
+                    "label": "Typical fit"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "r1",
+                    "cells": {
+                      "choice": "Backup & restore",
+                      "property": "Lowest steady-state cost",
+                      "behavior": "Slowest recovery",
+                      "use": "Backups only until recovery"
+                    }
+                  },
+                  {
+                    "id": "r2",
+                    "cells": {
+                      "choice": "Pilot light",
+                      "property": "Low",
+                      "behavior": "Faster",
+                      "use": "Core services running"
+                    }
+                  },
+                  {
+                    "id": "r3",
+                    "cells": {
+                      "choice": "Warm standby",
+                      "property": "Medium",
+                      "behavior": "Faster still",
+                      "use": "Scaled-down environment running"
+                    }
+                  },
+                  {
+                    "id": "r4",
+                    "cells": {
+                      "choice": "Multi-site active-active",
+                      "property": "Highest",
+                      "behavior": "Fastest",
+                      "use": "Full production in multiple sites"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "choice"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not use a __________ backup-and-restore design when the required recovery time is shorter than restoring infrastructure and data can achieve.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not use a slow backup-and-restore design when the required recovery time is shorter than restoring infrastructure and data can achieve."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "dr-strategies-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Very low RTO and RPO requirements usually require continuously __________ rather than backups alone.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Very low RTO and RPO requirements usually require continuously running capacity rather than backups alone."
+                "type": "keywords",
+                "items": [
+                  "warm standby",
+                  "Disaster recovery strategies and RPO/RTO"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design highly available and/or fault-tolerant architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "Disaster recovery strategies and RPO/RTO — AWS documentation",
-              "url": "https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -1011,15 +1136,15 @@
             "domain-2-dr-strategies"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.38
+            "x": 0.12,
+            "y": 0.44
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "replication-backups-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Replication improves availability or locality by maintaining additional copies, while backups preserve recoverable __________.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1027,47 +1152,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "replication-backups-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use both when the workload needs __________ plus protection from accidental deletion, corruption, or application mistakes.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use both when the workload needs rapid failover plus protection from accidental deletion, corruption, or application mistakes."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Replication improves availability or locality by maintaining additional copies, while backups preserve recoverable historical points.",
+                  "Key retrieval phrase: replication."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not assume __________ protects against logical corruption because bad changes can replicate to additional copies.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not assume replication alone protects against logical corruption because bad changes can replicate to additional copies."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "replication-backups-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A design needing low RPO plus recovery from accidental deletion often combines __________ with versioned backups.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A design needing low RPO plus recovery from accidental deletion often combines replication with versioned backups."
+                "type": "keywords",
+                "items": [
+                  "replication",
+                  "Replication, backups, and durability"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design highly available and/or fault-tolerant architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "Replication, backups, and durability — AWS documentation",
-              "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/whatisbackup.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -1081,15 +1197,15 @@
             "domain-2-replication-backups"
           ],
           "map_position": {
-            "x": 0.753,
-            "y": 0.38
+            "x": 0.36,
+            "y": 0.44
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "rds-proxy-quotas-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Amazon RDS Proxy __________ and shares database connections so large numbers of application connections do not overwhelm an RDS or Aurora database.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1097,47 +1213,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "rds-proxy-quotas-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use it for bursty serverless or microservice workloads that create many __________ database connections.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use it for bursty serverless or microservice workloads that create many short-lived database connections."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Amazon RDS Proxy pools and shares database connections so large numbers of application connections do not overwhelm an RDS or Aurora database.",
+                  "Key retrieval phrase: RDS Proxy."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not add __________ solely to solve connection storms when the main bottleneck is connection establishment and pooling.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not add read replicas solely to solve connection storms when the main bottleneck is connection establishment and pooling."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "rds-proxy-quotas-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Many Lambda functions exhausting database connections points to __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Many Lambda functions exhausting database connections points to RDS Proxy."
+                "type": "keywords",
+                "items": [
+                  "RDS Proxy",
+                  "RDS Proxy and connection resilience"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design highly available and/or fault-tolerant architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "RDS Proxy and connection resilience — AWS documentation",
-              "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -1151,15 +1258,15 @@
             "domain-2-rds-proxy-quotas"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.38
+            "x": 0.6,
+            "y": 0.44
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "immutable-infra-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Immutable infrastructure __________ unhealthy or outdated instances from versioned images or templates instead of manually repairing servers in place.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1167,47 +1274,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "immutable-infra-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use launch templates, images, Auto Scaling, and infrastructure as code to make replacement predictable and __________.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use launch templates, images, Auto Scaling, and infrastructure as code to make replacement predictable and repeatable."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Immutable infrastructure replaces unhealthy or outdated instances from versioned images or templates instead of manually repairing servers in place.",
+                  "Key retrieval phrase: immutable infrastructure."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not rely on unique __________ servers that cannot be recreated after failure.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not rely on unique hand-configured servers that cannot be recreated after failure."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "immutable-infra-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A requirement to rebuild identical capacity automatically from a known configuration points to __________ infrastructure.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A requirement to rebuild identical capacity automatically from a known configuration points to immutable infrastructure."
+                "type": "keywords",
+                "items": [
+                  "immutable infrastructure",
+                  "Immutable infrastructure and automated replacement"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design highly available and/or fault-tolerant architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain2.html"
-            },
-            {
-              "title": "Immutable infrastructure and automated replacement — AWS documentation",
-              "url": "https://docs.aws.amazon.com/whitepapers/latest/overview-deployment-options/immutable-infrastructure.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         }

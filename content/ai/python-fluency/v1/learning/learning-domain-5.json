@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-fluency-learning-2026-09-19-v1",
+  "content_version": "python-fluency-learning-2026-09-19-v2",
   "certification_id": "ai-python-fluency",
   "certification_version": "python-fluency-v1",
   "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python documentation and selected AnyIO/HTTPX docs reviewed 2026-09-19.",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; progressively harder typed code recall provides the scored signal."
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code or table discoveries.",
+    "mastery_note": "Discovery progress is not mastery evidence; progressively harder retrieval and typed coding questions provide the scored signal."
   },
   "source_refs": [
     {
@@ -37,9 +37,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 7,
-    "prompt_count": 21
+    "prompt_count": 7
   },
-  "authoring_notes": "Python Fluency is practical coding retrieval, not beginner trivia or a certification. Questions use progressive recall depth: guided -> recall -> construct -> fluency. Short literals stay on one line where readable, unfamiliar data shapes and intent are explained, and most questions have one meaningful blank.",
+  "authoring_notes": "Updated for the learning-v2 renderer. Code examples are authored as first-class syntax-highlighted code_file reveals with clickable annotations instead of prose strings. Tables are used for contrasts that benefit from progressive reveal.",
   "modules": [
     {
       "id": "domain-5-task-5-1",
@@ -61,52 +61,52 @@
           "concept_ids": [
             "ai.python.threadpool_executor"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.14
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ runs callables concurrently in a pool of OS threads and is commonly useful for overlapping blocking I/O.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "RUN BLOCKING I/O IN A THREAD POOL",
+              "placeholder": "Click the executor and map.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "ThreadPoolExecutor runs callables concurrently in a pool of OS threads and is commonly useful for overlapping blocking I/O."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ ThreadPoolExecutor() as pool: futures = [pool.submit(fetch, url) for url in urls] submits independent calls.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "with ThreadPoolExecutor() as pool: futures = [pool.submit(fetch, url) for url in urls] submits independent calls."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ do not normally provide multi-core speedups for CPU-bound pure Python because of the regular CPython GIL.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Threads do not normally provide multi-core speedups for CPU-bound pure Python because of the regular CPython GIL."
+                "type": "code_file",
+                "filename": "thread_pool.py",
+                "language": "python",
+                "code": "from concurrent.futures import ThreadPoolExecutor\nfrom urllib.request import urlopen\n\nurls = [\"https://example.com\", \"https://python.org\"]\n\nwith ThreadPoolExecutor(max_workers=8) as pool:\n    pages = list(pool.map(urlopen, urls))",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "pool",
+                    "anchor": {
+                      "line": 6,
+                      "text": "ThreadPoolExecutor(max_workers=8)",
+                      "occurrence": 1
+                    },
+                    "title": "Thread worker pool",
+                    "explanation": "Threads are commonly useful for overlapping blocking I/O.",
+                    "required": true
+                  },
+                  {
+                    "id": "map",
+                    "anchor": {
+                      "line": 7,
+                      "text": "pool.map(urlopen, urls)",
+                      "occurrence": 1
+                    },
+                    "title": "Apply one callable across inputs",
+                    "explanation": "map schedules one call per URL and yields results in input order.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "concurrent.futures — ThreadPoolExecutor",
-              "url": "https://docs.python.org/3/library/concurrent.futures.html#threadpoolexecutor"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-5-processpool_executor",
@@ -114,54 +114,54 @@
           "concept_ids": [
             "ai.python.processpool_executor"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "RUN CPU-BOUND WORK IN PROCESSES",
+              "placeholder": "Click the main guard and ProcessPoolExecutor.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "process_pool.py",
+                "language": "python",
+                "code": "from concurrent.futures import ProcessPoolExecutor\n\ndef cpu_work(n):\n    return sum(i * i for i in range(n))\n\nif __name__ == \"__main__\":\n    with ProcessPoolExecutor() as pool:\n        results = list(pool.map(cpu_work, [1_000_000, 2_000_000]))",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "guard",
+                    "anchor": {
+                      "line": 6,
+                      "text": "if __name__ == \"__main__\":",
+                      "occurrence": 1
+                    },
+                    "title": "Safe process entry point",
+                    "explanation": "The main guard supports portable process-spawning behavior.",
+                    "required": true
+                  },
+                  {
+                    "id": "pool",
+                    "anchor": {
+                      "line": 7,
+                      "text": "ProcessPoolExecutor()",
+                      "occurrence": 1
+                    },
+                    "title": "Process worker pool",
+                    "explanation": "Separate processes are appropriate for suitable CPU-bound Python work that can cross process boundaries.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-5-threadpool_executor"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.14
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ runs work in separate processes, allowing CPU-bound Python code to use multiple cores.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "ProcessPoolExecutor runs work in separate processes, allowing CPU-bound Python code to use multiple cores."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ ProcessPoolExecutor() as pool: results = list(pool.map(score, records)) is a high-level parallel map pattern.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "with ProcessPoolExecutor() as pool: results = list(pool.map(score, records)) is a high-level parallel map pattern."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ callables and arguments generally need to be picklable, and __main__ must be importable by worker processes.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Submitted callables and arguments generally need to be picklable, and __main__ must be importable by worker processes."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "concurrent.futures — ProcessPoolExecutor",
-              "url": "https://docs.python.org/3/library/concurrent.futures.html#processpoolexecutor"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-5-futures_as_completed",
@@ -169,54 +169,54 @@
           "concept_ids": [
             "ai.python.futures_as_completed"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "HANDLE RESULTS IN COMPLETION ORDER",
+              "placeholder": "Click submit and as_completed.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "as_completed.py",
+                "language": "python",
+                "code": "from concurrent.futures import ThreadPoolExecutor, as_completed\n\nwith ThreadPoolExecutor() as pool:\n    futures = [pool.submit(fetch, url) for url in urls]\n\n    for future in as_completed(futures):\n        response = future.result()\n        handle(response)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "submit",
+                    "anchor": {
+                      "line": 4,
+                      "text": "pool.submit(fetch, url)",
+                      "occurrence": 1
+                    },
+                    "title": "Create Futures",
+                    "explanation": "submit schedules one call and returns a Future.",
+                    "required": true
+                  },
+                  {
+                    "id": "complete",
+                    "anchor": {
+                      "line": 6,
+                      "text": "as_completed(futures)",
+                      "occurrence": 1
+                    },
+                    "title": "Iterate by completion time",
+                    "explanation": "Futures are yielded as they finish, not in original submission order.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-5-processpool_executor"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.14
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(futures) yields Future objects as each finishes, which is useful when processing results in completion order instead of submission order.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "as_completed(futures) yields Future objects as each finishes, which is useful when processing results in completion order instead of submission order."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ future in as_completed(futures): result = future.result() handles fast results without waiting for earlier slow submissions.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "for future in as_completed(futures): result = future.result() handles fast results without waiting for earlier slow submissions."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ result() re-raises the worker exception; completion order does not imply submission order.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Calling result() re-raises the worker exception; completion order does not imply submission order."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "concurrent.futures.as_completed",
-              "url": "https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.as_completed"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -242,52 +242,52 @@
           "concept_ids": [
             "ai.python.threading_event"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.36
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ is a thread-safe flag used to signal one or many waiting threads that a condition has occurred.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "SIGNAL BETWEEN THREADS",
+              "placeholder": "Click wait and set.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "threading.Event is a thread-safe flag used to signal one or many waiting threads that a condition has occurred."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ loops often use while not stop_event.is_set(): ... and another thread calls stop_event.set().",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "worker loops often use while not stop_event.is_set(): ... and another thread calls stop_event.set()."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ is signaling, not mutual exclusion; use Lock when shared mutable state itself needs serialized access.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Event is signaling, not mutual exclusion; use Lock when shared mutable state itself needs serialized access."
+                "type": "code_file",
+                "filename": "threading_event.py",
+                "language": "python",
+                "code": "from threading import Event, Thread\n\nready = Event()\n\ndef worker():\n    ready.wait()\n    process()\n\nthread = Thread(target=worker)\nthread.start()\n\nprepare()\nready.set()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "wait",
+                    "anchor": {
+                      "line": 6,
+                      "text": "ready.wait()",
+                      "occurrence": 1
+                    },
+                    "title": "Wait for the signal",
+                    "explanation": "The worker blocks until another thread sets the Event.",
+                    "required": true
+                  },
+                  {
+                    "id": "set",
+                    "anchor": {
+                      "line": 13,
+                      "text": "ready.set()",
+                      "occurrence": 1
+                    },
+                    "title": "Publish the signal",
+                    "explanation": "set wakes waiting threads and leaves the Event in the set state.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "threading.Event",
-              "url": "https://docs.python.org/3/library/threading.html#event-objects"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-5-threading_lock",
@@ -295,54 +295,43 @@
           "concept_ids": [
             "ai.python.threading_lock"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "GUARD SHARED MUTATION",
+              "placeholder": "Click with lock.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "threading_lock.py",
+                "language": "python",
+                "code": "from threading import Lock\n\nlock = Lock()\ncounter = 0\n\ndef increment():\n    global counter\n    with lock:\n        counter += 1",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "lock",
+                    "anchor": {
+                      "line": 8,
+                      "text": "with lock",
+                      "occurrence": 1
+                    },
+                    "title": "Critical section",
+                    "explanation": "Only one thread at a time can hold this lock and update counter.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-5-threading_event"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.36
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ provides mutual exclusion between threads; a with lock: block acquires and releases it safely.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "threading.Lock provides mutual exclusion between threads; a with lock: block acquires and releases it safely."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ with lock: around the smallest shared-state critical section that must be atomic across threads.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use with lock: around the smallest shared-state critical section that must be atomic across threads."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ Lock does not make compound operations automatically atomic unless those operations actually run while the lock is held.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A Lock does not make compound operations automatically atomic unless those operations actually run while the lock is held."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "threading.Lock",
-              "url": "https://docs.python.org/3/library/threading.html#lock-objects"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-5-queue_queue",
@@ -350,54 +339,76 @@
           "concept_ids": [
             "ai.python.queue_queue"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "USE A THREAD-SAFE WORK QUEUE",
+              "placeholder": "Click Queue, put, get, and task_done.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "thread_queue.py",
+                "language": "python",
+                "code": "from queue import Queue\n\nwork = Queue(maxsize=100)\n\nwork.put(\"job-1\")\nitem = work.get()\ntry:\n    process(item)\nfinally:\n    work.task_done()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "queue",
+                    "anchor": {
+                      "line": 3,
+                      "text": "Queue(maxsize=100)",
+                      "occurrence": 1
+                    },
+                    "title": "Bounded queue",
+                    "explanation": "The queue coordinates threads and can apply backpressure.",
+                    "required": true
+                  },
+                  {
+                    "id": "put",
+                    "anchor": {
+                      "line": 5,
+                      "text": "work.put(\"job-1\")",
+                      "occurrence": 1
+                    },
+                    "title": "Enqueue work",
+                    "explanation": "put waits if necessary until space exists.",
+                    "required": true
+                  },
+                  {
+                    "id": "get",
+                    "anchor": {
+                      "line": 6,
+                      "text": "work.get()",
+                      "occurrence": 1
+                    },
+                    "title": "Dequeue work",
+                    "explanation": "get waits until an item is available.",
+                    "required": true
+                  },
+                  {
+                    "id": "done",
+                    "anchor": {
+                      "line": 10,
+                      "text": "work.task_done()",
+                      "occurrence": 1
+                    },
+                    "title": "Mark work finished",
+                    "explanation": "task_done pairs with get so join can track unfinished tasks.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-5-threading_lock"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.36
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ is a synchronized producer-consumer queue for threads and supports blocking put/get plus task_done/join tracking.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "queue.Queue is a synchronized producer-consumer queue for threads and supports blocking put/get plus task_done/join tracking."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ threads usually call item = q.get(), then q.task_done() in a finally block after processing.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "worker threads usually call item = q.get(), then q.task_done() in a finally block after processing."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ is for thread coordination; asyncio.Queue is the corresponding event-loop-oriented primitive.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "queue.Queue is for thread coordination; asyncio.Queue is the corresponding event-loop-oriented primitive."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "queue — synchronized queue",
-              "url": "https://docs.python.org/3/library/queue.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -421,52 +432,52 @@
           "concept_ids": [
             "ai.python.multiprocessing_context"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.58
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(name) lets code explicitly choose a process start method instead of depending on a platform/version default.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "CHOOSE A START CONTEXT EXPLICITLY",
+              "placeholder": "Click get_context and ctx.Process.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "multiprocessing.get_context(name) lets code explicitly choose a process start method instead of depending on a platform/version default."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ = multiprocessing.get_context('spawn') can be passed to APIs that accept an mp_context.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "ctx = multiprocessing.get_context('spawn') can be passed to APIs that accept an mp_context."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________-method defaults differ across platforms and changed again on POSIX in Python 3.14, so code requiring a specific method should request it explicitly.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Start-method defaults differ across platforms and changed again on POSIX in Python 3.14, so code requiring a specific method should request it explicitly."
+                "type": "code_file",
+                "filename": "mp_context.py",
+                "language": "python",
+                "code": "import multiprocessing as mp\n\ndef worker(value):\n    print(value)\n\nif __name__ == \"__main__\":\n    ctx = mp.get_context(\"spawn\")\n    process = ctx.Process(target=worker, args=(42,))\n    process.start()\n    process.join()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "ctx",
+                    "anchor": {
+                      "line": 7,
+                      "text": "mp.get_context(\"spawn\")",
+                      "occurrence": 1
+                    },
+                    "title": "Select a start-method context",
+                    "explanation": "The context provides multiprocessing primitives using the requested start method where supported.",
+                    "required": true
+                  },
+                  {
+                    "id": "proc",
+                    "anchor": {
+                      "line": 8,
+                      "text": "ctx.Process",
+                      "occurrence": 1
+                    },
+                    "title": "Create through that context",
+                    "explanation": "The Process uses the selected context rather than an implicit global default.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "multiprocessing contexts",
-              "url": "https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         }
       ]
     }

@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-fluency-learning-2026-09-19-v1",
+  "content_version": "python-fluency-learning-2026-09-19-v2",
   "certification_id": "ai-python-fluency",
   "certification_version": "python-fluency-v1",
   "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python documentation and selected AnyIO/HTTPX docs reviewed 2026-09-19.",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; progressively harder typed code recall provides the scored signal."
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code or table discoveries.",
+    "mastery_note": "Discovery progress is not mastery evidence; progressively harder retrieval and typed coding questions provide the scored signal."
   },
   "source_refs": [
     {
@@ -33,9 +33,9 @@
     ],
     "module_count": 2,
     "knowledge_node_count": 4,
-    "prompt_count": 12
+    "prompt_count": 4
   },
-  "authoring_notes": "Python Fluency is practical coding retrieval, not beginner trivia or a certification. Questions use progressive recall depth: guided -> recall -> construct -> fluency. Short literals stay on one line where readable, unfamiliar data shapes and intent are explained, and most questions have one meaningful blank.",
+  "authoring_notes": "Updated for the learning-v2 renderer. Code examples are authored as first-class syntax-highlighted code_file reveals with clickable annotations instead of prose strings. Tables are used for contrasts that benefit from progressive reveal.",
   "modules": [
     {
       "id": "domain-11-task-11-1",
@@ -56,52 +56,41 @@
           "concept_ids": [
             "ai.python.py314_map_strict"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.14
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.14 added strict= to map(); with multiple iterables, strict=True raises ValueError if their lengths differ.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "REQUIRE PARALLEL ITERABLES TO MATCH",
+              "placeholder": "Click strict=True.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Python 3.14 added strict= to map(); with multiple iterables, strict=True raises ValueError if their lengths differ."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________(combine, left, right, strict=True) is useful when positional correspondence is required and silent truncation would be a bug.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "map(combine, left, right, strict=True) is useful when positional correspondence is required and silent truncation would be a bug."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ remains lazy, so a mismatch is detected only as the mapped iterator is consumed.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "map remains lazy, so a mismatch is detected only as the mapped iterator is consumed."
+                "type": "code_file",
+                "filename": "map_strict.py",
+                "language": "python",
+                "code": "names = [\"Ada\", \"Grace\"]\nscores = [98, 95]\n\nlabels = list(\n    map(lambda name, score: f\"{name}: {score}\", names, scores, strict=True)\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "strict",
+                    "anchor": {
+                      "line": 5,
+                      "text": "strict=True",
+                      "occurrence": 1
+                    },
+                    "title": "Validate iterable lengths",
+                    "explanation": "Unequal input lengths raise ValueError instead of silently stopping at the shortest.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Built-in functions — map",
-              "url": "https://docs.python.org/3.14/library/functions.html#map"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-11-py314_partial_placeholder",
@@ -109,54 +98,54 @@
           "concept_ids": [
             "ai.python.py314_partial_placeholder"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "LEAVE A HOLE IN POSITIONAL BINDING",
+              "placeholder": "Click Placeholder and the placeholder slot.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "partial_placeholder.py",
+                "language": "python",
+                "code": "from functools import partial, Placeholder as _\n\ndef format_message(prefix, value, suffix):\n    return f\"{prefix}{value}{suffix}\"\n\nwrap_error = partial(format_message, \"[ERROR] \", _, \"!\")\nmessage = wrap_error(\"disk full\")",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "placeholder",
+                    "anchor": {
+                      "line": 1,
+                      "text": "Placeholder as _",
+                      "occurrence": 1
+                    },
+                    "title": "Placeholder sentinel",
+                    "explanation": "Placeholder marks a positional slot that a future call must fill.",
+                    "required": true
+                  },
+                  {
+                    "id": "partial",
+                    "anchor": {
+                      "line": 6,
+                      "text": "partial(format_message, \"[ERROR] \", _, \"!\")",
+                      "occurrence": 1
+                    },
+                    "title": "Bind around the hole",
+                    "explanation": "The prefix and suffix are fixed while the middle value stays open.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-11-py314_map_strict"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.14
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.14 added functools.Placeholder so partial() can reserve non-leading positional argument positions for later calls.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Python 3.14 added functools.Placeholder so partial() can reserve non-leading positional argument positions for later calls."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________(str.replace, Placeholder, 'old', 'new') creates a callable that still expects the original string as its first positional input.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "partial(str.replace, Placeholder, 'old', 'new') creates a callable that still expects the original string as its first positional input."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ Placeholder must be filled at call time, and Placeholder cannot be supplied as a keyword argument.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Every Placeholder must be filled at call time, and Placeholder cannot be supplied as a keyword argument."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "functools.Placeholder",
-              "url": "https://docs.python.org/3.14/library/functools.html#functools.Placeholder"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -181,52 +170,63 @@
           "concept_ids": [
             "ai.python.py314_tstring"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.36
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.14 t-strings use a t prefix like f-strings but evaluate to string.templatelib.Template objects that preserve static and interpolated parts for custom processing.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "KEEP TEMPLATE STRUCTURE",
+              "placeholder": "Click the t-string, strings, and interpolations.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Python 3.14 t-strings use a t prefix like f-strings but evaluate to string.templatelib.Template objects that preserve static and interpolated parts for custom processing."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ = t'Hello {name}' creates a Template rather than immediately producing a str.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "template = t'Hello {name}' creates a Template rather than immediately producing a str."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________-strings are not the older string.Template $-substitution API; they are a separate Python 3.14 language feature.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "t-strings are not the older string.Template $-substitution API; they are a separate Python 3.14 language feature."
+                "type": "code_file",
+                "filename": "template_string.py",
+                "language": "python",
+                "code": "name = \"Ada\"\ntemplate = t\"Hello, {name}!\"\n\nprint(template.strings)\nprint(template.interpolations)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "tstring",
+                    "anchor": {
+                      "line": 2,
+                      "text": "t\"Hello, {name}!\"",
+                      "occurrence": 1
+                    },
+                    "title": "Template string literal",
+                    "explanation": "The template preserves literal segments and interpolation objects instead of immediately becoming one formatted str.",
+                    "required": true
+                  },
+                  {
+                    "id": "strings",
+                    "anchor": {
+                      "line": 4,
+                      "text": "template.strings",
+                      "occurrence": 1
+                    },
+                    "title": "Static segments",
+                    "explanation": "The template exposes its literal string parts.",
+                    "required": true
+                  },
+                  {
+                    "id": "interps",
+                    "anchor": {
+                      "line": 5,
+                      "text": "template.interpolations",
+                      "occurrence": 1
+                    },
+                    "title": "Interpolation objects",
+                    "explanation": "Structured interpolation data can be processed by another API.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "What's new in Python 3.14 — t-strings",
-              "url": "https://docs.python.org/3/whatsnew/3.14.html#pep-750-template-string-literals"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-11-py314_interpreter_pool",
@@ -234,54 +234,54 @@
           "concept_ids": [
             "ai.python.py314_interpreter_pool"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "RUN WORK IN ISOLATED INTERPRETERS",
+              "placeholder": "Click InterpreterPoolExecutor and map.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "interpreter_pool.py",
+                "language": "python",
+                "code": "from concurrent.futures import InterpreterPoolExecutor\n\ndef square(value):\n    return value * value\n\nwith InterpreterPoolExecutor(max_workers=4) as pool:\n    results = list(pool.map(square, range(8)))",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "executor",
+                    "anchor": {
+                      "line": 6,
+                      "text": "InterpreterPoolExecutor(max_workers=4)",
+                      "occurrence": 1
+                    },
+                    "title": "Interpreter worker pool",
+                    "explanation": "Workers run in separate interpreters, providing isolation and true multi-core parallelism for suitable work.",
+                    "required": true
+                  },
+                  {
+                    "id": "map",
+                    "anchor": {
+                      "line": 7,
+                      "text": "pool.map(square, range(8))",
+                      "occurrence": 1
+                    },
+                    "title": "Submit work",
+                    "explanation": "The executor applies square across inputs; values cross interpreter boundaries under isolation/serialization constraints.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-11-py314_tstring"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.36
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ 3.14 added concurrent.futures.InterpreterPoolExecutor; each worker has an isolated interpreter and its own GIL, enabling true multi-core execution with explicit isolation tradeoffs.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Python 3.14 added concurrent.futures.InterpreterPoolExecutor; each worker has an isolated interpreter and its own GIL, enabling true multi-core execution with explicit isolation tradeoffs."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ InterpreterPoolExecutor() as pool: results = list(pool.map(work, items)) uses the familiar Executor interface.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "with InterpreterPoolExecutor() as pool: results = list(pool.map(work, items)) uses the familiar Executor interface."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ interpreters cannot freely share mutable runtime state; arguments/results cross interpreter boundaries through supported serialization mechanisms.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Worker interpreters cannot freely share mutable runtime state; arguments/results cross interpreter boundaries through supported serialization mechanisms."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "InterpreterPoolExecutor",
-              "url": "https://docs.python.org/3.14/library/concurrent.futures.html#interpreterpoolexecutor"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

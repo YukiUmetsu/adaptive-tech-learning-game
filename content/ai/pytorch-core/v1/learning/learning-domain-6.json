@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "pytorch-core-learning-2026-09-19-v1",
+  "content_version": "pytorch-core-learning-2026-09-19-v2",
   "certification_id": "ai-pytorch-core",
   "certification_version": "pytorch-core-v1",
   "exam_guide_revision": "Not a certification. PyTorch stable documentation reviewed 2026-09-19 (current docs identified as 2.14).",
@@ -11,7 +11,7 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code and table discoveries.",
     "mastery_note": "Discovery progress is not mastery evidence; typed recall and coding questions provide the scored retrieval signal."
   },
   "source_refs": [
@@ -43,9 +43,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 9,
-    "prompt_count": 27
+    "prompt_count": 14
   },
-  "authoring_notes": "This is a practical learning track, not a certification. Domain weights are curriculum emphasis weights used for adaptive selection. Learning placeholders are exact cloze versions of their revealed text. Reviewed against PyTorch 2.14-era official documentation and the app's structured typed-fill code/table renderer on 2026-09-19.",
+  "authoring_notes": "Updated for the learning-v2 renderer. PyTorch code is displayed as syntax-highlighted code_file material with clickable annotations instead of inline prose. Progressive tables are used for shape reasoning and concept comparisons while preserving the existing curriculum scope.",
   "modules": [
     {
       "id": "domain-6-task-6-1",
@@ -66,52 +66,63 @@
           "concept_ids": [
             "ai.pytorch.accelerator_device"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.16
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Current PyTorch provides `__________` APIs to query an available accelerator such as CUDA, MPS, XPU, or other supported backends.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "SELECT AN AVAILABLE ACCELERATOR OR CPU",
+              "placeholder": "Click the accelerator availability check and fallback.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Current PyTorch provides `torch.accelerator` APIs to query an available accelerator such as CUDA, MPS, XPU, or other supported backends."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "A current quickstart pattern uses the available accelerator when present and otherwise __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A current quickstart pattern uses the available accelerator when present and otherwise falls back to CPU."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Selecting a device is only part of the job; model parameters and input tensors must __________ to that device.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Selecting a device is only part of the job; model parameters and input tensors must also be moved to that device."
+                "type": "code_file",
+                "filename": "select_device.py",
+                "language": "python",
+                "code": "import torch\n\nif torch.accelerator.is_available():\n    device = torch.accelerator.current_accelerator()\nelse:\n    device = torch.device(\"cpu\")\n\nprint(device)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "available",
+                    "anchor": {
+                      "line": 3,
+                      "text": "torch.accelerator.is_available()",
+                      "occurrence": 1
+                    },
+                    "title": "Check accelerator availability",
+                    "explanation": "Current PyTorch accelerator APIs can query whether a supported accelerator backend is available.",
+                    "required": true
+                  },
+                  {
+                    "id": "current",
+                    "anchor": {
+                      "line": 4,
+                      "text": "torch.accelerator.current_accelerator()",
+                      "occurrence": 1
+                    },
+                    "title": "Get the current accelerator",
+                    "explanation": "The accelerator API abstracts over supported accelerator backends.",
+                    "required": true
+                  },
+                  {
+                    "id": "cpu",
+                    "anchor": {
+                      "line": 6,
+                      "text": "torch.device(\"cpu\")",
+                      "occurrence": 1
+                    },
+                    "title": "CPU fallback",
+                    "explanation": "A CPU device keeps the same .to(device) workflow when no accelerator is available.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Selecting an accelerator — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/beginner/introyt/tensors_deeper_tutorial.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "source_refs": []
         },
         {
           "id": "domain-6-move-model-data",
@@ -119,54 +130,76 @@
           "concept_ids": [
             "ai.pytorch.move_model_data"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "PUT MODEL AND BATCH ON COMPATIBLE DEVICES",
+              "placeholder": "Click model.to and the input/target transfers.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "move_model_data.py",
+                "language": "python",
+                "code": "model = model.to(device)\n\nfor X, y in loader:\n    X = X.to(device)\n    y = y.to(device)\n\n    logits = model(X)\n    loss = loss_fn(logits, y)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "model",
+                    "anchor": {
+                      "line": 1,
+                      "text": "model.to(device)",
+                      "occurrence": 1
+                    },
+                    "title": "Move registered model state",
+                    "explanation": "model.to moves registered Parameters and buffers to the requested device.",
+                    "required": true
+                  },
+                  {
+                    "id": "x",
+                    "anchor": {
+                      "line": 4,
+                      "text": "X = X.to(device)",
+                      "occurrence": 1
+                    },
+                    "title": "Move model inputs",
+                    "explanation": "Input tensors need their own transfer before they interact with accelerator-resident model parameters.",
+                    "required": true
+                  },
+                  {
+                    "id": "y",
+                    "anchor": {
+                      "line": 5,
+                      "text": "y = y.to(device)",
+                      "occurrence": 1
+                    },
+                    "title": "Move targets when required",
+                    "explanation": "Loss computation generally needs its tensor operands on compatible devices.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "mismatch",
+              "kind": "not_this",
+              "label": "MOVING ONLY ONE SIDE CAUSES ERRORS",
+              "placeholder": "What common failure happens if the model is on an accelerator but the batch remains on CPU?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Operations between tensors on incompatible devices commonly fail with a device-mismatch error."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-6-accelerator-device"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.16
+            "x": 0.35,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` moves registered model parameters and buffers, while input tensors usually need their own `.to(device)` call.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`model.to(device)` moves registered model parameters and buffers, while input tensors usually need their own `.to(device)` call."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Move __________ to compatible devices before running operations between them.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Move both model and batch tensors to compatible devices before running operations between them."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Moving only the model or only the data commonly causes __________ errors.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Moving only the model or only the data commonly causes device-mismatch errors."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Move model and data together — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/beginner/basics/buildmodel_tutorial.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -192,52 +225,52 @@
           "concept_ids": [
             "ai.pytorch.save_state_dict"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.38
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "A recommended PyTorch pattern saves `__________` rather than serializing the entire Python model object.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "SAVE THE MODEL STATE DICTIONARY",
+              "placeholder": "Click state_dict and torch.save.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A recommended PyTorch pattern saves `model.state_dict()` rather than serializing the entire Python model object."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Use `__________(model.state_dict(), path)` to persist model weights and buffers.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use `torch.save(model.state_dict(), path)` to persist model weights and buffers."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Saving only the state dict means the model __________ in code before loading those weights.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Saving only the state dict means the model architecture must be recreated in code before loading those weights."
+                "type": "code_file",
+                "filename": "save_weights.py",
+                "language": "python",
+                "code": "import torch\n\nweights = model.state_dict()\ntorch.save(weights, \"model_weights.pt\")",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "state",
+                    "anchor": {
+                      "line": 3,
+                      "text": "model.state_dict()",
+                      "occurrence": 1
+                    },
+                    "title": "Collect registered model state",
+                    "explanation": "The state dict contains registered Parameters and persistent buffers.",
+                    "required": true
+                  },
+                  {
+                    "id": "save",
+                    "anchor": {
+                      "line": 4,
+                      "text": "torch.save(weights, \"model_weights.pt\")",
+                      "occurrence": 1
+                    },
+                    "title": "Persist the state data",
+                    "explanation": "Saving a state dict is the recommended weights-oriented pattern instead of serializing the entire Python model object.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Saving model weights — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/beginner/basics/saveloadrun_tutorial.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "source_refs": []
         },
         {
           "id": "domain-6-load-state-dict",
@@ -245,54 +278,76 @@
           "concept_ids": [
             "ai.pytorch.load_state_dict"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "RECREATE ARCHITECTURE, THEN LOAD WEIGHTS",
+              "placeholder": "Click torch.load(weights_only=True) and load_state_dict.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "load_weights.py",
+                "language": "python",
+                "code": "import torch\n\nmodel = Classifier()\n\nstate = torch.load(\n    \"model_weights.pt\",\n    weights_only=True,\n    map_location=\"cpu\",\n)\n\nmodel.load_state_dict(state)\nmodel.eval()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "load",
+                    "anchor": {
+                      "line": 5,
+                      "text": "torch.load(",
+                      "occurrence": 1
+                    },
+                    "title": "Load the saved mapping",
+                    "explanation": "torch.load reads the serialized state data. weights_only=True limits loading to weights-oriented objects and is a recommended safety practice.",
+                    "required": true
+                  },
+                  {
+                    "id": "weights",
+                    "anchor": {
+                      "line": 7,
+                      "text": "weights_only=True",
+                      "occurrence": 1
+                    },
+                    "title": "Weights-oriented loading",
+                    "explanation": "This narrows what the loader is allowed to reconstruct from the serialized file.",
+                    "required": true
+                  },
+                  {
+                    "id": "state",
+                    "anchor": {
+                      "line": 11,
+                      "text": "model.load_state_dict(state)",
+                      "occurrence": 1
+                    },
+                    "title": "Restore registered module state",
+                    "explanation": "The model architecture must already exist before the state mapping can be loaded.",
+                    "required": true
+                  },
+                  {
+                    "id": "eval",
+                    "anchor": {
+                      "line": 12,
+                      "text": "model.eval()",
+                      "occurrence": 1
+                    },
+                    "title": "Choose the next operating mode explicitly",
+                    "explanation": "Loading a state dict does not automatically switch the model to evaluation mode.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-6-save-state-dict"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.38
+            "x": 0.35,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "To restore a state dict, recreate the model architecture and call `model.__________(...)` with the loaded mapping.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "To restore a state dict, recreate the model architecture and call `model.load_state_dict(...)` with the loaded mapping."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "When loading a weights file, `torch.load(..., __________)` limits loading to weights-oriented objects and is a recommended safety practice.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "When loading a weights file, `torch.load(..., weights_only=True)` limits loading to weights-oriented objects and is a recommended safety practice."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Loading a state dict __________ `model.eval()`; choose train or eval mode explicitly for the next use.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Loading a state dict does not automatically call `model.eval()`; choose train or eval mode explicitly for the next use."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Loading model weights — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/beginner/basics/saveloadrun_tutorial.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-6-training-checkpoint",
@@ -300,54 +355,87 @@
           "concept_ids": [
             "ai.pytorch.training_checkpoint"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "SAVE ENOUGH STATE TO RESUME TRAINING",
+              "placeholder": "Click model, optimizer, epoch, and scheduler state.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "training_checkpoint.py",
+                "language": "python",
+                "code": "checkpoint = {\n    \"epoch\": epoch,\n    \"model\": model.state_dict(),\n    \"optimizer\": optimizer.state_dict(),\n    \"scheduler\": scheduler.state_dict(),\n}\n\ntorch.save(checkpoint, \"checkpoint.pt\")",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "epoch",
+                    "anchor": {
+                      "line": 2,
+                      "text": "\"epoch\": epoch",
+                      "occurrence": 1
+                    },
+                    "title": "Training position",
+                    "explanation": "Store enough progress information to resume at the correct epoch or step.",
+                    "required": true
+                  },
+                  {
+                    "id": "model",
+                    "anchor": {
+                      "line": 3,
+                      "text": "\"model\": model.state_dict()",
+                      "occurrence": 1
+                    },
+                    "title": "Model state",
+                    "explanation": "The current learned parameters and persistent buffers must be restored.",
+                    "required": true
+                  },
+                  {
+                    "id": "optimizer",
+                    "anchor": {
+                      "line": 4,
+                      "text": "\"optimizer\": optimizer.state_dict()",
+                      "occurrence": 1
+                    },
+                    "title": "Optimizer state",
+                    "explanation": "Momentum and adaptive optimizers maintain internal state beyond model weights.",
+                    "required": true
+                  },
+                  {
+                    "id": "scheduler",
+                    "anchor": {
+                      "line": 5,
+                      "text": "\"scheduler\": scheduler.state_dict()",
+                      "occurrence": 1
+                    },
+                    "title": "Scheduler state",
+                    "explanation": "If the learning-rate schedule has internal progress, save it for a seamless resume.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "inference",
+              "kind": "not_this",
+              "label": "WEIGHTS-ONLY IS DIFFERENT FROM RESUMABLE TRAINING",
+              "placeholder": "When are model weights alone insufficient?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Model weights can be enough for inference, but a seamless training resume may also require optimizer, scheduler, scaler, epoch/step, and other experiment state."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-6-load-state-dict"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.38
+            "x": 0.58,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "A resumable training checkpoint commonly stores the model state dict, __________, current epoch or step, and other training state you need to continue.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A resumable training checkpoint commonly stores the model state dict, optimizer state dict, current epoch or step, and other training state you need to continue."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Optimizer state matters because adaptive optimizers and momentum methods keep __________ beyond model weights.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Optimizer state matters because adaptive optimizers and momentum methods keep internal state beyond model weights."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Saving only model weights is enough for inference but may __________ a seamless training resume.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Saving only model weights is enough for inference but may not reproduce a seamless training resume."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Training checkpoints — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/recipes/recipes/what_is_state_dict.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -374,52 +462,63 @@
           "concept_ids": [
             "ai.pytorch.autocast"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.6
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` runs eligible operations in selected lower precision while keeping other operations in higher precision as appropriate.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "PUT FORWARD AND LOSS INSIDE AUTOCAST",
+              "placeholder": "Click autocast and notice that backward stays outside the context.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "`torch.autocast` runs eligible operations in selected lower precision while keeping other operations in higher precision as appropriate."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Wrap the __________ computation in an autocast context when using automatic mixed precision.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Wrap the forward pass and loss computation in an autocast context when using automatic mixed precision."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ itself inside autocast; backward uses the dtypes chosen for the corresponding forward operations.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not place backward itself inside autocast; backward uses the dtypes chosen for the corresponding forward operations."
+                "type": "code_file",
+                "filename": "autocast.py",
+                "language": "python",
+                "code": "optimizer.zero_grad()\n\nwith torch.autocast(\n    device_type=\"cuda\",\n    dtype=torch.float16,\n):\n    logits = model(X)\n    loss = loss_fn(logits, y)\n\nloss.backward()\noptimizer.step()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "autocast",
+                    "anchor": {
+                      "line": 3,
+                      "text": "with torch.autocast(",
+                      "occurrence": 1
+                    },
+                    "title": "Automatic mixed precision context",
+                    "explanation": "Eligible forward/loss operations use selected lower precision while other operations remain in higher precision as appropriate.",
+                    "required": true
+                  },
+                  {
+                    "id": "loss",
+                    "anchor": {
+                      "line": 8,
+                      "text": "loss = loss_fn(logits, y)",
+                      "occurrence": 1
+                    },
+                    "title": "Loss computed inside autocast",
+                    "explanation": "The forward pass and loss computation belong inside the autocast region.",
+                    "required": true
+                  },
+                  {
+                    "id": "backward",
+                    "anchor": {
+                      "line": 10,
+                      "text": "loss.backward()",
+                      "occurrence": 1
+                    },
+                    "title": "Backward outside autocast",
+                    "explanation": "Do not put backward itself inside autocast; backward uses dtypes associated with the recorded forward operations.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Automatic mixed precision autocast — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/recipes/recipes/amp_recipe.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "source_refs": []
         },
         {
           "id": "domain-6-grad-scaler",
@@ -427,54 +526,87 @@
           "concept_ids": [
             "ai.pytorch.grad_scaler"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "SCALE LOSS, STEP THROUGH THE SCALER, THEN UPDATE",
+              "placeholder": "Click GradScaler and the three scaler operations.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "grad_scaler.py",
+                "language": "python",
+                "code": "scaler = torch.amp.GradScaler(\"cuda\")\n\noptimizer.zero_grad()\n\nwith torch.autocast(device_type=\"cuda\", dtype=torch.float16):\n    logits = model(X)\n    loss = loss_fn(logits, y)\n\nscaler.scale(loss).backward()\nscaler.step(optimizer)\nscaler.update()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "scaler",
+                    "anchor": {
+                      "line": 1,
+                      "text": "torch.amp.GradScaler(\"cuda\")",
+                      "occurrence": 1
+                    },
+                    "title": "Create a CUDA gradient scaler",
+                    "explanation": "GradScaler helps reduce float16 gradient underflow during mixed-precision training.",
+                    "required": true
+                  },
+                  {
+                    "id": "scale",
+                    "anchor": {
+                      "line": 9,
+                      "text": "scaler.scale(loss).backward()",
+                      "occurrence": 1
+                    },
+                    "title": "Scale before backward",
+                    "explanation": "The scaler multiplies the loss so small float16 gradients are less likely to underflow.",
+                    "required": true
+                  },
+                  {
+                    "id": "step",
+                    "anchor": {
+                      "line": 10,
+                      "text": "scaler.step(optimizer)",
+                      "occurrence": 1
+                    },
+                    "title": "Conditionally perform optimizer step",
+                    "explanation": "The scaler unscales/checks gradients as part of the step workflow and can skip invalid updates.",
+                    "required": true
+                  },
+                  {
+                    "id": "update",
+                    "anchor": {
+                      "line": 11,
+                      "text": "scaler.update()",
+                      "occurrence": 1
+                    },
+                    "title": "Update the scaling factor",
+                    "explanation": "The scaler adjusts its scale for subsequent iterations.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "scope",
+              "kind": "not_this",
+              "label": "GRADSCALER IS NOT FOR EVERY MODE",
+              "placeholder": "When is GradScaler unnecessary?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "It is not required for ordinary full-precision training and is not needed for inference-only autocast."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-6-autocast"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.6
+            "x": 0.35,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`torch.amp.__________` scales the loss and gradients to reduce float16 gradient underflow during mixed-precision training.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`torch.amp.GradScaler` scales the loss and gradients to reduce float16 gradient underflow during mixed-precision training."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "A common CUDA sequence is `scaler.scale(loss).backward()`, `scaler.step(optimizer)`, then `__________`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A common CUDA sequence is `scaler.scale(loss).backward()`, `scaler.step(optimizer)`, then `scaler.update()`."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "GradScaler is not required for ordinary full-precision training and is __________ autocast.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "GradScaler is not required for ordinary full-precision training and is not needed for inference-only autocast."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Gradient scaling for float16 AMP — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/recipes/recipes/amp_recipe.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-6-torch-compile",
@@ -482,54 +614,65 @@
           "concept_ids": [
             "ai.pytorch.torch_compile"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "COMPILE, THEN CALL NORMALLY",
+              "placeholder": "Click torch.compile and the ordinary model call.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "torch_compile.py",
+                "language": "python",
+                "code": "import torch\n\ncompiled_model = torch.compile(model)\n\nfor X, y in loader:\n    logits = compiled_model(X)\n    loss = loss_fn(logits, y)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "compile",
+                    "anchor": {
+                      "line": 3,
+                      "text": "torch.compile(model)",
+                      "occurrence": 1
+                    },
+                    "title": "Wrap the model with compilation",
+                    "explanation": "torch.compile returns an optimized callable backed by PyTorch compilation infrastructure.",
+                    "required": true
+                  },
+                  {
+                    "id": "call",
+                    "anchor": {
+                      "line": 6,
+                      "text": "compiled_model(X)",
+                      "occurrence": 1
+                    },
+                    "title": "Use it like the original model",
+                    "explanation": "After compilation, call the compiled model through the normal Python interface.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "measure",
+              "kind": "not_this",
+              "label": "COMPILE PERFORMANCE MUST BE MEASURED",
+              "placeholder": "Why can compile fail to improve a workload?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Compilation can add startup overhead and graph breaks, so measure end-to-end performance rather than assuming every workload becomes faster."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-6-grad-scaler"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.6
+            "x": 0.58,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` returns an optimized callable around a model or Python function using PyTorch compilation infrastructure.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`torch.compile` returns an optimized callable around a model or Python function using PyTorch compilation infrastructure."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "A simple entry point is `compiled_model = __________` and then calling the compiled model normally.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A simple entry point is `compiled_model = torch.compile(model)` and then calling the compiled model normally."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Compilation can add startup overhead and graph breaks, so __________ end-to-end performance instead of assuming every workload becomes faster.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Compilation can add startup overhead and graph breaks, so measure end-to-end performance instead of assuming every workload becomes faster."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "`torch.compile` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.compile.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-6-reproducibility",
@@ -537,54 +680,76 @@
           "concept_ids": [
             "ai.pytorch.reproducibility"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "RECORD THE EXPERIMENT CONTROLS",
+              "placeholder": "Click the seeds and deterministic-algorithm setting.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "reproducibility.py",
+                "language": "python",
+                "code": "import random\nimport torch\n\nseed = 42\n\nrandom.seed(seed)\ntorch.manual_seed(seed)\n\ntorch.use_deterministic_algorithms(True)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "pyseed",
+                    "anchor": {
+                      "line": 6,
+                      "text": "random.seed(seed)",
+                      "occurrence": 1
+                    },
+                    "title": "Seed Python's RNG",
+                    "explanation": "Reproducible experiments may need multiple random-number generators seeded, not only PyTorch.",
+                    "required": true
+                  },
+                  {
+                    "id": "torchseed",
+                    "anchor": {
+                      "line": 7,
+                      "text": "torch.manual_seed(seed)",
+                      "occurrence": 1
+                    },
+                    "title": "Seed PyTorch RNGs",
+                    "explanation": "This starts PyTorch random-number generation from a known seed.",
+                    "required": true
+                  },
+                  {
+                    "id": "deterministic",
+                    "anchor": {
+                      "line": 9,
+                      "text": "torch.use_deterministic_algorithms(True)",
+                      "occurrence": 1
+                    },
+                    "title": "Request deterministic algorithms",
+                    "explanation": "Where supported, PyTorch can require deterministic algorithm choices rather than nondeterministic alternatives.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "limit",
+              "kind": "not_this",
+              "label": "EXACT REPRODUCIBILITY HAS LIMITS",
+              "placeholder": "Is bit-for-bit reproducibility guaranteed across releases and platforms?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "No. Exact reproducibility is not guaranteed across PyTorch releases, platforms, or all CPU and accelerator operations. Record software versions, data splits, seeds, and hyperparameters when comparing experiments."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-6-torch-compile"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.6
+            "x": 0.81,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Reproducible PyTorch experiments often begin by __________ random generators, while stricter determinism may require additional backend or algorithm settings.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Reproducible PyTorch experiments often begin by seeding random generators, while stricter determinism may require additional backend or algorithm settings."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________, software versions, data splits, and hyperparameters when you need to compare experiments reliably.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Record seeds, software versions, data splits, and hyperparameters when you need to compare experiments reliably."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Exact reproducibility is __________ across PyTorch releases, platforms, or all CPU and accelerator operations.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Exact reproducibility is not guaranteed across PyTorch releases, platforms, or all CPU and accelerator operations."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Reproducibility and determinism — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/notes/randomness.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

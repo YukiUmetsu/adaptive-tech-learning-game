@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-fluency-learning-2026-09-19-v1",
+  "content_version": "python-fluency-learning-2026-09-19-v2",
   "certification_id": "ai-python-fluency",
   "certification_version": "python-fluency-v1",
   "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python documentation and selected AnyIO/HTTPX docs reviewed 2026-09-19.",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; progressively harder typed code recall provides the scored signal."
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code or table discoveries.",
+    "mastery_note": "Discovery progress is not mastery evidence; progressively harder retrieval and typed coding questions provide the scored signal."
   },
   "source_refs": [
     {
@@ -40,9 +40,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 10,
-    "prompt_count": 30
+    "prompt_count": 10
   },
-  "authoring_notes": "Python Fluency is practical coding retrieval, not beginner trivia or a certification. Questions use progressive recall depth: guided -> recall -> construct -> fluency. Short literals stay on one line where readable, unfamiliar data shapes and intent are explained, and most questions have one meaningful blank.",
+  "authoring_notes": "Updated for the learning-v2 renderer. Code examples are authored as first-class syntax-highlighted code_file reveals with clickable annotations instead of prose strings. Tables are used for contrasts that benefit from progressive reveal.",
   "modules": [
     {
       "id": "domain-6-task-6-1",
@@ -65,52 +65,41 @@
           "concept_ids": [
             "ai.python.itertools_chain"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.14
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ lazily presents multiple iterables as one continuous iterator without first concatenating them into a new list.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "ITERATE MULTIPLE ITERABLES AS ONE",
+              "placeholder": "Click chain.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "itertools.chain lazily presents multiple iterables as one continuous iterator without first concatenating them into a new list."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ item in chain(primary, fallback): ... consumes primary then fallback.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "for item in chain(primary, fallback): ... consumes primary then fallback."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________(groups) is preferable when the iterables themselves already live in another iterable.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "chain.from_iterable(groups) is preferable when the iterables themselves already live in another iterable."
+                "type": "code_file",
+                "filename": "chain.py",
+                "language": "python",
+                "code": "from itertools import chain\n\nfirst = [1, 2]\nsecond = [3, 4]\ncombined = list(chain(first, second))",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "chain",
+                    "anchor": {
+                      "line": 5,
+                      "text": "chain(first, second)",
+                      "occurrence": 1
+                    },
+                    "title": "Lazy concatenation",
+                    "explanation": "chain yields all items from first, then all items from second.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "itertools.chain",
-              "url": "https://docs.python.org/3/library/itertools.html#itertools.chain"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-6-itertools_batched",
@@ -118,54 +107,43 @@
           "concept_ids": [
             "ai.python.itertools_batched"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "CHUNK AN ITERABLE",
+              "placeholder": "Click batched.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "batched.py",
+                "language": "python",
+                "code": "from itertools import batched\n\nvalues = range(10)\nchunks = list(batched(values, 3))",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "batched",
+                    "anchor": {
+                      "line": 4,
+                      "text": "batched(values, 3)",
+                      "occurrence": 1
+                    },
+                    "title": "Fixed-size batches",
+                    "explanation": "Successive tuples contain up to three items; the final batch may be shorter.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-6-itertools_chain"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.14
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(iterable, n) lazily groups input items into tuples of up to n elements.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "itertools.batched(iterable, n) lazily groups input items into tuples of up to n elements."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ batch in batched(records, 100): insert(batch) processes fixed-size chunks without manual slicing.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "for batch in batched(records, 100): insert(batch) processes fixed-size chunks without manual slicing."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ Python 3.13's strict option, the final batch may be shorter; code requiring exact batch size must account for that.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Before Python 3.13's strict option, the final batch may be shorter; code requiring exact batch size must account for that."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "itertools.batched",
-              "url": "https://docs.python.org/3/library/itertools.html#itertools.batched"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-6-itertools_pairwise",
@@ -173,54 +151,43 @@
           "concept_ids": [
             "ai.python.itertools_pairwise"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "COMPARE ADJACENT ITEMS",
+              "placeholder": "Click pairwise.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "pairwise.py",
+                "language": "python",
+                "code": "from itertools import pairwise\n\ntemperatures = [20, 22, 21, 25]\nchanges = [\n    current - previous\n    for previous, current in pairwise(temperatures)\n]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "pairwise",
+                    "anchor": {
+                      "line": 6,
+                      "text": "pairwise(temperatures)",
+                      "occurrence": 1
+                    },
+                    "title": "Adjacent overlapping pairs",
+                    "explanation": "The iterator yields (20,22), then (22,21), then (21,25).",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-6-itertools_batched"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.14
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(iterable) yields overlapping adjacent pairs such as (x0, x1), (x1, x2), and so on.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "itertools.pairwise(iterable) yields overlapping adjacent pairs such as (x0, x1), (x1, x2), and so on."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ previous, current in pairwise(values): ... compares neighbors without manual indexing.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "for previous, current in pairwise(values): ... compares neighbors without manual indexing."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ yields nothing for fewer than two input elements, so code expecting at least one pair must handle short input.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "pairwise yields nothing for fewer than two input elements, so code expecting at least one pair must handle short input."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "itertools.pairwise",
-              "url": "https://docs.python.org/3/library/itertools.html#itertools.pairwise"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-6-itertools_starmap",
@@ -228,54 +195,43 @@
           "concept_ids": [
             "ai.python.itertools_starmap"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "CALL WITH UNPACKED ARGUMENT TUPLES",
+              "placeholder": "Click starmap.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "starmap.py",
+                "language": "python",
+                "code": "from itertools import starmap\nfrom operator import mul\n\npairs = [(2, 3), (4, 5), (6, 7)]\nproducts = list(starmap(mul, pairs))",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "starmap",
+                    "anchor": {
+                      "line": 5,
+                      "text": "starmap(mul, pairs)",
+                      "occurrence": 1
+                    },
+                    "title": "Map argument tuples",
+                    "explanation": "starmap calls mul(2,3), mul(4,5), and mul(6,7).",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-6-itertools_pairwise"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.14
+            "x": 0.81,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(func, iterable_of_args) calls func(*args) for each tuple-like argument group from the iterable.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "itertools.starmap(func, iterable_of_args) calls func(*args) for each tuple-like argument group from the iterable."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________(pow, [(2, 5), (3, 2)]) applies pow to each argument tuple lazily.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "starmap(pow, [(2, 5), (3, 2)]) applies pow to each argument tuple lazily."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ map() when each input item is one argument; use starmap() when each input item should be expanded into multiple positional arguments.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use map() when each input item is one argument; use starmap() when each input item should be expanded into multiple positional arguments."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "itertools.starmap",
-              "url": "https://docs.python.org/3/library/itertools.html#itertools.starmap"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -300,52 +256,52 @@
           "concept_ids": [
             "ai.python.pathlib_paths"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.36
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ overloads / for path joining and provides object-oriented methods for reading, writing, globbing, and path transformations.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "COMPOSE PATHS AS OBJECTS",
+              "placeholder": "Click / and read_text.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "pathlib.Path overloads / for path joining and provides object-oriented methods for reading, writing, globbing, and path transformations."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ = base / 'config' / 'app.json' avoids manual separator handling.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "config_path = base / 'config' / 'app.json' avoids manual separator handling."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ objects represent filesystem paths, not guaranteed-existing files; existence and file type still need explicit checks when required.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Path objects represent filesystem paths, not guaranteed-existing files; existence and file type still need explicit checks when required."
+                "type": "code_file",
+                "filename": "pathlib_paths.py",
+                "language": "python",
+                "code": "from pathlib import Path\n\nroot = Path(\"data\")\nconfig = root / \"settings\" / \"app.json\"\ntext = config.read_text(encoding=\"utf-8\")",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "compose",
+                    "anchor": {
+                      "line": 4,
+                      "text": "root / \"settings\" / \"app.json\"",
+                      "occurrence": 1
+                    },
+                    "title": "Compose path segments",
+                    "explanation": "Path overloads / so you do not manually concatenate separators.",
+                    "required": true
+                  },
+                  {
+                    "id": "read",
+                    "anchor": {
+                      "line": 5,
+                      "text": "read_text(encoding=\"utf-8\")",
+                      "occurrence": 1
+                    },
+                    "title": "Read text through Path",
+                    "explanation": "Path provides direct filesystem convenience methods.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "pathlib",
-              "url": "https://docs.python.org/3/library/pathlib.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-6-subprocess_run",
@@ -353,54 +309,76 @@
           "concept_ids": [
             "ai.python.subprocess_run"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "RUN A COMMAND WITHOUT SHELL PARSING",
+              "placeholder": "Click the argument list, check, and capture_output.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "subprocess_run.py",
+                "language": "python",
+                "code": "import subprocess\n\nresult = subprocess.run(\n    [\"git\", \"status\", \"--short\"],\n    check=True,\n    capture_output=True,\n    text=True,\n)\n\nprint(result.stdout)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "args",
+                    "anchor": {
+                      "line": 4,
+                      "text": "[\"git\", \"status\", \"--short\"]",
+                      "occurrence": 1
+                    },
+                    "title": "Argument vector",
+                    "explanation": "Program and arguments stay separate instead of being parsed from one shell string.",
+                    "required": true
+                  },
+                  {
+                    "id": "check",
+                    "anchor": {
+                      "line": 5,
+                      "text": "check=True",
+                      "occurrence": 1
+                    },
+                    "title": "Fail on non-zero exit",
+                    "explanation": "A failing command raises CalledProcessError.",
+                    "required": true
+                  },
+                  {
+                    "id": "capture",
+                    "anchor": {
+                      "line": 6,
+                      "text": "capture_output=True",
+                      "occurrence": 1
+                    },
+                    "title": "Capture stdout/stderr",
+                    "explanation": "The completed-process object receives captured streams.",
+                    "required": true
+                  },
+                  {
+                    "id": "text",
+                    "anchor": {
+                      "line": 7,
+                      "text": "text=True",
+                      "occurrence": 1
+                    },
+                    "title": "Decode as text",
+                    "explanation": "stdout/stderr are strings instead of bytes.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-6-pathlib_paths"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.36
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________() is the recommended high-level API for executing a child process and waiting for it to finish.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "subprocess.run() is the recommended high-level API for executing a child process and waiting for it to finish."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________(cmd, check=True, capture_output=True, text=True) raises on a non-zero exit and returns decoded stdout/stderr.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "subprocess.run(cmd, check=True, capture_output=True, text=True) raises on a non-zero exit and returns decoded stdout/stderr."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ an argument list over shell=True for ordinary commands; shell parsing adds quoting complexity and can create injection risk with untrusted input.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Prefer an argument list over shell=True for ordinary commands; shell parsing adds quoting complexity and can create injection risk with untrusted input."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "subprocess.run",
-              "url": "https://docs.python.org/3/library/subprocess.html#subprocess.run"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -427,52 +405,52 @@
           "concept_ids": [
             "ai.python.datetime_timezone"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.58
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(timezone.utc) creates an aware UTC datetime whose tzinfo is explicit.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "KEEP TIMEZONE INFORMATION",
+              "placeholder": "Click timezone.utc and astimezone.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "datetime.now(timezone.utc) creates an aware UTC datetime whose tzinfo is explicit."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ datetime.now(timezone.utc) for an aware UTC timestamp rather than a naive datetime.utcnow().",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use datetime.now(timezone.utc) for an aware UTC timestamp rather than a naive datetime.utcnow()."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ naive and aware datetimes leads to ambiguous semantics and can raise during comparisons.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Mixing naive and aware datetimes leads to ambiguous semantics and can raise during comparisons."
+                "type": "code_file",
+                "filename": "aware_datetime.py",
+                "language": "python",
+                "code": "from datetime import datetime, timezone\nfrom zoneinfo import ZoneInfo\n\nnow_utc = datetime.now(timezone.utc)\ntokyo = now_utc.astimezone(ZoneInfo(\"Asia/Tokyo\"))",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "utc",
+                    "anchor": {
+                      "line": 4,
+                      "text": "datetime.now(timezone.utc)",
+                      "occurrence": 1
+                    },
+                    "title": "Aware UTC datetime",
+                    "explanation": "The datetime carries explicit timezone information.",
+                    "required": true
+                  },
+                  {
+                    "id": "convert",
+                    "anchor": {
+                      "line": 5,
+                      "text": "astimezone(ZoneInfo(\"Asia/Tokyo\"))",
+                      "occurrence": 1
+                    },
+                    "title": "Convert the same instant",
+                    "explanation": "astimezone applies the target zone's offset rules.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "datetime",
-              "url": "https://docs.python.org/3/library/datetime.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-6-json_default",
@@ -480,54 +458,43 @@
           "concept_ids": [
             "ai.python.json_default"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "HANDLE CUSTOM JSON VALUES",
+              "placeholder": "Click default.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "json_default.py",
+                "language": "python",
+                "code": "import json\nfrom datetime import datetime\n\npayload = {\"created_at\": datetime(2026, 9, 19, 12, 0)}\n\ntext = json.dumps(\n    payload,\n    default=lambda value: value.isoformat(),\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "default",
+                    "anchor": {
+                      "line": 8,
+                      "text": "default=lambda value: value.isoformat()",
+                      "occurrence": 1
+                    },
+                    "title": "Fallback serializer",
+                    "explanation": "The hook converts unsupported objects into JSON-encodable values.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-6-datetime_timezone"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.58
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(..., default=callable) invokes the callable for otherwise non-serializable objects so application-specific conversion can be defined.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "json.dumps(..., default=callable) invokes the callable for otherwise non-serializable objects so application-specific conversion can be defined."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________(payload, default=str) is a simple fallback when converting unsupported objects to strings is intentionally acceptable.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "json.dumps(payload, default=str) is a simple fallback when converting unsupported objects to strings is intentionally acceptable."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________=str can hide accidental unsupported types; a stricter custom encoder is often better when representation matters.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "default=str can hide accidental unsupported types; a stricter custom encoder is often better when representation matters."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "json.dumps",
-              "url": "https://docs.python.org/3/library/json.html#json.dumps"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-6-heapq_nlargest",
@@ -535,54 +502,54 @@
           "concept_ids": [
             "ai.python.heapq_nlargest"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "SELECT A SMALL TOP-K",
+              "placeholder": "Click nlargest and key.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "nlargest.py",
+                "language": "python",
+                "code": "from heapq import nlargest\n\nrecords = [\n    {\"name\": \"a\", \"score\": 7},\n    {\"name\": \"b\", \"score\": 10},\n    {\"name\": \"c\", \"score\": 9},\n]\n\ntop_two = nlargest(2, records, key=lambda row: row[\"score\"])",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "top",
+                    "anchor": {
+                      "line": 9,
+                      "text": "nlargest(2, records",
+                      "occurrence": 1
+                    },
+                    "title": "Top-k selection",
+                    "explanation": "nlargest returns the two largest records according to the key.",
+                    "required": true
+                  },
+                  {
+                    "id": "key",
+                    "anchor": {
+                      "line": 9,
+                      "text": "key=lambda row: row[\"score\"]",
+                      "occurrence": 1
+                    },
+                    "title": "Comparison key",
+                    "explanation": "Records are compared by score while original records are returned.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-6-json_default"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.58
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________(n, iterable, key=...) returns the n largest items without sorting the entire input when n is relatively small.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "heapq.nlargest(n, iterable, key=...) returns the n largest items without sorting the entire input when n is relatively small."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________ = nlargest(10, users, key=lambda u: u.score) directly returns the ten highest-scoring users.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "top = nlargest(10, users, key=lambda u: u.score) directly returns the ten highest-scoring users."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ large n relative to input size, sorted(..., reverse=True) may be simpler and can be competitive.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "For large n relative to input size, sorted(..., reverse=True) may be simpler and can be competitive."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "heapq.nlargest",
-              "url": "https://docs.python.org/3/library/heapq.html#heapq.nlargest"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-6-bisect_insort",
@@ -590,54 +557,43 @@
           "concept_ids": [
             "ai.python.bisect_insort"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "INSERT WHILE PRESERVING SORT ORDER",
+              "placeholder": "Click insort.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "insort.py",
+                "language": "python",
+                "code": "from bisect import insort\n\nvalues = [1, 4, 8, 12]\ninsort(values, 6)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "insort",
+                    "anchor": {
+                      "line": 4,
+                      "text": "insort(values, 6)",
+                      "occurrence": 1
+                    },
+                    "title": "Sorted insertion",
+                    "explanation": "6 is inserted at the position that keeps values sorted.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-6-heapq_nlargest"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.58
+            "x": 0.81,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ keeps a list sorted by locating an insertion point with binary search and then inserting the value.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "bisect.insort keeps a list sorted by locating an insertion point with binary search and then inserting the value."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "__________(scores, new_score) is convenient when maintaining a small sorted list incrementally.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "insort(scores, new_score) is convenient when maintaining a small sorted list incrementally."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "__________ the index is logarithmic, but list insertion is still O(n) because later elements must be shifted.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Finding the index is logarithmic, but list insertion is still O(n) because later elements must be shifted."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "bisect.insort",
-              "url": "https://docs.python.org/3/library/bisect.html#bisect.insort"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

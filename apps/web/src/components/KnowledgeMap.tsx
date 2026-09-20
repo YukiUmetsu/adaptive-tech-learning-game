@@ -3,7 +3,11 @@ import type {
   LearningDomainResponse,
   LearningModule,
 } from "../api/types";
-import type { DerivedLearningState, NodeState } from "../state/learningProgress";
+import {
+  nodePromptProgress,
+  type DerivedLearningState,
+  type NodeState,
+} from "../state/learningProgress";
 
 interface KnowledgeMapProps {
   domain: LearningDomainResponse;
@@ -26,18 +30,6 @@ const NODE_STATE_LABEL: Record<NodeState, string> = {
   in_progress: "In progress",
   unlocked: "Unlocked",
 };
-
-function requiredPrompts(node: KnowledgeNode) {
-  const required = node.prompts.filter((prompt) => prompt.required !== false);
-  return required.length > 0 ? required : node.prompts;
-}
-
-function nodeCharge(node: KnowledgeNode, revealed: readonly string[]): string {
-  const required = requiredPrompts(node);
-  const seen = new Set(revealed);
-  const count = required.filter((prompt) => seen.has(prompt.id)).length;
-  return `${count}/${required.length}`;
-}
 
 function unmetPrerequisiteTitles(
   node: KnowledgeNode,
@@ -116,6 +108,20 @@ export default function KnowledgeMap({
             previous !== null &&
             state.unlockedNodeIds.has(previous.id) &&
             state.unlockedNodeIds.has(node.id);
+          const revealedPrompts = new Set(
+            state.revealedPromptIds[node.id] ?? [],
+          );
+          const elementSets = new Map<string, Set<string>>();
+          for (const [promptId, ids] of Object.entries(
+            state.revealedElementIds[node.id] ?? {},
+          )) {
+            elementSets.set(promptId, new Set(ids));
+          }
+          const charge = nodePromptProgress(node, revealedPrompts, elementSets);
+          const chargePercent =
+            charge.total === 0
+              ? 0
+              : (charge.completed / charge.total) * 100;
 
           return (
             <li key={node.id} className="knowledge-path-item">
@@ -167,12 +173,12 @@ export default function KnowledgeMap({
                         <span
                           className="knowledge-node-charge-fill"
                           style={{
-                            width: `${chargePercent(node, state.revealedPromptIds[node.id] ?? [])}%`,
+                            width: `${chargePercent}%`,
                           }}
                         />
                       </span>
                       <span className="knowledge-node-charge-count">
-                        {nodeCharge(node, state.revealedPromptIds[node.id] ?? [])}
+                        {charge.completed}/{charge.total}
                       </span>
                     </span>
                   ) : null}
@@ -197,14 +203,4 @@ function metaText(
     return unmet.length > 0 ? `Locked · after ${unmet.join(", ")}` : "Locked";
   }
   return NODE_STATE_LABEL[nodeState];
-}
-
-function chargePercent(node: KnowledgeNode, revealed: readonly string[]): number {
-  const required = requiredPrompts(node);
-  if (required.length === 0) {
-    return 0;
-  }
-  const seen = new Set(revealed);
-  const count = required.filter((prompt) => seen.has(prompt.id)).length;
-  return (count / required.length) * 100;
 }

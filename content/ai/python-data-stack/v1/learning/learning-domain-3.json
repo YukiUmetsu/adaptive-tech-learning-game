@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-data-stack-learning-2026-09-19-v1",
+  "content_version": "python-data-stack-learning-2026-09-19-v2",
   "certification_id": "python-data-stack",
   "certification_version": "python-data-stack-v1",
   "exam_guide_revision": "Practical Python data-stack curriculum reviewed against current official NumPy, pandas, Matplotlib, and Seaborn documentation on 2026-09-19.",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; retrieval questions and typed coding questions provide the scored signal."
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code or table discoveries.",
+    "mastery_note": "Discovery progress is not mastery evidence; progressively harder retrieval and typed coding questions provide the scored signal."
   },
   "source_refs": [
     {
@@ -43,9 +43,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 9,
-    "prompt_count": 27
+    "prompt_count": 9
   },
-  "authoring_notes": "Interactive first-pass learning for Matplotlib. Emphasizes choosing the chart from the analysis question and DataFrame column types before memorizing plotting syntax, then composes object-oriented plotting APIs.",
+  "authoring_notes": "Updated for the learning-v2 renderer. Executable-looking material is shown as syntax-highlighted code_file content with clickable annotations. Low-difficulty examples include small concrete data and result comments so learners can connect code to shape/output.",
   "modules": [
     {
       "id": "domain-3-task-3-1",
@@ -66,56 +66,82 @@
           "concept_ids": [
             "python.matplotlib.plot_selection"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.25,
-            "y": 0.18
-          },
           "prompts": [
             {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Choose the chart from the variable types and the __________ you are asking.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Choose the chart from the variable types and the question you are asking."
-              }
-            },
-            {
-              "id": "what",
+              "id": "choose",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Two numeric variables → scatter; ordered time vs numeric → line; category vs magnitude → __________.",
+              "label": "QUESTION → PLOT",
+              "placeholder": "Reveal one analytical question at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Two numeric variables → scatter; ordered time vs numeric → line; category vs magnitude → bar."
-              }
-            },
-            {
-              "id": "what2",
-              "kind": "look_for",
-              "label": "👀 LOOK FOR",
-              "placeholder": "One numeric distribution → histogram; compare numeric distributions across categories → __________ plot.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "One numeric distribution → histogram; compare numeric distributions across categories → box plot."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "question",
+                    "label": "Question"
+                  },
+                  {
+                    "id": "plot",
+                    "label": "Plot"
+                  },
+                  {
+                    "id": "why",
+                    "label": "Why"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "relationship",
+                    "cells": {
+                      "question": "How do two numeric variables relate?",
+                      "plot": "scatter",
+                      "why": "Shows paired observations without implying an ordered path."
+                    }
+                  },
+                  {
+                    "id": "trend",
+                    "cells": {
+                      "question": "How does a value change across time or another ordered x-axis?",
+                      "plot": "line",
+                      "why": "Connects ordered observations to emphasize trend."
+                    }
+                  },
+                  {
+                    "id": "category",
+                    "cells": {
+                      "question": "How do category magnitudes compare?",
+                      "plot": "bar",
+                      "why": "Bar length encodes one value per category."
+                    }
+                  },
+                  {
+                    "id": "distribution",
+                    "cells": {
+                      "question": "What is the shape of one numeric distribution?",
+                      "plot": "histogram",
+                      "why": "Bins observations to show frequency across the numeric range."
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "question"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Matplotlib Axes API",
-              "url": "https://matplotlib.org/stable/api/axes_api.html"
-            },
-            {
-              "title": "Matplotlib pyplot.subplots",
-              "url": "https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-3-oo-workflow",
@@ -124,58 +150,65 @@
             "python.matplotlib.subplots",
             "python.matplotlib.axes_methods"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "USE FIGURE + AXES EXPLICITLY",
+              "placeholder": "Click subplots, ax.plot, and tight_layout.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "oo_plot.py",
+                "language": "python",
+                "code": "import matplotlib.pyplot as plt\n\nfig, ax = plt.subplots()\n\nax.plot([1, 2, 3], [2, 4, 3])\nax.set_title(\"Trend\")\n\nfig.tight_layout()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "subplots",
+                    "anchor": {
+                      "line": 3,
+                      "text": "plt.subplots()",
+                      "occurrence": 1
+                    },
+                    "title": "Create Figure and Axes",
+                    "explanation": "subplots returns the Figure container and one or more Axes objects.",
+                    "required": true
+                  },
+                  {
+                    "id": "plot",
+                    "anchor": {
+                      "line": 5,
+                      "text": "ax.plot",
+                      "occurrence": 1
+                    },
+                    "title": "Plot on a specific Axes",
+                    "explanation": "Using ax methods makes the destination explicit.",
+                    "required": true
+                  },
+                  {
+                    "id": "layout",
+                    "anchor": {
+                      "line": 8,
+                      "text": "fig.tight_layout()",
+                      "occurrence": 1
+                    },
+                    "title": "Adjust figure layout",
+                    "explanation": "The Figure manages layout across its Axes.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-plot-selection"
           ],
           "map_position": {
-            "x": 0.75,
-            "y": 0.18
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`plt.subplots()` returns a Figure and one or more __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`plt.subplots()` returns a Figure and one or more Axes."
-              }
-            },
-            {
-              "id": "sequence",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "A common workflow is `subplots → draw on ax → label ax → legend/layout → __________`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A common workflow is `subplots → draw on ax → label ax → legend/layout → show`."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Prefer Axes methods like `ax.scatter` and `ax.set_xlabel` when you are managing explicit subplot __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Prefer Axes methods like `ax.scatter` and `ax.set_xlabel` when you are managing explicit subplot objects."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Matplotlib Axes API",
-              "url": "https://matplotlib.org/stable/api/axes_api.html"
-            },
-            {
-              "title": "Matplotlib pyplot.subplots",
-              "url": "https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -202,56 +235,52 @@
             "python.matplotlib.plot_selection",
             "python.matplotlib.axes_methods"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.5
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`ax.scatter(x, y)` shows individual numeric pairs; `ax.plot(x, y)` emphasizes an __________ sequence.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "COMPARE SCATTER AND LINE",
+              "placeholder": "Click scatter and plot.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "`ax.scatter(x, y)` shows individual numeric pairs; `ax.plot(x, y)` emphasizes an ordered sequence."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Age vs income usually suggests scatter; month vs revenue usually suggests a __________ plot.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Age vs income usually suggests scatter; month vs revenue usually suggests a line plot."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "A line can imply continuity/order between adjacent observations, so do not use it for unordered numeric pairs without a meaningful __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A line can imply continuity/order between adjacent observations, so do not use it for unordered numeric pairs without a meaningful order."
+                "type": "code_file",
+                "filename": "scatter_line.py",
+                "language": "python",
+                "code": "import matplotlib.pyplot as plt\n\nfig, (ax1, ax2) = plt.subplots(1, 2)\n\nax1.scatter(height, weight)\nax1.set_title(\"Relationship\")\n\nax2.plot(date, temperature)\nax2.set_title(\"Ordered trend\")",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "scatter",
+                    "anchor": {
+                      "line": 5,
+                      "text": "ax1.scatter",
+                      "occurrence": 1
+                    },
+                    "title": "Scatter: paired observations",
+                    "explanation": "Scatter emphasizes the relationship between x/y observations without connecting them.",
+                    "required": true
+                  },
+                  {
+                    "id": "line",
+                    "anchor": {
+                      "line": 8,
+                      "text": "ax2.plot",
+                      "occurrence": 1
+                    },
+                    "title": "Line: ordered progression",
+                    "explanation": "Line connects observations across an ordered x variable to emphasize change.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Matplotlib Axes API",
-              "url": "https://matplotlib.org/stable/api/axes_api.html"
-            },
-            {
-              "title": "Matplotlib pyplot.subplots",
-              "url": "https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-3-bar-hist",
@@ -260,58 +289,54 @@
             "python.matplotlib.plot_selection",
             "python.matplotlib.axes_methods"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "DON'T CONFUSE BAR WITH HISTOGRAM",
+              "placeholder": "Click bar and hist.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "bar_hist.py",
+                "language": "python",
+                "code": "import matplotlib.pyplot as plt\n\nfig, (ax1, ax2) = plt.subplots(1, 2)\n\nax1.bar([\"A\", \"B\", \"C\"], [12, 8, 15])\nax1.set_title(\"Category totals\")\n\nax2.hist(response_times, bins=20)\nax2.set_title(\"Response-time distribution\")",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "bar",
+                    "anchor": {
+                      "line": 5,
+                      "text": "ax1.bar",
+                      "occurrence": 1
+                    },
+                    "title": "Categorical magnitudes",
+                    "explanation": "Each category gets a bar whose height represents its value.",
+                    "required": true
+                  },
+                  {
+                    "id": "hist",
+                    "anchor": {
+                      "line": 8,
+                      "text": "ax2.hist",
+                      "occurrence": 1
+                    },
+                    "title": "Numeric distribution",
+                    "explanation": "hist bins many numeric observations and shows their frequencies.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-scatter-line"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.5
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`bar` receives category positions/labels and heights; `hist` automatically groups numeric observations into __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`bar` receives category positions/labels and heights; `hist` automatically groups numeric observations into bins."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Region totals → bar; the shape of thousands of income observations → __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Region totals → bar; the shape of thousands of income observations → histogram."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "A histogram's x-axis represents numeric ranges, not named __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A histogram's x-axis represents numeric ranges, not named categories."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Matplotlib Axes API",
-              "url": "https://matplotlib.org/stable/api/axes_api.html"
-            },
-            {
-              "title": "Matplotlib pyplot.subplots",
-              "url": "https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-3-labels",
@@ -319,58 +344,65 @@
           "concept_ids": [
             "python.matplotlib.labels"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "LABEL THE ENCODING",
+              "placeholder": "Click xlabel, ylabel, and title.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "labels.py",
+                "language": "python",
+                "code": "import matplotlib.pyplot as plt\n\nfig, ax = plt.subplots()\nax.plot(hours, requests)\n\nax.set_xlabel(\"Time (hours)\")\nax.set_ylabel(\"Requests per minute\")\nax.set_title(\"API traffic\")",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "xlabel",
+                    "anchor": {
+                      "line": 6,
+                      "text": "set_xlabel(\"Time (hours)\")",
+                      "occurrence": 1
+                    },
+                    "title": "X-axis meaning",
+                    "explanation": "The x label states what horizontal position encodes.",
+                    "required": true
+                  },
+                  {
+                    "id": "ylabel",
+                    "anchor": {
+                      "line": 7,
+                      "text": "set_ylabel(\"Requests per minute\")",
+                      "occurrence": 1
+                    },
+                    "title": "Y-axis meaning",
+                    "explanation": "The y label names the measured quantity and unit.",
+                    "required": true
+                  },
+                  {
+                    "id": "title",
+                    "anchor": {
+                      "line": 8,
+                      "text": "set_title(\"API traffic\")",
+                      "occurrence": 1
+                    },
+                    "title": "Plot context",
+                    "explanation": "The title communicates the subject of the Axes.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-bar-hist"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.5
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "On an Axes, use `set_xlabel`, `set_ylabel`, and `__________` for the title.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "On an Axes, use `set_xlabel`, `set_ylabel`, and `set_title` for the title."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Labels should tell the learner what variable and, when useful, what __________ the axis represents.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Labels should tell the learner what variable and, when useful, what units the axis represents."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "The `ax.` object-oriented methods use the `set_` prefix; pyplot-level helpers like `plt.xlabel` do __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The `ax.` object-oriented methods use the `set_` prefix; pyplot-level helpers like `plt.xlabel` do not."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Matplotlib Axes API",
-              "url": "https://matplotlib.org/stable/api/axes_api.html"
-            },
-            {
-              "title": "Matplotlib pyplot.subplots",
-              "url": "https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -398,56 +430,63 @@
             "python.matplotlib.labels",
             "python.matplotlib.axes_methods"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.1,
-            "y": 0.82
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`ax.legend()` displays labels attached to plotted artists with `__________=...`.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "ADD INTERPRETATION AIDS DELIBERATELY",
+              "placeholder": "Click axhline, grid, and legend.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "`ax.legend()` displays labels attached to plotted artists with `label=...`."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "`ax.axhline` adds a horizontal reference value such as a target or __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`ax.axhline` adds a horizontal reference value such as a target or threshold."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "`set_xlim` changes the visible x-range; it does not filter the underlying __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`set_xlim` changes the visible x-range; it does not filter the underlying data."
+                "type": "code_file",
+                "filename": "plot_tools.py",
+                "language": "python",
+                "code": "import matplotlib.pyplot as plt\n\nfig, ax = plt.subplots()\n\nax.plot(days, latency, label=\"p95 latency\")\nax.axhline(250, linestyle=\"--\", label=\"SLO\")\nax.set_ylim(0, 400)\nax.grid(alpha=0.2)\nax.legend()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "ref",
+                    "anchor": {
+                      "line": 6,
+                      "text": "ax.axhline(250",
+                      "occurrence": 1
+                    },
+                    "title": "Reference line",
+                    "explanation": "A threshold such as an SLO becomes visually explicit.",
+                    "required": true
+                  },
+                  {
+                    "id": "grid",
+                    "anchor": {
+                      "line": 8,
+                      "text": "ax.grid(alpha=0.2)",
+                      "occurrence": 1
+                    },
+                    "title": "Reading aid",
+                    "explanation": "A subtle grid can help estimate values without dominating the plot.",
+                    "required": true
+                  },
+                  {
+                    "id": "legend",
+                    "anchor": {
+                      "line": 9,
+                      "text": "ax.legend()",
+                      "occurrence": 1
+                    },
+                    "title": "Decode labeled artists",
+                    "explanation": "legend uses artist labels to explain multiple visual elements.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Matplotlib Axes API",
-              "url": "https://matplotlib.org/stable/api/axes_api.html"
-            },
-            {
-              "title": "Matplotlib pyplot.subplots",
-              "url": "https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.15
+          },
+          "source_refs": []
         },
         {
           "id": "domain-3-multiple-axes",
@@ -456,58 +495,54 @@
             "python.matplotlib.multiaxes",
             "python.matplotlib.subplots"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "INDEX MULTIPLE AXES",
+              "placeholder": "Click plt.subplots and one Axes index.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "multiple_axes.py",
+                "language": "python",
+                "code": "import matplotlib.pyplot as plt\n\nfig, axes = plt.subplots(2, 2, figsize=(8, 6))\n\naxes[0, 0].plot(x, y1)\naxes[0, 1].scatter(x, y2)\naxes[1, 0].bar(categories, values)\naxes[1, 1].hist(samples, bins=20)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "subplots",
+                    "anchor": {
+                      "line": 3,
+                      "text": "plt.subplots(2, 2",
+                      "occurrence": 1
+                    },
+                    "title": "Create a 2×2 figure",
+                    "explanation": "Four Axes are created and returned in a two-dimensional array-like object.",
+                    "required": true
+                  },
+                  {
+                    "id": "index",
+                    "anchor": {
+                      "line": 6,
+                      "text": "axes[0, 1].scatter",
+                      "occurrence": 1
+                    },
+                    "title": "Choose one panel",
+                    "explanation": "Indexing axes makes the plot destination explicit.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-legend-tools"
           ],
           "map_position": {
-            "x": 0.37,
-            "y": 0.82
+            "x": 0.35,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`plt.subplots(1, 2)` creates one row and __________ columns of Axes.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`plt.subplots(1, 2)` creates one row and two columns of Axes."
-              }
-            },
-            {
-              "id": "code",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "With two side-by-side Axes, the first is commonly addressed as `axes[__________]`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "With two side-by-side Axes, the first is commonly addressed as `axes[0]`."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "A multi-panel figure lets different plots answer __________ questions while sharing one overall presentation.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A multi-panel figure lets different plots answer complementary questions while sharing one overall presentation."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Matplotlib Axes API",
-              "url": "https://matplotlib.org/stable/api/axes_api.html"
-            },
-            {
-              "title": "Matplotlib pyplot.subplots",
-              "url": "https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-3-layout",
@@ -515,58 +550,43 @@
           "concept_ids": [
             "python.matplotlib.multiaxes"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "LET THE FIGURE MANAGE SPACING",
+              "placeholder": "Click constrained_layout.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "layout.py",
+                "language": "python",
+                "code": "import matplotlib.pyplot as plt\n\nfig, axes = plt.subplots(\n    2,\n    2,\n    figsize=(8, 6),\n    constrained_layout=True,\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "layout",
+                    "anchor": {
+                      "line": 7,
+                      "text": "constrained_layout=True",
+                      "occurrence": 1
+                    },
+                    "title": "Automatic layout management",
+                    "explanation": "Matplotlib adjusts subplot spacing to reduce overlap among titles, labels, and neighboring Axes.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-multiple-axes"
           ],
           "map_position": {
-            "x": 0.63,
-            "y": 0.82
+            "x": 0.58,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`fig.tight_layout()` adjusts subplot spacing to reduce __________ between labels/titles and neighboring Axes.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`fig.tight_layout()` adjusts subplot spacing to reduce overlap between labels/titles and neighboring Axes."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Apply layout adjustments after the figure's Axes and labels have been __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Apply layout adjustments after the figure's Axes and labels have been created."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "`tight_layout` is a Figure-level layout operation; it is not a data plotting __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`tight_layout` is a Figure-level layout operation; it is not a data plotting method."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Matplotlib Axes API",
-              "url": "https://matplotlib.org/stable/api/axes_api.html"
-            },
-            {
-              "title": "Matplotlib pyplot.subplots",
-              "url": "https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-3-compose",
@@ -576,58 +596,76 @@
             "python.matplotlib.axes_methods",
             "python.matplotlib.labels"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ A COMPLETE OO PLOT",
+              "placeholder": "Click create, draw, labels, and layout.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "complete_plot.py",
+                "language": "python",
+                "code": "import matplotlib.pyplot as plt\n\nfig, ax = plt.subplots(figsize=(7, 4))\n\nax.scatter(df[\"engine_size\"], df[\"mpg\"], alpha=0.6)\nax.set(\n    xlabel=\"Engine size (L)\",\n    ylabel=\"Fuel economy (mpg)\",\n    title=\"Engine size vs fuel economy\",\n)\nax.grid(alpha=0.2)\n\nfig.tight_layout()",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "create",
+                    "anchor": {
+                      "line": 3,
+                      "text": "plt.subplots(figsize=(7, 4))",
+                      "occurrence": 1
+                    },
+                    "title": "Create Figure/Axes",
+                    "explanation": "Start the object-oriented workflow with explicit objects.",
+                    "required": true
+                  },
+                  {
+                    "id": "draw",
+                    "anchor": {
+                      "line": 5,
+                      "text": "ax.scatter",
+                      "occurrence": 1
+                    },
+                    "title": "Draw data",
+                    "explanation": "Two numeric columns become x/y positions.",
+                    "required": true
+                  },
+                  {
+                    "id": "labels",
+                    "anchor": {
+                      "line": 6,
+                      "text": "ax.set(",
+                      "occurrence": 1
+                    },
+                    "title": "Set labels/title together",
+                    "explanation": "Axes.set applies several readable properties in one call.",
+                    "required": true
+                  },
+                  {
+                    "id": "layout",
+                    "anchor": {
+                      "line": 13,
+                      "text": "fig.tight_layout()",
+                      "occurrence": 1
+                    },
+                    "title": "Finalize layout",
+                    "explanation": "Layout adjustment happens after artists and labels exist.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-layout"
           ],
           "map_position": {
-            "x": 0.9,
-            "y": 0.82
+            "x": 0.81,
+            "y": 0.15
           },
-          "prompts": [
-            {
-              "id": "sequence",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "A complete small plot is usually `create Axes → choose plot → draw data → label axes/title → optional context → __________`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A complete small plot is usually `create Axes → choose plot → draw data → label axes/title → optional context → show`."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "🎯 WHEN?",
-              "placeholder": "Before writing code, identify the DataFrame column types and decide which column maps to x, y, category/color, or __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Before writing code, identify the DataFrame column types and decide which column maps to x, y, category/color, or aggregation."
-              }
-            },
-            {
-              "id": "gotcha",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Do not memorize a long plotting block as one unit; each method should correspond to a specific visual __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not memorize a long plotting block as one unit; each method should correspond to a specific visual intention."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Matplotlib Axes API",
-              "url": "https://matplotlib.org/stable/api/axes_api.html"
-            },
-            {
-              "title": "Matplotlib pyplot.subplots",
-              "url": "https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

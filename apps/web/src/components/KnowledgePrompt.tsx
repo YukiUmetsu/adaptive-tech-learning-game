@@ -3,31 +3,44 @@ import {
   comparisonGridClass,
   comparisonPlaceholderColumns,
 } from "../lib/comparison";
+import { isProgressiveTable } from "../lib/learningElements";
 import { PROMPT_KIND_META, promptAccessibleName, promptWords } from "../state/learningVocabulary";
 import RevealContent from "./RevealContent";
 
 interface KnowledgePromptProps {
   prompt: KnowledgePromptData;
   revealed: boolean;
+  /** Namespaced discovery element ids already revealed for this prompt. */
+  revealedElementIds?: readonly string[];
   /** Reveal is disabled while the node is locked or the map is busy. */
   disabled?: boolean;
   onReveal: (promptId: string) => void;
+  /** Reveals one discovery element inside its reveal. Never scored. */
+  onRevealElement?: (promptId: string, elementId: string) => void;
 }
 
 /**
  * One progressive-reveal prompt on a knowledge card.
  *
  * Before reveal the learner sees the prompt and its blank; activating the blank
- * reveals the authored information. No grading happens here.
+ * reveals the authored information. Some reveals are interactive from the
+ * start instead: a `code_file` renders immediately and reveals individual
+ * annotations, and a progressive `table` renders immediately and reveals rows,
+ * columns, or cells. No grading happens here.
  */
 export default function KnowledgePrompt({
   prompt,
   revealed,
+  revealedElementIds,
   disabled = false,
   onReveal,
+  onRevealElement,
 }: KnowledgePromptProps) {
   const meta = PROMPT_KIND_META[prompt.kind];
   const accessibleName = promptAccessibleName(prompt);
+  const isCodeFile = prompt.reveal.type === "code_file";
+  const isProgressive = isProgressiveTable(prompt.reveal);
+  const interactive = isCodeFile || isProgressive;
   // A comparison prompt mirrors its columns in the blank, so show the blank as
   // aligned column cells instead of one running line.
   const columnSegments =
@@ -55,7 +68,38 @@ export default function KnowledgePrompt({
         </span>
       </div>
 
-      {revealed ? (
+      {interactive ? (
+        <>
+          {prompt.placeholder.trim().length > 0 ? (
+            <p className="knowledge-prompt-context">{prompt.placeholder}</p>
+          ) : null}
+          <RevealContent
+            reveal={prompt.reveal}
+            codeInteraction={
+              isCodeFile
+                ? {
+                    revealedElementIds: revealedElementIds ?? [],
+                    onRevealElement: (elementId) =>
+                      onRevealElement?.(prompt.id, elementId),
+                    disabled,
+                    complete: revealed,
+                    onComplete: () => onReveal(prompt.id),
+                  }
+                : undefined
+            }
+            tableInteraction={
+              isProgressive
+                ? {
+                    revealedElementIds: revealedElementIds ?? [],
+                    onRevealElement: (elementId) =>
+                      onRevealElement?.(prompt.id, elementId),
+                    disabled,
+                  }
+                : undefined
+            }
+          />
+        </>
+      ) : revealed ? (
         <RevealContent reveal={prompt.reveal} />
       ) : (
         <button

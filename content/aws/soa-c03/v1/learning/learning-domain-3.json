@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "soa-c03-learning-2026-09-18-v2",
+  "content_version": "soa-c03-learning-2026-09-19-v3",
   "certification_id": "aws-soa-c03",
   "certification_version": "soa-c03",
   "exam_guide_revision": "1.1",
@@ -11,7 +11,7 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required table or code discoveries.",
     "mastery_note": "Exploration progress is not mastery evidence; quiz attempts remain the scored retrieval signal."
   },
   "modules": [
@@ -34,120 +34,42 @@
           "concept_ids": [
             "aws.imagebuilder"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.1,
-            "y": 0.12
-          },
           "prompts": [
             {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "An Image Builder pipeline produces tested AMIs or container __________.",
+              "id": "pipeline",
+              "kind": "action",
+              "label": "IMAGE PIPELINE",
+              "placeholder": "What are the major stages of an image pipeline?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "An Image Builder pipeline produces tested AMIs or container images from repeatable recipes."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Bake dependencies and configuration into __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Bake dependencies and configuration into repeatable, tested images."
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Use each service for __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use each service for its own role."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "EC2 Image Builder",
-              "url": "https://docs.aws.amazon.com/imagebuilder/latest/userguide/what-is-image-builder.html"
-            }
-          ]
-        },
-        {
-          "id": "d3-image-recipes",
-          "title": "Image recipes and components",
-          "concept_ids": [
-            "aws.imagebuilder"
-          ],
-          "prerequisite_node_ids": [
-            "d3-image-builder"
-          ],
-          "map_position": {
-            "x": 0.32,
-            "y": 0.12
-          },
-          "prompts": [
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Recipes define the base image plus components __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Recipes define the base image plus components that install/configure/test the image."
-              }
-            },
-            {
-              "id": "look",
-              "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Build: install/configure | Test: __________",
-              "required": true,
-              "reveal": {
-                "type": "comparison",
-                "columns": [
-                  {
-                    "title": "Build",
-                    "items": [
-                      "install/configure"
-                    ]
-                  },
-                  {
-                    "title": "Test",
-                    "items": [
-                      "validate resulting image"
-                    ]
-                  }
+                "type": "sequence",
+                "items": [
+                  "Choose base image",
+                  "Apply components / recipe",
+                  "Build image",
+                  "Test image",
+                  "Distribute approved image"
                 ]
               }
             },
             {
-              "id": "action",
-              "kind": "action",
-              "label": "⚡ ACTION",
-              "placeholder": "Produce a new immutable image version rather than editing __________.",
+              "id": "why",
+              "kind": "what",
+              "label": "WHY PIPELINE IMAGES?",
+              "placeholder": "What operational problem does Image Builder solve?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Produce a new immutable image version rather than editing an already built image."
+                "text": "EC2 Image Builder automates repeatable image creation, testing, patching, and distribution so fleets can launch from controlled images instead of hand-maintained servers."
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "EC2 Image Builder",
-              "url": "https://docs.aws.amazon.com/imagebuilder/latest/userguide/what-is-image-builder.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.12
+          },
+          "source_refs": []
         },
         {
           "id": "d3-ecr",
@@ -155,54 +77,80 @@
           "concept_ids": [
             "aws.ecr"
           ],
+          "prompts": [
+            {
+              "id": "role",
+              "kind": "what",
+              "label": "WHAT DOES ECR STORE?",
+              "placeholder": "What artifact is ECR designed to manage?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Amazon ECR is a managed container image registry. It stores and distributes container images and integrates with AWS identity, scanning, lifecycle, and deployment workflows."
+              }
+            },
+            {
+              "id": "ops",
+              "kind": "what",
+              "label": "OPERATE THE REGISTRY",
+              "placeholder": "Reveal one operational control at a time.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "control",
+                    "label": "Control"
+                  },
+                  {
+                    "id": "purpose",
+                    "label": "Purpose"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "scan",
+                    "cells": {
+                      "control": "Image scanning",
+                      "purpose": "Identify known package/image vulnerabilities according to the configured scanning capability."
+                    }
+                  },
+                  {
+                    "id": "lifecycle",
+                    "cells": {
+                      "control": "Lifecycle policy",
+                      "purpose": "Expire old or unneeded images to control registry growth."
+                    }
+                  },
+                  {
+                    "id": "policy",
+                    "cells": {
+                      "control": "Repository policy / IAM",
+                      "purpose": "Control who can pull, push, or manage repository content."
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "control"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "d3-image-builder"
           ],
           "map_position": {
-            "x": 0.54,
+            "x": 0.36,
             "y": 0.12
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "ECR stores and manages container images __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "ECR stores and manages container images for AWS/container workflows."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use an image registry such as ECR __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use an image registry such as ECR for container image distribution."
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Registry and runtime/orchestrator __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Registry and runtime/orchestrator are separate responsibilities."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Amazon ECR",
-              "url": "https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "d3-cloudformation",
@@ -210,52 +158,87 @@
           "concept_ids": [
             "aws.cloudformation"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.2,
-            "y": 0.38
-          },
           "prompts": [
             {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "A CloudFormation template __________.",
+              "id": "model",
+              "kind": "what",
+              "label": "STACK MENTAL MODEL",
+              "placeholder": "What does CloudFormation manage?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "A CloudFormation template declares resources; a stack is the deployed instance of that template."
+                "text": "A CloudFormation template declares AWS resources and relationships; a stack is the deployed instance of that template. CloudFormation tracks the resources it manages and applies changes to move the stack toward the template."
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Infrastructure as code makes environments __________.",
+              "id": "template",
+              "kind": "look_for",
+              "label": "INSPECT A TEMPLATE",
+              "placeholder": "Click the structural fields that CloudFormation uses to build this stack.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Infrastructure as code makes environments reproducible and reviewable."
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Manual changes can create drift from __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Manual changes can create drift from the declared template."
+                "type": "code_file",
+                "filename": "template.yaml",
+                "language": "yaml",
+                "code": "AWSTemplateFormatVersion: '2010-09-09'\nParameters:\n  BucketName:\n    Type: String\nResources:\n  AppBucket:\n    Type: AWS::S3::Bucket\n    Properties:\n      BucketName: !Ref BucketName\nOutputs:\n  BucketArn:\n    Value: !GetAtt AppBucket.Arn",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "parameters",
+                    "anchor": {
+                      "line": 2,
+                      "text": "Parameters",
+                      "occurrence": 1
+                    },
+                    "title": "Template parameters",
+                    "explanation": "Parameters let callers supply values without editing the template.",
+                    "required": true
+                  },
+                  {
+                    "id": "resources",
+                    "anchor": {
+                      "line": 5,
+                      "text": "Resources",
+                      "occurrence": 1
+                    },
+                    "title": "Managed resources",
+                    "explanation": "Resources declares the AWS objects CloudFormation should manage.",
+                    "required": true
+                  },
+                  {
+                    "id": "ref",
+                    "anchor": {
+                      "line": 9,
+                      "text": "!Ref",
+                      "occurrence": 1
+                    },
+                    "title": "Reference",
+                    "explanation": "!Ref reads another template value and creates the necessary dependency/value relationship.",
+                    "required": true
+                  },
+                  {
+                    "id": "getatt",
+                    "anchor": {
+                      "line": 12,
+                      "text": "!GetAtt",
+                      "occurrence": 1
+                    },
+                    "title": "Resource attribute",
+                    "explanation": "!GetAtt reads an attribute produced by a managed resource.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "AWS CloudFormation",
-              "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html"
-            }
-          ]
+          "prerequisite_node_ids": [
+            "d3-ecr"
+          ],
+          "map_position": {
+            "x": 0.6,
+            "y": 0.12
+          },
+          "source_refs": []
         },
         {
           "id": "d3-cdk",
@@ -263,58 +246,43 @@
           "concept_ids": [
             "aws.cdk"
           ],
-          "prerequisite_node_ids": [
-            "d3-cloudformation"
-          ],
-          "map_position": {
-            "x": 0.45,
-            "y": 0.38
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "The AWS CDK defines cloud resources in code __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The AWS CDK defines cloud resources in code and synthesizes CloudFormation templates."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "CDK app → __________ → CloudFormation deployment",
+              "id": "flow",
+              "kind": "action",
+              "label": "FROM CDK CODE TO STACK",
+              "placeholder": "How does CDK reach CloudFormation?",
               "required": true,
               "reveal": {
                 "type": "sequence",
                 "items": [
-                  "CDK app",
-                  "CloudFormation template",
-                  "CloudFormation deployment"
+                  "Write infrastructure in a supported programming language",
+                  "CDK constructs build an application model",
+                  "Synthesize a CloudFormation template",
+                  "Deploy the CloudFormation stack"
                 ]
               }
             },
             {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "CDK commonly uses CloudFormation as __________.",
+              "id": "boundary",
+              "kind": "what",
+              "label": "CDK DOES NOT BYPASS CLOUDFORMATION",
+              "placeholder": "What executes the infrastructure change?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "CDK commonly uses CloudFormation as the deployment engine."
+                "text": "CDK synthesizes CloudFormation templates. CloudFormation remains the deployment engine for the resulting stacks."
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "AWS CDK",
-              "url": "https://docs.aws.amazon.com/cdk/v2/guide/home.html"
-            }
-          ]
+          "prerequisite_node_ids": [
+            "d3-cloudformation"
+          ],
+          "map_position": {
+            "x": 0.84,
+            "y": 0.12
+          },
+          "source_refs": []
         }
       ]
     },
@@ -335,112 +303,72 @@
       ],
       "nodes": [
         {
-          "id": "d3-change-sets",
-          "title": "CloudFormation change sets",
+          "id": "d3-change-drift",
+          "title": "Change sets and drift",
           "concept_ids": [
-            "aws.cloudformation.changesets"
+            "aws.cloudformation.changesets",
+            "aws.cloudformation.drift"
+          ],
+          "prompts": [
+            {
+              "id": "compare",
+              "kind": "what",
+              "label": "CHANGE SET OR DRIFT DETECTION?",
+              "placeholder": "Reveal one operational question at a time.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "need",
+                    "label": "Need"
+                  },
+                  {
+                    "id": "tool",
+                    "label": "CloudFormation feature"
+                  },
+                  {
+                    "id": "answer",
+                    "label": "What it tells you"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "future",
+                    "cells": {
+                      "need": "What would this template update change?",
+                      "tool": "Change set",
+                      "answer": "Proposed stack changes before execution."
+                    }
+                  },
+                  {
+                    "id": "past",
+                    "cells": {
+                      "need": "Has a managed resource changed outside CloudFormation?",
+                      "tool": "Drift detection",
+                      "answer": "Differences between expected stack configuration and supported actual resource properties."
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "need"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            }
           ],
           "prerequisite_node_ids": [],
           "map_position": {
-            "x": 0.1,
+            "x": 0.12,
             "y": 0.12
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "A change set shows how CloudFormation __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A change set shows how CloudFormation expects to modify resources."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Inspect additions, modifications, replacements, and __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Inspect additions, modifications, replacements, and removals before applying."
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Drift detection compares deployed resources with __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Drift detection compares deployed resources with the stack’s expected state."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "CloudFormation change sets",
-              "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html"
-            }
-          ]
-        },
-        {
-          "id": "d3-drift",
-          "title": "CloudFormation drift detection",
-          "concept_ids": [
-            "aws.cloudformation.drift"
-          ],
-          "prerequisite_node_ids": [
-            "d3-change-sets"
-          ],
-          "map_position": {
-            "x": 0.32,
-            "y": 0.12
-          },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Drift detection identifies supported resource properties that no longer __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Drift detection identifies supported resource properties that no longer match the stack definition."
-              }
-            },
-            {
-              "id": "exam",
-              "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "“Someone changed a managed resource manually” → __________",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "CloudFormation drift detection. Identify resources that no longer match the declared stack configuration."
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "It reports drift; remediation is __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "It reports drift; remediation is a separate action."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "CloudFormation drift",
-              "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "d3-nested-stacks",
@@ -448,67 +376,76 @@
           "concept_ids": [
             "aws.cloudformation.nested"
           ],
-          "prerequisite_node_ids": [
-            "d3-cloudformation"
-          ],
-          "map_position": {
-            "x": 0.54,
-            "y": 0.12
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Nested stacks let templates compose __________.",
+              "id": "nested",
+              "kind": "look_for",
+              "label": "INSPECT A NESTED STACK",
+              "placeholder": "Click the fields that make one stack call another template.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Nested stacks let templates compose reusable CloudFormation stacks."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Useful for modularizing __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Useful for modularizing repeated infrastructure patterns."
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Nested stacks: compose templates within an application/deployment | StackSets: __________",
-              "required": true,
-              "reveal": {
-                "type": "comparison",
-                "columns": [
+                "type": "code_file",
+                "filename": "root-stack.yaml",
+                "language": "yaml",
+                "code": "Resources:\n  Network:\n    Type: AWS::CloudFormation::Stack\n    Properties:\n      TemplateURL: https://example-bucket.s3.amazonaws.com/network.yaml\n      Parameters:\n        Environment: prod",
+                "line_numbers": true,
+                "annotations": [
                   {
-                    "title": "Nested stacks",
-                    "items": [
-                      "compose templates within an application/deployment"
-                    ]
+                    "id": "stack-type",
+                    "anchor": {
+                      "line": 3,
+                      "text": "AWS::CloudFormation::Stack",
+                      "occurrence": 1
+                    },
+                    "title": "Nested stack resource",
+                    "explanation": "A nested stack is represented as an AWS::CloudFormation::Stack resource inside the parent template.",
+                    "required": true
                   },
                   {
-                    "title": "StackSets",
-                    "items": [
-                      "deploy stacks across accounts/Regions"
-                    ]
+                    "id": "template-url",
+                    "anchor": {
+                      "line": 5,
+                      "text": "TemplateURL",
+                      "occurrence": 1
+                    },
+                    "title": "Child template location",
+                    "explanation": "TemplateURL points to the child template that the nested stack deploys.",
+                    "required": true
+                  },
+                  {
+                    "id": "parameters",
+                    "anchor": {
+                      "line": 6,
+                      "text": "Parameters",
+                      "occurrence": 1
+                    },
+                    "title": "Pass values to the child",
+                    "explanation": "Parameters pass values from the parent stack into the child template.",
+                    "required": true
                   }
                 ]
               }
+            },
+            {
+              "id": "use",
+              "kind": "what",
+              "label": "WHEN NESTED STACKS FIT",
+              "placeholder": "What problem do nested stacks solve?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Nested stacks let you compose a larger stack from reusable template components while keeping a parent-child deployment relationship."
+              }
             }
           ],
-          "source_refs": [
-            {
-              "title": "CloudFormation nested stacks",
-              "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html"
-            }
-          ]
+          "prerequisite_node_ids": [
+            "d3-change-drift"
+          ],
+          "map_position": {
+            "x": 0.36,
+            "y": 0.12
+          },
+          "source_refs": []
         },
         {
           "id": "d3-stacksets",
@@ -516,54 +453,76 @@
           "concept_ids": [
             "aws.cloudformation.stacksets"
           ],
-          "prerequisite_node_ids": [
-            "d3-cloudformation"
-          ],
-          "map_position": {
-            "x": 0.76,
-            "y": 0.12
-          },
           "prompts": [
             {
-              "id": "what",
+              "id": "scope",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "StackSets centrally deploy stack instances to target __________.",
+              "label": "UNDERSTAND STACKSETS",
+              "placeholder": "Reveal each dimension of a StackSet rollout.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "StackSets centrally deploy stack instances to target AWS accounts and Regions."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Common for standardized IAM, logging, configuration __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Common for standardized IAM, logging, configuration, or infrastructure baselines."
-              }
-            },
-            {
-              "id": "exam",
-              "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "“Same CloudFormation resources in 50 accounts” → __________",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "CloudFormation StackSets. Use them to deploy the same CloudFormation resources across multiple accounts or Regions."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "dimension",
+                    "label": "Dimension"
+                  },
+                  {
+                    "id": "meaning",
+                    "label": "Meaning"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "accounts",
+                    "cells": {
+                      "dimension": "Accounts / organizational units",
+                      "meaning": "Where stack instances should exist."
+                    }
+                  },
+                  {
+                    "id": "regions",
+                    "cells": {
+                      "dimension": "Regions",
+                      "meaning": "Which Regions receive stack instances."
+                    }
+                  },
+                  {
+                    "id": "permissions",
+                    "cells": {
+                      "dimension": "Permission model",
+                      "meaning": "How StackSets obtains authority to deploy across target accounts."
+                    }
+                  },
+                  {
+                    "id": "operations",
+                    "cells": {
+                      "dimension": "Operation preferences",
+                      "meaning": "How concurrency and failure tolerance are controlled during rollout."
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "dimension"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "CloudFormation StackSets",
-              "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html"
-            }
-          ]
+          "prerequisite_node_ids": [
+            "d3-nested-stacks"
+          ],
+          "map_position": {
+            "x": 0.6,
+            "y": 0.12
+          },
+          "source_refs": []
         },
         {
           "id": "d3-deletion-protection",
@@ -571,54 +530,54 @@
           "concept_ids": [
             "aws.cloudformation"
           ],
-          "prerequisite_node_ids": [
-            "d3-change-sets"
-          ],
-          "map_position": {
-            "x": 0.22,
-            "y": 0.37
-          },
           "prompts": [
             {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "CloudFormation supports deletion/update-replacement policies for resources __________.",
+              "id": "policies",
+              "kind": "look_for",
+              "label": "INSPECT RESOURCE RETENTION",
+              "placeholder": "Click the two policies and distinguish stack deletion from replacement.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "CloudFormation supports deletion/update-replacement policies for resources that need preservation."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use appropriate DeletionPolicy/UpdateReplacePolicy behavior such as Retain __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use appropriate DeletionPolicy/UpdateReplacePolicy behavior such as Retain or Snapshot where supported."
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Understand ownership and __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Understand ownership and lifecycle after retention."
+                "type": "code_file",
+                "filename": "database.yaml",
+                "language": "yaml",
+                "code": "Resources:\n  Database:\n    Type: AWS::RDS::DBInstance\n    DeletionPolicy: Snapshot\n    UpdateReplacePolicy: Snapshot\n    Properties:\n      DBInstanceClass: db.t3.micro",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "deletion",
+                    "anchor": {
+                      "line": 4,
+                      "text": "DeletionPolicy",
+                      "occurrence": 1
+                    },
+                    "title": "Stack deletion behavior",
+                    "explanation": "DeletionPolicy controls what CloudFormation does with the resource when the resource is removed from the stack or the stack is deleted, subject to service/policy semantics.",
+                    "required": true
+                  },
+                  {
+                    "id": "replace",
+                    "anchor": {
+                      "line": 5,
+                      "text": "UpdateReplacePolicy",
+                      "occurrence": 1
+                    },
+                    "title": "Replacement behavior",
+                    "explanation": "UpdateReplacePolicy controls what CloudFormation does with the old physical resource when an update requires replacement.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "CloudFormation resource attributes",
-              "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html"
-            }
-          ]
+          "prerequisite_node_ids": [
+            "d3-stacksets"
+          ],
+          "map_position": {
+            "x": 0.84,
+            "y": 0.12
+          },
+          "source_refs": []
         },
         {
           "id": "d3-deployment-troubleshooting",
@@ -627,109 +586,76 @@
             "aws.subnet.capacity",
             "aws.cloudformation"
           ],
-          "prerequisite_node_ids": [
-            "d3-cloudformation"
-          ],
-          "map_position": {
-            "x": 0.48,
-            "y": 0.37
-          },
           "prompts": [
             {
-              "id": "look",
-              "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Read stack events and the underlying service __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Read stack events and the underlying service error before retrying blindly."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⚡ ACTION",
-              "placeholder": "Stack events show which resource failed and the service __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Stack events show which resource failed and the service error that triggered rollback/failure."
-              }
-            },
-            {
-              "id": "exam",
-              "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "“Insufficient free IP addresses in subnet” → fix __________ capacity.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Subnet IP address capacity. Add, resize, or choose subnets with enough available addresses for the deployment."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "AWS CloudFormation",
-              "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html"
-            }
-          ]
-        },
-        {
-          "id": "d3-ram",
-          "title": "AWS Resource Access Manager",
-          "concept_ids": [
-            "aws.ram"
-          ],
-          "prerequisite_node_ids": [
-            "d3-stacksets"
-          ],
-          "map_position": {
-            "x": 0.7,
-            "y": 0.37
-          },
-          "prompts": [
-            {
-              "id": "what",
+              "id": "evidence",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "AWS RAM provides controlled resource sharing across accounts, Organizations, or OUs __________.",
+              "label": "TROUBLESHOOT A FAILED STACK",
+              "placeholder": "Reveal the evidence source that answers each question.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "AWS RAM provides controlled resource sharing across accounts, Organizations, or OUs for supported resource types."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Examples include sharing supported networking and __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Examples include sharing supported networking and infrastructure resources across accounts."
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Choose sharing versus replicated deployment based __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Choose sharing versus replicated deployment based on the architecture."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "question",
+                    "label": "Question"
+                  },
+                  {
+                    "id": "evidence",
+                    "label": "Check"
+                  },
+                  {
+                    "id": "why",
+                    "label": "Why"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "event",
+                    "cells": {
+                      "question": "Which resource failed first?",
+                      "evidence": "CloudFormation stack events",
+                      "why": "Shows resource-level status transitions and failure messages."
+                    }
+                  },
+                  {
+                    "id": "iam",
+                    "cells": {
+                      "question": "Was the operation denied?",
+                      "evidence": "Error plus IAM/CloudTrail context",
+                      "why": "Separates authorization from resource/service constraints."
+                    }
+                  },
+                  {
+                    "id": "capacity",
+                    "cells": {
+                      "question": "Could the target subnet/AZ satisfy the request?",
+                      "evidence": "Service error and target capacity/limits",
+                      "why": "Some failures are placement or capacity constraints rather than template syntax."
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "question"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "AWS RAM",
-              "url": "https://docs.aws.amazon.com/ram/latest/userguide/what-is.html"
-            }
-          ]
+          "prerequisite_node_ids": [
+            "d3-deletion-protection"
+          ],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.34
+          },
+          "source_refs": []
         }
       ]
     },
@@ -754,52 +680,42 @@
           "concept_ids": [
             "iac.version_control"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.15
-          },
           "prompts": [
             {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Keep infrastructure definitions in version control so changes __________.",
+              "id": "why",
+              "kind": "what",
+              "label": "WHY VERSION IAC?",
+              "placeholder": "What changes when infrastructure definitions live in source control?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Keep infrastructure definitions in version control so changes are auditable and repeatable."
+                "text": "Version control gives infrastructure changes history, review, collaboration, rollback context, and a repeatable source of intent instead of undocumented console changes."
               }
             },
             {
-              "id": "look",
-              "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Treat deployment tooling and dependencies as part __________.",
+              "id": "workflow",
+              "kind": "action",
+              "label": "SAFE CHANGE FLOW",
+              "placeholder": "What is a useful change workflow?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Treat deployment tooling and dependencies as part of the reproducible system."
-              }
-            },
-            {
-              "id": "exam",
-              "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "“Track who changed infrastructure definition and restore previous version” → __________",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Version control such as Git. Track infrastructure-definition changes and restore earlier versions when needed."
+                "type": "sequence",
+                "items": [
+                  "Edit IaC",
+                  "Review diff / pull request",
+                  "Validate and preview change",
+                  "Apply through controlled workflow",
+                  "Observe result"
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Git",
-              "url": "https://git-scm.com/doc"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.12
+          },
+          "source_refs": []
         },
         {
           "id": "d3-terraform",
@@ -807,59 +723,87 @@
           "concept_ids": [
             "iac.terraform"
           ],
+          "prompts": [
+            {
+              "id": "model",
+              "kind": "what",
+              "label": "TERRAFORM MENTAL MODEL",
+              "placeholder": "What are the main pieces?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Terraform Core reads configuration, builds a dependency graph, works with providers, compares desired configuration with state and remote objects, then plans and applies changes."
+              }
+            },
+            {
+              "id": "hcl",
+              "kind": "look_for",
+              "label": "INSPECT A TERRAFORM CONFIG",
+              "placeholder": "Click the important HCL structures.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "main.tf",
+                "language": "hcl",
+                "code": "terraform {\n  required_providers {\n    aws = {\n      source  = \"hashicorp/aws\"\n      version = \"~> 5.0\"\n    }\n  }\n}\n\nprovider \"aws\" {\n  region = \"us-east-1\"\n}\n\nresource \"aws_s3_bucket\" \"logs\" {\n  bucket = \"example-ops-logs\"\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "provider-source",
+                    "anchor": {
+                      "line": 4,
+                      "text": "source",
+                      "occurrence": 1
+                    },
+                    "title": "Provider source",
+                    "explanation": "The source address identifies the provider package Terraform should install.",
+                    "required": true
+                  },
+                  {
+                    "id": "provider-version",
+                    "anchor": {
+                      "line": 5,
+                      "text": "version",
+                      "occurrence": 1
+                    },
+                    "title": "Provider version constraint",
+                    "explanation": "The version constraint limits acceptable provider versions.",
+                    "required": true
+                  },
+                  {
+                    "id": "provider-config",
+                    "anchor": {
+                      "line": 10,
+                      "text": "provider \"aws\"",
+                      "occurrence": 1
+                    },
+                    "title": "Provider configuration",
+                    "explanation": "The provider block configures how Terraform talks to AWS.",
+                    "required": true
+                  },
+                  {
+                    "id": "resource",
+                    "anchor": {
+                      "line": 14,
+                      "text": "resource \"aws_s3_bucket\"",
+                      "occurrence": 1
+                    },
+                    "title": "Managed resource",
+                    "explanation": "A resource block declares an object Terraform should manage.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "d3-version-control"
           ],
           "map_position": {
-            "x": 0.38,
-            "y": 0.15
+            "x": 0.36,
+            "y": 0.12
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Terraform plans and applies infrastructure from configuration __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Terraform plans and applies infrastructure from configuration while tracking resource state."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Configuration → State → __________ → Apply",
-              "required": true,
-              "reveal": {
-                "type": "sequence",
-                "items": [
-                  "Configuration",
-                  "State",
-                  "Plan",
-                  "Apply"
-                ]
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "It is a separate IaC ecosystem/tool that __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "It is a separate IaC ecosystem/tool that can manage AWS resources."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Terraform AWS provider",
-              "url": "https://developer.hashicorp.com/terraform/tutorials/aws-get-started"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "d3-deployment-strategies",
@@ -868,54 +812,76 @@
             "aws.cloudformation",
             "aws.cdk"
           ],
-          "prerequisite_node_ids": [
-            "d3-version-control"
-          ],
-          "map_position": {
-            "x": 0.66,
-            "y": 0.15
-          },
           "prompts": [
             {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Deployment strategy determines how much old/new capacity runs simultaneously and __________.",
+              "id": "strategies",
+              "kind": "what",
+              "label": "CHOOSE A DEPLOYMENT APPROACH",
+              "placeholder": "Reveal one approach at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Deployment strategy determines how much old/new capacity runs simultaneously and how risk is controlled."
-              }
-            },
-            {
-              "id": "look",
-              "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Blue/green is a common clue because traffic __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Blue/green is a common clue because traffic can be shifted back."
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Choose based on downtime tolerance, capacity __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Choose based on downtime tolerance, capacity, validation, and rollback requirements."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "approach",
+                    "label": "Approach"
+                  },
+                  {
+                    "id": "risk",
+                    "label": "How it changes risk"
+                  },
+                  {
+                    "id": "fit",
+                    "label": "Typical fit"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "inplace",
+                    "cells": {
+                      "approach": "In-place update",
+                      "risk": "Changes the existing environment directly",
+                      "fit": "Lower-complexity changes where rollback/replacement risk is acceptable."
+                    }
+                  },
+                  {
+                    "id": "bluegreen",
+                    "cells": {
+                      "approach": "Blue/green",
+                      "risk": "Keeps old and new environments separate during cutover",
+                      "fit": "Safer cutover/rollback when duplicate capacity is acceptable."
+                    }
+                  },
+                  {
+                    "id": "canary",
+                    "cells": {
+                      "approach": "Canary / progressive rollout",
+                      "risk": "Exposes only a small portion of traffic/capacity first",
+                      "fit": "Changes where early signal can validate the new version before broad rollout."
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "approach"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "AWS deployment strategies",
-              "url": "https://docs.aws.amazon.com/whitepapers/latest/overview-deployment-options/deployment-strategies.html"
-            }
-          ]
+          "prerequisite_node_ids": [
+            "d3-terraform"
+          ],
+          "map_position": {
+            "x": 0.6,
+            "y": 0.12
+          },
+          "source_refs": []
         }
       ]
     },
@@ -939,52 +905,88 @@
           "concept_ids": [
             "aws.ssm"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.08,
-            "y": 0.1
-          },
           "prompts": [
             {
-              "id": "what",
+              "id": "tools",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Systems Manager provides multiple capabilities for operating managed __________.",
+              "label": "MATCH THE SYSTEMS MANAGER TOOL",
+              "placeholder": "Reveal one operational job at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Systems Manager provides multiple capabilities for operating managed nodes and AWS resources."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Managed nodes need the required agent/connectivity/permissions for __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Managed nodes need the required agent/connectivity/permissions for many Systems Manager capabilities."
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Run Command, Patch Manager, State Manager, Session Manager, Automation, and Maintenance __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Run Command, Patch Manager, State Manager, Session Manager, Automation, and Maintenance Windows solve different problems."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "job",
+                    "label": "Operational job"
+                  },
+                  {
+                    "id": "feature",
+                    "label": "Feature"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "command",
+                    "cells": {
+                      "job": "Run a command on managed nodes",
+                      "feature": "Run Command"
+                    }
+                  },
+                  {
+                    "id": "patch",
+                    "cells": {
+                      "job": "Assess/install operating-system patches",
+                      "feature": "Patch Manager"
+                    }
+                  },
+                  {
+                    "id": "state",
+                    "cells": {
+                      "job": "Keep node configuration in a desired state",
+                      "feature": "State Manager"
+                    }
+                  },
+                  {
+                    "id": "window",
+                    "cells": {
+                      "job": "Schedule coordinated operational tasks",
+                      "feature": "Maintenance Windows"
+                    }
+                  },
+                  {
+                    "id": "session",
+                    "cells": {
+                      "job": "Interactive managed shell without opening inbound SSH/RDP",
+                      "feature": "Session Manager"
+                    }
+                  },
+                  {
+                    "id": "workflow",
+                    "cells": {
+                      "job": "Multi-step runbook / AWS API orchestration",
+                      "feature": "Automation"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "job"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "AWS Systems Manager",
-              "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.12
+          },
+          "source_refs": []
         },
         {
           "id": "d3-run-command",
@@ -992,274 +994,192 @@
           "concept_ids": [
             "aws.ssm.runcommand"
           ],
-          "prerequisite_node_ids": [
-            "d3-ssm-overview"
-          ],
-          "map_position": {
-            "x": 0.26,
-            "y": 0.1
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Run Command uses Systems Manager to execute __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Run Command uses Systems Manager to execute documents/commands and report status."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Run Command is __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Run Command is a strong fit."
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Choose the abstraction that __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Choose the abstraction that matches the operation."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Run Command",
-              "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.html"
-            }
-          ]
-        },
-        {
-          "id": "d3-patch-manager",
-          "title": "Patch Manager",
-          "concept_ids": [
-            "aws.ssm.patchmanager"
-          ],
-          "prerequisite_node_ids": [
-            "d3-ssm-overview"
-          ],
-          "map_position": {
-            "x": 0.44,
-            "y": 0.1
-          },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Patch Manager helps evaluate and install patches according to __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Patch Manager helps evaluate and install patches according to patch policies/baselines and schedules."
-              }
-            },
-            {
-              "id": "look",
+              "id": "document",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Patch Manager is the __________.",
+              "label": "INSPECT A COMMAND DOCUMENT",
+              "placeholder": "Click the fields that tell SSM what to run.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Patch Manager is the direct service clue."
+                "type": "code_file",
+                "filename": "run-command.yaml",
+                "language": "yaml",
+                "code": "schemaVersion: '2.2'\ndescription: Check disk usage\nmainSteps:\n  - action: aws:runShellScript\n    name: checkDisk\n    inputs:\n      runCommand:\n        - df -h",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "schema",
+                    "anchor": {
+                      "line": 1,
+                      "text": "schemaVersion",
+                      "occurrence": 1
+                    },
+                    "title": "Command document schema",
+                    "explanation": "Command documents commonly use the 2.2 schema for managed-node command execution.",
+                    "required": true
+                  },
+                  {
+                    "id": "action",
+                    "anchor": {
+                      "line": 4,
+                      "text": "aws:runShellScript",
+                      "occurrence": 1
+                    },
+                    "title": "Plugin/action",
+                    "explanation": "aws:runShellScript executes shell commands on supported managed nodes.",
+                    "required": true
+                  },
+                  {
+                    "id": "command",
+                    "anchor": {
+                      "line": 8,
+                      "text": "df -h",
+                      "occurrence": 1
+                    },
+                    "title": "Command payload",
+                    "explanation": "runCommand contains the actual command lines sent to the managed node.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "OS patching and application deployment __________.",
+              "id": "fleet",
+              "kind": "what",
+              "label": "WHY IT SCALES BETTER THAN SSH",
+              "placeholder": "What operational advantage does Run Command provide?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "OS patching and application deployment are separate concerns."
+                "text": "Run Command can target managed nodes by IDs or tags and run commands without requiring operators to open inbound administrative ports or manually connect to each server."
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Patch Manager",
-              "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.html"
-            }
-          ]
+          "prerequisite_node_ids": [
+            "d3-ssm-overview"
+          ],
+          "map_position": {
+            "x": 0.36,
+            "y": 0.12
+          },
+          "source_refs": []
         },
         {
-          "id": "d3-state-manager",
-          "title": "State Manager",
+          "id": "d3-patch-state",
+          "title": "Patch Manager and State Manager",
           "concept_ids": [
+            "aws.ssm.patchmanager",
             "aws.ssm.statemanager"
           ],
-          "prerequisite_node_ids": [
-            "d3-ssm-overview"
-          ],
-          "map_position": {
-            "x": 0.62,
-            "y": 0.1
-          },
           "prompts": [
             {
-              "id": "what",
+              "id": "compare",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "State Manager associations periodically apply a desired __________.",
+              "label": "PATCH OR DESIRED STATE?",
+              "placeholder": "Reveal one feature at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "State Manager associations periodically apply a desired configuration/document to managed nodes."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "State Manager is designed for __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "State Manager is designed for recurring desired-state enforcement."
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Run Command is usually the simpler __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Run Command is usually the simpler one-off command tool."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "feature",
+                    "label": "Feature"
+                  },
+                  {
+                    "id": "goal",
+                    "label": "Primary goal"
+                  },
+                  {
+                    "id": "example",
+                    "label": "Example"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "patch",
+                    "cells": {
+                      "feature": "Patch Manager",
+                      "goal": "Assess and install operating-system patches",
+                      "example": "Apply approved security patches during a maintenance period."
+                    }
+                  },
+                  {
+                    "id": "state",
+                    "cells": {
+                      "feature": "State Manager",
+                      "goal": "Maintain a desired configuration on managed nodes",
+                      "example": "Ensure an agent/configuration remains installed and configured."
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "feature"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             }
-          ],
-          "source_refs": [
-            {
-              "title": "State Manager",
-              "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.html"
-            }
-          ]
-        },
-        {
-          "id": "d3-maintenance-window",
-          "title": "Maintenance Windows",
-          "concept_ids": [
-            "aws.ssm.maintenancewindows"
           ],
           "prerequisite_node_ids": [
-            "d3-ssm-overview"
+            "d3-run-command"
           ],
           "map_position": {
-            "x": 0.8,
-            "y": 0.1
+            "x": 0.6,
+            "y": 0.12
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Maintenance Windows schedule operational tasks against registered __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Maintenance Windows schedule operational tasks against registered targets within controlled windows."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use a Maintenance Window __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use a Maintenance Window to control timing."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "This separates the operational task from __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "This separates the operational task from the approved execution period."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Maintenance Windows",
-              "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.html"
-            }
-          ]
+          "source_refs": []
         },
         {
-          "id": "d3-session-manager",
-          "title": "Session Manager",
+          "id": "d3-maintenance-session",
+          "title": "Maintenance Windows and Session Manager",
           "concept_ids": [
+            "aws.ssm.maintenancewindows",
             "aws.ssm.sessionmanager"
           ],
-          "prerequisite_node_ids": [
-            "d3-ssm-overview"
-          ],
-          "map_position": {
-            "x": 0.3,
-            "y": 0.36
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Session Manager can provide auditable interactive access to managed nodes without __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Session Manager can provide auditable interactive access to managed nodes without traditional inbound administration ports."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Session Manager is a strong __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Session Manager is a strong operational access pattern."
-              }
-            },
-            {
-              "id": "not",
+              "id": "compare",
               "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "No inbound port does not mean __________.",
+              "label": "SCHEDULE OR CONNECT?",
+              "placeholder": "Separate the two operational jobs.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "No inbound port does not mean no authorization controls."
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Maintenance Windows",
+                    "items": [
+                      "Schedule recurring operational tasks",
+                      "Control targets and timing",
+                      "Useful for patching/commands/automation at approved times"
+                    ]
+                  },
+                  {
+                    "title": "Session Manager",
+                    "items": [
+                      "Interactive shell access to managed nodes",
+                      "No inbound SSH/RDP requirement",
+                      "Centralized control and auditing integration"
+                    ]
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Session Manager",
-              "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.html"
-            }
-          ]
+          "prerequisite_node_ids": [
+            "d3-patch-state"
+          ],
+          "map_position": {
+            "x": 0.84,
+            "y": 0.12
+          },
+          "source_refs": []
         },
         {
           "id": "d3-automation",
@@ -1267,54 +1187,44 @@
           "concept_ids": [
             "aws.ssm.automation"
           ],
-          "prerequisite_node_ids": [
-            "d3-ssm-overview"
-          ],
-          "map_position": {
-            "x": 0.58,
-            "y": 0.36
-          },
           "prompts": [
             {
-              "id": "what",
+              "id": "workflow",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Automation orchestrates AWS API actions, scripts, approvals, and other __________.",
+              "label": "WHAT MAKES AUTOMATION DIFFERENT?",
+              "placeholder": "Why not just use Run Command for everything?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Automation orchestrates AWS API actions, scripts, approvals, and other steps in repeatable runbooks."
+                "text": "Automation coordinates a sequence of runbook steps and can call AWS APIs, branch, wait, invoke other automation, and manage remediation workflows beyond a single node command."
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Automation is designed for __________.",
+              "id": "flow",
+              "kind": "action",
+              "label": "AUTOMATION FLOW",
+              "placeholder": "How should you think through a remediation runbook?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Automation is designed for structured operational workflows."
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Runbooks can orchestrate AWS resource APIs __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Runbooks can orchestrate AWS resource APIs and multiple service actions."
+                "type": "sequence",
+                "items": [
+                  "Parameterize target/resources",
+                  "Validate preconditions",
+                  "Perform remediation steps",
+                  "Verify result",
+                  "Surface failures / logs"
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Systems Manager Automation",
-              "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/automation.html"
-            }
-          ]
+          "prerequisite_node_ids": [
+            "d3-maintenance-session"
+          ],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.34
+          },
+          "source_refs": []
         }
       ]
     },
@@ -1338,52 +1248,74 @@
           "concept_ids": [
             "aws.eventbridge"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.1,
-            "y": 0.12
-          },
           "prompts": [
             {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Rules route matching events __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Rules route matching events to automation targets."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "EventBridge is a common __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "EventBridge is a common event-driven routing layer."
-              }
-            },
-            {
-              "id": "look",
+              "id": "rule",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Use target metrics/logs and DLQ/retry __________.",
+              "label": "INSPECT THE MATCH",
+              "placeholder": "Click the fields that make this an EC2 termination event pattern.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "termination-pattern.json",
+                "language": "json",
+                "code": "{\n  \"source\": [\"aws.ec2\"],\n  \"detail-type\": [\"EC2 Instance State-change Notification\"],\n  \"detail\": {\n    \"state\": [\"terminated\"]\n  }\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "source",
+                    "anchor": {
+                      "line": 2,
+                      "text": "source",
+                      "occurrence": 1
+                    },
+                    "title": "Source filter",
+                    "explanation": "Matches events from the EC2 service.",
+                    "required": true
+                  },
+                  {
+                    "id": "detail-type",
+                    "anchor": {
+                      "line": 3,
+                      "text": "detail-type",
+                      "occurrence": 1
+                    },
+                    "title": "Event type",
+                    "explanation": "Matches EC2 instance state-change notifications.",
+                    "required": true
+                  },
+                  {
+                    "id": "state",
+                    "anchor": {
+                      "line": 5,
+                      "text": "terminated",
+                      "occurrence": 1
+                    },
+                    "title": "Specific state",
+                    "explanation": "Narrows the pattern to the terminated state.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "target",
+              "kind": "what",
+              "label": "RULES NEED TARGETS",
+              "placeholder": "What happens after a match?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Use target metrics/logs and DLQ/retry settings where relevant."
+                "text": "A matching EventBridge rule routes the event to configured targets such as Lambda, SNS, Step Functions, Systems Manager, or supported AWS service/API targets."
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Amazon EventBridge",
-              "url": "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.12
+          },
+          "source_refs": []
         },
         {
           "id": "d3-lambda",
@@ -1391,54 +1323,65 @@
           "concept_ids": [
             "aws.lambda"
           ],
+          "prompts": [
+            {
+              "id": "function",
+              "kind": "look_for",
+              "label": "INSPECT A SMALL REMEDIATION",
+              "placeholder": "Click the AWS SDK calls to see the control flow.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "handler.py",
+                "language": "python",
+                "code": "import boto3\n\nec2 = boto3.client(\"ec2\")\n\ndef handler(event, context):\n    instance_id = event[\"detail\"][\"instance-id\"]\n    ec2.create_tags(\n        Resources=[instance_id],\n        Tags=[{\"Key\": \"NeedsReview\", \"Value\": \"true\"}],\n    )\n    return {\"tagged\": instance_id}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "client",
+                    "anchor": {
+                      "line": 3,
+                      "text": "boto3.client(\"ec2\")",
+                      "occurrence": 1
+                    },
+                    "title": "Service client",
+                    "explanation": "The Lambda function uses the AWS SDK client to call EC2 APIs.",
+                    "required": true
+                  },
+                  {
+                    "id": "event",
+                    "anchor": {
+                      "line": 6,
+                      "text": "event[\"detail\"][\"instance-id\"]",
+                      "occurrence": 1
+                    },
+                    "title": "Event input",
+                    "explanation": "The function reads the resource identifier from the event payload.",
+                    "required": true
+                  },
+                  {
+                    "id": "api",
+                    "anchor": {
+                      "line": 7,
+                      "text": "create_tags",
+                      "occurrence": 1
+                    },
+                    "title": "Remediation API",
+                    "explanation": "The function performs the intended AWS API action; its IAM role must allow that action on the intended scope.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "d3-eventbridge"
           ],
           "map_position": {
-            "x": 0.34,
+            "x": 0.36,
             "y": 0.12
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Lambda provides event-driven compute for short-lived __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Lambda provides event-driven compute for short-lived automation and integrations."
-              }
-            },
-            {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Lambda is useful when native actions __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Lambda is useful when native actions are not enough."
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Prefer simpler native __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Prefer simpler native integrations when possible."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "AWS Lambda",
-              "url": "https://docs.aws.amazon.com/lambda/latest/dg/welcome.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "d3-s3-events",
@@ -1446,113 +1389,87 @@
           "concept_ids": [
             "aws.s3.events"
           ],
-          "prerequisite_node_ids": [
-            "d3-eventbridge"
-          ],
-          "map_position": {
-            "x": 0.58,
-            "y": 0.12
-          },
           "prompts": [
             {
-              "id": "what",
+              "id": "dest",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "S3 can publish notifications for selected bucket __________.",
+              "label": "CHOOSE AN S3 EVENT DESTINATION",
+              "placeholder": "Reveal one destination pattern at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "S3 can publish notifications for selected bucket events to supported targets; S3 events can also flow through EventBridge."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "destination",
+                    "label": "Destination"
+                  },
+                  {
+                    "id": "fit",
+                    "label": "Typical fit"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "sns",
+                    "cells": {
+                      "destination": "SNS",
+                      "fit": "Fan out object-event notifications to subscribers."
+                    }
+                  },
+                  {
+                    "id": "sqs",
+                    "cells": {
+                      "destination": "SQS",
+                      "fit": "Buffer object-event work for asynchronous consumers."
+                    }
+                  },
+                  {
+                    "id": "lambda",
+                    "cells": {
+                      "destination": "Lambda",
+                      "fit": "Run code directly in response to object events."
+                    }
+                  },
+                  {
+                    "id": "eventbridge",
+                    "cells": {
+                      "destination": "EventBridge",
+                      "fit": "Use richer event routing and integration patterns."
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "destination"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "look",
-              "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Notification filters reduce __________.",
+              "id": "filters",
+              "kind": "what",
+              "label": "FILTER EARLY",
+              "placeholder": "Why use prefix/suffix filters where supported?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Notification filters reduce unnecessary downstream work."
-              }
-            },
-            {
-              "id": "exam",
-              "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "“Run processing when a new object arrives” → __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "S3 Event Notifications or EventBridge-based S3 events. Use them to trigger processing when matching object events occur."
+                "text": "Filtering object-event notifications reduces unnecessary downstream invocations by limiting events to the object keys that the workflow actually cares about."
               }
             }
-          ],
-          "source_refs": [
-            {
-              "title": "S3 Event Notifications",
-              "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/EventNotifications.html"
-            }
-          ]
-        },
-        {
-          "id": "d3-devops-agent",
-          "title": "AWS DevOps Agent",
-          "concept_ids": [
-            "aws.devopsagent"
           ],
           "prerequisite_node_ids": [
-            "d3-eventbridge"
+            "d3-lambda"
           ],
           "map_position": {
-            "x": 0.82,
+            "x": 0.6,
             "y": 0.12
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "AWS DevOps Agent is included in current exam-guide examples for __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "AWS DevOps Agent is included in current exam-guide examples for event-driven operations and remediation."
-              }
-            },
-            {
-              "id": "mental",
-              "kind": "mental_model",
-              "label": "🧠 MENTAL MODEL",
-              "placeholder": "Keep remediation auditable __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Keep remediation auditable and permission-bounded."
-              }
-            },
-            {
-              "id": "not",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Know how the underlying signals and __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Know how the underlying signals and automation services work."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "AWS DevOps Agent",
-              "url": "https://docs.aws.amazon.com/devopsagent/latest/userguide/about-aws-devops-agent.html"
-            },
-            {
-              "title": "SOA-C03 revisions",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/soa-03-revisions.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }
@@ -1591,8 +1508,8 @@
       "3.2.2"
     ],
     "module_count": 5,
-    "knowledge_node_count": 26,
-    "prompt_count": 78
+    "knowledge_node_count": 20,
+    "prompt_count": 31
   },
-  "authoring_notes": "Original learning content. Official SOA-C03 exam guide revision 1.1 is the scope authority; the supplied May 2026 study guide was used as a supplementary coverage check and was not copied. Prompt placeholders were revised in v2 so ordinary prompts directly cloze or structurally preview the revealed content. Exam-clue prompts retain certification-style scenario wording and now reveal a direct answer first."
+  "authoring_notes": "Re-authored for the learning-v2 discovery system. The curriculum uses progressive row/column/cell tables and annotated code/configuration examples where they improve operational understanding. Official SOA-C03 exam guide revision 1.1 remains the scope authority."
 }

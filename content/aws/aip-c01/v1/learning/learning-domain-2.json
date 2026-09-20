@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.0.0",
-  "content_version": "aip-c01-learning-2026-09-19-v1-domain2",
+  "schema_version": "2.0.0",
+  "content_version": "aip-c01-learning-2026-09-19-v2-domain2",
   "certification_id": "aws-aip-c01",
   "certification_version": "aip-c01",
   "domain": {
@@ -10,7 +10,7 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
+    "unlock_rule": "Reveal the required explanations, progressive table units, and required code annotations to unlock each knowledge node.",
     "mastery_note": "Exploration progress is not mastery evidence; quiz attempts remain the scored retrieval signal."
   },
   "source_refs": [
@@ -62,7 +62,7 @@
     "knowledge_node_count": 25,
     "prompt_count": 100
   },
-  "authoring_notes": "Authored from the AWS AIP-C01 standard exam guide and official service documentation. Explanations are paraphrased; questions are original exam-style practice, not recalled exam content.",
+  "authoring_notes": "Authored from the AWS AIP-C01 standard exam guide and official service documentation. Explanations are paraphrased; questions are original exam-style practice, not recalled exam content. Updated for the learning-v2 renderer: selected high-value concepts now use progressive tables and annotated syntax-highlighted code files while preserving the original concept/task coverage and prompt counts.",
   "modules": [
     {
       "id": "d2-task-2-1",
@@ -119,16 +119,69 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "AGENT STATE AND MEMORY",
+              "placeholder": "Reveal which state belongs where. Not every interaction should become permanent memory.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "Strands Agents",
-                  "AWS Agent Squad",
-                  "MCP and agent memory"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "layer",
+                    "label": "Layer"
+                  },
+                  {
+                    "id": "keeps",
+                    "label": "What it keeps"
+                  },
+                  {
+                    "id": "when",
+                    "label": "When it helps"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "session",
+                    "cells": {
+                      "layer": "Session state",
+                      "keeps": "Current-turn and short-lived workflow context",
+                      "when": "The agent needs continuity during one active session or workflow"
+                    }
+                  },
+                  {
+                    "id": "durable",
+                    "cells": {
+                      "layer": "Durable memory",
+                      "keeps": "Selected facts/preferences intended to survive sessions",
+                      "when": "Future interactions genuinely benefit from retained context"
+                    }
+                  },
+                  {
+                    "id": "coordination",
+                    "cells": {
+                      "layer": "Multi-agent coordination state",
+                      "keeps": "Task ownership, handoffs, intermediate outputs",
+                      "when": "Specialist agents have a real decomposition and must coordinate work"
+                    }
+                  },
+                  {
+                    "id": "protocol",
+                    "cells": {
+                      "layer": "Standardized tool protocol such as MCP",
+                      "keeps": "Tool/resource interface contracts rather than user memory",
+                      "when": "Agents need a consistent way to discover and call external capabilities"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "layer"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -489,15 +542,71 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "INSPECT A TOOL CONTRACT",
+              "placeholder": "Click the tool name, description, and input schema. Reliable tools constrain the model before privileged code executes.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "Strands API",
-                  "function definitions",
-                  "Lambda validation/error handling"
+                "type": "code_file",
+                "filename": "tool_schema.json",
+                "language": "json",
+                "code": "{\n  \"name\": \"get_inventory\",\n  \"description\": \"Read inventory for one SKU\",\n  \"inputSchema\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"sku\": {\"type\": \"string\"}\n    },\n    \"required\": [\"sku\"],\n    \"additionalProperties\": false\n  }\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "tool-name",
+                    "anchor": {
+                      "line": 2,
+                      "text": "\"get_inventory\"",
+                      "occurrence": 1
+                    },
+                    "title": "Stable tool name",
+                    "explanation": "A concise stable name helps the model select the intended capability instead of improvising a command.",
+                    "required": true
+                  },
+                  {
+                    "id": "tool-description",
+                    "anchor": {
+                      "line": 3,
+                      "text": "Read inventory for one SKU",
+                      "occurrence": 1
+                    },
+                    "title": "Narrow behavior description",
+                    "explanation": "The description tells the model exactly what the tool does. Avoid vague tools that combine unrelated privileged actions.",
+                    "required": true
+                  },
+                  {
+                    "id": "input-schema",
+                    "anchor": {
+                      "line": 4,
+                      "text": "\"inputSchema\"",
+                      "occurrence": 1
+                    },
+                    "title": "Validated input schema",
+                    "explanation": "A structured schema constrains arguments before application code or Lambda performs the operation.",
+                    "required": true
+                  },
+                  {
+                    "id": "required",
+                    "anchor": {
+                      "line": 9,
+                      "text": "\"required\"",
+                      "occurrence": 1
+                    },
+                    "title": "Required parameter",
+                    "explanation": "Required fields make missing inputs explicit. Server-side validation and authorization are still necessary.",
+                    "required": true
+                  },
+                  {
+                    "id": "no-extra",
+                    "anchor": {
+                      "line": 10,
+                      "text": "additionalProperties",
+                      "occurrence": 1
+                    },
+                    "title": "Reject unexpected fields",
+                    "explanation": "Rejecting unexpected fields is one way to reduce accidental or model-invented parameters before tool execution.",
+                    "required": true
+                  }
                 ]
               }
             },
@@ -653,16 +762,61 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "DEPLOYMENT MODES",
+              "placeholder": "Reveal the traffic shape, customization fit, and operational tradeoff for each inference mode.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "Bedrock on-demand",
-                  "Bedrock Provisioned Throughput",
-                  "SageMaker endpoint"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "mode",
+                    "label": "Mode"
+                  },
+                  {
+                    "id": "fit",
+                    "label": "Best fit"
+                  },
+                  {
+                    "id": "tradeoff",
+                    "label": "Tradeoff"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "ondemand",
+                    "cells": {
+                      "mode": "Bedrock On-Demand",
+                      "fit": "Variable traffic and managed foundation models without reserved capacity",
+                      "tradeoff": "Capacity is shared and request quotas still apply"
+                    }
+                  },
+                  {
+                    "id": "provisioned",
+                    "cells": {
+                      "mode": "Bedrock Provisioned Throughput",
+                      "fit": "Predictable sustained demand that benefits from reserved model capacity",
+                      "tradeoff": "Commit capacity deliberately; idle reserved capacity can waste cost"
+                    }
+                  },
+                  {
+                    "id": "sagemaker",
+                    "cells": {
+                      "mode": "SageMaker real-time endpoint",
+                      "fit": "Custom model serving or infrastructure-level control beyond managed Bedrock model invocation",
+                      "tradeoff": "More deployment, scaling, and operations responsibility"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "mode"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -1280,16 +1434,61 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "INVOCATION PATTERNS",
+              "placeholder": "Reveal which interaction pattern fits each request shape. “Async” is not automatically better for an interactive user.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "Bedrock APIs",
-                  "AWS SDK",
-                  "SQS"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "pattern",
+                    "label": "Pattern"
+                  },
+                  {
+                    "id": "fit",
+                    "label": "Best fit"
+                  },
+                  {
+                    "id": "ux",
+                    "label": "Application behavior"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "sync",
+                    "cells": {
+                      "pattern": "Synchronous request",
+                      "fit": "Short request where the caller can wait for the full result",
+                      "ux": "One request/response boundary"
+                    }
+                  },
+                  {
+                    "id": "stream",
+                    "cells": {
+                      "pattern": "Streaming response",
+                      "fit": "Interactive generation where early tokens improve perceived latency",
+                      "ux": "Process output events/chunks as they arrive"
+                    }
+                  },
+                  {
+                    "id": "background",
+                    "cells": {
+                      "pattern": "Background / asynchronous workflow",
+                      "fit": "Long-running or batch-style work that should not hold an interactive request open",
+                      "ux": "Persist job state and return/poll/callback later"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "pattern"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -1354,15 +1553,60 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "TRACE CONVERSESTREAM",
+              "placeholder": "Click the streaming call, event stream, and text delta to see how a Bedrock response is consumed incrementally.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "ConverseStream",
-                  "server-sent events",
-                  "WebSocket/chunked transfer"
+                "type": "code_file",
+                "filename": "bedrock_stream.py",
+                "language": "python",
+                "code": "response = client.converse_stream(\n    modelId=model_id,\n    messages=messages,\n    inferenceConfig={\"maxTokens\": 500},\n)\n\nfor event in response[\"stream\"]:\n    if \"contentBlockDelta\" in event:\n        delta = event[\"contentBlockDelta\"][\"delta\"]\n        if \"text\" in delta:\n            print(delta[\"text\"], end=\"\", flush=True)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "stream-call",
+                    "anchor": {
+                      "line": 1,
+                      "text": "client.converse_stream",
+                      "occurrence": 1
+                    },
+                    "title": "Streaming invocation",
+                    "explanation": "ConverseStream returns a response whose stream can be consumed incrementally instead of waiting for the complete model output.",
+                    "required": true
+                  },
+                  {
+                    "id": "event-stream",
+                    "anchor": {
+                      "line": 7,
+                      "text": "response[\"stream\"]",
+                      "occurrence": 1
+                    },
+                    "title": "Event stream",
+                    "explanation": "Iterate over the event stream and handle event types rather than assuming every event contains text.",
+                    "required": true
+                  },
+                  {
+                    "id": "delta-event",
+                    "anchor": {
+                      "line": 8,
+                      "text": "contentBlockDelta",
+                      "occurrence": 1
+                    },
+                    "title": "Content delta event",
+                    "explanation": "contentBlockDelta carries incremental content updates. Other event shapes can also appear, so production code should handle the events it needs safely.",
+                    "required": true
+                  },
+                  {
+                    "id": "text-delta",
+                    "anchor": {
+                      "line": 11,
+                      "text": "delta[\"text\"]",
+                      "occurrence": 1
+                    },
+                    "title": "Incremental text",
+                    "explanation": "Rendering text deltas as they arrive improves perceived latency for interactive applications.",
+                    "required": true
+                  }
                 ]
               }
             },
@@ -1428,16 +1672,69 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "RETRY OR FIX?",
+              "placeholder": "Reveal whether the failure should normally be retried or fixed first. Blind retries can make throttling worse.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "exponential backoff",
-                  "rate limiting",
-                  "fallback"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "failure",
+                    "label": "Failure"
+                  },
+                  {
+                    "id": "response",
+                    "label": "Normal response"
+                  },
+                  {
+                    "id": "why",
+                    "label": "Why"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "throttle",
+                    "cells": {
+                      "failure": "Throttling / quota pressure",
+                      "response": "Retry with exponential backoff + jitter; reduce concurrency or request quota/capacity as needed",
+                      "why": "The condition can be transient, but synchronized retries amplify it"
+                    }
+                  },
+                  {
+                    "id": "timeout",
+                    "cells": {
+                      "failure": "Transient timeout / retryable service failure",
+                      "response": "Bounded retry with backoff and idempotent handling where applicable",
+                      "why": "A later attempt can succeed if the underlying service recovers"
+                    }
+                  },
+                  {
+                    "id": "validation",
+                    "cells": {
+                      "failure": "Validation / malformed request",
+                      "response": "Fix the request; do not repeatedly retry unchanged input",
+                      "why": "The same invalid schema or parameter will keep failing"
+                    }
+                  },
+                  {
+                    "id": "auth",
+                    "cells": {
+                      "failure": "Authorization / model-access failure",
+                      "response": "Fix permissions, model access, or resource policy",
+                      "why": "Retrying does not grant missing authorization"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "failure"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {

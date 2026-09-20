@@ -12,6 +12,7 @@ import {
   deriveLearningState,
   loadDomainProgress,
   nextModuleAfter,
+  revealElement as revealElementInProgress,
   revealPrompt,
   type DomainLearningProgress,
 } from "../state/learningProgress";
@@ -146,24 +147,15 @@ export default function DomainLearningPage() {
     setSelectedNodeId(null);
   }, []);
 
-  const reveal = useCallback(
-    (node: KnowledgeNode, promptId: string) => {
+  // Applies a persisted progress update and fires the unlock transition once.
+  // Shared by prompt reveals and code-annotation reveals so both paths unlock
+  // nodes identically.
+  const commitProgress = useCallback(
+    (updated: DomainLearningProgress, node: KnowledgeNode) => {
       if (!data || !derived) {
         return;
       }
-      // Locked nodes are never interactive, even if a stray event fires.
-      if (derived.nodeState[node.id] === "locked") {
-        return;
-      }
-
       const before = derived;
-      const updated = revealPrompt(
-        data.certification_version,
-        data.domain.id,
-        data.content_version,
-        node.id,
-        promptId,
-      );
       const after = deriveLearningState(data, updated);
       setProgress(updated);
 
@@ -203,6 +195,48 @@ export default function DomainLearningPage() {
       }
     },
     [data, derived],
+  );
+
+  const reveal = useCallback(
+    (node: KnowledgeNode, promptId: string) => {
+      if (!data || !derived) {
+        return;
+      }
+      // Locked nodes are never interactive, even if a stray event fires.
+      if (derived.nodeState[node.id] === "locked") {
+        return;
+      }
+      const updated = revealPrompt(
+        data.certification_version,
+        data.domain.id,
+        data.content_version,
+        node.id,
+        promptId,
+      );
+      commitProgress(updated, node);
+    },
+    [data, derived, commitProgress],
+  );
+
+  const revealElement = useCallback(
+    (node: KnowledgeNode, promptId: string, elementId: string) => {
+      if (!data || !derived) {
+        return;
+      }
+      if (derived.nodeState[node.id] === "locked") {
+        return;
+      }
+      const updated = revealElementInProgress(
+        data.certification_version,
+        data.domain.id,
+        data.content_version,
+        node.id,
+        promptId,
+        elementId,
+      );
+      commitProgress(updated, node);
+    },
+    [data, derived, commitProgress],
   );
 
   const startDomainQuiz = useCallback(async () => {
@@ -294,9 +328,13 @@ export default function DomainLearningPage() {
           moduleTitle={moduleForSelected.title}
           state={derived.nodeState[selectedNode.id] ?? "locked"}
           revealedPromptIds={derived.revealedPromptIds[selectedNode.id] ?? []}
+          revealedElementIds={derived.revealedElementIds[selectedNode.id] ?? {}}
           nextNode={nextNode}
           reducedMotion={reducedMotion}
           onReveal={(promptId) => reveal(selectedNode, promptId)}
+          onRevealElement={(promptId, elementId) =>
+            revealElement(selectedNode, promptId, elementId)
+          }
           onClose={() => setSelectedNodeId(null)}
           onDiscoverNext={selectNode}
         />

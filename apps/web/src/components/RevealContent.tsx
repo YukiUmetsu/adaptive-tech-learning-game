@@ -1,8 +1,24 @@
 import type { LearningReveal } from "../api/types";
 import { comparisonGridClass } from "../lib/comparison";
+import { isProgressiveTable } from "../lib/learningElements";
+import CodeFile, { type CodeFileInteraction } from "./CodeFile";
+import LearningTable from "./LearningTable";
+import ProgressiveLearningTable, {
+  type ProgressiveTableInteraction,
+} from "./ProgressiveLearningTable";
 
 interface RevealContentProps {
   reveal: LearningReveal;
+  /**
+   * Discovery state for a `code_file` reveal. Static reveals ignore it; an
+   * interaction-free code file renders read-only with no clickable regions.
+   */
+  codeInteraction?: CodeFileInteraction;
+  /**
+   * Discovery state for a progressive `table` reveal. A table without
+   * `progressive_reveal` ignores it and uses the static whole-table reveal.
+   */
+  tableInteraction?: ProgressiveTableInteraction;
 }
 
 /**
@@ -10,9 +26,14 @@ interface RevealContentProps {
  *
  * Each reveal type gets a purpose-built layout instead of being flattened to
  * prose: sequences show arrows, comparisons are side-by-side (stacked on
- * mobile), and keywords become clue chips.
+ * mobile), keywords become clue chips, tables use real table semantics, and
+ * code files render as a read-only highlighted editor.
  */
-export default function RevealContent({ reveal }: RevealContentProps) {
+export default function RevealContent({
+  reveal,
+  codeInteraction,
+  tableInteraction,
+}: RevealContentProps) {
   switch (reveal.type) {
     case "text":
       return <p className="reveal reveal-text">{reveal.text}</p>;
@@ -67,6 +88,25 @@ export default function RevealContent({ reveal }: RevealContentProps) {
               </ul>
             </section>
           ))}
+        </div>
+      );
+    case "table":
+      return (
+        <div className="reveal reveal-table">
+          {isProgressiveTable(reveal) ? (
+            <ProgressiveLearningTable
+              reveal={reveal}
+              interaction={tableInteraction}
+            />
+          ) : (
+            <LearningTable {...reveal} />
+          )}
+        </div>
+      );
+    case "code_file":
+      return (
+        <div className="reveal reveal-code-file">
+          <CodeFile reveal={reveal} interaction={codeInteraction} />
         </div>
       );
     default:

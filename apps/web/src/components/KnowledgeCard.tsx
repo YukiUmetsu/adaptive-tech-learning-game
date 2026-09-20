@@ -1,5 +1,11 @@
+import { useMemo } from "react";
+
 import type { KnowledgeNode } from "../api/types";
-import type { NodeState } from "../state/learningProgress";
+import {
+  isPromptComplete,
+  nodePromptProgress,
+  type NodeState,
+} from "../state/learningProgress";
 import KnowledgePrompt from "./KnowledgePrompt";
 
 interface KnowledgeCardProps {
@@ -7,9 +13,12 @@ interface KnowledgeCardProps {
   moduleTitle: string;
   state: NodeState;
   revealedPromptIds: readonly string[];
+  /** Prompt id to revealed namespaced discovery element ids for this node. */
+  revealedElementIds: Readonly<Record<string, readonly string[]>>;
   nextNode: KnowledgeNode | null;
   reducedMotion: boolean;
   onReveal: (promptId: string) => void;
+  onRevealElement: (promptId: string, elementId: string) => void;
   onClose: () => void;
   onDiscoverNext: (nodeId: string) => void;
 }
@@ -26,17 +35,29 @@ export default function KnowledgeCard({
   moduleTitle,
   state,
   revealedPromptIds,
+  revealedElementIds,
   nextNode,
   reducedMotion,
   onReveal,
+  onRevealElement,
   onClose,
   onDiscoverNext,
 }: KnowledgeCardProps) {
-  const revealed = new Set(revealedPromptIds);
-  const requiredPrompts = node.prompts.filter((prompt) => prompt.required !== false);
-  const counted = requiredPrompts.length > 0 ? requiredPrompts : node.prompts;
-  const revealedCount = counted.filter((prompt) => revealed.has(prompt.id)).length;
-  const total = counted.length;
+  const elementSets = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const [promptId, ids] of Object.entries(revealedElementIds)) {
+      map.set(promptId, new Set(ids));
+    }
+    return map;
+  }, [revealedElementIds]);
+  const revealed = useMemo(() => new Set(revealedPromptIds), [revealedPromptIds]);
+  const promptComplete = (prompt: KnowledgeNode["prompts"][number]) =>
+    isPromptComplete(prompt, revealed, elementSets.get(prompt.id));
+  const { completed: revealedCount, total } = nodePromptProgress(
+    node,
+    revealed,
+    elementSets,
+  );
   const unlocked = state === "unlocked";
 
   return (
@@ -80,8 +101,10 @@ export default function KnowledgeCard({
           <KnowledgePrompt
             key={prompt.id}
             prompt={prompt}
-            revealed={revealed.has(prompt.id)}
+            revealed={promptComplete(prompt)}
+            revealedElementIds={revealedElementIds[prompt.id] ?? []}
             onReveal={onReveal}
+            onRevealElement={onRevealElement}
           />
         ))}
       </ul>

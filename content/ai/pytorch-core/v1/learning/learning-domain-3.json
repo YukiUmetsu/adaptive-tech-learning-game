@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "pytorch-core-learning-2026-09-19-v1",
+  "content_version": "pytorch-core-learning-2026-09-19-v2",
   "certification_id": "ai-pytorch-core",
   "certification_version": "pytorch-core-v1",
   "exam_guide_revision": "Not a certification. PyTorch stable documentation reviewed 2026-09-19 (current docs identified as 2.14).",
@@ -11,7 +11,7 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
+    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required code and table discoveries.",
     "mastery_note": "Discovery progress is not mastery evidence; typed recall and coding questions provide the scored retrieval signal."
   },
   "source_refs": [
@@ -47,9 +47,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 13,
-    "prompt_count": 39
+    "prompt_count": 19
   },
-  "authoring_notes": "This is a practical learning track, not a certification. Domain weights are curriculum emphasis weights used for adaptive selection. Learning placeholders are exact cloze versions of their revealed text. Reviewed against PyTorch 2.14-era official documentation and the app's structured typed-fill code/table renderer on 2026-09-19.",
+  "authoring_notes": "Updated for the learning-v2 renderer. PyTorch code is displayed as syntax-highlighted code_file material with clickable annotations instead of inline prose. Progressive tables are used for shape reasoning and concept comparisons while preserving the existing curriculum scope.",
   "modules": [
     {
       "id": "domain-3-task-3-1",
@@ -72,52 +72,74 @@
           "concept_ids": [
             "ai.pytorch.nn_module"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.16
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Custom neural networks normally subclass `__________`, call `super().__init__()`, and assign child layers as module attributes.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "BUILD A CUSTOM MODULE",
+              "placeholder": "Click the superclass initialization and registered child layers.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Custom neural networks normally subclass `nn.Module`, call `super().__init__()`, and assign child layers as module attributes."
+                "type": "code_file",
+                "filename": "custom_module.py",
+                "language": "python",
+                "code": "import torch.nn as nn\n\nclass Classifier(nn.Module):\n    def __init__(self, in_features, hidden, classes):\n        super().__init__()\n        self.hidden = nn.Linear(in_features, hidden)\n        self.activation = nn.ReLU()\n        self.output = nn.Linear(hidden, classes)\n\n    def forward(self, x):\n        x = self.hidden(x)\n        x = self.activation(x)\n        return self.output(x)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "super",
+                    "anchor": {
+                      "line": 5,
+                      "text": "super().__init__()",
+                      "occurrence": 1
+                    },
+                    "title": "Initialize nn.Module",
+                    "explanation": "Calling the parent initializer sets up Module's registration and internal state.",
+                    "required": true
+                  },
+                  {
+                    "id": "hidden",
+                    "anchor": {
+                      "line": 6,
+                      "text": "self.hidden = nn.Linear",
+                      "occurrence": 1
+                    },
+                    "title": "Registered child module",
+                    "explanation": "Assigning an nn.Module to an attribute registers it with the parent.",
+                    "required": true
+                  },
+                  {
+                    "id": "forward",
+                    "anchor": {
+                      "line": 10,
+                      "text": "def forward(self, x):",
+                      "occurrence": 1
+                    },
+                    "title": "Define the computation",
+                    "explanation": "forward describes how inputs move through the registered layers.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Registered child modules and parameters are discovered by methods such as `__________` and `state_dict()`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Registered child modules and parameters are discovered by methods such as `model.parameters()` and `state_dict()`."
-              }
-            },
-            {
-              "id": "not_this",
+              "id": "registration",
               "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Keeping layers only in an ordinary Python container can bypass __________ unless you use containers such as `ModuleList` or `ModuleDict`.",
+              "label": "REGISTER LAYERS WITH THE MODULE",
+              "placeholder": "Why not keep trainable layers only in an ordinary Python list?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Keeping layers only in an ordinary Python container can bypass module registration unless you use containers such as `ModuleList` or `ModuleDict`."
+                "text": "Plain Python containers do not automatically register child modules. Use ModuleList or ModuleDict when you need container behavior plus module registration."
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Subclassing `nn.Module` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "source_refs": []
         },
         {
           "id": "domain-3-forward-call",
@@ -125,54 +147,43 @@
           "concept_ids": [
             "ai.pytorch.forward_call"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "CALL THE MODULE, NOT forward DIRECTLY",
+              "placeholder": "Click model(x) and see why user code normally uses the Module call path.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "forward_call.py",
+                "language": "python",
+                "code": "model = Classifier(128, 64, 10)\nx = torch.randn(32, 128)\n\nlogits = model(x)\n\n# Normal user code calls model(x), not model.forward(x)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "call",
+                    "anchor": {
+                      "line": 4,
+                      "text": "model(x)",
+                      "occurrence": 1
+                    },
+                    "title": "Use Module's call wrapper",
+                    "explanation": "Calling the module respects Module wrapper behavior such as hooks before dispatching to forward.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-nn-module"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.16
+            "x": 0.35,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "A Module defines computation in __________, while normal user code should call `model(x)` so Module hooks and wrapper behavior are respected.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A Module defines computation in `forward`, while normal user code should call `model(x)` so Module hooks and wrapper behavior are respected."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Implement `def forward(self, x): ...` and invoke the model with `output = __________`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Implement `def forward(self, x): ...` and invoke the model with `output = model(x)`."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Do not normally call `__________` directly from training code.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not normally call `model.forward(x)` directly from training code."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "`forward` and calling the model — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-3-linear",
@@ -180,54 +191,54 @@
           "concept_ids": [
             "ai.pytorch.linear"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "TRACK THE LAST DIMENSION THROUGH Linear",
+              "placeholder": "Click the layer definition and compare the input/output shapes.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "linear.py",
+                "language": "python",
+                "code": "import torch\nimport torch.nn as nn\n\nlayer = nn.Linear(in_features=128, out_features=64)\n\nx = torch.randn(32, 128)\ny = layer(x)\n\n# x.shape -> [32, 128]\n# y.shape -> [32, 64]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "linear",
+                    "anchor": {
+                      "line": 4,
+                      "text": "nn.Linear(in_features=128, out_features=64)",
+                      "occurrence": 1
+                    },
+                    "title": "Affine transform on the last dimension",
+                    "explanation": "The last input dimension must match in_features; the layer replaces it with out_features.",
+                    "required": true
+                  },
+                  {
+                    "id": "call",
+                    "anchor": {
+                      "line": 7,
+                      "text": "y = layer(x)",
+                      "occurrence": 1
+                    },
+                    "title": "Preserve leading dimensions",
+                    "explanation": "The batch dimension is preserved while the feature dimension changes from 128 to 64.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-forward-call"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.16
+            "x": 0.58,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` applies an affine transformation to the last input dimension.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`nn.Linear(in_features, out_features)` applies an affine transformation to the last input dimension."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "For input shaped `[batch, features]`, `nn.Linear(features, hidden)` returns `__________`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "For input shaped `[batch, features]`, `nn.Linear(features, hidden)` returns `[batch, hidden]`."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "The input last dimension must match `__________`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The input last dimension must match `in_features`."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "`nn.Linear` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Linear.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-3-sequential",
@@ -235,54 +246,54 @@
           "concept_ids": [
             "ai.pytorch.sequential"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "CHAIN A SIMPLE FEED-FORWARD STACK",
+              "placeholder": "Click Sequential and see how each module receives the previous output.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "sequential.py",
+                "language": "python",
+                "code": "import torch.nn as nn\n\nmodel = nn.Sequential(\n    nn.Linear(128, 64),\n    nn.ReLU(),\n    nn.Linear(64, 10),\n)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "seq",
+                    "anchor": {
+                      "line": 3,
+                      "text": "nn.Sequential(",
+                      "occurrence": 1
+                    },
+                    "title": "Ordered module chain",
+                    "explanation": "Sequential feeds the output of each child module into the next child module.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "custom",
+              "kind": "not_this",
+              "label": "USE CUSTOM forward FOR NON-SEQUENTIAL GRAPHS",
+              "placeholder": "When does Sequential stop being a good fit?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use a custom forward when the graph needs branching, skip connections, multiple inputs, reused layers, or other logic that is not a simple chain."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-linear"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.16
+            "x": 0.81,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` chains modules in order so each module receives the previous module output.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`nn.Sequential` chains modules in order so each module receives the previous module output."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Use it for straightforward feed-forward stacks such as `__________`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use it for straightforward feed-forward stacks such as `Linear -> ReLU -> Linear`."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Use a __________ when the graph needs branching, multiple inputs, skip connections, or other non-sequential logic.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use a custom `forward` when the graph needs branching, multiple inputs, skip connections, or other non-sequential logic."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "`nn.Sequential` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Sequential.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -309,52 +320,85 @@
           "concept_ids": [
             "ai.pytorch.activations"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.38
-          },
           "prompts": [
             {
-              "id": "what",
+              "id": "activations",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` applies `max(0, x)`, while activations such as GELU provide alternative nonlinearities used in many modern architectures.",
+              "label": "CHOOSE THE NONLINEARITY INTENTIONALLY",
+              "placeholder": "Reveal one activation at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "`nn.ReLU` applies `max(0, x)`, while activations such as GELU provide alternative nonlinearities used in many modern architectures."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "activation",
+                    "label": "Activation"
+                  },
+                  {
+                    "id": "behavior",
+                    "label": "Core behavior"
+                  },
+                  {
+                    "id": "note",
+                    "label": "Typical note"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "relu",
+                    "cells": {
+                      "activation": "ReLU",
+                      "behavior": "max(0, x)",
+                      "note": "Simple, common hidden-layer nonlinearity"
+                    }
+                  },
+                  {
+                    "id": "gelu",
+                    "cells": {
+                      "activation": "GELU",
+                      "behavior": "Smooth input-dependent gating",
+                      "note": "Common in transformer-style architectures"
+                    }
+                  },
+                  {
+                    "id": "sigmoid",
+                    "cells": {
+                      "activation": "Sigmoid",
+                      "behavior": "Maps values to (0, 1)",
+                      "note": "Often used for probabilities at inference, but not before BCEWithLogitsLoss"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "activation"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "A typical MLP places an activation __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A typical MLP places an activation between Linear layers."
-              }
-            },
-            {
-              "id": "not_this",
+              "id": "logits",
               "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Do not automatically add a probability activation to final logits when the chosen loss already expects __________.",
+              "label": "LOSS FUNCTIONS MAY EXPECT RAW LOGITS",
+              "placeholder": "Should you always add a final probability activation?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Do not automatically add a probability activation to final logits when the chosen loss already expects raw logits."
+                "text": "No. Do not automatically add a probability activation when the selected loss already expects raw logits."
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "Common activation modules — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.ReLU.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "source_refs": []
         },
         {
           "id": "domain-3-flatten",
@@ -362,54 +406,54 @@
           "concept_ids": [
             "ai.pytorch.flatten"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "PRESERVE THE BATCH AXIS",
+              "placeholder": "Click Flatten(start_dim=1) and compare shapes.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "flatten.py",
+                "language": "python",
+                "code": "import torch\nimport torch.nn as nn\n\nflatten = nn.Flatten(start_dim=1)\n\nx = torch.randn(32, 16, 8, 8)\ny = flatten(x)\n\n# x.shape -> [32, 16, 8, 8]\n# y.shape -> [32, 1024]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "flatten",
+                    "anchor": {
+                      "line": 4,
+                      "text": "nn.Flatten(start_dim=1)",
+                      "occurrence": 1
+                    },
+                    "title": "Flatten non-batch dimensions",
+                    "explanation": "Starting at dimension 1 keeps dimension 0 as the batch axis.",
+                    "required": true
+                  },
+                  {
+                    "id": "shape",
+                    "anchor": {
+                      "line": 7,
+                      "text": "y = flatten(x)",
+                      "occurrence": 1
+                    },
+                    "title": "Combine feature dimensions",
+                    "explanation": "16×8×8 becomes one 1024-sized feature dimension per sample.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-activations"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.38
+            "x": 0.35,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`nn.Flatten(__________)` commonly flattens all non-batch dimensions while preserving dimension 0 as the batch axis.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`nn.Flatten(start_dim=1)` commonly flattens all non-batch dimensions while preserving dimension 0 as the batch axis."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "For `[N, C, H, W]`, flattening from dimension 1 produces `__________`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "For `[N, C, H, W]`, flattening from dimension 1 produces `[N, C*H*W]`."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Bare reshaping that accidentally folds the __________ into features breaks the sample structure.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Bare reshaping that accidentally folds the batch dimension into features breaks the sample structure."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Flattening feature dimensions — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Flatten.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-3-conv2d",
@@ -417,54 +461,76 @@
           "concept_ids": [
             "ai.pytorch.conv2d"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "READ CONV2D INPUT/OUTPUT CHANNELS",
+              "placeholder": "Click Conv2d and compare NCHW shapes.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "conv2d.py",
+                "language": "python",
+                "code": "import torch\nimport torch.nn as nn\n\nconv = nn.Conv2d(\n    in_channels=3,\n    out_channels=16,\n    kernel_size=3,\n    padding=1,\n)\n\nx = torch.randn(32, 3, 64, 64)\ny = conv(x)\n\n# x.shape -> [32, 3, 64, 64]\n# y.shape -> [32, 16, 64, 64]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "conv",
+                    "anchor": {
+                      "line": 4,
+                      "text": "nn.Conv2d(",
+                      "occurrence": 1
+                    },
+                    "title": "2D convolution layer",
+                    "explanation": "Conv2d expects batched image-like input in [N, C, H, W] form.",
+                    "required": true
+                  },
+                  {
+                    "id": "channels",
+                    "anchor": {
+                      "line": 6,
+                      "text": "out_channels=16",
+                      "occurrence": 1
+                    },
+                    "title": "Learned output channels",
+                    "explanation": "The layer learns 16 output feature maps from 3 input channels.",
+                    "required": true
+                  },
+                  {
+                    "id": "padding",
+                    "anchor": {
+                      "line": 8,
+                      "text": "padding=1",
+                      "occurrence": 1
+                    },
+                    "title": "Preserve spatial size here",
+                    "explanation": "For kernel_size=3 and stride=1, padding=1 keeps H and W unchanged.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "nhwc",
+              "kind": "not_this",
+              "label": "WATCH CHANNEL ORDER",
+              "placeholder": "What common layout mistake causes Conv2d shape errors?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Passing NHWC data directly to a Conv2d that expects NCHW is a common shape error."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-flatten"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.38
+            "x": 0.58,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`nn.Conv2d` expects image-like input with channels in the second dimension for batched tensors: `__________`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`nn.Conv2d` expects image-like input with channels in the second dimension for batched tensors: `[N, C, H, W]`."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "`nn.Conv2d(in_channels, __________, kernel_size, ...)` controls input channels, learned output channels, and spatial kernel size.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`nn.Conv2d(in_channels, out_channels, kernel_size, ...)` controls input channels, learned output channels, and spatial kernel size."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "A common shape error is passing __________ data directly to a Conv2d that expects NCHW.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A common shape error is passing NHWC data directly to a Conv2d that expects NCHW."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "`nn.Conv2d` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-3-pooling",
@@ -472,54 +538,54 @@
           "concept_ids": [
             "ai.pytorch.pooling"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "DOWNSAMPLE SPATIAL DIMENSIONS",
+              "placeholder": "Click MaxPool2d and compare the spatial shapes.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "pooling.py",
+                "language": "python",
+                "code": "import torch\nimport torch.nn as nn\n\npool = nn.MaxPool2d(kernel_size=2, stride=2)\n\nx = torch.randn(32, 16, 64, 64)\ny = pool(x)\n\n# y.shape -> [32, 16, 32, 32]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "pool",
+                    "anchor": {
+                      "line": 4,
+                      "text": "nn.MaxPool2d(kernel_size=2, stride=2)",
+                      "occurrence": 1
+                    },
+                    "title": "Local max downsampling",
+                    "explanation": "A 2×2 window with stride 2 halves each spatial dimension for this input.",
+                    "required": true
+                  },
+                  {
+                    "id": "shape",
+                    "anchor": {
+                      "line": 7,
+                      "text": "y = pool(x)",
+                      "occurrence": 1
+                    },
+                    "title": "Channels stay, spatial size changes",
+                    "explanation": "Pooling preserves the channel count here but reduces H and W.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-conv2d"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.38
+            "x": 0.81,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` downsamples spatial dimensions by taking local maxima over a window.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`nn.MaxPool2d` downsamples spatial dimensions by taking local maxima over a window."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "A common pattern is convolution, activation, then pooling to __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A common pattern is convolution, activation, then pooling to reduce spatial resolution."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Pooling changes spatial shape, so later Linear layer input sizes must match the __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Pooling changes spatial shape, so later Linear layer input sizes must match the post-pooling dimensions."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Pooling — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     },
@@ -547,52 +613,63 @@
           "concept_ids": [
             "ai.pytorch.embedding"
           ],
-          "prerequisite_node_ids": [],
-          "map_position": {
-            "x": 0.12,
-            "y": 0.6
-          },
           "prompts": [
             {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`nn.Embedding(num_embeddings, embedding_dim)` is a learnable __________ that maps integer indices to embedding vectors.",
+              "id": "code",
+              "kind": "look_for",
+              "label": "LOOK UP LEARNED VECTORS BY INTEGER INDEX",
+              "placeholder": "Click Embedding and the index tensor.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "`nn.Embedding(num_embeddings, embedding_dim)` is a learnable lookup table that maps integer indices to embedding vectors."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "If the input index tensor has shape `[*]`, the output adds an embedding dimension of size `__________`.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "If the input index tensor has shape `[*]`, the output adds an embedding dimension of size `embedding_dim`."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Embedding inputs are __________, not one-hot floating-point vectors passed to Linear.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Embedding inputs are indices, not one-hot floating-point vectors passed to Linear."
+                "type": "code_file",
+                "filename": "embedding.py",
+                "language": "python",
+                "code": "import torch\nimport torch.nn as nn\n\nembedding = nn.Embedding(\n    num_embeddings=10000,\n    embedding_dim=128,\n)\n\ntoken_ids = torch.tensor([[4, 19, 8], [7, 7, 2]])\nvectors = embedding(token_ids)\n\n# token_ids.shape -> [2, 3]\n# vectors.shape   -> [2, 3, 128]",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "embedding",
+                    "anchor": {
+                      "line": 4,
+                      "text": "nn.Embedding(",
+                      "occurrence": 1
+                    },
+                    "title": "Learnable lookup table",
+                    "explanation": "Embedding maps integer indices into trainable vectors.",
+                    "required": true
+                  },
+                  {
+                    "id": "ids",
+                    "anchor": {
+                      "line": 9,
+                      "text": "token_ids = torch.tensor",
+                      "occurrence": 1
+                    },
+                    "title": "Index input",
+                    "explanation": "Embedding inputs are integer indices rather than one-hot floating-point vectors.",
+                    "required": true
+                  },
+                  {
+                    "id": "shape",
+                    "anchor": {
+                      "line": 10,
+                      "text": "vectors = embedding(token_ids)",
+                      "occurrence": 1
+                    },
+                    "title": "Append embedding_dim",
+                    "explanation": "The output preserves the index tensor shape and adds the embedding dimension.",
+                    "required": true
+                  }
+                ]
               }
             }
           ],
-          "source_refs": [
-            {
-              "title": "`nn.Embedding` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Embedding.html"
-            }
-          ]
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "source_refs": []
         },
         {
           "id": "domain-3-dropout",
@@ -600,54 +677,65 @@
           "concept_ids": [
             "ai.pytorch.dropout"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "SEE TRAINING VS EVALUATION BEHAVIOR",
+              "placeholder": "Click train and eval around the same Dropout module.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "dropout_mode.py",
+                "language": "python",
+                "code": "import torch\nimport torch.nn as nn\n\ndropout = nn.Dropout(p=0.5)\nx = torch.ones(8)\n\ndropout.train()\ntrain_output = dropout(x)\n\ndropout.eval()\neval_output = dropout(x)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "dropout",
+                    "anchor": {
+                      "line": 4,
+                      "text": "nn.Dropout(p=0.5)",
+                      "occurrence": 1
+                    },
+                    "title": "Training-time random masking",
+                    "explanation": "During training, elements are randomly zeroed with probability p and outputs are scaled appropriately.",
+                    "required": true
+                  },
+                  {
+                    "id": "train",
+                    "anchor": {
+                      "line": 7,
+                      "text": "dropout.train()",
+                      "occurrence": 1
+                    },
+                    "title": "Enable training behavior",
+                    "explanation": "Training mode activates Dropout's random masking behavior.",
+                    "required": true
+                  },
+                  {
+                    "id": "eval",
+                    "anchor": {
+                      "line": 10,
+                      "text": "dropout.eval()",
+                      "occurrence": 1
+                    },
+                    "title": "Enable evaluation behavior",
+                    "explanation": "Evaluation mode makes Dropout behave as an identity transform.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-embedding"
           ],
           "map_position": {
-            "x": 0.31,
-            "y": 0.6
+            "x": 0.35,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`nn.Dropout(p)` randomly zeroes elements with __________ during training and behaves as an identity transform during evaluation.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`nn.Dropout(p)` randomly zeroes elements with probability `p` during training and behaves as an identity transform during evaluation."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Call `model.train()` for training behavior and `__________` before evaluation so Dropout switches modes correctly.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Call `model.train()` for training behavior and `model.eval()` before evaluation so Dropout switches modes correctly."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Dropout behavior depends on module training mode; __________ alone does not switch Dropout to evaluation behavior.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Dropout behavior depends on module training mode; disabling gradients alone does not switch Dropout to evaluation behavior."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Dropout — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Dropout.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-3-batchnorm",
@@ -655,54 +743,79 @@
           "concept_ids": [
             "ai.pytorch.batchnorm"
           ],
+          "prompts": [
+            {
+              "id": "modes",
+              "kind": "what",
+              "label": "BATCHNORM TRAIN OR EVAL?",
+              "placeholder": "Reveal what changes between modes.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "mode",
+                    "label": "Mode"
+                  },
+                  {
+                    "id": "statistics",
+                    "label": "Statistics behavior"
+                  },
+                  {
+                    "id": "grad",
+                    "label": "Autograd?"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "train",
+                    "cells": {
+                      "mode": "train()",
+                      "statistics": "Uses batch statistics and may update running statistics",
+                      "grad": "Controlled separately by grad mode"
+                    }
+                  },
+                  {
+                    "id": "eval",
+                    "cells": {
+                      "mode": "eval()",
+                      "statistics": "Uses stored running statistics when configured to track them",
+                      "grad": "Still controlled separately by grad mode"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "column",
+                  "initially_visible": {
+                    "column_ids": [
+                      "mode"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "buffers",
+              "kind": "what",
+              "label": "RUNNING STATISTICS LIVE IN state_dict",
+              "placeholder": "What kind of module state are BatchNorm running statistics?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "BatchNorm running statistics are registered buffers, so they are included in the module state dictionary even though they are not trainable Parameters."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-dropout"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.6
+            "x": 0.58,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "BatchNorm modules can track running statistics and use training-versus-evaluation mode differently, so __________ matter for inference correctness.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "BatchNorm modules can track running statistics and use training-versus-evaluation mode differently, so `train()` and `eval()` matter for inference correctness."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "BatchNorm running statistics are __________ and therefore appear in the module state dictionary.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "BatchNorm running statistics are registered buffers and therefore appear in the module state dictionary."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "Gradient disabling __________ `model.eval()` because evaluation mode changes module behavior rather than autograd recording.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Gradient disabling does not replace `model.eval()` because evaluation mode changes module behavior rather than autograd recording."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Batch normalization mode behavior — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/nn.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-3-modulelist",
@@ -710,54 +823,54 @@
           "concept_ids": [
             "ai.pytorch.modulelist"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "REGISTER A VARIABLE NUMBER OF LAYERS",
+              "placeholder": "Click ModuleList and the iteration in forward.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "modulelist.py",
+                "language": "python",
+                "code": "import torch.nn as nn\n\nclass DeepMLP(nn.Module):\n    def __init__(self, width, depth):\n        super().__init__()\n        self.layers = nn.ModuleList([\n            nn.Linear(width, width)\n            for _ in range(depth)\n        ])\n\n    def forward(self, x):\n        for layer in self.layers:\n            x = nn.functional.relu(layer(x))\n        return x",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "list",
+                    "anchor": {
+                      "line": 6,
+                      "text": "nn.ModuleList([",
+                      "occurrence": 1
+                    },
+                    "title": "Registered module container",
+                    "explanation": "ModuleList behaves like a list while registering each child module with the parent.",
+                    "required": true
+                  },
+                  {
+                    "id": "loop",
+                    "anchor": {
+                      "line": 12,
+                      "text": "for layer in self.layers:",
+                      "occurrence": 1
+                    },
+                    "title": "Custom iteration in forward",
+                    "explanation": "Use ModuleList when computation needs explicit loop logic rather than a fixed Sequential chain.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-batchnorm"
           ],
           "map_position": {
-            "x": 0.69,
-            "y": 0.6
+            "x": 0.81,
+            "y": 0.14
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` stores a list of child modules while keeping them registered with the parent Module.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`nn.ModuleList` stores a list of child modules while keeping them registered with the parent Module."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Use `ModuleList` when you need __________ over a dynamic number of layers but cannot express the computation as a simple Sequential chain.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Use `ModuleList` when you need list-like iteration over a dynamic number of layers but cannot express the computation as a simple Sequential chain."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "A __________ of layers is not a substitute when you need automatic parameter registration by the parent Module.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A plain Python list of layers is not a substitute when you need automatic parameter registration by the parent Module."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "`ModuleList` and module registration — PyTorch documentation",
-              "url": "https://docs.pytorch.org/docs/stable/nn.html"
-            }
-          ]
+          "source_refs": []
         },
         {
           "id": "domain-3-parameters-state",
@@ -765,54 +878,65 @@
           "concept_ids": [
             "ai.pytorch.parameters_state"
           ],
+          "prompts": [
+            {
+              "id": "code",
+              "kind": "look_for",
+              "label": "INSPECT TRAINABLE PARAMETERS AND SERIALIZABLE STATE",
+              "placeholder": "Click model.parameters and state_dict.",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "parameters_state.py",
+                "language": "python",
+                "code": "import torch.optim as optim\n\noptimizer = optim.AdamW(\n    model.parameters(),\n    lr=1e-3,\n)\n\nstate = model.state_dict()\n\nfor name, tensor in state.items():\n    print(name, tensor.shape)",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "params",
+                    "anchor": {
+                      "line": 4,
+                      "text": "model.parameters()",
+                      "occurrence": 1
+                    },
+                    "title": "Registered Parameters",
+                    "explanation": "Optimizers are commonly constructed from model.parameters() so they know which trainable tensors to update.",
+                    "required": true
+                  },
+                  {
+                    "id": "state",
+                    "anchor": {
+                      "line": 8,
+                      "text": "model.state_dict()",
+                      "occurrence": 1
+                    },
+                    "title": "Serializable module state",
+                    "explanation": "state_dict returns registered parameters and persistent buffers as data.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "architecture",
+              "kind": "not_this",
+              "label": "state_dict IS NOT THE MODEL CLASS",
+              "placeholder": "What does a state dict omit?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A state_dict is parameter/buffer data, not the Python model architecture itself. Recreate the architecture in code before loading the state."
+              }
+            }
+          ],
           "prerequisite_node_ids": [
             "domain-3-modulelist"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.6
+            "x": 0.12,
+            "y": 0.38
           },
-          "prompts": [
-            {
-              "id": "what",
-              "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "`__________` iterates registered Parameter objects, while `model.state_dict()` returns a mapping of registered parameters and persistent buffers.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "`model.parameters()` iterates registered Parameter objects, while `model.state_dict()` returns a mapping of registered parameters and persistent buffers."
-              }
-            },
-            {
-              "id": "action",
-              "kind": "action",
-              "label": "⌨️ CODE?",
-              "placeholder": "Optimizers are commonly constructed with `__________` so they know which tensors to update.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Optimizers are commonly constructed with `model.parameters()` so they know which tensors to update."
-              }
-            },
-            {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "⚠️ GOTCHA",
-              "placeholder": "A `state_dict` is data, __________ itself.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A `state_dict` is data, not the Python model architecture itself."
-              }
-            }
-          ],
-          "source_refs": [
-            {
-              "title": "Parameters and `state_dict` — PyTorch documentation",
-              "url": "https://docs.pytorch.org/tutorials/recipes/recipes/what_is_state_dict.html"
-            }
-          ]
+          "source_refs": []
         }
       ]
     }

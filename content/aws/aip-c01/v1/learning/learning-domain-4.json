@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.0.0",
-  "content_version": "aip-c01-learning-2026-09-19-v1-domain4",
+  "schema_version": "2.0.0",
+  "content_version": "aip-c01-learning-2026-09-19-v2-domain4",
   "certification_id": "aws-aip-c01",
   "certification_version": "aip-c01",
   "domain": {
@@ -10,7 +10,7 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
+    "unlock_rule": "Reveal the required explanations, progressive table units, and required code annotations to unlock each knowledge node.",
     "mastery_note": "Exploration progress is not mastery evidence; quiz attempts remain the scored retrieval signal."
   },
   "source_refs": [
@@ -51,7 +51,7 @@
     "knowledge_node_count": 16,
     "prompt_count": 64
   },
-  "authoring_notes": "Authored from the AWS AIP-C01 standard exam guide and official service documentation. Explanations are paraphrased; questions are original exam-style practice, not recalled exam content.",
+  "authoring_notes": "Authored from the AWS AIP-C01 standard exam guide and official service documentation. Explanations are paraphrased; questions are original exam-style practice, not recalled exam content. Updated for the learning-v2 renderer: selected high-value concepts now use progressive tables and annotated syntax-highlighted code files while preserving the original concept/task coverage and prompt counts.",
   "modules": [
     {
       "id": "d4-task-4-1",
@@ -105,16 +105,69 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "COST LEVERS",
+              "placeholder": "Reveal the lever that fits each token-cost symptom. The cheapest optimization is the one that removes work without harming required quality.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "token tracking",
-                  "context pruning",
-                  "response limits"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "symptom",
+                    "label": "Cost symptom"
+                  },
+                  {
+                    "id": "lever",
+                    "label": "Useful lever"
+                  },
+                  {
+                    "id": "caveat",
+                    "label": "Caveat"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "history",
+                    "cells": {
+                      "symptom": "Conversation history grows every turn",
+                      "lever": "Prune/summarize context and keep only needed state",
+                      "caveat": "Do not discard facts required for correctness"
+                    }
+                  },
+                  {
+                    "id": "shared",
+                    "cells": {
+                      "symptom": "Large stable prefix repeats across requests",
+                      "lever": "Prompt caching where supported and a high-reuse prefix exists",
+                      "caveat": "Caching helps repeated content, not unique prompts"
+                    }
+                  },
+                  {
+                    "id": "simple",
+                    "cells": {
+                      "symptom": "Many simple requests use an expensive high-capability model",
+                      "lever": "Route/cascade simple work to a cheaper adequate model",
+                      "caveat": "Gate routing with quality evaluation"
+                    }
+                  },
+                  {
+                    "id": "retrieval",
+                    "cells": {
+                      "symptom": "RAG inserts too many low-value chunks",
+                      "lever": "Improve retrieval/filtering/reranking and cap context",
+                      "caveat": "Over-pruning can remove evidence needed for grounded answers"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "symptom"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -253,16 +306,69 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "CAPACITY CHOICES",
+              "placeholder": "Reveal which capacity pattern fits the workload shape.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "batching",
-                  "Provisioned Throughput",
-                  "concurrency control"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "pattern",
+                    "label": "Pattern"
+                  },
+                  {
+                    "id": "fit",
+                    "label": "Best fit"
+                  },
+                  {
+                    "id": "watch",
+                    "label": "Watch for"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "ondemand",
+                    "cells": {
+                      "pattern": "On-Demand inference",
+                      "fit": "Bursty or uncertain interactive demand",
+                      "watch": "Quotas and shared capacity under spikes"
+                    }
+                  },
+                  {
+                    "id": "provisioned",
+                    "cells": {
+                      "pattern": "Provisioned Throughput",
+                      "fit": "Predictable sustained demand that justifies reserved capacity",
+                      "watch": "Under-utilized reservation cost"
+                    }
+                  },
+                  {
+                    "id": "batch",
+                    "cells": {
+                      "pattern": "Batch inference",
+                      "fit": "Large offline jobs that do not require interactive latency",
+                      "watch": "Not appropriate when the user is waiting synchronously"
+                    }
+                  },
+                  {
+                    "id": "concurrency",
+                    "cells": {
+                      "pattern": "Controlled concurrency / queueing",
+                      "fit": "Smooth bursts and keep downstream components within capacity",
+                      "watch": "Unbounded concurrency can create throttling and retry storms"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "pattern"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -327,16 +433,62 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "CACHE THE RIGHT THING",
+              "placeholder": "Reveal what each cache reuses. Prompt-prefix reuse and semantic-answer reuse are different optimization layers.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "Bedrock prompt caching",
-                  "semantic cache",
-                  "result cache"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "cache",
+                    "label": "Cache"
+                  },
+                  {
+                    "id": "reuses",
+                    "label": "What is reused"
+                  },
+                  {
+                    "id": "risk",
+                    "label": "Main risk"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "prompt",
+                    "cells": {
+                      "cache": "Bedrock prompt caching",
+                      "reuses": "Supported repeated prompt/context prefixes during model invocation",
+                      "risk": "Low reuse or frequently changing prefixes reduce benefit"
+                    }
+                  },
+                  {
+                    "id": "semantic",
+                    "cells": {
+                      "cache": "Semantic response cache",
+                      "reuses": "A prior answer for a sufficiently similar request",
+                      "risk": "Staleness, privacy, authorization, and similarity-key mistakes"
+                    }
+                  },
+                  {
+                    "id": "retrieval",
+                    "cells": {
+                      "cache": "Retrieval/result cache",
+                      "reuses": "Expensive retrieval/query results for stable data and safe cache keys",
+                      "risk": "Serving stale or cross-tenant context if invalidation/keying is wrong"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "cache",
+                      "reuses"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -420,16 +572,69 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "FIND THE LATENCY STAGE",
+              "placeholder": "Reveal the first optimization to consider for each measured bottleneck.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "streaming",
-                  "parallel processing",
-                  "latency-optimized inference"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "stage",
+                    "label": "Measured bottleneck"
+                  },
+                  {
+                    "id": "lever",
+                    "label": "Targeted lever"
+                  },
+                  {
+                    "id": "trap",
+                    "label": "Trap"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "retrieval",
+                    "cells": {
+                      "stage": "Vector/retrieval stage dominates",
+                      "lever": "Tune filters, top-k, indexes, reranking, and network path",
+                      "trap": "Switching the FM does not fix a slow retriever"
+                    }
+                  },
+                  {
+                    "id": "model",
+                    "cells": {
+                      "stage": "Time-to-first-token/model generation dominates",
+                      "lever": "Streaming, appropriate model choice, inference settings, or latency-optimized options where supported",
+                      "trap": "Do not blame retrieval without a trace"
+                    }
+                  },
+                  {
+                    "id": "tools",
+                    "cells": {
+                      "stage": "Agent/tool calls dominate",
+                      "lever": "Parallelize independent work, remove redundant calls, and set timeouts",
+                      "trap": "Parallelize only calls that are independent and safe"
+                    }
+                  },
+                  {
+                    "id": "network",
+                    "cells": {
+                      "stage": "Cross-service/network path dominates",
+                      "lever": "Profile hops, Region placement, connection reuse, and private/public path choices",
+                      "trap": "Application code micro-optimization will not remove network RTT"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "stage"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -883,16 +1088,77 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "OBSERVABILITY LAYERS",
+              "placeholder": "Reveal the signal class and the question it answers. Infrastructure uptime alone is not enough.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "operational metrics",
-                  "FM interaction tracing",
-                  "business-impact dashboards"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "layer",
+                    "label": "Signal layer"
+                  },
+                  {
+                    "id": "examples",
+                    "label": "Examples"
+                  },
+                  {
+                    "id": "question",
+                    "label": "Question answered"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "ops",
+                    "cells": {
+                      "layer": "Operational",
+                      "examples": "Errors, throttles, latency, availability, queue depth",
+                      "question": "Is the system healthy and fast?"
+                    }
+                  },
+                  {
+                    "id": "model",
+                    "cells": {
+                      "layer": "Model invocation",
+                      "examples": "Model ID, token usage, stop reason, safety/guardrail outcomes where available",
+                      "question": "How is the model call behaving and costing?"
+                    }
+                  },
+                  {
+                    "id": "rag",
+                    "cells": {
+                      "layer": "Retrieval / agent trace",
+                      "examples": "Retrieved chunks, ranking, tool calls, handoffs, per-step latency",
+                      "question": "Which reasoning/data/tool stage caused the result?"
+                    }
+                  },
+                  {
+                    "id": "business",
+                    "cells": {
+                      "layer": "Business / quality",
+                      "examples": "Task success, user feedback, groundedness/evaluation results",
+                      "question": "Is the application producing useful outcomes?"
+                    }
+                  },
+                  {
+                    "id": "audit",
+                    "cells": {
+                      "layer": "Governance / forensic",
+                      "examples": "API activity, prompt/model version, trace IDs, policy events",
+                      "question": "Can we explain and investigate what happened?"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "layer"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {

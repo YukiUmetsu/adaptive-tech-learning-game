@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.0.0",
-  "content_version": "aip-c01-learning-2026-09-19-v1-domain5",
+  "schema_version": "2.0.0",
+  "content_version": "aip-c01-learning-2026-09-19-v2-domain5",
   "certification_id": "aws-aip-c01",
   "certification_version": "aip-c01",
   "domain": {
@@ -10,7 +10,7 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
+    "unlock_rule": "Reveal the required explanations, progressive table units, and required code annotations to unlock each knowledge node.",
     "mastery_note": "Exploration progress is not mastery evidence; quiz attempts remain the scored retrieval signal."
   },
   "source_refs": [
@@ -48,7 +48,7 @@
     "knowledge_node_count": 14,
     "prompt_count": 56
   },
-  "authoring_notes": "Authored from the AWS AIP-C01 standard exam guide and official service documentation. Explanations are paraphrased; questions are original exam-style practice, not recalled exam content.",
+  "authoring_notes": "Authored from the AWS AIP-C01 standard exam guide and official service documentation. Explanations are paraphrased; questions are original exam-style practice, not recalled exam content. Updated for the learning-v2 renderer: selected high-value concepts now use progressive tables and annotated syntax-highlighted code files while preserving the original concept/task coverage and prompt counts.",
   "modules": [
     {
       "id": "d5-task-5-1",
@@ -107,16 +107,69 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "QUALITY EVALUATORS",
+              "placeholder": "Reveal what each evaluation approach can tell you and where it is weak.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "Bedrock Model Evaluation",
-                  "quality rubric",
-                  "factuality/relevance"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "method",
+                    "label": "Method"
+                  },
+                  {
+                    "id": "good_for",
+                    "label": "Good for"
+                  },
+                  {
+                    "id": "limit",
+                    "label": "Limitation"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "rubric",
+                    "cells": {
+                      "method": "Task-specific rubric / automated evaluator",
+                      "good_for": "Repeatable checks for relevance, correctness, style, safety, or schema requirements",
+                      "limit": "A poorly defined rubric produces misleading scores"
+                    }
+                  },
+                  {
+                    "id": "judge",
+                    "cells": {
+                      "method": "LLM-as-judge",
+                      "good_for": "Scalable semantic evaluation when exact string matching is inadequate",
+                      "limit": "Judge bias/variance requires calibration and representative examples"
+                    }
+                  },
+                  {
+                    "id": "human",
+                    "cells": {
+                      "method": "Human review",
+                      "good_for": "Nuance, high-impact decisions, and calibration of automated evaluation",
+                      "limit": "Slower and more expensive; needs clear reviewer guidance"
+                    }
+                  },
+                  {
+                    "id": "bedrock",
+                    "cells": {
+                      "method": "Bedrock model evaluation workflow",
+                      "good_for": "Structured evaluation of supported model/application quality dimensions",
+                      "limit": "Still choose representative data and decision thresholds"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "method"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -403,16 +456,69 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "SEPARATE RAG FAILURES",
+              "placeholder": "Reveal what to measure at each layer. A bad final answer can originate in retrieval or generation.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "RAG evaluation",
-                  "retrieval metrics",
-                  "LLM-as-judge"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "layer",
+                    "label": "Layer"
+                  },
+                  {
+                    "id": "measure",
+                    "label": "Measure"
+                  },
+                  {
+                    "id": "failure",
+                    "label": "If it fails"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "retriever",
+                    "cells": {
+                      "layer": "Retriever",
+                      "measure": "Whether relevant/authoritative evidence is retrieved and ranked well",
+                      "failure": "Tune source sync, chunking, embeddings, filters, query, search mode, or reranking"
+                    }
+                  },
+                  {
+                    "id": "context",
+                    "cells": {
+                      "layer": "Retrieved context",
+                      "measure": "Precision, source coverage, duplication, freshness, and usefulness of supplied context",
+                      "failure": "The generator is being given noisy, stale, or missing evidence"
+                    }
+                  },
+                  {
+                    "id": "generator",
+                    "cells": {
+                      "layer": "Generator",
+                      "measure": "Groundedness, factuality, relevance, citation/source use, and task correctness given good context",
+                      "failure": "Tune prompt/model/settings or safety/validation behavior"
+                    }
+                  },
+                  {
+                    "id": "end",
+                    "cells": {
+                      "layer": "End-to-end task",
+                      "measure": "User/task success under representative queries",
+                      "failure": "Use layer metrics to localize the root cause before changing components"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "layer"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -477,16 +583,77 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "RETRIEVAL SIGNALS",
+              "placeholder": "Reveal what each signal says about the retriever itself.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "retrieval relevance",
-                  "context precision",
-                  "latency"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "signal",
+                    "label": "Signal"
+                  },
+                  {
+                    "id": "meaning",
+                    "label": "What it tells you"
+                  },
+                  {
+                    "id": "symptom",
+                    "label": "Typical symptom"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "recall",
+                    "cells": {
+                      "signal": "Relevant-document recall / coverage",
+                      "meaning": "Whether needed evidence appears in the candidate set",
+                      "symptom": "Authoritative documents are missing entirely"
+                    }
+                  },
+                  {
+                    "id": "precision",
+                    "cells": {
+                      "signal": "Context precision / relevance",
+                      "meaning": "How much retrieved context is actually useful",
+                      "symptom": "Top results contain distractors or unrelated chunks"
+                    }
+                  },
+                  {
+                    "id": "ranking",
+                    "cells": {
+                      "signal": "Ranking / top-k quality",
+                      "meaning": "Whether best evidence is placed early enough to reach the model",
+                      "symptom": "Correct evidence exists but appears below noisy results"
+                    }
+                  },
+                  {
+                    "id": "latency",
+                    "cells": {
+                      "signal": "Retrieval latency",
+                      "meaning": "Operational cost of the retrieval stage",
+                      "symptom": "RAG is correct but slow before generation even begins"
+                    }
+                  },
+                  {
+                    "id": "freshness",
+                    "cells": {
+                      "signal": "Source/index freshness",
+                      "meaning": "Whether the index reflects current source data",
+                      "symptom": "Recently updated documents cannot be found"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "signal"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -865,16 +1032,69 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "ERROR TRIAGE",
+              "placeholder": "Reveal whether the error suggests retry, backoff, or a permanent fix first.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "request validation",
-                  "CloudWatch logs",
-                  "API error analysis"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "symptom",
+                    "label": "Error class"
+                  },
+                  {
+                    "id": "likely",
+                    "label": "Likely issue"
+                  },
+                  {
+                    "id": "action",
+                    "label": "First response"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "validation",
+                    "cells": {
+                      "symptom": "Validation / bad request",
+                      "likely": "Malformed payload, unsupported field, wrong model-specific shape, or invalid parameter",
+                      "action": "Fix the request; do not retry unchanged input"
+                    }
+                  },
+                  {
+                    "id": "auth",
+                    "cells": {
+                      "symptom": "Access denied / authorization failure",
+                      "likely": "IAM, model access, resource policy, or account/Region permission issue",
+                      "action": "Fix access; retries do not grant permission"
+                    }
+                  },
+                  {
+                    "id": "throttle",
+                    "cells": {
+                      "symptom": "Throttling / quota pressure",
+                      "likely": "Request or token throughput exceeds available quota/capacity",
+                      "action": "Backoff with jitter, reduce concurrency, or adjust quota/capacity"
+                    }
+                  },
+                  {
+                    "id": "transient",
+                    "cells": {
+                      "symptom": "Timeout / retryable service failure",
+                      "likely": "Temporary service or network condition",
+                      "action": "Use bounded retry/backoff and trace the affected request"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "symptom"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -1013,15 +1233,18 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "DEBUG RETRIEVAL IN ORDER",
+              "placeholder": "Reveal the diagnostic path from source freshness to the context actually sent to the model.",
               "required": true,
               "reveal": {
-                "type": "keywords",
+                "type": "sequence",
                 "items": [
-                  "retrieval inspection",
-                  "embedding/chunking check",
-                  "vector-store query"
+                  "Confirm the authoritative source changed and the knowledge-base/index sync completed",
+                  "Inspect metadata, tenant/security filters, and the transformed query",
+                  "Inspect chunking and embedding/vectorization assumptions for the affected content",
+                  "Run the retrieval/search step directly and inspect candidate/reranked chunks",
+                  "Compare the retrieved context actually supplied to the generator with the expected evidence",
+                  "Only then tune the generator if retrieval evidence is already correct"
                 ]
               }
             },
@@ -1087,15 +1310,82 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "INSPECT AN APP TRACE RECORD",
+              "placeholder": "Click the correlation, prompt/model version, retrieval evidence, and latency fields. This is an application trace example, not a fixed AWS-native schema.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "prompt logs",
-                  "AWS X-Ray",
-                  "schema validation"
+                "type": "code_file",
+                "filename": "genai_trace.json",
+                "language": "json",
+                "code": "{\n  \"request_id\": \"req-7f3a\",\n  \"trace_id\": \"1-abc...\",\n  \"prompt_version\": \"support-v12\",\n  \"model_id\": \"example-model-id\",\n  \"retrieval_hits\": [\"kb://doc-17#chunk-4\"],\n  \"tool_calls\": [\"lookup_order\"],\n  \"latency_ms\": {\"retrieval\": 42, \"model\": 611}\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "request-id",
+                    "anchor": {
+                      "line": 2,
+                      "text": "request_id",
+                      "occurrence": 1
+                    },
+                    "title": "Application request correlation",
+                    "explanation": "A stable request identifier lets application logs and evaluation artifacts point to the same execution without relying on timestamps alone.",
+                    "required": true
+                  },
+                  {
+                    "id": "trace-id",
+                    "anchor": {
+                      "line": 3,
+                      "text": "trace_id",
+                      "occurrence": 1
+                    },
+                    "title": "Distributed trace correlation",
+                    "explanation": "A trace identifier can connect the GenAI request to downstream services and dependencies such as APIs, retrieval, and tools.",
+                    "required": true
+                  },
+                  {
+                    "id": "prompt-version",
+                    "anchor": {
+                      "line": 4,
+                      "text": "prompt_version",
+                      "occurrence": 1
+                    },
+                    "title": "Prompt version",
+                    "explanation": "Version the prompt/template so an intermittent failure can be reproduced against the exact instruction set used in production.",
+                    "required": true
+                  },
+                  {
+                    "id": "model-id",
+                    "anchor": {
+                      "line": 5,
+                      "text": "model_id",
+                      "occurrence": 1
+                    },
+                    "title": "Model identity",
+                    "explanation": "Record the model or routed target used for the request; model changes can alter output behavior even when the prompt is unchanged.",
+                    "required": true
+                  },
+                  {
+                    "id": "retrieval",
+                    "anchor": {
+                      "line": 6,
+                      "text": "retrieval_hits",
+                      "occurrence": 1
+                    },
+                    "title": "Retrieved evidence",
+                    "explanation": "Correlating retrieved chunks helps distinguish a retrieval failure from a generator failure.",
+                    "required": true
+                  },
+                  {
+                    "id": "latency",
+                    "anchor": {
+                      "line": 8,
+                      "text": "latency_ms",
+                      "occurrence": 1
+                    },
+                    "title": "Per-stage latency",
+                    "explanation": "Stage-level timing localizes performance problems instead of treating total response time as a single opaque number.",
+                    "required": true
+                  }
                 ]
               }
             },

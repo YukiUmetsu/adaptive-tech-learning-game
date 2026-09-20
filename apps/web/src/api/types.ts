@@ -48,5 +48,14 @@ export type KnowledgePrompt = components["schemas"]["KnowledgePrompt"];
 export type PromptKind = components["schemas"]["PromptKind"];
 export type LearningReveal = components["schemas"]["LearningReveal"];
 export type RevealColumn = components["schemas"]["RevealColumn"];
+export type RevealTableColumn = components["schemas"]["RevealTableColumn"];
+export type RevealTableRow = components["schemas"]["RevealTableRow"];
+export type TableProgressiveReveal =
+  components["schemas"]["TableProgressiveReveal"];
+export type TableRevealMode = components["schemas"]["TableRevealMode"];
+export type TableInitialVisibility =
+  components["schemas"]["TableInitialVisibility"];
+export type CodeAnnotation = components["schemas"]["CodeAnnotation"];
+export type CodeAnnotationAnchor = components["schemas"]["CodeAnnotationAnchor"];
 export type MapPosition = components["schemas"]["MapPosition"];
 export type SourceRef = components["schemas"]["SourceRef"];
