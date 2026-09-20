@@ -11,7 +11,7 @@ use crate::DomainError;
 /// The remaining two are explicit Phase 1 subtypes used by tactile
 /// interactions; they are still treated as evidence modes, not proven
 /// independent latent abilities.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum AssessmentMode {
     /// Recognizing a correct option.
@@ -315,6 +315,11 @@ pub struct LearningEvent {
     pub question_id: String,
     /// Content version the answer was scored against.
     pub content_version: String,
+    /// Canonical question difficulty prior in `[0, 1]`, copied from server
+    /// content. The client never supplies this; it is preserved with the
+    /// evidence so selection and later models can use the difficulty the item
+    /// actually had.
+    pub difficulty_prior: f64,
     /// Concept mappings with weights.
     pub concepts: Vec<ConceptWeight>,
     /// Assessment/evidence mode.

@@ -50,8 +50,15 @@ Exit: useful study sessions work without game mechanics and events are determini
 > certification dashboard, three quiz modes with server-side selection, a
 > pre-quiz Knowledge Map (progressive `table`/`code_file` reveals), a
 > server-authoritative Bits currency, and a full set of tactile interaction
-> types. Adaptive scheduling, mastery prediction (HLR/FSRS/DAS3H), and the
-> persistent game world remain out of scope.
+> types.
+>
+> Adaptive selection now reads a persistent derived `user_concept_state` cache
+> (the deterministic, bounded `heuristic-v1` model) keyed per assessment mode.
+> Accepted events preserve the canonical question `difficulty_prior`, and
+> selection combines concept state, forgetting risk, domain weight, uncertainty,
+> difficulty fit, novelty, and repeat penalty with a deterministic tie-break.
+> It remains a heuristic, not mastery: trained student models (HLR/FSRS/DAS3H),
+> calibration, and the persistent game world remain out of scope.
 
 ## Phase 2 — Authoritative mission + sync protocol
 

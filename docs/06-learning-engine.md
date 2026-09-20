@@ -30,6 +30,31 @@ Initial modes:
 
 Treat these initially as **assessment/evidence modes**, not proven independent latent abilities.
 
+## Deterministic student state (`heuristic-v1`)
+
+V1 ships a small, pure, deterministic state layer before any trained model. It is
+deliberately named `heuristic-v1`, not "mastery".
+
+- Accepted `learning_events` are authoritative. `user_concept_state` is a
+  derived cache keyed by `(user, certification version, concept, assessment
+  mode)`.
+- A newly accepted event updates one cache row per authored
+  `ConceptWeight`. Replayed/duplicate events never advance state twice, and
+  anonymous demo attempts never create user state.
+- The update is bounded and uses the server-scored partial score, the authored
+  concept weight, the server-derived attempt number, hints, the assessment mode,
+  and timestamps. Recovery attempts and hinted successes contribute less
+  evidence than first-attempt, unaided successes.
+- Retrievability/forgetting is computed **on read** at selection time from the
+  stored evidence mass and last-practiced time. More evidence decays more slowly
+  (stability grows with evidence mass), and stored rows are never aged in place.
+- Constants live in `crates/domain/src/concept_state.rs` and are covered by
+  unit tests. Persistence is `crates/db/src/concept_state.rs`.
+
+The update function is intentionally replaceable: HLR/FSRS/DAS3H and prerequisite
+remediation (joined through `KnowledgeNode::concept_ids`) can later replace it
+without changing the storage contract or invalidating accepted history.
+
 ## Knowledge components
 
 Each question maps to one or more concepts/skills with optional weights.
@@ -174,12 +199,19 @@ and scoring primitives underneath them, not learner-facing choices.
 | Full Practice | 65 | weighted full-certification coverage |
 
 V1 selection is an explainable heuristic (`apps/api/src/selection.rs`), not a
-trained student model. Cold start covers domains by official weight; with
-accepted history it ranks candidates by concept weakness, recency, domain
-weight, novelty, and an immediate-repeat penalty, with a deterministic
-question-id tie-break. Full Practice allocates seats by domain weight using a
-deterministic largest-remainder method and redistributes any deficit when a
-domain is short. Question counts are server policy and are never client input.
+trained student model. It reads the derived per-concept state (estimate,
+uncertainty, forgetting risk, evidence mass) and the authored `ConceptWeight`
+mappings, then ranks candidates by concept weakness, forgetting risk, domain
+weight, uncertainty, difficulty fit, novelty, and an immediate-repeat penalty,
+with a deterministic question-id tie-break. Difficulty fit makes weak concepts
+tend toward easier suitable questions and strong concepts toward harder ones.
+
+Cold start falls back to accepted history when no derived state exists yet, then
+to the neutral prior, so the modes still work for a brand-new learner. Quick Quiz
+covers domains by official weight; Domain Quiz spreads across tasks; Full
+Practice allocates seats by domain weight using a deterministic largest-remainder
+method and redistributes any deficit when a domain is short. Question counts are
+server policy and are never client input.
 
 ## References
 

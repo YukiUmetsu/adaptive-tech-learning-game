@@ -25,7 +25,7 @@ use crate::dto::{
     SyncRequest, SyncResponse, TaskDto, WalletResponse,
 };
 use crate::error::ApiError;
-use crate::selection::{self, Candidate, HistoryEntry};
+use crate::selection::{self, Candidate, ConceptEvidence, HistoryEntry};
 use crate::state::AppState;
 
 /// Response times are capped so background time cannot inflate study time.
@@ -324,15 +324,32 @@ async fn select_ids(
     .map(|entry| HistoryEntry {
         question_id: entry.question_id,
         score: entry.score,
+        assessment_mode: entry.assessment_mode,
         occurred_at: entry.occurred_at,
         concepts: entry.concepts,
     })
     .collect();
 
+    // Derived concept state is the primary adaptation signal. It is absent for
+    // a cold-start learner; selection falls back to accepted history instead.
+    let states: Vec<ConceptEvidence> =
+        db::concept_state::list_for_user(&state.pool, user_id, version)
+            .await?
+            .into_iter()
+            .map(|state| ConceptEvidence {
+                concept_id: state.concept_id,
+                assessment_mode: state.assessment_mode,
+                estimate: state.estimate,
+                evidence_mass: state.evidence_mass,
+                last_practiced_at: state.last_practiced_at,
+            })
+            .collect();
+
     Ok(selection::select(
         &candidates,
         &domains,
         &history,
+        &states,
         request.mode,
         domain_id,
         now,
@@ -347,11 +364,7 @@ fn candidate_from(question: &Question) -> Candidate {
         interaction_type: question.interaction_type,
         assessment_mode: question.assessment_mode,
         difficulty_prior: question.difficulty_prior,
-        concepts: question
-            .concepts
-            .iter()
-            .map(|concept| concept.concept_id.clone())
-            .collect(),
+        concepts: concept_weights(question),
     }
 }
 
@@ -589,6 +602,9 @@ async fn apply_event(
     if mission.content_version != event.content_version {
         return Err(SyncRejection::Rejected("conflict".to_owned()));
     }
+    if !(0..=20).contains(&event.hint_count) {
+        return Err(SyncRejection::Rejected("bad_request".to_owned()));
+    }
 
     let question = state
         .content
@@ -608,6 +624,8 @@ async fn apply_event(
 
     // Domain and task come from the actual question, not the mission: mixed
     // missions have no single task, and analytics must stay per-question.
+    // `difficulty_prior` is copied from canonical server content, never from the
+    // client, and the attempt number is derived by the database below.
     let learning_event = LearningEvent {
         event_id: event.event_id,
         user_id: mission.user_id,
@@ -619,23 +637,23 @@ async fn apply_event(
         task_id: question.task_id.clone(),
         question_id: event.question_id,
         content_version: question.content_version.clone(),
+        difficulty_prior: question.difficulty_prior,
         concepts: concept_weights(question),
         assessment_mode: question.assessment_mode,
         interaction_type: question.interaction_type,
         score: scored.score,
         attempt_number: 1,
-        hint_count: 0,
+        hint_count: event.hint_count,
         response_ms: event.response_ms.clamp(0, MAX_RESPONSE_MS),
         structured_error_codes: scored.error_codes,
         occurred_at: event.occurred_at,
     };
 
-    // The database assigns the next attempt number and settles Bits in one
-    // idempotent transaction.
-    let attempt =
-        db::learning_events::accept_answer(&state.pool, &learning_event, question.difficulty_prior)
-            .await
-            .map_err(|error| SyncRejection::Fatal(error.into()))?;
+    // The database assigns the next attempt number, settles Bits, and advances
+    // derived concept state in one idempotent transaction.
+    let attempt = db::learning_events::accept_answer(&state.pool, &learning_event)
+        .await
+        .map_err(|error| SyncRejection::Fatal(error.into()))?;
 
     Ok(match attempt {
         Some(attempt_number) if owned_by_user => {

@@ -4,6 +4,7 @@
 //! and migrations that can be replayed. Phase 0 covers only the foundational
 //! `users` and `sync_batches` tables.
 
+pub mod concept_state;
 pub mod devices;
 pub mod error;
 pub mod learning_events;

@@ -59,25 +59,33 @@ deletion_tombstones
 ## Learner snapshot
 
 `user_concept_state` is a derived/cache representation, not ground truth.
+Accepted `learning_events` remain authoritative, so the cache can be rebuilt
+from them at any time.
+
+One row exists per `(user, certification version, concept, assessment mode)`, so
+recognition, recall, application, and structural reconstruction stay separate
+evidence signals instead of being averaged into one number.
 
 ```text
 user_id
+certification_version
 concept_id
-recognition_estimate
-recall_estimate
-application_estimate
-reconstruction_estimate
-last_practiced_at
-last_success_at
+assessment_mode
+estimate               # bounded [0, 1]
+evidence_mass          # accumulated weighted evidence; more mass decays slower
 exposure_count
 success_count
 failure_count
-model_version
-state_version
+last_practiced_at
+last_success_at
+model_version          # "heuristic-v1"
+state_version          # monotonic per-row revision
 updated_at
 ```
 
-Do not accept blind client replacement of this row.
+Do not accept blind client replacement of this row. Forgetting/retrievability is
+computed on read at selection time from `evidence_mass` and
+`last_practiced_at`; stored state is never aged by a background job.
 
 Ownership is user-based: `mission_instances`, `learning_events`, and wallet
 state carry an owning `user_id`. `device_wallets` is the legacy pre-auth table
@@ -99,6 +107,7 @@ Preserve rich evidence:
   "user_id": "uuid",
   "question_id": "q_123",
   "concept_ids": ["attention.query", "attention.key"],
+  "difficulty_prior": 0.6,
   "assessment_mode": "relationship_recall",
   "interaction_type": "node_connection",
   "answer_payload": {"edges": [["q", "k"]]},
