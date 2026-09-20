@@ -50,4 +50,44 @@ describe("formatCanonicalAnswer", () => {
     );
     expect(lines).toEqual([{ label: "policy_result", value: "Deny / deny" }]);
   });
+
+  it("orders a command assembly by the authored slot order, not map order", () => {
+    const commandInteraction = {
+      type: "command_assembly",
+      slots: [
+        { id: "service", label: "Service" },
+        { id: "operation", label: "Operation" },
+        { id: "state_filter", label: "State filter" },
+        { id: "state_value", label: "State value" },
+      ],
+      tokens: [
+        { id: "cloudwatch", label: "cloudwatch" },
+        { id: "describe", label: "describe-alarms" },
+        { id: "flag", label: "--state-value" },
+        { id: "alarm", label: "ALARM" },
+      ],
+    } as unknown as Interaction;
+
+    const lines = formatCanonicalAnswer(
+      {
+        type: "command_assembly",
+        // Deliberately not in command order.
+        values: {
+          state_value: "alarm",
+          service: "cloudwatch",
+          operation: "describe",
+          state_filter: "flag",
+        },
+      },
+      labelIndex(commandInteraction),
+      commandInteraction,
+    );
+
+    expect(lines).toEqual([
+      { label: "Service", value: "cloudwatch" },
+      { label: "Operation", value: "describe-alarms" },
+      { label: "State filter", value: "--state-value" },
+      { label: "State value", value: "ALARM" },
+    ]);
+  });
 });

@@ -40,6 +40,7 @@ export interface AnswerLine {
 export function formatCanonicalAnswer(
   answer: CanonicalAnswer,
   labels: Record<string, string>,
+  interaction?: Interaction,
 ): AnswerLine[] {
   const name = (id: string): string => labels[id] ?? id;
 
@@ -75,10 +76,11 @@ export function formatCanonicalAnswer(
     case "spot_the_fault":
       return answer.faulty_ids.map((id) => ({ value: name(id) }));
     case "fill_slots":
-      return Object.entries(answer.values).map(([slot, value]) => ({
-        label: name(slot),
-        value: name(value),
-      }));
+      return orderedSlotLines(
+        interaction?.type === "fill_slots" ? interaction.slots : undefined,
+        answer.values,
+        name,
+      );
     case "troubleshooting":
     case "scenario_choice_chain":
       return answer.expected_path.map((id, index) => ({
@@ -86,26 +88,60 @@ export function formatCanonicalAnswer(
         value: name(id),
       }));
     case "configuration_builder":
-      return Object.entries(answer.assignments).map(([slot, piece]) => ({
-        label: name(slot),
-        value: name(piece),
-      }));
+      return orderedSlotLines(
+        interaction?.type === "configuration_builder"
+          ? interaction.slots
+          : undefined,
+        answer.assignments,
+        name,
+      );
     case "two_dimensional_placement":
       return Object.entries(answer.regions).map(([item, region]) => ({
         label: name(item),
         value: `x ${region.x.join("–")}, y ${region.y.join("–")}`,
       }));
     case "command_assembly":
-      return Object.entries(answer.values).map(([slot, token]) => ({
-        label: name(slot),
-        value: name(token),
-      }));
+      // Slot order is the command order, so it must not follow the map's key
+      // order. Each line is a labelled token in the assembled sequence.
+      return orderedSlotLines(
+        interaction?.type === "command_assembly" ? interaction.slots : undefined,
+        answer.values,
+        name,
+      );
     case "typed_fill_blank":
-      return Object.entries(answer.answers).map(([slot, value]) => ({
-        label: name(slot),
-        value: value.accepted_answers.join(" / "),
-      }));
+      return orderedSlotLines(
+        interaction?.type === "typed_fill_blank" ? interaction.slots : undefined,
+        Object.fromEntries(
+          Object.entries(answer.answers).map(([slot, value]) => [
+            slot,
+            value.accepted_answers.join(" / "),
+          ]),
+        ),
+        (id) => id,
+      );
     default:
       return [];
   }
+}
+
+/** Orders slot values by the interaction's authored slot order when known. */
+function orderedSlotLines(
+  slots: ReadonlyArray<{ id: string; label: string }> | undefined,
+  values: Record<string, string>,
+  name: (id: string) => string,
+): AnswerLine[] {
+  if (slots && slots.length > 0) {
+    const lines: AnswerLine[] = [];
+    for (const slot of slots) {
+      const value = values[slot.id];
+      if (value !== undefined) {
+        lines.push({ label: slot.label, value: name(value) });
+      }
+    }
+    return lines;
+  }
+  return Object.entries(values).map(([slot, value]) => ({
+    label: name(slot),
+    value: name(value),
+  }));
 }

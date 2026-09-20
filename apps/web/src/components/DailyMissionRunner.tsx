@@ -599,7 +599,11 @@ function DailyPracticeReview({
         <ol className="daily-review-questions">
           {review.questions.map((question) => {
             const labels = labelIndex(question.interaction);
-            const lines = formatCanonicalAnswer(question.canonical_answer, labels);
+            const lines = formatCanonicalAnswer(
+              question.canonical_answer,
+              labels,
+              question.interaction,
+            );
             const attempt = attemptFor(question.id);
             return (
               <li key={question.id} className="daily-review-question">
