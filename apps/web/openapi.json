@@ -304,6 +304,85 @@
         ]
       }
     },
+    "/v1/daily-missions/{mission_id}/items/{position}/review": {
+      "get": {
+        "tags": [
+          "daily-missions"
+        ],
+        "summary": "Reviews the questions and answers of a Daily Mission item.",
+        "description": "Available after the item's practice mission completes, so a learner can\nrevisit the material without redoing it. It never creates evidence.",
+        "operationId": "review_daily_item",
+        "parameters": [
+          {
+            "name": "mission_id",
+            "in": "path",
+            "description": "Daily Mission identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "position",
+            "in": "path",
+            "description": "Zero-based item position.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Item review",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissionReviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Mission belongs to another account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown mission or item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/daily-missions/{mission_id}/items/{position}/start": {
       "post": {
         "tags": [
@@ -408,7 +487,7 @@
           "account"
         ],
         "summary": "Returns safe application account data for the authenticated learner.",
-        "description": "Used to confirm server-side auth and to power the account UI. It never\nreturns tokens, secrets, or provider internals. The account-wide study streak\nis bundled here so the Track Hub needs no separate streak request; a streak\nquery failure returns a neutral streak and never fails authentication.",
+        "description": "Used to confirm server-side auth and to power the account UI. It never\nreturns tokens, secrets, or provider internals. The account-wide study streak\nand study settings are bundled here so the Track Hub needs no extra request;\na query failure returns neutral values and never fails authentication.",
         "operationId": "get_me",
         "responses": {
           "200": {
@@ -417,6 +496,63 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/me/settings": {
+      "put": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Updates learner study settings.",
+        "description": "Settings are preferences only: they never affect scoring, evidence, concept\nstate, or rewards.",
+        "operationId": "update_settings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSettingsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -656,6 +792,75 @@
           },
           "403": {
             "description": "Mission belongs to another account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/missions/{mission_id}/review": {
+      "get": {
+        "tags": [
+          "missions"
+        ],
+        "summary": "Returns a read-only review of a completed mission.",
+        "description": "Canonical answers are included only after completion, so in-progress work\nnever leaks answers. Review never creates evidence or changes scores.",
+        "operationId": "review_mission",
+        "parameters": [
+          {
+            "name": "mission_id",
+            "in": "path",
+            "description": "Mission identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mission review",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissionReviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Mission belongs to another account or is not complete",
             "content": {
               "application/json": {
                 "schema": {
@@ -3844,7 +4049,8 @@
         "required": [
           "id",
           "authenticated",
-          "streak"
+          "streak",
+          "settings"
         ],
         "properties": {
           "authenticated": {
@@ -3862,6 +4068,10 @@
             "type": "string",
             "format": "uuid",
             "description": "Internal application user id. The stable ownership key."
+          },
+          "settings": {
+            "$ref": "#/components/schemas/UserSettingsDto",
+            "description": "Learner study settings."
           },
           "streak": {
             "$ref": "#/components/schemas/StreakDto",
@@ -3940,6 +4150,49 @@
               "null"
             ],
             "description": "Task covered, for task practice."
+          }
+        }
+      },
+      "MissionReviewResponse": {
+        "type": "object",
+        "description": "Read-only review of a completed mission.\n\nLets a learner revisit the questions and answers of completed work without\nredoing it. It is never learning evidence.",
+        "required": [
+          "mission_id",
+          "mode",
+          "questions",
+          "attempts"
+        ],
+        "properties": {
+          "attempts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewedAttempt"
+            },
+            "description": "Accepted attempts for this mission."
+          },
+          "completed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Completion time, when completed."
+          },
+          "mission_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Mission identifier."
+          },
+          "mode": {
+            "$ref": "#/components/schemas/QuizMode",
+            "description": "Quiz mode the mission used."
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewedQuestion"
+            },
+            "description": "Questions in presentation order, with canonical answers."
           }
         }
       },
@@ -4615,6 +4868,112 @@
               "null"
             ],
             "description": "Stable row identifier. Optional so existing static tables stay valid,\nbut required by progressive row and cell reveals."
+          }
+        }
+      },
+      "ReviewedAttempt": {
+        "type": "object",
+        "description": "One accepted attempt in a read-only mission review.",
+        "required": [
+          "question_id",
+          "attempt_number",
+          "score",
+          "correct",
+          "hint_count",
+          "occurred_at"
+        ],
+        "properties": {
+          "attempt_number": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Server-derived attempt number."
+          },
+          "correct": {
+            "type": "boolean",
+            "description": "Whether the attempt cleared the success threshold."
+          },
+          "hint_count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Hints used."
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the attempt occurred."
+          },
+          "question_id": {
+            "type": "string",
+            "description": "Question answered."
+          },
+          "score": {
+            "type": "number",
+            "format": "double",
+            "description": "Accepted partial score in `[0, 1]`."
+          }
+        }
+      },
+      "ReviewedQuestion": {
+        "type": "object",
+        "description": "One question in a read-only mission review.\n\nCanonical answers are included because the mission is already completed;\nreview never creates evidence or changes scores.",
+        "required": [
+          "id",
+          "domain_id",
+          "task_id",
+          "prompt",
+          "assessment_mode",
+          "interaction",
+          "concepts",
+          "canonical_answer",
+          "explanation",
+          "hints"
+        ],
+        "properties": {
+          "assessment_mode": {
+            "$ref": "#/components/schemas/AssessmentMode",
+            "description": "Evidence mode."
+          },
+          "canonical_answer": {
+            "$ref": "#/components/schemas/CanonicalAnswer",
+            "description": "Canonical answer, safe to show after completion."
+          },
+          "concepts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConceptWeight"
+            },
+            "description": "Concept mappings."
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "Owning domain."
+          },
+          "explanation": {
+            "type": "string",
+            "description": "Short explanation."
+          },
+          "hints": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional hints."
+          },
+          "id": {
+            "type": "string",
+            "description": "Question identifier."
+          },
+          "interaction": {
+            "$ref": "#/components/schemas/Interaction",
+            "description": "Interaction definition, used to render labels in review."
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Learner-facing prompt."
+          },
+          "task_id": {
+            "type": "string",
+            "description": "Owning task."
           }
         }
       },
@@ -5438,6 +5797,32 @@
           "id": {
             "type": "string",
             "description": "Stable identifier within the interaction."
+          }
+        }
+      },
+      "UpdateSettingsRequest": {
+        "type": "object",
+        "description": "Request to update learner study settings.",
+        "required": [
+          "unlock_all_materials"
+        ],
+        "properties": {
+          "unlock_all_materials": {
+            "type": "boolean",
+            "description": "Whether all study materials should be unlocked."
+          }
+        }
+      },
+      "UserSettingsDto": {
+        "type": "object",
+        "description": "Learner study settings.",
+        "required": [
+          "unlock_all_materials"
+        ],
+        "properties": {
+          "unlock_all_materials": {
+            "type": "boolean",
+            "description": "Whether the learner unlocks all study materials instead of the guided,\nin-order path. A preference only; it never affects scoring or evidence."
           }
         }
       },

@@ -130,6 +130,10 @@ The streak is motivational, not learning evidence: it never touches
 `learning_events`, `user_concept_state`, wallets, or rewards, and recording it is
 best-effort and isolated from the authoritative answer transaction.
 
+`users.unlock_all_materials` is a study preference: when false (default) the map
+uses a guided, in-order path; when true every node is available. It never affects
+scoring, evidence, or rewards.
+
 ## Auxiliary recommendation history
 
 `recommendation_log` records which optional recommendations were generated for a

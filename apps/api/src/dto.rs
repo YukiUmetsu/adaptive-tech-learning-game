@@ -274,6 +274,69 @@ pub struct FeedbackResponse {
     pub concepts: Vec<ConceptWeight>,
 }
 
+/// One question in a read-only mission review.
+///
+/// Canonical answers are included because the mission is already completed;
+/// review never creates evidence or changes scores.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ReviewedQuestion {
+    /// Question identifier.
+    pub id: String,
+    /// Owning domain.
+    pub domain_id: String,
+    /// Owning task.
+    pub task_id: String,
+    /// Learner-facing prompt.
+    pub prompt: String,
+    /// Evidence mode.
+    pub assessment_mode: AssessmentMode,
+    /// Interaction definition, used to render labels in review.
+    pub interaction: Interaction,
+    /// Concept mappings.
+    pub concepts: Vec<ConceptWeight>,
+    /// Canonical answer, safe to show after completion.
+    pub canonical_answer: CanonicalAnswer,
+    /// Short explanation.
+    pub explanation: String,
+    /// Optional hints.
+    pub hints: Vec<String>,
+}
+
+/// One accepted attempt in a read-only mission review.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ReviewedAttempt {
+    /// Question answered.
+    pub question_id: String,
+    /// Server-derived attempt number.
+    pub attempt_number: i32,
+    /// Accepted partial score in `[0, 1]`.
+    pub score: f64,
+    /// Whether the attempt cleared the success threshold.
+    pub correct: bool,
+    /// Hints used.
+    pub hint_count: i32,
+    /// When the attempt occurred.
+    pub occurred_at: DateTime<Utc>,
+}
+
+/// Read-only review of a completed mission.
+///
+/// Lets a learner revisit the questions and answers of completed work without
+/// redoing it. It is never learning evidence.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct MissionReviewResponse {
+    /// Mission identifier.
+    pub mission_id: Uuid,
+    /// Quiz mode the mission used.
+    pub mode: QuizMode,
+    /// Completion time, when completed.
+    pub completed_at: Option<DateTime<Utc>>,
+    /// Questions in presentation order, with canonical answers.
+    pub questions: Vec<ReviewedQuestion>,
+    /// Accepted attempts for this mission.
+    pub attempts: Vec<ReviewedAttempt>,
+}
+
 /// Request to sync a batch of evaluated attempts.
 ///
 /// The request may also carry optional auxiliary sections. They share one HTTP
@@ -433,6 +496,21 @@ pub struct CompleteMissionRequest {
     pub device_id: Option<Uuid>,
 }
 
+/// Learner study settings.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct UserSettingsDto {
+    /// Whether the learner unlocks all study materials instead of the guided,
+    /// in-order path. A preference only; it never affects scoring or evidence.
+    pub unlock_all_materials: bool,
+}
+
+/// Request to update learner study settings.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UpdateSettingsRequest {
+    /// Whether all study materials should be unlocked.
+    pub unlock_all_materials: bool,
+}
+
 /// Safe application account data for the signed-in learner.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct MeResponse {
@@ -448,6 +526,8 @@ pub struct MeResponse {
     /// Best-effort: a streak query failure returns a neutral streak and never
     /// fails authentication.
     pub streak: StreakDto,
+    /// Learner study settings.
+    pub settings: UserSettingsDto,
 }
 
 /// Completion result.

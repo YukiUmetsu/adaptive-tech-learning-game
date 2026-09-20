@@ -1,5 +1,6 @@
 import type { EvidenceLevel, FreshnessState, KnowledgeNode } from "../api/types";
 import { assessmentModeLabel, type NodeVisual } from "../state/knowledgeSignal";
+import { ANSWER_REWARD_RANGE, DAILY_MISSION_BONUS_BITS } from "../state/rewards";
 
 interface NodeSignalPanelProps {
   node: KnowledgeNode;
@@ -41,10 +42,10 @@ function freshnessLabel(state: FreshnessState): string {
 }
 
 /**
- * Compact node detail shown beside (desktop) or below (mobile) the map.
+ * Compact, motivating node detail.
  *
- * Assessment modes are only described here, never as permanent labels on every
- * node. Numeric estimates are never shown.
+ * Leads with the node's signal, then a reward hook, then one clear action.
+ * Assessment modes are only described here. No percentages or negative labels.
  */
 export default function NodeSignalPanel({
   node,
@@ -54,29 +55,48 @@ export default function NodeSignalPanel({
   onExplore,
   onClose,
 }: NodeSignalPanelProps) {
+  const hasData = visual.modes.length > 0 || visual.evidence !== "none";
+
   return (
     <aside className="node-panel" aria-label={`${node.title} details`}>
-      <header className="node-panel-head">
-        <div>
+      <button
+        type="button"
+        className="node-panel-close"
+        onClick={onClose}
+        aria-label="Close details"
+      >
+        ×
+      </button>
+
+      <div className="node-panel-hero">
+        <span
+          className={[
+            "node-panel-badge",
+            `signal-node--${visual.discovery}`,
+            `signal-node--evidence-${visual.evidence}`,
+            `signal-node--fresh-${visual.freshness}`,
+          ].join(" ")}
+          aria-hidden="true"
+        >
+          <span className="node-panel-badge-ring" />
+          <span className="node-panel-badge-core" />
+          {visual.recommended ? (
+            <span className="node-panel-badge-spark">✦</span>
+          ) : null}
+        </span>
+
+        <div className="node-panel-hero-text">
           <p className="node-panel-domain">{domainName}</p>
           <h3>{node.title}</h3>
-          <p className="muted node-panel-module">{moduleTitle}</p>
+          <p className="node-panel-module">{moduleTitle}</p>
         </div>
-        <button
-          type="button"
-          className="node-panel-close"
-          onClick={onClose}
-          aria-label="Close details"
-        >
-          ×
-        </button>
-      </header>
+      </div>
 
       {visual.recommended ? (
         <p className="node-panel-next">✦ Recommended next</p>
       ) : null}
 
-      {visual.modes.length > 0 ? (
+      {hasData ? (
         <ul className="node-panel-modes" aria-label="Assessment modes">
           {visual.modes.map((mode) => (
             <li key={mode.assessment_mode}>
@@ -91,24 +111,33 @@ export default function NodeSignalPanel({
           ))}
         </ul>
       ) : (
-        <p className="muted node-panel-empty">
-          No practice yet. Explore this topic to get started.
+        <p className="node-panel-empty">
+          ✨ A brand-new topic. Light it up and start your collection.
         </p>
       )}
 
-      <dl className="node-panel-meta">
-        <div>
-          <dt>Evidence</dt>
-          <dd>{evidenceLabel(visual.evidence)}</dd>
-        </div>
-        <div>
-          <dt>Review</dt>
-          <dd>{freshnessLabel(visual.freshness)}</dd>
-        </div>
-      </dl>
+      <div className="node-panel-stats">
+        <span className="node-panel-stat">
+          <span className="node-panel-stat-label">Evidence</span>
+          <span className="node-panel-stat-value">{evidenceLabel(visual.evidence)}</span>
+        </span>
+        <span className="node-panel-stat">
+          <span className="node-panel-stat-label">Review</span>
+          <span className="node-panel-stat-value">{freshnessLabel(visual.freshness)}</span>
+        </span>
+      </div>
+
+      <div className="node-panel-rewards">
+        <span className="node-panel-reward">
+          <span aria-hidden="true">💰</span> {ANSWER_REWARD_RANGE} Bits / correct
+        </span>
+        <span className="node-panel-reward node-panel-reward--daily">
+          <span aria-hidden="true">🔥</span> +{DAILY_MISSION_BONUS_BITS} daily bonus
+        </span>
+      </div>
 
       <button type="button" className="primary node-panel-explore" onClick={onExplore}>
-        Explore this topic
+        <span aria-hidden="true">✨</span> Explore this topic
       </button>
     </aside>
   );

@@ -21,7 +21,7 @@ use std::time::Duration;
 use axum::Router;
 use axum::extract::Extension;
 use axum::http::{Method, StatusCode, header};
-use axum::routing::{get, post};
+use axum::routing::{get, post, put};
 use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
@@ -86,6 +86,10 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
             "/v1/daily-missions/{mission_id}/items/{position}/complete",
             post(routes::daily_missions::complete_daily_item),
         )
+        .route(
+            "/v1/daily-missions/{mission_id}/items/{position}/review",
+            get(routes::daily_missions::review_daily_item),
+        )
         .route("/v1/missions/issue", post(routes::missions::issue_mission))
         .route(
             "/v1/missions/{mission_id}/answers",
@@ -95,9 +99,14 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
             "/v1/missions/{mission_id}/complete",
             post(routes::missions::complete_mission),
         )
+        .route(
+            "/v1/missions/{mission_id}/review",
+            get(routes::missions::review_mission),
+        )
         .route("/v1/sync", post(routes::sync::sync))
         .route("/v1/wallet", get(routes::wallet::get_wallet))
-        .route("/v1/me", get(routes::me::get_me));
+        .route("/v1/me", get(routes::me::get_me))
+        .route("/v1/me/settings", put(routes::me::update_settings));
 
     // The internal evaluation endpoint is only mounted when explicitly enabled,
     // so a normal deployment returns 404 for it to every caller (including

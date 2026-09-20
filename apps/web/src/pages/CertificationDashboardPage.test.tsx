@@ -89,6 +89,31 @@ const trackMap = {
         },
       ],
     },
+    {
+      schema_version: "1.0.0",
+      content_version: "soa-c03-content-v1",
+      certification_id: "aws-soa-c03",
+      certification_version: "soa-c03",
+      exam_guide_revision: null,
+      domain: { id: "domain-2", name: "Networking", weight: 0.22 },
+      learning_design: {
+        progress_label: "Discovery Progress",
+        unlock_rule: "Unlock",
+        mastery_note: "Explore first.",
+      },
+      source_refs: [],
+      modules: [
+        {
+          id: "module-2",
+          title: "Routes",
+          order: 1,
+          task_ids: [],
+          skill_ids: [],
+          prerequisite_module_ids: [],
+          nodes: [node("n3", "Route Tables", 0)],
+        },
+      ],
+    },
   ],
 };
 
@@ -180,6 +205,7 @@ function stubHub(options: MockOptions = {}) {
               email: "learner@example.com",
               authenticated: true,
               streak,
+              settings: { unlock_all_materials: false },
             })
           : jsonResponse({ error: { code: "internal" } }, 500);
       }
@@ -310,7 +336,7 @@ describe("CertificationDashboardPage (Track Hub)", () => {
       screen.getByRole("button", { name: /Knowledge Map/ }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Daily Mission/ }),
+      screen.getByRole("button", { name: /Daily Mission/ }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Start Quick Quiz/ }),
@@ -440,14 +466,78 @@ describe("CertificationDashboardPage (Track Hub)", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows the Daily Mission CTA when today's mission loads", async () => {
+  it("opens the Daily Mission in the same page", async () => {
     stubHub({ dailyMission: true });
     renderHub();
     await ready();
 
+    const cta = await screen.findByRole("button", {
+      name: /Continue Daily Mission/,
+    });
+    await userEvent.click(cta);
+
+    // The runner renders in-page rather than navigating away.
     expect(
-      await screen.findByRole("link", { name: /Continue Daily Mission/ }),
-    ).toHaveAttribute("href", "/tracks/aws-soa-c03/daily");
+      await screen.findByText(/Daily Mission complete/),
+    ).toBeInTheDocument();
+  });
+
+  it("switches domains on the Knowledge Map", async () => {
+    stubHub();
+    renderHub();
+    await ready();
+
+    // Defaults to the first domain.
+    expect(await screen.findByRole("button", { name: /Metrics/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Route Tables/ })).not.toBeInTheDocument();
+
+    // Switching domains shows only the other domain's nodes.
+    await userEvent.click(screen.getByRole("button", { name: /Networking/ }));
+    expect(await screen.findByRole("button", { name: /Route Tables/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Metrics/ })).not.toBeInTheDocument();
+  });
+
+  it("persists the unlock-all setting", async () => {
+    let saved: unknown = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = requestUrl(input);
+        if (url.includes("/v1/certifications")) return jsonResponse(catalog);
+        if (url.includes("/v1/wallet"))
+          return jsonResponse({ device_id: "device", bits_balance: 1240 });
+        if (url.includes("/v1/tracks/aws-soa-c03/map"))
+          return jsonResponse(trackMap);
+        if (url.includes("/v1/tracks/aws-soa-c03/progress"))
+          return jsonResponse(progress);
+        if (url.includes("/v1/me/settings")) {
+          if (input instanceof Request) {
+            saved = JSON.parse(await input.clone().text());
+          }
+          return jsonResponse({ unlock_all_materials: true });
+        }
+        if (url.includes("/v1/me"))
+          return jsonResponse({
+            id: "user-1",
+            email: "learner@example.com",
+            authenticated: true,
+            streak,
+            settings: { unlock_all_materials: false },
+          });
+        return jsonResponse({ error: { code: "not_found" } }, 404);
+      }),
+    );
+
+    renderHub();
+    await ready();
+
+    await userEvent.click(
+      screen.getByRole("checkbox", { name: /Unlock all study materials/ }),
+    );
+
+    await waitFor(() =>
+      expect(saved).toMatchObject({ unlock_all_materials: true }),
+    );
   });
 
   it("applies reduced-motion classes when the user prefers reduced motion", async () => {

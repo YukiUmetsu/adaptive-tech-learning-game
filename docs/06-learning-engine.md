@@ -505,6 +505,34 @@ The UI is compact and never punishing: an active day is illuminated, a pending
 day is quiet, and a lapsed streak reads as "start a streak today" rather than
 announcing a loss.
 
+## Track Hub UX and study settings
+
+The Learning Track hub is organized around one domain's Knowledge Map at a
+time, with a compact domain switcher so the map never becomes an overwhelming
+wall of nodes. Nodes align on their signal circle regardless of label length,
+grow subtly on hover, and the recommended node carries a small "Next" marker
+(explained in the map legend).
+
+The Daily Mission is embedded in the hub as a view, using the same runner as the
+standalone `/tracks/:id/daily` route (kept for deep links), so it no longer feels
+like a separate page. Completed Daily Mission items can be **reviewed read-only**:
+learning-node material is shown fully revealed with no clicks, and practice
+questions are shown with their canonical answers and the learner's attempts via
+`GET /v1/daily-missions/:id/items/:position/review` (or
+`GET /v1/missions/:id/review`). Canonical answers are only returned after the
+mission is complete, so in-progress work never leaks them.
+
+### Guided order and unlocking
+
+By default the hub presents a **guided, in-order path**: within a module, a node
+becomes available only once every earlier node is complete, on top of the
+existing module/node prerequisites. This reduces choice and is easier to focus
+on. Learners who prefer freedom can enable **Unlock all study materials** in
+study settings (`PUT /v1/me/settings`, also surfaced on the account page and in
+the hub); the map then makes every node available while still presenting them in
+content order. The setting is a preference only and never affects scoring,
+evidence, concept state, or rewards.
+
 ## Request and caching strategy
 
 The Track Hub is designed to keep HTTP traffic low and to fail open:

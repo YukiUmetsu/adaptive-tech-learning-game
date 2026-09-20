@@ -5175,7 +5175,7 @@ button.primary:hover:not(:disabled) {
 .track-map-nodes {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.15rem;
   margin: 0;
   padding: 0;
@@ -5184,13 +5184,13 @@ button.primary:hover:not(:disabled) {
 
 .track-map-node {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .track-map-connector {
   width: 1.6rem;
   height: 2px;
-  margin: 0 -0.1rem;
+  margin: 1.6rem -0.1rem 0;
   border-radius: 2px;
   background: var(--border);
   transition: background 0.3s;
@@ -5223,6 +5223,45 @@ button.primary:hover:not(:disabled) {
   transform: translateY(-2px);
 }
 
+.signal-node:hover .signal-node-ring,
+.signal-node:focus-visible .signal-node-ring {
+  transform: translateX(-50%) scale(1.18);
+  opacity: 1;
+}
+
+.signal-node:hover .signal-node-core,
+.signal-node:focus-visible .signal-node-core {
+  transform: translateX(-50%) scale(1.12);
+}
+
+.signal-node:hover .signal-node-label,
+.signal-node:focus-visible .signal-node-label {
+  color: var(--text);
+}
+
+.signal-node-next {
+  position: absolute;
+  top: 2.6rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.18);
+  color: var(--warning);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.signal-node:hover .signal-node-next,
+.signal-node:focus-visible .signal-node-next {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 .signal-node-ring,
 .signal-node-core,
 .signal-node-orbit {
@@ -5239,7 +5278,11 @@ button.primary:hover:not(:disabled) {
   height: 2.75rem;
   border: 2px solid var(--border);
   opacity: 0.55;
-  transition: border-color 0.3s, box-shadow 0.3s, opacity 0.3s;
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s,
+    opacity 0.3s,
+    transform 0.2s ease-out;
 }
 
 .signal-node-core {
@@ -5249,7 +5292,11 @@ button.primary:hover:not(:disabled) {
   background: var(--accent);
   opacity: 0;
   box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
-  transition: opacity 0.3s, background 0.3s, box-shadow 0.3s;
+  transition:
+    opacity 0.3s,
+    background 0.3s,
+    box-shadow 0.3s,
+    transform 0.2s ease-out;
 }
 
 .signal-node-orbit {
@@ -5298,6 +5345,11 @@ button.primary:hover:not(:disabled) {
 }
 
 .signal-node-label {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.4em;
   font-size: 0.78rem;
   line-height: 1.2;
   text-align: center;
@@ -5833,4 +5885,365 @@ button.primary:hover:not(:disabled) {
   .signal-node:hover {
     transform: none;
   }
+}
+
+/* --- Domain switcher ------------------------------------------------------- */
+
+.hub-domain-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.hub-domain-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.hub-domain-pill:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.hub-domain-pill--active {
+  border-color: var(--accent);
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--text);
+  box-shadow: 0 0 14px -6px rgba(56, 189, 248, 0.7);
+}
+
+.hub-domain-pill--complete {
+  border-color: rgba(52, 211, 153, 0.5);
+}
+
+.hub-domain-pill-progress {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+}
+
+/* --- Node detail panel (redesigned) ---------------------------------------- */
+
+.node-panel {
+  position: relative;
+}
+
+.node-panel-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+}
+
+.node-panel-hero {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding-right: 1.5rem;
+}
+
+.node-panel-badge {
+  position: relative;
+  width: 3.6rem;
+  height: 3.6rem;
+  flex: none;
+}
+
+.node-panel-badge-ring,
+.node-panel-badge-core {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.node-panel-badge-ring {
+  inset: 0;
+  border: 2px solid var(--border);
+  opacity: 0.55;
+  transition: border-color 0.3s, opacity 0.3s;
+}
+
+.node-panel-badge-core {
+  top: 50%;
+  left: 50%;
+  width: 2rem;
+  height: 2rem;
+  transform: translate(-50%, -50%);
+  background: var(--accent);
+  opacity: 0;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
+}
+
+.node-panel-badge-spark {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.15rem;
+  color: var(--warning);
+  font-size: 0.95rem;
+}
+
+.node-panel-badge.signal-node--unexplored .node-panel-badge-ring {
+  opacity: 0.35;
+}
+.node-panel-badge.signal-node--explored .node-panel-badge-ring,
+.node-panel-badge.signal-node--completed .node-panel-badge-ring {
+  opacity: 1;
+}
+.node-panel-badge.signal-node--explored .node-panel-badge-core,
+.node-panel-badge.signal-node--completed .node-panel-badge-core {
+  opacity: 0.22;
+}
+.node-panel-badge.signal-node--evidence-early .node-panel-badge-core {
+  opacity: 0.42;
+}
+.node-panel-badge.signal-node--evidence-developing .node-panel-badge-core {
+  opacity: 0.68;
+}
+.node-panel-badge.signal-node--evidence-substantial .node-panel-badge-core {
+  opacity: 0.95;
+  background: var(--success);
+  box-shadow: 0 0 18px rgba(52, 211, 153, 0.55);
+}
+.node-panel-badge.signal-node--fresh-fresh .node-panel-badge-ring {
+  border-color: rgba(56, 189, 248, 0.6);
+}
+.node-panel-badge.signal-node--fresh-becoming_due .node-panel-badge-ring {
+  border-style: dashed;
+  border-color: rgba(251, 191, 36, 0.65);
+}
+.node-panel-badge.signal-node--fresh-due .node-panel-badge-ring {
+  border-style: dashed;
+  border-color: var(--warning);
+}
+
+.node-panel-hero-text h3 {
+  margin: 0.1rem 0 0;
+  font-size: 1.05rem;
+}
+
+.node-panel-stats {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.node-panel-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.node-panel-stat-label {
+  font-size: 0.68rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.node-panel-stat-value {
+  font-size: 0.88rem;
+}
+
+.node-panel-rewards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.node-panel-reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--warning);
+  font-size: 0.75rem;
+}
+
+.node-panel-reward--daily {
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--accent);
+}
+
+.node-panel-explore {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+/* --- Practice mode cards --------------------------------------------------- */
+
+.hub-practice-head {
+  margin-bottom: 1rem;
+}
+
+.hub-mode-card {
+  position: relative;
+}
+
+.hub-mode-questions {
+  margin: 0;
+  font-weight: 600;
+}
+
+.hub-mode-reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+  font-size: 0.78rem;
+  color: var(--warning);
+}
+
+.legend-node--recommended {
+  display: grid;
+  place-items: center;
+  border: 0;
+  color: var(--warning);
+  font-size: 0.85rem;
+}
+
+/* --- Study setting toggle -------------------------------------------------- */
+
+.hub-setting {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
+  cursor: pointer;
+}
+
+.hub-setting input {
+  margin-top: 0.2rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
+}
+
+.hub-setting span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.hub-setting-title {
+  font-size: 0.88rem;
+}
+
+.hub-setting-note {
+  font-size: 0.75rem;
+}
+
+.account-settings {
+  margin: 1.5rem 0;
+}
+
+.account-settings h2 {
+  font-size: 1.05rem;
+}
+
+/* --- Daily Mission review -------------------------------------------------- */
+
+.daily-step-review {
+  margin-left: auto;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.daily-step-review:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.daily-review-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.daily-review-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.daily-review-question {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
+}
+
+.daily-review-prompt {
+  margin: 0;
+  font-weight: 600;
+}
+
+.daily-review-meta {
+  margin: 0.2rem 0 0.75rem;
+  font-size: 0.78rem;
+  text-transform: capitalize;
+}
+
+.daily-review-answer {
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  background: rgba(56, 189, 248, 0.07);
+}
+
+.daily-review-answer-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.daily-review-answer ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.daily-review-answer li {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.86rem;
+}
+
+.daily-review-answer-label {
+  color: var(--text-muted);
+}
+
+.daily-review-explanation {
+  margin: 0.75rem 0 0;
+  font-size: 0.84rem;
+  color: var(--text-muted);
 }

@@ -7,7 +7,7 @@ use uuid::Uuid;
 use crate::auth::AuthenticatedUser;
 use crate::dto::{
     DailyItemCompleteRequest, DailyItemCompleteResponse, DailyMissionRequest, DailyMissionResponse,
-    MissionResponse,
+    MissionResponse, MissionReviewResponse,
 };
 use crate::error::{ApiError, ErrorResponse};
 use crate::routes::json_body;
@@ -126,5 +126,36 @@ pub async fn complete_daily_item(
     Ok(Json(
         services::complete_daily_item(&state, &user, path.mission_id, path.position, request)
             .await?,
+    ))
+}
+
+/// Reviews the questions and answers of a Daily Mission item.
+///
+/// Available after the item's practice mission completes, so a learner can
+/// revisit the material without redoing it. It never creates evidence.
+#[utoipa::path(
+    get,
+    path = "/v1/daily-missions/{mission_id}/items/{position}/review",
+    tag = "daily-missions",
+    params(DailyItemPath),
+    responses(
+        (status = 200, description = "Item review", body = MissionReviewResponse),
+        (status = 401, description = "Authentication required", body = ErrorResponse),
+        (status = 403, description = "Mission belongs to another account", body = ErrorResponse),
+        (status = 404, description = "Unknown mission or item", body = ErrorResponse)
+    ),
+    security(("bearerAuth" = []))
+)]
+pub async fn review_daily_item(
+    State(state): State<AppState>,
+    user: AuthenticatedUser,
+    path: Result<Path<DailyItemPath>, PathRejection>,
+) -> Result<Json<MissionReviewResponse>, ApiError> {
+    let Path(path) = path.map_err(|rejection| {
+        ApiError::BadRequest(format!("invalid path parameter: {rejection}"))
+    })?;
+
+    Ok(Json(
+        services::daily_item_review(&state, &user, path.mission_id, path.position).await?,
     ))
 }

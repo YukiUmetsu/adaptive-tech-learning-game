@@ -53,9 +53,14 @@ function KnowledgeNodeGlyph({
       <span className="signal-node-ring" aria-hidden="true" />
       <span className="signal-node-core" aria-hidden="true" />
       {visual.recommended ? (
-        <span className="signal-node-spark" aria-hidden="true">
-          ✦
-        </span>
+        <>
+          <span className="signal-node-spark" aria-hidden="true">
+            ✦
+          </span>
+          <span className="signal-node-next" aria-hidden="true">
+            Next
+          </span>
+        </>
       ) : null}
       {modePips.length > 0 ? (
         <span className="signal-node-modes" aria-hidden="true">

@@ -14,6 +14,7 @@ use adaptive_learn_content::{
     merge_domain_discovery, score,
 };
 use adaptive_learn_db as db;
+use adaptive_learn_domain::concept_state::SUCCESS_THRESHOLD;
 use adaptive_learn_domain::{
     ConceptWeight, DAILY_MISSION_BONUS_BITS, LearningEvent, MODEL_VERSION, MissionInstance,
     MissionStatus, PredictionSample, QuizMode, evaluate, predict_question, retrievability,
@@ -30,11 +31,12 @@ use crate::dto::{
     DailyMissionItemStatus, DailyMissionPlanType, DailyMissionRequest, DailyMissionResponse,
     DailyMissionStatus, DiscoveryResponse, DiscoveryState, DiscoveryUpdateRequest, DomainDto,
     DomainProgressDto, EvaluationSliceDto, FeedbackResponse, IssueMissionRequest,
-    LearningDomainResponse, MissionResponse, ModelEvaluationResponse, NodeProgressDto,
-    QuestionView, RecommendationEventRequest, RecommendationEventResponse, RecommendationResponse,
-    StreakDto, StudySessionRequest, StudySessionResponse, SyncEventRequest, SyncEventResult,
-    SyncRequest, SyncResponse, SyncSectionResult, TaskDto, TrackMapResponse, TrackProgressResponse,
-    WalletResponse,
+    LearningDomainResponse, MissionResponse, MissionReviewResponse, ModelEvaluationResponse,
+    NodeProgressDto, QuestionView, RecommendationEventRequest, RecommendationEventResponse,
+    RecommendationResponse, ReviewedAttempt, ReviewedQuestion, StreakDto, StudySessionRequest,
+    StudySessionResponse, SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse,
+    SyncSectionResult, TaskDto, TrackMapResponse, TrackProgressResponse, UpdateSettingsRequest,
+    UserSettingsDto, WalletResponse,
 };
 use crate::error::ApiError;
 use crate::planner::{
@@ -1622,6 +1624,36 @@ pub async fn streak(state: &AppState, user: &AuthenticatedUser) -> StreakDto {
     StreakDto::from(summarize_streak(days, today))
 }
 
+/// Returns the learner's study settings, best-effort.
+pub async fn user_settings(state: &AppState, user: &AuthenticatedUser) -> UserSettingsDto {
+    let unlock_all_materials = match db::users::unlock_all_materials(&state.pool, user.id).await {
+        Ok(value) => value,
+        Err(error) => {
+            tracing::debug!(error = %error, "could not read study settings");
+            false
+        }
+    };
+    UserSettingsDto {
+        unlock_all_materials,
+    }
+}
+
+/// Updates the learner's study settings.
+///
+/// Settings are preferences only and never affect scoring, evidence, or rewards.
+pub async fn update_settings(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    request: UpdateSettingsRequest,
+) -> Result<UserSettingsDto, ApiError> {
+    let stored =
+        db::users::set_unlock_all_materials(&state.pool, user.id, request.unlock_all_materials)
+            .await?;
+    Ok(UserSettingsDto {
+        unlock_all_materials: stored,
+    })
+}
+
 /// Captures the request timezone when absent and returns the effective one.
 ///
 /// The timezone is captured once (matching Daily Mission behavior), so a later
@@ -1845,6 +1877,85 @@ fn mission_response(state: &AppState, stored: MissionInstance) -> MissionRespons
         expires_at: stored.expires_at,
         questions,
     }
+}
+
+/// Builds a read-only review of a completed mission.
+///
+/// Review is only available after completion, so canonical answers cannot leak
+/// for in-progress work. It never creates evidence or changes scores.
+pub async fn mission_review(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    mission_id: Uuid,
+) -> Result<MissionReviewResponse, ApiError> {
+    let mission = load_mission(state, mission_id).await?;
+    if mission.user_id != Some(user.id) {
+        return Err(ApiError::Forbidden);
+    }
+    if mission.status != MissionStatus::Completed {
+        return Err(ApiError::Conflict("mission is not complete yet".to_owned()));
+    }
+
+    let questions = mission
+        .question_ids
+        .iter()
+        .filter_map(|id| state.content.question(&mission.certification_version, id))
+        .map(|question| ReviewedQuestion {
+            id: question.id.clone(),
+            domain_id: question.domain_id.clone(),
+            task_id: question.task_id.clone(),
+            prompt: question.prompt.clone(),
+            assessment_mode: question.assessment_mode,
+            interaction: question.interaction.clone(),
+            concepts: concept_weights(question),
+            canonical_answer: question.canonical_answer.clone(),
+            explanation: question.explanation.clone(),
+            hints: question.hints.clone(),
+        })
+        .collect();
+
+    let attempts = db::learning_events::list_for_mission(&state.pool, mission.id)
+        .await?
+        .into_iter()
+        .map(|event| ReviewedAttempt {
+            question_id: event.question_id,
+            attempt_number: event.attempt_number,
+            score: event.score,
+            correct: event.score >= SUCCESS_THRESHOLD,
+            hint_count: event.hint_count,
+            occurred_at: event.occurred_at,
+        })
+        .collect();
+
+    Ok(MissionReviewResponse {
+        mission_id: mission.id,
+        mode: mission.mode,
+        completed_at: mission.completed_at,
+        questions,
+        attempts,
+    })
+}
+
+/// Reviews the mission that executed a Daily Mission item.
+pub async fn daily_item_review(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    daily_mission_id: Uuid,
+    position: i32,
+) -> Result<MissionReviewResponse, ApiError> {
+    let daily = db::daily_missions::find_by_id(&state.pool, daily_mission_id)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+    if daily.user_id != user.id {
+        return Err(ApiError::Forbidden);
+    }
+
+    let mission =
+        db::missions::find_for_daily_item(&state.pool, user.id, daily_mission_id, position)
+            .await?
+            .ok_or(ApiError::NotFound)?;
+
+    mission_review(state, user, mission.id).await
 }
 
 /// Builds `(domain_id, task_id, question_ids)` for a mode.

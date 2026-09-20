@@ -182,6 +182,7 @@ Use **SQLx** for PostgreSQL. Keep SQL explicit and avoid a heavy ORM.
 ```text
 POST /v1/missions/issue
 POST /v1/missions/:id/answers
+GET  /v1/missions/:id/review
 POST /v1/sync
 GET  /v1/tracks/:id/discovery
 GET  /v1/tracks/:id/map
@@ -192,6 +193,9 @@ POST /v1/tracks/:id/session
 POST /v1/tracks/:id/daily-mission
 POST /v1/daily-missions/:id/items/:position/start
 POST /v1/daily-missions/:id/items/:position/complete
+GET  /v1/daily-missions/:id/items/:position/review
+GET  /v1/me
+PUT  /v1/me/settings
 GET  /internal/model-evaluation
 POST /v1/uploads/authorize
 POST /v1/gacha/roll

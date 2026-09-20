@@ -8,6 +8,7 @@ import {
   clearDomainProgress,
   deriveLearningState,
   emptyDomainProgress,
+  fullPromptReveals,
   isNodeUnlocked,
   isPromptComplete,
   loadDomainProgress,
@@ -625,5 +626,60 @@ describe("mergeServerDiscovery", () => {
     // Discovery is queued separately and never becomes scored evidence.
     expect(window.localStorage.getItem("adaptive-learn.pending-events")).toBeNull();
     expect(loadPendingDiscovery()).toHaveLength(1);
+  });
+});
+
+describe("deriveLearningState availability options", () => {
+  // A linear module: two nodes with no node prerequisites, so guided order is
+  // the only thing that locks the second node.
+  const linear = {
+    ...learningFixture,
+    modules: [
+      {
+        ...learningFixture.modules[0],
+        nodes: learningFixture.modules[0].nodes.map((node) =>
+          node.id === "n2" ? { ...node, prerequisite_node_ids: [] } : node,
+        ),
+      },
+    ],
+  };
+
+  it("default behavior leaves both nodes available", () => {
+    const state = deriveLearningState(linear, null);
+    expect(state.nodeState.n1).toBe("ready");
+    expect(state.nodeState.n2).toBe("ready");
+  });
+
+  it("guided mode makes the learner follow content order", () => {
+    const state = deriveLearningState(linear, null, { guided: true });
+    expect(state.nodeState.n1).toBe("ready");
+    expect(state.nodeState.n2).toBe("locked");
+  });
+
+  it("guided mode unlocks the next node once the earlier one completes", () => {
+    revealPrompt("v1", "domain-1", "test-content-v1", "n1", "what");
+    revealPrompt("v1", "domain-1", "test-content-v1", "n1", "look");
+    const progress = loadDomainProgress("v1", "domain-1");
+
+    const state = deriveLearningState(linear, progress, { guided: true });
+    expect(state.nodeState.n1).toBe("unlocked");
+    expect(state.nodeState.n2).toBe("ready");
+  });
+
+  it("unlockAll makes every node available regardless of order", () => {
+    const state = deriveLearningState(learningFixture, null, { unlockAll: true });
+    expect(state.nodeState.n1).toBe("ready");
+    expect(state.nodeState.n2).toBe("ready");
+    // The gated second module is available too.
+    expect(state.moduleProgress.m2.available).toBe(true);
+  });
+});
+
+describe("fullPromptReveals", () => {
+  it("marks every prompt and required element revealed", () => {
+    const node = learningFixture.modules[0].nodes[0];
+    const full = fullPromptReveals(node);
+    expect(full.promptIds).toEqual(["what", "look"]);
+    expect(full.elementIds).toEqual({});
   });
 });

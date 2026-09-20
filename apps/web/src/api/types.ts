@@ -56,6 +56,11 @@ export type StreakDto = components["schemas"]["StreakDto"];
 export type EvidenceLevel = components["schemas"]["EvidenceLevel"];
 export type FreshnessState = components["schemas"]["FreshnessState"];
 export type ModeSignal = components["schemas"]["ModeSignal"];
+export type MissionReviewResponse =
+  components["schemas"]["MissionReviewResponse"];
+export type ReviewedQuestion = components["schemas"]["ReviewedQuestion"];
+export type ReviewedAttempt = components["schemas"]["ReviewedAttempt"];
+export type UserSettingsDto = components["schemas"]["UserSettingsDto"];
 export type LearningDomainResponse =
   components["schemas"]["LearningDomainResponse"];
 export type LearningModule = components["schemas"]["LearningModule"];

@@ -22,6 +22,11 @@ interface KnowledgeCardProps {
   onClose: () => void;
   onDiscoverNext: (nodeId: string) => void;
   /**
+   * Read-only review mode: every prompt is shown revealed and interactions are
+   * disabled, so completed material can be revisited without any clicks.
+   */
+  readOnly?: boolean;
+  /**
    * Replaces the "Back to map" header control. Pass `null` to hide it.
    * Omitted keeps the default, preserving existing map behavior.
    */
@@ -52,6 +57,7 @@ export default function KnowledgeCard({
   onRevealElement,
   onClose,
   onDiscoverNext,
+  readOnly = false,
   headerAction,
   unlockedActions,
 }: KnowledgeCardProps) {
@@ -70,7 +76,7 @@ export default function KnowledgeCard({
     revealed,
     elementSets,
   );
-  const unlocked = state === "unlocked";
+  const unlocked = state === "unlocked" && !readOnly;
 
   return (
     <section
@@ -119,6 +125,7 @@ export default function KnowledgeCard({
             prompt={prompt}
             revealed={promptComplete(prompt)}
             revealedElementIds={revealedElementIds[prompt.id] ?? []}
+            disabled={readOnly}
             onReveal={onReveal}
             onRevealElement={onRevealElement}
           />

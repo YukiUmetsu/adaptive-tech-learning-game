@@ -110,6 +110,7 @@ describe("streak", () => {
       active_today: true,
       last_active_day: "2026-09-20",
     },
+    settings: { unlock_all_materials: false },
   };
 
   it("maps the account streak and caches it", async () => {

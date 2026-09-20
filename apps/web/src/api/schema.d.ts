@@ -127,6 +127,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/daily-missions/{mission_id}/items/{position}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reviews the questions and answers of a Daily Mission item.
+         * @description Available after the item's practice mission completes, so a learner can
+         *     revisit the material without redoing it. It never creates evidence.
+         */
+        get: operations["review_daily_item"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/daily-missions/{mission_id}/items/{position}/start": {
         parameters: {
             query?: never;
@@ -155,11 +176,32 @@ export interface paths {
          * Returns safe application account data for the authenticated learner.
          * @description Used to confirm server-side auth and to power the account UI. It never
          *     returns tokens, secrets, or provider internals. The account-wide study streak
-         *     is bundled here so the Track Hub needs no separate streak request; a streak
-         *     query failure returns a neutral streak and never fails authentication.
+         *     and study settings are bundled here so the Track Hub needs no extra request;
+         *     a query failure returns neutral values and never fails authentication.
          */
         get: operations["get_me"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Updates learner study settings.
+         * @description Settings are preferences only: they never affect scoring, evidence, concept
+         *     state, or rewards.
+         */
+        put: operations["update_settings"];
         post?: never;
         delete?: never;
         options?: never;
@@ -216,6 +258,27 @@ export interface paths {
         put?: never;
         /** Marks a mission completed for its owner. */
         post: operations["complete_mission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/{mission_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns a read-only review of a completed mission.
+         * @description Canonical answers are included only after completion, so in-progress work
+         *     never leaks answers. Review never creates evidence or changes scores.
+         */
+        get: operations["review_mission"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1399,6 +1462,8 @@ export interface components {
              * @description Internal application user id. The stable ownership key.
              */
             id: string;
+            /** @description Learner study settings. */
+            settings: components["schemas"]["UserSettingsDto"];
             /**
              * @description Account-wide daily study streak.
              *
@@ -1444,6 +1509,30 @@ export interface components {
             questions: components["schemas"]["QuestionView"][];
             /** @description Task covered, for task practice. */
             task_id?: string | null;
+        };
+        /**
+         * @description Read-only review of a completed mission.
+         *
+         *     Lets a learner revisit the questions and answers of completed work without
+         *     redoing it. It is never learning evidence.
+         */
+        MissionReviewResponse: {
+            /** @description Accepted attempts for this mission. */
+            attempts: components["schemas"]["ReviewedAttempt"][];
+            /**
+             * Format: date-time
+             * @description Completion time, when completed.
+             */
+            completed_at?: string | null;
+            /**
+             * Format: uuid
+             * @description Mission identifier.
+             */
+            mission_id: string;
+            /** @description Quiz mode the mission used. */
+            mode: components["schemas"]["QuizMode"];
+            /** @description Questions in presentation order, with canonical answers. */
+            questions: components["schemas"]["ReviewedQuestion"][];
         };
         /**
          * @description Lifecycle of a server-issued mission.
@@ -1745,6 +1834,61 @@ export interface components {
              *     but required by progressive row and cell reveals.
              */
             id?: string | null;
+        };
+        /** @description One accepted attempt in a read-only mission review. */
+        ReviewedAttempt: {
+            /**
+             * Format: int32
+             * @description Server-derived attempt number.
+             */
+            attempt_number: number;
+            /** @description Whether the attempt cleared the success threshold. */
+            correct: boolean;
+            /**
+             * Format: int32
+             * @description Hints used.
+             */
+            hint_count: number;
+            /**
+             * Format: date-time
+             * @description When the attempt occurred.
+             */
+            occurred_at: string;
+            /** @description Question answered. */
+            question_id: string;
+            /**
+             * Format: double
+             * @description Accepted partial score in `[0, 1]`.
+             */
+            score: number;
+        };
+        /**
+         * @description One question in a read-only mission review.
+         *
+         *     Canonical answers are included because the mission is already completed;
+         *     review never creates evidence or changes scores.
+         */
+        ReviewedQuestion: {
+            /** @description Evidence mode. */
+            assessment_mode: components["schemas"]["AssessmentMode"];
+            /** @description Canonical answer, safe to show after completion. */
+            canonical_answer: components["schemas"]["CanonicalAnswer"];
+            /** @description Concept mappings. */
+            concepts: components["schemas"]["ConceptWeight"][];
+            /** @description Owning domain. */
+            domain_id: string;
+            /** @description Short explanation. */
+            explanation: string;
+            /** @description Optional hints. */
+            hints: string[];
+            /** @description Question identifier. */
+            id: string;
+            /** @description Interaction definition, used to render labels in review. */
+            interaction: components["schemas"]["Interaction"];
+            /** @description Learner-facing prompt. */
+            prompt: string;
+            /** @description Owning task. */
+            task_id: string;
         };
         /**
          * @description The operational stage a branching-scenario decision belongs to.
@@ -2174,6 +2318,19 @@ export interface components {
             /** @description Stable identifier within the interaction. */
             id: string;
         };
+        /** @description Request to update learner study settings. */
+        UpdateSettingsRequest: {
+            /** @description Whether all study materials should be unlocked. */
+            unlock_all_materials: boolean;
+        };
+        /** @description Learner study settings. */
+        UserSettingsDto: {
+            /**
+             * @description Whether the learner unlocks all study materials instead of the guided,
+             *     in-order path. A preference only; it never affects scoring or evidence.
+             */
+            unlock_all_materials: boolean;
+        };
         /**
          * @description A learner's settled Bits balance.
          *
@@ -2417,6 +2574,58 @@ export interface operations {
             };
         };
     };
+    review_daily_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Daily Mission identifier. */
+                mission_id: string;
+                /** @description Zero-based item position. */
+                position: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Item review */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionReviewResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Mission belongs to another account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown mission or item */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     start_daily_item: {
         parameters: {
             query?: never;
@@ -2503,6 +2712,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    update_settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserSettingsDto"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Authentication required */
@@ -2674,6 +2925,56 @@ export interface operations {
                 };
             };
             /** @description Mission belongs to another account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown mission */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    review_mission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Mission identifier */
+                mission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mission review */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionReviewResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Mission belongs to another account or is not complete */
             403: {
                 headers: {
                     [name: string]: unknown;

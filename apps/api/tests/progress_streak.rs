@@ -533,3 +533,96 @@ async fn timezone_change_cannot_farm_study_days() {
         .await
         .expect("delete user");
 }
+
+// ---------------------------------------------------------------------------
+// Mission review and settings
+// ---------------------------------------------------------------------------
+
+async fn complete_mission(app: &Router, subject: &str, mission_id: Uuid) {
+    let (status, body) = common::send_as(
+        app.clone(),
+        subject,
+        "POST",
+        &format!("/v1/missions/{mission_id}/complete"),
+        Some(json!({})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+}
+
+#[tokio::test]
+async fn mission_review_returns_answers_only_after_completion() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let subject = format!("review-mission-{}", Uuid::new_v4());
+    let device = Uuid::new_v4();
+    create_account(&app, &subject).await;
+    let mission = issue_task(&app, &subject, device).await;
+    let mission_id: Uuid = mission["id"].as_str().expect("id").parse().expect("uuid");
+
+    // Canonical answers are hidden until the mission is complete.
+    let (status, _) = common::send_as(
+        app.clone(),
+        &subject,
+        "GET",
+        &format!("/v1/missions/{mission_id}/review"),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::CONFLICT);
+
+    sync_answer(
+        &app,
+        &subject,
+        device,
+        &mission,
+        Uuid::new_v4(),
+        Some("UTC"),
+    )
+    .await;
+    complete_mission(&app, &subject, mission_id).await;
+
+    let (status, body) = common::send_as(
+        app,
+        &subject,
+        "GET",
+        &format!("/v1/missions/{mission_id}/review"),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let questions = body["questions"].as_array().expect("questions");
+    assert!(!questions.is_empty());
+    assert!(questions[0].get("canonical_answer").is_some());
+    assert!(questions[0].get("interaction").is_some());
+    assert!(!body["attempts"].as_array().expect("attempts").is_empty());
+}
+
+#[tokio::test]
+async fn user_settings_round_trip_through_me() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let subject = format!("settings-{}", Uuid::new_v4());
+    create_account(&app, &subject).await;
+
+    let (_, me) = common::send_as(app.clone(), &subject, "GET", "/v1/me", None).await;
+    assert_eq!(me["settings"]["unlock_all_materials"], false);
+
+    let (status, updated) = common::send_as(
+        app.clone(),
+        &subject,
+        "PUT",
+        "/v1/me/settings",
+        Some(json!({ "unlock_all_materials": true })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{updated}");
+    assert_eq!(updated["unlock_all_materials"], true);
+
+    let (_, me) = common::send_as(app, &subject, "GET", "/v1/me", None).await;
+    assert_eq!(me["settings"]["unlock_all_materials"], true);
+}

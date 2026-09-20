@@ -132,6 +132,33 @@ pub async fn find_active_for_daily_item(
     row.map(TryInto::try_into).transpose()
 }
 
+/// Finds the most recent mission for one Daily Mission item, any status.
+///
+/// Used to review a completed item's questions and answers.
+pub async fn find_for_daily_item(
+    pool: &PgPool,
+    user_id: Uuid,
+    daily_mission_id: Uuid,
+    position: i32,
+) -> Result<Option<MissionInstance>, DbError> {
+    let row = sqlx::query_as::<_, MissionRow>(
+        "SELECT id, user_id, device_id, certification_id, certification_version, content_version,
+                mode, recommendation_id, daily_mission_id, daily_item_position, domain_id, task_id,
+                question_ids, status, issued_at, expires_at, completed_at
+         FROM mission_instances
+         WHERE user_id = $1 AND daily_mission_id = $2 AND daily_item_position = $3
+         ORDER BY issued_at DESC
+         LIMIT 1",
+    )
+    .bind(user_id)
+    .bind(daily_mission_id)
+    .bind(position)
+    .fetch_optional(pool)
+    .await?;
+
+    row.map(TryInto::try_into).transpose()
+}
+
 /// Locks a mission row for the duration of a transaction.
 ///
 /// Used to serialize attempt numbering so concurrent syncs cannot both assign

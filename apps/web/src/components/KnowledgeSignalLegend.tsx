@@ -29,6 +29,12 @@ export default function KnowledgeSignalLegend() {
           <span className="legend-node legend-node--due" aria-hidden="true" />
           Review coming up
         </li>
+        <li>
+          <span className="legend-node legend-node--recommended" aria-hidden="true">
+            ✦
+          </span>
+          Recommended next
+        </li>
       </ul>
       <p className="muted">Every step lights up your map. Keep going.</p>
     </details>

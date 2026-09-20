@@ -3,17 +3,24 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import type { MeResponse } from "../api/types";
 import { useAuth } from "../auth/context";
+import {
+  DEFAULT_SETTINGS,
+  saveUnlockAllMaterials,
+  type UserSettings,
+} from "../state/account";
 
 /**
  * Account page.
  *
  * Confirms that server-side authentication works end to end by reading
- * `GET /v1/me` with the session's access token.
+ * `GET /v1/me` with the session's access token, and hosts learner study
+ * settings.
  */
 export default function AccountPage() {
   const { user, signOut } = useAuth();
   const [me, setMe] = useState<MeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
     let active = true;
@@ -25,6 +32,9 @@ export default function AccountPage() {
         }
         if (result.data) {
           setMe(result.data);
+          setSettings({
+            unlockAllMaterials: result.data.settings.unlock_all_materials,
+          });
         } else {
           setError(`Could not load your account (HTTP ${result.response.status})`);
         }
@@ -38,6 +48,14 @@ export default function AccountPage() {
       active = false;
     };
   }, []);
+
+  const toggleUnlockAll = async (next: boolean) => {
+    setSettings({ unlockAllMaterials: next });
+    const stored = await saveUnlockAllMaterials(next);
+    if (stored) {
+      setSettings(stored);
+    }
+  };
 
   return (
     <section className="account-page">
@@ -66,6 +84,23 @@ export default function AccountPage() {
       ) : !error ? (
         <p role="status">Loading your account…</p>
       ) : null}
+
+      <section className="account-settings" aria-label="Study settings">
+        <h2>Study settings</h2>
+        <label className="hub-setting">
+          <input
+            type="checkbox"
+            checked={settings.unlockAllMaterials}
+            onChange={(event) => void toggleUnlockAll(event.target.checked)}
+          />
+          <span>
+            <span className="hub-setting-title">Unlock all study materials</span>
+            <span className="muted hub-setting-note">
+              Off keeps a guided, in-order path that is easier to focus on.
+            </span>
+          </span>
+        </label>
+      </section>
 
       <button type="button" onClick={() => void signOut()}>
         Sign out

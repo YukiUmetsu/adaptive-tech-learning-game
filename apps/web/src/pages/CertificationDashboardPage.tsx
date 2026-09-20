@@ -22,11 +22,25 @@ import {
 } from "../state/learningProgress";
 import { startMission } from "../state/mission";
 import { loadMission } from "../state/persistence";
-import { quizModeLabel } from "../state/quizModes";
-import { peekStreak, loadStreak, type Streak } from "../state/streak";
+import {
+  DEFAULT_SETTINGS,
+  loadAccount,
+  peekAccount,
+  saveUnlockAllMaterials,
+  type Streak,
+  type UserSettings,
+} from "../state/account";
+import {
+  DOMAIN_QUIZ,
+  FULL_PRACTICE,
+  QUICK_QUIZ,
+  quizModeLabel,
+  type QuizModePresentation,
+} from "../state/quizModes";
 import { loadTrackMap } from "../state/trackMap";
 import { loadTrackProgress, signalIndex } from "../state/trackProgress";
 import { refreshWallet } from "../state/wallet";
+import DailyMissionRunner from "../components/DailyMissionRunner";
 
 interface Launch {
   mode: QuizMode;
@@ -51,11 +65,12 @@ export default function CertificationDashboardPage() {
   const { status } = useAuth();
   const authenticated = status === "authenticated";
 
-  const [view, setView] = useState<"map" | "practice">("map");
+  const [view, setView] = useState<"map" | "daily" | "practice">("map");
   const [starting, setStarting] = useState<string | null>(null);
   const [choosingDomain, setChoosingDomain] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [activeDomainId, setActiveDomainId] = useState<string | null>(null);
 
   const [trackMap, setTrackMap] = useState<TrackMapResponse | null>(null);
   const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">(
@@ -66,6 +81,7 @@ export default function CertificationDashboardPage() {
   );
   const [streak, setStreak] = useState<Streak | null>(null);
   const [streakPulse, setStreakPulse] = useState(false);
+  const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
 
   const reducedMotion = useMemo(() => prefersReducedMotion(), []);
 
@@ -90,7 +106,7 @@ export default function CertificationDashboardPage() {
     enabled: authenticated,
     discovery,
   });
-  const { state: dailyState } = useDailyMission({
+  const { state: dailyState, reload: reloadDaily } = useDailyMission({
     trackId: certificationId,
     enabled: authenticated,
     discovery,
@@ -140,16 +156,18 @@ export default function CertificationDashboardPage() {
   useEffect(() => {
     if (!authenticated) {
       setStreak(null);
+      setSettings(DEFAULT_SETTINGS);
       return;
     }
     let cancelled = false;
-    const previous = peekStreak();
-    void loadStreak(true).then((fresh) => {
-      if (cancelled) {
+    const previous = peekAccount();
+    void loadAccount(true).then((account) => {
+      if (cancelled || !account) {
         return;
       }
-      setStreak(fresh);
-      if (previous && fresh && !previous.activeToday && fresh.activeToday) {
+      setStreak(account.streak);
+      setSettings(account.settings);
+      if (previous && !previous.streak.activeToday && account.streak.activeToday) {
         setStreakPulse(true);
       }
     });
@@ -157,6 +175,20 @@ export default function CertificationDashboardPage() {
       cancelled = true;
     };
   }, [authenticated, certificationId]);
+
+  // Keep the visible domain on a valid one as the map loads or the track changes.
+  useEffect(() => {
+    if (!trackMap || trackMap.domains.length === 0) {
+      setActiveDomainId(null);
+      return;
+    }
+    if (
+      !activeDomainId ||
+      !trackMap.domains.some((domain) => domain.domain.id === activeDomainId)
+    ) {
+      setActiveDomainId(trackMap.domains[0].domain.id);
+    }
+  }, [trackMap, activeDomainId]);
 
   const derivedByDomain = useMemo(() => {
     const result: Record<string, DerivedLearningState> = {};
@@ -167,10 +199,14 @@ export default function CertificationDashboardPage() {
       result[domain.domain.id] = deriveLearningState(
         domain,
         loadDomainProgress(trackVersion, domain.domain.id),
+        {
+          guided: !settings.unlockAllMaterials,
+          unlockAll: settings.unlockAllMaterials,
+        },
       );
     }
     return result;
-  }, [trackMap, trackVersion]);
+  }, [trackMap, trackVersion, settings.unlockAllMaterials]);
 
   const selected = useMemo(() => {
     if (!trackMap || !selectedNodeId) {
@@ -275,6 +311,14 @@ export default function CertificationDashboardPage() {
     }
   }, [recommendation, recommendationState, certification, version, navigate]);
 
+  const toggleUnlockAll = useCallback(async (next: boolean) => {
+    setSettings((current) => ({ ...current, unlockAllMaterials: next }));
+    const stored = await saveUnlockAllMaterials(next);
+    if (stored) {
+      setSettings(stored);
+    }
+  }, []);
+
   if (state.status === "loading") {
     return <p role="status">Loading certification…</p>;
   }
@@ -339,6 +383,47 @@ export default function CertificationDashboardPage() {
       </button>
     </div>
   );
+
+  const modeCard = (presentation: QuizModePresentation) => {
+    const isDomain = presentation.key === "domain_quiz";
+    return (
+      <article
+        key={presentation.key}
+        className={`mode-card mode-${presentation.key} hub-mode-card`}
+      >
+        <div className="mode-card-heading">
+          <span className="mode-icon" aria-hidden="true">
+            {presentation.icon}
+          </span>
+          <h3>{presentation.label}</h3>
+        </div>
+        <p className="hub-mode-questions">{presentation.questionLabel}</p>
+        <p className="muted">{presentation.duration}</p>
+        <p className="mode-horizon muted">{presentation.horizon}</p>
+        <span className="hub-mode-reward">
+          <span aria-hidden="true">💰</span> Bits for every correct answer
+        </span>
+        <button
+          type="button"
+          className="primary"
+          disabled={starting !== null}
+          onClick={() => {
+            if (isDomain) {
+              setChoosingDomain(true);
+              return;
+            }
+            void launch({ mode: presentation.key, key: presentation.key });
+          }}
+        >
+          {starting === presentation.key
+            ? "Starting…"
+            : isDomain
+              ? "Choose Domain"
+              : `Start ${presentation.label}`}
+        </button>
+      </article>
+    );
+  };
 
   const domainPicker = choosingDomain ? (
     <section className="hub-domain-picker" aria-label="Choose a domain">
@@ -436,9 +521,13 @@ export default function CertificationDashboardPage() {
           >
             <span aria-hidden="true">🗺️</span> Knowledge Map
           </button>
-          <Link to={`/tracks/${certification.id}/daily`}>
+          <button
+            type="button"
+            aria-current={view === "daily" ? "page" : undefined}
+            onClick={() => setView("daily")}
+          >
             <span aria-hidden="true">🧭</span> Daily Mission
-          </Link>
+          </button>
           <button
             type="button"
             aria-current={view === "practice" ? "page" : undefined}
@@ -465,6 +554,39 @@ export default function CertificationDashboardPage() {
       {view === "map" ? (
         <div className="track-hub-map-layout">
           <div className="track-hub-map">
+            {trackMap && trackMap.domains.length > 0 ? (
+              <nav className="hub-domain-switcher" aria-label="Knowledge map domains">
+                {trackMap.domains.map((domain) => {
+                  const derived = derivedByDomain[domain.domain.id];
+                  const unlocked = derived?.unlockedCount ?? 0;
+                  const total = derived?.totalNodeCount ?? 0;
+                  const complete = derived?.domainComplete ?? false;
+                  const active = activeDomainId === domain.domain.id;
+                  return (
+                    <button
+                      key={domain.domain.id}
+                      type="button"
+                      className={`hub-domain-pill${
+                        active ? " hub-domain-pill--active" : ""
+                      }${complete ? " hub-domain-pill--complete" : ""}`}
+                      aria-current={active ? "true" : undefined}
+                      onClick={() => {
+                        setActiveDomainId(domain.domain.id);
+                        setSelectedNodeId(null);
+                      }}
+                    >
+                      <span className="hub-domain-pill-name">
+                        {domain.domain.name}
+                      </span>
+                      <span className="hub-domain-pill-progress" aria-hidden="true">
+                        {unlocked}/{total}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+            ) : null}
+
             {mapStatus === "loading" ? (
               <p role="status" className="track-hub-map-status">
                 Lighting up your map…
@@ -473,6 +595,7 @@ export default function CertificationDashboardPage() {
             {trackMap ? (
               <TrackKnowledgeMap
                 map={trackMap}
+                activeDomainId={activeDomainId}
                 signals={signals}
                 derivedByDomain={derivedByDomain}
                 selectedNodeId={selectedNodeId}
@@ -499,7 +622,26 @@ export default function CertificationDashboardPage() {
                 onClose={() => setSelectedNodeId(null)}
               />
             ) : (
-              <KnowledgeSignalLegend />
+              <>
+                <KnowledgeSignalLegend />
+                <label className="hub-setting">
+                  <input
+                    type="checkbox"
+                    checked={settings.unlockAllMaterials}
+                    onChange={(event) =>
+                      void toggleUnlockAll(event.target.checked)
+                    }
+                  />
+                  <span>
+                    <span className="hub-setting-title">
+                      Unlock all study materials
+                    </span>
+                    <span className="muted hub-setting-note">
+                      Off keeps a guided, in-order path.
+                    </span>
+                  </span>
+                </label>
+              </>
             )}
 
             {recommendation &&
@@ -519,20 +661,49 @@ export default function CertificationDashboardPage() {
             ) : null}
           </aside>
         </div>
+      ) : view === "daily" ? (
+        dailyState.status === "loaded" ? (
+          <DailyMissionRunner
+            trackId={certification.id}
+            mission={dailyState.mission}
+            onRefresh={() => void reloadDaily()}
+          />
+        ) : dailyState.status === "error" ? (
+          <section className="track-hub-practice-view" aria-label="Daily Mission">
+            <p className="muted">
+              Today&apos;s Daily Mission is unavailable right now. You can still
+              explore your map or practice.
+            </p>
+          </section>
+        ) : (
+          <p role="status">Loading today&apos;s mission…</p>
+        )
       ) : (
         <section className="track-hub-practice-view" aria-label="Practice">
-          <h2>Practice</h2>
-          <p className="muted">
-            {totalQuestions} questions across {domains.length} domains.
-          </p>
+          <div className="hub-practice-head">
+            <h2>Practice</h2>
+            <p className="muted">
+              {totalQuestions} questions across {domains.length} domains. Earn
+              Bits for every correct answer.
+            </p>
+          </div>
+          <div className="mode-grid">
+            {[QUICK_QUIZ, DOMAIN_QUIZ, FULL_PRACTICE].map((presentation) =>
+              modeCard(presentation),
+            )}
+          </div>
           {domainPicker}
         </section>
       )}
 
       <div className="track-hub-actions">
-        {practiceControls}
+        {view === "map" ? practiceControls : null}
         {dailyMission ? (
-          <Link className="primary hub-daily-cta" to={`/tracks/${certification.id}/daily`}>
+          <button
+            type="button"
+            className="primary hub-daily-cta"
+            onClick={() => setView("daily")}
+          >
             <span aria-hidden="true">🧭</span>
             {dailyMission.status === "completed"
               ? "Review today's Daily Mission"
@@ -540,7 +711,7 @@ export default function CertificationDashboardPage() {
             <span className="hub-daily-progress muted">
               {dailyMission.completed_items} / {dailyMission.total_items}
             </span>
-          </Link>
+          </button>
         ) : null}
       </div>
 
