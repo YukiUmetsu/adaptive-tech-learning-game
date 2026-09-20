@@ -16,12 +16,14 @@ Deliver:
 
 Exit: authenticated user can load and sync a trivial state.
 
-> Phase 0 implementation note: this repository currently implements the local
-> foundation only — Rust/Axum skeleton, React/Vite/PWA shell, local PostgreSQL
-> with SQLx migrations, and OpenAPI → TypeScript generation. WorkOS staging
-> auth, deployed Cloud Run/Neon/R2 environments, and IaC are deliberately
-> deferred until credentials and environments exist. See
-> [Local development](11-local-development.md).
+> Phase 0 implementation note: the repository implements the local foundation —
+> Rust/Axum skeleton, React/Vite/PWA shell, local PostgreSQL with SQLx
+> migrations, and OpenAPI → TypeScript generation — and WorkOS AuthKit is wired
+> end to end (API token verification plus the web sign-in flow). The web app is
+> hosted on Cloudflare (Worker static assets, see `apps/web/wrangler.jsonc`).
+> The Cloud Run API, Neon database, R2 storage, and IaC are deferred until those
+> environments exist. See [Local development](11-local-development.md) and
+> [Deployment](12-deployment.md).
 
 ## Phase 1 — Narrow learning MVP
 
@@ -40,14 +42,16 @@ Deliver:
 
 Exit: useful study sessions work without game mechanics and events are deterministic/replayable.
 
-> Phase 1 implementation note: the repository currently implements one narrow
-> slice — AWS SOA-C03, Domain 1, Task 1.1 — with classification, ordering, and
-> node-connection interactions, server-side scoring, a normalized learning
-> event, local-first persistence, and a batched sync endpoint. This is
-> deliberately smaller than the 100-300 interaction target below: the current
-> bundle has a small validated set for one task, and the equation mechanic is
-> not implemented yet. Domains 2-5 and other tasks are blueprint metadata only.
-> Adaptive scheduling, mastery prediction, and gamification remain out of scope.
+> Phase 1 implementation note: the MVP now spans more than the original narrow
+> slice. All five AWS SOA-C03 domains are authored, joined by AWS SAA-C03,
+> AWS AIP-C01, HashiCorp Terraform Associate 004, and AI/Python tracks
+> (Python fluency, Python data stack, PyTorch core), with original demo bundles
+> for every interaction type. The web app has a certification catalog, a
+> certification dashboard, three quiz modes with server-side selection, a
+> pre-quiz Knowledge Map (progressive `table`/`code_file` reveals), a
+> server-authoritative Bits currency, and a full set of tactile interaction
+> types. Adaptive scheduling, mastery prediction (HLR/FSRS/DAS3H), and the
+> persistent game world remain out of scope.
 
 ## Phase 2 — Authoritative mission + sync protocol
 

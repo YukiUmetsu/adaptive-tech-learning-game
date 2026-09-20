@@ -15,9 +15,15 @@ Use storage by access pattern.
 | raw client telemetry | R2 | append-heavy, cheap storage |
 | compacted Parquet/Iceberg | R2 | training/analytics |
 | models | R2 | immutable artifacts |
-| certification bundles | R2/static CDN | cacheable/versioned |
+| certification bundles | R2/static CDN (target); embedded in the API build today | cacheable/versioned |
 | game media (art, audio, video) | R2 `app-assets` + CDN | cheap delivery; too large for the web bundle |
 | local session cache | IndexedDB | offline/local-first |
+
+> Current implementation note: certification and learning content is discovered
+> under `content/` and embedded into the API binary at build time
+> (`crates/content/build.rs`), then validated when the registry loads. Content is
+> never fetched per request. Moving versioned bundles to R2/static CDN remains
+> the target for content that should not ship in the API image.
 
 ## PostgreSQL schema
 

@@ -12,7 +12,7 @@ crates/
   db/        PostgreSQL pool, SQLx migrations, persistence
 content/     authored certification bundles (JSON)
 ml/          Python 3.12 + uv evaluation utilities (no model yet)
-infra/       deployment documentation only; nothing is deployed
+infra/       infrastructure notes; the web app is hosted on Cloudflare (see apps/web/wrangler.jsonc)
 docs/        architecture and design documents
 ```
 
@@ -88,12 +88,22 @@ POSTGRES_PORT=55432 docker compose up -d
 DATABASE_URL=postgres://app:app@localhost:55432/app cargo run -p adaptive-learn-api
 ```
 
-## Phase 1 learning MVP (AWS SOA-C03)
+## Phase 1 learning MVP
 
-Phase 1 ships one real module:
+Phase 1 ships real, multi-certification content:
 
-- Certification: AWS Certified CloudOps Engineer - Associate (`aws-soa-c03`, `SOA-C03`).
-- Domains 1-5 from the official SOA-C03 blueprint, each with authored tasks and questions.
+- AWS Certified CloudOps Engineer - Associate (`aws-soa-c03`, `SOA-C03`): all
+  five domains, each with authored tasks and questions.
+- AWS Certified Solutions Architect - Associate (`aws-saa-c03`) and AWS
+  Certified Generative AI Developer - Professional (`aws-aip-c01`).
+- HashiCorp Certified: Terraform Associate (`hashicorp-terraform-associate-004`).
+- AI tracks: Python fluency, Python data stack (NumPy/pandas/Matplotlib/Seaborn),
+  and PyTorch core.
+
+Each certification also has learning knowledge maps for pre-quiz discovery;
+AWS SOA-C03 and the AI tracks are fully covered, Terraform covers all eight
+domains. The web catalog and dashboard read certification metadata from
+`apps/web/src/state/catalogMeta.ts` plus the API catalog.
 
 Content is authored as versioned JSON organized as
 `content/<category>/<certification>/<version>/<file>.json`. The content crate
@@ -124,11 +134,13 @@ Key API endpoints:
 
 ```text
 GET  /v1/certifications
+GET  /v1/certifications/{certification_id}/domains/{domain_id}/learning
 POST /v1/missions/issue          # mode: quick_adaptive | domain_quiz | full_practice | task_practice
 POST /v1/missions/{mission_id}/answers
 POST /v1/missions/{mission_id}/complete
 POST /v1/sync
 GET  /v1/wallet?device_id=...
+GET  /v1/me
 ```
 
 `GET /v1/certifications` also returns each version's domains, tasks, and
@@ -160,17 +172,22 @@ sync fails, events remain pending and can be retried from the summary.
   persistence and attempt numbering happen at `/sync`, where the server
   re-scores primitives and derives `attempt_number` from accepted evidence.
   Hints are not implemented, so the server records `hint_count = 0`.
-- **Device-scoped ownership.** Requests are keyed by a client-generated
-  `device_id`; there is no authenticated identity yet. Ownership checks are
-  therefore not cryptographic. WorkOS AuthKit and subject ↔ device binding are
-  a Phase 2 requirement before any economy exists.
+- **Identity.** Requests carry a client-generated `device_id` as device/install
+  context, but ownership is derived from the verified WorkOS subject, not from
+  the device id. The local `dev:<subject>` bearer mode is available only when
+  the API runs with `APP_ENV=local`/`test`; staging and production require WorkOS
+  and there is no production bypass.
 - **Mission expiry.** `expires_at` is issued and stored but not enforced.
 - **Storage.** Progress uses `localStorage`. If storage is unavailable the
   runner surfaces a warning rather than silently losing evidence; synced events
   are removed from the pending queue.
-- **Content scope.** Only SOA-C03 Domain 1 / Task 1.1 has authored questions.
-  Domains 2-5 are blueprint metadata only, and the equation interaction is not
-  implemented yet.
+- **Content scope.** Authored questions now span all SOA-C03 domains plus SAA-C03,
+  AIP-C01, Terraform Associate 004, and the AI/Python tracks. The equation
+  interaction is still not implemented.
+- **Auth session persistence.** With the default `api.workos.com` host the
+  refresh token is stored in `localStorage` (`devMode`); a custom AuthKit
+  authentication domain gives first-party cookie persistence instead. See
+  [Authentication](05-authentication.md).
 
 ## Database migrations
 
@@ -220,13 +237,18 @@ same document at `/openapi.json`.
 | `LOG_FORMAT` | `pretty` or `json` | `json` default in production |
 | `RUST_LOG` | tracing filter | e.g. `info,tower_http=debug` |
 | `WORKOS_CLIENT_ID` / `WORKOS_API_KEY` | WorkOS AuthKit | set together or both empty |
-| `WORKOS_ISSUER` | expected token issuer | optional |
-| `R2_*` | Cloudflare R2 | unused in Phase 0 |
+| `WORKOS_ISSUER` | expected token issuer | optional; set for a custom AuthKit domain |
+| `WORKOS_JWKS_URL` | JWKS override | optional; e.g. `/oauth2/jwks` for a custom AuthKit domain |
+| `R2_*` | Cloudflare R2 | unused so far |
 | `VITE_API_PROXY_TARGET` | dev/preview proxy target for `/v1` and `/health` | `apps/web/.env.local`; defaults to `http://localhost:8080` |
 | `VITE_API_BASE_URL` | web → API origin | set only when the API is on a different origin than the web app |
+| `VITE_WORKOS_CLIENT_ID` | web WorkOS client id | enables the AuthKit sign-in UI |
+| `VITE_WORKOS_API_HOSTNAME` | custom AuthKit authentication domain | optional; leave empty for `api.workos.com` |
+| `VITE_ASSET_BASE_URL` | public origin for R2 game media | optional; no trailing slash |
+| `VITE_AUTH_DEV_MODE` | opt into the local dev identity in a non-dev build | never enable in production |
 
-Authentication is not wired to any route in Phase 0. WorkOS values are loaded
-and validated as a configuration boundary only; see
+Authentication is enforced on the API by default; WorkOS values are validated at
+startup and staging/production require them. See
 [Authentication](05-authentication.md).
 
 ## ML environment
@@ -237,8 +259,8 @@ uv sync
 uv run pytest
 ```
 
-There is no training entrypoint in Phase 0. HLR/FSRS/DAS3H work begins in a
-later phase.
+There is no training entrypoint yet. HLR/FSRS/DAS3H work begins in a later
+phase.
 
 ## Tests and checks
 

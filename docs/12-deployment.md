@@ -26,19 +26,47 @@ Do not manage production only with manual console steps.
 
 ## Frontend — Cloudflare
 
+Cloudflare is connected to GitHub: merging to `main` builds and deploys the
+frontend automatically. The Worker/static-assets config is
+`apps/web/wrangler.jsonc` (`assets.directory: ./dist`,
+`assets.not_found_handling: single-page-application`, which provides the SPA
+fallback). To build and deploy manually:
+
 ```bash
 cd apps/web
 pnpm install --frozen-lockfile
 pnpm build
+npx wrangler deploy
 ```
+
+Production environment variables (build-time, in Cloudflare, set for the
+production branch):
+
+- `VITE_API_BASE_URL` — the Cloud Run API origin, for example
+  `https://api.<project>.run.app`.
+- `VITE_WORKOS_CLIENT_ID` — the production WorkOS client id.
+- `VITE_WORKOS_API_HOSTNAME` — leave empty for `api.workos.com`, or set it to a
+  custom AuthKit authentication domain under this domain (recommended; see
+  below). Never set it to the app's own host.
+
+Custom domain: `learn.shidenlabs.com`, added as a Workers/Pages custom domain so
+Cloudflare creates the DNS record and certificate.
 
 Requirements:
 
-- SPA fallback
+- SPA fallback (provided by `not_found_handling`)
 - immutable caching for hashed assets
 - CSP
-- explicit API origin
+- explicit API origin (`VITE_API_BASE_URL`)
 - no backend secrets
+
+Cross-origin wiring that must match the deployed origin:
+
+- API `CORS_ALLOWED_ORIGINS` must include `https://learn.shidenlabs.com`
+  (comma-separated for staging plus production).
+- WorkOS **Applications → Redirects** and **Authentication → allowed origins**
+  must both include `https://learn.shidenlabs.com` (exact, no trailing slash),
+  because the app sets `redirectUri={window.location.origin}`.
 
 ## API — Cloud Run
 
@@ -178,10 +206,20 @@ Production:
 
 - Google OAuth
 - Magic Auth code
-- exact redirect URIs
-- custom auth domain before launch if appropriate
+- exact redirect URIs and allowed origins (`https://learn.shidenlabs.com`)
+- a custom AuthKit authentication domain before relying on sessions in
+  production
 - explicit session/token storage strategy
 - logout/revocation path
+
+Session persistence depends on the auth host. With the default `api.workos.com`
+the session cookie is third-party and the SDK cannot restore the session, so the
+web app enables the SDK's `devMode` and keeps the refresh token in
+`localStorage` for the origin. A custom AuthKit domain (for example
+`auth.shidenlabs.com`) makes the session a first-party httpOnly cookie, so
+reloads and tabs work without `localStorage`; set `VITE_WORKOS_API_HOSTNAME` to
+it and point the API at it with `WORKOS_ISSUER` / `WORKOS_JWKS_URL`. See
+[Authentication](05-authentication.md).
 
 Never put WorkOS API secret in the browser.
 
