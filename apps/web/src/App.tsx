@@ -11,6 +11,7 @@ import AppShell from "./layout/AppShell";
 import AccountPage from "./pages/AccountPage";
 import CertificationDashboardPage from "./pages/CertificationDashboardPage";
 import CertificationsPage from "./pages/CertificationsPage";
+import DailyMissionPage from "./pages/DailyMissionPage";
 import DemoPage from "./pages/DemoPage";
 import DomainLearningPage from "./pages/DomainLearningPage";
 import HomePage from "./pages/HomePage";
@@ -34,6 +35,14 @@ export default function App() {
           element={
             <RequireAuth>
               <DomainLearningPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="tracks/:certificationId/daily"
+          element={
+            <RequireAuth>
+              <DailyMissionPage />
             </RequireAuth>
           }
         />

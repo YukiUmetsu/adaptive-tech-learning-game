@@ -281,6 +281,10 @@ pub struct MissionInstance {
     ///
     /// Context only: it is never an ownership or authorization key.
     pub recommendation_id: Option<Uuid>,
+    /// Daily Mission this mission executes, when it belongs to one.
+    pub daily_mission_id: Option<Uuid>,
+    /// Zero-based Daily Mission item position this mission executes.
+    pub daily_item_position: Option<i32>,
     /// Domain covered, when the mission is domain-scoped.
     pub domain_id: Option<String>,
     /// Task covered, when the mission is task-scoped.

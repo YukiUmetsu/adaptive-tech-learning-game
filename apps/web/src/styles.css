@@ -688,14 +688,16 @@ button.primary:hover:not(:disabled) {
 }
 
 .selection-grid {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  /* One option per row, full width: easier to scan and tap than a packed grid. */
+  grid-template-columns: 1fr;
 }
 
 .selection-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.55rem;
   min-height: 3rem;
+  padding: 0.7rem 0.85rem;
 }
 
 .selection-marker {
@@ -1628,7 +1630,7 @@ button.primary:hover:not(:disabled) {
   margin: 0;
 }
 
-.study-session {
+.daily-mission {
   display: grid;
   gap: 0.85rem;
   padding: 1.1rem 1.3rem;
@@ -1637,7 +1639,7 @@ button.primary:hover:not(:disabled) {
   background: var(--surface);
 }
 
-.study-session-head {
+.daily-mission-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -1645,20 +1647,45 @@ button.primary:hover:not(:disabled) {
   flex-wrap: wrap;
 }
 
-.study-session-kicker {
+.daily-mission-kicker {
   margin: 0;
-  color: var(--text-muted);
+  color: var(--accent);
   font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
 }
 
-.study-session-title {
+.daily-mission-title {
   margin: 0.1rem 0 0.2rem;
   font-size: 1.15rem;
 }
 
-.study-session-list {
+.daily-mission-progress-label {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.daily-mission-cta {
+  align-self: center;
+}
+
+.daily-mission-progress {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--surface-raised, rgba(148, 163, 184, 0.2));
+  overflow: hidden;
+}
+
+.daily-mission-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), #a78bfa);
+  transition: width 240ms ease;
+}
+
+.daily-mission-list,
+.daily-runner-steps {
   display: grid;
   gap: 0.5rem;
   margin: 0;
@@ -1666,35 +1693,137 @@ button.primary:hover:not(:disabled) {
   list-style: none;
 }
 
-.study-session-activity {
+.daily-mission-item,
+.daily-runner-step {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.6rem;
   padding: 0.6rem 0.75rem;
   border-radius: var(--radius-md, 0.6rem);
   border: 1px solid var(--border);
   background: var(--surface-raised, var(--surface));
 }
 
-.study-session-activity-title {
-  margin: 0;
+.daily-mission-item-done,
+.daily-runner-step-done {
+  border-color: rgba(34, 197, 94, 0.5);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.daily-runner-step-current {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+}
+
+.daily-mission-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.daily-mission-item-done .daily-mission-check,
+.daily-runner-step-done .daily-mission-check {
+  border-color: #22c55e;
+  background: #22c55e;
+  color: #06121f;
+  animation: daily-check-pop 320ms ease;
+}
+
+.daily-mission-icon {
+  flex: none;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.daily-mission-item-body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+
+.daily-mission-item-title {
   font-weight: 600;
 }
 
-.study-session-activity-meta {
+.daily-mission-item-meta {
   margin: 0.1rem 0 0;
   font-size: 0.8rem;
 }
 
-.study-session-overrides {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+.daily-runner {
+  display: grid;
+  gap: 1.1rem;
 }
 
-.study-session-error {
+.daily-runner-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.daily-runner-activity {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+}
+
+.daily-page-complete {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+  padding: 1.2rem 1.3rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.daily-page-complete-title {
   margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.daily-page-complete-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+@keyframes daily-check-pop {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daily-mission-progress-fill {
+    transition: none;
+  }
+
+  .daily-mission-item-done .daily-mission-check,
+  .daily-runner-step-done .daily-mission-check {
+    animation: none;
+  }
+}
+
+.dashboard-hud-stats {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
 }
 
 .bits-hud {
@@ -1745,34 +1874,6 @@ button.primary:hover:not(:disabled) {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-}
-
-.campaign-panel {
-  padding: 1.1rem 1.3rem;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: var(--surface);
-}
-
-.campaign-stats {
-  display: grid;
-  gap: 0.85rem;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  margin: 0.75rem 0 0.5rem;
-}
-
-.campaign-stats dt {
-  color: var(--text-muted);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.campaign-stats dd {
-  margin: 0.2rem 0 0;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
 }
 
 .mode-grid {

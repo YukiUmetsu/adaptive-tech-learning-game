@@ -318,21 +318,18 @@ describe("CertificationDashboardPage", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("falls back to a standard study session when adaptive planning fails", async () => {
-    // Default mock returns 404 for the session endpoint (unknown URL).
+  it("hides the Daily Mission section when it cannot be loaded", async () => {
+    // Default mock returns 404 for the daily-mission endpoint.
     renderDashboard();
     await ready();
 
-    expect(
-      await screen.findByText("Standard study session"),
-    ).toBeInTheDocument();
-    // Existing controls remain usable alongside the fallback.
+    expect(screen.queryByText("Daily Mission")).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Start Quick Quiz" }),
     ).toBeInTheDocument();
   });
 
-  it("stays usable when both session and recommendation requests fail", async () => {
+  it("shows today's Daily Mission with progress and a continue entry point", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
@@ -343,7 +340,75 @@ describe("CertificationDashboardPage", () => {
         if (url.includes("/v1/wallet")) {
           return jsonResponse({ device_id: "device", bits_balance: 1240 });
         }
-        if (url.includes("/recommendation") || url.endsWith("/session")) {
+        if (url.includes("/daily-mission")) {
+          return jsonResponse({
+            id: "33333333-3333-4333-8333-333333333333",
+            track_id: "aws-soa-c03",
+            track_version: "soa-c03",
+            day_key: "2026-09-20",
+            plan_type: "adaptive",
+            status: "active",
+            reward_bits: 25,
+            reward_granted: false,
+            completed_items: 1,
+            total_items: 2,
+            created_at: "2026-09-20T08:00:00Z",
+            completed_at: null,
+            items: [
+              {
+                position: 0,
+                kind: "review_node",
+                domain_id: "domain-1",
+                domain_name: "Monitoring and Observability",
+                node_id: "n1",
+                title: "Operational signals",
+                estimated_minutes: 4,
+                status: "completed",
+                question_count: 0,
+                completed_at: "2026-09-20T08:10:00Z",
+              },
+              {
+                position: 1,
+                kind: "practice",
+                domain_id: "domain-1",
+                domain_name: "Monitoring and Observability",
+                node_id: null,
+                title: "Retrieval practice",
+                estimated_minutes: 6,
+                status: "pending",
+                question_count: 3,
+                completed_at: null,
+              },
+            ],
+          });
+        }
+        return jsonResponse({ error: { code: "not_found" } }, 404);
+      }),
+    );
+
+    renderDashboard();
+    await ready();
+
+    expect(await screen.findByText("Daily Mission")).toBeInTheDocument();
+    expect(screen.getByText("1 / 2 complete")).toBeInTheDocument();
+    expect(screen.getByText("Operational signals")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Continue Daily Mission" }),
+    ).toHaveAttribute("href", "/tracks/aws-soa-c03/daily");
+  });
+
+  it("stays usable when both Daily Mission and recommendation requests fail", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = requestUrl(input);
+        if (url.includes("/v1/certifications")) {
+          return jsonResponse(catalog);
+        }
+        if (url.includes("/v1/wallet")) {
+          return jsonResponse({ device_id: "device", bits_balance: 1240 });
+        }
+        if (url.includes("/recommendation") || url.includes("/daily-mission")) {
           throw new Error("adaptive services unavailable");
         }
         return jsonResponse({ error: { code: "not_found" } }, 404);
@@ -353,11 +418,12 @@ describe("CertificationDashboardPage", () => {
     renderDashboard();
     await ready();
 
-    expect(
-      await screen.findByText("Standard study session"),
-    ).toBeInTheDocument();
+    expect(screen.queryByText("Daily Mission")).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Start Quick Quiz" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Start Full Practice" }),
     ).toBeInTheDocument();
   });
 });

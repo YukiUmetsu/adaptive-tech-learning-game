@@ -60,6 +60,18 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
             "/v1/tracks/{track_id}/session",
             post(routes::sessions::create_study_session),
         )
+        .route(
+            "/v1/tracks/{track_id}/daily-mission",
+            post(routes::daily_missions::get_today_daily_mission),
+        )
+        .route(
+            "/v1/daily-missions/{mission_id}/items/{position}/start",
+            post(routes::daily_missions::start_daily_item),
+        )
+        .route(
+            "/v1/daily-missions/{mission_id}/items/{position}/complete",
+            post(routes::daily_missions::complete_daily_item),
+        )
         .route("/v1/missions/issue", post(routes::missions::issue_mission))
         .route(
             "/v1/missions/{mission_id}/answers",

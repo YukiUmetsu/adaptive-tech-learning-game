@@ -14,7 +14,8 @@ use adaptive_learn_content::{
 };
 use adaptive_learn_db as db;
 use adaptive_learn_domain::{
-    ConceptWeight, LearningEvent, MissionInstance, MissionStatus, QuizMode, reward_bits,
+    ConceptWeight, DAILY_MISSION_BONUS_BITS, LearningEvent, MissionInstance, MissionStatus,
+    QuizMode, reward_bits,
 };
 use chrono::{Duration, Utc};
 use uuid::Uuid;
@@ -22,10 +23,13 @@ use uuid::Uuid;
 use crate::auth::AuthenticatedUser;
 use crate::dto::{
     AnswerPayload, AnswerRequest, CatalogResponse, CertificationDto, CertificationVersionDto,
-    CompleteMissionResponse, ConceptDto, DomainDto, FeedbackResponse, IssueMissionRequest,
-    LearningDomainResponse, MissionResponse, QuestionView, RecommendationEventRequest,
-    RecommendationEventResponse, RecommendationResponse, StudySessionRequest, StudySessionResponse,
-    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, TaskDto, WalletResponse,
+    CompleteMissionResponse, ConceptDto, DailyItemCompleteRequest, DailyItemCompleteResponse,
+    DailyMissionItemDto, DailyMissionItemKind, DailyMissionItemStatus, DailyMissionPlanType,
+    DailyMissionRequest, DailyMissionResponse, DailyMissionStatus, DomainDto, FeedbackResponse,
+    IssueMissionRequest, LearningDomainResponse, MissionResponse, QuestionView,
+    RecommendationEventRequest, RecommendationEventResponse, RecommendationResponse,
+    StudySessionRequest, StudySessionResponse, SyncEventRequest, SyncEventResult, SyncRequest,
+    SyncResponse, TaskDto, WalletResponse,
 };
 use crate::error::ApiError;
 use crate::planner::{
@@ -332,6 +336,550 @@ async fn log_study_session(pool: &db::PgPool, entry: &db::sessions::StudySession
     }
 }
 
+/// Requested Daily Mission length in minutes.
+const DAILY_MISSION_MINUTES: u32 = 20;
+/// Maximum items in one Daily Mission.
+const DAILY_MISSION_MAX_ITEMS: usize = 5;
+
+/// One Daily Mission item before it is persisted.
+struct PlannedDailyItem {
+    position: i32,
+    kind: &'static str,
+    domain_id: String,
+    node_id: Option<String>,
+    title: String,
+    estimated_minutes: i32,
+    practice_context: serde_json::Value,
+}
+
+/// Generated Daily Mission items plus whether adaptive planning was used.
+struct GeneratedDailyItems {
+    adaptive: bool,
+    items: Vec<PlannedDailyItem>,
+}
+
+/// Returns today's immutable Daily Mission, generating it once if needed.
+///
+/// The plan never changes after creation: completing items, state changes,
+/// refreshes, and repeated requests all return the same stored snapshot. If
+/// adaptive generation fails, a standard non-adaptive plan is persisted instead
+/// and kept for the rest of the day.
+pub async fn daily_mission(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    track_id: &str,
+    request: DailyMissionRequest,
+) -> Result<DailyMissionResponse, ApiError> {
+    let bundle = state
+        .content
+        .bundle_for_certification(track_id)
+        .ok_or(ApiError::NotFound)?;
+    let track_version = bundle.version.id.clone();
+    // Canonical UTC day boundary: timezone changes cannot create a second
+    // reward-bearing mission for the same day.
+    let day_key = Utc::now().date_naive();
+    let timezone = sanitize_timezone(request.timezone.as_deref());
+
+    if let Some(existing) =
+        db::daily_missions::find_for_day(&state.pool, user.id, track_id, day_key).await?
+    {
+        settle_completed_reward(state, &existing).await;
+        let current = db::daily_missions::find_by_id(&state.pool, existing.id)
+            .await?
+            .unwrap_or(existing);
+        return Ok(daily_response(&bundle.version.domains, &current));
+    }
+
+    let generated =
+        generate_daily_items(state, user, track_id, &track_version, &request.discovery).await;
+    let plan_type = if generated.adaptive {
+        DailyMissionPlanType::Adaptive
+    } else {
+        DailyMissionPlanType::Standard
+    };
+    let items: Vec<db::daily_missions::NewDailyMissionItem<'_>> = generated
+        .items
+        .iter()
+        .map(|item| db::daily_missions::NewDailyMissionItem {
+            position: item.position,
+            kind: item.kind,
+            domain_id: &item.domain_id,
+            node_id: item.node_id.as_deref(),
+            title: &item.title,
+            estimated_minutes: item.estimated_minutes,
+            practice_context: item.practice_context.clone(),
+        })
+        .collect();
+
+    let new_mission = db::daily_missions::NewDailyMission {
+        user_id: user.id,
+        track_id,
+        track_version: &track_version,
+        day_key,
+        timezone: timezone.as_deref(),
+        plan_type: plan_type.as_str(),
+        reward_bits: DAILY_MISSION_BONUS_BITS as i32,
+    };
+    let stored = db::daily_missions::create(&state.pool, &new_mission, &items).await?;
+    settle_completed_reward(state, &stored).await;
+    let current = db::daily_missions::find_by_id(&state.pool, stored.id)
+        .await?
+        .unwrap_or(stored);
+    Ok(daily_response(&bundle.version.domains, &current))
+}
+
+/// Generates items adaptively, falling back to authored track content.
+async fn generate_daily_items(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    track_id: &str,
+    track_version: &str,
+    discovery: &[DomainDiscoveryInput],
+) -> GeneratedDailyItems {
+    match planner_context(state, user, track_id, discovery).await {
+        Ok(context) => {
+            if let Some(session) =
+                planner::session::plan_session(&planner::session::SessionPlannerInput {
+                    planner: context.input,
+                    available_minutes: DAILY_MISSION_MINUTES,
+                    preference: planner::session::SessionPreference::Balanced,
+                    history: context.history,
+                })
+            {
+                let items: Vec<PlannedDailyItem> = session
+                    .activities
+                    .into_iter()
+                    .take(DAILY_MISSION_MAX_ITEMS)
+                    .enumerate()
+                    .map(|(index, activity)| {
+                        let practice =
+                            activity.kind == planner::session::SessionActivityKind::Practice;
+                        let question_ids = activity.question_ids.clone();
+                        let title = daily_activity_title(
+                            activity.kind,
+                            activity.node_title.as_deref(),
+                            &activity.domain_name,
+                        );
+                        PlannedDailyItem {
+                            position: index as i32,
+                            kind: daily_activity_kind(activity.kind),
+                            domain_id: activity.domain_id,
+                            node_id: activity.node_id,
+                            title,
+                            estimated_minutes: activity.estimated_minutes as i32,
+                            practice_context: if practice {
+                                serde_json::json!({ "question_ids": question_ids })
+                            } else {
+                                serde_json::json!({})
+                            },
+                        }
+                    })
+                    .collect();
+                if !items.is_empty() {
+                    return GeneratedDailyItems {
+                        adaptive: true,
+                        items,
+                    };
+                }
+            }
+        }
+        Err(error) => {
+            tracing::debug!(error = %error, "adaptive daily mission generation failed");
+        }
+    }
+
+    GeneratedDailyItems {
+        adaptive: false,
+        items: standard_daily_items(state, track_version),
+    }
+}
+
+fn daily_activity_kind(kind: planner::session::SessionActivityKind) -> &'static str {
+    use planner::session::SessionActivityKind;
+    match kind {
+        SessionActivityKind::LearnNode => "learn_node",
+        SessionActivityKind::ReviewNode => "review_node",
+        SessionActivityKind::Practice => "practice",
+        SessionActivityKind::PracticeDomain => "domain_practice",
+    }
+}
+
+fn daily_activity_title(
+    kind: planner::session::SessionActivityKind,
+    node_title: Option<&str>,
+    domain_name: &str,
+) -> String {
+    use planner::session::SessionActivityKind;
+    match kind {
+        SessionActivityKind::LearnNode | SessionActivityKind::ReviewNode => {
+            node_title.unwrap_or(domain_name).to_owned()
+        }
+        SessionActivityKind::Practice => "Retrieval practice".to_owned(),
+        SessionActivityKind::PracticeDomain => "Domain review".to_owned(),
+    }
+}
+
+/// Builds a deterministic, non-adaptive plan from authored track content only.
+///
+/// This never reads concept state, recommendation data, or any adaptive API, so
+/// it works even when the learner has no state or adaptive planning is down.
+fn standard_daily_items(state: &AppState, track_version: &str) -> Vec<PlannedDailyItem> {
+    let Some(bundle) = state.content.bundle_for_version(track_version) else {
+        return Vec::new();
+    };
+    let mut items: Vec<PlannedDailyItem> = Vec::new();
+    let mut minutes = 0u32;
+
+    for domain in &bundle.version.domains {
+        if items.len() >= DAILY_MISSION_MAX_ITEMS || minutes >= DAILY_MISSION_MINUTES {
+            break;
+        }
+        if let Some(learning) = state
+            .content
+            .learning_domain_for_certification(&bundle.certification.id, &domain.id)
+        {
+            if let Some(node) = learning
+                .modules
+                .first()
+                .and_then(|module| module.nodes.first())
+            {
+                items.push(PlannedDailyItem {
+                    position: items.len() as i32,
+                    kind: "learn_node",
+                    domain_id: domain.id.clone(),
+                    node_id: Some(node.id.clone()),
+                    title: node.title.clone(),
+                    estimated_minutes: 4,
+                    practice_context: serde_json::json!({}),
+                });
+                minutes += 4;
+            }
+        }
+        if items.len() >= DAILY_MISSION_MAX_ITEMS || minutes >= DAILY_MISSION_MINUTES {
+            break;
+        }
+        if !state
+            .content
+            .questions_for_domain(track_version, &domain.id)
+            .is_empty()
+        {
+            items.push(PlannedDailyItem {
+                position: items.len() as i32,
+                kind: "domain_practice",
+                domain_id: domain.id.clone(),
+                node_id: None,
+                title: "Domain review".to_owned(),
+                estimated_minutes: 6,
+                practice_context: serde_json::json!({}),
+            });
+            minutes += 6;
+        }
+    }
+
+    items
+}
+
+/// Starts the practice mission for one Daily Mission item.
+///
+/// The server owns the question set: practice items use the persisted
+/// server-selected ids, and domain items reuse the normal adaptive domain
+/// selector. The client never supplies question ids.
+pub async fn start_daily_item(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    mission_id: Uuid,
+    position: i32,
+) -> Result<MissionResponse, ApiError> {
+    let daily = db::daily_missions::find_by_id(&state.pool, mission_id)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+    if daily.user_id != user.id {
+        return Err(ApiError::Forbidden);
+    }
+    if daily.is_completed() {
+        return Err(ApiError::Conflict(
+            "daily mission is already complete".to_owned(),
+        ));
+    }
+    let item = daily
+        .items
+        .iter()
+        .find(|item| item.position == position)
+        .cloned()
+        .ok_or(ApiError::NotFound)?;
+    if item.status == "completed" {
+        return Err(ApiError::Conflict("item is already complete".to_owned()));
+    }
+
+    // Resume an already-issued mission for this item instead of duplicating it.
+    if let Some(existing) =
+        db::missions::find_active_for_daily_item(&state.pool, user.id, mission_id, position).await?
+    {
+        return Ok(mission_response(state, existing));
+    }
+
+    let bundle = state
+        .content
+        .bundle_for_version(&daily.track_version)
+        .ok_or(ApiError::NotFound)?;
+    let now = Utc::now();
+
+    let (mode, domain_id, question_ids) = match item.kind.as_str() {
+        "practice" => {
+            let ids = practice_question_ids(&item.practice_context);
+            if ids.is_empty() {
+                return Err(ApiError::Conflict(
+                    "practice content is unavailable".to_owned(),
+                ));
+            }
+            for id in &ids {
+                if state.content.question(&daily.track_version, id).is_none() {
+                    return Err(ApiError::Conflict(
+                        "practice content changed since the plan was created".to_owned(),
+                    ));
+                }
+            }
+            (QuizMode::RecommendedPractice, item.domain_id.clone(), ids)
+        }
+        "domain_practice" => {
+            let request = IssueMissionRequest {
+                device_id: None,
+                certification_id: daily.track_id.clone(),
+                certification_version: daily.track_version.clone(),
+                mode: QuizMode::DomainQuiz,
+                domain_id: Some(item.domain_id.clone()),
+                task_id: None,
+                question_id: None,
+                recommendation_id: None,
+            };
+            let ids =
+                select_ids(state, &request, Some(user.id), Some(&item.domain_id), now).await?;
+            (QuizMode::DomainQuiz, item.domain_id.clone(), ids)
+        }
+        _ => {
+            return Err(ApiError::BadRequest(
+                "this item is completed on the knowledge map".to_owned(),
+            ));
+        }
+    };
+
+    if question_ids.is_empty() {
+        return Err(ApiError::NotFound);
+    }
+
+    let mission = MissionInstance {
+        id: Uuid::new_v4(),
+        user_id: Some(user.id),
+        device_id: Uuid::new_v4(),
+        certification_id: bundle.certification.id.clone(),
+        certification_version: bundle.version.id.clone(),
+        content_version: bundle.version.content_version.clone(),
+        mode,
+        recommendation_id: None,
+        daily_mission_id: Some(mission_id),
+        daily_item_position: Some(position),
+        domain_id: Some(domain_id),
+        task_id: None,
+        question_ids,
+        status: MissionStatus::Issued,
+        issued_at: now,
+        expires_at: now + Duration::minutes(mode.ttl_minutes()),
+        completed_at: None,
+    };
+    let stored = db::missions::insert(&state.pool, &mission).await?;
+    Ok(mission_response(state, stored))
+}
+
+/// Completes a learning-node Daily Mission item from authoritative discovery.
+///
+/// The node is only considered complete when its required prompts are complete,
+/// derived with the same rules as the Knowledge Map. Opening the node alone does
+/// not complete it.
+pub async fn complete_daily_item(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    mission_id: Uuid,
+    position: i32,
+    request: DailyItemCompleteRequest,
+) -> Result<DailyItemCompleteResponse, ApiError> {
+    let daily = db::daily_missions::find_by_id(&state.pool, mission_id)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+    if daily.user_id != user.id {
+        return Err(ApiError::Forbidden);
+    }
+    let item = daily
+        .items
+        .iter()
+        .find(|item| item.position == position)
+        .cloned()
+        .ok_or(ApiError::NotFound)?;
+    if matches!(item.kind.as_str(), "practice" | "domain_practice") {
+        return Err(ApiError::BadRequest(
+            "practice items complete through their mission".to_owned(),
+        ));
+    }
+    let node_id = item
+        .node_id
+        .clone()
+        .ok_or_else(|| ApiError::BadRequest("item has no learning node".to_owned()))?;
+
+    let derived = state
+        .content
+        .learning_domain(&daily.track_version, &item.domain_id)
+        .and_then(|domain| {
+            request
+                .discovery
+                .iter()
+                .find(|input| input.domain_id == item.domain_id)
+                .map(|input| derive_domain_discovery(domain, input))
+        })
+        .unwrap_or_default();
+    let unlocked = derived.unlocked_node_ids.contains(&node_id);
+
+    let current = if unlocked {
+        db::daily_missions::mark_item_complete(&state.pool, mission_id, position)
+            .await?
+            .unwrap_or(daily)
+    } else {
+        daily
+    };
+    settle_completed_reward(state, &current).await;
+    let current = db::daily_missions::find_by_id(&state.pool, mission_id)
+        .await?
+        .unwrap_or(current);
+    let bundle = state
+        .content
+        .bundle_for_version(&current.track_version)
+        .ok_or(ApiError::NotFound)?;
+    let item_completed = current
+        .items
+        .iter()
+        .any(|item| item.position == position && item.status == "completed");
+
+    Ok(DailyItemCompleteResponse {
+        item_completed,
+        mission: daily_response(&bundle.version.domains, &current),
+    })
+}
+
+/// Settles the Daily Mission completion bonus exactly once, best-effort.
+///
+/// Mission completion is preserved even if settlement fails; the deterministic
+/// ledger event id makes a later retry idempotent.
+async fn settle_completed_reward(
+    state: &AppState,
+    mission: &db::daily_missions::StoredDailyMission,
+) {
+    if !mission.is_completed() || mission.reward_settled_at.is_some() || mission.reward_bits <= 0 {
+        return;
+    }
+
+    let settle = async {
+        let mut tx = state.pool.begin().await?;
+        let transaction = db::wallets::BitTransaction {
+            user_id: mission.user_id,
+            device_id: None,
+            event_id: mission.id,
+            mission_instance_id: mission.id,
+            question_id: "daily_mission".to_owned(),
+            amount: mission.reward_bits as i64,
+            reason: "daily_mission_complete".to_owned(),
+        };
+        // Idempotent by event_id; safe to retry.
+        db::wallets::settle(&mut tx, &transaction).await?;
+        db::daily_missions::mark_reward_settled(&mut tx, mission.id).await?;
+        tx.commit().await?;
+        Ok::<_, db::DbError>(())
+    }
+    .await;
+
+    if let Err(error) = settle {
+        tracing::debug!(error = %error, "could not settle daily mission reward");
+    }
+}
+
+/// Maps a stored Daily Mission into its learner-facing response.
+fn daily_response(
+    domains: &[adaptive_learn_content::Domain],
+    stored: &db::daily_missions::StoredDailyMission,
+) -> DailyMissionResponse {
+    let names: HashMap<&str, &str> = domains
+        .iter()
+        .map(|domain| (domain.id.as_str(), domain.name.as_str()))
+        .collect();
+
+    let items = stored
+        .items
+        .iter()
+        .map(|item| DailyMissionItemDto {
+            position: item.position,
+            kind: DailyMissionItemKind::parse(&item.kind)
+                .unwrap_or(DailyMissionItemKind::DomainPractice),
+            domain_id: item.domain_id.clone(),
+            domain_name: names
+                .get(item.domain_id.as_str())
+                .map(|name| (*name).to_owned())
+                .unwrap_or_else(|| item.domain_id.clone()),
+            node_id: item.node_id.clone(),
+            title: item.title.clone(),
+            estimated_minutes: item.estimated_minutes.max(0) as u32,
+            status: if item.status == "completed" {
+                DailyMissionItemStatus::Completed
+            } else {
+                DailyMissionItemStatus::Pending
+            },
+            question_count: practice_question_ids(&item.practice_context).len(),
+            completed_at: item.completed_at,
+        })
+        .collect();
+
+    DailyMissionResponse {
+        id: stored.id,
+        track_id: stored.track_id.clone(),
+        track_version: stored.track_version.clone(),
+        day_key: stored.day_key.format("%Y-%m-%d").to_string(),
+        plan_type: if stored.plan_type == "adaptive" {
+            DailyMissionPlanType::Adaptive
+        } else {
+            DailyMissionPlanType::Standard
+        },
+        status: if stored.is_completed() {
+            DailyMissionStatus::Completed
+        } else {
+            DailyMissionStatus::Active
+        },
+        reward_bits: stored.reward_bits as i64,
+        reward_granted: stored.reward_settled_at.is_some(),
+        completed_items: stored.completed_items(),
+        total_items: stored.items.len(),
+        created_at: stored.created_at,
+        completed_at: stored.completed_at,
+        items,
+    }
+}
+
+fn practice_question_ids(context: &serde_json::Value) -> Vec<String> {
+    context
+        .get("question_ids")
+        .and_then(|value| value.as_array())
+        .map(|ids| {
+            ids.iter()
+                .filter_map(|id| id.as_str().map(str::to_owned))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Keeps only safe, bounded timezone metadata.
+fn sanitize_timezone(value: Option<&str>) -> Option<String> {
+    let value = value?.trim();
+    if value.is_empty() || value.len() > 64 {
+        return None;
+    }
+    Some(value.to_owned())
+}
+
 /// Records one recommendation lifecycle event, best-effort.
 ///
 /// The response reports whether the auxiliary write landed, but the request
@@ -523,6 +1071,8 @@ pub async fn issue_mission(
         content_version: bundle.version.content_version.clone(),
         mode: request.mode,
         recommendation_id,
+        daily_mission_id: None,
+        daily_item_position: None,
         domain_id,
         task_id,
         question_ids,
@@ -563,6 +1113,11 @@ pub async fn issue_mission(
         }
     }
 
+    Ok(mission_response(state, stored))
+}
+
+/// Maps a stored mission into its learner-facing response.
+fn mission_response(state: &AppState, stored: MissionInstance) -> MissionResponse {
     let questions: Vec<QuestionView> = stored
         .question_ids
         .iter()
@@ -574,7 +1129,7 @@ pub async fn issue_mission(
         })
         .collect();
 
-    Ok(MissionResponse {
+    MissionResponse {
         id: stored.id,
         device_id: stored.device_id,
         certification_id: stored.certification_id,
@@ -586,7 +1141,7 @@ pub async fn issue_mission(
         issued_at: stored.issued_at,
         expires_at: stored.expires_at,
         questions,
-    })
+    }
 }
 
 /// Builds `(domain_id, task_id, question_ids)` for a mode.
@@ -986,6 +1541,22 @@ pub async fn complete_mission(
         .await;
     }
 
+    // A mission that executes a Daily Mission item completes that item, which
+    // may complete the whole Daily Mission and settle its bonus. This is
+    // separate from authoritative mission completion and never fails it.
+    if let (Some(daily_mission_id), Some(position)) =
+        (mission.daily_mission_id, mission.daily_item_position)
+    {
+        match db::daily_missions::mark_item_complete(&state.pool, daily_mission_id, position).await
+        {
+            Ok(Some(updated)) => settle_completed_reward(state, &updated).await,
+            Ok(None) => {}
+            Err(error) => {
+                tracing::debug!(error = %error, "could not update daily mission item");
+            }
+        }
+    }
+
     Ok(CompleteMissionResponse {
         id: mission.id,
         status: mission.status,
@@ -1363,6 +1934,41 @@ mod tests {
 
         // Auxiliary persistence must never panic or propagate.
         log_study_session(&pool, &entry).await;
+    }
+
+    #[tokio::test]
+    async fn standard_daily_items_depend_only_on_content() {
+        use crate::auth::{Authenticator, DevVerifier};
+        use std::sync::Arc;
+
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .connect_lazy("postgres://app:app@127.0.0.1:1/app")
+            .expect("lazy pool");
+        let content = Arc::new(
+            adaptive_learn_content::ContentRegistry::embedded().expect("embedded content"),
+        );
+        let state = AppState::new(
+            pool,
+            content,
+            Authenticator {
+                verifier: Arc::new(DevVerifier),
+                profile: None,
+            },
+        );
+
+        // The fallback is built from authored content only, with no learner
+        // state, and still produces a usable, ordered plan.
+        let items = standard_daily_items(&state, "soa-c03");
+        assert!(!items.is_empty(), "fallback should plan items");
+        for (index, item) in items.iter().enumerate() {
+            assert_eq!(item.position, index as i32);
+            assert!(
+                matches!(item.kind, "learn_node" | "domain_practice"),
+                "unexpected fallback kind {}",
+                item.kind
+            );
+            assert!(!item.domain_id.is_empty());
+        }
     }
 
     #[test]

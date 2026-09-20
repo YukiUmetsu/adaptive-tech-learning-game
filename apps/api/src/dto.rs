@@ -500,3 +500,174 @@ pub struct StudySessionResponse {
     /// builds a standard non-adaptive session.
     pub activities: Vec<crate::planner::session::SessionActivity>,
 }
+
+/// How a Daily Mission was generated.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum DailyMissionPlanType {
+    /// Generated from the learner's adaptive state.
+    Adaptive,
+    /// A non-adaptive fallback generated from authored track content.
+    Standard,
+}
+
+impl DailyMissionPlanType {
+    /// Canonical string stored in PostgreSQL.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Adaptive => "adaptive",
+            Self::Standard => "standard",
+        }
+    }
+}
+
+/// Daily Mission lifecycle status.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum DailyMissionStatus {
+    /// Still has incomplete items.
+    Active,
+    /// Every item is complete.
+    Completed,
+}
+
+impl DailyMissionStatus {
+    /// Canonical string stored in PostgreSQL.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Active => "active",
+            Self::Completed => "completed",
+        }
+    }
+}
+
+/// One Daily Mission activity kind.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum DailyMissionItemKind {
+    /// Study a knowledge-map node.
+    LearnNode,
+    /// Revisit a node for a stale concept.
+    ReviewNode,
+    /// Answer a fixed, server-selected set of questions.
+    Practice,
+    /// Take a domain/topic review.
+    DomainPractice,
+}
+
+impl DailyMissionItemKind {
+    /// Canonical string stored in PostgreSQL.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::LearnNode => "learn_node",
+            Self::ReviewNode => "review_node",
+            Self::Practice => "practice",
+            Self::DomainPractice => "domain_practice",
+        }
+    }
+
+    /// Parses a stored kind.
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "learn_node" => Some(Self::LearnNode),
+            "review_node" => Some(Self::ReviewNode),
+            "practice" => Some(Self::Practice),
+            "domain_practice" => Some(Self::DomainPractice),
+            _ => None,
+        }
+    }
+}
+
+/// Completion status of one Daily Mission item.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum DailyMissionItemStatus {
+    /// Not yet completed.
+    Pending,
+    /// Completed.
+    Completed,
+}
+
+/// One item of the learner's Daily Mission.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct DailyMissionItemDto {
+    /// Zero-based position in the immutable plan.
+    pub position: i32,
+    /// Activity kind.
+    pub kind: DailyMissionItemKind,
+    /// Owning domain/topic.
+    pub domain_id: String,
+    /// Learner-facing domain name.
+    pub domain_name: String,
+    /// Knowledge node, for node items.
+    pub node_id: Option<String>,
+    /// Learner-facing title.
+    pub title: String,
+    /// Estimated minutes.
+    pub estimated_minutes: u32,
+    /// Completion status.
+    pub status: DailyMissionItemStatus,
+    /// Number of server-selected questions, for practice items.
+    pub question_count: usize,
+    /// Completion time, when complete.
+    pub completed_at: Option<DateTime<Utc>>,
+}
+
+/// The learner's immutable Daily Mission snapshot for the canonical day.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct DailyMissionResponse {
+    /// Mission identifier.
+    pub id: Uuid,
+    /// Learning track identifier.
+    pub track_id: String,
+    /// Learning track version identifier.
+    pub track_version: String,
+    /// Canonical UTC day key, `YYYY-MM-DD`.
+    pub day_key: String,
+    /// How the plan was generated.
+    pub plan_type: DailyMissionPlanType,
+    /// Lifecycle status.
+    pub status: DailyMissionStatus,
+    /// Bits bonus for completing the whole mission.
+    pub reward_bits: i64,
+    /// Whether the completion bonus has been settled.
+    pub reward_granted: bool,
+    /// Completed item count.
+    pub completed_items: usize,
+    /// Total item count.
+    pub total_items: usize,
+    /// Creation time.
+    pub created_at: DateTime<Utc>,
+    /// Completion time, when complete.
+    pub completed_at: Option<DateTime<Utc>>,
+    /// Immutable, ordered items.
+    pub items: Vec<DailyMissionItemDto>,
+}
+
+/// Request for the learner's Daily Mission for today.
+#[derive(Debug, Default, Deserialize, ToSchema)]
+pub struct DailyMissionRequest {
+    /// Client IANA timezone. Stored as metadata; the day boundary is canonical UTC.
+    #[serde(default)]
+    pub timezone: Option<String>,
+    /// Raw Knowledge Map discovery progress, if available.
+    #[serde(default)]
+    pub discovery: Vec<adaptive_learn_content::DomainDiscoveryInput>,
+}
+
+/// Request to complete a learning-node Daily Mission item.
+#[derive(Debug, Default, Deserialize, ToSchema)]
+pub struct DailyItemCompleteRequest {
+    /// Raw Knowledge Map discovery progress used to derive node completion.
+    #[serde(default)]
+    pub discovery: Vec<adaptive_learn_content::DomainDiscoveryInput>,
+}
+
+/// Result of completing one Daily Mission item.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct DailyItemCompleteResponse {
+    /// Whether the item is now complete.
+    pub item_completed: bool,
+    /// The updated Daily Mission.
+    pub mission: DailyMissionResponse,
+}

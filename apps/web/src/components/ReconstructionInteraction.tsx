@@ -44,6 +44,13 @@ const NODE_PREFIX = "node:";
 const MOVE_PREFIX = "move:";
 
 /**
+ * Vertical headroom kept above the first row of graph nodes so a node's ↗
+ * relationship handle is never clipped by the map's overflow. Applied to both
+ * node placement and edge geometry so arrows still land on the nodes.
+ */
+const GRAPH_TOP_HEADROOM_PX = 40;
+
+/**
  * Rebuild a structure by placing candidate pieces into a scaffold's slots.
  *
  * Linear scaffolds encode relationships in slot order, so arrows are drawn for
@@ -313,9 +320,16 @@ export default function ReconstructionInteraction({
   };
 
   if (layout === "graph") {
+    // Clamp authored y positions into a band that leaves room for the handle,
+    // so a node at the top of the map is never clipped.
+    const verticalInset =
+      size.height > GRAPH_TOP_HEADROOM_PX * 2
+        ? GRAPH_TOP_HEADROOM_PX / size.height
+        : 0.14;
+    const topFraction = (y: number) => verticalInset + y * (1 - 2 * verticalInset);
     const positionOf = (node: CanvasNode) => ({
       x: node.x * size.width,
-      y: node.y * size.height,
+      y: topFraction(node.y) * size.height,
     });
     const nodeByEdgeId = new Map<string, CanvasNode>();
     for (const node of canvasNodes) {
@@ -406,7 +420,7 @@ export default function ReconstructionInteraction({
                 <div
                   key={node.key}
                   className="reconstruction-graph-node"
-                  style={{ left: `${node.x * 100}%`, top: `${node.y * 100}%` }}
+                  style={{ left: `${node.x * 100}%`, top: `${topFraction(node.y) * 100}%` }}
                   onDragOver={(event) => event.preventDefault()}
                   onDragEnter={() => setDropTarget(node.key)}
                   onDragLeave={() =>

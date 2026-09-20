@@ -138,6 +138,202 @@
         ]
       }
     },
+    "/v1/daily-missions/{mission_id}/items/{position}/complete": {
+      "post": {
+        "tags": [
+          "daily-missions"
+        ],
+        "summary": "Completes a learning-node Daily Mission item from discovery progress.",
+        "operationId": "complete_daily_item",
+        "parameters": [
+          {
+            "name": "mission_id",
+            "in": "path",
+            "description": "Daily Mission identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "position",
+            "in": "path",
+            "description": "Zero-based item position.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DailyItemCompleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Item completion result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyItemCompleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Item completes through a mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Mission belongs to another account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown mission or item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/daily-missions/{mission_id}/items/{position}/start": {
+      "post": {
+        "tags": [
+          "daily-missions"
+        ],
+        "summary": "Starts the mission for one Daily Mission practice item.",
+        "operationId": "start_daily_item",
+        "parameters": [
+          {
+            "name": "mission_id",
+            "in": "path",
+            "description": "Daily Mission identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "position",
+            "in": "path",
+            "description": "Zero-based item position.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Started mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Item is completed on the knowledge map",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Mission belongs to another account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown mission or item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Item or mission already complete",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/me": {
       "get": {
         "tags": [
@@ -459,6 +655,84 @@
           },
           "401": {
             "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tracks/{track_id}/daily-mission": {
+      "post": {
+        "tags": [
+          "daily-missions"
+        ],
+        "summary": "Returns today's immutable Daily Mission, generating it once if needed.",
+        "description": "The plan never changes after creation, and generation is optional: if\nadaptive planning fails, a standard non-adaptive plan is persisted instead.",
+        "operationId": "get_today_daily_mission",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `ai-python-fluency`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DailyMissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Today's Daily Mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyMissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown learning track",
             "content": {
               "application/json": {
                 "schema": {
@@ -1611,6 +1885,242 @@
             "description": "Learner-facing label for the role, for example `IPv4 default route target`."
           }
         }
+      },
+      "DailyItemCompleteRequest": {
+        "type": "object",
+        "description": "Request to complete a learning-node Daily Mission item.",
+        "properties": {
+          "discovery": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDiscoveryInput"
+            },
+            "description": "Raw Knowledge Map discovery progress used to derive node completion."
+          }
+        }
+      },
+      "DailyItemCompleteResponse": {
+        "type": "object",
+        "description": "Result of completing one Daily Mission item.",
+        "required": [
+          "item_completed",
+          "mission"
+        ],
+        "properties": {
+          "item_completed": {
+            "type": "boolean",
+            "description": "Whether the item is now complete."
+          },
+          "mission": {
+            "$ref": "#/components/schemas/DailyMissionResponse",
+            "description": "The updated Daily Mission."
+          }
+        }
+      },
+      "DailyMissionItemDto": {
+        "type": "object",
+        "description": "One item of the learner's Daily Mission.",
+        "required": [
+          "position",
+          "kind",
+          "domain_id",
+          "domain_name",
+          "title",
+          "estimated_minutes",
+          "status",
+          "question_count"
+        ],
+        "properties": {
+          "completed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Completion time, when complete."
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "Owning domain/topic."
+          },
+          "domain_name": {
+            "type": "string",
+            "description": "Learner-facing domain name."
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Estimated minutes.",
+            "minimum": 0
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DailyMissionItemKind",
+            "description": "Activity kind."
+          },
+          "node_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Knowledge node, for node items."
+          },
+          "position": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Zero-based position in the immutable plan."
+          },
+          "question_count": {
+            "type": "integer",
+            "description": "Number of server-selected questions, for practice items.",
+            "minimum": 0
+          },
+          "status": {
+            "$ref": "#/components/schemas/DailyMissionItemStatus",
+            "description": "Completion status."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing title."
+          }
+        }
+      },
+      "DailyMissionItemKind": {
+        "type": "string",
+        "description": "One Daily Mission activity kind.",
+        "enum": [
+          "learn_node",
+          "review_node",
+          "practice",
+          "domain_practice"
+        ]
+      },
+      "DailyMissionItemStatus": {
+        "type": "string",
+        "description": "Completion status of one Daily Mission item.",
+        "enum": [
+          "pending",
+          "completed"
+        ]
+      },
+      "DailyMissionPlanType": {
+        "type": "string",
+        "description": "How a Daily Mission was generated.",
+        "enum": [
+          "adaptive",
+          "standard"
+        ]
+      },
+      "DailyMissionRequest": {
+        "type": "object",
+        "description": "Request for the learner's Daily Mission for today.",
+        "properties": {
+          "discovery": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDiscoveryInput"
+            },
+            "description": "Raw Knowledge Map discovery progress, if available."
+          },
+          "timezone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Client IANA timezone. Stored as metadata; the day boundary is canonical UTC."
+          }
+        }
+      },
+      "DailyMissionResponse": {
+        "type": "object",
+        "description": "The learner's immutable Daily Mission snapshot for the canonical day.",
+        "required": [
+          "id",
+          "track_id",
+          "track_version",
+          "day_key",
+          "plan_type",
+          "status",
+          "reward_bits",
+          "reward_granted",
+          "completed_items",
+          "total_items",
+          "created_at",
+          "items"
+        ],
+        "properties": {
+          "completed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Completion time, when complete."
+          },
+          "completed_items": {
+            "type": "integer",
+            "description": "Completed item count.",
+            "minimum": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation time."
+          },
+          "day_key": {
+            "type": "string",
+            "description": "Canonical UTC day key, `YYYY-MM-DD`."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Mission identifier."
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyMissionItemDto"
+            },
+            "description": "Immutable, ordered items."
+          },
+          "plan_type": {
+            "$ref": "#/components/schemas/DailyMissionPlanType",
+            "description": "How the plan was generated."
+          },
+          "reward_bits": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Bits bonus for completing the whole mission."
+          },
+          "reward_granted": {
+            "type": "boolean",
+            "description": "Whether the completion bonus has been settled."
+          },
+          "status": {
+            "$ref": "#/components/schemas/DailyMissionStatus",
+            "description": "Lifecycle status."
+          },
+          "total_items": {
+            "type": "integer",
+            "description": "Total item count.",
+            "minimum": 0
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track identifier."
+          },
+          "track_version": {
+            "type": "string",
+            "description": "Learning track version identifier."
+          }
+        }
+      },
+      "DailyMissionStatus": {
+        "type": "string",
+        "description": "Daily Mission lifecycle status.",
+        "enum": [
+          "active",
+          "completed"
+        ]
       },
       "DatabaseStatus": {
         "type": "string",
@@ -4213,6 +4723,10 @@
     {
       "name": "recommendations",
       "description": "Optional next-action recommendations for a track"
+    },
+    {
+      "name": "daily-missions",
+      "description": "Immutable daily study missions and their progress"
     },
     {
       "name": "missions",

@@ -278,6 +278,43 @@ more learning, regenerate) that are preferences, not mastery evidence.
 learning evidence and a persistence failure never prevents a session from being
 returned.
 
+## Daily Missions (V1)
+
+The learner-facing plan is a single, stable **Daily Mission** per track and
+canonical UTC day. It is generated once and stored immutably in
+`daily_missions` / `daily_mission_items`; completing items, answering questions,
+concept-state changes, refreshing, navigating away, or re-requesting the
+endpoint never regenerate or reorder it. Tomorrow's mission is generated from
+the learner's latest state.
+
+Generation reuses the session planner (`planner::session::plan_session`) with a
+roughly 20-minute, balanced plan, then persists the complete activity list and
+position order, including the server-selected question ids for `practice`
+activities. Activities are `learn_node`, `review_node`, `practice`, and
+`domain_practice`.
+
+Execution reuses existing primitives:
+
+- `learn_node` / `review_node` are completed when the Knowledge Node reaches its
+  normal completion condition, re-derived server-side from discovery progress.
+  Opening the node alone does not complete it.
+- `practice` / `domain_practice` start a normal mission whose completion marks
+  the item complete. The client never chooses canonical question ids.
+
+If adaptive generation fails when today's mission is first created, a
+**standard non-adaptive** plan is generated from authored track content (domain
+order, available learning nodes, domain practice), persisted with
+`plan_type = standard`, and kept for the rest of the day. It never reads concept
+state or adaptive APIs, and it is not silently replaced later.
+
+Progress is server-authoritative and survives navigation, refresh, and
+reopening the app; the runner resumes the first incomplete item. Completing all
+items marks the mission complete and settles a single idempotent
+`daily_mission_complete` Bits bonus (see `DAILY_MISSION_BONUS_BITS`), awarded at
+most once even under retries or concurrent requests. Daily Mission completion is
+never concept/mastery evidence; only scored learning events change knowledge
+state.
+
 ## Plan explanation
 
 Example:

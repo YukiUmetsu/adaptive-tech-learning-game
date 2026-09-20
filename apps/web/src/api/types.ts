@@ -81,3 +81,15 @@ export type StudySessionResponse =
 export type SessionActivity = components["schemas"]["SessionActivity"];
 export type SessionActivityKind = components["schemas"]["SessionActivityKind"];
 export type SessionPreference = components["schemas"]["SessionPreference"];
+export type DailyMissionRequest = components["schemas"]["DailyMissionRequest"];
+export type DailyMissionResponse = components["schemas"]["DailyMissionResponse"];
+export type DailyMissionItemDto = components["schemas"]["DailyMissionItemDto"];
+export type DailyMissionItemKind = components["schemas"]["DailyMissionItemKind"];
+export type DailyMissionItemStatus =
+  components["schemas"]["DailyMissionItemStatus"];
+export type DailyMissionPlanType = components["schemas"]["DailyMissionPlanType"];
+export type DailyMissionStatus = components["schemas"]["DailyMissionStatus"];
+export type DailyItemCompleteRequest =
+  components["schemas"]["DailyItemCompleteRequest"];
+export type DailyItemCompleteResponse =
+  components["schemas"]["DailyItemCompleteResponse"];

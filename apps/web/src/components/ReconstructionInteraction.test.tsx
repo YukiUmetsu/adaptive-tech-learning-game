@@ -226,6 +226,16 @@ describe("ReconstructionInteraction (graph)", () => {
     });
   });
 
+  it("insets the top node so its relationship handle is not clipped", () => {
+    const { container } = graph({ placements, edges: [] });
+
+    const topNode = container.querySelector(".reconstruction-graph-node");
+    expect(topNode).not.toBeNull();
+    // The authored y was 0.15; the runner keeps extra vertical headroom.
+    const top = Number.parseFloat((topNode as HTMLElement).style.top);
+    expect(top).toBeGreaterThan(15);
+  });
+
   it("creates a relationship by tapping a source handle then a target handle", async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();

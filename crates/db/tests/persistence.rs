@@ -200,6 +200,8 @@ async fn telemetry_failure_does_not_affect_mission_persistence() {
         content_version: "c1".to_owned(),
         mode: QuizMode::RecommendedPractice,
         recommendation_id: Some(Uuid::new_v4()),
+        daily_mission_id: None,
+        daily_item_position: None,
         domain_id: Some("d1".to_owned()),
         task_id: None,
         question_ids: vec!["q1".to_owned()],
@@ -270,6 +272,59 @@ async fn study_session_log_accepts_valid_rows_and_rejects_bad_preferences() {
         db::sessions::log(&pool, &invalid).await.is_err(),
         "an invalid preference must fail on its own"
     );
+
+    delete_user(&pool, user_id).await;
+}
+
+#[tokio::test]
+async fn daily_missions_are_unique_per_user_track_and_day() {
+    let Some(pool) = pool().await else {
+        return;
+    };
+
+    let user_id = insert_user(&pool).await;
+    let today = Utc::now().date_naive();
+    let tomorrow = today + Duration::days(1);
+    let items = vec![db::daily_missions::NewDailyMissionItem {
+        position: 0,
+        kind: "domain_practice",
+        domain_id: "domain-1",
+        node_id: None,
+        title: "Domain review",
+        estimated_minutes: 6,
+        practice_context: serde_json::json!({}),
+    }];
+
+    let new_mission = db::daily_missions::NewDailyMission {
+        user_id,
+        track_id: "track",
+        track_version: "v1",
+        day_key: today,
+        timezone: Some("UTC"),
+        plan_type: "standard",
+        reward_bits: 25,
+    };
+    let first = db::daily_missions::create(&pool, &new_mission, &items)
+        .await
+        .expect("create mission");
+    assert_eq!(first.items.len(), 1);
+    assert_eq!(first.status, "active");
+
+    // A repeat for the same day returns the existing immutable snapshot.
+    let again = db::daily_missions::create(&pool, &new_mission, &items)
+        .await
+        .expect("reuse mission");
+    assert_eq!(first.id, again.id);
+
+    // A new canonical day creates a new plan.
+    let next_mission = db::daily_missions::NewDailyMission {
+        day_key: tomorrow,
+        ..new_mission.clone()
+    };
+    let next = db::daily_missions::create(&pool, &next_mission, &items)
+        .await
+        .expect("create next day");
+    assert_ne!(first.id, next.id);
 
     delete_user(&pool, user_id).await;
 }

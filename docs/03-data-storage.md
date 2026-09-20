@@ -56,6 +56,8 @@ model_versions
 recommendation_log
 recommendation_events
 study_session_log
+daily_missions
+daily_mission_items
 deletion_tombstones
 ```
 
@@ -113,6 +115,24 @@ knowledge state.
 `study_session_log` is the matching auxiliary log for generated adaptive study
 sessions. It stores the requested length and preference plus the produced
 estimate; it is never learning evidence and writes are best-effort.
+
+## Daily Missions
+
+`daily_missions` is the immutable daily snapshot: `(user_id, track_id, day_key)`
+is unique, `plan_type` is `adaptive` or `standard`, and `status` moves from
+`active` to `completed`. `daily_mission_items` stores the ordered plan (kind,
+domain, node, title, estimate, server-selected practice context) plus per-item
+status. `mission_instances.daily_mission_id` / `daily_item_position` link a
+scored mission back to the item it executes.
+
+The day boundary is a single canonical **UTC** day. The client IANA timezone is
+stored as metadata only, so changing the timezone cannot create a second
+reward-bearing mission for the same day. The plan is generated once and never
+recomputed; only real timed-out requests for a new day create a new plan.
+
+Daily Mission completion is not learning evidence. The completion bonus is a
+single idempotent ledger event (`daily_mission_complete`, `event_id` =
+mission id), so retries and concurrent requests can never award it twice.
 
 Ownership is user-based: `mission_instances`, `learning_events`, and wallet
 state carry an owning `user_id`. `device_wallets` is the legacy pre-auth table

@@ -98,10 +98,12 @@ export default function LocalAuthProvider({
     setSubject(null);
   }, []);
 
+  // Register during render so the first child effects can attach a bearer
+  // token; see WorkosAuthProvider for why an effect-only registration is racy.
+  setAccessTokenProvider(getAccessToken);
   useEffect(() => {
-    setAccessTokenProvider(getAccessToken);
     return () => setAccessTokenProvider(null);
-  }, [getAccessToken]);
+  }, []);
 
   const value: AuthContextValue = useMemo(
     () => ({

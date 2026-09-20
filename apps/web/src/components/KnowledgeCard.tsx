@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 
 import type { KnowledgeNode } from "../api/types";
 import {
@@ -21,6 +21,16 @@ interface KnowledgeCardProps {
   onRevealElement: (promptId: string, elementId: string) => void;
   onClose: () => void;
   onDiscoverNext: (nodeId: string) => void;
+  /**
+   * Replaces the "Back to map" header control. Pass `null` to hide it.
+   * Omitted keeps the default, preserving existing map behavior.
+   */
+  headerAction?: ReactNode;
+  /**
+   * Replaces the default unlocked actions. Pass `null` to hide them.
+   * Omitted keeps the default, preserving existing map behavior.
+   */
+  unlockedActions?: ReactNode;
 }
 
 /**
@@ -42,6 +52,8 @@ export default function KnowledgeCard({
   onRevealElement,
   onClose,
   onDiscoverNext,
+  headerAction,
+  unlockedActions,
 }: KnowledgeCardProps) {
   const elementSets = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -70,9 +82,13 @@ export default function KnowledgeCard({
           <p className="knowledge-card-kicker">Knowledge Node · {moduleTitle}</p>
           <h2 id={`knowledge-card-title-${node.id}`}>{node.title}</h2>
         </div>
-        <button type="button" className="knowledge-card-close" onClick={onClose}>
-          Back to map
-        </button>
+        {headerAction === undefined ? (
+          <button type="button" className="knowledge-card-close" onClick={onClose}>
+            Back to map
+          </button>
+        ) : (
+          headerAction
+        )}
       </header>
 
       <div className="knowledge-card-charge">
@@ -133,18 +149,24 @@ export default function KnowledgeCard({
           <p className="knowledge-card-unlocked-title">✨ UNLOCKED! ✨</p>
           <p className="knowledge-card-unlocked-node">{node.title}</p>
           <div className="knowledge-card-actions">
-            <button type="button" onClick={onClose}>
-              Continue to Knowledge Map
-            </button>
-            {nextNode && nextNode.id !== node.id ? (
-              <button
-                type="button"
-                className="primary"
-                onClick={() => onDiscoverNext(nextNode.id)}
-              >
-                Discover {nextNode.title} →
-              </button>
-            ) : null}
+            {unlockedActions === undefined ? (
+              <>
+                <button type="button" onClick={onClose}>
+                  Continue to Knowledge Map
+                </button>
+                {nextNode && nextNode.id !== node.id ? (
+                  <button
+                    type="button"
+                    className="primary"
+                    onClick={() => onDiscoverNext(nextNode.id)}
+                  >
+                    Discover {nextNode.title} →
+                  </button>
+                ) : null}
+              </>
+            ) : (
+              unlockedActions
+            )}
           </div>
         </div>
       ) : null}

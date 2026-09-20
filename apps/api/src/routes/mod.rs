@@ -1,4 +1,5 @@
 pub mod certifications;
+pub mod daily_missions;
 pub mod health;
 pub mod learning;
 pub mod me;

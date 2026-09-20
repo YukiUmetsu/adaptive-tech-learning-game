@@ -87,6 +87,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/daily-missions/{mission_id}/items/{position}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Completes a learning-node Daily Mission item from discovery progress. */
+        post: operations["complete_daily_item"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/daily-missions/{mission_id}/items/{position}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Starts the mission for one Daily Mission practice item. */
+        post: operations["start_daily_item"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me": {
         parameters: {
             query?: never;
@@ -179,6 +213,27 @@ export interface paths {
          *     accepted for demo missions but never settle Bits.
          */
         post: operations["sync"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tracks/{track_id}/daily-mission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Returns today's immutable Daily Mission, generating it once if needed.
+         * @description The plan never changes after creation, and generation is optional: if
+         *     adaptive planning fails, a standard non-adaptive plan is persisted instead.
+         */
+        post: operations["get_today_daily_mission"];
         delete?: never;
         options?: never;
         head?: never;
@@ -575,6 +630,118 @@ export interface components {
             /** @description Learner-facing label for the role, for example `IPv4 default route target`. */
             label: string;
         };
+        /** @description Request to complete a learning-node Daily Mission item. */
+        DailyItemCompleteRequest: {
+            /** @description Raw Knowledge Map discovery progress used to derive node completion. */
+            discovery?: components["schemas"]["DomainDiscoveryInput"][];
+        };
+        /** @description Result of completing one Daily Mission item. */
+        DailyItemCompleteResponse: {
+            /** @description Whether the item is now complete. */
+            item_completed: boolean;
+            /** @description The updated Daily Mission. */
+            mission: components["schemas"]["DailyMissionResponse"];
+        };
+        /** @description One item of the learner's Daily Mission. */
+        DailyMissionItemDto: {
+            /**
+             * Format: date-time
+             * @description Completion time, when complete.
+             */
+            completed_at?: string | null;
+            /** @description Owning domain/topic. */
+            domain_id: string;
+            /** @description Learner-facing domain name. */
+            domain_name: string;
+            /**
+             * Format: int32
+             * @description Estimated minutes.
+             */
+            estimated_minutes: number;
+            /** @description Activity kind. */
+            kind: components["schemas"]["DailyMissionItemKind"];
+            /** @description Knowledge node, for node items. */
+            node_id?: string | null;
+            /**
+             * Format: int32
+             * @description Zero-based position in the immutable plan.
+             */
+            position: number;
+            /** @description Number of server-selected questions, for practice items. */
+            question_count: number;
+            /** @description Completion status. */
+            status: components["schemas"]["DailyMissionItemStatus"];
+            /** @description Learner-facing title. */
+            title: string;
+        };
+        /**
+         * @description One Daily Mission activity kind.
+         * @enum {string}
+         */
+        DailyMissionItemKind: "learn_node" | "review_node" | "practice" | "domain_practice";
+        /**
+         * @description Completion status of one Daily Mission item.
+         * @enum {string}
+         */
+        DailyMissionItemStatus: "pending" | "completed";
+        /**
+         * @description How a Daily Mission was generated.
+         * @enum {string}
+         */
+        DailyMissionPlanType: "adaptive" | "standard";
+        /** @description Request for the learner's Daily Mission for today. */
+        DailyMissionRequest: {
+            /** @description Raw Knowledge Map discovery progress, if available. */
+            discovery?: components["schemas"]["DomainDiscoveryInput"][];
+            /** @description Client IANA timezone. Stored as metadata; the day boundary is canonical UTC. */
+            timezone?: string | null;
+        };
+        /** @description The learner's immutable Daily Mission snapshot for the canonical day. */
+        DailyMissionResponse: {
+            /**
+             * Format: date-time
+             * @description Completion time, when complete.
+             */
+            completed_at?: string | null;
+            /** @description Completed item count. */
+            completed_items: number;
+            /**
+             * Format: date-time
+             * @description Creation time.
+             */
+            created_at: string;
+            /** @description Canonical UTC day key, `YYYY-MM-DD`. */
+            day_key: string;
+            /**
+             * Format: uuid
+             * @description Mission identifier.
+             */
+            id: string;
+            /** @description Immutable, ordered items. */
+            items: components["schemas"]["DailyMissionItemDto"][];
+            /** @description How the plan was generated. */
+            plan_type: components["schemas"]["DailyMissionPlanType"];
+            /**
+             * Format: int64
+             * @description Bits bonus for completing the whole mission.
+             */
+            reward_bits: number;
+            /** @description Whether the completion bonus has been settled. */
+            reward_granted: boolean;
+            /** @description Lifecycle status. */
+            status: components["schemas"]["DailyMissionStatus"];
+            /** @description Total item count. */
+            total_items: number;
+            /** @description Learning track identifier. */
+            track_id: string;
+            /** @description Learning track version identifier. */
+            track_version: string;
+        };
+        /**
+         * @description Daily Mission lifecycle status.
+         * @enum {string}
+         */
+        DailyMissionStatus: "active" | "completed";
         /**
          * @description Database reachability.
          * @enum {string}
@@ -1759,6 +1926,141 @@ export interface operations {
             };
         };
     };
+    complete_daily_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Daily Mission identifier. */
+                mission_id: string;
+                /** @description Zero-based item position. */
+                position: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DailyItemCompleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Item completion result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyItemCompleteResponse"];
+                };
+            };
+            /** @description Item completes through a mission */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Mission belongs to another account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown mission or item */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    start_daily_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Daily Mission identifier. */
+                mission_id: string;
+                /** @description Zero-based item position. */
+                position: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Started mission */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionResponse"];
+                };
+            };
+            /** @description Item is completed on the knowledge map */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Mission belongs to another account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown mission or item */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Item or mission already complete */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     get_me: {
         parameters: {
             query?: never;
@@ -1998,6 +2300,60 @@ export interface operations {
             };
             /** @description Authentication required */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_today_daily_mission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Learning track identifier, for example `ai-python-fluency`. */
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DailyMissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Today's Daily Mission */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyMissionResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown learning track */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

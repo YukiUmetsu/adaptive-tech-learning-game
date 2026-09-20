@@ -4,8 +4,8 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import type { DomainDto, QuizMode } from "../api/types";
 import { useAuth } from "../auth/context";
 import BitsHud from "../components/BitsHud";
+import DailyMissionCard from "../components/DailyMissionCard";
 import RecommendedNext from "../components/RecommendedNext";
-import StudySessionCard from "../components/StudySessionCard";
 import { useCatalog } from "../hooks/useCatalog";
 import { certificationQuestionCount, domainQuestionCount } from "../state/demo";
 import { startMission } from "../state/mission";
@@ -184,6 +184,9 @@ export default function CertificationDashboardPage() {
             {certification.vendor} · {certification.exam_code}
           </p>
           <h1>{certification.name}</h1>
+          <p className="dashboard-hud-stats muted">
+            {totalQuestions} questions · {domains.length} domains
+          </p>
         </div>
         <BitsHud />
       </header>
@@ -203,39 +206,12 @@ export default function CertificationDashboardPage() {
         enabled={status === "authenticated"}
       />
 
-      {/* Optional adaptive session with a standard fallback; never required. */}
-      <StudySessionCard
+      {/* Today's immutable Daily Mission; hidden if it cannot be loaded. */}
+      <DailyMissionCard
         trackId={certification.id}
         trackVersion={version.id}
-        domains={domains}
-        enabled={status === "authenticated"}
+        authStatus={status}
       />
-
-      <article className="campaign-panel">
-        <h2>Campaign</h2>
-        <dl className="campaign-stats">
-          <div>
-            <dt>Exam</dt>
-            <dd>{certification.exam_code}</dd>
-          </div>
-          <div>
-            <dt>Questions</dt>
-            <dd>{totalQuestions}</dd>
-          </div>
-          <div>
-            <dt>Domains</dt>
-            <dd>{domains.length}</dd>
-          </div>
-          <div>
-            <dt>Content</dt>
-            <dd>{version.content_version}</dd>
-          </div>
-        </dl>
-        <p className="muted">
-          Blueprint reviewed {certification.last_reviewed}. Complete quizzes to
-          build your knowledge profile.
-        </p>
-      </article>
 
       <h2>Quiz modes</h2>
       <div className="mode-grid">
