@@ -192,15 +192,36 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
          * Returns a best-effort next-action recommendation for a learning track.
          * @description This is an optional, explainable layer over the derived concept state. It
          *     never gates the dashboard, knowledge maps, or quizzes, and it never creates
          *     learning evidence. Requires an authenticated account.
          */
-        get: operations["get_recommendation"];
+        post: operations["create_recommendation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tracks/{track_id}/recommendations/{recommendation_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Records one recommendation lifecycle event.
+         * @description Telemetry is auxiliary: the request succeeds even when the write fails, so it
+         *     can never block the learner.
+         */
+        post: operations["record_recommendation_event"];
         delete?: never;
         options?: never;
         head?: never;
@@ -537,6 +558,21 @@ export interface components {
          * @enum {string}
          */
         DatabaseStatus: "ok" | "unavailable";
+        /** @description Raw discovery progress for one learning domain, as stored on the client. */
+        DomainDiscoveryInput: {
+            /** @description Domain identifier. */
+            domain_id: string;
+            /** @description Knowledge node id to prompt id to revealed discovery element ids. */
+            revealed_element_ids?: {
+                [key: string]: {
+                    [key: string]: string[];
+                };
+            };
+            /** @description Knowledge node id to the prompt ids the learner has revealed. */
+            revealed_prompt_ids?: {
+                [key: string]: string[];
+            };
+        };
         /** @description A content domain. */
         DomainDto: {
             /** @description Domain identifier. */
@@ -769,6 +805,18 @@ export interface components {
             domain_id?: string | null;
             /** @description Quiz mode deciding how the server selects questions. */
             mode: components["schemas"]["QuizMode"];
+            /**
+             * @description Anchor question for `recommended_practice`. The server validates it
+             *     belongs to the certification version; it never trusts it as the whole
+             *     practice set.
+             */
+            question_id?: string | null;
+            /**
+             * Format: uuid
+             * @description Recommendation that produced this mission, when it was recommended.
+             *     Context only, never an authorization key.
+             */
+            recommendation_id?: string | null;
             /** @description Task to scope a task practice to. Required for `task_practice`. */
             task_id?: string | null;
         };
@@ -1082,7 +1130,7 @@ export interface components {
          *     three learner-facing modes are quick, domain, and full practice.
          * @enum {string}
          */
-        QuizMode: "quick_adaptive" | "domain_quiz" | "full_practice" | "task_practice";
+        QuizMode: "quick_adaptive" | "domain_quiz" | "full_practice" | "task_practice" | "recommended_practice";
         /** @description A structured, explainable recommendation. */
         Recommendation: {
             /** @description Action to take. */
@@ -1108,10 +1156,47 @@ export interface components {
             track_id: string;
         };
         /**
+         * @description A recommendation lifecycle stage.
+         * @enum {string}
+         */
+        RecommendationEventKind: "shown" | "clicked" | "started" | "node_opened" | "completed";
+        /** @description One recommendation lifecycle event. */
+        RecommendationEventRequest: {
+            action?: null | components["schemas"]["PlannerAction"];
+            /** @description Domain/topic, when known. */
+            domain_id?: string | null;
+            /** @description Lifecycle stage being reported. */
+            event: components["schemas"]["RecommendationEventKind"];
+            /** @description Knowledge node, when known. */
+            node_id?: string | null;
+            /** @description Question, when known. */
+            question_id?: string | null;
+        };
+        /**
+         * @description Result of recording a lifecycle event.
+         *
+         *     `recorded` is `false` when the auxiliary write failed; the request still
+         *     succeeds because telemetry must never block learning.
+         */
+        RecommendationEventResponse: {
+            /** @description Whether the event was persisted. */
+            recorded: boolean;
+        };
+        /**
          * @description A stable, explainable reason code for a recommendation.
          * @enum {string}
          */
         RecommendationReason: "cold_start" | "weak_concept" | "weak_prerequisite" | "needs_practice" | "stale_knowledge" | "domain_review" | "strong_and_fresh";
+        /**
+         * @description Request body for a recommendation.
+         *
+         *     Discovery progress is optional and best-effort: it lets the planner mirror
+         *     the Knowledge Map's exact unlock semantics. It is never learning evidence.
+         */
+        RecommendationRequest: {
+            /** @description Raw Knowledge Map discovery progress for the track, if available. */
+            discovery?: components["schemas"]["DomainDiscoveryInput"][];
+        };
         /**
          * @description Best-effort next-action recommendation for a learning track.
          *
@@ -1121,6 +1206,12 @@ export interface components {
          */
         RecommendationResponse: {
             recommendation?: null | components["schemas"]["Recommendation"];
+            /**
+             * Format: uuid
+             * @description Stable id for this recommendation, used by lifecycle telemetry. `null`
+             *     only when no recommendation was produced.
+             */
+            recommendation_id?: string | null;
         };
         /** @description Reconstruction answer primitives. */
         ReconstructionAnswerPayload: {
@@ -1809,17 +1900,9 @@ export interface operations {
             };
         };
     };
-    get_recommendation: {
+    create_recommendation: {
         parameters: {
-            query?: {
-                /**
-                 * @description Comma-separated knowledge-node ids the learner has already explored.
-                 *
-                 *     Discovery progress lives on the client, so it is optional. When omitted
-                 *     the planner falls back to accepted quiz evidence.
-                 */
-                explored_node_ids?: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 /** @description Learning track identifier, for example `ai-python-fluency`. */
@@ -1827,7 +1910,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecommendationRequest"];
+            };
+        };
         responses: {
             /** @description Next-action recommendation */
             200: {
@@ -1836,6 +1923,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecommendationResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Authentication required */
@@ -1849,6 +1945,53 @@ export interface operations {
             };
             /** @description Unknown learning track */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    record_recommendation_event: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Learning track identifier. */
+                track_id: string;
+                /** @description Recommendation the event refers to. */
+                recommendation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecommendationEventRequest"];
+            };
+        };
+        responses: {
+            /** @description Event disposition */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationEventResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

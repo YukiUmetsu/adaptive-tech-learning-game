@@ -114,6 +114,13 @@ pub struct IssueMissionRequest {
     pub domain_id: Option<String>,
     /// Task to scope a task practice to. Required for `task_practice`.
     pub task_id: Option<String>,
+    /// Anchor question for `recommended_practice`. The server validates it
+    /// belongs to the certification version; it never trusts it as the whole
+    /// practice set.
+    pub question_id: Option<String>,
+    /// Recommendation that produced this mission, when it was recommended.
+    /// Context only, never an authorization key.
+    pub recommendation_id: Option<Uuid>,
 }
 
 /// A server-issued mission with its questions.
@@ -387,6 +394,79 @@ pub struct LearningDomainResponse {
 /// dashboard to render.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct RecommendationResponse {
+    /// Stable id for this recommendation, used by lifecycle telemetry. `null`
+    /// only when no recommendation was produced.
+    pub recommendation_id: Option<Uuid>,
     /// The chosen recommendation, or `null` when none is available.
     pub recommendation: Option<crate::planner::Recommendation>,
+}
+
+/// Request body for a recommendation.
+///
+/// Discovery progress is optional and best-effort: it lets the planner mirror
+/// the Knowledge Map's exact unlock semantics. It is never learning evidence.
+#[derive(Debug, Default, Deserialize, ToSchema)]
+pub struct RecommendationRequest {
+    /// Raw Knowledge Map discovery progress for the track, if available.
+    #[serde(default)]
+    pub discovery: Vec<adaptive_learn_content::DomainDiscoveryInput>,
+}
+
+/// A recommendation lifecycle stage.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum RecommendationEventKind {
+    /// The client actually rendered the recommendation card.
+    Shown,
+    /// The learner clicked/accepted the recommendation.
+    Clicked,
+    /// Practice started (server-observed for missions, client-reported for the
+    /// node path).
+    Started,
+    /// The learner opened the recommended Knowledge Node.
+    NodeOpened,
+    /// Practice from the recommendation was completed.
+    Completed,
+}
+
+impl RecommendationEventKind {
+    /// Canonical event string stored in PostgreSQL.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Shown => "shown",
+            Self::Clicked => "clicked",
+            Self::Started => "started",
+            Self::NodeOpened => "node_opened",
+            Self::Completed => "completed",
+        }
+    }
+}
+
+/// One recommendation lifecycle event.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct RecommendationEventRequest {
+    /// Lifecycle stage being reported.
+    pub event: RecommendationEventKind,
+    /// Planner action the recommendation had, when known.
+    #[serde(default)]
+    pub action: Option<crate::planner::PlannerAction>,
+    /// Domain/topic, when known.
+    #[serde(default)]
+    pub domain_id: Option<String>,
+    /// Knowledge node, when known.
+    #[serde(default)]
+    pub node_id: Option<String>,
+    /// Question, when known.
+    #[serde(default)]
+    pub question_id: Option<String>,
+}
+
+/// Result of recording a lifecycle event.
+///
+/// `recorded` is `false` when the auxiliary write failed; the request still
+/// succeeds because telemetry must never block learning.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct RecommendationEventResponse {
+    /// Whether the event was persisted.
+    pub recorded: bool,
 }

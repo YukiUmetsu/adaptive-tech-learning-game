@@ -54,6 +54,7 @@ inventory
 gacha_rolls
 model_versions
 recommendation_log
+recommendation_events
 deletion_tombstones
 ```
 
@@ -90,11 +91,23 @@ computed on read at selection time from `evidence_mass` and
 
 ## Auxiliary recommendation history
 
-`recommendation_log` records which optional recommendations were shown to a
-learner so planner quality can be reviewed later. It is deliberately **not**
-learning evidence: it never feeds scoring, rewards, concept state, or mastery.
-Writes are best-effort — a missing table, an unreachable database, or a
-constraint failure must never fail a recommendation or a learning session.
+`recommendation_log` records which optional recommendations were generated for a
+learner, keyed by a stable `recommendation_id`. `recommendation_events` records
+lifecycle stages (`shown`, `clicked`, `started`, `node_opened`, `completed`)
+against that id. `mission_instances.recommendation_id` links a mission back to
+the recommendation that started it.
+
+These tables are deliberately **not** learning evidence: they never feed scoring,
+rewards, concept state, or mastery. Writes are best-effort and never share a
+transaction with authoritative learning-event persistence — a missing table, an
+unreachable database, or a constraint failure must never fail a recommendation,
+a mission, or a learning session.
+
+Generation is recorded when the recommendation is computed. A recommendation
+request is not proof the learner saw anything: `shown` is a separate client
+event, and concept state is never updated because a recommendation was shown,
+clicked, started, or completed. Only accepted, scored learning events change
+knowledge state.
 
 Ownership is user-based: `mission_instances`, `learning_events`, and wallet
 state carry an owning `user_id`. `device_wallets` is the legacy pre-auth table

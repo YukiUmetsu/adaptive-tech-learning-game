@@ -9,7 +9,9 @@
 
 use std::collections::{HashMap, HashSet};
 
-use adaptive_learn_content::{Question, SubmittedAnswer, score};
+use adaptive_learn_content::{
+    DomainDiscoveryInput, Question, SubmittedAnswer, derive_domain_discovery, score,
+};
 use adaptive_learn_db as db;
 use adaptive_learn_domain::{
     ConceptWeight, LearningEvent, MissionInstance, MissionStatus, QuizMode, reward_bits,
@@ -21,8 +23,9 @@ use crate::auth::AuthenticatedUser;
 use crate::dto::{
     AnswerPayload, AnswerRequest, CatalogResponse, CertificationDto, CertificationVersionDto,
     CompleteMissionResponse, ConceptDto, DomainDto, FeedbackResponse, IssueMissionRequest,
-    LearningDomainResponse, MissionResponse, QuestionView, RecommendationResponse,
-    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, TaskDto, WalletResponse,
+    LearningDomainResponse, MissionResponse, QuestionView, RecommendationEventRequest,
+    RecommendationEventResponse, RecommendationResponse, SyncEventRequest, SyncEventResult,
+    SyncRequest, SyncResponse, TaskDto, WalletResponse,
 };
 use crate::error::ApiError;
 use crate::planner::{
@@ -122,13 +125,15 @@ pub fn learning_domain(
 /// Builds a best-effort next-action recommendation for a learning track.
 ///
 /// The planner is pure and track-agnostic; this function only assembles its
-/// input from content, derived concept state, and accepted history. Auxiliary
+/// input from content, derived concept state, accepted history, and optional
+/// discovery progress. Discovery is derived with the same rules as the frontend
+/// Knowledge Map so the planner never targets a map-locked node. Auxiliary
 /// logging is best-effort and never fails the recommendation or learning flow.
 pub async fn recommendation(
     state: &AppState,
     user: &AuthenticatedUser,
     track_id: &str,
-    explored_node_ids: &[String],
+    discovery: &[DomainDiscoveryInput],
 ) -> Result<RecommendationResponse, ApiError> {
     let bundle = state
         .content
@@ -165,6 +170,8 @@ pub async fn recommendation(
         })
         .collect();
 
+    let discovery_state = derive_track_discovery(state, &track_version, discovery);
+
     let input = PlannerInput {
         track_id: track_id.to_owned(),
         track_version: track_version.clone(),
@@ -183,14 +190,21 @@ pub async fn recommendation(
         domains,
         nodes,
         questions,
-        explored_node_ids: explored_node_ids.iter().cloned().collect(),
+        explored_node_ids: discovery_state.explored_node_ids,
+        unlocked_node_ids: discovery_state.unlocked_node_ids,
+        completed_module_ids: discovery_state.completed_module_ids,
         recent_question_ids: history.into_iter().map(|entry| entry.question_id).collect(),
     };
 
     let recommendation = planner::recommend(&input);
 
-    if let Some(choice) = &recommendation {
+    // Generate a stable id for lifecycle telemetry even if the best-effort
+    // generation log write fails below.
+    let recommendation_id = recommendation.as_ref().map(|_| Uuid::new_v4());
+
+    if let (Some(choice), Some(id)) = (&recommendation, recommendation_id) {
         let entry = db::recommendations::RecommendationLogEntry {
+            recommendation_id: id,
             user_id: user.id,
             track_id: &choice.track_id,
             track_version: &track_version,
@@ -204,7 +218,95 @@ pub async fn recommendation(
         log_recommendation(&state.pool, &entry).await;
     }
 
-    Ok(RecommendationResponse { recommendation })
+    Ok(RecommendationResponse {
+        recommendation_id,
+        recommendation,
+    })
+}
+
+/// Records one recommendation lifecycle event, best-effort.
+///
+/// The response reports whether the auxiliary write landed, but the request
+/// always succeeds so telemetry can never block learning.
+pub async fn record_recommendation_event(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    track_id: &str,
+    recommendation_id: Uuid,
+    request: RecommendationEventRequest,
+) -> RecommendationEventResponse {
+    record_event_best_effort(
+        &state.pool,
+        &db::recommendations::RecommendationEventEntry {
+            recommendation_id,
+            user_id: user.id,
+            track_id,
+            event: request.event.as_str(),
+            action: request.action.map(|action| action.as_str()),
+            domain_id: request.domain_id.as_deref(),
+            node_id: request.node_id.as_deref(),
+            question_id: request.question_id.as_deref(),
+        },
+    )
+    .await
+}
+
+/// Records a lifecycle event and reports whether it landed.
+async fn record_event_best_effort(
+    pool: &db::PgPool,
+    entry: &db::recommendations::RecommendationEventEntry<'_>,
+) -> RecommendationEventResponse {
+    match db::recommendations::record_event(pool, entry).await {
+        Ok(()) => RecommendationEventResponse { recorded: true },
+        Err(error) => {
+            tracing::debug!(error = %error, "could not record recommendation event");
+            RecommendationEventResponse { recorded: false }
+        }
+    }
+}
+
+/// Derived discovery state for a whole track, aggregated across domains.
+#[derive(Debug, Default)]
+struct TrackDiscovery {
+    explored_node_ids: HashSet<String>,
+    unlocked_node_ids: HashSet<String>,
+    completed_module_ids: HashSet<String>,
+}
+
+/// Mirrors the Knowledge Map's derivation for every domain of a track.
+///
+/// Domains without client progress contribute nothing, which matches a fresh
+/// learner: no completed modules and only root-module nodes available.
+fn derive_track_discovery(
+    state: &AppState,
+    track_version: &str,
+    inputs: &[DomainDiscoveryInput],
+) -> TrackDiscovery {
+    let mut aggregate = TrackDiscovery::default();
+    for domain in state
+        .content
+        .learning_domains()
+        .iter()
+        .filter(|domain| domain.certification_version == track_version)
+    {
+        let Some(input) = inputs
+            .iter()
+            .find(|input| input.domain_id == domain.domain.id)
+        else {
+            continue;
+        };
+        let derived = derive_domain_discovery(domain, input);
+        aggregate
+            .explored_node_ids
+            .extend(derived.explored_node_ids);
+        aggregate
+            .unlocked_node_ids
+            .extend(derived.unlocked_node_ids);
+        aggregate
+            .completed_module_ids
+            .extend(derived.completed_module_ids);
+    }
+    aggregate
 }
 
 /// Logs a recommendation without ever letting a persistence problem escape.
@@ -303,6 +405,7 @@ pub async fn issue_mission(
         return Err(ApiError::NotFound);
     }
 
+    let recommendation_id = request.recommendation_id;
     let mission = MissionInstance {
         id: Uuid::new_v4(),
         user_id: owner,
@@ -311,6 +414,7 @@ pub async fn issue_mission(
         certification_version: bundle.version.id.clone(),
         content_version: bundle.version.content_version.clone(),
         mode: request.mode,
+        recommendation_id,
         domain_id,
         task_id,
         question_ids,
@@ -321,6 +425,29 @@ pub async fn issue_mission(
     };
 
     let stored = db::missions::insert(&state.pool, &mission).await?;
+
+    // Best-effort lifecycle telemetry: a mission was started from a
+    // recommendation. This is auxiliary and never affects the mission.
+    if let (Some(id), Some(user)) = (recommendation_id, user) {
+        let action = match stored.mode {
+            QuizMode::RecommendedPractice => "practice_question",
+            _ => "practice_domain",
+        };
+        let _ = record_event_best_effort(
+            &state.pool,
+            &db::recommendations::RecommendationEventEntry {
+                recommendation_id: id,
+                user_id: user.id,
+                track_id: &stored.certification_id,
+                event: "started",
+                action: Some(action),
+                domain_id: stored.domain_id.as_deref(),
+                node_id: None,
+                question_id: None,
+            },
+        )
+        .await;
+    }
 
     if let (Some(user), Some(device)) = (user, request.device_id) {
         if let Err(error) = db::devices::upsert(&state.pool, device, user.id).await {
@@ -406,7 +533,75 @@ async fn build_question_set(
             let ids = select_ids(state, request, owner, None, now).await?;
             Ok((None, None, ids))
         }
+        QuizMode::RecommendedPractice => {
+            let owner = owner.ok_or(ApiError::Unauthorized)?;
+            let anchor_id = request.question_id.as_deref().ok_or_else(|| {
+                ApiError::BadRequest("recommended_practice requires question_id".to_owned())
+            })?;
+            // The anchor is validated against canonical content; the rest of the
+            // set is chosen server-side below.
+            let anchor = state
+                .content
+                .question(version, anchor_id)
+                .ok_or(ApiError::NotFound)?;
+            let ids = select_recommended_practice(state, version, anchor, owner).await?;
+            Ok((
+                Some(anchor.domain_id.clone()),
+                Some(anchor.task_id.clone()),
+                ids,
+            ))
+        }
     }
+}
+
+/// Builds the focused set for a recommended-practice mission.
+///
+/// The anchor question is always first and must exist in canonical content. The
+/// remaining questions are selected server-side from authored concept overlap;
+/// the client never supplies them.
+async fn select_recommended_practice(
+    state: &AppState,
+    version: &str,
+    anchor: &Question,
+    owner: Uuid,
+) -> Result<Vec<String>, ApiError> {
+    let candidates: Vec<Candidate> = state
+        .content
+        .questions_for_version(version)
+        .into_iter()
+        .map(candidate_from)
+        .collect();
+    if candidates.is_empty() {
+        return Err(ApiError::NotFound);
+    }
+
+    let anchor_candidate = candidate_from(anchor);
+    let history: Vec<HistoryEntry> = match state.content.bundle_for_version(version) {
+        Some(bundle) => db::learning_events::recent_for_user(
+            &state.pool,
+            owner,
+            &bundle.certification.id,
+            HISTORY_LIMIT,
+        )
+        .await?
+        .into_iter()
+        .map(|entry| HistoryEntry {
+            question_id: entry.question_id,
+            score: entry.score,
+            assessment_mode: entry.assessment_mode,
+            occurred_at: entry.occurred_at,
+            concepts: entry.concepts,
+        })
+        .collect(),
+        None => Vec::new(),
+    };
+
+    Ok(selection::recommended_practice(
+        &anchor_candidate,
+        &candidates,
+        &history,
+        selection::RECOMMENDED_PRACTICE_LEN,
+    ))
 }
 
 /// Runs the selection service for a certification-wide or domain mode.
@@ -663,6 +858,26 @@ pub async fn complete_mission(
     };
 
     let mission = updated.ok_or(ApiError::NotFound)?;
+
+    // Best-effort lifecycle telemetry: a mission started from a recommendation
+    // was completed. Telemetry never affects mission completion.
+    if let (Some(recommendation_id), Some(owner)) = (mission.recommendation_id, mission.user_id) {
+        let _ = record_event_best_effort(
+            &state.pool,
+            &db::recommendations::RecommendationEventEntry {
+                recommendation_id,
+                user_id: owner,
+                track_id: &mission.certification_id,
+                event: "completed",
+                action: None,
+                domain_id: mission.domain_id.as_deref(),
+                node_id: None,
+                question_id: None,
+            },
+        )
+        .await;
+    }
+
     Ok(CompleteMissionResponse {
         id: mission.id,
         status: mission.status,
@@ -979,6 +1194,7 @@ mod tests {
             .expect("lazy pool");
         let concept_ids = vec!["c1".to_owned()];
         let entry = db::recommendations::RecommendationLogEntry {
+            recommendation_id: Uuid::new_v4(),
             user_id: Uuid::new_v4(),
             track_id: "track",
             track_version: "track-v1",
@@ -993,6 +1209,30 @@ mod tests {
         // The database is unreachable, but auxiliary logging must never panic or
         // propagate a failure into the recommendation request.
         log_recommendation(&pool, &entry).await;
+    }
+
+    #[tokio::test]
+    async fn recommendation_event_telemetry_failure_is_swallowed() {
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .max_connections(1)
+            .acquire_timeout(std::time::Duration::from_millis(50))
+            .connect_lazy("postgres://app:app@127.0.0.1:1/app")
+            .expect("lazy pool");
+        let entry = db::recommendations::RecommendationEventEntry {
+            recommendation_id: Uuid::new_v4(),
+            user_id: Uuid::new_v4(),
+            track_id: "track",
+            event: "shown",
+            action: Some("learn_node"),
+            domain_id: Some("d1"),
+            node_id: Some("n1"),
+            question_id: None,
+        };
+
+        // Unreachable database: the helper reports failure without panicking or
+        // propagating, so the caller can continue normally.
+        let response = record_event_best_effort(&pool, &entry).await;
+        assert!(!response.recorded);
     }
 
     #[test]

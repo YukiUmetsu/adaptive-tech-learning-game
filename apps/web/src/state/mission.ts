@@ -11,6 +11,10 @@ export interface StartMissionOptions {
   domainId?: string;
   /** Required for `task_practice`. */
   taskId?: string;
+  /** Anchor question for `recommended_practice`. Server-validated. */
+  questionId?: string;
+  /** Recommendation that produced this mission, when recommended. */
+  recommendationId?: string;
 }
 
 /**
@@ -30,6 +34,8 @@ export async function startMission(
       mode: options.mode,
       domain_id: options.domainId ?? null,
       task_id: options.taskId ?? null,
+      question_id: options.questionId ?? null,
+      recommendation_id: options.recommendationId ?? null,
     },
   });
 

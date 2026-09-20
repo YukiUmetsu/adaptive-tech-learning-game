@@ -476,13 +476,13 @@
       }
     },
     "/v1/tracks/{track_id}/recommendation": {
-      "get": {
+      "post": {
         "tags": [
           "recommendations"
         ],
         "summary": "Returns a best-effort next-action recommendation for a learning track.",
         "description": "This is an optional, explainable layer over the derived concept state. It\nnever gates the dashboard, knowledge maps, or quizzes, and it never creates\nlearning evidence. Requires an authenticated account.",
-        "operationId": "get_recommendation",
+        "operationId": "create_recommendation",
         "parameters": [
           {
             "name": "track_id",
@@ -492,17 +492,18 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "explored_node_ids",
-            "in": "query",
-            "description": "Comma-separated knowledge-node ids the learner has already explored.\n\nDiscovery progress lives on the client, so it is optional. When omitted\nthe planner falls back to accepted quiz evidence.",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "Next-action recommendation",
@@ -510,6 +511,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RecommendationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -526,6 +537,84 @@
           },
           "404": {
             "description": "Unknown learning track",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tracks/{track_id}/recommendations/{recommendation_id}/events": {
+      "post": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Records one recommendation lifecycle event.",
+        "description": "Telemetry is auxiliary: the request succeeds even when the write fails, so it\ncan never block the learner.",
+        "operationId": "record_recommendation_event",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recommendation_id",
+            "in": "path",
+            "description": "Recommendation the event refers to.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Event disposition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationEventResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
             "content": {
               "application/json": {
                 "schema": {
@@ -1453,6 +1542,51 @@
           "unavailable"
         ]
       },
+      "DomainDiscoveryInput": {
+        "type": "object",
+        "description": "Raw discovery progress for one learning domain, as stored on the client.",
+        "required": [
+          "domain_id"
+        ],
+        "properties": {
+          "domain_id": {
+            "type": "string",
+            "description": "Domain identifier."
+          },
+          "revealed_element_ids": {
+            "type": "object",
+            "description": "Knowledge node id to prompt id to revealed discovery element ids.",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "propertyNames": {
+                "type": "string"
+              }
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "revealed_prompt_ids": {
+            "type": "object",
+            "description": "Knowledge node id to the prompt ids the learner has revealed.",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "DomainDto": {
         "type": "object",
         "description": "A content domain.",
@@ -2133,6 +2267,21 @@
           "mode": {
             "$ref": "#/components/schemas/QuizMode",
             "description": "Quiz mode deciding how the server selects questions."
+          },
+          "question_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Anchor question for `recommended_practice`. The server validates it\nbelongs to the certification version; it never trusts it as the whole\npractice set."
+          },
+          "recommendation_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Recommendation that produced this mission, when it was recommended.\nContext only, never an authorization key."
           },
           "task_id": {
             "type": [
@@ -2922,7 +3071,8 @@
           "quick_adaptive",
           "domain_quiz",
           "full_practice",
-          "task_practice"
+          "task_practice",
+          "recommended_practice"
         ]
       },
       "Recommendation": {
@@ -3003,6 +3153,75 @@
           }
         }
       },
+      "RecommendationEventKind": {
+        "type": "string",
+        "description": "A recommendation lifecycle stage.",
+        "enum": [
+          "shown",
+          "clicked",
+          "started",
+          "node_opened",
+          "completed"
+        ]
+      },
+      "RecommendationEventRequest": {
+        "type": "object",
+        "description": "One recommendation lifecycle event.",
+        "required": [
+          "event"
+        ],
+        "properties": {
+          "action": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlannerAction",
+                "description": "Planner action the recommendation had, when known."
+              }
+            ]
+          },
+          "domain_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Domain/topic, when known."
+          },
+          "event": {
+            "$ref": "#/components/schemas/RecommendationEventKind",
+            "description": "Lifecycle stage being reported."
+          },
+          "node_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Knowledge node, when known."
+          },
+          "question_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Question, when known."
+          }
+        }
+      },
+      "RecommendationEventResponse": {
+        "type": "object",
+        "description": "Result of recording a lifecycle event.\n\n`recorded` is `false` when the auxiliary write failed; the request still\nsucceeds because telemetry must never block learning.",
+        "required": [
+          "recorded"
+        ],
+        "properties": {
+          "recorded": {
+            "type": "boolean",
+            "description": "Whether the event was persisted."
+          }
+        }
+      },
       "RecommendationReason": {
         "type": "string",
         "description": "A stable, explainable reason code for a recommendation.",
@@ -3015,6 +3234,19 @@
           "domain_review",
           "strong_and_fresh"
         ]
+      },
+      "RecommendationRequest": {
+        "type": "object",
+        "description": "Request body for a recommendation.\n\nDiscovery progress is optional and best-effort: it lets the planner mirror\nthe Knowledge Map's exact unlock semantics. It is never learning evidence.",
+        "properties": {
+          "discovery": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDiscoveryInput"
+            },
+            "description": "Raw Knowledge Map discovery progress for the track, if available."
+          }
+        }
       },
       "RecommendationResponse": {
         "type": "object",
@@ -3030,6 +3262,14 @@
                 "description": "The chosen recommendation, or `null` when none is available."
               }
             ]
+          },
+          "recommendation_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Stable id for this recommendation, used by lifecycle telemetry. `null`\nonly when no recommendation was produced."
           }
         }
       },

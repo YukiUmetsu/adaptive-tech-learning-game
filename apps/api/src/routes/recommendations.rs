@@ -1,10 +1,16 @@
 use axum::Json;
-use axum::extract::rejection::PathRejection;
-use axum::extract::{Path, Query, State};
+use axum::extract::Path;
+use axum::extract::State;
+use axum::extract::rejection::{JsonRejection, PathRejection};
+use uuid::Uuid;
 
 use crate::auth::AuthenticatedUser;
-use crate::dto::RecommendationResponse;
+use crate::dto::{
+    RecommendationEventRequest, RecommendationEventResponse, RecommendationRequest,
+    RecommendationResponse,
+};
 use crate::error::{ApiError, ErrorResponse};
+use crate::routes::json_body;
 use crate::services;
 use crate::state::AppState;
 
@@ -16,16 +22,14 @@ pub struct RecommendationPath {
     pub track_id: String,
 }
 
-/// Optional client discovery progress for a recommendation.
-#[derive(Debug, Default, serde::Deserialize, utoipa::IntoParams)]
-#[into_params(parameter_in = Query)]
-pub struct RecommendationQuery {
-    /// Comma-separated knowledge-node ids the learner has already explored.
-    ///
-    /// Discovery progress lives on the client, so it is optional. When omitted
-    /// the planner falls back to accepted quiz evidence.
-    #[serde(default)]
-    pub explored_node_ids: Option<String>,
+/// Path parameters for a recommendation lifecycle event.
+#[derive(Debug, serde::Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Path)]
+pub struct RecommendationEventPath {
+    /// Learning track identifier.
+    pub track_id: String,
+    /// Recommendation the event refers to.
+    pub recommendation_id: Uuid,
 }
 
 /// Returns a best-effort next-action recommendation for a learning track.
@@ -34,57 +38,71 @@ pub struct RecommendationQuery {
 /// never gates the dashboard, knowledge maps, or quizzes, and it never creates
 /// learning evidence. Requires an authenticated account.
 #[utoipa::path(
-    get,
+    post,
     path = "/v1/tracks/{track_id}/recommendation",
     tag = "recommendations",
-    params(RecommendationPath, RecommendationQuery),
+    params(RecommendationPath),
+    request_body = RecommendationRequest,
     responses(
         (status = 200, description = "Next-action recommendation", body = RecommendationResponse),
+        (status = 400, description = "Malformed request", body = ErrorResponse),
         (status = 401, description = "Authentication required", body = ErrorResponse),
         (status = 404, description = "Unknown learning track", body = ErrorResponse)
     ),
     security(("bearerAuth" = []))
 )]
-pub async fn get_recommendation(
+pub async fn create_recommendation(
     State(state): State<AppState>,
     user: AuthenticatedUser,
     path: Result<Path<RecommendationPath>, PathRejection>,
-    Query(query): Query<RecommendationQuery>,
+    body: Result<Json<RecommendationRequest>, JsonRejection>,
 ) -> Result<Json<RecommendationResponse>, ApiError> {
     let Path(path) = path.map_err(|rejection| {
         ApiError::BadRequest(format!("invalid path parameter: {rejection}"))
     })?;
-    let explored = parse_explored_node_ids(query.explored_node_ids.as_deref());
+    let request = json_body(body)?;
 
     Ok(Json(
-        services::recommendation(&state, &user, &path.track_id, &explored).await?,
+        services::recommendation(&state, &user, &path.track_id, &request.discovery).await?,
     ))
 }
 
-/// Splits a comma-separated discovery list, ignoring blanks.
-fn parse_explored_node_ids(raw: Option<&str>) -> Vec<String> {
-    raw.map(|value| {
-        value
-            .split(',')
-            .map(str::trim)
-            .filter(|id| !id.is_empty())
-            .map(str::to_owned)
-            .collect()
-    })
-    .unwrap_or_default()
-}
+/// Records one recommendation lifecycle event.
+///
+/// Telemetry is auxiliary: the request succeeds even when the write fails, so it
+/// can never block the learner.
+#[utoipa::path(
+    post,
+    path = "/v1/tracks/{track_id}/recommendations/{recommendation_id}/events",
+    tag = "recommendations",
+    params(RecommendationEventPath),
+    request_body = RecommendationEventRequest,
+    responses(
+        (status = 200, description = "Event disposition", body = RecommendationEventResponse),
+        (status = 400, description = "Malformed request", body = ErrorResponse),
+        (status = 401, description = "Authentication required", body = ErrorResponse)
+    ),
+    security(("bearerAuth" = []))
+)]
+pub async fn record_recommendation_event(
+    State(state): State<AppState>,
+    user: AuthenticatedUser,
+    path: Result<Path<RecommendationEventPath>, PathRejection>,
+    body: Result<Json<RecommendationEventRequest>, JsonRejection>,
+) -> Result<Json<RecommendationEventResponse>, ApiError> {
+    let Path(path) = path.map_err(|rejection| {
+        ApiError::BadRequest(format!("invalid path parameter: {rejection}"))
+    })?;
+    let request = json_body(body)?;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn explored_node_ids_are_split_and_trimmed() {
-        assert_eq!(
-            parse_explored_node_ids(Some(" n1 , n2 ,, n3 ")),
-            vec!["n1".to_owned(), "n2".to_owned(), "n3".to_owned()]
-        );
-        assert!(parse_explored_node_ids(None).is_empty());
-        assert!(parse_explored_node_ids(Some("  ")).is_empty());
-    }
+    Ok(Json(
+        services::record_recommendation_event(
+            &state,
+            &user,
+            &path.track_id,
+            path.recommendation_id,
+            request,
+        )
+        .await,
+    ))
 }

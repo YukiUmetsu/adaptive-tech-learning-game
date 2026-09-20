@@ -65,3 +65,13 @@ export type RecommendationReason =
 export type Recommendation = components["schemas"]["Recommendation"];
 export type RecommendationResponse =
   components["schemas"]["RecommendationResponse"];
+export type RecommendationRequest =
+  components["schemas"]["RecommendationRequest"];
+export type RecommendationEventRequest =
+  components["schemas"]["RecommendationEventRequest"];
+export type RecommendationEventResponse =
+  components["schemas"]["RecommendationEventResponse"];
+export type RecommendationEventKind =
+  components["schemas"]["RecommendationEventKind"];
+export type DomainDiscoveryInput =
+  components["schemas"]["DomainDiscoveryInput"];

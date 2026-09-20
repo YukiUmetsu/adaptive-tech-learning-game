@@ -40,8 +40,6 @@ const WEIGHT_DOMAIN: f64 = 0.15;
 const WEIGHT_DIFFICULTY_FIT: f64 = 0.1;
 /// Bonus for a learning node the learner has never seen.
 const UNSEEN_BONUS: f64 = 0.1;
-/// Penalty for a learning node in a module whose prerequisites are unmet.
-const NOT_READY_PENALTY: f64 = 0.2;
 /// Small bonus for practice questions so ties prefer active retrieval.
 const PRACTICE_TIE_BONUS: f64 = 0.001;
 
@@ -185,8 +183,12 @@ pub struct PlannerInput {
     pub nodes: Vec<PlannerNode>,
     /// Questions available for practice.
     pub questions: Vec<PlannerQuestion>,
-    /// Node ids the learner has already explored (discovery progress), if known.
+    /// Node ids the learner has already explored (any reveal), if known.
     pub explored_node_ids: HashSet<String>,
+    /// Node ids whose required prompts are all complete, mirroring the map.
+    pub unlocked_node_ids: HashSet<String>,
+    /// Module ids whose every node is unlocked, mirroring the map.
+    pub completed_module_ids: HashSet<String>,
     /// Recently answered question ids, to avoid immediate repeats.
     pub recent_question_ids: HashSet<String>,
 }
@@ -449,7 +451,9 @@ impl<'a> Model<'a> {
     /// Whether a node has been fully explored. Discovery progress counts, and so
     /// does accepted quiz evidence for every concept the node teaches.
     fn node_explored(&self, node: &PlannerNode) -> bool {
-        if self.input.explored_node_ids.contains(&node.id) {
+        if self.input.explored_node_ids.contains(&node.id)
+            || self.input.unlocked_node_ids.contains(&node.id)
+        {
             return true;
         }
         !node.concept_ids.is_empty()
@@ -459,28 +463,34 @@ impl<'a> Model<'a> {
                 .all(|concept_id| self.summary(concept_id).explored)
     }
 
-    fn module_ready(&self, module_id: &str) -> bool {
-        if self.input.explored_node_ids.is_empty() {
-            // Without discovery progress every module is treated as available.
-            return true;
-        }
-        self.module_prereqs
-            .get(module_id)
-            .map(|prereqs| prereqs.iter().all(|id| self.module_touched(id)))
-            .unwrap_or(true)
+    /// Whether every required prompt on the node is complete in the map.
+    fn node_unlocked(&self, node: &PlannerNode) -> bool {
+        self.input.unlocked_node_ids.contains(&node.id)
     }
 
-    fn module_touched(&self, module_id: &str) -> bool {
-        self.nodes_by_module
+    /// Whether the Knowledge Map would show this node as available or in
+    /// progress, i.e. not `locked`.
+    ///
+    /// This intentionally mirrors the frontend rule exactly: the owning module
+    /// must be available (all prerequisite modules complete) and every node
+    /// prerequisite must be unlocked.
+    fn node_accessible(&self, node: &PlannerNode) -> bool {
+        self.module_ready(&node.module_id)
+            && node
+                .prerequisite_node_ids
+                .iter()
+                .all(|id| self.input.unlocked_node_ids.contains(id))
+    }
+
+    fn module_ready(&self, module_id: &str) -> bool {
+        self.module_prereqs
             .get(module_id)
-            .map(|nodes| {
-                nodes.iter().any(|index| {
-                    self.input
-                        .explored_node_ids
-                        .contains(&self.input.nodes[*index].id)
-                })
+            .map(|prereqs| {
+                prereqs
+                    .iter()
+                    .all(|id| self.input.completed_module_ids.contains(id))
             })
-            .unwrap_or(false)
+            .unwrap_or(true)
     }
 
     fn unmet_module_prereqs(&self, module_id: &str) -> Vec<String> {
@@ -489,20 +499,23 @@ impl<'a> Model<'a> {
             .map(|prereqs| {
                 prereqs
                     .iter()
-                    .filter(|id| !self.module_touched(id))
+                    .filter(|id| !self.input.completed_module_ids.contains(*id))
                     .cloned()
                     .collect()
             })
             .unwrap_or_default()
     }
 
-    /// Weakest node in a module, by average weakness then id.
+    /// Weakest learnable node in a module, by average weakness then id.
     fn weakest_node_in_module(&self, module_id: &str) -> Option<usize> {
         let indices = self.nodes_by_module.get(module_id)?;
         indices
             .iter()
             .copied()
-            .filter(|index| self.node_has_weak(&self.input.nodes[*index]))
+            .filter(|index| {
+                let node = &self.input.nodes[*index];
+                !self.node_unlocked(node) && self.node_accessible(node) && self.node_has_weak(node)
+            })
             .min_by(|a, b| {
                 let wa = self.node_avg_weakness(&self.input.nodes[*a]);
                 let wb = self.node_avg_weakness(&self.input.nodes[*b]);
@@ -697,10 +710,20 @@ fn prerequisite_first(model: &Model<'_>) -> Option<Recommendation> {
         }
 
         for prereq_id in &node.prerequisite_node_ids {
+            // The node-prerequisite rule only applies when the owning module is
+            // already available; otherwise the module rule below handles it.
+            if !model.module_ready(&node.module_id) {
+                break;
+            }
             let Some(index) = model.node_index.get(prereq_id) else {
                 continue;
             };
             let prereq = &model.input.nodes[*index];
+            // Never point at a node the map still shows as locked, and never
+            // re-teach a node whose prompts are already complete.
+            if model.node_unlocked(prereq) || !model.node_accessible(prereq) {
+                continue;
+            }
             let Some((prereq_concept, prereq_summary)) = model.weakest_node_concept(prereq) else {
                 continue;
             };
@@ -769,18 +792,19 @@ fn learn_node(model: &Model<'_>) -> Option<Recommendation> {
         .nodes
         .iter()
         .filter_map(|node| {
-            if model.node_explored(node) || !model.node_has_weak(node) {
+            if model.node_explored(node)
+                || !model.node_accessible(node)
+                || !model.node_has_weak(node)
+            {
                 return None;
             }
             let (_concept, summary) = model.weakest_node_concept(node)?;
             if summary.evidence_mass >= LITTLE_EVIDENCE_MASS {
                 return None;
             }
-            let ready = model.module_ready(&node.module_id);
             let score = model.node_avg_weakness(node)
                 + model.domain_weight(&node.domain_id) * WEIGHT_DOMAIN
-                + if summary.explored { 0.0 } else { UNSEEN_BONUS }
-                - if ready { 0.0 } else { NOT_READY_PENALTY };
+                + if summary.explored { 0.0 } else { UNSEEN_BONUS };
             Some(Candidate {
                 score,
                 action: PlannerAction::LearnNode,
@@ -840,7 +864,7 @@ fn review_node(model: &Model<'_>) -> Option<Recommendation> {
         .nodes
         .iter()
         .filter_map(|node| {
-            if node.concept_ids.is_empty() {
+            if node.concept_ids.is_empty() || !model.node_accessible(node) {
                 return None;
             }
             let summaries: Vec<ConceptSummary> = node
@@ -937,8 +961,7 @@ fn first_ready_node<'a>(model: &'a Model<'a>) -> Option<&'a PlannerNode> {
         .input
         .nodes
         .iter()
-        .find(|node| model.module_ready(&node.module_id))
-        .or_else(|| model.input.nodes.first())
+        .find(|node| model.node_accessible(node))
 }
 
 fn highest_weight_domain<'a>(model: &'a Model<'a>) -> Option<&'a PlannerDomain> {
@@ -1053,6 +1076,8 @@ mod tests {
             nodes,
             questions,
             explored_node_ids: HashSet::new(),
+            unlocked_node_ids: HashSet::new(),
+            completed_module_ids: HashSet::new(),
             recent_question_ids: HashSet::new(),
         }
     }
@@ -1381,5 +1406,129 @@ mod tests {
         assert_eq!(recommendation.track_id, "python-fluency");
         assert_eq!(recommendation.action, PlannerAction::LearnNode);
         assert_eq!(recommendation.reason, RecommendationReason::ColdStart);
+    }
+
+    fn with_module_prereqs(mut node: PlannerNode, prereqs: &[&str]) -> PlannerNode {
+        node.module_prerequisite_ids = prereqs.iter().map(|id| (*id).to_owned()).collect();
+        node
+    }
+
+    #[test]
+    fn untouched_prerequisite_module_blocks_its_dependent() {
+        let content = input(
+            vec![domain("domain-1", 1.0)],
+            vec![
+                node("n1", "domain-1", "m1", &["python.a"]),
+                with_module_prereqs(node("n2", "domain-1", "m2", &["python.b"]), &["m1"]),
+            ],
+            Vec::new(),
+            Vec::new(),
+        );
+
+        // Cold start: the only accessible node is in the root module.
+        let recommendation = recommend(&content).expect("recommendation");
+        assert_eq!(recommendation.node_id.as_deref(), Some("n1"));
+        assert_ne!(recommendation.node_id.as_deref(), Some("n2"));
+    }
+
+    #[test]
+    fn partially_completed_prerequisite_module_does_not_unlock_dependent() {
+        let mut content = input(
+            vec![domain("domain-1", 1.0)],
+            vec![
+                node("n1", "domain-1", "m1", &["python.a"]),
+                node("n2", "domain-1", "m1", &["python.b"]),
+                with_module_prereqs(node("n3", "domain-1", "m2", &["python.c"]), &["m1"]),
+            ],
+            Vec::new(),
+            Vec::new(),
+        );
+        // n1 is unlocked, but n2 is not, so m1 is not complete.
+        content.unlocked_node_ids.insert("n1".to_owned());
+
+        let recommendation = recommend(&content).expect("recommendation");
+        assert_eq!(recommendation.action, PlannerAction::LearnNode);
+        assert_ne!(recommendation.node_id.as_deref(), Some("n3"));
+        assert!(
+            matches!(recommendation.node_id.as_deref(), Some("n1" | "n2")),
+            "expected a node from the available module: {recommendation:?}"
+        );
+    }
+
+    #[test]
+    fn completed_prerequisite_module_unlocks_dependent() {
+        let mut content = input(
+            vec![domain("domain-1", 1.0)],
+            vec![
+                node("n1", "domain-1", "m1", &["python.a"]),
+                with_module_prereqs(node("n3", "domain-1", "m2", &["python.c"]), &["m1"]),
+            ],
+            Vec::new(),
+            vec![state("python.a", AssessmentMode::Recall, 0.95, 8.0, now())],
+        );
+        // Every node of m1 is unlocked, so m1 is complete.
+        content.unlocked_node_ids.insert("n1".to_owned());
+        content.completed_module_ids.insert("m1".to_owned());
+
+        let recommendation = recommend(&content).expect("recommendation");
+        assert_eq!(recommendation.node_id.as_deref(), Some("n3"));
+        assert_eq!(recommendation.reason, RecommendationReason::WeakConcept);
+    }
+
+    #[test]
+    fn planner_never_recommends_a_map_locked_node() {
+        let mut content = input(
+            vec![domain("domain-1", 1.0)],
+            vec![
+                node("n1", "domain-1", "m1", &["python.a"]),
+                with_module_prereqs(node("n2", "domain-1", "m2", &["python.b"]), &["m1"]),
+            ],
+            Vec::new(),
+            vec![
+                // The only weak concept lives in the locked dependent module.
+                state("python.a", AssessmentMode::Recall, 0.95, 8.0, now()),
+                state("python.b", AssessmentMode::Recall, 0.1, 1.0, now()),
+            ],
+        );
+        content.unlocked_node_ids.insert("n1".to_owned());
+
+        let recommendation = recommend(&content).expect("recommendation");
+        assert_ne!(
+            recommendation.node_id.as_deref(),
+            Some("n2"),
+            "a locked node must never be recommended: {recommendation:?}"
+        );
+        assert_eq!(recommendation.action, PlannerAction::PracticeDomain);
+    }
+
+    #[test]
+    fn node_prerequisite_must_be_unlocked_before_dependent() {
+        let mut content = input(
+            vec![domain("domain-1", 1.0)],
+            vec![node("n1", "domain-1", "m1", &["python.a"]), {
+                let mut dependent = node("n2", "domain-1", "m1", &["python.b"]);
+                dependent.prerequisite_node_ids = vec!["n1".to_owned()];
+                dependent
+            }],
+            Vec::new(),
+            Vec::new(),
+        );
+        // The map shows n2 locked because n1 is not unlocked yet.
+        content.explored_node_ids.insert("n1".to_owned());
+        // Some accepted evidence keeps this out of cold start.
+        content.states.push(state(
+            "python.other",
+            AssessmentMode::Recall,
+            0.95,
+            8.0,
+            now(),
+        ));
+
+        let recommendation = recommend(&content).expect("recommendation");
+        assert_eq!(recommendation.node_id.as_deref(), Some("n1"));
+        assert_eq!(
+            recommendation.reason,
+            RecommendationReason::WeakPrerequisite
+        );
     }
 }

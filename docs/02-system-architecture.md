@@ -160,7 +160,8 @@ Use **SQLx** for PostgreSQL. Keep SQL explicit and avoid a heavy ORM.
 POST /v1/missions/issue
 POST /v1/missions/:id/answers
 POST /v1/sync
-GET  /v1/tracks/:id/recommendation
+POST /v1/tracks/:id/recommendation
+POST /v1/tracks/:id/recommendations/:rid/events
 POST /v1/uploads/authorize
 POST /v1/gacha/roll
 POST /v1/game/action

@@ -209,11 +209,40 @@ modes stay distinct: a practice candidate is scored against the state for the
 question's own mode, so strength in recognition never hides weakness in
 application.
 
-The API exposes it as `GET /v1/tracks/{track_id}/recommendation`, optionally
-passing explored node ids. Recommendations are auxiliary and best-effort: the
-endpoint is never required for the dashboard, knowledge maps, or quizzes, and a
-recommendation-history write failure is ignored. Recommendations are not
-learning evidence and are never stored as such.
+### Discovery semantics match the Knowledge Map
+
+Raw client discovery progress is sent with the recommendation request
+(`POST /v1/tracks/{track_id}/recommendation`). The server derives unlocked nodes
+and completed modules with the same rules the frontend Knowledge Map uses
+(`crates/content/src/discovery.rs`): a module is available only when every
+prerequisite module is **complete** (every node unlocked), and a node is
+available only when its module is available and every node prerequisite is
+unlocked. The planner never targets a node the map still shows as locked.
+
+### Executing a recommendation
+
+- `learn_node` / `review_node` open the exact recommended Knowledge Node.
+- `practice_question` starts a focused `recommended_practice` mission. The
+  server validates the anchor question against canonical content, places it
+  first, and selects the related questions itself from authored concept overlap
+  (deterministic, repeat-aware). The client never supplies the related ids.
+- `practice_domain` starts the normal adaptive `domain_quiz`.
+
+Existing Quick Quiz, Domain Quiz, Full Practice, and Task Practice behavior is
+unchanged.
+
+### Lifecycle telemetry
+
+Each recommendation carries a stable `recommendation_id`. Generation is logged
+when the recommendation is computed; lifecycle stages (`shown`, `clicked`,
+`started`, `node_opened`, `completed`) are reported to
+`POST /v1/tracks/{track_id}/recommendations/{recommendation_id}/events`. A
+recommendation request is never treated as proof it was shown.
+
+All recommendation and telemetry persistence is auxiliary and best-effort. It
+never shares a transaction with learning-event persistence, and a failure can
+never block the dashboard, knowledge maps, quizzes, mission creation, answer
+submission, or sync. Only accepted, scored learning events change concept state.
 
 ## Plan explanation
 

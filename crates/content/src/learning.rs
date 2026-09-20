@@ -930,7 +930,7 @@ fn validate_progressive_reveal(
 /// - row mode: rows with at least one hidden cell
 /// - column mode: columns with at least one hidden cell
 /// - cell mode: every hidden cell
-fn progressive_reveal_units(
+pub(crate) fn progressive_reveal_units(
     progressive: &TableProgressiveReveal,
     columns: &[RevealTableColumn],
     rows: &[RevealTableRow],

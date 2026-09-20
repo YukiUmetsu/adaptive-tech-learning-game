@@ -205,6 +205,8 @@ pub enum QuizMode {
     FullPractice,
     /// A single task's questions (demo/internal).
     TaskPractice,
+    /// A short set anchored on one recommended question.
+    RecommendedPractice,
 }
 
 impl QuizMode {
@@ -215,6 +217,7 @@ impl QuizMode {
             Self::DomainQuiz => "domain_quiz",
             Self::FullPractice => "full_practice",
             Self::TaskPractice => "task_practice",
+            Self::RecommendedPractice => "recommended_practice",
         }
     }
 
@@ -230,6 +233,7 @@ impl QuizMode {
             Self::DomainQuiz => 120,
             Self::FullPractice => 180,
             Self::TaskPractice => 60,
+            Self::RecommendedPractice => 60,
         }
     }
 }
@@ -249,6 +253,7 @@ impl TryFrom<&str> for QuizMode {
             "domain_quiz" => Ok(Self::DomainQuiz),
             "full_practice" => Ok(Self::FullPractice),
             "task_practice" => Ok(Self::TaskPractice),
+            "recommended_practice" => Ok(Self::RecommendedPractice),
             _ => Err(DomainError::invalid("quiz_mode", "unknown quiz mode")),
         }
     }
@@ -272,6 +277,10 @@ pub struct MissionInstance {
     pub content_version: String,
     /// Quiz mode used to build the mission.
     pub mode: QuizMode,
+    /// Recommendation that started this mission, when it was recommended.
+    ///
+    /// Context only: it is never an ownership or authorization key.
+    pub recommendation_id: Option<Uuid>,
     /// Domain covered, when the mission is domain-scoped.
     pub domain_id: Option<String>,
     /// Task covered, when the mission is task-scoped.

@@ -11,6 +11,7 @@ import {
   isNodeUnlocked,
   isPromptComplete,
   loadDomainProgress,
+  loadTrackDiscovery,
   loadTrackExploredNodeIds,
   nodePromptProgress,
   revealElement,
@@ -528,5 +529,30 @@ describe("loadTrackExploredNodeIds", () => {
     revealPrompt("v1", "domain-1", "c1", "n-b", "p1");
     revealPrompt("v1", "domain-2", "c1", "n-a", "p1");
     expect(loadTrackExploredNodeIds("v1")).toEqual(["n-a", "n-b"]);
+  });
+});
+
+describe("loadTrackDiscovery", () => {
+  it("returns raw prompt and element progress for one track version", () => {
+    revealPrompt("v1", "domain-2", "c1", "n2", "p1");
+    revealElement("v1", "domain-1", "c1", "n1", "p1", elementId.row("r1"));
+    revealPrompt("v2", "domain-1", "c1", "n9", "p1");
+
+    expect(loadTrackDiscovery("v1")).toEqual([
+      {
+        domain_id: "domain-1",
+        revealed_prompt_ids: {},
+        revealed_element_ids: { n1: { p1: ["row:r1"] } },
+      },
+      {
+        domain_id: "domain-2",
+        revealed_prompt_ids: { n2: ["p1"] },
+        revealed_element_ids: {},
+      },
+    ]);
+  });
+
+  it("returns an empty list for an unknown track version", () => {
+    expect(loadTrackDiscovery("missing")).toEqual([]);
   });
 });

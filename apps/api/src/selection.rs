@@ -38,6 +38,8 @@ pub const QUICK_QUIZ_LEN: usize = 10;
 pub const DOMAIN_QUIZ_LEN: usize = 20;
 /// Questions in a Full Practice set.
 pub const FULL_PRACTICE_LEN: usize = 65;
+/// Questions in a focused recommended-practice set (anchor + related).
+pub const RECOMMENDED_PRACTICE_LEN: usize = 5;
 /// How many recent events are treated as "just practiced".
 const RECENT_WINDOW: usize = 12;
 /// Immediate-repeat penalty subtracted from a candidate's rank.
@@ -114,6 +116,7 @@ pub const fn target_len(mode: QuizMode) -> usize {
         QuizMode::DomainQuiz => DOMAIN_QUIZ_LEN,
         QuizMode::FullPractice => FULL_PRACTICE_LEN,
         QuizMode::TaskPractice => 0,
+        QuizMode::RecommendedPractice => RECOMMENDED_PRACTICE_LEN,
     }
 }
 
@@ -543,6 +546,9 @@ pub fn select(
             interleave(per_domain)
         }
         QuizMode::TaskPractice => Vec::new(),
+        // Recommended practice is anchored on a specific question and built by
+        // `recommended_practice`, not by the general selector.
+        QuizMode::RecommendedPractice => Vec::new(),
     }
 }
 
@@ -564,6 +570,74 @@ fn interleave(per_domain: Vec<(String, Vec<String>)>) -> Vec<String> {
         index += 1;
     }
     result
+}
+
+/// Builds a focused set anchored on a recommended question.
+///
+/// The anchor is always first. Related questions are chosen server-side from
+/// authored concept overlap (highest overlap first), with a small same-mode
+/// bonus and a penalty for recently practiced questions, then a stable
+/// question-id tie-break. The learner never supplies the related ids; only the
+/// anchor is validated by the caller.
+pub fn recommended_practice(
+    anchor: &Candidate,
+    candidates: &[Candidate],
+    history: &[HistoryEntry],
+    target: usize,
+) -> Vec<String> {
+    let mut selected = vec![anchor.id.clone()];
+    if target <= 1 {
+        return selected;
+    }
+
+    let summary = RecentHistory::build(history);
+    let anchor_concepts: HashSet<&str> = anchor
+        .concepts
+        .iter()
+        .map(|concept| concept.concept_id.as_str())
+        .collect();
+
+    let mut related: Vec<(&Candidate, f64)> = candidates
+        .iter()
+        .filter(|candidate| candidate.id != anchor.id)
+        .filter_map(|candidate| {
+            let shared: f64 = candidate
+                .concepts
+                .iter()
+                .filter(|concept| anchor_concepts.contains(concept.concept_id.as_str()))
+                .map(|concept| concept.weight.clamp(0.0, 1.0))
+                .sum();
+            if shared <= 0.0 {
+                return None;
+            }
+            let mode_bonus = if candidate.assessment_mode == anchor.assessment_mode {
+                0.1
+            } else {
+                0.0
+            };
+            let repeat = if summary.recently_practiced.contains(&candidate.id) {
+                REPEAT_PENALTY
+            } else {
+                0.0
+            };
+            Some((candidate, shared + mode_bonus - repeat))
+        })
+        .collect();
+
+    related.sort_by(|a, b| {
+        b.1.partial_cmp(&a.1)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.0.id.cmp(&b.0.id))
+    });
+
+    for (candidate, _) in related {
+        if selected.len() >= target {
+            break;
+        }
+        selected.push(candidate.id.clone());
+    }
+
+    selected
 }
 
 #[cfg(test)]
@@ -966,5 +1040,121 @@ mod tests {
             now(),
         );
         assert_eq!(selected.len(), 10);
+    }
+
+    fn weighted(
+        id: &str,
+        domain: &str,
+        task: &str,
+        interaction: InteractionType,
+        weights: &[(&str, f64)],
+    ) -> Candidate {
+        let mut candidate = candidate(id, domain, task, interaction, "unused");
+        candidate.concepts = weights
+            .iter()
+            .map(|(concept_id, weight)| ConceptWeight {
+                concept_id: (*concept_id).to_owned(),
+                weight: *weight,
+            })
+            .collect();
+        candidate
+    }
+
+    #[test]
+    fn recommended_practice_anchors_and_orders_by_concept_overlap() {
+        let anchor = weighted(
+            "anchor",
+            "d1",
+            "t1",
+            InteractionType::Ordering,
+            &[("d1.core", 1.0)],
+        );
+        let strong = weighted(
+            "strong",
+            "d1",
+            "t1",
+            InteractionType::Ordering,
+            &[("d1.core", 1.0)],
+        );
+        let weak = weighted(
+            "weak",
+            "d1",
+            "t1",
+            InteractionType::Classification,
+            &[("d1.core", 0.4)],
+        );
+        let unrelated = weighted(
+            "unrelated",
+            "d1",
+            "t1",
+            InteractionType::Classification,
+            &[("d1.other", 1.0)],
+        );
+
+        let selected = recommended_practice(&anchor, &[unrelated, weak, strong], &[], 3);
+        assert_eq!(selected, vec!["anchor", "strong", "weak"]);
+    }
+
+    #[test]
+    fn recommended_practice_is_deterministic_and_avoids_recent_repeats() {
+        let anchor = weighted(
+            "anchor",
+            "d1",
+            "t1",
+            InteractionType::Ordering,
+            &[("d1.core", 1.0)],
+        );
+        let recent = weighted(
+            "recent",
+            "d1",
+            "t1",
+            InteractionType::Ordering,
+            &[("d1.core", 1.0)],
+        );
+        let fresh = weighted(
+            "fresh",
+            "d1",
+            "t1",
+            InteractionType::Ordering,
+            &[("d1.core", 0.5)],
+        );
+        let history = vec![HistoryEntry {
+            question_id: "recent".to_owned(),
+            score: 0.0,
+            assessment_mode: AssessmentMode::Application,
+            occurred_at: now(),
+            concepts: vec![ConceptWeight {
+                concept_id: "d1.core".to_owned(),
+                weight: 1.0,
+            }],
+        }];
+
+        let candidates = [recent.clone(), fresh.clone()];
+        let first = recommended_practice(&anchor, &candidates, &history, 2);
+        let second = recommended_practice(&anchor, &candidates, &history, 2);
+        assert_eq!(first, second);
+        assert_eq!(first, vec!["anchor", "fresh"]);
+    }
+
+    #[test]
+    fn recommended_practice_returns_only_the_anchor_without_related_content() {
+        let anchor = weighted(
+            "anchor",
+            "d1",
+            "t1",
+            InteractionType::Ordering,
+            &[("d1.core", 1.0)],
+        );
+        let unrelated = weighted(
+            "unrelated",
+            "d1",
+            "t1",
+            InteractionType::Classification,
+            &[("d1.other", 1.0)],
+        );
+        assert_eq!(
+            recommended_practice(&anchor, &[unrelated], &[], 5),
+            vec!["anchor"]
+        );
     }
 }

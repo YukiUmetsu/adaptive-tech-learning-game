@@ -102,15 +102,26 @@ Exit: scheduler selects plausible sessions and is evaluated separately from the 
 
 > Phase 4 implementation note: an optional, deterministic planner V1 ships early
 > as a pure `PlannerInput -> Recommendation` function (`apps/api/src/planner.rs`)
-> exposed at `GET /v1/tracks/{track_id}/recommendation`. It recommends
+> exposed at `POST /v1/tracks/{track_id}/recommendation`. It recommends
 > `learn_node`, `review_node`, `practice_question`, or `practice_domain` with a
 > stable reason code, using concept state, difficulties, prerequisites, and
-> optional client discovery progress. It is track-agnostic and works for
-> non-certification Learning Tracks. It remains a heuristic: exam-date goals,
-> availability constraints, the full "why this plan?" surface, alternatives,
-> overrides, and separate teaching-policy evaluation are still to come. The
-> recommendation is auxiliary — never required for the dashboard, knowledge
-> maps, or quizzes — and recommendation history is not learning evidence.
+> optional client discovery progress. Discovery is derived server-side with the
+> exact Knowledge Map rules, so a module prerequisite is satisfied only when the
+> module is complete. It is track-agnostic and works for non-certification
+> Learning Tracks.
+>
+> Recommendations now execute: `learn_node`/`review_node` open the exact node,
+> `practice_question` starts a server-built `recommended_practice` mission that
+> guarantees the anchor question, and `practice_domain` starts a domain quiz.
+> A recommendation carries a stable `recommendation_id`, and lifecycle stages
+> (`shown`, `clicked`, `started`, `node_opened`, `completed`) are recorded as
+> auxiliary telemetry. A recommendation request is not treated as "shown", and
+> telemetry is never learning evidence.
+>
+> It remains a heuristic: exam-date goals, availability constraints, the full
+> "why this plan?" surface, alternatives, overrides, and separate teaching-policy
+> evaluation are still to come. Recommendation and telemetry failures never block
+> the dashboard, knowledge maps, quizzes, missions, or sync.
 
 ## Phase 5 — Economy
 

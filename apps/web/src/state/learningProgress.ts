@@ -1,4 +1,5 @@
 import type {
+  DomainDiscoveryInput,
   KnowledgeNode,
   KnowledgePrompt,
   LearningDomainResponse,
@@ -324,6 +325,31 @@ export function loadTrackExploredNodeIds(certificationVersion: string): string[]
     }
   }
   return [...explored].sort();
+}
+
+/**
+ * Raw discovery progress for every domain of a track version.
+ *
+ * This is the best-effort payload sent with a recommendation request. The server
+ * derives unlocked nodes and completed modules itself, so the planner and the
+ * Knowledge Map share one rule set. Unknown or stale keys are ignored.
+ */
+export function loadTrackDiscovery(
+  certificationVersion: string,
+): DomainDiscoveryInput[] {
+  const prefix = `${certificationVersion}::`;
+  const domains: DomainDiscoveryInput[] = [];
+  for (const [key, domain] of Object.entries(readStore().domains)) {
+    if (!key.startsWith(prefix)) {
+      continue;
+    }
+    domains.push({
+      domain_id: domain.domainId,
+      revealed_prompt_ids: { ...domain.revealedPromptIds },
+      revealed_element_ids: { ...domain.revealedElementIds },
+    });
+  }
+  return domains.sort((a, b) => a.domain_id.localeCompare(b.domain_id));
 }
 
 const EMPTY_REVEALS: string[] = [];

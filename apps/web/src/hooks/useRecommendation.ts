@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../api/client";
-import type { Recommendation } from "../api/types";
+import type { DomainDiscoveryInput, Recommendation } from "../api/types";
 
 export type RecommendationState =
   | { status: "idle" }
-  | { status: "loaded"; data: Recommendation | null }
+  | {
+      status: "loaded";
+      recommendation: Recommendation | null;
+      recommendationId: string | null;
+    }
   | { status: "error" };
 
 interface UseRecommendationOptions {
@@ -13,8 +17,8 @@ interface UseRecommendationOptions {
   trackId: string | undefined;
   /** Whether the learner is authenticated and the feature should load. */
   enabled: boolean;
-  /** Knowledge-node ids the learner has already explored locally. */
-  exploredNodeIds?: string[];
+  /** Raw Knowledge Map discovery progress for the track, if available. */
+  discovery?: DomainDiscoveryInput[];
 }
 
 /**
@@ -22,14 +26,16 @@ interface UseRecommendationOptions {
  *
  * This is best-effort auxiliary data. It never throws into the page, never
  * blocks the dashboard, and never participates in a required loading chain: any
- * failure resolves to an `error` state that callers hide.
+ * failure resolves to an `error` state that callers hide. A successful request
+ * is not proof the learner saw anything; `shown` is reported separately.
  */
 export function useRecommendation({
   trackId,
   enabled,
-  exploredNodeIds = [],
+  discovery = [],
 }: UseRecommendationOptions) {
-  const exploredKey = exploredNodeIds.join(",");
+  // Serialize so the effect only reruns when the discovery payload changes.
+  const discoveryKey = useMemo(() => JSON.stringify(discovery), [discovery]);
   const [state, setState] = useState<RecommendationState>({ status: "idle" });
   // Guards against an out-of-order response overwriting a newer request.
   const requestRef = useRef(0);
@@ -42,18 +48,21 @@ export function useRecommendation({
 
     const requestId = requestRef.current + 1;
     requestRef.current = requestId;
+    const payload = JSON.parse(discoveryKey) as DomainDiscoveryInput[];
     try {
-      const result = await api.GET("/v1/tracks/{track_id}/recommendation", {
-        params: {
-          path: { track_id: trackId },
-          query: exploredKey ? { explored_node_ids: exploredKey } : undefined,
-        },
+      const result = await api.POST("/v1/tracks/{track_id}/recommendation", {
+        params: { path: { track_id: trackId } },
+        body: { discovery: payload },
       });
       if (requestId !== requestRef.current) {
         return;
       }
       if (result.data) {
-        setState({ status: "loaded", data: result.data.recommendation ?? null });
+        setState({
+          status: "loaded",
+          recommendation: result.data.recommendation ?? null,
+          recommendationId: result.data.recommendation_id ?? null,
+        });
       } else {
         setState({ status: "error" });
       }
@@ -64,7 +73,7 @@ export function useRecommendation({
       // Optional data: swallow the failure so the page renders normally.
       setState({ status: "error" });
     }
-  }, [enabled, trackId, exploredKey]);
+  }, [enabled, trackId, discoveryKey]);
 
   useEffect(() => {
     void load();

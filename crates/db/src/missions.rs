@@ -15,6 +15,7 @@ struct MissionRow {
     certification_version: String,
     content_version: String,
     mode: String,
+    recommendation_id: Option<Uuid>,
     domain_id: Option<String>,
     task_id: Option<String>,
     question_ids: Json<Vec<String>>,
@@ -36,6 +37,7 @@ impl TryFrom<MissionRow> for MissionInstance {
             certification_version: row.certification_version,
             content_version: row.content_version,
             mode: QuizMode::try_from(row.mode.as_str())?,
+            recommendation_id: row.recommendation_id,
             domain_id: row.domain_id,
             task_id: row.task_id,
             question_ids: row.question_ids.0,
@@ -52,10 +54,10 @@ pub async fn insert(pool: &PgPool, mission: &MissionInstance) -> Result<MissionI
     let row = sqlx::query_as::<_, MissionRow>(
         "INSERT INTO mission_instances
             (id, user_id, device_id, certification_id, certification_version, content_version,
-             mode, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+             mode, recommendation_id, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
          RETURNING id, user_id, device_id, certification_id, certification_version, content_version,
-                   mode, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at",
+                   mode, recommendation_id, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at",
     )
     .bind(mission.id)
     .bind(mission.user_id)
@@ -64,6 +66,7 @@ pub async fn insert(pool: &PgPool, mission: &MissionInstance) -> Result<MissionI
     .bind(&mission.certification_version)
     .bind(&mission.content_version)
     .bind(mission.mode.as_str())
+    .bind(mission.recommendation_id)
     .bind(mission.domain_id.as_deref())
     .bind(mission.task_id.as_deref())
     .bind(Json(&mission.question_ids))
@@ -81,7 +84,7 @@ pub async fn insert(pool: &PgPool, mission: &MissionInstance) -> Result<MissionI
 pub async fn find_by_id(pool: &PgPool, id: Uuid) -> Result<Option<MissionInstance>, DbError> {
     let row = sqlx::query_as::<_, MissionRow>(
         "SELECT id, user_id, device_id, certification_id, certification_version, content_version,
-                mode, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at
+                mode, recommendation_id, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at
          FROM mission_instances
          WHERE id = $1",
     )
@@ -119,7 +122,7 @@ pub async fn mark_completed(
          SET status = 'completed', completed_at = now()
          WHERE id = $1 AND user_id = $2
          RETURNING id, user_id, device_id, certification_id, certification_version, content_version,
-                   mode, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at",
+                   mode, recommendation_id, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at",
     )
     .bind(id)
     .bind(user_id)
@@ -144,7 +147,7 @@ pub async fn mark_completed_anonymous_device(
          SET status = 'completed', completed_at = now()
          WHERE id = $1 AND user_id IS NULL AND device_id = $2
          RETURNING id, user_id, device_id, certification_id, certification_version, content_version,
-                   mode, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at",
+                   mode, recommendation_id, domain_id, task_id, question_ids, status, issued_at, expires_at, completed_at",
     )
     .bind(id)
     .bind(device_id)

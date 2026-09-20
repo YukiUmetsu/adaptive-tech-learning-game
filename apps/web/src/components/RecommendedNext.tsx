@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import type { RecommendationReason } from "../api/types";
 import { useRecommendation } from "../hooks/useRecommendation";
-import { loadTrackExploredNodeIds } from "../state/learningProgress";
+import { loadTrackDiscovery } from "../state/learningProgress";
 import { startMission } from "../state/mission";
+import { reportRecommendationEvent } from "../state/recommendation";
 
 interface RecommendedNextProps {
   /** Learning track identifier. */
@@ -32,32 +33,83 @@ const REASON_LABELS: Record<RecommendationReason, string> = {
  * planner has nothing to suggest, this renders nothing. It never blocks the
  * dashboard, knowledge maps, or quizzes, and a failed practice launch is shown
  * inline rather than as a page error.
+ *
+ * Lifecycle reporting is best-effort and never treated as learning evidence.
  */
 export default function RecommendedNext({
   trackId,
   trackVersion,
   enabled,
 }: RecommendedNextProps) {
-  const exploredNodeIds = useMemo(
-    () => (enabled ? loadTrackExploredNodeIds(trackVersion) : []),
+  const discovery = useMemo(
+    () => (enabled ? loadTrackDiscovery(trackVersion) : []),
     [enabled, trackVersion],
   );
-  const { state } = useRecommendation({ trackId, enabled, exploredNodeIds });
+  const { state } = useRecommendation({ trackId, enabled, discovery });
   const navigate = useNavigate();
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Report "shown" once per recommendation id; a GET is not proof of showing.
+  const shownRef = useRef<string | null>(null);
 
-  if (state.status !== "loaded" || !state.data) {
+  const recommendationId =
+    state.status === "loaded" ? state.recommendationId : null;
+  const recommendation =
+    state.status === "loaded" ? state.recommendation : null;
+
+  useEffect(() => {
+    if (!recommendation || !recommendationId || shownRef.current === recommendationId) {
+      return;
+    }
+    shownRef.current = recommendationId;
+    void reportRecommendationEvent({
+      trackId,
+      recommendationId,
+      event: "shown",
+      action: recommendation.action,
+      domainId: recommendation.domain_id,
+      nodeId: recommendation.node_id,
+      questionId: recommendation.question_id,
+    });
+  }, [recommendation, recommendationId, trackId]);
+
+  if (!recommendation) {
     return null;
   }
 
-  const recommendation = state.data;
   const opensMap =
     recommendation.action === "learn_node" ||
     recommendation.action === "review_node";
 
+  const reportClicked = () => {
+    if (!recommendationId) {
+      return;
+    }
+    void reportRecommendationEvent({
+      trackId,
+      recommendationId,
+      event: "clicked",
+      action: recommendation.action,
+      domainId: recommendation.domain_id,
+      nodeId: recommendation.node_id,
+      questionId: recommendation.question_id,
+    });
+  };
+
   const start = async () => {
+    reportClicked();
+
     if (opensMap) {
+      if (recommendationId) {
+        void reportRecommendationEvent({
+          trackId,
+          recommendationId,
+          event: "node_opened",
+          action: recommendation.action,
+          domainId: recommendation.domain_id,
+          nodeId: recommendation.node_id,
+        });
+      }
       const search = recommendation.node_id
         ? `?node=${encodeURIComponent(recommendation.node_id)}`
         : "";
@@ -70,12 +122,30 @@ export default function RecommendedNext({
     setStarting(true);
     setError(null);
     try {
-      const mission = await startMission({
-        certificationId: trackId,
-        certificationVersion: trackVersion,
-        mode: "domain_quiz",
-        domainId: recommendation.domain_id,
-      });
+      // A recommended question uses the focused recommended-practice mission so
+      // the exact question is guaranteed to be practiced. If no anchor is
+      // available, fall back to a domain quiz rather than failing.
+      const useRecommendedQuestion =
+        recommendation.action === "practice_question" &&
+        recommendation.question_id != null;
+
+      const mission = await startMission(
+        useRecommendedQuestion
+          ? {
+              certificationId: trackId,
+              certificationVersion: trackVersion,
+              mode: "recommended_practice",
+              questionId: recommendation.question_id ?? undefined,
+              recommendationId: recommendationId ?? undefined,
+            }
+          : {
+              certificationId: trackId,
+              certificationVersion: trackVersion,
+              mode: "domain_quiz",
+              domainId: recommendation.domain_id,
+              recommendationId: recommendationId ?? undefined,
+            },
+      );
       navigate(`/missions/${mission.id}`);
     } catch (caught) {
       setError(
