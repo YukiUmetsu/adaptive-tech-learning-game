@@ -11,12 +11,14 @@ import { prefersReducedMotion } from "../lib/motion";
 import {
   deriveLearningState,
   loadDomainProgress,
+  mergeServerDiscovery,
   nextModuleAfter,
   revealElement as revealElementInProgress,
   revealPrompt,
   type DomainLearningProgress,
 } from "../state/learningProgress";
 import { startMission } from "../state/mission";
+import { loadServerDiscovery } from "../state/syncAuxiliary";
 import {
   playModuleComplete,
   playNodeUnlock,
@@ -78,6 +80,30 @@ export default function DomainLearningPage() {
     setSelectedNodeId(null);
     setModuleCelebration(null);
     setJustUnlockedNodeId(null);
+  }, [data]);
+
+  // Local-first: the map is already rendered from localStorage above. Merge any
+  // server-persisted discovery asynchronously; a failure is ignored and the map
+  // keeps working from local progress.
+  useEffect(() => {
+    if (!data) {
+      return;
+    }
+    let cancelled = false;
+    void loadServerDiscovery(data.certification_id).then((server) => {
+      if (cancelled || !server) {
+        return;
+      }
+      mergeServerDiscovery(
+        data.certification_version,
+        data.content_version,
+        server,
+      );
+      setProgress(loadDomainProgress(data.certification_version, data.domain.id));
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [data]);
 
   const derived = useMemo(

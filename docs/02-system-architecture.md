@@ -140,6 +140,29 @@ Rules:
 | inventory | server transaction |
 | campaign progress | monotonic/validated merge |
 | preferences | optimistic last-write with version |
+| discovery progress | monotonic set-union (never removes a reveal) |
+
+### Batched auxiliary state
+
+Discovery persistence, recommendation lifecycle telemetry, and other auxiliary
+events share the existing `POST /v1/sync` request instead of adding one request
+per reveal or per event:
+
+```json
+{
+  "events": ["authoritative scored attempts"],
+  "discovery_updates": ["optional Knowledge Map deltas"],
+  "auxiliary_events": ["optional recommendation telemetry"]
+}
+```
+
+Each section has its own disposition. The authoritative `events` section commits
+first; the optional sections are processed separately and are **not** placed in
+one atomic transaction. A failure in an auxiliary section never rejects or rolls
+back accepted learning events, and the client retains only the failed auxiliary
+work for a later retry. Auxiliary work is flushed at natural boundaries
+(dashboard open, mission sync, Daily Mission transitions, returning online) with
+no polling timer.
 
 ## API
 
@@ -160,6 +183,7 @@ Use **SQLx** for PostgreSQL. Keep SQL explicit and avoid a heavy ORM.
 POST /v1/missions/issue
 POST /v1/missions/:id/answers
 POST /v1/sync
+GET  /v1/tracks/:id/discovery
 POST /v1/tracks/:id/recommendation
 POST /v1/tracks/:id/recommendations/:rid/events
 POST /v1/tracks/:id/session

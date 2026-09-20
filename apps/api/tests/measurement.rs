@@ -131,6 +131,7 @@ async fn sync_event(
     subject: &str,
     device: Uuid,
     mission_id: Uuid,
+    content_version: &str,
     question: &Question,
     answer: Value,
 ) -> Value {
@@ -145,7 +146,7 @@ async fn sync_event(
                 "event_id": Uuid::new_v4(),
                 "mission_instance_id": mission_id,
                 "question_id": question.id,
-                "content_version": question.content_version,
+                "content_version": content_version,
                 "attempt_number": 1,
                 "hint_count": 0,
                 "response_ms": 1500,
@@ -222,6 +223,9 @@ async fn prediction_is_immutable_and_links_one_outcome() {
         &subject,
         device,
         mission_id,
+        mission["content_version"]
+            .as_str()
+            .expect("content version"),
         &question,
         correct_answer(&question),
     )
@@ -300,6 +304,9 @@ async fn repeated_attempts_are_distinguishable() {
         &subject,
         device,
         mission_id,
+        mission["content_version"]
+            .as_str()
+            .expect("content version"),
         &question,
         wrong_answer(&question),
     )
@@ -309,6 +316,9 @@ async fn repeated_attempts_are_distinguishable() {
         &subject,
         device,
         mission_id,
+        mission["content_version"]
+            .as_str()
+            .expect("content version"),
         &question,
         correct_answer(&question),
     )
@@ -343,6 +353,9 @@ async fn internal_model_evaluation_reports_calibration() {
         &subject,
         device,
         mission_id,
+        mission["content_version"]
+            .as_str()
+            .expect("content version"),
         &question,
         correct_answer(&question),
     )

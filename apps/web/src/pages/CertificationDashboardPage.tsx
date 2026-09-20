@@ -10,6 +10,7 @@ import { useCatalog } from "../hooks/useCatalog";
 import { certificationQuestionCount, domainQuestionCount } from "../state/demo";
 import { startMission } from "../state/mission";
 import { loadMission } from "../state/persistence";
+import { flushAuxiliary } from "../state/syncAuxiliary";
 import {
   DOMAIN_QUIZ,
   FULL_PRACTICE,
@@ -37,6 +38,12 @@ export default function CertificationDashboardPage() {
 
   useEffect(() => {
     void refreshWallet();
+  }, []);
+
+  // Opening the dashboard is a natural synchronization boundary: flush any
+  // queued discovery/telemetry in one request. Best-effort and non-blocking.
+  useEffect(() => {
+    void flushAuxiliary();
   }, []);
 
   if (state.status === "loading") {

@@ -210,8 +210,12 @@ pub struct QuestionPrediction {
 /// Predicts one question's score from pre-answer concept state.
 ///
 /// Aggregation is deterministic: the predicted score is the authored-weight
-/// average of the mode-specific concept estimates. A concept with no state in
-/// the question's assessment mode contributes the neutral prior, which keeps
+/// average of each concept's *current expected performance*. For a concept with
+/// stored state that is `estimate * retrievability`, so a concept the learner is
+/// likely to have forgotten is predicted lower than its stored estimate. This is
+/// the `heuristic-v1` forgetting behavior applied at read time; the stored
+/// concept state is never mutated by evaluation. A concept with no state in the
+/// question's assessment mode contributes the neutral prior, which keeps
 /// recognition and recall evidence separate. Only information available before
 /// the answer is read.
 pub fn predict_question(
@@ -260,8 +264,12 @@ pub fn predict_question(
             seconds_since = Some(seconds_since.map_or(elapsed, |current| current.min(elapsed)));
         }
 
+        // Expected performance now: a forgotten concept is less likely to be
+        // retrieved, so decay is applied to the stored estimate rather than
+        // reporting the pre-forgetting estimate as the prediction.
+        let expected_now = (estimate * retrieval).clamp(0.0, 1.0);
         weight_sum += weight;
-        weighted_estimate += weight * estimate;
+        weighted_estimate += weight * expected_now;
         detail.push(ConceptPrediction {
             concept_id: concept.concept_id.clone(),
             weight,
@@ -361,18 +369,41 @@ mod tests {
                 weight: 0.25,
             },
         ];
-        let states = vec![
-            state("a", AssessmentMode::Recall, 0.9, 6.0),
-            state("b", AssessmentMode::Recognition, 0.1, 6.0),
-        ];
+        let state_a = state("a", AssessmentMode::Recall, 0.9, 6.0);
+        let retrieval_a = retrievability(state_a.evidence_mass, state_a.last_practiced_at, now());
+        let states = vec![state_a, state("b", AssessmentMode::Recognition, 0.1, 6.0)];
 
         // In recall, only `a` has mode-specific evidence; `b` falls back to prior.
         let recall = predict_question(&concepts, AssessmentMode::Recall, &states, now());
-        let expected = 0.75 * 0.9 + 0.25 * PRIOR_ESTIMATE;
+        // `a` is stale, so its expected performance now is decayed from 0.9.
+        let expected = 0.75 * 0.9 * retrieval_a + 0.25 * PRIOR_ESTIMATE;
         assert!((recall.predicted_score - expected).abs() < 1e-9);
         assert_eq!(recall.concepts.len(), 2);
+        assert_eq!(recall.concepts[0].estimate, 0.9);
+        assert!(recall.concepts[0].retrievability < 1.0);
         assert_eq!(recall.concepts[1].estimate, PRIOR_ESTIMATE);
         assert!(recall.seconds_since_previous_practice.is_some());
+    }
+
+    #[test]
+    fn prediction_reflects_current_retrievability() {
+        let concepts = vec![ConceptWeight {
+            concept_id: "a".to_owned(),
+            weight: 1.0,
+        }];
+        let mut fresh = state("a", AssessmentMode::Recall, 0.9, 6.0);
+        fresh.last_practiced_at = Some(now());
+        let mut stale = state("a", AssessmentMode::Recall, 0.9, 6.0);
+        stale.last_practiced_at = Some(now() - chrono::Duration::days(120));
+
+        let fresh_prediction = predict_question(&concepts, AssessmentMode::Recall, &[fresh], now());
+        let stale_prediction = predict_question(&concepts, AssessmentMode::Recall, &[stale], now());
+
+        // Same stored estimate, but the stale concept is predicted lower.
+        assert!(fresh_prediction.predicted_score > stale_prediction.predicted_score);
+        assert!((fresh_prediction.predicted_score - 0.9).abs() < 1e-9);
+        assert!(stale_prediction.predicted_score < 0.9);
+        assert!(stale_prediction.predicted_score >= 0.0);
     }
 
     #[test]

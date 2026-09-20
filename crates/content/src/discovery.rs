@@ -44,6 +44,79 @@ pub struct DomainDiscoveryState {
     pub completed_module_ids: HashSet<String>,
 }
 
+/// Merges two discovery inputs with monotonic set-union semantics.
+///
+/// Discovery is append-only: every revealed prompt and element present in either
+/// input is present in the result, so an older device sending stale state can
+/// never remove a newer reveal. Duplicate ids collapse, which makes repeated
+/// batches idempotent. The domain id comes from `base` when it is non-empty,
+/// otherwise from `incoming`.
+pub fn merge_domain_discovery(
+    base: &DomainDiscoveryInput,
+    incoming: &DomainDiscoveryInput,
+) -> DomainDiscoveryInput {
+    let domain_id = if base.domain_id.is_empty() {
+        incoming.domain_id.clone()
+    } else {
+        base.domain_id.clone()
+    };
+
+    DomainDiscoveryInput {
+        domain_id,
+        revealed_prompt_ids: merge_prompt_maps(
+            &base.revealed_prompt_ids,
+            &incoming.revealed_prompt_ids,
+        ),
+        revealed_element_ids: merge_element_maps(
+            &base.revealed_element_ids,
+            &incoming.revealed_element_ids,
+        ),
+    }
+}
+
+/// Unions two `node -> prompt ids` maps, sorting each id list for determinism.
+fn merge_prompt_maps(
+    base: &BTreeMap<String, Vec<String>>,
+    incoming: &BTreeMap<String, Vec<String>>,
+) -> BTreeMap<String, Vec<String>> {
+    let mut merged = base.clone();
+    for (node_id, ids) in incoming {
+        let entry = merged.entry(node_id.clone()).or_default();
+        entry.extend(ids.iter().cloned());
+        entry.sort();
+        entry.dedup();
+    }
+    for ids in merged.values_mut() {
+        ids.sort();
+        ids.dedup();
+    }
+    merged
+}
+
+/// Unions two `node -> prompt -> element ids` maps, sorting each id list.
+fn merge_element_maps(
+    base: &BTreeMap<String, BTreeMap<String, Vec<String>>>,
+    incoming: &BTreeMap<String, BTreeMap<String, Vec<String>>>,
+) -> BTreeMap<String, BTreeMap<String, Vec<String>>> {
+    let mut merged = base.clone();
+    for (node_id, prompts) in incoming {
+        let node = merged.entry(node_id.clone()).or_default();
+        for (prompt_id, ids) in prompts {
+            let entry = node.entry(prompt_id.clone()).or_default();
+            entry.extend(ids.iter().cloned());
+            entry.sort();
+            entry.dedup();
+        }
+    }
+    for prompts in merged.values_mut() {
+        for ids in prompts.values_mut() {
+            ids.sort();
+            ids.dedup();
+        }
+    }
+    merged
+}
+
 /// Derives explored/unlocked nodes and completed modules for a domain.
 ///
 /// Unknown node, prompt, or element ids are ignored, so stale progress recorded
@@ -467,5 +540,84 @@ mod tests {
             derive_domain_discovery(&domain, &input(&[("n1", &["p1"]), ("n2", &["p2"])], &[]));
         assert!(both.completed_module_ids.contains("m1"));
         assert_eq!(both.unlocked_node_ids.len(), 2);
+    }
+
+    #[test]
+    fn merge_is_a_monotonic_set_union() {
+        let older = input(
+            &[("n1", &["p1"]), ("n2", &["p1"])],
+            &[("n1", "p1", &["annotation:a1"])],
+        );
+        let newer = input(
+            &[("n1", &["p1", "p2"]), ("n3", &["p1"])],
+            &[
+                ("n1", "p1", &["annotation:a1", "annotation:a2"]),
+                ("n2", "p1", &["cell:r1:c1"]),
+            ],
+        );
+
+        // Order must not matter: union is commutative.
+        let forward = merge_domain_discovery(&older, &newer);
+        let backward = merge_domain_discovery(&newer, &older);
+        assert_eq!(forward, backward);
+
+        // Older state can never remove a newer reveal.
+        let stale = input(&[("n1", &["p1"])], &[]);
+        let merged = merge_domain_discovery(&newer, &stale);
+        assert_eq!(merged.revealed_prompt_ids["n1"], vec!["p1", "p2"]);
+        assert_eq!(
+            merged.revealed_element_ids["n1"]["p1"],
+            vec!["annotation:a1", "annotation:a2"]
+        );
+        assert_eq!(merged.revealed_prompt_ids["n3"], vec!["p1"]);
+    }
+
+    #[test]
+    fn merge_deduplicates_repeated_ids() {
+        let once = input(&[("n1", &["p1"])], &[("n1", "p1", &["annotation:a1"])]);
+        let duplicated = input(
+            &[("n1", &["p1", "p1"])],
+            &[("n1", "p1", &["annotation:a1", "annotation:a1"])],
+        );
+
+        let merged = merge_domain_discovery(&once, &duplicated);
+        assert_eq!(merged.revealed_prompt_ids["n1"], vec!["p1"]);
+        assert_eq!(
+            merged.revealed_element_ids["n1"]["p1"],
+            vec!["annotation:a1"]
+        );
+    }
+
+    #[test]
+    fn merged_discovery_derives_the_same_state_as_the_union() {
+        let domain = domain(vec![module(
+            "m1",
+            &[],
+            vec![node(
+                "n1",
+                vec![
+                    prompt(
+                        "p1",
+                        LearningReveal::Text {
+                            text: "x".to_owned(),
+                        },
+                    ),
+                    prompt(
+                        "p2",
+                        LearningReveal::Text {
+                            text: "y".to_owned(),
+                        },
+                    ),
+                ],
+            )],
+        )]);
+
+        let device_a = input(&[("n1", &["p1"])], &[]);
+        let device_b = input(&[("n1", &["p2"])], &[]);
+        let merged = merge_domain_discovery(&device_a, &device_b);
+        let state = derive_domain_discovery(&domain, &merged);
+
+        assert!(state.unlocked_node_ids.contains("n1"));
+        assert!(state.completed_module_ids.contains("m1"));
     }
 }

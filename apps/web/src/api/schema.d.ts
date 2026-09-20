@@ -34,8 +34,10 @@ export interface paths {
         };
         /**
          * Internal calibration summary for a model version.
-         * @description Analytics only: returns aggregate metrics, never per-user data. Requires an
-         *     authenticated account and is not part of the learner-facing surface.
+         * @description Analytics only: returns aggregate metrics, never per-user data. Disabled
+         *     outside local/test by default, and when enabled outside local/test it
+         *     requires an explicit `X-Internal-Token`. A learner token alone is never
+         *     enough, so this is not part of the learner-facing surface.
          */
         get: operations["get_model_evaluation"];
         put?: never;
@@ -261,6 +263,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tracks/{track_id}/discovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns a learner's persisted Knowledge Map discovery progress for a track.
+         * @description This is an enhancement, not a prerequisite: the Knowledge Map renders from
+         *     local progress immediately and merges this response asynchronously. It is raw
+         *     monotonic discovery data and never scored knowledge evidence.
+         */
+        get: operations["get_track_discovery"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/tracks/{track_id}/recommendation": {
         parameters: {
             query?: never;
@@ -438,6 +462,30 @@ export interface components {
          * @enum {string}
          */
         AssessmentMode: "recognition" | "recall" | "application" | "structural_reconstruction" | "relationship_recall" | "procedural_recall";
+        /** @description One auxiliary recommendation lifecycle event sent in a sync batch. */
+        AuxiliaryEventRequest: {
+            action?: null | components["schemas"]["PlannerAction"];
+            /** @description Domain/topic, when known. */
+            domain_id?: string | null;
+            /** @description Lifecycle stage being reported. */
+            event: components["schemas"]["RecommendationEventKind"];
+            /**
+             * Format: uuid
+             * @description Stable client-generated id, used to make retried telemetry idempotent.
+             */
+            event_id: string;
+            /** @description Knowledge node, when known. */
+            node_id?: string | null;
+            /** @description Question, when known. */
+            question_id?: string | null;
+            /**
+             * Format: uuid
+             * @description Recommendation the event refers to.
+             */
+            recommendation_id: string;
+            /** @description Learning track identifier. */
+            track_id: string;
+        };
         /** @description One calibration bucket in an internal evaluation summary. */
         CalibrationBucketDto: {
             /** @description Bucket label, for example `0.6-0.8`. */
@@ -785,6 +833,32 @@ export interface components {
          * @enum {string}
          */
         DatabaseStatus: "ok" | "unavailable";
+        /**
+         * @description Server-persisted Knowledge Map discovery progress for a learning track.
+         *
+         *     Discovery is raw and monotonic: node/module state is derived by the client
+         *     with the same rules as the Knowledge Map. It is never learning evidence.
+         */
+        DiscoveryResponse: {
+            /** @description Raw per-domain discovery progress. */
+            domains: components["schemas"]["DomainDiscoveryInput"][];
+            /** @description Learning track version the progress belongs to. */
+            track_version: string;
+        };
+        /**
+         * @description A monotonic Knowledge Map discovery delta for one track version.
+         *
+         *     Discovery is set-union based, so duplicates are harmless and an older device
+         *     can never remove a newer reveal.
+         */
+        DiscoveryUpdateRequest: {
+            /** @description Learning content version the reveals were recorded against. */
+            content_version: string;
+            /** @description Raw per-domain discovery progress. */
+            domains?: components["schemas"]["DomainDiscoveryInput"][];
+            /** @description Learning track version the discovery belongs to. */
+            track_version: string;
+        };
         /** @description Raw discovery progress for one learning domain, as stored on the client. */
         DomainDiscoveryInput: {
             /** @description Domain identifier. */
@@ -1461,6 +1535,12 @@ export interface components {
             domain_id?: string | null;
             /** @description Lifecycle stage being reported. */
             event: components["schemas"]["RecommendationEventKind"];
+            /**
+             * Format: uuid
+             * @description Stable client-generated id for idempotent retries. Generated by the
+             *     server when absent.
+             */
+            event_id?: string | null;
             /** @description Knowledge node, when known. */
             node_id?: string | null;
             /** @description Question, when known. */
@@ -1733,25 +1813,49 @@ export interface components {
              */
             event_id: string;
         };
-        /** @description Request to sync a batch of evaluated attempts. */
+        /**
+         * @description Request to sync a batch of evaluated attempts.
+         *
+         *     The request may also carry optional auxiliary sections. They share one HTTP
+         *     request to reduce chatter, but their transactional semantics are isolated:
+         *     an auxiliary failure never rejects or rolls back accepted learning events.
+         */
         SyncRequest: {
+            /** @description Optional recommendation lifecycle telemetry. Never authoritative. */
+            auxiliary_events?: components["schemas"]["AuxiliaryEventRequest"][];
             /**
              * Format: uuid
              * @description Device/install context. Ownership comes from the authenticated user.
              */
             device_id?: string | null;
+            /** @description Optional Knowledge Map discovery deltas. Never learning evidence. */
+            discovery_updates?: components["schemas"]["DiscoveryUpdateRequest"][];
             /** @description Attempts to reconcile. */
-            events: components["schemas"]["SyncEventRequest"][];
+            events?: components["schemas"]["SyncEventRequest"][];
         };
         /** @description Result of a sync batch. */
         SyncResponse: {
+            /** @description Disposition of the optional auxiliary telemetry section. */
+            auxiliary: components["schemas"]["SyncSectionResult"];
             /**
              * Format: int64
              * @description Authoritative settled Bits balance after this batch.
              */
             bits_balance: number;
+            /** @description Disposition of the optional discovery section. */
+            discovery: components["schemas"]["SyncSectionResult"];
             /** @description Per-event results. */
             results: components["schemas"]["SyncEventResult"][];
+        };
+        /**
+         * @description Disposition of one optional sync section.
+         *
+         *     `accepted` is `false` when the auxiliary work failed; the request still
+         *     succeeds and the client only retains the failed section for retry.
+         */
+        SyncSectionResult: {
+            /** @description Whether the section was persisted. */
+            accepted: boolean;
         };
         /**
          * @description Information that is visible before the learner reveals anything.
@@ -1977,6 +2081,15 @@ export interface operations {
             };
             /** @description Authentication required */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Endpoint unavailable */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2480,6 +2593,47 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown learning track */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_track_discovery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Learning track identifier, for example `aws-soa-c03`. */
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Persisted discovery progress */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryResponse"];
                 };
             };
             /** @description Authentication required */

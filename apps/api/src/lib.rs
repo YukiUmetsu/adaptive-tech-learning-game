@@ -18,6 +18,7 @@ pub mod state;
 use std::time::Duration;
 
 use axum::Router;
+use axum::extract::Extension;
 use axum::http::{Method, StatusCode, header};
 use axum::routing::{get, post};
 use tower_http::cors::{AllowOrigin, CorsLayer};
@@ -47,6 +48,10 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
         .route(
             "/v1/certifications/{certification_id}/domains/{domain_id}/learning",
             get(routes::learning::get_learning_domain),
+        )
+        .route(
+            "/v1/tracks/{track_id}/discovery",
+            get(routes::discovery::get_track_discovery),
         )
         .route(
             "/v1/tracks/{track_id}/recommendation",
@@ -88,6 +93,7 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
             "/internal/model-evaluation",
             get(routes::internal::get_model_evaluation),
         )
+        .layer(Extension(config.internal_access()))
         .layer(TraceLayer::new_for_http())
         .layer(TimeoutLayer::with_status_code(
             StatusCode::REQUEST_TIMEOUT,

@@ -211,13 +211,48 @@ application.
 
 ### Discovery semantics match the Knowledge Map
 
-Raw client discovery progress is sent with the recommendation request
+Discovery means "I revealed/explored learning material", not "I demonstrated
+knowledge". It never creates a `learning_event`, concept-state evidence, a quiz
+score, or Bits.
+
+Raw discovery progress is sent with the recommendation request
 (`POST /v1/tracks/{track_id}/recommendation`). The server derives unlocked nodes
 and completed modules with the same rules the frontend Knowledge Map uses
 (`crates/content/src/discovery.rs`): a module is available only when every
 prerequisite module is **complete** (every node unlocked), and a node is
 available only when its module is available and every node prerequisite is
 unlocked. The planner never targets a node the map still shows as locked.
+
+#### Local-first, server-persisted discovery
+
+The Knowledge Map is local-first: it renders from `localStorage` immediately and
+never waits for the server. Persisted discovery (`discovery_progress`) is fetched
+asynchronously and **unioned** into local progress; a failure is ignored and the
+map keeps working from local state. Reveals stay enabled even when discovery
+persistence is down.
+
+Server merging is a monotonic set-union:
+
+```text
+server prompts  = server prompts  ∪ incoming prompts
+server elements = server elements ∪ incoming elements
+```
+
+An older device can never remove a newer reveal, duplicate batches are harmless,
+and concurrent multi-device writes are serialized per `(user, track, domain)` by a
+row lock, so there is no last-write-wins conflict. Node/module state is always
+derived on read, never stored as a second source of truth.
+
+Planners use the best state available:
+
+```text
+persisted server discovery ∪ fresh discovery in the current request
+```
+
+so a just-revealed node does not need to wait for discovery sync before the next
+explicit planning request understands it. Daily Missions remain immutable once
+generated: newly synced discovery never regenerates today's mission, though it can
+inform tomorrow's.
 
 ### Executing a recommendation
 
@@ -235,14 +270,33 @@ unchanged.
 
 Each recommendation carries a stable `recommendation_id`. Generation is logged
 when the recommendation is computed; lifecycle stages (`shown`, `clicked`,
-`started`, `node_opened`, `completed`) are reported to
-`POST /v1/tracks/{track_id}/recommendations/{recommendation_id}/events`. A
+`started`, `node_opened`, `completed`) are queued locally and delivered in
+batches, piggybacked on `/v1/sync` as `auxiliary_events` (or via the direct
+`POST /v1/tracks/{track_id}/recommendations/{recommendation_id}/events`). A
 recommendation request is never treated as proof it was shown.
+
+Telemetry is idempotent: every event carries a stable `event_id`, so a retried
+batch cannot insert it twice. Telemetry may arrive late; it is never
+authoritative, and losing it entirely does not affect learning.
 
 All recommendation and telemetry persistence is auxiliary and best-effort. It
 never shares a transaction with learning-event persistence, and a failure can
 never block the dashboard, knowledge maps, quizzes, mission creation, answer
 submission, or sync. Only accepted, scored learning events change concept state.
+
+### Eventual consistency and request reduction
+
+Recommendations are advisory and do not need real-time freshness. The client
+caches the current recommendation for the relevant context and only refreshes at
+meaningful boundaries (opening the Learning Track dashboard, completing a Daily
+Mission, entering a new day, or an explicit refresh). A reveal or answer never
+triggers another recommendation request, and temporary staleness is acceptable.
+
+Auxiliary state (discovery deltas, recommendation telemetry, evaluation data) is
+queued locally and flushed only at natural boundaries. There is no per-reveal
+request, no per-telemetry request, and no polling timer. If the recommendation
+API fails, the client hides the recommendation section and all study controls
+remain available.
 
 ## V1 session planning
 
@@ -325,22 +379,31 @@ predicts future performance; it does not replace it.
   never reads the answer, the score, structured errors, response time, or
   post-answer state, so there is no target leakage.
 - **Deterministic aggregation.** A question's predicted score is the
-  authored-weight average of the mode-specific concept estimates. A concept with
+  authored-weight average of each concept's *current expected performance*. For a
+  concept with stored state that is `estimate × retrievability`, so a concept the
+  learner is likely to have forgotten is predicted lower than its stored estimate.
+  The formula is deterministic, bounded to `[0, 1]`, documented, and unit tested;
+  the stored concept state itself is never mutated by evaluation. A concept with
   no state in the question's assessment mode contributes the neutral prior, so
   recognition and recall stay separate. Per-concept detail (estimate, evidence
   mass, retrievability, uncertainty, forgetting risk) is stored for later
   analysis.
 - **Outcome linkage.** When the accepted learning event arrives (immediately or
   after offline sync), it is linked to the prediction. The snapshot is never
-  mutated, duplicates cannot double-link, repeated attempts are distinguishable
-  by attempt number, and abandoned questions simply have no outcome.
-  `learning_events` remain authoritative for the actual score.
+  mutated and duplicates cannot double-link. Retry attempts are retained as
+  operational data, but evaluation uses only the **first accepted attempt** for a
+  question, so retries cannot inflate predictive samples. Abandoned questions
+  simply have no outcome. `learning_events` remain authoritative for the actual
+  score.
 - **Metrics.** Pure functions compute Brier score, log loss, mean predicted and
   observed scores, and calibration buckets, with slices by assessment mode,
   source, track, domain, difficulty band, spacing, and delayed-retrieval flag.
-  An internal aggregate-only endpoint exposes the summary; no per-user analytics
-  are surfaced in learner APIs. Later models (HLR, FSRS, DAS3H, deep KT) are
-  benchmarked against this same prediction/outcome dataset.
+  The internal aggregate-only endpoint (`/internal/model-evaluation`) exposes the
+  summary and is **disabled outside local/test by default**; when enabled outside
+  local/test it requires an explicit `X-Internal-Token`, so a normal learner token
+  is never enough. No per-user analytics are surfaced in learner APIs. Later
+  models (HLR, FSRS, DAS3H, deep KT) are benchmarked against this same
+  prediction/outcome dataset.
 - **Delayed retrieval.** Daily Missions may include at most one spaced
   retrieval item for a practiced concept whose `heuristic-v1` retrievability has
   decayed below a due threshold and whose spacing exceeds a minimum window.
@@ -389,6 +452,44 @@ covers domains by official weight; Domain Quiz spreads across tasks; Full
 Practice allocates seats by domain weight using a deterministic largest-remainder
 method and redistributes any deficit when a domain is short. Question counts are
 server policy and are never client input.
+
+## Auxiliary failure isolation and batching
+
+Auxiliary systems (discovery persistence, recommendation telemetry, prediction
+measurement, calibration/analytics) are strictly non-authoritative. The
+authoritative path is:
+
+```text
+learning events -> authoritative persistence -> concept state / Bits
+```
+
+Auxiliary work is performed **after** the authoritative operation commits, or, if
+it must happen first for technical reasons, its failure is still swallowed.
+Auxiliary writes never share a transaction with mission issuance, answer
+acceptance, concept-state updates, Bits settlement, or Daily Mission completion.
+
+`POST /v1/sync` carries optional sections in one request:
+
+```json
+{
+  "events": ["..."],
+  "discovery_updates": ["..."],
+  "auxiliary_events": ["..."]
+}
+```
+
+Each section has its own disposition. A failure in `discovery_updates` or
+`auxiliary_events` never rejects or rolls back accepted `events`. The client
+retains only the failed auxiliary section for a later retry; accepted learning
+events are never resent because an auxiliary section failed. Sections are not
+placed in one atomic database transaction.
+
+## Cold start: no diagnostic onboarding
+
+There is no diagnostic or placement test. New learners study normally, and the
+system accumulates evidence from ordinary quiz answers, Daily Missions, Knowledge
+Map discovery, and spaced retrieval. Unknown concepts stay uncertain until
+natural evidence accumulates; nothing forces an onboarding assessment.
 
 ## References
 

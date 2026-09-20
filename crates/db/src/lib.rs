@@ -7,6 +7,7 @@
 pub mod concept_state;
 pub mod daily_missions;
 pub mod devices;
+pub mod discovery;
 pub mod error;
 pub mod learning_events;
 pub mod missions;

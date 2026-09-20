@@ -188,6 +188,11 @@ struct ResolvedSampleRow {
 }
 
 /// Lists resolved prediction/outcome pairs for one model version, newest first.
+///
+/// Only the first accepted attempt for a question is evaluated. Retry attempts
+/// are retained in `prediction_outcomes` as operational data, but they are not
+/// independent observations of the original pre-answer prediction, so including
+/// them would inflate evaluation samples.
 pub async fn list_resolved(
     pool: &PgPool,
     model_version: &str,
@@ -199,7 +204,7 @@ pub async fn list_resolved(
                 p.seconds_since_previous_practice, o.attempt_number, o.observed_score, o.observed_at
          FROM prediction_snapshots p
          JOIN prediction_outcomes o ON o.prediction_id = p.id
-         WHERE p.model_version = $1
+         WHERE p.model_version = $1 AND o.attempt_number = 1
          ORDER BY o.observed_at DESC
          LIMIT $2",
     )

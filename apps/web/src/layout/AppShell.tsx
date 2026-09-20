@@ -4,6 +4,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/context";
 import BitsHud from "../components/BitsHud";
 import { toggleSoundMuted, useSoundMuted } from "../state/sound";
+import { flushAuxiliary } from "../state/syncAuxiliary";
 import { refreshWallet, resetWallet } from "../state/wallet";
 import LearningTracksNav from "./LearningTracksNav";
 
@@ -34,6 +35,16 @@ export default function AppShell() {
       resetWallet();
     }
   }, [status]);
+
+  // Returning online is a natural boundary to flush queued auxiliary work.
+  // No polling timer is introduced.
+  useEffect(() => {
+    const handleOnline = () => {
+      void flushAuxiliary();
+    };
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();

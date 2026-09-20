@@ -216,6 +216,7 @@ async fn telemetry_failure_does_not_affect_mission_persistence() {
 
     // An invalid event string violates the auxiliary table's check constraint.
     let bad_event = db::recommendations::RecommendationEventEntry {
+        event_id: Uuid::new_v4(),
         recommendation_id: stored.recommendation_id.expect("recommendation id"),
         user_id,
         track_id: "track",

@@ -269,6 +269,10 @@ async fn practice_items_are_server_authoritative_and_resume() {
     let app = common::app_with_pool(pool.clone());
     let registry: std::sync::Arc<ContentRegistry> = common::content();
     let subject = format!("daily-practice-{}", Uuid::new_v4());
+    // Create the account first so the seeded weak concept is owned by a real user
+    // before the adaptive plan is generated.
+    let (status, _) = common::send_as(app.clone(), &subject, "GET", "/v1/me", None).await;
+    assert_eq!(status, StatusCode::OK);
     let user_id = user_id_for(&pool, &subject).await;
     seed_weak_concept(
         &pool,

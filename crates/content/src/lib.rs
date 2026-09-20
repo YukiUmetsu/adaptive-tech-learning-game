@@ -14,7 +14,7 @@ pub mod validate;
 
 pub use discovery::{
     DomainDiscoveryInput, DomainDiscoveryState, derive_domain_discovery, is_node_unlocked,
-    is_prompt_complete,
+    is_prompt_complete, merge_domain_discovery,
 };
 
 pub use embedded::{EMBEDDED_LEARNING_SOURCES, EMBEDDED_SOURCES};

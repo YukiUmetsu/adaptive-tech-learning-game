@@ -1,7 +1,9 @@
 use axum::Json;
-use axum::extract::{Query, State};
+use axum::extract::{Extension, Query, State};
+use axum::http::HeaderMap;
 
 use crate::auth::AuthenticatedUser;
+use crate::config::InternalAccess;
 use crate::dto::ModelEvaluationResponse;
 use crate::error::{ApiError, ErrorResponse};
 use crate::services;
@@ -21,8 +23,10 @@ pub struct ModelEvaluationQuery {
 
 /// Internal calibration summary for a model version.
 ///
-/// Analytics only: returns aggregate metrics, never per-user data. Requires an
-/// authenticated account and is not part of the learner-facing surface.
+/// Analytics only: returns aggregate metrics, never per-user data. Disabled
+/// outside local/test by default, and when enabled outside local/test it
+/// requires an explicit `X-Internal-Token`. A learner token alone is never
+/// enough, so this is not part of the learner-facing surface.
 #[utoipa::path(
     get,
     path = "/internal/model-evaluation",
@@ -30,15 +34,32 @@ pub struct ModelEvaluationQuery {
     params(ModelEvaluationQuery),
     responses(
         (status = 200, description = "Evaluation summary", body = ModelEvaluationResponse),
-        (status = 401, description = "Authentication required", body = ErrorResponse)
+        (status = 401, description = "Authentication required", body = ErrorResponse),
+        (status = 404, description = "Endpoint unavailable", body = ErrorResponse)
     ),
     security(("bearerAuth" = []))
 )]
 pub async fn get_model_evaluation(
     State(state): State<AppState>,
+    Extension(access): Extension<InternalAccess>,
+    headers: HeaderMap,
     _user: AuthenticatedUser,
     Query(query): Query<ModelEvaluationQuery>,
 ) -> Result<Json<ModelEvaluationResponse>, ApiError> {
+    // Hide the endpoint entirely when it is disabled or the caller cannot prove
+    // internal access, rather than revealing that it exists.
+    if !access.enabled {
+        return Err(ApiError::NotFound);
+    }
+    if let Some(expected) = access.token.as_deref() {
+        let provided = headers
+            .get("x-internal-token")
+            .and_then(|value| value.to_str().ok());
+        if provided != Some(expected) {
+            return Err(ApiError::NotFound);
+        }
+    }
+
     let model_version = query
         .model_version
         .unwrap_or_else(|| adaptive_learn_domain::MODEL_VERSION.to_owned());

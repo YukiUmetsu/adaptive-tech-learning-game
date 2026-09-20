@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useSearchParams } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { loadPendingAuxiliary } from "../state/auxiliaryQueue";
 import RecommendedNext from "./RecommendedNext";
 
 interface RecordedRequest {
@@ -146,17 +147,22 @@ describe("RecommendedNext", () => {
     await waitFor(() => expect(screen.queryByText(/Recommended next/)).not.toBeInTheDocument());
   });
 
-  it("reports shown but never treats the request itself as shown", async () => {
+  it("queues shown telemetry instead of posting it, and never treats the request as shown", async () => {
     renderRecommendation();
     await screen.findByText("Learn Tensor broadcasting");
 
-    await waitFor(() => expect(eventRequests()).toHaveLength(1));
-    const [shown] = eventRequests();
-    expect(shown.method).toBe("POST");
-    expect(shown.body).toMatchObject({ event: "shown", action: "learn_node" });
+    await waitFor(() =>
+      expect(
+        loadPendingAuxiliary().some((event) => event.event === "shown"),
+      ).toBe(true),
+    );
+    // Telemetry is batched; it must not create its own request.
+    expect(eventRequests()).toHaveLength(0);
+    const shown = loadPendingAuxiliary().find((event) => event.event === "shown");
+    expect(shown?.action).toBe("learn_node");
   });
 
-  it("opens the knowledge map and reports node_opened for a learn_node recommendation", async () => {
+  it("opens the knowledge map and queues node_opened for a learn_node recommendation", async () => {
     renderRecommendation();
     await screen.findByText("Learn Tensor broadcasting");
 
@@ -166,20 +172,12 @@ describe("RecommendedNext", () => {
       await screen.findByText("Learn page for n-broadcasting"),
     ).toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(
-        eventRequests().some(
-          (request) =>
-            (request.body as { event?: string } | null)?.event === "clicked",
-        ),
-      ).toBe(true),
-    );
-    expect(
-      eventRequests().some(
-        (request) =>
-          (request.body as { event?: string } | null)?.event === "node_opened",
-      ),
-    ).toBe(true);
+    await waitFor(() => {
+      const events = loadPendingAuxiliary().map((event) => event.event);
+      expect(events).toContain("clicked");
+      expect(events).toContain("node_opened");
+    });
+    expect(eventRequests()).toHaveLength(0);
   });
 
   it("starts focused recommended practice for a practice_question recommendation", async () => {

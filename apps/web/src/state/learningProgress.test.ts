@@ -13,10 +13,12 @@ import {
   loadDomainProgress,
   loadTrackDiscovery,
   loadTrackExploredNodeIds,
+  mergeServerDiscovery,
   nodePromptProgress,
   revealElement,
   revealPrompt,
 } from "./learningProgress";
+import { loadPendingDiscovery } from "./auxiliaryQueue";
 import { learningFixture } from "../test/learningFixture";
 import { codeLearningFixture } from "../test/codeLearningFixture";
 import { progressiveTableFixture } from "../test/progressiveTableFixture";
@@ -554,5 +556,74 @@ describe("loadTrackDiscovery", () => {
 
   it("returns an empty list for an unknown track version", () => {
     expect(loadTrackDiscovery("missing")).toEqual([]);
+  });
+});
+
+describe("mergeServerDiscovery", () => {
+  it("unions server progress with local progress", () => {
+    revealPrompt("v1", "domain-1", "c1", "n1", "p1");
+
+    mergeServerDiscovery("v1", "c1", [
+      {
+        domain_id: "domain-1",
+        revealed_prompt_ids: { n1: ["p2"], n2: ["p1"] },
+        revealed_element_ids: { n1: { p1: ["annotation:a1"] } },
+      },
+    ]);
+
+    const stored = loadDomainProgress("v1", "domain-1");
+    expect(stored?.revealedPromptIds).toEqual({
+      n1: ["p1", "p2"],
+      n2: ["p1"],
+    });
+    expect(stored?.revealedElementIds).toEqual({
+      n1: { p1: ["annotation:a1"] },
+    });
+  });
+
+  it("lets older server state not remove a newer local reveal", () => {
+    revealPrompt("v1", "domain-1", "c1", "n1", "p1");
+    revealPrompt("v1", "domain-1", "c1", "n1", "p2");
+
+    mergeServerDiscovery("v1", "c1", [
+      {
+        domain_id: "domain-1",
+        revealed_prompt_ids: { n1: ["p1"] },
+        revealed_element_ids: {},
+      },
+    ]);
+
+    expect(loadDomainProgress("v1", "domain-1")?.revealedPromptIds.n1).toEqual([
+      "p1",
+      "p2",
+    ]);
+  });
+
+  it("ignores an empty server payload", () => {
+    revealPrompt("v1", "domain-1", "c1", "n1", "p1");
+    mergeServerDiscovery("v1", "c1", []);
+    expect(loadDomainProgress("v1", "domain-1")?.revealedPromptIds).toEqual({
+      n1: ["p1"],
+    });
+  });
+
+  it("queues local reveals for later server sync", () => {
+    revealPrompt("v1", "domain-1", "c1", "n1", "p1");
+    revealElement("v1", "domain-1", "c1", "n1", "p1", elementId.row("r1"));
+
+    const pending = loadPendingDiscovery();
+    expect(pending).toHaveLength(1);
+    expect(pending[0].trackVersion).toBe("v1");
+    expect(pending[0].domains[0].revealed_prompt_ids).toEqual({ n1: ["p1"] });
+    expect(pending[0].domains[0].revealed_element_ids).toEqual({
+      n1: { p1: ["row:r1"] },
+    });
+  });
+
+  it("a reveal never creates a scored pending event", () => {
+    revealPrompt("v1", "domain-1", "c1", "n1", "p1");
+    // Discovery is queued separately and never becomes scored evidence.
+    expect(window.localStorage.getItem("adaptive-learn.pending-events")).toBeNull();
+    expect(loadPendingDiscovery()).toHaveLength(1);
   });
 });

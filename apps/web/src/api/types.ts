@@ -40,6 +40,12 @@ export type FeedbackResponse = components["schemas"]["FeedbackResponse"];
 export type CanonicalAnswer = components["schemas"]["CanonicalAnswer"];
 export type SyncEventRequest = components["schemas"]["SyncEventRequest"];
 export type SyncResponse = components["schemas"]["SyncResponse"];
+export type SyncSectionResult = components["schemas"]["SyncSectionResult"];
+export type DiscoveryUpdateRequest =
+  components["schemas"]["DiscoveryUpdateRequest"];
+export type AuxiliaryEventRequest =
+  components["schemas"]["AuxiliaryEventRequest"];
+export type DiscoveryResponse = components["schemas"]["DiscoveryResponse"];
 export type LearningDomainResponse =
   components["schemas"]["LearningDomainResponse"];
 export type LearningModule = components["schemas"]["LearningModule"];

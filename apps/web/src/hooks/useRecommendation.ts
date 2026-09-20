@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api } from "../api/client";
 import type { DomainDiscoveryInput, Recommendation } from "../api/types";
@@ -19,6 +19,8 @@ interface UseRecommendationOptions {
   enabled: boolean;
   /** Raw Knowledge Map discovery progress for the track, if available. */
   discovery?: DomainDiscoveryInput[];
+  /** Changing this forces a refresh at an explicit boundary. */
+  refreshKey?: number;
 }
 
 /**
@@ -28,19 +30,31 @@ interface UseRecommendationOptions {
  * blocks the dashboard, and never participates in a required loading chain: any
  * failure resolves to an `error` state that callers hide. A successful request
  * is not proof the learner saw anything; `shown` is reported separately.
+ *
+ * Recommendations do not need millisecond freshness, so this only fetches when
+ * the track changes or an explicit `refreshKey` changes. Discovery is read at
+ * request time (through a ref) but is deliberately NOT a dependency, so a reveal
+ * or answer never triggers another recommendation request. Stale data until the
+ * next meaningful boundary is acceptable.
  */
 export function useRecommendation({
   trackId,
   enabled,
   discovery = [],
+  refreshKey = 0,
 }: UseRecommendationOptions) {
-  // Serialize so the effect only reruns when the discovery payload changes.
-  const discoveryKey = useMemo(() => JSON.stringify(discovery), [discovery]);
+  const discoveryRef = useRef(discovery);
+  discoveryRef.current = discovery;
   const [state, setState] = useState<RecommendationState>({ status: "idle" });
   // Guards against an out-of-order response overwriting a newer request.
   const requestRef = useRef(0);
 
   const load = useCallback(async () => {
+    // `refreshKey` intentionally participates only through the callback
+    // identity: changing it re-runs the effect and refetches at an explicit
+    // boundary.
+    void refreshKey;
+
     if (!enabled || !trackId) {
       setState({ status: "idle" });
       return;
@@ -48,7 +62,7 @@ export function useRecommendation({
 
     const requestId = requestRef.current + 1;
     requestRef.current = requestId;
-    const payload = JSON.parse(discoveryKey) as DomainDiscoveryInput[];
+    const payload = discoveryRef.current;
     try {
       const result = await api.POST("/v1/tracks/{track_id}/recommendation", {
         params: { path: { track_id: trackId } },
@@ -73,7 +87,7 @@ export function useRecommendation({
       // Optional data: swallow the failure so the page renders normally.
       setState({ status: "error" });
     }
-  }, [enabled, trackId, discoveryKey]);
+  }, [enabled, trackId, refreshKey]);
 
   useEffect(() => {
     void load();

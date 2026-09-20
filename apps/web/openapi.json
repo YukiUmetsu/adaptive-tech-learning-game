@@ -48,7 +48,7 @@
           "internal"
         ],
         "summary": "Internal calibration summary for a model version.",
-        "description": "Analytics only: returns aggregate metrics, never per-user data. Requires an\nauthenticated account and is not part of the learner-facing surface.",
+        "description": "Analytics only: returns aggregate metrics, never per-user data. Disabled\noutside local/test by default, and when enabled outside local/test it\nrequires an explicit `X-Internal-Token`. A learner token alone is never\nenough, so this is not part of the learner-facing surface.",
         "operationId": "get_model_evaluation",
         "parameters": [
           {
@@ -84,6 +84,16 @@
           },
           "401": {
             "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Endpoint unavailable",
             "content": {
               "application/json": {
                 "schema": {
@@ -807,6 +817,64 @@
         ]
       }
     },
+    "/v1/tracks/{track_id}/discovery": {
+      "get": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Returns a learner's persisted Knowledge Map discovery progress for a track.",
+        "description": "This is an enhancement, not a prerequisite: the Knowledge Map renders from\nlocal progress immediately and merges this response asynchronously. It is raw\nmonotonic discovery data and never scored knowledge evidence.",
+        "operationId": "get_track_discovery",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `aws-soa-c03`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Persisted discovery progress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown learning track",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/tracks/{track_id}/recommendation": {
       "post": {
         "tags": [
@@ -1301,6 +1369,68 @@
           "relationship_recall",
           "procedural_recall"
         ]
+      },
+      "AuxiliaryEventRequest": {
+        "type": "object",
+        "description": "One auxiliary recommendation lifecycle event sent in a sync batch.",
+        "required": [
+          "event_id",
+          "track_id",
+          "recommendation_id",
+          "event"
+        ],
+        "properties": {
+          "action": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlannerAction",
+                "description": "Planner action the recommendation had, when known."
+              }
+            ]
+          },
+          "domain_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Domain/topic, when known."
+          },
+          "event": {
+            "$ref": "#/components/schemas/RecommendationEventKind",
+            "description": "Lifecycle stage being reported."
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Stable client-generated id, used to make retried telemetry idempotent."
+          },
+          "node_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Knowledge node, when known."
+          },
+          "question_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Question, when known."
+          },
+          "recommendation_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Recommendation the event refers to."
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track identifier."
+          }
+        }
       },
       "CalibrationBucketDto": {
         "type": "object",
@@ -2218,6 +2348,52 @@
           "ok",
           "unavailable"
         ]
+      },
+      "DiscoveryResponse": {
+        "type": "object",
+        "description": "Server-persisted Knowledge Map discovery progress for a learning track.\n\nDiscovery is raw and monotonic: node/module state is derived by the client\nwith the same rules as the Knowledge Map. It is never learning evidence.",
+        "required": [
+          "track_version",
+          "domains"
+        ],
+        "properties": {
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDiscoveryInput"
+            },
+            "description": "Raw per-domain discovery progress."
+          },
+          "track_version": {
+            "type": "string",
+            "description": "Learning track version the progress belongs to."
+          }
+        }
+      },
+      "DiscoveryUpdateRequest": {
+        "type": "object",
+        "description": "A monotonic Knowledge Map discovery delta for one track version.\n\nDiscovery is set-union based, so duplicates are harmless and an older device\ncan never remove a newer reveal.",
+        "required": [
+          "track_version",
+          "content_version"
+        ],
+        "properties": {
+          "content_version": {
+            "type": "string",
+            "description": "Learning content version the reveals were recorded against."
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDiscoveryInput"
+            },
+            "description": "Raw per-domain discovery progress."
+          },
+          "track_version": {
+            "type": "string",
+            "description": "Learning track version the discovery belongs to."
+          }
+        }
       },
       "DomainDiscoveryInput": {
         "type": "object",
@@ -3993,6 +4169,14 @@
             "$ref": "#/components/schemas/RecommendationEventKind",
             "description": "Lifecycle stage being reported."
           },
+          "event_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Stable client-generated id for idempotent retries. Generated by the\nserver when absent."
+          },
           "node_id": {
             "type": [
               "string",
@@ -4536,11 +4720,15 @@
       },
       "SyncRequest": {
         "type": "object",
-        "description": "Request to sync a batch of evaluated attempts.",
-        "required": [
-          "events"
-        ],
+        "description": "Request to sync a batch of evaluated attempts.\n\nThe request may also carry optional auxiliary sections. They share one HTTP\nrequest to reduce chatter, but their transactional semantics are isolated:\nan auxiliary failure never rejects or rolls back accepted learning events.",
         "properties": {
+          "auxiliary_events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuxiliaryEventRequest"
+            },
+            "description": "Optional recommendation lifecycle telemetry. Never authoritative."
+          },
           "device_id": {
             "type": [
               "string",
@@ -4548,6 +4736,13 @@
             ],
             "format": "uuid",
             "description": "Device/install context. Ownership comes from the authenticated user."
+          },
+          "discovery_updates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryUpdateRequest"
+            },
+            "description": "Optional Knowledge Map discovery deltas. Never learning evidence."
           },
           "events": {
             "type": "array",
@@ -4563,13 +4758,23 @@
         "description": "Result of a sync batch.",
         "required": [
           "results",
-          "bits_balance"
+          "bits_balance",
+          "discovery",
+          "auxiliary"
         ],
         "properties": {
+          "auxiliary": {
+            "$ref": "#/components/schemas/SyncSectionResult",
+            "description": "Disposition of the optional auxiliary telemetry section."
+          },
           "bits_balance": {
             "type": "integer",
             "format": "int64",
             "description": "Authoritative settled Bits balance after this batch."
+          },
+          "discovery": {
+            "$ref": "#/components/schemas/SyncSectionResult",
+            "description": "Disposition of the optional discovery section."
           },
           "results": {
             "type": "array",
@@ -4577,6 +4782,19 @@
               "$ref": "#/components/schemas/SyncEventResult"
             },
             "description": "Per-event results."
+          }
+        }
+      },
+      "SyncSectionResult": {
+        "type": "object",
+        "description": "Disposition of one optional sync section.\n\n`accepted` is `false` when the auxiliary work failed; the request still\nsucceeds and the client only retains the failed section for retry.",
+        "required": [
+          "accepted"
+        ],
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "description": "Whether the section was persisted."
           }
         }
       },

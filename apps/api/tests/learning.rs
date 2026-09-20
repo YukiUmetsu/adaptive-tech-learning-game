@@ -1217,15 +1217,19 @@ fn wrong_classification_answer(question: &Question) -> Value {
     let Interaction::Classification { categories, .. } = &question.interaction else {
         panic!("expected classification interaction");
     };
-    let (item, correct) = placements.iter().next().expect("placement");
-    let other = categories
-        .iter()
-        .find(|category| &category.id != correct)
-        .expect("another category")
-        .id
-        .clone();
+    // Flip every placement into a different category so the answer is an
+    // unambiguous failure (partial credit for one flipped item can otherwise
+    // clear the success threshold).
     let mut wrong = placements.clone();
-    wrong.insert(item.clone(), other);
+    for (item, correct) in placements {
+        let other = categories
+            .iter()
+            .find(|category| &category.id != correct)
+            .expect("another category")
+            .id
+            .clone();
+        wrong.insert(item.clone(), other);
+    }
     json!({ "placements": wrong })
 }
 

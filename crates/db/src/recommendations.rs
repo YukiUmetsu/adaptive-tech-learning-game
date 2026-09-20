@@ -40,6 +40,8 @@ pub struct RecommendationLogEntry<'a> {
 /// One lifecycle event for a recommendation.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RecommendationEventEntry<'a> {
+    /// Stable client-generated id, used to make retried telemetry idempotent.
+    pub event_id: Uuid,
     /// Recommendation the event refers to.
     pub recommendation_id: Uuid,
     /// Owning learner.
@@ -87,6 +89,7 @@ pub async fn log(pool: &PgPool, entry: &RecommendationLogEntry<'_>) -> Result<()
 
 /// Appends one recommendation lifecycle event.
 ///
+/// Idempotent by `event_id`: a retried batch cannot insert the same event twice.
 /// Callers must treat this as best-effort and ignore errors.
 pub async fn record_event(
     pool: &PgPool,
@@ -94,9 +97,12 @@ pub async fn record_event(
 ) -> Result<(), DbError> {
     sqlx::query(
         "INSERT INTO recommendation_events
-            (recommendation_id, user_id, track_id, event, action, domain_id, node_id, question_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+            (event_id, recommendation_id, user_id, track_id, event, action, domain_id, node_id,
+             question_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         ON CONFLICT (event_id) DO NOTHING",
     )
+    .bind(entry.event_id)
     .bind(entry.recommendation_id)
     .bind(entry.user_id)
     .bind(entry.track_id)

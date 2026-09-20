@@ -7,10 +7,11 @@
 //! check `mission.user_id`, never the client-supplied `device_id`. A device may
 //! still be recorded as context.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use adaptive_learn_content::{
-    DomainDiscoveryInput, Question, SubmittedAnswer, derive_domain_discovery, score,
+    DomainDiscoveryInput, Question, SubmittedAnswer, derive_domain_discovery,
+    merge_domain_discovery, score,
 };
 use adaptive_learn_db as db;
 use adaptive_learn_domain::{
@@ -23,14 +24,15 @@ use uuid::Uuid;
 
 use crate::auth::AuthenticatedUser;
 use crate::dto::{
-    AnswerPayload, AnswerRequest, CalibrationBucketDto, CatalogResponse, CertificationDto,
-    CertificationVersionDto, CompleteMissionResponse, ConceptDto, DailyItemCompleteRequest,
-    DailyItemCompleteResponse, DailyMissionItemDto, DailyMissionItemKind, DailyMissionItemStatus,
-    DailyMissionPlanType, DailyMissionRequest, DailyMissionResponse, DailyMissionStatus, DomainDto,
-    EvaluationSliceDto, FeedbackResponse, IssueMissionRequest, LearningDomainResponse,
-    MissionResponse, ModelEvaluationResponse, QuestionView, RecommendationEventRequest,
-    RecommendationEventResponse, RecommendationResponse, StudySessionRequest, StudySessionResponse,
-    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, TaskDto, WalletResponse,
+    AnswerPayload, AnswerRequest, AuxiliaryEventRequest, CalibrationBucketDto, CatalogResponse,
+    CertificationDto, CertificationVersionDto, CompleteMissionResponse, ConceptDto,
+    DailyItemCompleteRequest, DailyItemCompleteResponse, DailyMissionItemDto, DailyMissionItemKind,
+    DailyMissionItemStatus, DailyMissionPlanType, DailyMissionRequest, DailyMissionResponse,
+    DailyMissionStatus, DiscoveryResponse, DiscoveryUpdateRequest, DomainDto, EvaluationSliceDto,
+    FeedbackResponse, IssueMissionRequest, LearningDomainResponse, MissionResponse,
+    ModelEvaluationResponse, QuestionView, RecommendationEventRequest, RecommendationEventResponse,
+    RecommendationResponse, StudySessionRequest, StudySessionResponse, SyncEventRequest,
+    SyncEventResult, SyncRequest, SyncResponse, SyncSectionResult, TaskDto, WalletResponse,
 };
 use crate::error::ApiError;
 use crate::planner::{
@@ -188,7 +190,10 @@ async fn planner_context(
         })
         .collect();
 
-    let discovery_state = derive_track_discovery(state, &track_version, discovery);
+    let discovery_state = {
+        let merged = merged_track_discovery(state, user.id, &track_version, discovery).await;
+        derive_track_discovery(state, &track_version, &merged)
+    };
 
     let input = PlannerInput {
         track_id: track_id.to_owned(),
@@ -1143,12 +1148,13 @@ pub async fn complete_daily_item(
         .clone()
         .ok_or_else(|| ApiError::BadRequest("item has no learning node".to_owned()))?;
 
+    let merged =
+        merged_track_discovery(state, user.id, &daily.track_version, &request.discovery).await;
     let derived = state
         .content
         .learning_domain(&daily.track_version, &item.domain_id)
         .and_then(|domain| {
-            request
-                .discovery
+            merged
                 .iter()
                 .find(|input| input.domain_id == item.domain_id)
                 .map(|input| derive_domain_discovery(domain, input))
@@ -1313,6 +1319,7 @@ pub async fn record_recommendation_event(
     record_event_best_effort(
         &state.pool,
         &db::recommendations::RecommendationEventEntry {
+            event_id: request.event_id.unwrap_or_else(Uuid::new_v4),
             recommendation_id,
             user_id: user.id,
             track_id,
@@ -1382,6 +1389,80 @@ fn derive_track_discovery(
             .extend(derived.completed_module_ids);
     }
     aggregate
+}
+
+/// Loads persisted discovery and unions it with the current request's progress.
+///
+/// Persisted progress is an enhancement, never a prerequisite: a read failure is
+/// logged and ignored, and planning continues from whatever the request
+/// supplied. Because the result is a set-union, a newly revealed node is visible
+/// to the next explicit planning request even before the discovery batch has
+/// been persisted.
+async fn merged_track_discovery(
+    state: &AppState,
+    user_id: Uuid,
+    track_version: &str,
+    request_discovery: &[DomainDiscoveryInput],
+) -> Vec<DomainDiscoveryInput> {
+    let persisted =
+        match db::discovery::list_for_user_track(&state.pool, user_id, track_version).await {
+            Ok(rows) => rows
+                .into_iter()
+                .map(|row| row.to_input())
+                .collect::<Vec<_>>(),
+            Err(error) => {
+                tracing::debug!(
+                    error = %error,
+                    "could not load persisted discovery; using request progress only"
+                );
+                Vec::new()
+            }
+        };
+
+    merge_discovery_sets(persisted, request_discovery)
+}
+
+/// Unions persisted and incoming discovery by domain, deterministically ordered.
+fn merge_discovery_sets(
+    persisted: impl IntoIterator<Item = DomainDiscoveryInput>,
+    incoming: &[DomainDiscoveryInput],
+) -> Vec<DomainDiscoveryInput> {
+    let mut merged: BTreeMap<String, DomainDiscoveryInput> = BTreeMap::new();
+    for input in persisted {
+        merged.insert(input.domain_id.clone(), input);
+    }
+    for input in incoming {
+        let union = match merged.get(&input.domain_id) {
+            Some(existing) => merge_domain_discovery(existing, input),
+            None => input.clone(),
+        };
+        merged.insert(input.domain_id.clone(), union);
+    }
+    merged.into_values().collect()
+}
+
+/// Returns a learner's persisted discovery for one track version.
+pub async fn track_discovery(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    track_id: &str,
+) -> Result<DiscoveryResponse, ApiError> {
+    let bundle = state
+        .content
+        .bundle_for_certification(track_id)
+        .ok_or(ApiError::NotFound)?;
+    let track_version = bundle.version.id.clone();
+
+    let domains = db::discovery::list_for_user_track(&state.pool, user.id, &track_version)
+        .await?
+        .into_iter()
+        .map(|row| row.to_input())
+        .collect();
+
+    Ok(DiscoveryResponse {
+        track_version,
+        domains,
+    })
 }
 
 /// Logs a recommendation without ever letting a persistence problem escape.
@@ -1513,6 +1594,7 @@ pub async fn issue_mission(
         let _ = record_event_best_effort(
             &state.pool,
             &db::recommendations::RecommendationEventEntry {
+                event_id: Uuid::new_v4(),
                 recommendation_id: id,
                 user_id: user.id,
                 track_id: &stored.certification_id,
@@ -1891,10 +1973,96 @@ pub async fn sync(
         Some(user) => db::wallets::balance(&state.pool, user.id).await?,
         None => 0,
     };
+
+    // Optional sections are processed after the authoritative events have been
+    // committed, each in its own transaction and with its own disposition. An
+    // auxiliary failure is logged and reported as not accepted; it can never
+    // reject or roll back an accepted learning event.
+    let discovery = persist_discovery_best_effort(state, user, &request.discovery_updates).await;
+    let auxiliary =
+        record_auxiliary_events_best_effort(state, user, &request.auxiliary_events).await;
+
     Ok(SyncResponse {
         results,
         bits_balance,
+        discovery,
+        auxiliary,
     })
+}
+
+/// Persists optional discovery deltas, swallowing every failure.
+///
+/// Discovery is a set-union, so a failure here is reported as not accepted and
+/// the client may resend the same batch later; duplicates are harmless.
+async fn persist_discovery_best_effort(
+    state: &AppState,
+    user: Option<&AuthenticatedUser>,
+    updates: &[DiscoveryUpdateRequest],
+) -> SyncSectionResult {
+    if updates.is_empty() {
+        return SyncSectionResult { accepted: true };
+    }
+    // Anonymous callers have no account to own persisted progress.
+    let Some(user) = user else {
+        return SyncSectionResult { accepted: false };
+    };
+
+    let mut accepted = true;
+    for update in updates {
+        if let Err(error) = db::discovery::merge(
+            &state.pool,
+            user.id,
+            &update.track_version,
+            &update.content_version,
+            &update.domains,
+        )
+        .await
+        {
+            tracing::debug!(error = %error, "could not persist discovery progress");
+            accepted = false;
+        }
+    }
+    SyncSectionResult { accepted }
+}
+
+/// Records optional auxiliary telemetry, swallowing every failure.
+///
+/// Each event carries a stable id, so retries are idempotent. A failure is
+/// reported as not accepted without affecting the accepted learning events.
+async fn record_auxiliary_events_best_effort(
+    state: &AppState,
+    user: Option<&AuthenticatedUser>,
+    events: &[AuxiliaryEventRequest],
+) -> SyncSectionResult {
+    if events.is_empty() {
+        return SyncSectionResult { accepted: true };
+    }
+    let Some(user) = user else {
+        return SyncSectionResult { accepted: false };
+    };
+
+    let mut accepted = true;
+    for event in events {
+        let response = record_event_best_effort(
+            &state.pool,
+            &db::recommendations::RecommendationEventEntry {
+                event_id: event.event_id,
+                recommendation_id: event.recommendation_id,
+                user_id: user.id,
+                track_id: &event.track_id,
+                event: event.event.as_str(),
+                action: event.action.map(|action| action.as_str()),
+                domain_id: event.domain_id.as_deref(),
+                node_id: event.node_id.as_deref(),
+                question_id: event.question_id.as_deref(),
+            },
+        )
+        .await;
+        if !response.recorded {
+            accepted = false;
+        }
+    }
+    SyncSectionResult { accepted }
 }
 
 fn reject(event_id: Uuid, code: impl Into<String>) -> SyncEventResult {
@@ -1956,6 +2124,7 @@ pub async fn complete_mission(
         let _ = record_event_best_effort(
             &state.pool,
             &db::recommendations::RecommendationEventEntry {
+                event_id: Uuid::new_v4(),
                 recommendation_id,
                 user_id: owner,
                 track_id: &mission.certification_id,
@@ -2344,6 +2513,7 @@ mod tests {
             .connect_lazy("postgres://app:app@127.0.0.1:1/app")
             .expect("lazy pool");
         let entry = db::recommendations::RecommendationEventEntry {
+            event_id: Uuid::new_v4(),
             recommendation_id: Uuid::new_v4(),
             user_id: Uuid::new_v4(),
             track_id: "track",

@@ -7,15 +7,16 @@ use utoipa::OpenApi;
 use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
 
 use crate::dto::{
-    AnswerPayload, AnswerRequest, CalibrationBucketDto, CatalogResponse, CertificationDto,
-    CertificationVersionDto, CompleteMissionRequest, CompleteMissionResponse, ConceptDto,
-    DailyItemCompleteRequest, DailyItemCompleteResponse, DailyMissionItemDto, DailyMissionItemKind,
-    DailyMissionItemStatus, DailyMissionPlanType, DailyMissionRequest, DailyMissionResponse,
-    DailyMissionStatus, DomainDto, EvaluationSliceDto, FeedbackResponse, IssueMissionRequest,
-    LearningDomainResponse, MeResponse, MissionResponse, ModelEvaluationResponse, QuestionView,
-    RecommendationEventRequest, RecommendationEventResponse, RecommendationRequest,
-    RecommendationResponse, ReconstructionAnswerPayload, StudySessionRequest, StudySessionResponse,
-    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, TaskDto, WalletResponse,
+    AnswerPayload, AnswerRequest, AuxiliaryEventRequest, CalibrationBucketDto, CatalogResponse,
+    CertificationDto, CertificationVersionDto, CompleteMissionRequest, CompleteMissionResponse,
+    ConceptDto, DailyItemCompleteRequest, DailyItemCompleteResponse, DailyMissionItemDto,
+    DailyMissionItemKind, DailyMissionItemStatus, DailyMissionPlanType, DailyMissionRequest,
+    DailyMissionResponse, DailyMissionStatus, DiscoveryResponse, DiscoveryUpdateRequest, DomainDto,
+    EvaluationSliceDto, FeedbackResponse, IssueMissionRequest, LearningDomainResponse, MeResponse,
+    MissionResponse, ModelEvaluationResponse, QuestionView, RecommendationEventRequest,
+    RecommendationEventResponse, RecommendationRequest, RecommendationResponse,
+    ReconstructionAnswerPayload, StudySessionRequest, StudySessionResponse, SyncEventRequest,
+    SyncEventResult, SyncRequest, SyncResponse, SyncSectionResult, TaskDto, WalletResponse,
 };
 use crate::error::{ErrorBody, ErrorResponse};
 use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
@@ -32,6 +33,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         crate::routes::openapi::openapi_json,
         crate::routes::certifications::list_certifications,
         crate::routes::learning::get_learning_domain,
+        crate::routes::discovery::get_track_discovery,
         crate::routes::recommendations::create_recommendation,
         crate::routes::recommendations::record_recommendation_event,
         crate::routes::sessions::create_study_session,
@@ -71,6 +73,10 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         SyncEventRequest,
         SyncResponse,
         SyncEventResult,
+        SyncSectionResult,
+        DiscoveryUpdateRequest,
+        AuxiliaryEventRequest,
+        DiscoveryResponse,
         CompleteMissionRequest,
         CompleteMissionResponse,
         LearningDomainResponse,

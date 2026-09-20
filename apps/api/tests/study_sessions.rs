@@ -192,6 +192,9 @@ async fn preference_changes_session_composition() {
     };
     let app = common::app_with_pool(pool.clone());
     let subject = format!("session-preference-{}", Uuid::new_v4());
+    // Create the account first so the seeded weak concept is owned by a real user.
+    let (status, _) = common::send_as(app.clone(), &subject, "GET", "/v1/me", None).await;
+    assert_eq!(status, StatusCode::OK);
     let user_id = user_id_for(&pool, &subject).await;
     seed_weak_concept(
         &pool,
@@ -293,6 +296,9 @@ async fn session_practice_anchors_a_guaranteed_mission_question() {
     };
     let app = common::app_with_pool(pool.clone());
     let subject = format!("session-execute-{}", Uuid::new_v4());
+    // Create the account first so the seeded weak concept is owned by a real user.
+    let (status, _) = common::send_as(app.clone(), &subject, "GET", "/v1/me", None).await;
+    assert_eq!(status, StatusCode::OK);
     let user_id = user_id_for(&pool, &subject).await;
     seed_weak_concept(
         &pool,

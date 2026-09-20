@@ -6,6 +6,8 @@ import type {
   LearningModule,
 } from "../api/types";
 import { deriveProgressiveTable, elementId } from "../lib/learningElements";
+import { enqueueDiscovery } from "./auxiliaryQueue";
+import { unionElementIds, unionPromptIds } from "./discovery";
 
 /**
  * Discovery progress for the pre-quiz knowledge maps.
@@ -352,6 +354,47 @@ export function loadTrackDiscovery(
   return domains.sort((a, b) => a.domain_id.localeCompare(b.domain_id));
 }
 
+/**
+ * Unions server-persisted discovery into local progress.
+ *
+ * Local-first: the caller renders from localStorage first and calls this
+ * asynchronously. The union means persisted progress can never remove a local
+ * reveal, and local reveals remain queued for a later server sync.
+ */
+export function mergeServerDiscovery(
+  certificationVersion: string,
+  contentVersion: string,
+  domains: DomainDiscoveryInput[],
+): void {
+  if (domains.length === 0) {
+    return;
+  }
+  const store = readStore();
+  let changed = false;
+  for (const domain of domains) {
+    const key = domainKey(certificationVersion, domain.domain_id);
+    const existing = store.domains[key];
+    store.domains[key] = {
+      certificationVersion,
+      domainId: domain.domain_id,
+      contentVersion,
+      revealedPromptIds: unionPromptIds(
+        existing?.revealedPromptIds ?? {},
+        domain.revealed_prompt_ids ?? {},
+      ),
+      revealedElementIds: unionElementIds(
+        existing?.revealedElementIds ?? {},
+        domain.revealed_element_ids ?? {},
+      ),
+      updatedAt: new Date().toISOString(),
+    };
+    changed = true;
+  }
+  if (changed) {
+    writeStore(store);
+  }
+}
+
 const EMPTY_REVEALS: string[] = [];
 const EMPTY_ELEMENTS_SET: ReadonlySet<string> = new Set();
 
@@ -388,6 +431,20 @@ export function revealPrompt(
       updatedAt: new Date().toISOString(),
     };
     writeStore(store);
+  }
+
+  if (!alreadyRevealed) {
+    enqueueDiscovery({
+      trackVersion: certificationVersion,
+      contentVersion,
+      domains: [
+        {
+          domain_id: domainId,
+          revealed_prompt_ids: { [nodeId]: [promptId] },
+          revealed_element_ids: {},
+        },
+      ],
+    });
   }
 
   return store.domains[key];
@@ -432,6 +489,20 @@ export function revealElement(
       updatedAt: new Date().toISOString(),
     };
     writeStore(store);
+  }
+
+  if (!alreadyRevealed) {
+    enqueueDiscovery({
+      trackVersion: certificationVersion,
+      contentVersion,
+      domains: [
+        {
+          domain_id: domainId,
+          revealed_prompt_ids: {},
+          revealed_element_ids: { [nodeId]: { [promptId]: [element] } },
+        },
+      ],
+    });
   }
 
   return store.domains[key];

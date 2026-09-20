@@ -58,6 +58,7 @@ recommendation_events
 study_session_log
 daily_missions
 daily_mission_items
+discovery_progress
 prediction_snapshots
 prediction_outcomes
 deletion_tombstones
@@ -94,13 +95,35 @@ Do not accept blind client replacement of this row. Forgetting/retrievability is
 computed on read at selection time from `evidence_mass` and
 `last_practiced_at`; stored state is never aged by a background job.
 
+## Discovery progress
+
+`discovery_progress` stores server-persisted Knowledge Map discovery for
+`(user_id, track_version, domain_id)`: the learning `content_version`, raw
+`revealed_prompt_ids`, namespaced `revealed_element_ids`, and `updated_at`.
+
+Discovery is **not** learning evidence. It never creates a `learning_event`,
+concept state, a quiz score, or Bits. Node/module/domain state (explored,
+unlocked, completed) is derived on read with the same rules the Knowledge Map and
+planner share, so this table never becomes a second source of truth.
+
+Merging is a monotonic set-union: the stored prompt/element sets are unioned with
+each incoming batch. An older device can never remove a newer reveal, duplicate
+batches are idempotent, and concurrent multi-device writes are serialized per
+`(user, track, domain)` with a row lock, so there is no last-write-wins conflict.
+The frontend is local-first: it renders from `localStorage` immediately, merges
+the persisted response asynchronously, and keeps working if persistence fails.
+
 ## Auxiliary recommendation history
 
 `recommendation_log` records which optional recommendations were generated for a
 learner, keyed by a stable `recommendation_id`. `recommendation_events` records
 lifecycle stages (`shown`, `clicked`, `started`, `node_opened`, `completed`)
-against that id. `mission_instances.recommendation_id` links a mission back to
-the recommendation that started it.
+against that id, each with a stable `event_id` so a retried batch cannot insert
+the same event twice. `mission_instances.recommendation_id` links a mission back
+to the recommendation that started it.
+
+Lifecycle telemetry is queued locally and delivered in batches, piggybacked on
+`/v1/sync` as `auxiliary_events`, rather than one request per event.
 
 These tables are deliberately **not** learning evidence: they never feed scoring,
 rewards, concept state, or mastery. Writes are best-effort and never share a
@@ -148,12 +171,17 @@ item was spaced delayed retrieval. Snapshots are immutable; the answer never
 modifies them.
 
 `prediction_outcomes` links an accepted event to its prediction, append-only and
-idempotent per `(prediction_id, event_id)`. `learning_events` remain
-authoritative for actual outcomes; unresolved snapshots (abandoned questions)
-simply have no outcome and are excluded from evaluation. Prediction and outcome
-rows never feed scoring, rewards, or concept state, and every write is
-best-effort: measurement can never block mission issuance, answer acceptance,
-reward settlement, or concept-state updates.
+idempotent per `(prediction_id, event_id)`. Retry attempts remain as operational
+data, but evaluation reads only the **first accepted attempt** for a question, so
+retries cannot inflate predictive samples. `learning_events` remain authoritative
+for actual outcomes; unresolved snapshots (abandoned questions) simply have no
+outcome and are excluded from evaluation. Prediction and outcome rows never feed
+scoring, rewards, or concept state, and every write is best-effort: measurement
+can never block mission issuance, answer acceptance, reward settlement, or
+concept-state updates. The aggregate calibration endpoint
+(`/internal/model-evaluation`) is disabled outside local/test by default and,
+when enabled there, requires an explicit `X-Internal-Token`; a normal learner
+token is never sufficient.
 
 Ownership is user-based: `mission_instances`, `learning_events`, and wallet
 state carry an owning `user_id`. `device_wallets` is the legacy pre-auth table

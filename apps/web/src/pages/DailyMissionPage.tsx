@@ -16,11 +16,13 @@ import {
   deriveLearningState,
   loadDomainProgress,
   loadTrackDiscovery,
+  mergeServerDiscovery,
   revealElement as revealElementInProgress,
   revealPrompt,
   type DomainLearningProgress,
 } from "../state/learningProgress";
 import { startDailyItem } from "../state/mission";
+import { flushAuxiliary, loadServerDiscovery } from "../state/syncAuxiliary";
 
 /**
  * Dedicated Daily Mission runner.
@@ -189,6 +191,29 @@ function DailyNodeActivity({
     setProgress(loadDomainProgress(data.certification_version, data.domain.id));
   }, [data]);
 
+  // Local-first: merge persisted discovery asynchronously. A failure is ignored
+  // and the card keeps working from local progress.
+  useEffect(() => {
+    if (!data) {
+      return;
+    }
+    let cancelled = false;
+    void loadServerDiscovery(data.certification_id).then((server) => {
+      if (cancelled || !server) {
+        return;
+      }
+      mergeServerDiscovery(
+        data.certification_version,
+        data.content_version,
+        server,
+      );
+      setProgress(loadDomainProgress(data.certification_version, data.domain.id));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [data]);
+
   const derived = useMemo(
     () => (data ? deriveLearningState(data, progress) : null),
     [data, progress],
@@ -231,6 +256,9 @@ function DailyNodeActivity({
       .then((response) => {
         if (response.item_completed) {
           setCompleted(true);
+          // Persist any pending discovery/telemetry now that this Daily Mission
+          // transition is a natural synchronization boundary.
+          void flushAuxiliary();
         } else {
           submitted.current = false;
           setError("This task is not marked complete yet. Keep exploring.");

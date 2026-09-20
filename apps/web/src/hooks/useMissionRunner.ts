@@ -9,6 +9,12 @@ import type {
 } from "../api/types";
 import { newId } from "../lib/id";
 import {
+  loadPendingAuxiliary,
+  loadPendingDiscovery,
+  markAuxiliarySynced,
+  markDiscoverySynced,
+} from "../state/auxiliaryQueue";
+import {
   appendPendingEvent,
   getDeviceId,
   loadMission,
@@ -92,7 +98,9 @@ export function useMissionRunner(missionId: string): MissionRunner {
 
   const sync = useCallback(async () => {
     const pending = loadPendingEvents();
-    if (pending.length === 0) {
+    const discovery = loadPendingDiscovery();
+    const auxiliary = loadPendingAuxiliary();
+    if (pending.length === 0 && discovery.length === 0 && auxiliary.length === 0) {
       setSyncState({ status: "synced", pending: 0 });
       return;
     }
@@ -113,6 +121,23 @@ export function useMissionRunner(missionId: string): MissionRunner {
             occurred_at: event.occurredAt,
             answer: event.answer,
           })),
+          // Auxiliary work rides along on the same request but is logically
+          // isolated server-side. Only accepted sections are cleared below.
+          discovery_updates: discovery.map((entry) => ({
+            track_version: entry.trackVersion,
+            content_version: entry.contentVersion,
+            domains: entry.domains,
+          })),
+          auxiliary_events: auxiliary.map((entry) => ({
+            event_id: entry.eventId,
+            track_id: entry.trackId,
+            recommendation_id: entry.recommendationId,
+            event: entry.event,
+            action: entry.action,
+            domain_id: entry.domainId,
+            node_id: entry.nodeId,
+            question_id: entry.questionId,
+          })),
         },
       });
 
@@ -129,6 +154,12 @@ export function useMissionRunner(missionId: string): MissionRunner {
         .filter((entry) => entry.accepted)
         .map((entry) => entry.event_id);
       markEventsSynced(accepted);
+      if (result.data.discovery?.accepted) {
+        markDiscoverySynced(discovery.map((entry) => entry.trackVersion));
+      }
+      if (result.data.auxiliary?.accepted) {
+        markAuxiliarySynced(auxiliary.map((entry) => entry.id));
+      }
       reconcileBits(result.data.bits_balance);
       const remaining = pendingEventCount();
       setSyncState({
