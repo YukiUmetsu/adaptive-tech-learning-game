@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.0.0",
-  "content_version": "aip-c01-learning-2026-09-19-v1-domain3",
+  "schema_version": "2.0.0",
+  "content_version": "aip-c01-learning-2026-09-19-v2-domain3",
   "certification_id": "aws-aip-c01",
   "certification_version": "aip-c01",
   "domain": {
@@ -10,7 +10,7 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
+    "unlock_rule": "Reveal the required explanations, progressive table units, and required code annotations to unlock each knowledge node.",
     "mastery_note": "Exploration progress is not mastery evidence; quiz attempts remain the scored retrieval signal."
   },
   "source_refs": [
@@ -51,7 +51,7 @@
     "knowledge_node_count": 15,
     "prompt_count": 60
   },
-  "authoring_notes": "Authored from the AWS AIP-C01 standard exam guide and official service documentation. Explanations are paraphrased; questions are original exam-style practice, not recalled exam content.",
+  "authoring_notes": "Authored from the AWS AIP-C01 standard exam guide and official service documentation. Explanations are paraphrased; questions are original exam-style practice, not recalled exam content. Updated for the learning-v2 renderer: selected high-value concepts now use progressive tables and annotated syntax-highlighted code files while preserving the original concept/task coverage and prompt counts.",
   "modules": [
     {
       "id": "d3-task-3-1",
@@ -328,16 +328,77 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "LAYER THE DEFENSES",
+              "placeholder": "Reveal what each layer protects. Safety needs more than a single prompt or one filtering control.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "Comprehend preprocessing",
-                  "Bedrock guardrails",
-                  "Lambda/API post-processing"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "layer",
+                    "label": "Layer"
+                  },
+                  {
+                    "id": "role",
+                    "label": "Role"
+                  },
+                  {
+                    "id": "limit",
+                    "label": "What it does not replace"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "input",
+                    "cells": {
+                      "layer": "Input screening / Guardrails",
+                      "role": "Detect or block disallowed, sensitive, or risky input patterns",
+                      "limit": "Does not authorize tools or data access"
+                    }
+                  },
+                  {
+                    "id": "instruction",
+                    "cells": {
+                      "layer": "Trusted instruction/context separation",
+                      "role": "Keep application policy separate from untrusted user/retrieved content",
+                      "limit": "Prompt wording alone is not a security boundary"
+                    }
+                  },
+                  {
+                    "id": "tool",
+                    "cells": {
+                      "layer": "Tool authorization + least privilege",
+                      "role": "Constrain what actions the agent can actually perform",
+                      "limit": "Does not judge final answer quality"
+                    }
+                  },
+                  {
+                    "id": "output",
+                    "cells": {
+                      "layer": "Output validation / Guardrails",
+                      "role": "Check generated content before returning or executing it",
+                      "limit": "Does not prove upstream retrieved data is trustworthy"
+                    }
+                  },
+                  {
+                    "id": "monitor",
+                    "cells": {
+                      "layer": "Monitoring + red-team/evaluation",
+                      "role": "Detect regressions, abuse patterns, and control gaps over time",
+                      "limit": "Monitoring after the fact cannot replace preventive controls"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "layer"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -402,16 +463,62 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "INJECTION PATHS",
+              "placeholder": "Reveal where the hostile instruction originates and which boundary should contain it.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "prompt-injection detection",
-                  "input sanitization",
-                  "adversarial testing"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "attack",
+                    "label": "Attack path"
+                  },
+                  {
+                    "id": "example",
+                    "label": "Example"
+                  },
+                  {
+                    "id": "defense",
+                    "label": "Key defense"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "direct",
+                    "cells": {
+                      "attack": "Direct prompt injection / jailbreak",
+                      "example": "User asks the model to ignore application rules",
+                      "defense": "Guardrails/input checks, strong trusted instructions, and external enforcement of privileged actions"
+                    }
+                  },
+                  {
+                    "id": "indirect",
+                    "cells": {
+                      "attack": "Indirect prompt injection",
+                      "example": "Retrieved document or web content contains instructions aimed at the model",
+                      "defense": "Treat retrieved content as untrusted data; isolate instructions and constrain tools/data access"
+                    }
+                  },
+                  {
+                    "id": "tool",
+                    "cells": {
+                      "attack": "Tool-abuse escalation",
+                      "example": "Injected content tries to make the agent call a high-impact action",
+                      "defense": "Least-privilege tools, parameter validation, allowlists, and human approval for sensitive actions"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "attack",
+                      "example"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -492,16 +599,69 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "PROTECTION BOUNDARIES",
+              "placeholder": "Reveal which control protects which boundary. Network privacy, identity, and encryption solve different problems.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "VPC endpoints",
-                  "IAM",
-                  "Lake Formation/CloudWatch access controls"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "control",
+                    "label": "Control"
+                  },
+                  {
+                    "id": "protects",
+                    "label": "Protects"
+                  },
+                  {
+                    "id": "trap",
+                    "label": "Do not confuse with"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "iam",
+                    "cells": {
+                      "control": "IAM / least-privilege roles",
+                      "protects": "Who or what may invoke models, retrieve data, or call tools",
+                      "trap": "Network isolation"
+                    }
+                  },
+                  {
+                    "id": "private",
+                    "cells": {
+                      "control": "Private network paths / VPC endpoints where supported",
+                      "protects": "Keeping supported service traffic off public internet paths",
+                      "trap": "Application-level authorization"
+                    }
+                  },
+                  {
+                    "id": "kms",
+                    "cells": {
+                      "control": "KMS encryption controls",
+                      "protects": "Encryption keys and data-at-rest protection for supported resources",
+                      "trap": "Prompt-injection filtering"
+                    }
+                  },
+                  {
+                    "id": "data",
+                    "cells": {
+                      "control": "Repository/data permissions",
+                      "protects": "Which knowledge or enterprise data a principal/agent can access",
+                      "trap": "Model-output safety policy"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "column",
+                  "initially_visible": {
+                    "column_ids": [
+                      "control"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -566,16 +726,69 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "SENSITIVE-DATA CONTROLS",
+              "placeholder": "Reveal the primary role of each control. Discovery, filtering, encryption, and retention are separate jobs.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "Amazon Comprehend/Macie",
-                  "Bedrock privacy/Guardrails",
-                  "S3 lifecycle"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "control",
+                    "label": "Control"
+                  },
+                  {
+                    "id": "role",
+                    "label": "Primary role"
+                  },
+                  {
+                    "id": "example",
+                    "label": "Example use"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "macie",
+                    "cells": {
+                      "control": "Amazon Macie",
+                      "role": "Discover and classify sensitive data in Amazon S3",
+                      "example": "Find PII or sensitive objects in an S3 data repository"
+                    }
+                  },
+                  {
+                    "id": "guardrails",
+                    "cells": {
+                      "control": "Bedrock Guardrails sensitive-information controls",
+                      "role": "Apply configured filtering/masking behavior to model interactions",
+                      "example": "Block or mask configured PII in application input/output paths"
+                    }
+                  },
+                  {
+                    "id": "kms",
+                    "cells": {
+                      "control": "KMS-backed encryption",
+                      "role": "Protect supported data at rest with managed key controls",
+                      "example": "Encrypt stores/logs/repositories according to policy"
+                    }
+                  },
+                  {
+                    "id": "retention",
+                    "cells": {
+                      "control": "Retention / lifecycle policy",
+                      "role": "Limit how long logs, prompts, outputs, or source data are retained",
+                      "example": "Expire data after the approved retention period"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "control"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -805,16 +1018,69 @@
             {
               "id": "look",
               "kind": "look_for",
-              "label": "🔍 LOOK FOR",
-              "placeholder": "Key tools/patterns: __________",
+              "label": "AUDIT EVIDENCE",
+              "placeholder": "Reveal what each evidence source can answer. An API audit trail is not the same as an application trace.",
               "required": true,
               "reveal": {
-                "type": "keywords",
-                "items": [
-                  "AWS CloudTrail",
-                  "Glue Data Catalog",
-                  "audit logs"
-                ]
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "evidence",
+                    "label": "Evidence"
+                  },
+                  {
+                    "id": "answers",
+                    "label": "What it answers"
+                  },
+                  {
+                    "id": "use",
+                    "label": "Typical use"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "cloudtrail",
+                    "cells": {
+                      "evidence": "AWS CloudTrail",
+                      "answers": "Who called which AWS API, when, and from what context",
+                      "use": "Control-plane audit and investigation"
+                    }
+                  },
+                  {
+                    "id": "app",
+                    "cells": {
+                      "evidence": "Application / model invocation logs",
+                      "answers": "What request path, prompt version, model call, or result the application observed",
+                      "use": "Reproduce application behavior while respecting privacy policy"
+                    }
+                  },
+                  {
+                    "id": "trace",
+                    "cells": {
+                      "evidence": "Trace / correlation ID",
+                      "answers": "How one request moved across services and components",
+                      "use": "Join API, retrieval, tool, and model evidence for one execution"
+                    }
+                  },
+                  {
+                    "id": "lineage",
+                    "cells": {
+                      "evidence": "Data catalog / lineage records",
+                      "answers": "Where governed data came from and how it is classified/used",
+                      "use": "Governance and compliance evidence"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "evidence"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
