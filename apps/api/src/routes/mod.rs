@@ -7,6 +7,7 @@ pub mod learning;
 pub mod me;
 pub mod missions;
 pub mod openapi;
+pub mod progress;
 pub mod recommendations;
 pub mod sessions;
 pub mod sync;

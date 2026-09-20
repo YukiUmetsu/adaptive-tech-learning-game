@@ -17,7 +17,7 @@ use adaptive_learn_db as db;
 use adaptive_learn_domain::{
     ConceptWeight, DAILY_MISSION_BONUS_BITS, LearningEvent, MODEL_VERSION, MissionInstance,
     MissionStatus, PredictionSample, QuizMode, evaluate, predict_question, retrievability,
-    reward_bits,
+    reward_bits, summarize_streak,
 };
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use uuid::Uuid;
@@ -28,17 +28,20 @@ use crate::dto::{
     CertificationDto, CertificationVersionDto, CompleteMissionResponse, ConceptDto,
     DailyItemCompleteRequest, DailyItemCompleteResponse, DailyMissionItemDto, DailyMissionItemKind,
     DailyMissionItemStatus, DailyMissionPlanType, DailyMissionRequest, DailyMissionResponse,
-    DailyMissionStatus, DiscoveryResponse, DiscoveryUpdateRequest, DomainDto, EvaluationSliceDto,
-    FeedbackResponse, IssueMissionRequest, LearningDomainResponse, MissionResponse,
-    ModelEvaluationResponse, QuestionView, RecommendationEventRequest, RecommendationEventResponse,
-    RecommendationResponse, StudySessionRequest, StudySessionResponse, SyncEventRequest,
-    SyncEventResult, SyncRequest, SyncResponse, SyncSectionResult, TaskDto, WalletResponse,
+    DailyMissionStatus, DiscoveryResponse, DiscoveryState, DiscoveryUpdateRequest, DomainDto,
+    DomainProgressDto, EvaluationSliceDto, FeedbackResponse, IssueMissionRequest,
+    LearningDomainResponse, MissionResponse, ModelEvaluationResponse, NodeProgressDto,
+    QuestionView, RecommendationEventRequest, RecommendationEventResponse, RecommendationResponse,
+    StreakDto, StudySessionRequest, StudySessionResponse, SyncEventRequest, SyncEventResult,
+    SyncRequest, SyncResponse, SyncSectionResult, TaskDto, TrackMapResponse, TrackProgressResponse,
+    WalletResponse,
 };
 use crate::error::ApiError;
 use crate::planner::{
     self, ConceptStateView, PlannerDomain, PlannerInput, PlannerNode, PlannerQuestion,
 };
 use crate::selection::{self, Candidate, ConceptEvidence, HistoryEntry};
+use crate::signals;
 use crate::state::AppState;
 
 /// Response times are capped so background time cannot inflate study time.
@@ -116,7 +119,14 @@ pub fn learning_domain(
         .learning_domain_for_certification(certification_id, domain_id)
         .ok_or(ApiError::NotFound)?;
 
-    Ok(LearningDomainResponse {
+    Ok(learning_domain_response(domain))
+}
+
+/// Maps authored learning content into its learner-facing transport shape.
+fn learning_domain_response(
+    domain: &adaptive_learn_content::LearningDomain,
+) -> LearningDomainResponse {
+    LearningDomainResponse {
         schema_version: domain.schema_version.clone(),
         content_version: domain.content_version.clone(),
         certification_id: domain.certification_id.clone(),
@@ -126,6 +136,33 @@ pub fn learning_domain(
         learning_design: domain.learning_design.clone(),
         source_refs: domain.source_refs.clone(),
         modules: domain.modules.clone(),
+    }
+}
+
+/// Returns every learning domain for one track in a single response.
+///
+/// The Track Hub renders one track-wide Knowledge Map, so this avoids a request
+/// per domain. It is a read-only aggregate over authored content and carries no
+/// scored answers or learner state.
+pub fn track_map(state: &AppState, track_id: &str) -> Result<TrackMapResponse, ApiError> {
+    let bundle = state
+        .content
+        .bundle_for_certification(track_id)
+        .ok_or(ApiError::NotFound)?;
+    let track_version = bundle.version.id.clone();
+    let domains = state
+        .content
+        .learning_domains()
+        .iter()
+        .filter(|domain| domain.certification_version == track_version)
+        .map(learning_domain_response)
+        .collect();
+
+    Ok(TrackMapResponse {
+        track_id: track_id.to_owned(),
+        track_version,
+        content_version: bundle.version.content_version.clone(),
+        domains,
     })
 }
 
@@ -1465,6 +1502,162 @@ pub async fn track_discovery(
     })
 }
 
+/// Maximum active days loaded when deriving the streak.
+const STREAK_DAY_LIMIT: i64 = 4000;
+
+/// Builds the aggregate Knowledge Signal for one track.
+///
+/// One request returns every domain and node so the Track Hub never fetches
+/// per-node state. Coarse semantic states only: no raw probabilities,
+/// percentages, or pass estimates. Evidence/freshness come from the derived
+/// concept state; discovery comes from persisted discovery progress.
+pub async fn track_progress(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    track_id: &str,
+) -> Result<TrackProgressResponse, ApiError> {
+    let bundle = state
+        .content
+        .bundle_for_certification(track_id)
+        .ok_or(ApiError::NotFound)?;
+    let track_version = bundle.version.id.clone();
+    let now = Utc::now();
+
+    let states: Vec<ConceptStateView> =
+        db::concept_state::list_for_user(&state.pool, user.id, &track_version)
+            .await?
+            .into_iter()
+            .map(|state| ConceptStateView {
+                concept_id: state.concept_id,
+                assessment_mode: state.assessment_mode,
+                estimate: state.estimate,
+                evidence_mass: state.evidence_mass,
+                exposure_count: state.exposure_count,
+                last_practiced_at: state.last_practiced_at,
+            })
+            .collect();
+
+    // Persisted discovery is an enhancement; a read failure degrades to
+    // "unexplored" rather than failing the whole signal.
+    let stored_discovery =
+        match db::discovery::list_for_user_track(&state.pool, user.id, &track_version).await {
+            Ok(rows) => rows,
+            Err(error) => {
+                tracing::debug!(error = %error, "could not load discovery for track progress");
+                Vec::new()
+            }
+        };
+
+    let domains = state
+        .content
+        .learning_domains()
+        .iter()
+        .filter(|domain| domain.certification_version == track_version)
+        .map(|domain| {
+            let input = stored_discovery
+                .iter()
+                .find(|row| row.domain_id == domain.domain.id)
+                .map(|row| row.to_input())
+                .unwrap_or_default();
+            let derived = derive_domain_discovery(domain, &input);
+
+            let nodes = domain
+                .modules
+                .iter()
+                .flat_map(|module| module.nodes.iter())
+                .map(|node| {
+                    let discovery_state = if derived.unlocked_node_ids.contains(&node.id) {
+                        DiscoveryState::Completed
+                    } else if derived.explored_node_ids.contains(&node.id) {
+                        DiscoveryState::Explored
+                    } else {
+                        DiscoveryState::Unexplored
+                    };
+                    let signal = signals::derive_node_signal(&node.concept_ids, &states, now);
+                    NodeProgressDto {
+                        node_id: node.id.clone(),
+                        discovery_state,
+                        evidence_level: signal.evidence_level,
+                        freshness_state: signal.freshness_state,
+                        mode_signals: signal.mode_signals,
+                    }
+                })
+                .collect();
+
+            DomainProgressDto {
+                domain_id: domain.domain.id.clone(),
+                nodes,
+            }
+        })
+        .collect();
+
+    Ok(TrackProgressResponse {
+        track_id: track_id.to_owned(),
+        track_version,
+        content_version: bundle.version.content_version.clone(),
+        domains,
+    })
+}
+
+/// Returns the account-wide daily study streak, best-effort.
+///
+/// A query failure returns a neutral streak; the streak never fails account
+/// loading or learning.
+pub async fn streak(state: &AppState, user: &AuthenticatedUser) -> StreakDto {
+    let timezone = match db::users::timezone(&state.pool, user.id).await {
+        Ok(timezone) => timezone,
+        Err(error) => {
+            tracing::debug!(error = %error, "could not read timezone for streak");
+            None
+        }
+    };
+    let days = match db::study_days::list_days(&state.pool, user.id, STREAK_DAY_LIMIT).await {
+        Ok(days) => days,
+        Err(error) => {
+            tracing::debug!(error = %error, "could not load study days for streak");
+            Vec::new()
+        }
+    };
+    let today = local_day(Utc::now(), timezone.as_deref().unwrap_or("UTC"));
+    StreakDto::from(summarize_streak(days, today))
+}
+
+/// Captures the request timezone when absent and returns the effective one.
+///
+/// The timezone is captured once (matching Daily Mission behavior), so a later
+/// change cannot move the study-day boundary or farm streak days.
+async fn effective_timezone(
+    state: &AppState,
+    user_id: Uuid,
+    requested: Option<&str>,
+) -> Option<String> {
+    let requested = sanitize_timezone(requested);
+    if let Some(timezone) = requested.as_deref() {
+        if let Err(error) = db::users::set_timezone_if_absent(&state.pool, user_id, timezone).await
+        {
+            tracing::debug!(error = %error, "could not persist learner timezone");
+        }
+    }
+    match db::users::timezone(&state.pool, user_id).await {
+        Ok(stored) => stored.or(requested),
+        Err(error) => {
+            tracing::debug!(error = %error, "could not read learner timezone");
+            requested
+        }
+    }
+}
+
+/// Records today as a qualified study day, swallowing every failure.
+///
+/// The streak is motivational only: it never shares a transaction with learning
+/// events, concept state, or rewards, and a failure is logged and ignored.
+async fn record_study_day_best_effort(state: &AppState, user_id: Uuid, timezone: Option<&str>) {
+    let day = local_day(Utc::now(), timezone.unwrap_or("UTC"));
+    if let Err(error) = db::study_days::record(&state.pool, user_id, day).await {
+        tracing::debug!(error = %error, "could not record study day");
+    }
+}
+
 /// Logs a recommendation without ever letting a persistence problem escape.
 ///
 /// Recommendation history is auxiliary data: a missing table, an unreachable
@@ -1948,6 +2141,7 @@ pub async fn sync(
         }
     }
 
+    let mut newly_accepted_any = false;
     for event in request.events {
         let event_id = event.event_id;
         let mission_id = event.mission_instance_id;
@@ -1958,12 +2152,17 @@ pub async fn sync(
         };
 
         match apply_event(state, user, device_id, &mission, event).await {
-            Ok(bits_settled) => results.push(SyncEventResult {
-                event_id,
-                accepted: true,
-                error_code: None,
-                bits_settled,
-            }),
+            Ok(applied) => {
+                if applied.newly_accepted {
+                    newly_accepted_any = true;
+                }
+                results.push(SyncEventResult {
+                    event_id,
+                    accepted: true,
+                    error_code: None,
+                    bits_settled: applied.bits_settled,
+                });
+            }
             Err(SyncRejection::Fatal(error)) => return Err(ApiError::Internal(error)),
             Err(SyncRejection::Rejected(code)) => results.push(reject(event_id, code)),
         }
@@ -1973,6 +2172,17 @@ pub async fn sync(
         Some(user) => db::wallets::balance(&state.pool, user.id).await?,
         None => 0,
     };
+
+    // Account-wide study streak: a day qualifies when at least one scored event
+    // was newly accepted. This runs after the authoritative events commit, in its
+    // own statement, and every failure is swallowed, so a streak problem can
+    // never fail answer acceptance, concept state, or Bits.
+    if let Some(user) = user {
+        if newly_accepted_any {
+            let timezone = effective_timezone(state, user.id, request.timezone.as_deref()).await;
+            record_study_day_best_effort(state, user.id, timezone.as_deref()).await;
+        }
+    }
 
     // Optional sections are processed after the authoritative events have been
     // committed, each in its own transaction and with its own disposition. An
@@ -2113,6 +2323,14 @@ enum SyncRejection {
     Fatal(anyhow::Error),
 }
 
+/// Outcome of applying one synced event.
+struct AppliedEvent {
+    /// Bits settled for this event (0 when rejected or already settled).
+    bits_settled: i64,
+    /// Whether the event was newly accepted (not a duplicate retry).
+    newly_accepted: bool,
+}
+
 /// Marks a mission completed for its owner.
 pub async fn complete_mission(
     state: &AppState,
@@ -2216,7 +2434,7 @@ async fn apply_event(
     device_id: Option<Uuid>,
     mission: &MissionInstance,
     event: SyncEventRequest,
-) -> Result<i64, SyncRejection> {
+) -> Result<AppliedEvent, SyncRejection> {
     let owned_by_user = match mission.user_id {
         Some(owner) => match user {
             Some(user) if user.id == owner => true,
@@ -2314,11 +2532,16 @@ async fn apply_event(
         .await;
     }
 
-    Ok(match attempt {
+    let bits_settled = match attempt {
         Some(attempt_number) if owned_by_user => {
             reward_bits(attempt_number, scored.score, question.difficulty_prior)
         }
         _ => 0,
+    };
+
+    Ok(AppliedEvent {
+        bits_settled,
+        newly_accepted: attempt.is_some(),
     })
 }
 
@@ -2687,6 +2910,33 @@ mod tests {
         };
         let result = persist_discovery_best_effort(&state, Some(&user), &[unknown]).await;
         assert!(result.accepted);
+    }
+
+    #[tokio::test]
+    async fn study_day_persistence_failure_is_swallowed() {
+        use crate::auth::{Authenticator, DevVerifier};
+        use std::sync::Arc;
+
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .max_connections(1)
+            .acquire_timeout(std::time::Duration::from_millis(50))
+            .connect_lazy("postgres://app:app@127.0.0.1:1/app")
+            .expect("lazy pool");
+        let content = Arc::new(
+            adaptive_learn_content::ContentRegistry::embedded().expect("embedded content"),
+        );
+        let state = AppState::new(
+            pool,
+            content,
+            Authenticator {
+                verifier: Arc::new(DevVerifier),
+                profile: None,
+            },
+        );
+
+        // Unreachable database: recording a study day must never panic or
+        // propagate, so a streak problem can never fail answer acceptance.
+        record_study_day_best_effort(&state, Uuid::new_v4(), Some("UTC")).await;
     }
 
     fn concept_weight(concept_id: &str) -> ConceptWeight {

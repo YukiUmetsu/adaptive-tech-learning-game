@@ -283,6 +283,10 @@ pub struct FeedbackResponse {
 pub struct SyncRequest {
     /// Device/install context. Ownership comes from the authenticated user.
     pub device_id: Option<Uuid>,
+    /// Client IANA timezone. Captured once if absent so the account-wide study
+    /// streak uses the learner's local day boundary, matching Daily Missions.
+    #[serde(default)]
+    pub timezone: Option<String>,
     /// Attempts to reconcile. Strict: authoritative events must be well-formed.
     #[serde(default)]
     pub events: Vec<SyncEventRequest>,
@@ -438,6 +442,12 @@ pub struct MeResponse {
     pub email: Option<String>,
     /// Always `true`; the endpoint requires authentication.
     pub authenticated: bool,
+    /// Account-wide daily study streak.
+    ///
+    /// Bundled here so the Track Hub does not need a separate streak request.
+    /// Best-effort: a streak query failure returns a neutral streak and never
+    /// fails authentication.
+    pub streak: StreakDto,
 }
 
 /// Completion result.
@@ -488,6 +498,108 @@ pub struct DiscoveryResponse {
     pub track_version: String,
     /// Raw per-domain discovery progress.
     pub domains: Vec<adaptive_learn_content::DomainDiscoveryInput>,
+}
+
+/// Discovery dimension of the Knowledge Signal.
+///
+/// Whether the learner explored the node's learning content. This is separate
+/// from scored evidence and is never a mastery claim.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum DiscoveryState {
+    /// No prompt revealed.
+    Unexplored,
+    /// Some prompts revealed, not yet complete.
+    Explored,
+    /// Every required prompt complete.
+    Completed,
+}
+
+/// Knowledge Signal for one knowledge node.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct NodeProgressDto {
+    /// Knowledge node identifier.
+    pub node_id: String,
+    /// Whether the learner explored the node's content.
+    pub discovery_state: DiscoveryState,
+    /// Amount of scored evidence (coarse; never a percentage).
+    pub evidence_level: crate::signals::EvidenceLevel,
+    /// Freshness of that evidence (outer-ring treatment only).
+    pub freshness_state: crate::signals::FreshnessState,
+    /// Per-assessment-mode signals, present only for modes with evidence.
+    pub mode_signals: Vec<crate::signals::ModeSignal>,
+}
+
+/// Knowledge Signal for one domain's nodes.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct DomainProgressDto {
+    /// Domain identifier.
+    pub domain_id: String,
+    /// Per-node signals.
+    pub nodes: Vec<NodeProgressDto>,
+}
+
+/// Aggregate Knowledge Signal for one learning track.
+///
+/// One request returns every domain and node so the Track Hub never fetches
+/// per-node state. Coarse semantic states only: no raw model probabilities,
+/// percentages, or pass estimates.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct TrackProgressResponse {
+    /// Learning track identifier.
+    pub track_id: String,
+    /// Learning track version identifier.
+    pub track_version: String,
+    /// Immutable learning content version.
+    pub content_version: String,
+    /// Per-domain node signals.
+    pub domains: Vec<DomainProgressDto>,
+}
+
+/// All learner-facing learning content for one learning track.
+///
+/// This is a read-only aggregate over authored content so the Track Hub can
+/// render one track-wide Knowledge Map without a request per domain. It carries
+/// no scored answers and no learner state.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct TrackMapResponse {
+    /// Learning track identifier.
+    pub track_id: String,
+    /// Learning track version identifier.
+    pub track_version: String,
+    /// Immutable learning content version.
+    pub content_version: String,
+    /// Learning domains with modules, nodes, and reveals.
+    pub domains: Vec<LearningDomainResponse>,
+}
+
+/// Account-wide daily study streak.
+///
+/// Motivational only: it never feeds concept state, scoring, or rewards. It
+/// spans every learning track.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct StreakDto {
+    /// Consecutive active days ending today or yesterday.
+    pub current: u32,
+    /// Longest consecutive run ever recorded.
+    pub longest: u32,
+    /// Whether today is already a qualified study day.
+    pub active_today: bool,
+    /// Most recent qualified local day, `YYYY-MM-DD`, when any.
+    pub last_active_day: Option<String>,
+}
+
+impl From<adaptive_learn_domain::StreakSummary> for StreakDto {
+    fn from(summary: adaptive_learn_domain::StreakSummary) -> Self {
+        Self {
+            current: summary.current,
+            longest: summary.longest,
+            active_today: summary.active_today,
+            last_active_day: summary
+                .last_active_day
+                .map(|day| day.format("%Y-%m-%d").to_string()),
+        }
+    }
 }
 
 /// Best-effort next-action recommendation for a learning track.

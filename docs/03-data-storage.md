@@ -59,6 +59,7 @@ study_session_log
 daily_missions
 daily_mission_items
 discovery_progress
+user_study_days
 prediction_snapshots
 prediction_outcomes
 deletion_tombstones
@@ -115,6 +116,19 @@ blank domains are dropped, so a client cannot accumulate arbitrary
 `(track, domain)` rows in hot Postgres. The frontend is local-first: it renders
 from `localStorage` immediately, merges the persisted response asynchronously,
 and keeps working if persistence fails.
+
+## Account-wide study days
+
+`user_study_days` stores one row per qualified `(user_id, local_day)`, unique.
+A day qualifies when at least one scored learning event is newly accepted; the
+streak is derived from these unique days rather than a mutable counter, so
+retries are idempotent. `local_day` uses the learner's persisted IANA timezone
+(`users.timezone`), the same boundary Daily Missions use, so a timezone change
+cannot farm extra days.
+
+The streak is motivational, not learning evidence: it never touches
+`learning_events`, `user_concept_state`, wallets, or rewards, and recording it is
+best-effort and isolated from the authoritative answer transaction.
 
 ## Auxiliary recommendation history
 

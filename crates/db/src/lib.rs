@@ -14,6 +14,7 @@ pub mod missions;
 pub mod predictions;
 pub mod recommendations;
 pub mod sessions;
+pub mod study_days;
 pub mod sync_batches;
 pub mod users;
 pub mod wallets;

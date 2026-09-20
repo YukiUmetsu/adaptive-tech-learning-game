@@ -184,6 +184,8 @@ POST /v1/missions/issue
 POST /v1/missions/:id/answers
 POST /v1/sync
 GET  /v1/tracks/:id/discovery
+GET  /v1/tracks/:id/map
+GET  /v1/tracks/:id/progress
 POST /v1/tracks/:id/recommendation
 POST /v1/tracks/:id/recommendations/:rid/events
 POST /v1/tracks/:id/session

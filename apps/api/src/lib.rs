@@ -13,6 +13,7 @@ pub mod planner;
 pub mod routes;
 pub mod selection;
 pub mod services;
+pub mod signals;
 pub mod state;
 
 use std::time::Duration;
@@ -52,6 +53,14 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
         .route(
             "/v1/tracks/{track_id}/discovery",
             get(routes::discovery::get_track_discovery),
+        )
+        .route(
+            "/v1/tracks/{track_id}/map",
+            get(routes::progress::get_track_map),
+        )
+        .route(
+            "/v1/tracks/{track_id}/progress",
+            get(routes::progress::get_track_progress),
         )
         .route(
             "/v1/tracks/{track_id}/recommendation",

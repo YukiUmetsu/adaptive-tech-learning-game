@@ -453,6 +453,80 @@ Practice allocates seats by domain weight using a deterministic largest-remainde
 method and redistributes any deficit when a domain is short. Question counts are
 server policy and are never client input.
 
+## Knowledge Signal (learner visualization)
+
+The Track Hub visualizes progress through a coarse, non-judgmental
+**Knowledge Signal**. It is explicitly not mastery: it never shows percentages,
+pass probabilities, or negative labels.
+
+Three independent dimensions are combined:
+
+1. **Discovery** — whether the learner explored the node's learning content.
+   Derived from discovery progress (never scored evidence): unexplored, explored,
+   or completed.
+2. **Evidence level** — how much scored evidence exists, from concept-state
+   evidence mass: none, early, developing, or substantial. This is an amount of
+   evidence, not a success claim; a node with little evidence looks early, not
+   deficient.
+3. **Freshness** — whether that evidence is still retrievable now, from
+   `heuristic-v1` retrievability. It affects only the outer ring: fresh,
+   becoming due, or review useful. A previously strong node never becomes dark
+   or "lost" — it stays visibly learned and invites a refresh.
+
+Assessment modes stay separate: each mode contributes its own small signal,
+shown only in the node's hover/tap detail, never as permanent text on every
+node. Unknown concepts look unexplored, not deficient.
+
+The aggregate endpoint `GET /v1/tracks/{track_id}/progress` returns coarse
+semantic states for every node in one request. States are derived
+deterministically server-side (`apps/api/src/signals.rs`) from concept state,
+evidence mass, retrievability, node → concept mappings, and discovery progress.
+No raw model probabilities are exposed to the learner UI.
+
+## Account-wide daily study streak
+
+The streak spans **all** learning tracks: studying AWS today and Python tomorrow
+continues the same streak. It is motivational, not learning evidence, and never
+updates concept state.
+
+A day qualifies when the learner has at least one **newly accepted scored
+learning event**. Opening a page, clicking a node, revealing a card, viewing a
+recommendation, loading a Daily Mission, and telemetry events never qualify.
+
+Persistence is a small table of unique active days
+(`user_study_days (user_id, local_day)`, unique), not a mutable counter, so the
+current and longest streak are derived deterministically on read and duplicate
+syncs/retries cannot advance the streak twice. The local day uses the learner's
+persisted IANA timezone — the same boundary Daily Missions use — so a later
+timezone change cannot farm extra days. The streak is bundled into `GET /v1/me`
+so no separate request is needed.
+
+The UI is compact and never punishing: an active day is illuminated, a pending
+day is quiet, and a lapsed streak reads as "start a streak today" rather than
+announcing a loss.
+
+## Request and caching strategy
+
+The Track Hub is designed to keep HTTP traffic low and to fail open:
+
+- one aggregate `GET /v1/tracks/{track_id}/map` for track-wide content, instead
+  of one request per domain;
+- one aggregate `GET /v1/tracks/{track_id}/progress` for the Knowledge Signal;
+- the streak bundled into the already-loaded `GET /v1/me`;
+- the recommendation and Daily Mission use their existing cached/eventual
+  behavior.
+
+Signals are cached in memory and refreshed only at meaningful boundaries
+(opening the track, completing a quiz, an explicit refresh). There is no polling,
+no per-node request, and no refetch after every answer. Temporary visual
+staleness is acceptable.
+
+Every enhancement loads independently. If the map, progress, streak,
+recommendation, discovery sync, analytics, or telemetry fails, the dashboard,
+Knowledge Map, learning nodes, Daily Mission, all quiz modes, answer submission,
+sync, concept state, and Bits remain fully usable. The Knowledge Map renders from
+local discovery progress alone when the signal is unavailable.
+
 ## Auxiliary failure isolation and batching
 
 Auxiliary systems (discovery persistence, recommendation telemetry, prediction

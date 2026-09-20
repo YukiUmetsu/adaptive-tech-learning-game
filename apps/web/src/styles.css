@@ -5009,3 +5009,828 @@ button.primary:hover:not(:disabled) {
   margin: 0.15rem 0 0;
   overflow-wrap: anywhere;
 }
+
+/* ---------------------------------------------------------------------------
+   Track Hub + Knowledge Signal
+   A calm, constellation-style hub. The Knowledge Map is the centerpiece; the
+   streak, Bits, Daily Mission, and practice controls are compact. No red or
+   negative states; meaning never depends on color alone.
+   --------------------------------------------------------------------------- */
+
+.track-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.track-hub-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 1rem;
+}
+
+.track-hub-title h1 {
+  margin: 0.15rem 0 0;
+}
+
+.track-hub-back {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.track-hub-back:hover {
+  color: var(--text);
+}
+
+.track-hub-subtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+}
+
+.track-hub-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.track-hub-tabs > button,
+.track-hub-tabs > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.8rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.track-hub-tabs > button:hover,
+.track-hub-tabs > a:hover {
+  color: var(--text);
+}
+
+.track-hub-tabs > [aria-current="page"] {
+  background: rgba(56, 189, 248, 0.14);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.35);
+}
+
+.track-hub-hud {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.track-hub-resume {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.track-hub-map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18rem;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.track-hub-map {
+  position: relative;
+  min-height: 18rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(700px 320px at 20% 0%, rgba(56, 189, 248, 0.06), transparent 60%),
+    radial-gradient(600px 320px at 100% 100%, rgba(129, 140, 248, 0.05), transparent 60%),
+    var(--surface-muted);
+  box-shadow: var(--shadow);
+}
+
+.track-hub-map-status {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.track-hub-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.track-hub-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.track-hub-practice-view {
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
+}
+
+/* --- Track map ------------------------------------------------------------- */
+
+.track-map {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.track-map-domain-head h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.track-map-module {
+  margin-bottom: 0.75rem;
+}
+
+.track-map-module-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.track-map-nodes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.track-map-node {
+  display: flex;
+  align-items: center;
+}
+
+.track-map-connector {
+  width: 1.6rem;
+  height: 2px;
+  margin: 0 -0.1rem;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background 0.3s;
+}
+
+.track-map-connector--lit {
+  background: linear-gradient(90deg, var(--accent), var(--border-strong));
+}
+
+/* --- Knowledge Signal node ------------------------------------------------- */
+
+.signal-node {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  width: 6.5rem;
+  padding: 3.4rem 0.25rem 0.5rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.signal-node:hover {
+  transform: translateY(-2px);
+}
+
+.signal-node-ring,
+.signal-node-core,
+.signal-node-orbit {
+  position: absolute;
+  top: 0.35rem;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.signal-node-ring {
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 2px solid var(--border);
+  opacity: 0.55;
+  transition: border-color 0.3s, box-shadow 0.3s, opacity 0.3s;
+}
+
+.signal-node-core {
+  top: 0.95rem;
+  width: 1.55rem;
+  height: 1.55rem;
+  background: var(--accent);
+  opacity: 0;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+  transition: opacity 0.3s, background 0.3s, box-shadow 0.3s;
+}
+
+.signal-node-orbit {
+  width: 3.4rem;
+  height: 3.4rem;
+  top: 0;
+  border: 1px dashed rgba(56, 189, 248, 0.5);
+  opacity: 0;
+}
+
+.signal-node-spark {
+  position: absolute;
+  top: -0.1rem;
+  right: 0.7rem;
+  color: var(--warning);
+  font-size: 0.9rem;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.signal-node-modes {
+  position: absolute;
+  top: 3.15rem;
+  display: flex;
+  gap: 0.15rem;
+  pointer-events: none;
+}
+
+.signal-pip {
+  width: 0.32rem;
+  height: 0.32rem;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.signal-pip--early {
+  background: rgba(56, 189, 248, 0.55);
+}
+
+.signal-pip--developing {
+  background: var(--accent);
+}
+
+.signal-pip--substantial {
+  background: var(--success);
+}
+
+.signal-node-label {
+  font-size: 0.78rem;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* Discovery dimension */
+.signal-node--unexplored .signal-node-ring {
+  opacity: 0.35;
+}
+.signal-node--unexplored .signal-node-core {
+  opacity: 0;
+}
+.signal-node--explored .signal-node-ring,
+.signal-node--completed .signal-node-ring {
+  opacity: 1;
+}
+.signal-node--explored .signal-node-core,
+.signal-node--completed .signal-node-core {
+  opacity: 0.22;
+}
+.signal-node--completed .signal-node-ring {
+  border-color: rgba(56, 189, 248, 0.55);
+}
+
+/* Evidence dimension (declared after discovery so it wins) */
+.signal-node--evidence-early .signal-node-core {
+  opacity: 0.42;
+}
+.signal-node--evidence-developing .signal-node-core {
+  opacity: 0.68;
+}
+.signal-node--evidence-substantial .signal-node-core {
+  opacity: 0.95;
+  background: var(--success);
+  box-shadow: 0 0 16px rgba(52, 211, 153, 0.5);
+}
+
+/* Freshness dimension (outer ring only; never darkens the node) */
+.signal-node--fresh-fresh .signal-node-ring {
+  border-color: rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.22);
+}
+.signal-node--fresh-becoming_due .signal-node-ring {
+  border-style: dashed;
+  border-color: rgba(251, 191, 36, 0.65);
+}
+.signal-node--fresh-due .signal-node-ring {
+  border-style: dashed;
+  border-color: var(--warning);
+  animation: signal-pulse 3.4s ease-in-out infinite;
+}
+
+.signal-node--recommended .signal-node-spark {
+  opacity: 1;
+  animation: signal-float 3.6s ease-in-out infinite;
+}
+.signal-node--recommended .signal-node-orbit {
+  opacity: 0.6;
+  animation: signal-orbit 9s linear infinite;
+}
+
+.signal-node--selected .signal-node-ring {
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+}
+
+.signal-node--reduced .signal-node-ring,
+.signal-node--reduced .signal-node-spark,
+.signal-node--reduced .signal-node-orbit {
+  animation: none;
+}
+
+@keyframes signal-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(251, 191, 36, 0.12);
+  }
+}
+
+@keyframes signal-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes signal-orbit {
+  from {
+    transform: translateX(-50%) rotate(0deg);
+  }
+  to {
+    transform: translateX(-50%) rotate(360deg);
+  }
+}
+
+/* --- Streak HUD ------------------------------------------------------------ */
+
+.streak-hud {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.streak-flame {
+  font-size: 1.3rem;
+  filter: grayscale(1);
+  opacity: 0.55;
+  transition: filter 0.3s, opacity 0.3s, transform 0.3s;
+}
+
+.streak-body {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.streak-count {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.streak-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.streak-hud--active {
+  border-color: rgba(251, 191, 36, 0.5);
+  box-shadow: 0 0 16px -6px rgba(251, 191, 36, 0.5);
+}
+
+.streak-hud--active .streak-flame {
+  filter: none;
+  opacity: 1;
+}
+
+.streak-hud--quiet .streak-count {
+  color: var(--text-muted);
+}
+
+.streak-hud--pulse .streak-flame {
+  animation: streak-flame 1.6s ease-in-out 1;
+}
+
+@keyframes streak-flame {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* --- Node detail panel ----------------------------------------------------- */
+
+.node-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.node-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.node-panel-head h3 {
+  margin: 0.1rem 0 0;
+  font-size: 1.05rem;
+}
+
+.node-panel-domain {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.node-panel-module {
+  margin: 0.1rem 0 0;
+  font-size: 0.78rem;
+}
+
+.node-panel-close {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.node-panel-next {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--warning);
+}
+
+.node-panel-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.node-panel-modes li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.node-mode-ring {
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 2px solid var(--border-strong);
+  border-radius: 50%;
+  flex: none;
+}
+
+.node-mode-ring--early {
+  border-color: rgba(56, 189, 248, 0.5);
+}
+.node-mode-ring--developing {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
+.node-mode-ring--substantial {
+  border-color: var(--success);
+  background: rgba(52, 211, 153, 0.16);
+}
+.node-mode-ring--due {
+  border-style: dashed;
+  border-color: var(--warning);
+}
+
+.node-panel-empty {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.node-panel-meta {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+}
+
+.node-panel-meta dt {
+  font-size: 0.68rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.node-panel-meta dd {
+  margin: 0.1rem 0 0;
+  font-size: 0.85rem;
+}
+
+.node-panel-explore {
+  width: 100%;
+}
+
+/* --- Legend ---------------------------------------------------------------- */
+
+.signal-legend {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
+  font-size: 0.82rem;
+}
+
+.signal-legend summary {
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.signal-legend ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.signal-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-node {
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  flex: none;
+}
+
+.legend-node--unexplored {
+  opacity: 0.4;
+}
+.legend-node--explored {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.22);
+}
+.legend-node--developing {
+  border-color: var(--accent);
+  background: rgba(56, 189, 248, 0.5);
+}
+.legend-node--strong {
+  border-color: var(--success);
+  background: rgba(52, 211, 153, 0.75);
+}
+.legend-node--due {
+  border-style: dashed;
+  border-color: var(--warning);
+}
+
+/* --- Practice controls ----------------------------------------------------- */
+
+.hub-practice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hub-practice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.hub-practice-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.hub-practice-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.hub-domain-picker {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.hub-domain-picker-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hub-domain-picker-head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.hub-domain-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hub-domain-list button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hub-domain-list button:hover {
+  border-color: var(--accent);
+}
+
+.hub-next-practice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: var(--radius-lg);
+  background: rgba(56, 189, 248, 0.07);
+}
+
+.hub-next-practice-title {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.hub-daily-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.hub-daily-progress {
+  font-size: 0.78rem;
+}
+
+.hub-fallback-domains {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hub-fallback-domain {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+}
+
+.hub-fallback-name {
+  margin: 0;
+  font-weight: 600;
+}
+
+.hub-fallback-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* --- Responsive ------------------------------------------------------------ */
+
+@media (max-width: 900px) {
+  .track-hub-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .track-hub-tabs {
+    justify-self: start;
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  .track-hub-map-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .track-hub-side {
+    position: static;
+  }
+
+  .node-panel {
+    order: 2;
+  }
+}
+
+@media (max-width: 560px) {
+  .signal-node {
+    width: 5.25rem;
+  }
+
+  .track-map-connector {
+    width: 0.8rem;
+  }
+
+  .track-hub-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signal-node--fresh-due .signal-node-ring,
+  .signal-node--recommended .signal-node-spark,
+  .signal-node--recommended .signal-node-orbit,
+  .streak-hud--pulse .streak-flame {
+    animation: none;
+  }
+
+  .signal-node:hover {
+    transform: none;
+  }
+}

@@ -46,6 +46,16 @@ export type DiscoveryUpdateRequest =
 export type AuxiliaryEventRequest =
   components["schemas"]["AuxiliaryEventRequest"];
 export type DiscoveryResponse = components["schemas"]["DiscoveryResponse"];
+export type TrackMapResponse = components["schemas"]["TrackMapResponse"];
+export type TrackProgressResponse =
+  components["schemas"]["TrackProgressResponse"];
+export type DomainProgressDto = components["schemas"]["DomainProgressDto"];
+export type NodeProgressDto = components["schemas"]["NodeProgressDto"];
+export type DiscoveryState = components["schemas"]["DiscoveryState"];
+export type StreakDto = components["schemas"]["StreakDto"];
+export type EvidenceLevel = components["schemas"]["EvidenceLevel"];
+export type FreshnessState = components["schemas"]["FreshnessState"];
+export type ModeSignal = components["schemas"]["ModeSignal"];
 export type LearningDomainResponse =
   components["schemas"]["LearningDomainResponse"];
 export type LearningModule = components["schemas"]["LearningModule"];

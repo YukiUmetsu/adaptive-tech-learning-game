@@ -408,7 +408,7 @@
           "account"
         ],
         "summary": "Returns safe application account data for the authenticated learner.",
-        "description": "Used to confirm server-side auth and to power the account UI. It never\nreturns tokens, secrets, or provider internals.",
+        "description": "Used to confirm server-side auth and to power the account UI. It never\nreturns tokens, secrets, or provider internals. The account-wide study streak\nis bundled here so the Track Hub needs no separate streak request; a streak\nquery failure returns a neutral streak and never fails authentication.",
         "operationId": "get_me",
         "responses": {
           "200": {
@@ -843,6 +843,122 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DiscoveryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown learning track",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tracks/{track_id}/map": {
+      "get": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Returns every learning domain for a track in one response.",
+        "description": "The Track Hub renders one track-wide Knowledge Map, so this avoids a request\nper domain. It is authored content only: no scored answers, no learner state.",
+        "operationId": "get_track_map",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `aws-soa-c03`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Track knowledge map content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackMapResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown learning track",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tracks/{track_id}/progress": {
+      "get": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Returns the aggregate Knowledge Signal for a track.",
+        "description": "One request covers every domain and node. Coarse semantic states only: no raw\nmodel probabilities, percentages, or pass estimates. This is an enhancement:\nif it fails, the client renders the normal Knowledge Map from discovery\nprogress and omits the adaptive decoration.",
+        "operationId": "get_track_progress",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `aws-soa-c03`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Track knowledge signal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackProgressResponse"
                 }
               }
             }
@@ -2370,6 +2486,15 @@
           }
         }
       },
+      "DiscoveryState": {
+        "type": "string",
+        "description": "Discovery dimension of the Knowledge Signal.\n\nWhether the learner explored the node's learning content. This is separate\nfrom scored evidence and is never a mastery claim.",
+        "enum": [
+          "unexplored",
+          "explored",
+          "completed"
+        ]
+      },
       "DiscoveryUpdateRequest": {
         "type": "object",
         "description": "A monotonic Knowledge Map discovery delta for one track version.\n\nDiscovery is set-union based, so duplicates are harmless and an older device\ncan never remove a newer reveal.",
@@ -2477,6 +2602,27 @@
           }
         }
       },
+      "DomainProgressDto": {
+        "type": "object",
+        "description": "Knowledge Signal for one domain's nodes.",
+        "required": [
+          "domain_id",
+          "nodes"
+        ],
+        "properties": {
+          "domain_id": {
+            "type": "string",
+            "description": "Domain identifier."
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NodeProgressDto"
+            },
+            "description": "Per-node signals."
+          }
+        }
+      },
       "ErrorBody": {
         "type": "object",
         "description": "Structured error details.",
@@ -2563,6 +2709,16 @@
             "minimum": 0
           }
         }
+      },
+      "EvidenceLevel": {
+        "type": "string",
+        "description": "Coarse evidence level for a node or one assessment mode.\n\nThis is an amount-of-evidence signal, never a mastery claim. A node with\nlittle evidence looks \"early\", not deficient.",
+        "enum": [
+          "none",
+          "early",
+          "developing",
+          "substantial"
+        ]
       },
       "FeedbackResponse": {
         "type": "object",
@@ -2689,6 +2845,16 @@
         "enum": [
           "start",
           "end"
+        ]
+      },
+      "FreshnessState": {
+        "type": "string",
+        "description": "Coarse freshness signal, used only for the outer ring.",
+        "enum": [
+          "unknown",
+          "fresh",
+          "becoming_due",
+          "due"
         ]
       },
       "HealthResponse": {
@@ -3677,7 +3843,8 @@
         "description": "Safe application account data for the signed-in learner.",
         "required": [
           "id",
-          "authenticated"
+          "authenticated",
+          "streak"
         ],
         "properties": {
           "authenticated": {
@@ -3695,6 +3862,10 @@
             "type": "string",
             "format": "uuid",
             "description": "Internal application user id. The stable ownership key."
+          },
+          "streak": {
+            "$ref": "#/components/schemas/StreakDto",
+            "description": "Account-wide daily study streak.\n\nBundled here so the Track Hub does not need a separate streak request.\nBest-effort: a streak query failure returns a neutral streak and never\nfails authentication."
           }
         }
       },
@@ -3779,6 +3950,29 @@
           "issued",
           "completed"
         ]
+      },
+      "ModeSignal": {
+        "type": "object",
+        "description": "One assessment mode's signal for a node.",
+        "required": [
+          "assessment_mode",
+          "evidence_level",
+          "freshness_state"
+        ],
+        "properties": {
+          "assessment_mode": {
+            "$ref": "#/components/schemas/AssessmentMode",
+            "description": "Evidence mode this signal measures."
+          },
+          "evidence_level": {
+            "$ref": "#/components/schemas/EvidenceLevel",
+            "description": "Amount-of-evidence level in this mode."
+          },
+          "freshness_state": {
+            "$ref": "#/components/schemas/FreshnessState",
+            "description": "Freshness of the evidence in this mode."
+          }
+        }
       },
       "ModelEvaluationResponse": {
         "type": "object",
@@ -3874,6 +4068,42 @@
             "type": "number",
             "format": "double",
             "description": "Vertical position in an abstract `0..=1` layout space."
+          }
+        }
+      },
+      "NodeProgressDto": {
+        "type": "object",
+        "description": "Knowledge Signal for one knowledge node.",
+        "required": [
+          "node_id",
+          "discovery_state",
+          "evidence_level",
+          "freshness_state",
+          "mode_signals"
+        ],
+        "properties": {
+          "discovery_state": {
+            "$ref": "#/components/schemas/DiscoveryState",
+            "description": "Whether the learner explored the node's content."
+          },
+          "evidence_level": {
+            "$ref": "#/components/schemas/EvidenceLevel",
+            "description": "Amount of scored evidence (coarse; never a percentage)."
+          },
+          "freshness_state": {
+            "$ref": "#/components/schemas/FreshnessState",
+            "description": "Freshness of that evidence (outer-ring treatment only)."
+          },
+          "mode_signals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModeSignal"
+            },
+            "description": "Per-assessment-mode signals, present only for modes with evidence."
+          },
+          "node_id": {
+            "type": "string",
+            "description": "Knowledge node identifier."
           }
         }
       },
@@ -4542,6 +4772,40 @@
           }
         }
       },
+      "StreakDto": {
+        "type": "object",
+        "description": "Account-wide daily study streak.\n\nMotivational only: it never feeds concept state, scoring, or rewards. It\nspans every learning track.",
+        "required": [
+          "current",
+          "longest",
+          "active_today"
+        ],
+        "properties": {
+          "active_today": {
+            "type": "boolean",
+            "description": "Whether today is already a qualified study day."
+          },
+          "current": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Consecutive active days ending today or yesterday.",
+            "minimum": 0
+          },
+          "last_active_day": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Most recent qualified local day, `YYYY-MM-DD`, when any."
+          },
+          "longest": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Longest consecutive run ever recorded.",
+            "minimum": 0
+          }
+        }
+      },
       "StudySession": {
         "type": "object",
         "description": "A planned study session.",
@@ -4750,6 +5014,13 @@
               "$ref": "#/components/schemas/SyncEventRequest"
             },
             "description": "Attempts to reconcile. Strict: authoritative events must be well-formed."
+          },
+          "timezone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Client IANA timezone. Captured once if absent so the account-wide study\nstreak uses the learner's local day boundary, matching Daily Missions."
           }
         }
       },
@@ -4872,6 +5143,68 @@
             "type": "integer",
             "description": "Number of authored questions available.",
             "minimum": 0
+          }
+        }
+      },
+      "TrackMapResponse": {
+        "type": "object",
+        "description": "All learner-facing learning content for one learning track.\n\nThis is a read-only aggregate over authored content so the Track Hub can\nrender one track-wide Knowledge Map without a request per domain. It carries\nno scored answers and no learner state.",
+        "required": [
+          "track_id",
+          "track_version",
+          "content_version",
+          "domains"
+        ],
+        "properties": {
+          "content_version": {
+            "type": "string",
+            "description": "Immutable learning content version."
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearningDomainResponse"
+            },
+            "description": "Learning domains with modules, nodes, and reveals."
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track identifier."
+          },
+          "track_version": {
+            "type": "string",
+            "description": "Learning track version identifier."
+          }
+        }
+      },
+      "TrackProgressResponse": {
+        "type": "object",
+        "description": "Aggregate Knowledge Signal for one learning track.\n\nOne request returns every domain and node so the Track Hub never fetches\nper-node state. Coarse semantic states only: no raw model probabilities,\npercentages, or pass estimates.",
+        "required": [
+          "track_id",
+          "track_version",
+          "content_version",
+          "domains"
+        ],
+        "properties": {
+          "content_version": {
+            "type": "string",
+            "description": "Immutable learning content version."
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainProgressDto"
+            },
+            "description": "Per-domain node signals."
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track identifier."
+          },
+          "track_version": {
+            "type": "string",
+            "description": "Learning track version identifier."
           }
         }
       },

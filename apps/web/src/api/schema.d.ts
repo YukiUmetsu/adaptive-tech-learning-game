@@ -154,7 +154,9 @@ export interface paths {
         /**
          * Returns safe application account data for the authenticated learner.
          * @description Used to confirm server-side auth and to power the account UI. It never
-         *     returns tokens, secrets, or provider internals.
+         *     returns tokens, secrets, or provider internals. The account-wide study streak
+         *     is bundled here so the Track Hub needs no separate streak request; a streak
+         *     query failure returns a neutral streak and never fails authentication.
          */
         get: operations["get_me"];
         put?: never;
@@ -277,6 +279,50 @@ export interface paths {
          *     monotonic discovery data and never scored knowledge evidence.
          */
         get: operations["get_track_discovery"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tracks/{track_id}/map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns every learning domain for a track in one response.
+         * @description The Track Hub renders one track-wide Knowledge Map, so this avoids a request
+         *     per domain. It is authored content only: no scored answers, no learner state.
+         */
+        get: operations["get_track_map"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tracks/{track_id}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns the aggregate Knowledge Signal for a track.
+         * @description One request covers every domain and node. Coarse semantic states only: no raw
+         *     model probabilities, percentages, or pass estimates. This is an enhancement:
+         *     if it fails, the client renders the normal Knowledge Map from discovery
+         *     progress and omits the adaptive decoration.
+         */
+        get: operations["get_track_progress"];
         put?: never;
         post?: never;
         delete?: never;
@@ -846,6 +892,14 @@ export interface components {
             track_version: string;
         };
         /**
+         * @description Discovery dimension of the Knowledge Signal.
+         *
+         *     Whether the learner explored the node's learning content. This is separate
+         *     from scored evidence and is never a mastery claim.
+         * @enum {string}
+         */
+        DiscoveryState: "unexplored" | "explored" | "completed";
+        /**
          * @description A monotonic Knowledge Map discovery delta for one track version.
          *
          *     Discovery is set-union based, so duplicates are harmless and an older device
@@ -890,6 +944,13 @@ export interface components {
              */
             weight: number;
         };
+        /** @description Knowledge Signal for one domain's nodes. */
+        DomainProgressDto: {
+            /** @description Domain identifier. */
+            domain_id: string;
+            /** @description Per-node signals. */
+            nodes: components["schemas"]["NodeProgressDto"][];
+        };
         /** @description Structured error details. */
         ErrorBody: {
             /** @description Stable error code. */
@@ -931,6 +992,14 @@ export interface components {
             /** @description Number of samples in the slice. */
             samples: number;
         };
+        /**
+         * @description Coarse evidence level for a node or one assessment mode.
+         *
+         *     This is an amount-of-evidence signal, never a mastery claim. A node with
+         *     little evidence looks "early", not deficient.
+         * @enum {string}
+         */
+        EvidenceLevel: "none" | "early" | "developing" | "substantial";
         /** @description Feedback for one scored attempt. */
         FeedbackResponse: {
             /**
@@ -994,6 +1063,11 @@ export interface components {
          * @enum {string}
          */
         FixedNodePosition: "start" | "end";
+        /**
+         * @description Coarse freshness signal, used only for the outer ring.
+         * @enum {string}
+         */
+        FreshnessState: "unknown" | "fresh" | "becoming_due" | "due";
         /**
          * @description Safe operational health payload. Never includes connection strings, hosts,
          *     versions of dependencies, or other internals.
@@ -1325,6 +1399,14 @@ export interface components {
              * @description Internal application user id. The stable ownership key.
              */
             id: string;
+            /**
+             * @description Account-wide daily study streak.
+             *
+             *     Bundled here so the Track Hub does not need a separate streak request.
+             *     Best-effort: a streak query failure returns a neutral streak and never
+             *     fails authentication.
+             */
+            streak: components["schemas"]["StreakDto"];
         };
         /** @description A server-issued mission with its questions. */
         MissionResponse: {
@@ -1368,6 +1450,15 @@ export interface components {
          * @enum {string}
          */
         MissionStatus: "issued" | "completed";
+        /** @description One assessment mode's signal for a node. */
+        ModeSignal: {
+            /** @description Evidence mode this signal measures. */
+            assessment_mode: components["schemas"]["AssessmentMode"];
+            /** @description Amount-of-evidence level in this mode. */
+            evidence_level: components["schemas"]["EvidenceLevel"];
+            /** @description Freshness of the evidence in this mode. */
+            freshness_state: components["schemas"]["FreshnessState"];
+        };
         /**
          * @description Internal calibration summary for one model version.
          *
@@ -1422,6 +1513,19 @@ export interface components {
              * @description Vertical position in an abstract `0..=1` layout space.
              */
             y: number;
+        };
+        /** @description Knowledge Signal for one knowledge node. */
+        NodeProgressDto: {
+            /** @description Whether the learner explored the node's content. */
+            discovery_state: components["schemas"]["DiscoveryState"];
+            /** @description Amount of scored evidence (coarse; never a percentage). */
+            evidence_level: components["schemas"]["EvidenceLevel"];
+            /** @description Freshness of that evidence (outer-ring treatment only). */
+            freshness_state: components["schemas"]["FreshnessState"];
+            /** @description Per-assessment-mode signals, present only for modes with evidence. */
+            mode_signals: components["schemas"]["ModeSignal"][];
+            /** @description Knowledge node identifier. */
+            node_id: string;
         };
         /** @description One axis of a two-dimensional conceptual map. */
         PlacementAxis: {
@@ -1709,6 +1813,28 @@ export interface components {
             /** @description URL. */
             url: string;
         };
+        /**
+         * @description Account-wide daily study streak.
+         *
+         *     Motivational only: it never feeds concept state, scoring, or rewards. It
+         *     spans every learning track.
+         */
+        StreakDto: {
+            /** @description Whether today is already a qualified study day. */
+            active_today: boolean;
+            /**
+             * Format: int32
+             * @description Consecutive active days ending today or yesterday.
+             */
+            current: number;
+            /** @description Most recent qualified local day, `YYYY-MM-DD`, when any. */
+            last_active_day?: string | null;
+            /**
+             * Format: int32
+             * @description Longest consecutive run ever recorded.
+             */
+            longest: number;
+        };
         /** @description A planned study session. */
         StudySession: {
             /** @description Ordered activities. */
@@ -1841,6 +1967,11 @@ export interface components {
             discovery_updates?: components["schemas"]["DiscoveryUpdateRequest"][];
             /** @description Attempts to reconcile. Strict: authoritative events must be well-formed. */
             events?: components["schemas"]["SyncEventRequest"][];
+            /**
+             * @description Client IANA timezone. Captured once if absent so the account-wide study
+             *     streak uses the learner's local day boundary, matching Daily Missions.
+             */
+            timezone?: string | null;
         };
         /** @description Result of a sync batch. */
         SyncResponse: {
@@ -1907,6 +2038,40 @@ export interface components {
             name: string;
             /** @description Number of authored questions available. */
             question_count: number;
+        };
+        /**
+         * @description All learner-facing learning content for one learning track.
+         *
+         *     This is a read-only aggregate over authored content so the Track Hub can
+         *     render one track-wide Knowledge Map without a request per domain. It carries
+         *     no scored answers and no learner state.
+         */
+        TrackMapResponse: {
+            /** @description Immutable learning content version. */
+            content_version: string;
+            /** @description Learning domains with modules, nodes, and reveals. */
+            domains: components["schemas"]["LearningDomainResponse"][];
+            /** @description Learning track identifier. */
+            track_id: string;
+            /** @description Learning track version identifier. */
+            track_version: string;
+        };
+        /**
+         * @description Aggregate Knowledge Signal for one learning track.
+         *
+         *     One request returns every domain and node so the Track Hub never fetches
+         *     per-node state. Coarse semantic states only: no raw model probabilities,
+         *     percentages, or pass estimates.
+         */
+        TrackProgressResponse: {
+            /** @description Immutable learning content version. */
+            content_version: string;
+            /** @description Per-domain node signals. */
+            domains: components["schemas"]["DomainProgressDto"][];
+            /** @description Learning track identifier. */
+            track_id: string;
+            /** @description Learning track version identifier. */
+            track_version: string;
         };
         /**
          * @description Accepted typed answers for one blank.
@@ -2643,6 +2808,88 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DiscoveryResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown learning track */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_track_map: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Learning track identifier, for example `aws-soa-c03`. */
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Track knowledge map content */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrackMapResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown learning track */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_track_progress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Learning track identifier, for example `aws-soa-c03`. */
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Track knowledge signal */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrackProgressResponse"];
                 };
             };
             /** @description Authentication required */

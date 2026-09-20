@@ -9,6 +9,7 @@ pub mod concept_state;
 pub mod evaluation;
 pub mod learning;
 pub mod reward;
+pub mod streak;
 pub mod sync;
 pub mod user;
 
@@ -26,6 +27,7 @@ pub use learning::{
     QuizMode,
 };
 pub use reward::{BASE_BITS, DAILY_MISSION_BONUS_BITS, reward_bits};
+pub use streak::{StreakSummary, summarize_streak};
 pub use sync::{NewSyncBatch, SyncBatch, SyncBatchStatus};
 pub use user::{NewUser, User};
 
