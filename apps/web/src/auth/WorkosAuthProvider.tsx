@@ -16,9 +16,20 @@ import {
 } from "./context";
 import { sanitizeReturnTo } from "./returnTo";
 import { setAccessTokenProvider } from "./token";
+import { isFirstPartyAuthHost, sanitizeWorkosApiHostname } from "./workosHostname";
+import { hasPersistedWorkosSession } from "./workosSession";
+
+/** Storage key for the one-shot cross-tab session recovery attempt. */
+const RECOVERY_ATTEMPT_KEY = "adaptive-learn.workos-recovery-attempted";
 
 /** Bridges the WorkOS SDK into the project auth facade. */
-function WorkosBridge({ children }: { children: ReactNode }) {
+function WorkosBridge({
+  clientId,
+  children,
+}: {
+  clientId: string;
+  children: ReactNode;
+}) {
   const { isLoading, user, getAccessToken, signIn, signOut } = useWorkosAuth();
 
   // The SDK strips the OAuth query string quickly, so read it once on the first
@@ -58,6 +69,48 @@ function WorkosBridge({ children }: { children: ReactNode }) {
       console.error("[auth]", authError, callback);
     }
   }, [authError, callback]);
+
+  // Cross-tab recovery. When sign-in completes in another window (an installed
+  // PWA opens the WorkOS navigation in a new tab) the original window never saw
+  // the callback. Once it can see persisted session material, reload once so
+  // the SDK restores the session on initialize. The sessionStorage guard keeps
+  // an invalid session from causing a reload loop.
+  useEffect(() => {
+    if (isLoading || user) {
+      return;
+    }
+    const attempted = () => {
+      try {
+        return window.sessionStorage.getItem(RECOVERY_ATTEMPT_KEY) === "1";
+      } catch {
+        return true;
+      }
+    };
+    const maybeRecover = () => {
+      if (attempted()) {
+        return;
+      }
+      if (document.visibilityState === "hidden") {
+        return;
+      }
+      if (!hasPersistedWorkosSession(clientId)) {
+        return;
+      }
+      try {
+        window.sessionStorage.setItem(RECOVERY_ATTEMPT_KEY, "1");
+      } catch {
+        // If the guard cannot be stored, still attempt one recovery.
+      }
+      window.location.reload();
+    };
+    window.addEventListener("storage", maybeRecover);
+    document.addEventListener("visibilitychange", maybeRecover);
+    maybeRecover();
+    return () => {
+      window.removeEventListener("storage", maybeRecover);
+      document.removeEventListener("visibilitychange", maybeRecover);
+    };
+  }, [isLoading, user, clientId]);
 
   const appUser: AuthUser | null = useMemo(
     () =>
@@ -136,9 +189,15 @@ function WorkosBridge({ children }: { children: ReactNode }) {
  *
  * `onRedirectCallback` runs after the hosted sign-in redirect and returns the
  * learner to the internal path they started from. Navigation is done client-side
- * through React Router rather than a full page reload: the SDK only persists the
- * session across reloads on localhost, so reloading would drop the session on
- * other hosts and leave the UI looking signed out.
+ * through React Router rather than a full page reload so the callback does not
+ * flash the map.
+ *
+ * Session persistence depends on the auth host: a first-party custom AuthKit
+ * domain restores the session from an httpOnly cookie, while the default
+ * `api.workos.com` cannot (the cookie is third-party and the refresh call fails
+ * with HTTP 400), so `devMode` persists the refresh token in localStorage
+ * instead. Sign-in opened from an installed PWA can also complete in another
+ * window; the bridge reloads once when it can see persisted session material.
  */
 export default function WorkosAuthProvider({
   clientId,
@@ -148,13 +207,45 @@ export default function WorkosAuthProvider({
   children: ReactNode;
 }) {
   // Optional custom AuthKit authentication domain. Defaults to api.workos.com.
-  const apiHostname = import.meta.env.VITE_WORKOS_API_HOSTNAME?.trim();
+  // The app's own host is rejected: pointing AuthKit's API at the static host
+  // would send the learner to the SPA fallback instead of the hosted login.
+  const configuredHostname = import.meta.env.VITE_WORKOS_API_HOSTNAME;
+  const apiHostname = sanitizeWorkosApiHostname(
+    configuredHostname,
+    window.location.host,
+  );
+  // The SDK persists the session in an httpOnly cookie only when the auth host
+  // is first-party. With the default api.workos.com that cookie is third-party,
+  // so the refresh call fails with HTTP 400 and every reload signs the learner
+  // out. `devMode` keeps the refresh token in localStorage for this origin
+  // instead, which is WorkOS's documented fallback until a custom
+  // authentication domain (for example auth.shidenlabs.com) is configured.
+  const devMode = !isFirstPartyAuthHost(apiHostname, window.location.host);
+  useEffect(() => {
+    if (configuredHostname?.trim() && !apiHostname) {
+      console.warn(
+        "[auth] Ignoring VITE_WORKOS_API_HOSTNAME because it is empty, " +
+          "malformed, or points at this app's own host. Falling back to " +
+          "api.workos.com. Set it only to a WorkOS AuthKit authentication " +
+          "domain.",
+      );
+    } else if (devMode) {
+      console.warn(
+        "[auth] No first-party WorkOS authentication domain is configured, " +
+          "so the session is persisted in localStorage for this origin. " +
+          "Configure a custom AuthKit domain (for example " +
+          "auth.shidenlabs.com) and set VITE_WORKOS_API_HOSTNAME to it for " +
+          "cookie-based sessions.",
+      );
+    }
+  }, [configuredHostname, apiHostname, devMode]);
   const navigate = useNavigate();
 
   return (
     <AuthKitProvider
       clientId={clientId}
       apiHostname={apiHostname || undefined}
+      devMode={devMode}
       redirectUri={window.location.origin}
       onRedirectCallback={(params) => {
         const rawState = (params as { state?: unknown } | undefined)?.state;
@@ -173,7 +264,7 @@ export default function WorkosAuthProvider({
         navigate(returnTo ?? "/", { replace: true });
       }}
     >
-      <WorkosBridge>{children}</WorkosBridge>
+      <WorkosBridge clientId={clientId}>{children}</WorkosBridge>
     </AuthKitProvider>
   );
 }
