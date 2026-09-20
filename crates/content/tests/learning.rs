@@ -292,7 +292,7 @@ fn coverage_counts_match_the_authored_curriculum() {
         (modules, nodes, prompts)
     };
 
-    assert_eq!(totals("aws-soa-c03"), (23, 138, 418));
+    assert_eq!(totals("aws-soa-c03"), (23, 97, 150));
     assert_eq!(totals("aws-aip-c01"), (20, 98, 392));
 }
 
@@ -368,6 +368,18 @@ fn rejects_coverage_mismatch() {
 #[test]
 fn rejects_comparison_with_one_column() {
     let mut value = learning_value("aws-soa-c03", "domain-1");
+    // Author a well-formed comparison first so the test does not depend on the
+    // current first prompt happening to be a comparison reveal.
+    set_first_prompt_reveal(
+        &mut value,
+        serde_json::json!({
+            "type": "comparison",
+            "columns": [
+                { "title": "CloudTrail", "items": ["API/audit activity"] },
+                { "title": "CloudWatch", "items": ["metrics, logs, alarms"] }
+            ]
+        }),
+    );
     let columns = value["modules"][0]["nodes"][0]["prompts"][0]["reveal"]["columns"]
         .as_array_mut()
         .expect("comparison columns");
