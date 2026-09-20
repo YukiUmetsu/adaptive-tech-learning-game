@@ -112,7 +112,12 @@ pub async fn merge(
     }
 
     let mut tx = pool.begin().await?;
-    for update in updates {
+    // Merge domains in a stable order so concurrent multi-domain batches always
+    // acquire row locks in the same order and cannot deadlock.
+    let mut ordered: Vec<&DomainDiscoveryInput> = updates.iter().collect();
+    ordered.sort_by(|a, b| a.domain_id.cmp(&b.domain_id));
+
+    for update in ordered {
         // Ensure a row exists so the following SELECT ... FOR UPDATE always
         // locks something, even on the first write from this device.
         sqlx::query(

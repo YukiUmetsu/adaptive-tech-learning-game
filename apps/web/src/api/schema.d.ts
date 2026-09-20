@@ -1821,16 +1821,25 @@ export interface components {
          *     an auxiliary failure never rejects or rolls back accepted learning events.
          */
         SyncRequest: {
-            /** @description Optional recommendation lifecycle telemetry. Never authoritative. */
+            /**
+             * @description Optional recommendation lifecycle telemetry. Never authoritative.
+             *
+             *     Deserialized leniently for the same reason as `discovery_updates`.
+             */
             auxiliary_events?: components["schemas"]["AuxiliaryEventRequest"][];
             /**
              * Format: uuid
              * @description Device/install context. Ownership comes from the authenticated user.
              */
             device_id?: string | null;
-            /** @description Optional Knowledge Map discovery deltas. Never learning evidence. */
+            /**
+             * @description Optional Knowledge Map discovery deltas. Never learning evidence.
+             *
+             *     Deserialized leniently: a malformed entry is dropped rather than failing
+             *     the whole request, so it can never block accepted learning events.
+             */
             discovery_updates?: components["schemas"]["DiscoveryUpdateRequest"][];
-            /** @description Attempts to reconcile. */
+            /** @description Attempts to reconcile. Strict: authoritative events must be well-formed. */
             events?: components["schemas"]["SyncEventRequest"][];
         };
         /** @description Result of a sync batch. */

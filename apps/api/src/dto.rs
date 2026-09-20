@@ -283,15 +283,41 @@ pub struct FeedbackResponse {
 pub struct SyncRequest {
     /// Device/install context. Ownership comes from the authenticated user.
     pub device_id: Option<Uuid>,
-    /// Attempts to reconcile.
+    /// Attempts to reconcile. Strict: authoritative events must be well-formed.
     #[serde(default)]
     pub events: Vec<SyncEventRequest>,
     /// Optional Knowledge Map discovery deltas. Never learning evidence.
-    #[serde(default)]
+    ///
+    /// Deserialized leniently: a malformed entry is dropped rather than failing
+    /// the whole request, so it can never block accepted learning events.
+    #[serde(default, deserialize_with = "lenient_auxiliary_list")]
     pub discovery_updates: Vec<DiscoveryUpdateRequest>,
     /// Optional recommendation lifecycle telemetry. Never authoritative.
-    #[serde(default)]
+    ///
+    /// Deserialized leniently for the same reason as `discovery_updates`.
+    #[serde(default, deserialize_with = "lenient_auxiliary_list")]
     pub auxiliary_events: Vec<AuxiliaryEventRequest>,
+}
+
+/// Deserializes an optional auxiliary list, dropping malformed entries.
+///
+/// Auxiliary sections are isolated from the authoritative `events` section. A
+/// malformed analytics entry must not turn the whole batch into a 400 and
+/// discard accepted learning events, so invalid items are skipped. A non-array
+/// value is treated as empty.
+fn lenient_auxiliary_list<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: serde::de::DeserializeOwned,
+{
+    let value = serde_json::Value::deserialize(deserializer)?;
+    let serde_json::Value::Array(items) = value else {
+        return Ok(Vec::new());
+    };
+    Ok(items
+        .into_iter()
+        .filter_map(|item| serde_json::from_value(item).ok())
+        .collect())
 }
 
 /// A monotonic Knowledge Map discovery delta for one track version.

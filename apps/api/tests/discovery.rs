@@ -96,6 +96,88 @@ async fn get_daily(app: &Router, subject: &str, track_id: &str) -> Value {
     body
 }
 
+/// Issues a task-practice mission and returns its body.
+async fn issue_task(app: &Router, subject: &str, device: Uuid) -> Value {
+    let (status, mission) = common::send_as(
+        app.clone(),
+        subject,
+        "POST",
+        "/v1/missions/issue",
+        Some(json!({
+            "device_id": device,
+            "certification_id": "aws-soa-c03",
+            "certification_version": "soa-c03",
+            "mode": "task_practice",
+            "task_id": "1.1"
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{mission}");
+    mission
+}
+
+/// Maps a question's canonical answer into an answer payload.
+fn canonical_answer_value(question: &adaptive_learn_content::Question) -> Value {
+    match &question.canonical_answer {
+        adaptive_learn_content::CanonicalAnswer::Classification { placements } => {
+            json!({ "placements": placements })
+        }
+        adaptive_learn_content::CanonicalAnswer::Ordering { ordered_ids } => {
+            json!({ "ordered_ids": ordered_ids })
+        }
+        adaptive_learn_content::CanonicalAnswer::NodeConnection { edges } => {
+            json!({ "edges": edges })
+        }
+        adaptive_learn_content::CanonicalAnswer::EvidenceSelection { relevant_ids } => {
+            json!({ "evidence_ids": relevant_ids })
+        }
+        adaptive_learn_content::CanonicalAnswer::SpotTheFault { faulty_ids } => {
+            json!({ "faulty_ids": faulty_ids })
+        }
+        adaptive_learn_content::CanonicalAnswer::FillSlots { values } => {
+            json!({ "slot_values": values })
+        }
+        adaptive_learn_content::CanonicalAnswer::Troubleshooting { expected_path, .. } => {
+            json!({ "choice_path": expected_path })
+        }
+        adaptive_learn_content::CanonicalAnswer::ScenarioChoiceChain { expected_path, .. } => {
+            json!({ "choice_path": expected_path })
+        }
+        adaptive_learn_content::CanonicalAnswer::ConfigurationBuilder { assignments } => {
+            json!({ "assignments": assignments })
+        }
+        adaptive_learn_content::CanonicalAnswer::CommandAssembly { values } => {
+            json!({ "token_values": values })
+        }
+        adaptive_learn_content::CanonicalAnswer::TypedFillBlank { answers } => {
+            let typed: Map<String, Value> = answers
+                .iter()
+                .map(|(slot_id, answer)| {
+                    (
+                        slot_id.clone(),
+                        json!(answer.accepted_answers.first().cloned().unwrap_or_default()),
+                    )
+                })
+                .collect();
+            json!({ "typed_answers": typed })
+        }
+        adaptive_learn_content::CanonicalAnswer::Reconstruction { placements, edges } => {
+            json!({ "reconstruction": { "placements": placements, "edges": edges } })
+        }
+        adaptive_learn_content::CanonicalAnswer::TwoDimensionalPlacement { regions } => {
+            let positions: Map<String, Value> = regions
+                .iter()
+                .map(|(item_id, region)| {
+                    let x = (region.x[0] + region.x[1]) / 2.0;
+                    let y = (region.y[0] + region.y[1]) / 2.0;
+                    (item_id.clone(), json!({ "x": x, "y": y }))
+                })
+                .collect();
+            json!({ "positions": positions })
+        }
+    }
+}
+
 #[tokio::test]
 async fn sync_persists_discovery_and_the_track_endpoint_returns_it() {
     let Some(pool) = common::database_pool().await else {
@@ -212,21 +294,7 @@ async fn auxiliary_failure_does_not_reject_accepted_learning_events() {
     let subject = format!("discovery-isolation-{}", Uuid::new_v4());
     let device = Uuid::new_v4();
 
-    let (status, mission) = common::send_as(
-        app.clone(),
-        &subject,
-        "POST",
-        "/v1/missions/issue",
-        Some(json!({
-            "device_id": device,
-            "certification_id": "aws-soa-c03",
-            "certification_version": "soa-c03",
-            "mode": "task_practice",
-            "task_id": "1.1"
-        })),
-    )
-    .await;
-    assert_eq!(status, StatusCode::OK, "{mission}");
+    let mission = issue_task(&app, &subject, device).await;
     let mission_id: Uuid = mission["id"].as_str().expect("id").parse().expect("uuid");
     let content_version = mission["content_version"].as_str().expect("version");
     let question_id = mission["questions"][0]["id"]
@@ -237,64 +305,7 @@ async fn auxiliary_failure_does_not_reject_accepted_learning_events() {
         .question("soa-c03", &question_id)
         .expect("question")
         .clone();
-    let answer = match &question.canonical_answer {
-        adaptive_learn_content::CanonicalAnswer::Classification { placements } => {
-            json!({ "placements": placements })
-        }
-        adaptive_learn_content::CanonicalAnswer::Ordering { ordered_ids } => {
-            json!({ "ordered_ids": ordered_ids })
-        }
-        adaptive_learn_content::CanonicalAnswer::NodeConnection { edges } => {
-            json!({ "edges": edges })
-        }
-        adaptive_learn_content::CanonicalAnswer::EvidenceSelection { relevant_ids } => {
-            json!({ "evidence_ids": relevant_ids })
-        }
-        adaptive_learn_content::CanonicalAnswer::SpotTheFault { faulty_ids } => {
-            json!({ "faulty_ids": faulty_ids })
-        }
-        adaptive_learn_content::CanonicalAnswer::FillSlots { values } => {
-            json!({ "slot_values": values })
-        }
-        adaptive_learn_content::CanonicalAnswer::Troubleshooting { expected_path, .. } => {
-            json!({ "choice_path": expected_path })
-        }
-        adaptive_learn_content::CanonicalAnswer::ScenarioChoiceChain { expected_path, .. } => {
-            json!({ "choice_path": expected_path })
-        }
-        adaptive_learn_content::CanonicalAnswer::ConfigurationBuilder { assignments } => {
-            json!({ "assignments": assignments })
-        }
-        adaptive_learn_content::CanonicalAnswer::CommandAssembly { values } => {
-            json!({ "token_values": values })
-        }
-        adaptive_learn_content::CanonicalAnswer::TypedFillBlank { answers } => {
-            let typed: Map<String, Value> = answers
-                .iter()
-                .map(|(slot_id, answer)| {
-                    (
-                        slot_id.clone(),
-                        json!(answer.accepted_answers.first().cloned().unwrap_or_default()),
-                    )
-                })
-                .collect();
-            json!({ "typed_answers": typed })
-        }
-        adaptive_learn_content::CanonicalAnswer::Reconstruction { placements, edges } => {
-            json!({ "reconstruction": { "placements": placements, "edges": edges } })
-        }
-        adaptive_learn_content::CanonicalAnswer::TwoDimensionalPlacement { regions } => {
-            let positions: Map<String, Value> = regions
-                .iter()
-                .map(|(item_id, region)| {
-                    let x = (region.x[0] + region.x[1]) / 2.0;
-                    let y = (region.y[0] + region.y[1]) / 2.0;
-                    (item_id.clone(), json!({ "x": x, "y": y }))
-                })
-                .collect();
-            json!({ "positions": positions })
-        }
-    };
+    let answer = canonical_answer_value(&question);
 
     // The discovery update has a blank domain id (violates a DB check) and the
     // telemetry event has a blank track id (violates a DB check). Both auxiliary
@@ -337,6 +348,73 @@ async fn auxiliary_failure_does_not_reject_accepted_learning_events() {
     assert_eq!(body["auxiliary"]["accepted"], false, "{body}");
 
     // The accepted event really was persisted.
+    let accepted: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM learning_events WHERE mission_instance_id = $1")
+            .bind(mission_id)
+            .fetch_one(&pool)
+            .await
+            .expect("count events");
+    assert_eq!(accepted, 1);
+}
+
+#[tokio::test]
+async fn malformed_auxiliary_entries_do_not_fail_the_batch() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool.clone());
+    let registry = registry();
+    let subject = format!("discovery-malformed-{}", Uuid::new_v4());
+    let device = Uuid::new_v4();
+
+    let mission = issue_task(&app, &subject, device).await;
+    let mission_id: Uuid = mission["id"].as_str().expect("id").parse().expect("uuid");
+    let content_version = mission["content_version"].as_str().expect("version");
+    let question_id = mission["questions"][0]["id"]
+        .as_str()
+        .expect("question id")
+        .to_owned();
+    let question = registry
+        .question("soa-c03", &question_id)
+        .expect("question")
+        .clone();
+    let answer = canonical_answer_value(&question);
+
+    // Malformed auxiliary entries (wrong types, unknown enum value, bad uuid)
+    // must be dropped rather than turning the batch into a 400 that would discard
+    // the accepted learning event.
+    let (status, body) = common::send_as(
+        app,
+        &subject,
+        "POST",
+        "/v1/sync",
+        Some(json!({
+            "device_id": device,
+            "events": [{
+                "event_id": Uuid::new_v4(),
+                "mission_instance_id": mission_id,
+                "question_id": question_id,
+                "content_version": content_version,
+                "attempt_number": 1,
+                "hint_count": 0,
+                "response_ms": 1200,
+                "occurred_at": "2026-09-20T10:00:00Z",
+                "answer": answer
+            }],
+            "discovery_updates": [
+                { "track_version": 123, "content_version": "soa-c03-content-v1" },
+                { "track_version": "soa-c03", "content_version": "soa-c03-content-v1", "domains": "not-an-array" }
+            ],
+            "auxiliary_events": [
+                { "event_id": "not-a-uuid", "track_id": "aws-soa-c03", "recommendation_id": Uuid::new_v4(), "event": "shown" },
+                { "event_id": Uuid::new_v4(), "track_id": "aws-soa-c03", "recommendation_id": Uuid::new_v4(), "event": "bogus" }
+            ]
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["results"][0]["accepted"], true, "{body}");
+
     let accepted: i64 =
         sqlx::query_scalar("SELECT count(*) FROM learning_events WHERE mission_instance_id = $1")
             .bind(mission_id)
