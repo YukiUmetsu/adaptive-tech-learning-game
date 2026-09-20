@@ -185,7 +185,7 @@ describe("LoginPage", () => {
     );
   }
 
-  it("returns to the intended internal route after signing in", async () => {
+  it("starts WorkOS sign-in with the intended internal route", async () => {
     const signIn = vi.fn(async () => {});
     renderLogin(
       "/login?returnTo=%2Ftracks%2Faws-soa-c03",
@@ -196,15 +196,17 @@ describe("LoginPage", () => {
       screen.getByRole("button", { name: "Continue with Google" }),
     );
 
-    await waitFor(() =>
-      expect(screen.getByText("Intended dashboard")).toBeInTheDocument(),
-    );
     expect(signIn).toHaveBeenCalledWith(
       expect.objectContaining({ returnTo: "/tracks/aws-soa-c03" }),
     );
+    // WorkOS performs a full-page redirect, so the app must not client-navigate
+    // first (that would land on the homepage when the redirect opens out of
+    // process, such as in an installed PWA).
+    expect(screen.queryByText("Intended dashboard")).toBeNull();
+    expect(screen.getByText("Welcome back")).toBeInTheDocument();
   });
 
-  it("ignores an off-site returnTo and falls back to home", async () => {
+  it("sanitizes an off-site returnTo before starting WorkOS sign-in", async () => {
     const signIn = vi.fn(async () => {});
     renderLogin(
       "/login?returnTo=https%3A%2F%2Fevil.example",
@@ -215,9 +217,10 @@ describe("LoginPage", () => {
       screen.getByRole("button", { name: "Continue with Google" }),
     );
 
-    await waitFor(() =>
-      expect(screen.getByText("App home")).toBeInTheDocument(),
+    expect(signIn).toHaveBeenCalledWith(
+      expect.objectContaining({ returnTo: "/" }),
     );
+    expect(screen.queryByText("App home")).toBeNull();
   });
 
   it("redirects an already-authenticated learner to the intended route", () => {

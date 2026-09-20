@@ -31,8 +31,14 @@ export default function LoginPage() {
     setError(null);
     try {
       await signIn({ returnTo, loginHint: loginHint?.trim() || undefined });
-      // Local/dev sign-in resolves here; WorkOS redirects the whole page first.
-      navigate(returnTo, { replace: true });
+      // Local/dev sign-in resolves in place and needs a client-side navigation.
+      // WorkOS starts a full-page redirect and its return is handled by the
+      // AuthKit callback, so navigating here is wrong: if the browser opens the
+      // redirect out of process (for example an installed PWA), the page does
+      // not unload and this would navigate the app to the homepage instead.
+      if (!configured) {
+        navigate(returnTo, { replace: true });
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Sign-in failed");
     } finally {
