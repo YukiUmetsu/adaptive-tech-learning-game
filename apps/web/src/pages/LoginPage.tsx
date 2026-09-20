@@ -38,10 +38,14 @@ export default function LoginPage() {
       // not unload and this would navigate the app to the homepage instead.
       if (!configured) {
         navigate(returnTo, { replace: true });
+        setBusy(false);
       }
+      // For WorkOS the control stays disabled: `signIn` resolves right after
+      // `location.assign`, so re-enabling it would allow a second sign-in that
+      // regenerates the PKCE verifier and makes the first callback's code fail
+      // to exchange (HTTP 400).
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Sign-in failed");
-    } finally {
       setBusy(false);
     }
   };
