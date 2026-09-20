@@ -1,9 +1,9 @@
 {
-  "schema_version": "1.0.0",
-  "content_version": "saa-c03-learning-2026-09-19-v1",
+  "schema_version": "2.0.0",
+  "content_version": "saa-c03-learning-2026-09-19-v2-interactive",
   "certification_id": "aws-saa-c03",
   "certification_version": "saa-c03",
-  "exam_guide_revision": "AWS exam guide reviewed 2026-09-19",
+  "exam_guide_revision": "SAA-C03 / reviewed 2026-09-19",
   "domain": {
     "id": "domain-1",
     "name": "Design Secure Architectures",
@@ -11,17 +11,13 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; quiz attempts remain the scored retrieval signal."
+    "unlock_rule": "Reveal the required explanations, progressive table units, and required code annotations to unlock each knowledge node.",
+    "mastery_note": "Discovery builds the mental model first; quiz attempts provide scored recall and architecture-application evidence."
   },
   "source_refs": [
     {
       "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
       "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
-    },
-    {
-      "title": "SAA-C03 in-scope AWS services",
-      "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/saa-03-in-scope-services.html"
     }
   ],
   "coverage": {
@@ -52,12 +48,12 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 18,
-    "prompt_count": 72
+    "prompt_count": 54
   },
-  "authoring_notes": "Original study content. The attached 2026 SAA course PDF was used only as a breadth/coverage cross-check; wording was independently authored and current AWS documentation was used for verification.",
+  "authoring_notes": "Interactive v2 refresh. Uses progressive tables for service/trade-off comparisons and annotated code files where reading a real policy/configuration improves understanding.",
   "modules": [
     {
-      "id": "domain-1-task-1-1",
+      "id": "domain-1-module-1",
       "title": "Design secure access to AWS resources",
       "order": 1,
       "task_ids": [
@@ -87,10 +83,10 @@
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "shared-responsibility-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "AWS secures the cloud infrastructure, while __________ their data, identities, configurations, and workloads in the cloud.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -98,47 +94,105 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use the root user only for tasks that require it, protect it with __________, and use least-privilege identities for daily work.",
+              "id": "shared-responsibility-task-table",
+              "kind": "connects_to",
+              "label": "TASK MAP",
+              "placeholder": "Reveal each row and compare neighboring architecture choices.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use the root user only for tasks that require it, protect it with MFA, and use least-privilege identities for daily work."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "choice",
+                    "label": "Choice / concept"
+                  },
+                  {
+                    "id": "best_for",
+                    "label": "What distinguishes it"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "r1",
+                    "cells": {
+                      "choice": "shared responsibility model",
+                      "best_for": "AWS secures the cloud infrastructure, while customers secure their data, identities, configurations, and workloads in the cloud."
+                    }
+                  },
+                  {
+                    "id": "r2",
+                    "cells": {
+                      "choice": "explicit deny",
+                      "best_for": "IAM authorization evaluates applicable identity and resource policies, and an explicit Deny overrides an Allow."
+                    }
+                  },
+                  {
+                    "id": "r3",
+                    "cells": {
+                      "choice": "AWS STS",
+                      "best_for": "IAM roles provide temporary credentials and are commonly assumed through AWS STS instead of using long-term access keys."
+                    }
+                  },
+                  {
+                    "id": "r4",
+                    "cells": {
+                      "choice": "IAM Identity Center",
+                      "best_for": "AWS IAM Identity Center centralizes workforce access to multiple AWS accounts and applications by using federated identities and permission sets."
+                    }
+                  },
+                  {
+                    "id": "r5",
+                    "cells": {
+                      "choice": "SCP",
+                      "best_for": "AWS Organizations groups accounts, SCPs set permission guardrails, and AWS Control Tower helps establish and govern a multi-account landing zone."
+                    }
+                  },
+                  {
+                    "id": "r6",
+                    "cells": {
+                      "choice": "resource-based policy",
+                      "best_for": "Resource-based policies attach to supported AWS resources and can name principals that are allowed or denied access."
+                    }
+                  },
+                  {
+                    "id": "r7",
+                    "cells": {
+                      "choice": "permissions boundary",
+                      "best_for": "A permissions boundary sets the maximum permissions that an IAM user or role can receive from identity-based policies."
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "choice"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not treat AWS-managed infrastructure security as a __________ for customer-side IAM, data protection, or operating-system controls.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not treat AWS-managed infrastructure security as a replacement for customer-side IAM, data protection, or operating-system controls."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "shared-responsibility-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "If a scenario asks who patches the guest OS on EC2, that responsibility belongs to the __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "If a scenario asks who patches the guest OS on EC2, that responsibility belongs to the customer."
+                "type": "keywords",
+                "items": [
+                  "shared responsibility model",
+                  "Shared responsibility and root-user hygiene"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design secure access to AWS resources — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "Shared responsibility and root-user hygiene — AWS documentation",
-              "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-risk-and-compliance/shared-responsibility-security-model.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -152,15 +206,15 @@
             "domain-1-shared-responsibility"
           ],
           "map_position": {
-            "x": 0.247,
+            "x": 0.36,
             "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "iam-policy-evaluation-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "IAM authorization evaluates applicable identity and resource policies, and an __________ overrides an Allow.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -168,47 +222,62 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use least-privilege policies with narrow actions and resources, then add __________ when access should depend on context.",
+              "id": "iam-policy-evaluation-code",
+              "kind": "look_for",
+              "label": "READ THE CONFIG",
+              "placeholder": "Click the important parts of this configuration before revealing the explanation.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use least-privilege policies with narrow actions and resources, then add conditions when access should depend on context."
+                "type": "code_file",
+                "filename": "policy.json",
+                "language": "json",
+                "code": "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\"Effect\": \"Allow\", \"Action\": \"s3:*\", \"Resource\": \"*\"},\n    {\"Effect\": \"Deny\", \"Action\": \"s3:DeleteObject\", \"Resource\": \"*\"}\n  ]\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "a1",
+                    "anchor": {
+                      "line": 4,
+                      "text": "\"Effect\": \"Allow\"",
+                      "occurrence": 1
+                    },
+                    "title": "Allow is not final",
+                    "explanation": "An Allow grants permission only when no applicable explicit Deny blocks the request.",
+                    "required": true
+                  },
+                  {
+                    "id": "a2",
+                    "anchor": {
+                      "line": 5,
+                      "text": "\"Effect\": \"Deny\"",
+                      "occurrence": 1
+                    },
+                    "title": "Explicit Deny wins",
+                    "explanation": "An applicable explicit Deny overrides an Allow from another applicable policy.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not assume that attaching another Allow policy can __________ an explicit Deny.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not assume that attaching another Allow policy can override an explicit Deny."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "iam-policy-evaluation-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "When an allowed action still fails, look for an __________ in an SCP, permissions boundary, identity policy, or resource policy.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "When an allowed action still fails, look for an explicit Deny in an SCP, permissions boundary, identity policy, or resource policy."
+                "type": "keywords",
+                "items": [
+                  "explicit deny",
+                  "IAM policies and explicit deny"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design secure access to AWS resources — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "IAM policies and explicit deny — AWS documentation",
-              "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -222,15 +291,15 @@
             "domain-1-iam-policy-evaluation"
           ],
           "map_position": {
-            "x": 0.373,
+            "x": 0.6,
             "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "sts-roles-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "IAM roles provide __________ and are commonly assumed through AWS STS instead of using long-term access keys.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -238,47 +307,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "sts-roles-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use a role with a __________ for cross-account access, workload identities, and temporary privileged sessions.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use a role with a trust policy for cross-account access, workload identities, and temporary privileged sessions."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: IAM roles provide temporary credentials and are commonly assumed through AWS STS instead of using long-term access keys.",
+                  "Key retrieval phrase: AWS STS."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not embed IAM user __________ in applications when a service or workload can assume a role.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not embed IAM user access keys in applications when a service or workload can assume a role."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "sts-roles-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Cross-account access with temporary credentials points to an IAM role plus AWS STS __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Cross-account access with temporary credentials points to an IAM role plus AWS STS AssumeRole."
+                "type": "keywords",
+                "items": [
+                  "AWS STS",
+                  "IAM roles, STS, and cross-account access"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design secure access to AWS resources — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "IAM roles, STS, and cross-account access — AWS documentation",
-              "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -292,15 +352,15 @@
             "domain-1-sts-roles"
           ],
           "map_position": {
-            "x": 0.5,
+            "x": 0.84,
             "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "identity-center-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "AWS IAM Identity Center centralizes workforce access to multiple AWS accounts and applications by using federated identities and __________.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -308,47 +368,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "identity-center-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use it when employees need centrally managed __________ across an AWS organization instead of separate IAM users in every account.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use it when employees need centrally managed single sign-on across an AWS organization instead of separate IAM users in every account."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: AWS IAM Identity Center centralizes workforce access to multiple AWS accounts and applications by using federated identities and permission sets.",
+                  "Key retrieval phrase: IAM Identity Center."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not create __________ long-lived IAM users in each account when centralized workforce federation satisfies the requirement.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not create duplicate long-lived IAM users in each account when centralized workforce federation satisfies the requirement."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "identity-center-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A multi-account workforce SSO requirement is a strong clue for __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A multi-account workforce SSO requirement is a strong clue for IAM Identity Center."
+                "type": "keywords",
+                "items": [
+                  "IAM Identity Center",
+                  "IAM Identity Center and federation"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design secure access to AWS resources — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "IAM Identity Center and federation — AWS documentation",
-              "url": "https://docs.aws.amazon.com/singlesignon/latest/userguide/what-is.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -362,15 +413,15 @@
             "domain-1-identity-center"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.16
+            "x": 0.12,
+            "y": 0.44
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "organizations-scp-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "AWS Organizations groups accounts, SCPs set permission __________, and AWS Control Tower helps establish and govern a multi-account landing zone.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -378,47 +429,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "organizations-scp-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use SCPs to define the __________ available to member accounts while identity policies grant actual permissions within those boundaries.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use SCPs to define the maximum permissions available to member accounts while identity policies grant actual permissions within those boundaries."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: AWS Organizations groups accounts, SCPs set permission guardrails, and AWS Control Tower helps establish and govern a multi-account landing zone.",
+                  "Key retrieval phrase: SCP."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "An SCP __________ permissions by itself; it limits what identity and resource policies can allow.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "An SCP does not grant permissions by itself; it limits what identity and resource policies can allow."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "organizations-scp-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "If many accounts must be prevented from using a service or Region, consider an Organizations __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "If many accounts must be prevented from using a service or Region, consider an Organizations SCP."
+                "type": "keywords",
+                "items": [
+                  "SCP",
+                  "Organizations, SCPs, and Control Tower"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design secure access to AWS resources — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "Organizations, SCPs, and Control Tower — AWS documentation",
-              "url": "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -432,15 +474,15 @@
             "domain-1-organizations-scp"
           ],
           "map_position": {
-            "x": 0.753,
-            "y": 0.16
+            "x": 0.36,
+            "y": 0.44
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "resource-policies-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Resource-based policies attach to supported AWS resources and can name __________ that are allowed or denied access.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -448,47 +490,62 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use them for cases such as __________ S3 bucket access, KMS key access, SNS topics, or SQS queues.",
+              "id": "resource-policies-code",
+              "kind": "look_for",
+              "label": "READ THE CONFIG",
+              "placeholder": "Click the important parts of this configuration before revealing the explanation.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use them for cases such as cross-account S3 bucket access, KMS key access, SNS topics, or SQS queues."
+                "type": "code_file",
+                "filename": "bucket-policy.json",
+                "language": "json",
+                "code": "{\n  \"Statement\": [{\n    \"Effect\": \"Allow\",\n    \"Principal\": {\"AWS\": \"arn:aws:iam::222222222222:role/Reader\"},\n    \"Action\": \"s3:GetObject\",\n    \"Resource\": \"arn:aws:s3:::reports/*\"\n  }]\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "a1",
+                    "anchor": {
+                      "line": 4,
+                      "text": "\"Principal\"",
+                      "occurrence": 1
+                    },
+                    "title": "Resource policy names a principal",
+                    "explanation": "A resource-based policy can name the external account or role that is allowed to access the resource.",
+                    "required": true
+                  },
+                  {
+                    "id": "a2",
+                    "anchor": {
+                      "line": 6,
+                      "text": "\"Resource\"",
+                      "occurrence": 1
+                    },
+                    "title": "Scope the resource",
+                    "explanation": "The resource ARN limits the permission to objects under the reports bucket.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not confuse a resource policy, which names who may access a resource, with a security group, which filters __________.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not confuse a resource policy, which names who may access a resource, with a security group, which filters network traffic."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "resource-policies-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A question that asks which principal from another account can access an S3 bucket usually points to a __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A question that asks which principal from another account can access an S3 bucket usually points to a bucket policy."
+                "type": "keywords",
+                "items": [
+                  "resource-based policy",
+                  "Resource-based policies"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design secure access to AWS resources — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "Resource-based policies — AWS documentation",
-              "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_identity-vs-resource.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -502,15 +559,15 @@
             "domain-1-resource-policies"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.16
+            "x": 0.6,
+            "y": 0.44
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "permissions-boundary-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "A permissions boundary sets the __________ that an IAM user or role can receive from identity-based policies.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -518,54 +575,45 @@
               }
             },
             {
-              "id": "when",
+              "id": "permissions-boundary-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use a boundary when delegated administrators may create roles but must not exceed a defined __________.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use a boundary when delegated administrators may create roles but must not exceed a defined permission ceiling."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: A permissions boundary sets the maximum permissions that an IAM user or role can receive from identity-based policies.",
+                  "Key retrieval phrase: permissions boundary."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "A permissions boundary __________ permissions and does not replace an Organizations SCP for account-wide guardrails.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A permissions boundary does not grant permissions and does not replace an Organizations SCP for account-wide guardrails."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "permissions-boundary-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Delegated role creation with a maximum-permission ceiling is a __________ scenario.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Delegated role creation with a maximum-permission ceiling is a permissions-boundary scenario."
+                "type": "keywords",
+                "items": [
+                  "permissions boundary",
+                  "Permissions boundaries"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design secure access to AWS resources — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "Permissions boundaries — AWS documentation",
-              "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         }
       ]
     },
     {
-      "id": "domain-1-task-1-2",
+      "id": "domain-1-module-2",
       "title": "Design secure workloads and applications",
       "order": 2,
       "task_ids": [
@@ -580,7 +628,7 @@
         "1.2.06"
       ],
       "prerequisite_module_ids": [
-        "domain-1-task-1-1"
+        "domain-1-module-1"
       ],
       "nodes": [
         {
@@ -592,14 +640,14 @@
           "prerequisite_node_ids": [],
           "map_position": {
             "x": 0.12,
-            "y": 0.38
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "vpc-segmentation-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "A subnet is public when its route table provides a path to an __________; private application and database tiers normally avoid direct inbound internet paths.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -607,47 +655,98 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Place internet-facing load balancers in public subnets and application or database resources in __________ when they do not need direct internet exposure.",
+              "id": "vpc-segmentation-task-table",
+              "kind": "connects_to",
+              "label": "TASK MAP",
+              "placeholder": "Reveal each row and compare neighboring architecture choices.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Place internet-facing load balancers in public subnets and application or database resources in private subnets when they do not need direct internet exposure."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "choice",
+                    "label": "Choice / concept"
+                  },
+                  {
+                    "id": "best_for",
+                    "label": "What distinguishes it"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "r1",
+                    "cells": {
+                      "choice": "internet gateway",
+                      "best_for": "A subnet is public when its route table provides a path to an internet gateway; private application and database tiers normally avoid direct inbound internet paths."
+                    }
+                  },
+                  {
+                    "id": "r2",
+                    "cells": {
+                      "choice": "security group",
+                      "best_for": "Security groups are stateful controls attached to resources such as ENIs, while network ACLs are stateless controls applied at the subnet boundary."
+                    }
+                  },
+                  {
+                    "id": "r3",
+                    "cells": {
+                      "choice": "VPC endpoint",
+                      "best_for": "VPC endpoints provide private access to supported services without requiring traffic to traverse an internet gateway or NAT gateway."
+                    }
+                  },
+                  {
+                    "id": "r4",
+                    "cells": {
+                      "choice": "Secrets Manager",
+                      "best_for": "AWS Secrets Manager stores sensitive credentials and supports controlled retrieval and automated rotation for supported secret types."
+                    }
+                  },
+                  {
+                    "id": "r5",
+                    "cells": {
+                      "choice": "AWS WAF",
+                      "best_for": "AWS WAF filters HTTP and HTTPS requests with web ACL rules, while AWS Shield provides managed protection against distributed denial-of-service attacks."
+                    }
+                  },
+                  {
+                    "id": "r6",
+                    "cells": {
+                      "choice": "GuardDuty",
+                      "best_for": "GuardDuty detects suspicious activity, Inspector identifies software and network exposure vulnerabilities, Macie discovers sensitive data in S3, and Security Hub aggregates security findings."
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "choice"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "A public IP address alone does not make a subnet public without an appropriate __________ to an internet gateway.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "A public IP address alone does not make a subnet public without an appropriate route to an internet gateway."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "vpc-segmentation-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A multi-tier web application usually exposes the __________, not the database subnet, to the internet.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A multi-tier web application usually exposes the load balancer, not the database subnet, to the internet."
+                "type": "keywords",
+                "items": [
+                  "internet gateway",
+                  "VPC segmentation: public and private tiers"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design secure workloads and applications — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "VPC segmentation: public and private tiers — AWS documentation",
-              "url": "https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -661,15 +760,15 @@
             "domain-1-vpc-segmentation"
           ],
           "map_position": {
-            "x": 0.272,
-            "y": 0.38
+            "x": 0.36,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "sg-nacl-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Security groups are __________ controls attached to resources such as ENIs, while network ACLs are stateless controls applied at the subnet boundary.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -677,47 +776,82 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use security groups for resource-level allow rules and network ACLs when subnet-level allow and __________ are required.",
+              "id": "sg-nacl-table",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "The choices are visible. Reveal the differences one cell at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use security groups for resource-level allow rules and network ACLs when subnet-level allow and deny rules are required."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "choice",
+                    "label": "Choice"
+                  },
+                  {
+                    "id": "property",
+                    "label": "Primary property"
+                  },
+                  {
+                    "id": "behavior",
+                    "label": "Behavior / trade-off"
+                  },
+                  {
+                    "id": "use",
+                    "label": "Typical fit"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "r1",
+                    "cells": {
+                      "choice": "Security group",
+                      "property": "Stateful",
+                      "behavior": "Allow only",
+                      "use": "ENI/resource"
+                    }
+                  },
+                  {
+                    "id": "r2",
+                    "cells": {
+                      "choice": "Network ACL",
+                      "property": "Stateless",
+                      "behavior": "Allow + deny",
+                      "use": "Subnet"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "choice"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not expect a security group to support __________ rules; security groups use allow rules and track return traffic statefully.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not expect a security group to support explicit Deny rules; security groups use allow rules and track return traffic statefully."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "sg-nacl-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A requirement for an explicit subnet-level deny points to a __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A requirement for an explicit subnet-level deny points to a network ACL."
+                "type": "keywords",
+                "items": [
+                  "security group",
+                  "Security groups vs network ACLs"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design secure workloads and applications — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "Security groups vs network ACLs — AWS documentation",
-              "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -731,15 +865,15 @@
             "domain-1-sg-nacl"
           ],
           "map_position": {
-            "x": 0.424,
-            "y": 0.38
+            "x": 0.6,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "vpc-endpoints-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "VPC endpoints provide __________ to supported services without requiring traffic to traverse an internet gateway or NAT gateway.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -747,47 +881,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "vpc-endpoints-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use __________ for supported services such as S3 and DynamoDB, and interface endpoints powered by AWS PrivateLink for many other services.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use gateway endpoints for supported services such as S3 and DynamoDB, and interface endpoints powered by AWS PrivateLink for many other services."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: VPC endpoints provide private access to supported services without requiring traffic to traverse an internet gateway or NAT gateway.",
+                  "Key retrieval phrase: VPC endpoint."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not add a __________ solely to reach a supported AWS service privately when an appropriate VPC endpoint meets the requirement.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not add a NAT gateway solely to reach a supported AWS service privately when an appropriate VPC endpoint meets the requirement."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "vpc-endpoints-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Private access to an AWS API from private subnets without public internet is a __________ clue.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Private access to an AWS API from private subnets without public internet is a VPC endpoint clue."
+                "type": "keywords",
+                "items": [
+                  "VPC endpoint",
+                  "VPC endpoints and AWS PrivateLink"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design secure workloads and applications — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "VPC endpoints and AWS PrivateLink — AWS documentation",
-              "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-access-aws-services.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -801,15 +926,15 @@
             "domain-1-vpc-endpoints"
           ],
           "map_position": {
-            "x": 0.576,
-            "y": 0.38
+            "x": 0.84,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "secrets-manager-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "AWS Secrets Manager stores sensitive credentials and supports controlled retrieval and __________ for supported secret types.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -817,47 +942,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "secrets-manager-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use it for database passwords, API credentials, and other secrets that applications should __________ instead of embedding in code.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use it for database passwords, API credentials, and other secrets that applications should retrieve at runtime instead of embedding in code."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: AWS Secrets Manager stores sensitive credentials and supports controlled retrieval and automated rotation for supported secret types.",
+                  "Key retrieval phrase: Secrets Manager."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not __________ reusable credentials in source code, AMIs, Lambda environment variables in plaintext, or container images.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not hardcode reusable credentials in source code, AMIs, Lambda environment variables in plaintext, or container images."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "secrets-manager-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A requirement to rotate a database password automatically points to __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A requirement to rotate a database password automatically points to Secrets Manager."
+                "type": "keywords",
+                "items": [
+                  "Secrets Manager",
+                  "Secrets Manager"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design secure workloads and applications — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "Secrets Manager — AWS documentation",
-              "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -871,15 +987,15 @@
             "domain-1-secrets-manager"
           ],
           "map_position": {
-            "x": 0.728,
-            "y": 0.38
+            "x": 0.12,
+            "y": 0.44
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "waf-shield-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "AWS WAF filters HTTP and HTTPS requests with __________ rules, while AWS Shield provides managed protection against distributed denial-of-service attacks.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -887,47 +1003,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "waf-shield-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use WAF for application-layer patterns such as __________ or rate-based rules, and Shield for DDoS protection.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use WAF for application-layer patterns such as SQL injection or rate-based rules, and Shield for DDoS protection."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: AWS WAF filters HTTP and HTTPS requests with web ACL rules, while AWS Shield provides managed protection against distributed denial-of-service attacks.",
+                  "Key retrieval phrase: AWS WAF."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not use a __________ as a substitute for HTTP-aware WAF rules that inspect web requests.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not use a security group as a substitute for HTTP-aware WAF rules that inspect web requests."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "waf-shield-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "SQL injection filtering points to __________; DDoS protection points to Shield.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "SQL injection filtering points to WAF; DDoS protection points to Shield."
+                "type": "keywords",
+                "items": [
+                  "AWS WAF",
+                  "AWS WAF and AWS Shield"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design secure workloads and applications — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "AWS WAF and AWS Shield — AWS documentation",
-              "url": "https://docs.aws.amazon.com/waf/latest/developerguide/what-is-aws-waf.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -941,15 +1048,15 @@
             "domain-1-waf-shield"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.38
+            "x": 0.36,
+            "y": 0.44
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "security-services-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "GuardDuty detects suspicious activity, Inspector identifies software and network exposure vulnerabilities, Macie discovers sensitive data in S3, and Security Hub __________.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -957,54 +1064,45 @@
               }
             },
             {
-              "id": "when",
+              "id": "security-services-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Choose among these services based on whether the __________ is threat detection, vulnerability management, sensitive-data discovery, or centralized findings.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Choose among these services based on whether the requirement is threat detection, vulnerability management, sensitive-data discovery, or centralized findings."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: GuardDuty detects suspicious activity, Inspector identifies software and network exposure vulnerabilities, Macie discovers sensitive data in S3, and Security Hub aggregates security findings.",
+                  "Key retrieval phrase: GuardDuty."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not choose __________ to scan EC2 packages for CVEs or Inspector to classify sensitive S3 data.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not choose Macie to scan EC2 packages for CVEs or Inspector to classify sensitive S3 data."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "security-services-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Sensitive-data discovery in S3 points to Macie; package vulnerability findings point to __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Sensitive-data discovery in S3 points to Macie; package vulnerability findings point to Inspector."
+                "type": "keywords",
+                "items": [
+                  "GuardDuty",
+                  "GuardDuty, Inspector, Macie, and Security Hub"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design secure workloads and applications — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "GuardDuty, Inspector, Macie, and Security Hub — AWS documentation",
-              "url": "https://docs.aws.amazon.com/securityhub/latest/userguide/what-is-securityhub.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         }
       ]
     },
     {
-      "id": "domain-1-task-1-3",
+      "id": "domain-1-module-3",
       "title": "Determine appropriate data security controls",
       "order": 3,
       "task_ids": [
@@ -1018,7 +1116,7 @@
         "1.3.05"
       ],
       "prerequisite_module_ids": [
-        "domain-1-task-1-2"
+        "domain-1-module-2"
       ],
       "nodes": [
         {
@@ -1030,14 +1128,14 @@
           "prerequisite_node_ids": [],
           "map_position": {
             "x": 0.12,
-            "y": 0.6
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "kms-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "AWS KMS creates and controls __________ that AWS services can use to protect data at rest.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1045,47 +1143,91 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use __________ KMS keys when you need direct control over key policy, lifecycle, rotation choices, or cross-account permissions.",
+              "id": "kms-task-table",
+              "kind": "connects_to",
+              "label": "TASK MAP",
+              "placeholder": "Reveal each row and compare neighboring architecture choices.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use customer managed KMS keys when you need direct control over key policy, lifecycle, rotation choices, or cross-account permissions."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "choice",
+                    "label": "Choice / concept"
+                  },
+                  {
+                    "id": "best_for",
+                    "label": "What distinguishes it"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "r1",
+                    "cells": {
+                      "choice": "AWS KMS",
+                      "best_for": "AWS KMS creates and controls encryption keys that AWS services can use to protect data at rest."
+                    }
+                  },
+                  {
+                    "id": "r2",
+                    "cells": {
+                      "choice": "AWS Certificate Manager",
+                      "best_for": "AWS Certificate Manager provisions and manages TLS certificates for supported integrated AWS services."
+                    }
+                  },
+                  {
+                    "id": "r3",
+                    "cells": {
+                      "choice": "S3 Object Lock",
+                      "best_for": "Amazon S3 combines IAM and bucket policies with features such as versioning, lifecycle rules, replication, and Object Lock to control access and protect object data."
+                    }
+                  },
+                  {
+                    "id": "r4",
+                    "cells": {
+                      "choice": "backup",
+                      "best_for": "Backups create recoverable copies, while replication maintains additional copies in another location for availability, locality, or disaster-recovery objectives."
+                    }
+                  },
+                  {
+                    "id": "r5",
+                    "cells": {
+                      "choice": "Amazon Macie",
+                      "best_for": "Data classification identifies sensitive or regulated information so that access, encryption, retention, and monitoring controls can match the data's requirements."
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "choice"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not assume an IAM Allow is sufficient when a KMS __________ does not permit the required use.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not assume an IAM Allow is sufficient when a KMS key policy does not permit the required use."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "kms-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Fine-grained control over who can use an encryption key points to a customer managed __________ and its key policy.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Fine-grained control over who can use an encryption key points to a customer managed KMS key and its key policy."
+                "type": "keywords",
+                "items": [
+                  "AWS KMS",
+                  "KMS encryption and key policies"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Determine appropriate data security controls — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "KMS encryption and key policies — AWS documentation",
-              "url": "https://docs.aws.amazon.com/kms/latest/developerguide/overview.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -1099,15 +1241,15 @@
             "domain-1-kms"
           ],
           "map_position": {
-            "x": 0.31,
-            "y": 0.6
+            "x": 0.36,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "acm-tls-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "AWS Certificate Manager provisions and manages __________ for supported integrated AWS services.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1115,47 +1257,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "acm-tls-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use ACM certificates with services such as Elastic Load Balancing and CloudFront to __________ client connections in transit.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use ACM certificates with services such as Elastic Load Balancing and CloudFront to encrypt client connections in transit."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: AWS Certificate Manager provisions and manages TLS certificates for supported integrated AWS services.",
+                  "Key retrieval phrase: AWS Certificate Manager."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not use __________ data-encryption keys as TLS certificates for HTTPS listeners.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not use KMS data-encryption keys as TLS certificates for HTTPS listeners."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "acm-tls-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A managed public certificate for an HTTPS load balancer listener points to __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A managed public certificate for an HTTPS load balancer listener points to ACM."
+                "type": "keywords",
+                "items": [
+                  "AWS Certificate Manager",
+                  "ACM and encryption in transit"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Determine appropriate data security controls — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "ACM and encryption in transit — AWS documentation",
-              "url": "https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -1169,15 +1302,15 @@
             "domain-1-acm-tls"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.6
+            "x": 0.6,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "s3-protection-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Amazon S3 combines IAM and bucket policies with features such as versioning, lifecycle rules, replication, and __________ to control access and protect object data.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1185,47 +1318,62 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use __________ for recoverability from overwrites or deletes and Object Lock when write-once-read-many retention is required.",
+              "id": "s3-protection-code",
+              "kind": "look_for",
+              "label": "READ THE CONFIG",
+              "placeholder": "Click the important parts of this configuration before revealing the explanation.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use versioning for recoverability from overwrites or deletes and Object Lock when write-once-read-many retention is required."
+                "type": "code_file",
+                "filename": "bucket-policy-tls.json",
+                "language": "json",
+                "code": "{\n  \"Statement\": [{\n    \"Effect\": \"Deny\",\n    \"Principal\": \"*\",\n    \"Action\": \"s3:*\",\n    \"Resource\": [\"arn:aws:s3:::example\", \"arn:aws:s3:::example/*\"],\n    \"Condition\": {\"Bool\": {\"aws:SecureTransport\": \"false\"}}\n  }]\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "a1",
+                    "anchor": {
+                      "line": 3,
+                      "text": "\"Effect\": \"Deny\"",
+                      "occurrence": 1
+                    },
+                    "title": "Deny insecure requests",
+                    "explanation": "The statement blocks requests that match the insecure-transport condition.",
+                    "required": true
+                  },
+                  {
+                    "id": "a2",
+                    "anchor": {
+                      "line": 7,
+                      "text": "\"aws:SecureTransport\"",
+                      "occurrence": 1
+                    },
+                    "title": "Require TLS",
+                    "explanation": "The condition detects requests that are not using secure transport.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not treat lifecycle expiration as a __________; lifecycle rules can permanently remove data.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not treat lifecycle expiration as a backup strategy; lifecycle rules can permanently remove data."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "s3-protection-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A compliance requirement that objects cannot be deleted before a retention date points to S3 __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A compliance requirement that objects cannot be deleted before a retention date points to S3 Object Lock."
+                "type": "keywords",
+                "items": [
+                  "S3 Object Lock",
+                  "S3 access, versioning, lifecycle, and Object Lock"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Determine appropriate data security controls — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "S3 access, versioning, lifecycle, and Object Lock — AWS documentation",
-              "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -1239,15 +1387,15 @@
             "domain-1-s3-protection"
           ],
           "map_position": {
-            "x": 0.69,
-            "y": 0.6
+            "x": 0.84,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "backup-replication-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Backups create __________, while replication maintains additional copies in another location for availability, locality, or disaster-recovery objectives.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1255,47 +1403,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "backup-replication-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use __________ for centralized policy-based backups and service-native replication when low RPO or regional copy requirements demand it.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use AWS Backup for centralized policy-based backups and service-native replication when low RPO or regional copy requirements demand it."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Backups create recoverable copies, while replication maintains additional copies in another location for availability, locality, or disaster-recovery objectives.",
+                  "Key retrieval phrase: backup."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not assume that a read replica or __________ object replaces every backup requirement, because logical deletion or corruption can also replicate.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not assume that a read replica or replicated object replaces every backup requirement, because logical deletion or corruption can also replicate."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "backup-replication-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A centralized backup policy across multiple AWS services and accounts points to __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A centralized backup policy across multiple AWS services and accounts points to AWS Backup."
+                "type": "keywords",
+                "items": [
+                  "backup",
+                  "Backup and replication controls"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Determine appropriate data security controls — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "Backup and replication controls — AWS documentation",
-              "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/whatisbackup.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -1309,15 +1448,15 @@
             "domain-1-backup-replication"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.6
+            "x": 0.12,
+            "y": 0.44
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "data-classification-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Data classification identifies __________ or regulated information so that access, encryption, retention, and monitoring controls can match the data's requirements.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -1325,47 +1464,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "data-classification-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use Amazon __________ when the architecture needs automated discovery of sensitive data in S3 as part of a governance program.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use Amazon Macie when the architecture needs automated discovery of sensitive data in S3 as part of a governance program."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Data classification identifies sensitive or regulated information so that access, encryption, retention, and monitoring controls can match the data's requirements.",
+                  "Key retrieval phrase: Amazon Macie."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not apply __________ retention and access controls to all data when classifications have different legal or business requirements.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not apply identical retention and access controls to all data when classifications have different legal or business requirements."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "data-classification-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Discover personally identifiable information stored in S3 is a __________ clue.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Discover personally identifiable information stored in S3 is a Macie clue."
+                "type": "keywords",
+                "items": [
+                  "Amazon Macie",
+                  "Data classification and governance"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Determine appropriate data security controls — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain1.html"
-            },
-            {
-              "title": "Data classification and governance — AWS documentation",
-              "url": "https://docs.aws.amazon.com/macie/latest/user/what-is-macie.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         }

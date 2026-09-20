@@ -1,9 +1,9 @@
 {
-  "schema_version": "1.0.0",
-  "content_version": "saa-c03-learning-2026-09-19-v1",
+  "schema_version": "2.0.0",
+  "content_version": "saa-c03-learning-2026-09-19-v2-interactive",
   "certification_id": "aws-saa-c03",
   "certification_version": "saa-c03",
-  "exam_guide_revision": "AWS exam guide reviewed 2026-09-19",
+  "exam_guide_revision": "SAA-C03 / reviewed 2026-09-19",
   "domain": {
     "id": "domain-4",
     "name": "Design Cost-Optimized Architectures",
@@ -11,17 +11,13 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are revealed.",
-    "mastery_note": "Discovery progress is not mastery evidence; quiz attempts remain the scored retrieval signal."
+    "unlock_rule": "Reveal the required explanations, progressive table units, and required code annotations to unlock each knowledge node.",
+    "mastery_note": "Discovery builds the mental model first; quiz attempts provide scored recall and architecture-application evidence."
   },
   "source_refs": [
     {
       "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
       "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
-    },
-    {
-      "title": "SAA-C03 in-scope AWS services",
-      "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/saa-03-in-scope-services.html"
     }
   ],
   "coverage": {
@@ -48,12 +44,12 @@
     ],
     "module_count": 4,
     "knowledge_node_count": 13,
-    "prompt_count": 52
+    "prompt_count": 39
   },
-  "authoring_notes": "Original study content. The attached 2026 SAA course PDF was used only as a breadth/coverage cross-check; wording was independently authored and current AWS documentation was used for verification.",
+  "authoring_notes": "Interactive v2 refresh. Uses progressive tables for service/trade-off comparisons and annotated code files where reading a real policy/configuration improves understanding.",
   "modules": [
     {
-      "id": "domain-4-task-4-1",
+      "id": "domain-4-module-1",
       "title": "Design cost-optimized storage solutions",
       "order": 1,
       "task_ids": [
@@ -79,10 +75,10 @@
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "s3-classes-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "S3 storage classes trade storage price, retrieval price, minimum duration, availability design, and __________ for different access patterns.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -90,47 +86,62 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use S3 lifecycle rules or Intelligent-Tiering to move data toward __________ as access becomes less frequent or unpredictable.",
+              "id": "s3-classes-code",
+              "kind": "look_for",
+              "label": "READ THE CONFIG",
+              "placeholder": "Click the important parts of this configuration before revealing the explanation.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use S3 lifecycle rules or Intelligent-Tiering to move data toward lower-cost tiers as access becomes less frequent or unpredictable."
+                "type": "code_file",
+                "filename": "lifecycle.json",
+                "language": "json",
+                "code": "{\n  \"Rules\": [{\n    \"Status\": \"Enabled\",\n    \"Transitions\": [\n      {\"Days\": 30, \"StorageClass\": \"STANDARD_IA\"},\n      {\"Days\": 90, \"StorageClass\": \"GLACIER\"}\n    ]\n  }]\n}",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "a1",
+                    "anchor": {
+                      "line": 5,
+                      "text": "\"Days\": 30",
+                      "occurrence": 1
+                    },
+                    "title": "Age-based transition",
+                    "explanation": "Lifecycle rules can move objects to a lower-cost class after a defined age.",
+                    "required": true
+                  },
+                  {
+                    "id": "a2",
+                    "anchor": {
+                      "line": 6,
+                      "text": "\"StorageClass\": \"GLACIER\"",
+                      "occurrence": 1
+                    },
+                    "title": "Archive transition",
+                    "explanation": "Archive tiers reduce storage cost when slower retrieval and retrieval charges are acceptable.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not place frequently read latency-sensitive data in an __________ that requires restore time.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not place frequently read latency-sensitive data in an archive class that requires restore time."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "s3-classes-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Unknown or changing access patterns point to S3 __________; rarely accessed archives point to a Glacier class.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Unknown or changing access patterns point to S3 Intelligent-Tiering; rarely accessed archives point to a Glacier class."
+                "type": "keywords",
+                "items": [
+                  "S3 Intelligent-Tiering",
+                  "S3 storage classes and lifecycle"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design cost-optimized storage solutions — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain4.html"
-            },
-            {
-              "title": "S3 storage classes and lifecycle — AWS documentation",
-              "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage-class-intro.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -144,15 +155,15 @@
             "domain-4-s3-classes"
           ],
           "map_position": {
-            "x": 0.5,
+            "x": 0.36,
             "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "ebs-cost-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "__________ decouples baseline storage size from provisioned IOPS and throughput, while io2 targets demanding IOPS and st1 or sc1 target lower-cost sequential throughput workloads.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -160,47 +171,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "ebs-cost-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Choose the __________ EBS type that still satisfies IOPS, throughput, latency, durability, and boot-volume requirements.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Choose the lowest-cost EBS type that still satisfies IOPS, throughput, latency, durability, and boot-volume requirements."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: gp3 decouples baseline storage size from provisioned IOPS and throughput, while io2 targets demanding IOPS and st1 or sc1 target lower-cost sequential throughput workloads.",
+                  "Key retrieval phrase: gp3."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not pay for __________ when a general-purpose gp3 volume already meets the workload's measured performance.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not pay for provisioned IOPS when a general-purpose gp3 volume already meets the workload's measured performance."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "ebs-cost-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A general transactional workload needing configurable IOPS at lower cost than provisioned-IOPS volumes often points to __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A general transactional workload needing configurable IOPS at lower cost than provisioned-IOPS volumes often points to gp3."
+                "type": "keywords",
+                "items": [
+                  "gp3",
+                  "Cost-aware EBS selection"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design cost-optimized storage solutions — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain4.html"
-            },
-            {
-              "title": "Cost-aware EBS selection — AWS documentation",
-              "url": "https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -214,15 +216,15 @@
             "domain-4-ebs-cost"
           ],
           "map_position": {
-            "x": 0.88,
+            "x": 0.6,
             "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "storage-transfer-cost-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Online services such as DataSync, physical Snow Family devices, and hybrid Storage Gateway patterns have different transfer, time, and operational __________.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -230,54 +232,45 @@
               }
             },
             {
-              "id": "when",
+              "id": "storage-transfer-cost-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Estimate dataset size, available bandwidth, migration deadline, recurring transfer pattern, and __________ before selecting a method.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Estimate dataset size, available bandwidth, migration deadline, recurring transfer pattern, and data-transfer charges before selecting a method."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Online services such as DataSync, physical Snow Family devices, and hybrid Storage Gateway patterns have different transfer, time, and operational cost profiles.",
+                  "Key retrieval phrase: Snow Family."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not choose the technically __________ transfer method without checking whether the business deadline actually requires its higher cost.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not choose the technically fastest transfer method without checking whether the business deadline actually requires its higher cost."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "storage-transfer-cost-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A one-time very large migration over a severely bandwidth-limited link can make __________ Family more economical than months of network transfer.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A one-time very large migration over a severely bandwidth-limited link can make Snow Family more economical than months of network transfer."
+                "type": "keywords",
+                "items": [
+                  "Snow Family",
+                  "Cost-aware storage migration and transfer"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design cost-optimized storage solutions — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain4.html"
-            },
-            {
-              "title": "Cost-aware storage migration and transfer — AWS documentation",
-              "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/large-migration-guide/data-transfer.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         }
       ]
     },
     {
-      "id": "domain-4-task-4-2",
+      "id": "domain-4-module-2",
       "title": "Design cost-optimized compute solutions",
       "order": 2,
       "task_ids": [
@@ -289,7 +282,7 @@
         "4.2.03"
       ],
       "prerequisite_module_ids": [
-        "domain-4-task-4-1"
+        "domain-4-module-1"
       ],
       "nodes": [
         {
@@ -301,14 +294,14 @@
           "prerequisite_node_ids": [],
           "map_position": {
             "x": 0.12,
-            "y": 0.38
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "ec2-purchasing-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "On-Demand offers flexibility, Savings Plans and Reserved Instances reward committed usage, and Spot uses spare EC2 capacity at steep discounts with __________.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -316,47 +309,91 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use Spot for fault-tolerant interruptible work, commitment discounts for __________ usage, and On-Demand for uncertain or short-lived needs.",
+              "id": "ec2-purchasing-table",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "The choices are visible. Reveal the differences one cell at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use Spot for fault-tolerant interruptible work, commitment discounts for predictable baseline usage, and On-Demand for uncertain or short-lived needs."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "choice",
+                    "label": "Choice"
+                  },
+                  {
+                    "id": "property",
+                    "label": "Primary property"
+                  },
+                  {
+                    "id": "behavior",
+                    "label": "Behavior / trade-off"
+                  },
+                  {
+                    "id": "use",
+                    "label": "Typical fit"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "r1",
+                    "cells": {
+                      "choice": "On-Demand",
+                      "property": "No commitment",
+                      "behavior": "Unpredictable / short-lived",
+                      "use": "Highest flexibility"
+                    }
+                  },
+                  {
+                    "id": "r2",
+                    "cells": {
+                      "choice": "Savings Plans / RI",
+                      "property": "Commitment",
+                      "behavior": "Steady predictable usage",
+                      "use": "Commitment discount"
+                    }
+                  },
+                  {
+                    "id": "r3",
+                    "cells": {
+                      "choice": "Spot",
+                      "property": "Interruptible spare capacity",
+                      "behavior": "Fault-tolerant flexible work",
+                      "use": "Largest discount, interruption risk"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "choice"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not place a non-interruptible __________ database on Spot solely to reduce compute price.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not place a non-interruptible singleton database on Spot solely to reduce compute price."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "ec2-purchasing-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Interruptible batch work points to __________; steady long-term compute usage points to Savings Plans or Reserved Instances.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Interruptible batch work points to Spot; steady long-term compute usage points to Savings Plans or Reserved Instances."
+                "type": "keywords",
+                "items": [
+                  "Spot Instances",
+                  "On-Demand, Savings Plans, Reserved Instances, and Spot"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design cost-optimized compute solutions — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain4.html"
-            },
-            {
-              "title": "On-Demand, Savings Plans, Reserved Instances, and Spot — AWS documentation",
-              "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-purchasing-options.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -370,15 +407,15 @@
             "domain-4-ec2-purchasing"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.38
+            "x": 0.36,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "rightsizing-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Right-sizing matches resource capacity to __________, Auto Scaling adjusts capacity over time, and AWS Compute Optimizer provides recommendations based on utilization data.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -386,47 +423,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "rightsizing-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use measurements and recommendations to reduce chronic overprovisioning, then preserve headroom required by latency and availability __________.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use measurements and recommendations to reduce chronic overprovisioning, then preserve headroom required by latency and availability objectives."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Right-sizing matches resource capacity to measured demand, Auto Scaling adjusts capacity over time, and AWS Compute Optimizer provides recommendations based on utilization data.",
+                  "Key retrieval phrase: AWS Compute Optimizer."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not downsize solely from __________ if memory, network, I/O, or peak demand is the limiting resource.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not downsize solely from average CPU if memory, network, I/O, or peak demand is the limiting resource."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "rightsizing-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "An underutilized fleet with stable metrics is a right-sizing and __________ opportunity.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "An underutilized fleet with stable metrics is a right-sizing and Compute Optimizer opportunity."
+                "type": "keywords",
+                "items": [
+                  "AWS Compute Optimizer",
+                  "Right-sizing, Auto Scaling, and Compute Optimizer"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design cost-optimized compute solutions — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain4.html"
-            },
-            {
-              "title": "Right-sizing, Auto Scaling, and Compute Optimizer — AWS documentation",
-              "url": "https://docs.aws.amazon.com/compute-optimizer/latest/ug/what-is-compute-optimizer.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -440,15 +468,15 @@
             "domain-4-rightsizing"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.38
+            "x": 0.6,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "serverless-cost-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Lambda charges for requests and __________, Fargate charges for provisioned task resources, and EC2 charges for instance capacity with purchasing-model options.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -456,54 +484,45 @@
               }
             },
             {
-              "id": "when",
+              "id": "serverless-cost-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Compare __________, utilization, execution duration, scaling pattern, operational effort, and commitment discounts instead of assuming one compute model is always cheaper.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Compare duty cycle, utilization, execution duration, scaling pattern, operational effort, and commitment discounts instead of assuming one compute model is always cheaper."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Lambda charges for requests and execution resources, Fargate charges for provisioned task resources, and EC2 charges for instance capacity with purchasing-model options.",
+                  "Key retrieval phrase: AWS Lambda."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not keep an __________ EC2 fleet only for occasional short event-driven work when serverless options meet the workload requirements.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not keep an always-idle EC2 fleet only for occasional short event-driven work when serverless options meet the workload requirements."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "serverless-cost-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Very spiky short-lived event processing often favors __________, while continuously utilized services can favor containers or EC2.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Very spiky short-lived event processing often favors Lambda, while continuously utilized services can favor containers or EC2."
+                "type": "keywords",
+                "items": [
+                  "AWS Lambda",
+                  "Lambda, Fargate, and EC2 cost trade-offs"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design cost-optimized compute solutions — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain4.html"
-            },
-            {
-              "title": "Lambda, Fargate, and EC2 cost trade-offs — AWS documentation",
-              "url": "https://aws.amazon.com/lambda/pricing/"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         }
       ]
     },
     {
-      "id": "domain-4-task-4-3",
+      "id": "domain-4-module-3",
       "title": "Design cost-optimized database solutions",
       "order": 3,
       "task_ids": [
@@ -515,7 +534,7 @@
         "4.3.03"
       ],
       "prerequisite_module_ids": [
-        "domain-4-task-4-2"
+        "domain-4-module-2"
       ],
       "nodes": [
         {
@@ -527,14 +546,14 @@
           "prerequisite_node_ids": [],
           "map_position": {
             "x": 0.12,
-            "y": 0.6
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "db-cost-models-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Managed relational databases charge for database __________ and storage, Aurora Serverless can adjust relational capacity, and DynamoDB offers on-demand or provisioned capacity for key-value workloads.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -542,47 +561,77 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Match cost model to __________: variable relational demand can fit Aurora Serverless, while unpredictable key-value traffic can fit DynamoDB on-demand.",
+              "id": "db-cost-models-task-table",
+              "kind": "connects_to",
+              "label": "TASK MAP",
+              "placeholder": "Reveal each row and compare neighboring architecture choices.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Match cost model to access pattern: variable relational demand can fit Aurora Serverless, while unpredictable key-value traffic can fit DynamoDB on-demand."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "choice",
+                    "label": "Choice / concept"
+                  },
+                  {
+                    "id": "best_for",
+                    "label": "What distinguishes it"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "r1",
+                    "cells": {
+                      "choice": "Aurora Serverless",
+                      "best_for": "Managed relational databases charge for database capacity and storage, Aurora Serverless can adjust relational capacity, and DynamoDB offers on-demand or provisioned capacity for key-value workloads."
+                    }
+                  },
+                  {
+                    "id": "r2",
+                    "cells": {
+                      "choice": "ElastiCache",
+                      "best_for": "A cache can absorb repeated reads and reduce database CPU, I/O, and capacity requirements when the workload has cacheable access patterns."
+                    }
+                  },
+                  {
+                    "id": "r3",
+                    "cells": {
+                      "choice": "retention period",
+                      "best_for": "Backup frequency and retention determine recovery coverage and storage consumption, so retention should match business and compliance requirements."
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "choice"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not move a relational workload that depends on __________ and transactions to DynamoDB solely because serverless billing sounds cheaper.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not move a relational workload that depends on joins and transactions to DynamoDB solely because serverless billing sounds cheaper."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "db-cost-models-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Unpredictable key-value traffic with no capacity planning preference points to DynamoDB __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Unpredictable key-value traffic with no capacity planning preference points to DynamoDB on-demand."
+                "type": "keywords",
+                "items": [
+                  "Aurora Serverless",
+                  "RDS, Aurora Serverless, and DynamoDB cost models"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design cost-optimized database solutions — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain4.html"
-            },
-            {
-              "title": "RDS, Aurora Serverless, and DynamoDB cost models — AWS documentation",
-              "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadWriteCapacityMode.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -596,15 +645,15 @@
             "domain-4-db-cost-models"
           ],
           "map_position": {
-            "x": 0.5,
-            "y": 0.6
+            "x": 0.36,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "db-caching-cost-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "A cache can absorb repeated reads and __________ CPU, I/O, and capacity requirements when the workload has cacheable access patterns.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -612,47 +661,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "db-caching-cost-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use ElastiCache for general application caching or DAX for suitable DynamoDB read workloads when __________ can justify the added cache cost.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use ElastiCache for general application caching or DAX for suitable DynamoDB read workloads when cache hit rate can justify the added cache cost."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: A cache can absorb repeated reads and reduce database CPU, I/O, and capacity requirements when the workload has cacheable access patterns.",
+                  "Key retrieval phrase: ElastiCache."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not add a cache to a __________ or low-reuse workload when it adds cost and complexity without meaningful offload.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not add a cache to a write-only or low-reuse workload when it adds cost and complexity without meaningful offload."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "db-caching-cost-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A read-heavy workload repeatedly requesting the same data can often lower database load by __________ hot results.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A read-heavy workload repeatedly requesting the same data can often lower database load by caching hot results."
+                "type": "keywords",
+                "items": [
+                  "ElastiCache",
+                  "Caching to reduce database cost"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design cost-optimized database solutions — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain4.html"
-            },
-            {
-              "title": "Caching to reduce database cost — AWS documentation",
-              "url": "https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/WhatIs.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -666,15 +706,15 @@
             "domain-4-db-caching-cost"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.6
+            "x": 0.6,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "db-retention-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Backup frequency and retention determine recovery coverage and __________, so retention should match business and compliance requirements.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -682,54 +722,45 @@
               }
             },
             {
-              "id": "when",
+              "id": "db-retention-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Keep the recovery points the business requires and __________ obsolete snapshots or backups according to policy.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Keep the recovery points the business requires and expire obsolete snapshots or backups according to policy."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Backup frequency and retention determine recovery coverage and storage consumption, so retention should match business and compliance requirements.",
+                  "Key retrieval phrase: retention period."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not retain every manual snapshot __________ when no legal, recovery, or business requirement justifies the storage cost.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not retain every manual snapshot forever when no legal, recovery, or business requirement justifies the storage cost."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "db-retention-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "A large collection of old unneeded snapshots is a __________-policy optimization opportunity.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A large collection of old unneeded snapshots is a retention-policy optimization opportunity."
+                "type": "keywords",
+                "items": [
+                  "retention period",
+                  "Database backups and retention cost"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design cost-optimized database solutions — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain4.html"
-            },
-            {
-              "title": "Database backups and retention cost — AWS documentation",
-              "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/creating-a-backup-plan.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         }
       ]
     },
     {
-      "id": "domain-4-task-4-4",
+      "id": "domain-4-module-4",
       "title": "Design cost-optimized network architectures",
       "order": 4,
       "task_ids": [
@@ -742,7 +773,7 @@
         "4.4.04"
       ],
       "prerequisite_module_ids": [
-        "domain-4-task-4-3"
+        "domain-4-module-3"
       ],
       "nodes": [
         {
@@ -754,14 +785,14 @@
           "prerequisite_node_ids": [],
           "map_position": {
             "x": 0.12,
-            "y": 0.82
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "nat-endpoints-cost-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "NAT gateways incur hourly and __________, while VPC endpoints can keep supported service traffic private and may reduce NAT data processing for that traffic.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -769,47 +800,91 @@
               }
             },
             {
-              "id": "when",
-              "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use an S3 or DynamoDB __________ when private workloads frequently access those services and do not need NAT for that traffic.",
+              "id": "nat-endpoints-cost-table",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "The choices are visible. Reveal the differences one cell at a time.",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use an S3 or DynamoDB gateway endpoint when private workloads frequently access those services and do not need NAT for that traffic."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "choice",
+                    "label": "Choice"
+                  },
+                  {
+                    "id": "property",
+                    "label": "Primary property"
+                  },
+                  {
+                    "id": "behavior",
+                    "label": "Behavior / trade-off"
+                  },
+                  {
+                    "id": "use",
+                    "label": "Typical fit"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "r1",
+                    "cells": {
+                      "choice": "NAT Gateway",
+                      "property": "General outbound internet/AWS access",
+                      "behavior": "Hourly + processing",
+                      "use": "Broad compatibility"
+                    }
+                  },
+                  {
+                    "id": "r2",
+                    "cells": {
+                      "choice": "Gateway endpoint",
+                      "property": "S3/DynamoDB private access",
+                      "behavior": "No NAT path for supported traffic",
+                      "use": "No hourly endpoint charge"
+                    }
+                  },
+                  {
+                    "id": "r3",
+                    "cells": {
+                      "choice": "Interface endpoint",
+                      "property": "PrivateLink-supported services",
+                      "behavior": "Hourly + data processing",
+                      "use": "Private ENIs in VPC"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "choice"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not route high-volume S3 traffic through a __________ when a gateway VPC endpoint satisfies the access requirement.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not route high-volume S3 traffic through a NAT gateway when a gateway VPC endpoint satisfies the access requirement."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "nat-endpoints-cost-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Large private-subnet S3 traffic plus NAT data-processing cost points to an __________.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Large private-subnet S3 traffic plus NAT data-processing cost points to an S3 gateway endpoint."
+                "type": "keywords",
+                "items": [
+                  "VPC endpoint",
+                  "NAT gateway and VPC endpoint cost trade-offs"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design cost-optimized network architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain4.html"
-            },
-            {
-              "title": "NAT gateway and VPC endpoint cost trade-offs — AWS documentation",
-              "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -823,15 +898,15 @@
             "domain-4-nat-endpoints-cost"
           ],
           "map_position": {
-            "x": 0.373,
-            "y": 0.82
+            "x": 0.36,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "data-transfer-edge-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Architecture choices that keep traffic local or serve cacheable content from __________ can reduce origin load and some data-transfer paths.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -839,47 +914,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "data-transfer-edge-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use __________ when globally distributed users repeatedly request cacheable content from an origin such as S3 or an ALB.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use CloudFront when globally distributed users repeatedly request cacheable content from an origin such as S3 or an ALB."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Architecture choices that keep traffic local or serve cacheable content from edge locations can reduce origin load and some data-transfer paths.",
+                  "Key retrieval phrase: CloudFront."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not force every global request back to the __________ when edge caching can satisfy repeated reads.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not force every global request back to the origin when edge caching can satisfy repeated reads."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "data-transfer-edge-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "High global egress plus highly cacheable content is a __________ cost and performance opportunity.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "High global egress plus highly cacheable content is a CloudFront cost and performance opportunity."
+                "type": "keywords",
+                "items": [
+                  "CloudFront",
+                  "Data transfer and edge caching cost"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design cost-optimized network architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain4.html"
-            },
-            {
-              "title": "Data transfer and edge caching cost — AWS documentation",
-              "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -893,15 +959,15 @@
             "domain-4-data-transfer-edge"
           ],
           "map_position": {
-            "x": 0.627,
-            "y": 0.82
+            "x": 0.6,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "network-topology-cost-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "VPC peering, Transit Gateway, Site-to-Site VPN, and Direct Connect have different topology, bandwidth, operational, and data-processing __________.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -909,47 +975,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "network-topology-cost-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use peering for simpler point-to-point connectivity, Transit Gateway for scalable __________ routing, VPN for internet-based encrypted connectivity, and Direct Connect for dedicated connectivity.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use peering for simpler point-to-point connectivity, Transit Gateway for scalable hub-and-spoke routing, VPN for internet-based encrypted connectivity, and Direct Connect for dedicated connectivity."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: VPC peering, Transit Gateway, Site-to-Site VPN, and Direct Connect have different topology, bandwidth, operational, and data-processing cost characteristics.",
+                  "Key retrieval phrase: VPC peering."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not build a large __________ peering topology when centralized transit is required and operational complexity dominates.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not build a large full-mesh peering topology when centralized transit is required and operational complexity dominates."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "network-topology-cost-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Dozens of VPCs requiring centralized routing usually point to __________ rather than a peering mesh.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Dozens of VPCs requiring centralized routing usually point to Transit Gateway rather than a peering mesh."
+                "type": "keywords",
+                "items": [
+                  "VPC peering",
+                  "Peering, Transit Gateway, VPN, and Direct Connect cost"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design cost-optimized network architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain4.html"
-            },
-            {
-              "title": "Peering, Transit Gateway, VPN, and Direct Connect cost — AWS documentation",
-              "url": "https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         },
@@ -963,15 +1020,15 @@
             "domain-4-network-topology-cost"
           ],
           "map_position": {
-            "x": 0.88,
-            "y": 0.82
+            "x": 0.84,
+            "y": 0.16
           },
           "prompts": [
             {
-              "id": "what",
+              "id": "cost-tools-what",
               "kind": "what",
-              "label": "❓ WHAT?",
-              "placeholder": "Cost Explorer analyzes spend and usage trends, AWS Budgets tracks thresholds and forecasts, Cost and Usage Report provides __________, and cost allocation tags attribute spend to resources.",
+              "label": "WHAT?",
+              "placeholder": "What should this concept make you think of?",
               "required": true,
               "reveal": {
                 "type": "text",
@@ -979,47 +1036,38 @@
               }
             },
             {
-              "id": "when",
+              "id": "cost-tools-use",
               "kind": "when",
-              "label": "⏱️ WHEN?",
-              "placeholder": "Use the tool that matches the question: exploration and trends, proactive __________, detailed line-item analysis, or cost attribution.",
+              "label": "WHEN?",
+              "placeholder": "What requirement should trigger this choice?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use the tool that matches the question: exploration and trends, proactive thresholds, detailed line-item analysis, or cost attribution."
+                "type": "bullets",
+                "items": [
+                  "Choose it when the requirement aligns with: Cost Explorer analyzes spend and usage trends, AWS Budgets tracks thresholds and forecasts, Cost and Usage Report provides detailed billing data, and cost allocation tags attribute spend to resources.",
+                  "Key retrieval phrase: AWS Cost Explorer."
+                ]
               }
             },
             {
-              "id": "not_this",
-              "kind": "not_this",
-              "label": "🚫 NOT THIS",
-              "placeholder": "Do not expect AWS Budgets alone to provide the __________ raw billing dataset as the Cost and Usage Report.",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Do not expect AWS Budgets alone to provide the same granular raw billing dataset as the Cost and Usage Report."
-              }
-            },
-            {
-              "id": "exam_clue",
+              "id": "cost-tools-clue",
               "kind": "exam_clue",
-              "label": "🎯 EXAM CLUE",
-              "placeholder": "Alert when forecast spend exceeds a monthly target points to AWS __________; detailed billing exports point to Cost and Usage Report.",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrase should make this answer jump out?",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Alert when forecast spend exceeds a monthly target points to AWS Budgets; detailed billing exports point to Cost and Usage Report."
+                "type": "keywords",
+                "items": [
+                  "AWS Cost Explorer",
+                  "Cost Explorer, Budgets, CUR, and cost allocation tags"
+                ]
               }
             }
           ],
           "source_refs": [
             {
-              "title": "Design cost-optimized network architectures — official exam guide",
-              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03-domain4.html"
-            },
-            {
-              "title": "Cost Explorer, Budgets, CUR, and cost allocation tags — AWS documentation",
-              "url": "https://docs.aws.amazon.com/cost-management/latest/userguide/what-is-costmanagement.html"
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
           ]
         }
