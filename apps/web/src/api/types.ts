@@ -59,3 +59,9 @@ export type CodeAnnotation = components["schemas"]["CodeAnnotation"];
 export type CodeAnnotationAnchor = components["schemas"]["CodeAnnotationAnchor"];
 export type MapPosition = components["schemas"]["MapPosition"];
 export type SourceRef = components["schemas"]["SourceRef"];
+export type PlannerAction = components["schemas"]["PlannerAction"];
+export type RecommendationReason =
+  components["schemas"]["RecommendationReason"];
+export type Recommendation = components["schemas"]["Recommendation"];
+export type RecommendationResponse =
+  components["schemas"]["RecommendationResponse"];

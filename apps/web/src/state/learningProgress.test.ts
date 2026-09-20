@@ -11,6 +11,7 @@ import {
   isNodeUnlocked,
   isPromptComplete,
   loadDomainProgress,
+  loadTrackExploredNodeIds,
   nodePromptProgress,
   revealElement,
   revealPrompt,
@@ -509,5 +510,23 @@ describe("progressive table progress", () => {
     );
     expect(state.nodeState["n-row"]).toBe("in_progress");
     expect(state.unlockedNodeIds.has("n-row")).toBe(false);
+  });
+});
+
+describe("loadTrackExploredNodeIds", () => {
+  it("collects explored node ids for one track version only", () => {
+    revealPrompt("v1", "domain-1", "c1", "n1", "p1");
+    revealElement("v1", "domain-1", "c1", "n2", "p1", elementId.row("r1"));
+    revealPrompt("v2", "domain-1", "c1", "n9", "p1");
+
+    expect(loadTrackExploredNodeIds("v1")).toEqual(["n1", "n2"]);
+    expect(loadTrackExploredNodeIds("v2")).toEqual(["n9"]);
+    expect(loadTrackExploredNodeIds("missing")).toEqual([]);
+  });
+
+  it("returns a sorted, repeatable list", () => {
+    revealPrompt("v1", "domain-1", "c1", "n-b", "p1");
+    revealPrompt("v1", "domain-2", "c1", "n-a", "p1");
+    expect(loadTrackExploredNodeIds("v1")).toEqual(["n-a", "n-b"]);
   });
 });

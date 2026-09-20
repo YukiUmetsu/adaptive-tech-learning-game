@@ -247,4 +247,74 @@ describe("CertificationDashboardPage", () => {
     );
     expect(posted).toHaveLength(0);
   });
+
+  it("shows the optional recommendation when one is available", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = requestUrl(input);
+        if (url.includes("/v1/certifications")) {
+          return jsonResponse(catalog);
+        }
+        if (url.includes("/v1/wallet")) {
+          return jsonResponse({ device_id: "device", bits_balance: 1240 });
+        }
+        if (url.includes("/recommendation")) {
+          return jsonResponse({
+            recommendation: {
+              action: "learn_node",
+              reason: "cold_start",
+              track_id: "aws-soa-c03",
+              domain_id: "domain-1",
+              domain_name: "Monitoring and Observability",
+              node_id: "n1",
+              node_title: "Metrics",
+              question_id: null,
+              assessment_mode: null,
+              concept_ids: [],
+              title: "Learn Metrics",
+            },
+          });
+        }
+        return jsonResponse({ error: { code: "not_found" } }, 404);
+      }),
+    );
+
+    renderDashboard();
+    await ready();
+
+    expect(await screen.findByText("Learn Metrics")).toBeInTheDocument();
+    expect(screen.getByText("Recommended next")).toBeInTheDocument();
+  });
+
+  it("stays usable when the recommendation request fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = requestUrl(input);
+        if (url.includes("/v1/certifications")) {
+          return jsonResponse(catalog);
+        }
+        if (url.includes("/v1/wallet")) {
+          return jsonResponse({ device_id: "device", bits_balance: 1240 });
+        }
+        if (url.includes("/recommendation")) {
+          throw new Error("recommendation service unavailable");
+        }
+        return jsonResponse({ error: { code: "not_found" } }, 404);
+      }),
+    );
+
+    renderDashboard();
+    await ready();
+
+    // The core dashboard is unaffected by the optional feature failing.
+    expect(
+      screen.getByRole("heading", { name: /Quick Quiz/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Domain Quiz/ })).toBeInTheDocument();
+    expect(
+      screen.queryByText("Recommended next"),
+    ).not.toBeInTheDocument();
+  });
 });

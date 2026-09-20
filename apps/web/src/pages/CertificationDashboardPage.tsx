@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import type { DomainDto, QuizMode } from "../api/types";
 import { useAuth } from "../auth/context";
 import BitsHud from "../components/BitsHud";
+import RecommendedNext from "../components/RecommendedNext";
 import { useCatalog } from "../hooks/useCatalog";
 import { certificationQuestionCount, domainQuestionCount } from "../state/demo";
 import { startMission } from "../state/mission";
@@ -193,6 +194,13 @@ export default function CertificationDashboardPage() {
           </Link>
         </p>
       ) : null}
+
+      {/* Optional and best-effort: hidden on any failure, never blocks the page. */}
+      <RecommendedNext
+        trackId={certification.id}
+        trackVersion={version.id}
+        enabled={status === "authenticated"}
+      />
 
       <article className="campaign-panel">
         <h2>Campaign</h2>

@@ -174,6 +174,47 @@ forgetting risk
 
 Then satisfy session constraints such as duration and interaction diversity.
 
+## V1 planner (optional, deterministic)
+
+The first planner is a small pure function, `PlannerInput -> Recommendation`,
+implemented in `apps/api/src/planner.rs`. It is track-agnostic: a Learning Track
+may be a vendor certification or a general track such as Python Fluency, Python
+Data Stack, or PyTorch Core. It never hard-codes an exam or vendor.
+
+Actions:
+
+- `learn_node` — study a knowledge-map node the learner has not explored.
+- `review_node` — revisit a node for a strong but stale concept.
+- `practice_question` — answer a retrieval-practice question.
+- `practice_domain` — take a domain/topic review.
+
+Stable reason codes explain each choice: `cold_start`, `weak_concept`,
+`weak_prerequisite`, `needs_practice`, `stale_knowledge`, `domain_review`, and
+`strong_and_fresh`. Rules are evaluated in a fixed order, so identical input
+produces an identical recommendation:
+
+```text
+cold start
+-> weak prerequisite before a weak dependent concept
+-> weak, unexplored node with little evidence
+-> weak, already-explored concept -> retrieval practice
+-> strong but stale concept -> review
+-> strong and fresh -> harder/applied practice or a domain review
+```
+
+Inputs are the derived `heuristic-v1` concept state, recent accepted events,
+question `ConceptWeight`/assessment mode/difficulty, knowledge nodes and their
+module/node prerequisites, and optional client discovery progress. Assessment
+modes stay distinct: a practice candidate is scored against the state for the
+question's own mode, so strength in recognition never hides weakness in
+application.
+
+The API exposes it as `GET /v1/tracks/{track_id}/recommendation`, optionally
+passing explored node ids. Recommendations are auxiliary and best-effort: the
+endpoint is never required for the dashboard, knowledge maps, or quizzes, and a
+recommendation-history write failure is ignored. Recommendations are not
+learning evidence and are never stored as such.
+
 ## Plan explanation
 
 Example:

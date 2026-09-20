@@ -53,6 +53,7 @@ wallet_ledger
 inventory
 gacha_rolls
 model_versions
+recommendation_log
 deletion_tombstones
 ```
 
@@ -86,6 +87,14 @@ updated_at
 Do not accept blind client replacement of this row. Forgetting/retrievability is
 computed on read at selection time from `evidence_mass` and
 `last_practiced_at`; stored state is never aged by a background job.
+
+## Auxiliary recommendation history
+
+`recommendation_log` records which optional recommendations were shown to a
+learner so planner quality can be reviewed later. It is deliberately **not**
+learning evidence: it never feeds scoring, rewards, concept state, or mastery.
+Writes are best-effort — a missing table, an unreachable database, or a
+constraint failure must never fail a recommendation or a learning session.
 
 Ownership is user-based: `mission_instances`, `learning_events`, and wallet
 state carry an owning `user_id`. `device_wallets` is the legacy pre-auth table

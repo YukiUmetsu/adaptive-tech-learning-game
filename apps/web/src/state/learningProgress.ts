@@ -298,6 +298,34 @@ export function loadDomainProgress(
   return stored;
 }
 
+/**
+ * Every knowledge-node id the learner has explored for a track version.
+ *
+ * Discovery progress lives on the client, so this is best-effort auxiliary
+ * input for recommendations: unknown or stale keys are ignored. The result is
+ * sorted so the recommendation query stays deterministic.
+ */
+export function loadTrackExploredNodeIds(certificationVersion: string): string[] {
+  const prefix = `${certificationVersion}::`;
+  const explored = new Set<string>();
+  for (const [key, domain] of Object.entries(readStore().domains)) {
+    if (!key.startsWith(prefix)) {
+      continue;
+    }
+    for (const [nodeId, prompts] of Object.entries(domain.revealedPromptIds)) {
+      if (prompts.length > 0) {
+        explored.add(nodeId);
+      }
+    }
+    for (const [nodeId, prompts] of Object.entries(domain.revealedElementIds)) {
+      if (Object.values(prompts).some((ids) => ids.length > 0)) {
+        explored.add(nodeId);
+      }
+    }
+  }
+  return [...explored].sort();
+}
+
 const EMPTY_REVEALS: string[] = [];
 const EMPTY_ELEMENTS_SET: ReadonlySet<string> = new Set();
 

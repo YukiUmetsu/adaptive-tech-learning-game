@@ -21,10 +21,13 @@ use crate::auth::AuthenticatedUser;
 use crate::dto::{
     AnswerPayload, AnswerRequest, CatalogResponse, CertificationDto, CertificationVersionDto,
     CompleteMissionResponse, ConceptDto, DomainDto, FeedbackResponse, IssueMissionRequest,
-    LearningDomainResponse, MissionResponse, QuestionView, SyncEventRequest, SyncEventResult,
-    SyncRequest, SyncResponse, TaskDto, WalletResponse,
+    LearningDomainResponse, MissionResponse, QuestionView, RecommendationResponse,
+    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, TaskDto, WalletResponse,
 };
 use crate::error::ApiError;
+use crate::planner::{
+    self, ConceptStateView, PlannerDomain, PlannerInput, PlannerNode, PlannerQuestion,
+};
 use crate::selection::{self, Candidate, ConceptEvidence, HistoryEntry};
 use crate::state::AppState;
 
@@ -114,6 +117,134 @@ pub fn learning_domain(
         source_refs: domain.source_refs.clone(),
         modules: domain.modules.clone(),
     })
+}
+
+/// Builds a best-effort next-action recommendation for a learning track.
+///
+/// The planner is pure and track-agnostic; this function only assembles its
+/// input from content, derived concept state, and accepted history. Auxiliary
+/// logging is best-effort and never fails the recommendation or learning flow.
+pub async fn recommendation(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    track_id: &str,
+    explored_node_ids: &[String],
+) -> Result<RecommendationResponse, ApiError> {
+    let bundle = state
+        .content
+        .bundle_for_certification(track_id)
+        .ok_or(ApiError::NotFound)?;
+    let track_version = bundle.version.id.clone();
+
+    let states = db::concept_state::list_for_user(&state.pool, user.id, &track_version).await?;
+    let history =
+        db::learning_events::recent_for_user(&state.pool, user.id, track_id, HISTORY_LIMIT).await?;
+
+    let domains: Vec<PlannerDomain> = bundle
+        .version
+        .domains
+        .iter()
+        .map(|domain| PlannerDomain {
+            id: domain.id.clone(),
+            name: domain.name.clone(),
+            weight: domain.weight,
+        })
+        .collect();
+
+    let nodes = planner_nodes(state, &track_version);
+    let questions: Vec<PlannerQuestion> = state
+        .content
+        .questions_for_version(&track_version)
+        .into_iter()
+        .map(|question| PlannerQuestion {
+            id: question.id.clone(),
+            domain_id: question.domain_id.clone(),
+            assessment_mode: question.assessment_mode,
+            difficulty_prior: question.difficulty_prior,
+            concepts: concept_weights(question),
+        })
+        .collect();
+
+    let input = PlannerInput {
+        track_id: track_id.to_owned(),
+        track_version: track_version.clone(),
+        now: Utc::now(),
+        states: states
+            .into_iter()
+            .map(|state| ConceptStateView {
+                concept_id: state.concept_id,
+                assessment_mode: state.assessment_mode,
+                estimate: state.estimate,
+                evidence_mass: state.evidence_mass,
+                exposure_count: state.exposure_count,
+                last_practiced_at: state.last_practiced_at,
+            })
+            .collect(),
+        domains,
+        nodes,
+        questions,
+        explored_node_ids: explored_node_ids.iter().cloned().collect(),
+        recent_question_ids: history.into_iter().map(|entry| entry.question_id).collect(),
+    };
+
+    let recommendation = planner::recommend(&input);
+
+    if let Some(choice) = &recommendation {
+        let entry = db::recommendations::RecommendationLogEntry {
+            user_id: user.id,
+            track_id: &choice.track_id,
+            track_version: &track_version,
+            action: choice.action.as_str(),
+            reason: choice.reason.as_str(),
+            domain_id: Some(choice.domain_id.as_str()),
+            node_id: choice.node_id.as_deref(),
+            question_id: choice.question_id.as_deref(),
+            concept_ids: &choice.concept_ids,
+        };
+        log_recommendation(&state.pool, &entry).await;
+    }
+
+    Ok(RecommendationResponse { recommendation })
+}
+
+/// Logs a recommendation without ever letting a persistence problem escape.
+///
+/// Recommendation history is auxiliary data: a missing table, an unreachable
+/// database, or a constraint failure must not fail the request or the learning
+/// flow.
+async fn log_recommendation(
+    pool: &db::PgPool,
+    entry: &db::recommendations::RecommendationLogEntry<'_>,
+) {
+    if let Err(error) = db::recommendations::log(pool, entry).await {
+        tracing::debug!(error = %error, "could not log recommendation");
+    }
+}
+
+/// Flattens the track's knowledge-map nodes for the planner.
+fn planner_nodes(state: &AppState, track_version: &str) -> Vec<PlannerNode> {
+    let mut nodes = Vec::new();
+    for domain in state
+        .content
+        .learning_domains()
+        .iter()
+        .filter(|domain| domain.certification_version == track_version)
+    {
+        for module in &domain.modules {
+            for node in &module.nodes {
+                nodes.push(PlannerNode {
+                    id: node.id.clone(),
+                    domain_id: domain.domain.id.clone(),
+                    module_id: module.id.clone(),
+                    title: node.title.clone(),
+                    module_prerequisite_ids: module.prerequisite_module_ids.clone(),
+                    prerequisite_node_ids: node.prerequisite_node_ids.clone(),
+                    concept_ids: node.concept_ids.clone(),
+                });
+            }
+        }
+    }
+    nodes
 }
 
 /// Whether a certification is the public demo bundle, which may be issued
@@ -838,6 +969,31 @@ fn question_view(question: &adaptive_learn_content::Question) -> QuestionView {
 mod tests {
     use super::*;
     use std::collections::BTreeMap;
+
+    #[tokio::test]
+    async fn recommendation_logging_failure_is_swallowed() {
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .max_connections(1)
+            .acquire_timeout(std::time::Duration::from_millis(50))
+            .connect_lazy("postgres://app:app@127.0.0.1:1/app")
+            .expect("lazy pool");
+        let concept_ids = vec!["c1".to_owned()];
+        let entry = db::recommendations::RecommendationLogEntry {
+            user_id: Uuid::new_v4(),
+            track_id: "track",
+            track_version: "track-v1",
+            action: "learn_node",
+            reason: "cold_start",
+            domain_id: Some("d1"),
+            node_id: Some("n1"),
+            question_id: None,
+            concept_ids: &concept_ids,
+        };
+
+        // The database is unreachable, but auxiliary logging must never panic or
+        // propagate a failure into the recommendation request.
+        log_recommendation(&pool, &entry).await;
+    }
 
     #[test]
     fn answer_payload_must_have_exactly_one_shape() {

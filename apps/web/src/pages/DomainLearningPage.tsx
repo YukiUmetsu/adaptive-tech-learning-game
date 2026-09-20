@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import type { KnowledgeNode } from "../api/types";
 import KnowledgeCard from "../components/KnowledgeCard";
@@ -49,6 +49,8 @@ export default function DomainLearningPage() {
   const { certificationId, domainId } = useParams();
   const navigate = useNavigate();
   const { state, reload } = useLearningDomain(certificationId, domainId);
+  const [searchParams] = useSearchParams();
+  const requestedNodeId = searchParams.get("node");
 
   const [progress, setProgress] = useState<DomainLearningProgress | null>(null);
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
@@ -82,6 +84,26 @@ export default function DomainLearningPage() {
     () => (data ? deriveLearningState(data, progress) : null),
     [data, progress],
   );
+
+  // A recommendation can deep-link straight to a knowledge node.
+  useEffect(() => {
+    if (!data || !requestedNodeId) {
+      return;
+    }
+    const node = data.modules
+      .flatMap((module) => module.nodes)
+      .find((candidate) => candidate.id === requestedNodeId);
+    if (!node) {
+      return;
+    }
+    const module = data.modules.find((candidate) =>
+      candidate.nodes.some((candidateNode) => candidateNode.id === node.id),
+    );
+    if (module) {
+      setActiveModuleId(module.id);
+    }
+    setSelectedNodeId(node.id);
+  }, [data, requestedNodeId]);
 
   // Clear the one-shot map highlight after the celebration window so a later
   // re-render does not leave a stale animation class behind.

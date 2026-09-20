@@ -10,8 +10,8 @@ use crate::dto::{
     AnswerPayload, AnswerRequest, CatalogResponse, CertificationDto, CertificationVersionDto,
     CompleteMissionRequest, CompleteMissionResponse, ConceptDto, DomainDto, FeedbackResponse,
     IssueMissionRequest, LearningDomainResponse, MeResponse, MissionResponse, QuestionView,
-    ReconstructionAnswerPayload, SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse,
-    TaskDto, WalletResponse,
+    RecommendationResponse, ReconstructionAnswerPayload, SyncEventRequest, SyncEventResult,
+    SyncRequest, SyncResponse, TaskDto, WalletResponse,
 };
 use crate::error::{ErrorBody, ErrorResponse};
 use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
@@ -28,6 +28,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         crate::routes::openapi::openapi_json,
         crate::routes::certifications::list_certifications,
         crate::routes::learning::get_learning_domain,
+        crate::routes::recommendations::get_recommendation,
         crate::routes::missions::issue_mission,
         crate::routes::missions::answer_mission,
         crate::routes::missions::complete_mission,
@@ -63,6 +64,10 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         CompleteMissionRequest,
         CompleteMissionResponse,
         LearningDomainResponse,
+        RecommendationResponse,
+        crate::planner::Recommendation,
+        crate::planner::PlannerAction,
+        crate::planner::RecommendationReason,
         adaptive_learn_content::Interaction,
         adaptive_learn_content::CanonicalAnswer,
         adaptive_learn_content::Choice,
@@ -111,6 +116,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         (name = "system", description = "Operational endpoints"),
         (name = "catalog", description = "Certification catalog"),
         (name = "learning", description = "Pre-quiz knowledge maps and discovery progress"),
+        (name = "recommendations", description = "Optional next-action recommendations for a track"),
         (name = "missions", description = "Mission issuance, scoring, and completion"),
         (name = "sync", description = "Batch reconciliation of learning events"),
         (name = "wallet", description = "Server-authoritative Bits balance"),

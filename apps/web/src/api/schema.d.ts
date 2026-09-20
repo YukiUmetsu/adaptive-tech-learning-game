@@ -185,6 +185,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tracks/{track_id}/recommendation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns a best-effort next-action recommendation for a learning track.
+         * @description This is an optional, explainable layer over the derived concept state. It
+         *     never gates the dashboard, knowledge maps, or quizzes, and it never creates
+         *     learning evidence. Requires an authenticated account.
+         */
+        get: operations["get_recommendation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/wallet": {
         parameters: {
             query?: never;
@@ -1017,6 +1039,11 @@ export interface components {
             y: number[];
         };
         /**
+         * @description A next action the learner can take.
+         * @enum {string}
+         */
+        PlannerAction: "learn_node" | "review_node" | "practice_question" | "practice_domain";
+        /**
          * @description The shared prompt vocabulary. Icons are selected by the UI from this kind,
          *     so content can change labels without the renderer special-casing nodes.
          * @enum {string}
@@ -1056,6 +1083,45 @@ export interface components {
          * @enum {string}
          */
         QuizMode: "quick_adaptive" | "domain_quiz" | "full_practice" | "task_practice";
+        /** @description A structured, explainable recommendation. */
+        Recommendation: {
+            /** @description Action to take. */
+            action: components["schemas"]["PlannerAction"];
+            assessment_mode?: null | components["schemas"]["AssessmentMode"];
+            /** @description Concepts the recommendation targets. */
+            concept_ids: string[];
+            /** @description Domain/topic the action belongs to. */
+            domain_id: string;
+            /** @description Learner-facing domain name. */
+            domain_name: string;
+            /** @description Knowledge node to open, when the action is node-based. */
+            node_id?: string | null;
+            /** @description Learner-facing node title, when the action is node-based. */
+            node_title?: string | null;
+            /** @description Question to practice, when the action targets one. */
+            question_id?: string | null;
+            /** @description Why this action was chosen. */
+            reason: components["schemas"]["RecommendationReason"];
+            /** @description Short learner-facing title, for example `Learn tensor broadcasting`. */
+            title: string;
+            /** @description Learning track the recommendation belongs to. */
+            track_id: string;
+        };
+        /**
+         * @description A stable, explainable reason code for a recommendation.
+         * @enum {string}
+         */
+        RecommendationReason: "cold_start" | "weak_concept" | "weak_prerequisite" | "needs_practice" | "stale_knowledge" | "domain_review" | "strong_and_fresh";
+        /**
+         * @description Best-effort next-action recommendation for a learning track.
+         *
+         *     Recommendations are optional and explainable. `recommendation` is `null` when
+         *     the track has nothing actionable yet, and the field is never required for the
+         *     dashboard to render.
+         */
+        RecommendationResponse: {
+            recommendation?: null | components["schemas"]["Recommendation"];
+        };
         /** @description Reconstruction answer primitives. */
         ReconstructionAnswerPayload: {
             /** @description Directed `[from, to]` relationships the learner drew. */
@@ -1734,6 +1800,55 @@ export interface operations {
             };
             /** @description Authentication required */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_recommendation: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Comma-separated knowledge-node ids the learner has already explored.
+                 *
+                 *     Discovery progress lives on the client, so it is optional. When omitted
+                 *     the planner falls back to accepted quiz evidence.
+                 */
+                explored_node_ids?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Learning track identifier, for example `ai-python-fluency`. */
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Next-action recommendation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown learning track */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -404,4 +404,26 @@ describe("DomainLearningPage", () => {
       container.querySelectorAll(".knowledge-node").length,
     ).toBeGreaterThan(0);
   });
+
+  it("deep-links to a knowledge node from the query string", async () => {
+    render(
+      <MemoryRouter
+        initialEntries={[
+          "/tracks/test-cert/domains/domain-1/learn?node=n1",
+        ]}
+      >
+        <Routes>
+          <Route
+            path="/tracks/:certificationId/domains/:domainId/learn"
+            element={<DomainLearningPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await ready();
+
+    expect(
+      await screen.findByRole("heading", { name: "Alpha" }),
+    ).toBeInTheDocument();
+  });
 });

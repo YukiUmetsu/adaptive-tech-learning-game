@@ -379,3 +379,14 @@ pub struct LearningDomainResponse {
     /// Modules with their knowledge nodes.
     pub modules: Vec<LearningModule>,
 }
+
+/// Best-effort next-action recommendation for a learning track.
+///
+/// Recommendations are optional and explainable. `recommendation` is `null` when
+/// the track has nothing actionable yet, and the field is never required for the
+/// dashboard to render.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct RecommendationResponse {
+    /// The chosen recommendation, or `null` when none is available.
+    pub recommendation: Option<crate::planner::Recommendation>,
+}

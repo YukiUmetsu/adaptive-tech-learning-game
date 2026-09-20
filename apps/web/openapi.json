@@ -475,6 +475,73 @@
         ]
       }
     },
+    "/v1/tracks/{track_id}/recommendation": {
+      "get": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Returns a best-effort next-action recommendation for a learning track.",
+        "description": "This is an optional, explainable layer over the derived concept state. It\nnever gates the dashboard, knowledge maps, or quizzes, and it never creates\nlearning evidence. Requires an authenticated account.",
+        "operationId": "get_recommendation",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `ai-python-fluency`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "explored_node_ids",
+            "in": "query",
+            "description": "Comma-separated knowledge-node ids the learner has already explored.\n\nDiscovery progress lives on the client, so it is optional. When omitted\nthe planner falls back to accepted quiz evidence.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Next-action recommendation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown learning track",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/wallet": {
       "get": {
         "tags": [
@@ -2759,6 +2826,16 @@
           }
         }
       },
+      "PlannerAction": {
+        "type": "string",
+        "description": "A next action the learner can take.",
+        "enum": [
+          "learn_node",
+          "review_node",
+          "practice_question",
+          "practice_domain"
+        ]
+      },
       "PromptKind": {
         "type": "string",
         "description": "The shared prompt vocabulary. Icons are selected by the UI from this kind,\nso content can change labels without the renderer special-casing nodes.",
@@ -2847,6 +2924,114 @@
           "full_practice",
           "task_practice"
         ]
+      },
+      "Recommendation": {
+        "type": "object",
+        "description": "A structured, explainable recommendation.",
+        "required": [
+          "action",
+          "reason",
+          "track_id",
+          "domain_id",
+          "domain_name",
+          "concept_ids",
+          "title"
+        ],
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/PlannerAction",
+            "description": "Action to take."
+          },
+          "assessment_mode": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AssessmentMode",
+                "description": "Assessment mode the recommendation is measured in, when known."
+              }
+            ]
+          },
+          "concept_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Concepts the recommendation targets."
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "Domain/topic the action belongs to."
+          },
+          "domain_name": {
+            "type": "string",
+            "description": "Learner-facing domain name."
+          },
+          "node_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Knowledge node to open, when the action is node-based."
+          },
+          "node_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Learner-facing node title, when the action is node-based."
+          },
+          "question_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Question to practice, when the action targets one."
+          },
+          "reason": {
+            "$ref": "#/components/schemas/RecommendationReason",
+            "description": "Why this action was chosen."
+          },
+          "title": {
+            "type": "string",
+            "description": "Short learner-facing title, for example `Learn tensor broadcasting`."
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track the recommendation belongs to."
+          }
+        }
+      },
+      "RecommendationReason": {
+        "type": "string",
+        "description": "A stable, explainable reason code for a recommendation.",
+        "enum": [
+          "cold_start",
+          "weak_concept",
+          "weak_prerequisite",
+          "needs_practice",
+          "stale_knowledge",
+          "domain_review",
+          "strong_and_fresh"
+        ]
+      },
+      "RecommendationResponse": {
+        "type": "object",
+        "description": "Best-effort next-action recommendation for a learning track.\n\nRecommendations are optional and explainable. `recommendation` is `null` when\nthe track has nothing actionable yet, and the field is never required for the\ndashboard to render.",
+        "properties": {
+          "recommendation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Recommendation",
+                "description": "The chosen recommendation, or `null` when none is available."
+              }
+            ]
+          }
+        }
       },
       "ReconstructionAnswerPayload": {
         "type": "object",
@@ -3537,6 +3722,10 @@
     {
       "name": "learning",
       "description": "Pre-quiz knowledge maps and discovery progress"
+    },
+    {
+      "name": "recommendations",
+      "description": "Optional next-action recommendations for a track"
     },
     {
       "name": "missions",
