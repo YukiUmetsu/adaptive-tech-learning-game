@@ -18,8 +18,8 @@ export const QUICK_QUIZ: QuizModePresentation = {
   key: "quick_adaptive",
   label: "Quick Quiz",
   shortLabel: "Quick Quiz",
-  questionLabel: "10 adaptive questions",
-  duration: "~6 min",
+  questionLabel: "3 adaptive questions",
+  duration: "~2 min",
   icon: "⚡",
   horizon: "What should I practice right now?",
 };

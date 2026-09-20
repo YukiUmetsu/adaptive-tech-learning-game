@@ -33,7 +33,7 @@ use adaptive_learn_domain::{
 use chrono::{DateTime, Utc};
 
 /// Questions in a Quick Quiz.
-pub const QUICK_QUIZ_LEN: usize = 10;
+pub const QUICK_QUIZ_LEN: usize = 3;
 /// Questions in a Domain Quiz when the domain has enough content.
 pub const DOMAIN_QUIZ_LEN: usize = 20;
 /// Questions in a Full Practice set.
@@ -716,7 +716,7 @@ mod tests {
     }
 
     #[test]
-    fn quick_quiz_selects_ten_and_covers_every_domain() {
+    fn quick_quiz_is_short_and_covers_top_domains() {
         let selected = select(
             &corpus(8),
             &domains(),
@@ -731,7 +731,8 @@ mod tests {
         for id in &selected {
             domains_covered.insert(id.split('-').next().unwrap());
         }
-        assert_eq!(domains_covered.len(), 5);
+        // Three questions cover three distinct domains (broad but short).
+        assert_eq!(domains_covered.len(), QUICK_QUIZ_LEN);
         assert_eq!(
             selected.iter().collect::<HashSet<_>>().len(),
             selected.len()

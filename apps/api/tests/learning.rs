@@ -1234,7 +1234,7 @@ fn wrong_classification_answer(question: &Question) -> Value {
 }
 
 #[tokio::test]
-async fn quick_quiz_selects_ten_across_domains() {
+async fn quick_quiz_selects_a_short_cross_domain_set() {
     let Some(pool) = common::database_pool().await else {
         return;
     };
@@ -1245,7 +1245,7 @@ async fn quick_quiz_selects_ten_across_domains() {
     assert_eq!(body["mode"], "quick_adaptive");
 
     let questions = body["questions"].as_array().expect("questions");
-    assert_eq!(questions.len(), 10);
+    assert_eq!(questions.len(), 3);
     let mut domains: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut ids: std::collections::HashSet<&str> = std::collections::HashSet::new();
     for question in questions {
@@ -1255,7 +1255,7 @@ async fn quick_quiz_selects_ten_across_domains() {
         let resolved = registry.question("soa-c03", id).expect("question");
         domains.insert(resolved.domain_id.clone());
     }
-    assert_eq!(ids.len(), 10, "quick quiz must not repeat questions");
+    assert_eq!(ids.len(), 3, "quick quiz must not repeat questions");
     assert!(
         domains.len() >= 3,
         "quick quiz should cover several domains: {domains:?}"
