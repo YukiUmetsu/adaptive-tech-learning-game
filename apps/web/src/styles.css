@@ -6277,3 +6277,133 @@ button.primary:hover:not(:disabled) {
   font-size: 0.84rem;
   color: var(--text-muted);
 }
+
+/* --- Animated checkmark ---------------------------------------------------- */
+
+.animated-check {
+  display: inline-block;
+  vertical-align: middle;
+  overflow: visible;
+}
+
+.animated-check-ring {
+  fill: none;
+  stroke: var(--success);
+  stroke-width: 2;
+  opacity: 0.5;
+  transform-origin: 50% 50%;
+  animation: check-ring 0.4s ease-out both;
+}
+
+.animated-check-mark {
+  fill: none;
+  stroke: var(--success);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 34;
+  stroke-dashoffset: 34;
+  animation: check-draw 0.35s 0.12s ease-out forwards;
+}
+
+.feedback-check {
+  margin-right: 0.3rem;
+}
+
+@keyframes check-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes check-ring {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+}
+
+.daily-runner-step-done .daily-mission-check {
+  color: var(--success);
+  animation: check-pop 0.35s ease-out;
+}
+
+@keyframes check-pop {
+  0% {
+    transform: scale(0.4);
+  }
+  60% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* --- Bits flying into the wallet ------------------------------------------- */
+
+.bits-fly-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bits-fly-burst {
+  position: absolute;
+}
+
+.bits-fly-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--warning);
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.7);
+  animation: bits-fly 0.95s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+.bits-fly-particle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fde68a, #f59e0b);
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.8);
+  transform: translate(-50%, -50%);
+  animation: bits-fly 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+@keyframes bits-fly {
+  0% {
+    transform: translate(-50%, -50%) scale(0.4);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+  100% {
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.5);
+    opacity: 0.12;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animated-check-ring,
+  .animated-check-mark,
+  .daily-runner-step-done .daily-mission-check,
+  .bits-fly-label,
+  .bits-fly-particle {
+    animation: none;
+  }
+
+  .animated-check-mark {
+    stroke-dashoffset: 0;
+  }
+}

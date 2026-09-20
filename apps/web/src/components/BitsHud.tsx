@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+import { BITS_EARNED_EVENT, BITS_TARGET_ATTR } from "../lib/bitsFly";
 import { useBitsBalance, useSettledBits } from "../state/wallet";
 import BitsIcon from "./BitsIcon";
 
@@ -42,11 +43,22 @@ export default function BitsHud({ size = "md" }: BitsHudProps) {
     return () => clearTimeout(timer);
   }, [settled]);
 
+  // Pulse when Bits are earned so the wallet reacts as the coins arrive.
+  useEffect(() => {
+    const handle = () => {
+      setPulsing(true);
+      window.setTimeout(() => setPulsing(false), 700);
+    };
+    window.addEventListener(BITS_EARNED_EVENT, handle);
+    return () => window.removeEventListener(BITS_EARNED_EVENT, handle);
+  }, []);
+
   return (
     <span
       className={`bits-hud bits-hud-${size}${pulsing ? " bits-hud-pulse" : ""}`}
       aria-label={`${bits.toLocaleString()} Bits`}
       data-testid="bits-hud"
+      {...{ [BITS_TARGET_ATTR]: "true" }}
     >
       <BitsIcon className="bits-icon" />
       <span className="bits-amount" data-testid="bits-amount">

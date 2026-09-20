@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../auth/context";
+import BitsFlyOverlay from "../components/BitsFlyOverlay";
 import BitsHud from "../components/BitsHud";
 import { toggleSoundMuted, useSoundMuted } from "../state/sound";
 import { flushAuxiliary } from "../state/syncAuxiliary";
@@ -134,6 +135,7 @@ export default function AppShell() {
           © {new Date().getFullYear()} Adaptive Learning. All rights reserved.
         </p>
       </footer>
+      <BitsFlyOverlay />
     </div>
   );
 }

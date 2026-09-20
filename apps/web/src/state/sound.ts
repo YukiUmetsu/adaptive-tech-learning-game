@@ -88,7 +88,9 @@ type SoundName =
   | "reveal"
   | "node_unlock"
   | "path_unlock"
-  | "module_complete";
+  | "module_complete"
+  | "bits"
+  | "check";
 
 interface SoundShape {
   notes: number[];
@@ -153,6 +155,22 @@ const SOUNDS: Record<SoundName, SoundShape> = {
     peak: 0.18,
     spacing: 0.09,
     wave: "triangle",
+  },
+  // Bright two-note coin chime for Bits flying into the wallet.
+  bits: {
+    notes: [1318.51, 1760.0],
+    noteDuration: 0.12,
+    peak: 0.11,
+    spacing: 0.05,
+    wave: "triangle",
+  },
+  // Crisp tick for a checklist step completing.
+  check: {
+    notes: [1568.0, 2093.0],
+    noteDuration: 0.07,
+    peak: 0.08,
+    spacing: 0.04,
+    wave: "sine",
   },
 };
 
@@ -231,4 +249,14 @@ export function playPathUnlock(): void {
 /** Short success flourish for completing all nodes in a module. */
 export function playModuleComplete(): void {
   play("module_complete");
+}
+
+/** Bright coin chime for Bits flying into the wallet. */
+export function playBits(): void {
+  play("bits");
+}
+
+/** Crisp tick for a checklist step completing. */
+export function playCheck(): void {
+  play("check");
 }

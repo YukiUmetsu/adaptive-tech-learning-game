@@ -25,6 +25,7 @@ import {
 } from "../state/learningProgress";
 import { startDailyItem } from "../state/mission";
 import { loadDailyItemReview } from "../state/missionReview";
+import { playCheck } from "../state/sound";
 import { flushAuxiliary, loadServerDiscovery } from "../state/syncAuxiliary";
 import { useLearningDomain } from "../hooks/useLearningDomain";
 import KnowledgeCard from "./KnowledgeCard";
@@ -76,6 +77,7 @@ export default function DailyMissionRunner({
     // Keep the completed card visible (with its celebration and "Next task"
     // action) instead of auto-advancing, while the checklist updates.
     setDisplayedPosition(position);
+    playCheck();
     setLocallyCompleted((previous) => {
       if (previous.has(position)) {
         return previous;

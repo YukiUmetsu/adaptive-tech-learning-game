@@ -155,4 +155,52 @@ describe("FeedbackPanel", () => {
 
     expect(screen.queryByTestId("bits-reward")).toBeNull();
   });
+
+  it("sends earned Bits flying toward the wallet on a correct answer", () => {
+    const listener = vi.fn();
+    window.addEventListener("adaptive-learn:bits-earned", listener);
+
+    render(
+      <FeedbackPanel
+        feedback={{
+          ...base,
+          correct: true,
+          score: 1,
+          error_codes: [],
+          bits_preview: 12,
+        }}
+        question={question}
+        submitted={null}
+        isLast={false}
+        onRetry={vi.fn()}
+        onNext={vi.fn()}
+      />,
+    );
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    const detail = (listener.mock.calls[0][0] as CustomEvent).detail as {
+      amount: number;
+    };
+    expect(detail.amount).toBe(12);
+    window.removeEventListener("adaptive-learn:bits-earned", listener);
+  });
+
+  it("does not celebrate Bits for an incorrect answer", () => {
+    const listener = vi.fn();
+    window.addEventListener("adaptive-learn:bits-earned", listener);
+
+    render(
+      <FeedbackPanel
+        feedback={base}
+        question={question}
+        submitted={null}
+        isLast={false}
+        onRetry={vi.fn()}
+        onNext={vi.fn()}
+      />,
+    );
+
+    expect(listener).not.toHaveBeenCalled();
+    window.removeEventListener("adaptive-learn:bits-earned", listener);
+  });
 });
