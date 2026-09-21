@@ -552,4 +552,59 @@ describe("reviewDetails", () => {
       { kind: "missing", text: "Result — expected “deny”" },
     ]);
   });
+
+  it("names the correct multiple-choice option", () => {
+    const question: QuestionView = {
+      ...base,
+      interaction_type: "multiple_choice",
+      interaction: {
+        type: "multiple_choice",
+        choices: [
+          { id: "A", label: "Wrong option" },
+          { id: "C", label: "CloudWatch agent" },
+        ],
+      },
+    };
+
+    expect(
+      reviewDetails(
+        question,
+        { choice_id: "A" },
+        { type: "multiple_choice", choice_id: "C" },
+      ),
+    ).toEqual([
+      {
+        kind: "wrong",
+        text: "You chose “Wrong option”; the correct answer is “CloudWatch agent”",
+      },
+    ]);
+  });
+
+  it("reports missing and extra multiple-response answers", () => {
+    const question: QuestionView = {
+      ...base,
+      interaction_type: "multiple_response",
+      interaction: {
+        type: "multiple_response",
+        required_selections: 2,
+        choices: [
+          { id: "A", label: "Polling" },
+          { id: "B", label: "SNS notification" },
+          { id: "C", label: "Composite rule" },
+          { id: "D", label: "Delete alarms" },
+        ],
+      },
+    };
+
+    expect(
+      reviewDetails(
+        question,
+        { choice_ids: ["B", "D"] },
+        { type: "multiple_response", choice_ids: ["B", "C"] },
+      ),
+    ).toEqual([
+      { kind: "missing", text: "Missing required answer: Composite rule" },
+      { kind: "invalid", text: "Not a required answer: Delete alarms" },
+    ]);
+  });
 });

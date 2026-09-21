@@ -69,6 +69,8 @@ fn correct_answer(question: &Question) -> Value {
                 .collect();
             json!({ "typed_answers": typed })
         }
+        CanonicalAnswer::MultipleChoice { choice_id } => json!({ "choice_id": choice_id }),
+        CanonicalAnswer::MultipleResponse { choice_ids } => json!({ "choice_ids": choice_ids }),
     }
 }
 

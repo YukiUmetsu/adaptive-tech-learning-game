@@ -347,7 +347,7 @@ fn validate_question_concepts(
     }
 }
 
-fn validate_interaction(question: &Question, errors: &mut Vec<ContentError>) {
+pub(crate) fn validate_interaction(question: &Question, errors: &mut Vec<ContentError>) {
     match &question.interaction {
         Interaction::Classification { items, categories } => {
             if items.is_empty() || categories.is_empty() {
@@ -604,6 +604,52 @@ fn validate_interaction(question: &Question, errors: &mut Vec<ContentError>) {
         }
         Interaction::TypedFillBlank { content, slots } => {
             validate_typed_fill_blank(question, content, slots, errors);
+        }
+        Interaction::MultipleChoice { choices } => {
+            if choices.len() < 2 {
+                errors.push(ContentError::new(
+                    "multiple_choice_incomplete",
+                    format!(
+                        "question {} needs at least two choices for multiple choice",
+                        question.id
+                    ),
+                ));
+            }
+            ensure_unique_choice_ids(question, choices, "multiple-choice", errors);
+        }
+        Interaction::MultipleResponse {
+            choices,
+            required_selections,
+        } => {
+            if choices.len() < 2 {
+                errors.push(ContentError::new(
+                    "multiple_response_incomplete",
+                    format!(
+                        "question {} needs at least two choices for multiple response",
+                        question.id
+                    ),
+                ));
+            }
+            if *required_selections < 2 {
+                errors.push(ContentError::new(
+                    "multiple_response_required_invalid",
+                    format!(
+                        "question {} required_selections must be at least 2",
+                        question.id
+                    ),
+                ));
+            } else if *required_selections > choices.len() {
+                errors.push(ContentError::new(
+                    "multiple_response_required_invalid",
+                    format!(
+                        "question {} required_selections {} exceeds its {} choices",
+                        question.id,
+                        required_selections,
+                        choices.len()
+                    ),
+                ));
+            }
+            ensure_unique_choice_ids(question, choices, "multiple-response", errors);
         }
     }
 }
@@ -1233,7 +1279,7 @@ fn validate_scenario_answer(
     }
 }
 
-fn validate_canonical_answer(question: &Question, errors: &mut Vec<ContentError>) {
+pub(crate) fn validate_canonical_answer(question: &Question, errors: &mut Vec<ContentError>) {
     match (&question.interaction, &question.canonical_answer) {
         (
             Interaction::Classification { items, categories },
@@ -1748,6 +1794,64 @@ fn validate_canonical_answer(question: &Question, errors: &mut Vec<ContentError>
                 }
             }
         }
+        (
+            Interaction::MultipleChoice { choices },
+            CanonicalAnswer::MultipleChoice { choice_id },
+        ) => {
+            let choice_ids: BTreeSet<&str> =
+                choices.iter().map(|choice| choice.id.as_str()).collect();
+            if choice_id.trim().is_empty() || !choice_ids.contains(choice_id.as_str()) {
+                errors.push(ContentError::new(
+                    "canonical_unknown_choice",
+                    format!(
+                        "question {} canonical answer references unknown choice {}",
+                        question.id, choice_id
+                    ),
+                ));
+            }
+        }
+        (
+            Interaction::MultipleResponse {
+                choices,
+                required_selections,
+            },
+            CanonicalAnswer::MultipleResponse { choice_ids },
+        ) => {
+            let available: BTreeSet<&str> =
+                choices.iter().map(|choice| choice.id.as_str()).collect();
+            let mut seen = HashSet::new();
+            for choice_id in choice_ids {
+                if !available.contains(choice_id.as_str()) {
+                    errors.push(ContentError::new(
+                        "canonical_unknown_choice",
+                        format!(
+                            "question {} canonical answer references unknown choice {}",
+                            question.id, choice_id
+                        ),
+                    ));
+                }
+                if !seen.insert(choice_id.as_str()) {
+                    errors.push(ContentError::new(
+                        "canonical_duplicate_choice",
+                        format!(
+                            "question {} canonical answer repeats choice {}",
+                            question.id, choice_id
+                        ),
+                    ));
+                }
+            }
+            if choice_ids.len() != *required_selections {
+                errors.push(ContentError::new(
+                    "canonical_response_count_mismatch",
+                    format!(
+                        "question {} canonical answer has {} choices but required_selections is {}",
+                        question.id,
+                        choice_ids.len(),
+                        required_selections
+                    ),
+                ));
+            }
+        }
         _ => errors.push(ContentError::new(
             "canonical_answer_mismatch",
             format!(
@@ -1861,7 +1965,7 @@ fn ensure_unique_slot_ids(
     }
 }
 
-fn interaction_matches(question: &Question) -> bool {
+pub(crate) fn interaction_matches(question: &Question) -> bool {
     matches!(
         (question.interaction_type, &question.interaction),
         (
@@ -1908,6 +2012,14 @@ fn interaction_matches(question: &Question) -> bool {
             | (
                 InteractionType::TypedFillBlank,
                 Interaction::TypedFillBlank { .. }
+            )
+            | (
+                InteractionType::MultipleChoice,
+                Interaction::MultipleChoice { .. }
+            )
+            | (
+                InteractionType::MultipleResponse,
+                Interaction::MultipleResponse { .. }
             )
     )
 }

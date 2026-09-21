@@ -86,7 +86,8 @@ pub struct GlossaryTerm {
 
 /// Authored counts used to validate the curriculum at load time.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
-pub struct LearningCoverage {    /// Exam task ids covered by the domain's modules.
+pub struct LearningCoverage {
+    /// Exam task ids covered by the domain's modules.
     pub task_ids: Vec<String>,
     /// Exam skill ids covered by the domain's modules.
     pub skill_ids: Vec<String>,

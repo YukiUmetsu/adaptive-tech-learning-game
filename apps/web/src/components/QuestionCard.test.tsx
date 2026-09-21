@@ -72,6 +72,52 @@ describe("QuestionCard", () => {
     expect(onSubmit).toHaveBeenCalledWith({ faulty_ids: ["target"] });
   });
 
+  it("submits a multiple choice payload", async () => {
+    const onSubmit = vi.fn();
+    const question = base({
+      interaction_type: "multiple_choice",
+      instruction: "Choose ONE.",
+      interaction: {
+        type: "multiple_choice",
+        choices: [
+          { id: "A", label: "First option" },
+          { id: "B", label: "Second option" },
+        ],
+      },
+    });
+
+    render(<QuestionCard question={question} onSubmit={onSubmit} />);
+    expect(screen.getByText("Choose ONE.")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("radio", { name: /Second option/ }));
+    await submit();
+
+    expect(onSubmit).toHaveBeenCalledWith({ choice_id: "B" });
+  });
+
+  it("submits a multiple response payload", async () => {
+    const onSubmit = vi.fn();
+    const question = base({
+      interaction_type: "multiple_response",
+      instruction: "Choose TWO.",
+      interaction: {
+        type: "multiple_response",
+        choices: [
+          { id: "A", label: "First option" },
+          { id: "B", label: "Second option" },
+          { id: "C", label: "Third option" },
+        ],
+        required_selections: 2,
+      },
+    });
+
+    render(<QuestionCard question={question} onSubmit={onSubmit} />);
+    await userEvent.click(screen.getByRole("checkbox", { name: /First option/ }));
+    await userEvent.click(screen.getByRole("checkbox", { name: /Third option/ }));
+    await submit();
+
+    expect(onSubmit).toHaveBeenCalledWith({ choice_ids: ["A", "C"] });
+  });
+
   it("submits a fill slots payload", async () => {
     const onSubmit = vi.fn();
     const question = base({

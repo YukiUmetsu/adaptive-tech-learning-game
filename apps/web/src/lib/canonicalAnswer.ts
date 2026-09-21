@@ -119,6 +119,10 @@ export function formatCanonicalAnswer(
         ),
         (id) => id,
       );
+    case "multiple_choice":
+      return [{ value: name(answer.choice_id) }];
+    case "multiple_response":
+      return answer.choice_ids.map((id) => ({ value: name(id) }));
     default:
       return [];
   }

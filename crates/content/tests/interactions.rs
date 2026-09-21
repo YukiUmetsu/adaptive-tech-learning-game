@@ -25,6 +25,8 @@ fn interaction_kind(interaction: &Interaction) -> &'static str {
         Interaction::TwoDimensionalPlacement { .. } => "two_dimensional_placement",
         Interaction::CommandAssembly { .. } => "command_assembly",
         Interaction::TypedFillBlank { .. } => "typed_fill_blank",
+        Interaction::MultipleChoice { .. } => "multiple_choice",
+        Interaction::MultipleResponse { .. } => "multiple_response",
     }
 }
 
@@ -43,6 +45,8 @@ fn canonical_kind(answer: &CanonicalAnswer) -> &'static str {
         CanonicalAnswer::TwoDimensionalPlacement { .. } => "two_dimensional_placement",
         CanonicalAnswer::CommandAssembly { .. } => "command_assembly",
         CanonicalAnswer::TypedFillBlank { .. } => "typed_fill_blank",
+        CanonicalAnswer::MultipleChoice { .. } => "multiple_choice",
+        CanonicalAnswer::MultipleResponse { .. } => "multiple_response",
     }
 }
 
@@ -1518,6 +1522,10 @@ fn multiline_partial_credit_still_works_for_multiple_blanks() {
         interaction_type: adaptive_learn_domain::InteractionType::TypedFillBlank,
         difficulty_prior: 0.5,
         prompt: "Write the clear and update lines.".to_owned(),
+        instruction: None,
+        choice_feedback: std::collections::BTreeMap::new(),
+        blueprint_skill_ids: Vec::new(),
+        difficulty_label: None,
         interaction: Interaction::TypedFillBlank {
             content: adaptive_learn_content::TypedFillContent::Code {
                 language: "python".to_owned(),

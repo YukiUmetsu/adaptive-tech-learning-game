@@ -4,9 +4,7 @@
 //! clickable explanations, so the loader must parse them and reject malformed
 //! or duplicate entries.
 
-use adaptive_learn_content::{
-    EMBEDDED_LEARNING_SOURCES, LearningDomain, validate_learning_domain,
-};
+use adaptive_learn_content::{EMBEDDED_LEARNING_SOURCES, LearningDomain, validate_learning_domain};
 use serde_json::Value;
 
 fn learning_domain_json(certification_id: &str, domain_id: &str) -> String {
@@ -31,7 +29,10 @@ fn authored_glossary_parses_and_validates() {
     let domain: LearningDomain = serde_json::from_str(&json).expect("learning domain parses");
 
     assert!(
-        domain.glossary.iter().any(|term| term.term == "guest memory"),
+        domain
+            .glossary
+            .iter()
+            .any(|term| term.term == "guest memory"),
         "domain-1 defines the guest memory term"
     );
     assert!(

@@ -51,6 +51,42 @@ describe("formatCanonicalAnswer", () => {
     expect(lines).toEqual([{ label: "policy_result", value: "Deny / deny" }]);
   });
 
+  it("renders a multiple-choice answer with its label", () => {
+    const choiceInteraction = {
+      type: "multiple_choice",
+      choices: [
+        { id: "A", label: "Wrong option" },
+        { id: "C", label: "CloudWatch agent" },
+      ],
+    } as unknown as Interaction;
+
+    const lines = formatCanonicalAnswer(
+      { type: "multiple_choice", choice_id: "C" },
+      labelIndex(choiceInteraction),
+    );
+    expect(lines).toEqual([{ value: "CloudWatch agent" }]);
+  });
+
+  it("renders every multiple-response answer with labels", () => {
+    const responseInteraction = {
+      type: "multiple_response",
+      required_selections: 2,
+      choices: [
+        { id: "B", label: "Composite alarm to SNS" },
+        { id: "C", label: "Composite alarm rule" },
+      ],
+    } as unknown as Interaction;
+
+    const lines = formatCanonicalAnswer(
+      { type: "multiple_response", choice_ids: ["B", "C"] },
+      labelIndex(responseInteraction),
+    );
+    expect(lines).toEqual([
+      { value: "Composite alarm to SNS" },
+      { value: "Composite alarm rule" },
+    ]);
+  });
+
   it("orders a command assembly by the authored slot order, not map order", () => {
     const commandInteraction = {
       type: "command_assembly",

@@ -119,3 +119,21 @@ export type ModelEvaluationResponse =
   components["schemas"]["ModelEvaluationResponse"];
 export type CalibrationBucketDto = components["schemas"]["CalibrationBucketDto"];
 export type EvaluationSliceDto = components["schemas"]["EvaluationSliceDto"];
+export type PracticeTestListResponse =
+  components["schemas"]["PracticeTestListResponse"];
+export type PracticeTestSummaryDto =
+  components["schemas"]["PracticeTestSummaryDto"];
+export type PracticeTestResponse =
+  components["schemas"]["PracticeTestResponse"];
+export type PracticeTestItemView =
+  components["schemas"]["PracticeTestItemView"];
+export type PracticeTestAnswerRequest =
+  components["schemas"]["PracticeTestAnswerRequest"];
+export type PracticeTestSubmissionRequest =
+  components["schemas"]["PracticeTestSubmissionRequest"];
+export type PracticeTestResultResponse =
+  components["schemas"]["PracticeTestResultResponse"];
+export type PracticeTestItemResult =
+  components["schemas"]["PracticeTestItemResult"];
+export type PracticeTestDomainResult =
+  components["schemas"]["PracticeTestDomainResult"];

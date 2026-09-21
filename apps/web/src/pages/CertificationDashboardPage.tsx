@@ -10,6 +10,7 @@ import StreakHud from "../components/StreakHud";
 import TrackKnowledgeMap from "../components/TrackKnowledgeMap";
 import { useCatalog } from "../hooks/useCatalog";
 import { useDailyMission } from "../hooks/useDailyMission";
+import { usePracticeTests } from "../hooks/usePracticeTests";
 import { useRecommendation } from "../hooks/useRecommendation";
 import { prefersReducedMotion } from "../lib/motion";
 import { certificationQuestionCount, domainQuestionCount } from "../state/demo";
@@ -115,6 +116,12 @@ export default function CertificationDashboardPage() {
     enabled: authenticated,
     discovery,
   });
+  const practiceTestsState = usePracticeTests(certificationId);
+  const practiceTests = useMemo(
+    () =>
+      practiceTestsState.status === "loaded" ? practiceTestsState.tests : [],
+    [practiceTestsState],
+  );
 
   // Publish the Daily Mission projection for the floating Focus widget when the
   // runner is not mounted. The runner owns it while the daily view is open, so
@@ -332,6 +339,34 @@ export default function CertificationDashboardPage() {
     [certification, version, status, location, navigate],
   );
 
+  // "Full Practice" is the exam simulation whenever the track authors a
+  // practice test. The exam stays a fixed, timed practice test (never the
+  // adaptive engine). Tracks without an authored test keep the adaptive
+  // full-practice fallback unchanged.
+  const startFullPractice = useCallback(() => {
+    if (!certification) {
+      return;
+    }
+    if (status !== "authenticated") {
+      const returnTo = `${location.pathname}${location.search}`;
+      navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`);
+      return;
+    }
+    if (practiceTests.length === 1) {
+      navigate(
+        `/tracks/${certification.id}/practice-tests/${practiceTests[0].id}`,
+      );
+      return;
+    }
+    if (practiceTests.length > 1) {
+      // Let the learner choose among the authored exams.
+      setChoosingDomain(false);
+      setView("practice");
+      return;
+    }
+    void launch({ mode: "full_practice", key: "full" });
+  }, [certification, status, location, navigate, practiceTests, launch]);
+
   const startRecommendedPractice = useCallback(async () => {
     if (!recommendation || !certification || !version) {
       return;
@@ -442,7 +477,7 @@ export default function CertificationDashboardPage() {
         type="button"
         className="hub-practice-btn"
         disabled={starting !== null}
-        onClick={() => void launch({ mode: "full_practice", key: "full" })}
+        onClick={startFullPractice}
       >
         <span aria-hidden="true">🏁</span>
         {starting === "full" ? "Starting…" : "Start Full Practice"}
@@ -452,6 +487,13 @@ export default function CertificationDashboardPage() {
 
   const modeCard = (presentation: QuizModePresentation) => {
     const isDomain = presentation.key === "domain_quiz";
+    const isFullPractice = presentation.key === "full_practice";
+    // With authored practice tests, Full Practice IS the exam simulation, so the
+    // card describes the timed exam instead of the adaptive challenge. With none
+    // authored, it stays the adaptive fallback.
+    const exam =
+      isFullPractice && practiceTests.length > 0 ? practiceTests[0] : null;
+    const multipleExams = practiceTests.length > 1;
     return (
       <article
         key={presentation.key}
@@ -463,12 +505,37 @@ export default function CertificationDashboardPage() {
           </span>
           <h3>{presentation.label}</h3>
         </div>
-        <p className="hub-mode-questions">{presentation.questionLabel}</p>
-        <p className="muted">{presentation.duration}</p>
-        <p className="mode-horizon muted">{presentation.horizon}</p>
+        <p className="hub-mode-questions">
+          {exam
+            ? multipleExams
+              ? "Fixed, timed exam simulations"
+              : `${exam.question_count}-question timed exam simulation`
+            : presentation.questionLabel}
+        </p>
+        <p className="muted">
+          {exam
+            ? multipleExams
+              ? "Choose from the available exams"
+              : `${exam.time_limit_minutes} min · ${exam.scored_question_count} scored`
+            : presentation.duration}
+        </p>
+        <p className="mode-horizon muted">
+          {exam
+            ? "Fixed order and timed. Full review only after you submit."
+            : presentation.horizon}
+        </p>
         <span className="hub-mode-reward">
-          <span aria-hidden="true">💰</span> Earn {ANSWER_REWARD_RANGE} Bits per
-          correct answer
+          {exam ? (
+            <>
+              <span aria-hidden="true">🕒</span> No Bits during the exam — review
+              after you submit
+            </>
+          ) : (
+            <>
+              <span aria-hidden="true">💰</span> Earn {ANSWER_REWARD_RANGE} Bits per
+              correct answer
+            </>
+          )}
         </span>
         <button
           type="button"
@@ -479,10 +546,14 @@ export default function CertificationDashboardPage() {
               setChoosingDomain(true);
               return;
             }
+            if (isFullPractice) {
+              startFullPractice();
+              return;
+            }
             void launch({ mode: presentation.key, key: presentation.key });
           }}
         >
-          {starting === presentation.key
+          {starting === presentation.key && !isFullPractice
             ? "Starting…"
             : isDomain
               ? "Choose Domain"
@@ -783,6 +854,39 @@ export default function CertificationDashboardPage() {
             )}
           </div>
           {domainPicker}
+
+          {practiceTests.length > 1 ? (
+            <section className="hub-exam-sim" aria-label="Exam simulations">
+              <div className="hub-practice-head">
+                <h3>
+                  <span aria-hidden="true">📝</span> Exam Simulations
+                </h3>
+                <p className="muted">
+                  Choose a fixed, timed practice test. Answers are reviewed only
+                  after you submit, and it never changes your concept mastery.
+                </p>
+              </div>
+              <ul className="hub-exam-list">
+                {practiceTests.map((test) => (
+                  <li key={test.id}>
+                    <div>
+                      <p className="hub-exam-title">{test.title}</p>
+                      <p className="muted">
+                        {test.question_count} questions · {test.time_limit_minutes} min ·{" "}
+                        {test.scored_question_count} scored
+                      </p>
+                    </div>
+                    <Link
+                      className="primary"
+                      to={`/tracks/${certification.id}/practice-tests/${test.id}`}
+                    >
+                      Start
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
         </section>
       )}
 

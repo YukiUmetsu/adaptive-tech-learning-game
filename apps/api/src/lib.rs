@@ -51,6 +51,18 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
             get(routes::learning::get_learning_domain),
         )
         .route(
+            "/v1/certifications/{certification_id}/practice-tests",
+            get(routes::practice_tests::list_practice_tests),
+        )
+        .route(
+            "/v1/certifications/{certification_id}/practice-tests/{practice_test_id}",
+            get(routes::practice_tests::get_practice_test),
+        )
+        .route(
+            "/v1/certifications/{certification_id}/practice-tests/{practice_test_id}/submit",
+            post(routes::practice_tests::submit_practice_test),
+        )
+        .route(
             "/v1/tracks/{track_id}/discovery",
             get(routes::discovery::get_track_discovery),
         )

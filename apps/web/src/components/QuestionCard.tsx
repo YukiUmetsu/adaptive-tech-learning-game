@@ -13,6 +13,8 @@ import BranchingScenarioInteraction from "./BranchingScenarioInteraction";
 import ClassificationInteraction from "./ClassificationInteraction";
 import EvidenceSelectionInteraction from "./EvidenceSelectionInteraction";
 import FillSlotsInteraction from "./FillSlotsInteraction";
+import MultipleChoiceInteraction from "./MultipleChoiceInteraction";
+import MultipleResponseInteraction from "./MultipleResponseInteraction";
 import NodeConnectionInteraction from "./NodeConnectionInteraction";
 import OrderingInteraction from "./OrderingInteraction";
 import ReconstructionInteraction from "./ReconstructionInteraction";
@@ -57,6 +59,8 @@ export default function QuestionCard({
   const [positions, setPositions] = useState<Record<string, PlacementPoint>>(
     {},
   );
+  const [choiceId, setChoiceId] = useState<string | null>(null);
+  const [choiceIds, setChoiceIds] = useState<string[]>([]);
 
   const typedStatuses =
     question.interaction.type === "typed_fill_blank"
@@ -94,6 +98,10 @@ export default function QuestionCard({
         return question.interaction.slots.every(
           (slot) => (slots[slot.id] ?? "").trim().length > 0,
         );
+      case "multiple_choice":
+        return choiceId !== null;
+      case "multiple_response":
+        return choiceIds.length > 0;
     }
   })();
 
@@ -135,11 +143,22 @@ export default function QuestionCard({
         return;
       case "typed_fill_blank":
         onSubmit({ typed_answers: slots });
+        return;
+      case "multiple_choice":
+        if (choiceId !== null) {
+          onSubmit({ choice_id: choiceId });
+        }
+        return;
+      case "multiple_response":
+        onSubmit({ choice_ids: choiceIds });
     }
   };
 
   return (
     <section className="question" aria-label={question.prompt}>
+      {question.instruction ? (
+        <p className="question-instruction">{question.instruction}</p>
+      ) : null}
       {question.interaction.type === "classification" ? (
         <ClassificationInteraction
           items={question.interaction.items}
@@ -251,6 +270,25 @@ export default function QuestionCard({
           disabled={disabled}
           statuses={typedStatuses}
           onChange={setSlots}
+        />
+      ) : null}
+
+      {question.interaction.type === "multiple_choice" ? (
+        <MultipleChoiceInteraction
+          choices={question.interaction.choices}
+          value={choiceId}
+          disabled={disabled}
+          onChange={setChoiceId}
+        />
+      ) : null}
+
+      {question.interaction.type === "multiple_response" ? (
+        <MultipleResponseInteraction
+          choices={question.interaction.choices}
+          requiredSelections={question.interaction.required_selections}
+          value={choiceIds}
+          disabled={disabled}
+          onChange={setChoiceIds}
         />
       ) : null}
 

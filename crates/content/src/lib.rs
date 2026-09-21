@@ -8,6 +8,7 @@ mod embedded {
 pub mod discovery;
 pub mod learning;
 pub mod model;
+pub mod practice_test;
 pub mod registry;
 pub mod scoring;
 pub mod validate;
@@ -32,6 +33,9 @@ pub struct EmbeddedSource {
 pub use embedded::{EMBEDDED_LEARNING_SOURCES, EMBEDDED_PRACTICE_TEST_SOURCES, EMBEDDED_SOURCES};
 pub use learning::*;
 pub use model::*;
+pub use practice_test::{
+    PRACTICE_TEST_SCHEMA_VERSION, PracticeTest, PracticeTestItem, validate_practice_test,
+};
 pub use registry::ContentRegistry;
 pub use scoring::{ScoredAnswer, ScoringError, SubmittedAnswer, normalize_typed_answer, score};
 pub use validate::{ContentError, validate};

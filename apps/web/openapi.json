@@ -206,6 +206,162 @@
         ]
       }
     },
+    "/v1/certifications/{certification_id}/practice-tests": {
+      "get": {
+        "tags": [
+          "practice-tests"
+        ],
+        "summary": "Lists the practice tests (exam simulations) for a certification.",
+        "operationId": "list_practice_tests",
+        "parameters": [
+          {
+            "name": "certification_id",
+            "in": "path",
+            "description": "Certification identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available practice tests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeTestListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/certifications/{certification_id}/practice-tests/{practice_test_id}": {
+      "get": {
+        "tags": [
+          "practice-tests"
+        ],
+        "summary": "Returns learner-safe practice-test content, before submission.",
+        "description": "Canonical answers, per-choice feedback, and scored flags are never included.",
+        "operationId": "get_practice_test",
+        "parameters": [
+          {
+            "name": "certification_id",
+            "in": "path",
+            "description": "Certification identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "practice_test_id",
+            "in": "path",
+            "description": "Practice-test identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Learner-safe practice test",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeTestResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown practice test",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/certifications/{certification_id}/practice-tests/{practice_test_id}/submit": {
+      "post": {
+        "tags": [
+          "practice-tests"
+        ],
+        "summary": "Scores and reviews a complete practice-test attempt.",
+        "description": "The whole attempt is submitted at once; the response reveals canonical\nanswers, explanations, and per-choice feedback. The raw practice score is\nnot an AWS scaled score.",
+        "operationId": "submit_practice_test",
+        "parameters": [
+          {
+            "name": "certification_id",
+            "in": "path",
+            "description": "Certification identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "practice_test_id",
+            "in": "path",
+            "description": "Practice-test identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeTestSubmissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Scored practice test",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeTestResultResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid submission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown practice test",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/daily-missions/{mission_id}/items/{position}/complete": {
       "post": {
         "tags": [
@@ -1497,6 +1653,23 @@
               "type": "string"
             }
           },
+          "choice_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Selected choice id for multiple choice."
+          },
+          "choice_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Selected choice ids for multiple response."
+          },
           "choice_path": {
             "type": [
               "array",
@@ -2153,6 +2326,49 @@
                 "type": "string",
                 "enum": [
                   "typed_fill_blank"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The single correct choice id.",
+            "required": [
+              "choice_id",
+              "type"
+            ],
+            "properties": {
+              "choice_id": {
+                "type": "string",
+                "description": "Correct choice id."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "multiple_choice"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The exact set of correct choice ids.",
+            "required": [
+              "choice_ids",
+              "type"
+            ],
+            "properties": {
+              "choice_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Correct choice ids; order is not significant."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "multiple_response"
                 ]
               }
             }
@@ -3517,6 +3733,58 @@
                 ]
               }
             }
+          },
+          {
+            "type": "object",
+            "description": "Choose exactly one option.",
+            "required": [
+              "choices",
+              "type"
+            ],
+            "properties": {
+              "choices": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Choice"
+                },
+                "description": "Selectable options, including distractors."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "multiple_choice"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Choose an exact set of options.",
+            "required": [
+              "choices",
+              "required_selections",
+              "type"
+            ],
+            "properties": {
+              "choices": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Choice"
+                },
+                "description": "Selectable options, including distractors."
+              },
+              "required_selections": {
+                "type": "integer",
+                "description": "Number of options the learner must select.",
+                "minimum": 0
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "multiple_response"
+                ]
+              }
+            }
           }
         ],
         "description": "Interaction definition shown to the learner. Contains no answer key."
@@ -3537,7 +3805,9 @@
           "configuration_builder",
           "two_dimensional_placement",
           "command_assembly",
-          "typed_fill_blank"
+          "typed_fill_blank",
+          "multiple_choice",
+          "multiple_response"
         ]
       },
       "IssueMissionRequest": {
@@ -4480,6 +4750,403 @@
           "practice_domain"
         ]
       },
+      "PracticeTestAnswerRequest": {
+        "type": "object",
+        "description": "The learner's answer to one practice-test item.",
+        "required": [
+          "question_id",
+          "answer"
+        ],
+        "properties": {
+          "answer": {
+            "$ref": "#/components/schemas/AnswerPayload",
+            "description": "Answer primitives, keyed by the question's interaction type."
+          },
+          "question_id": {
+            "type": "string",
+            "description": "Question being answered."
+          }
+        }
+      },
+      "PracticeTestDomainResult": {
+        "type": "object",
+        "description": "Scored accuracy for one exam domain, over scored items only.",
+        "required": [
+          "domain_id",
+          "correct",
+          "scored_count"
+        ],
+        "properties": {
+          "correct": {
+            "type": "integer",
+            "description": "Scored items answered correctly in this domain.",
+            "minimum": 0
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "Domain identifier."
+          },
+          "scored_count": {
+            "type": "integer",
+            "description": "Scored items in this domain.",
+            "minimum": 0
+          }
+        }
+      },
+      "PracticeTestItemResult": {
+        "type": "object",
+        "description": "One reviewed practice-test item, available only after submission.",
+        "required": [
+          "order",
+          "question_id",
+          "domain_id",
+          "task_id",
+          "prompt",
+          "interaction_type",
+          "assessment_mode",
+          "interaction",
+          "canonical_answer",
+          "explanation",
+          "choice_feedback",
+          "is_scored",
+          "answered"
+        ],
+        "properties": {
+          "answered": {
+            "type": "boolean",
+            "description": "Whether the learner submitted any answer."
+          },
+          "assessment_mode": {
+            "$ref": "#/components/schemas/AssessmentMode",
+            "description": "Evidence mode."
+          },
+          "canonical_answer": {
+            "$ref": "#/components/schemas/CanonicalAnswer",
+            "description": "Canonical answer, safe to reveal after submission."
+          },
+          "choice_feedback": {
+            "type": "object",
+            "description": "Per-choice feedback keyed by choice id, safe after submission.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "correct": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the submission was fully correct; `None` when unanswered."
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "Owning domain."
+          },
+          "explanation": {
+            "type": "string",
+            "description": "Short explanation."
+          },
+          "instruction": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional authored instruction."
+          },
+          "interaction": {
+            "$ref": "#/components/schemas/Interaction",
+            "description": "Interaction definition, used to render labels in review."
+          },
+          "interaction_type": {
+            "$ref": "#/components/schemas/InteractionType",
+            "description": "Interaction family."
+          },
+          "is_scored": {
+            "type": "boolean",
+            "description": "Whether the item counts toward the practice score."
+          },
+          "order": {
+            "type": "integer",
+            "format": "int64",
+            "description": "1-based authored position."
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Learner-facing prompt."
+          },
+          "question_id": {
+            "type": "string",
+            "description": "Question identifier."
+          },
+          "submitted_answer": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AnswerPayload",
+                "description": "The learner's submitted answer, when any."
+              }
+            ]
+          },
+          "task_id": {
+            "type": "string",
+            "description": "Owning task."
+          }
+        }
+      },
+      "PracticeTestItemView": {
+        "type": "object",
+        "description": "One learner-safe practice-test item, before submission.\n\nNo answer key, per-choice feedback, or scored flag is present.",
+        "required": [
+          "order",
+          "question"
+        ],
+        "properties": {
+          "order": {
+            "type": "integer",
+            "format": "int64",
+            "description": "1-based authored position."
+          },
+          "question": {
+            "$ref": "#/components/schemas/QuestionView",
+            "description": "The question to present, in authored order."
+          }
+        }
+      },
+      "PracticeTestListResponse": {
+        "type": "object",
+        "description": "Practice tests available for one certification.",
+        "required": [
+          "practice_tests"
+        ],
+        "properties": {
+          "practice_tests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PracticeTestSummaryDto"
+            },
+            "description": "Available practice tests."
+          }
+        }
+      },
+      "PracticeTestResponse": {
+        "type": "object",
+        "description": "Learner-safe practice-test content served before submission.",
+        "required": [
+          "id",
+          "title",
+          "exam_code",
+          "certification_version",
+          "content_version",
+          "time_limit_minutes",
+          "question_count",
+          "scored_question_count",
+          "question_types",
+          "items"
+        ],
+        "properties": {
+          "certification_version": {
+            "type": "string",
+            "description": "Certification version identifier."
+          },
+          "content_version": {
+            "type": "string",
+            "description": "Immutable content version."
+          },
+          "exam_code": {
+            "type": "string",
+            "description": "Official exam code."
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable practice-test identifier."
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PracticeTestItemView"
+            },
+            "description": "Items in authored presentation order."
+          },
+          "question_count": {
+            "type": "integer",
+            "description": "Total authored items.",
+            "minimum": 0
+          },
+          "question_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Response types present."
+          },
+          "scored_question_count": {
+            "type": "integer",
+            "description": "Items that count toward the practice score.",
+            "minimum": 0
+          },
+          "time_limit_minutes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Exam time limit in minutes."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing title."
+          }
+        }
+      },
+      "PracticeTestResultResponse": {
+        "type": "object",
+        "description": "Full practice-test result and review, available only after submission.",
+        "required": [
+          "id",
+          "title",
+          "exam_code",
+          "total_questions",
+          "scored_question_count",
+          "correct_count",
+          "raw_accuracy",
+          "answered_count",
+          "unanswered_count",
+          "domain_breakdown",
+          "questions",
+          "score_note"
+        ],
+        "properties": {
+          "answered_count": {
+            "type": "integer",
+            "description": "Items with a submitted answer.",
+            "minimum": 0
+          },
+          "correct_count": {
+            "type": "integer",
+            "description": "Scored items answered correctly.",
+            "minimum": 0
+          },
+          "domain_breakdown": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PracticeTestDomainResult"
+            },
+            "description": "Per-domain scored accuracy, derived from authored content."
+          },
+          "exam_code": {
+            "type": "string",
+            "description": "Official exam code."
+          },
+          "id": {
+            "type": "string",
+            "description": "Practice-test identifier."
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PracticeTestItemResult"
+            },
+            "description": "Per-item review in authored order."
+          },
+          "raw_accuracy": {
+            "type": "number",
+            "format": "double",
+            "description": "Raw accuracy across scored items, in `[0, 1]`."
+          },
+          "score_note": {
+            "type": "string",
+            "description": "Explicit note that this raw score is not an AWS scaled score."
+          },
+          "scored_question_count": {
+            "type": "integer",
+            "description": "Items that count toward the practice score.",
+            "minimum": 0
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing title."
+          },
+          "total_questions": {
+            "type": "integer",
+            "description": "Total authored items.",
+            "minimum": 0
+          },
+          "unanswered_count": {
+            "type": "integer",
+            "description": "Items without a submitted answer.",
+            "minimum": 0
+          }
+        }
+      },
+      "PracticeTestSubmissionRequest": {
+        "type": "object",
+        "description": "One-shot submission of a practice-test attempt.\n\nAnswers are keyed by question id; unanswered items are simply omitted.",
+        "properties": {
+          "answers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PracticeTestAnswerRequest"
+            },
+            "description": "Submitted answers, at most one per question."
+          }
+        }
+      },
+      "PracticeTestSummaryDto": {
+        "type": "object",
+        "description": "Summary of one available practice test (exam simulation).\n\nMetadata only: it never contains questions or answers. The scored count is\nan aggregate and does not reveal which items are unscored.",
+        "required": [
+          "id",
+          "title",
+          "exam_code",
+          "certification_version",
+          "time_limit_minutes",
+          "question_count",
+          "scored_question_count",
+          "question_types"
+        ],
+        "properties": {
+          "certification_version": {
+            "type": "string",
+            "description": "Certification version identifier."
+          },
+          "exam_code": {
+            "type": "string",
+            "description": "Official exam code."
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable practice-test identifier."
+          },
+          "question_count": {
+            "type": "integer",
+            "description": "Total authored items.",
+            "minimum": 0
+          },
+          "question_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Response types present, for example `multiple_choice`."
+          },
+          "scored_question_count": {
+            "type": "integer",
+            "description": "Items that count toward the practice score.",
+            "minimum": 0
+          },
+          "time_limit_minutes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Exam time limit in minutes."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing title."
+          }
+        }
+      },
       "PromptKind": {
         "type": "string",
         "description": "The shared prompt vocabulary. Icons are selected by the UI from this kind,\nso content can change labels without the renderer special-casing nodes.",
@@ -4540,6 +5207,13 @@
           "id": {
             "type": "string",
             "description": "Question identifier."
+          },
+          "instruction": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional authored instruction shown with the prompt, for example\n`Choose TWO.`. Never reveals the answer."
           },
           "interaction": {
             "$ref": "#/components/schemas/Interaction",
@@ -5919,6 +6593,10 @@
     {
       "name": "missions",
       "description": "Mission issuance, scoring, and completion"
+    },
+    {
+      "name": "practice-tests",
+      "description": "Fixed-order exam simulations with delayed feedback"
     },
     {
       "name": "sync",

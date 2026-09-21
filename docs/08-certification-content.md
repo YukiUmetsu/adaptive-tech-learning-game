@@ -104,23 +104,65 @@ content types:
 content/<category>/<certification>/<version>/
 ├── learning/            # LearningDomain knowledge maps (pre-quiz)
 │   └── learning-domain-1.json
-├── questions/           # ContentBundle quiz content (scored)
+├── questions/           # ContentBundle quiz content (scored, adaptive)
 │   └── domain-1.json
-└── practice-tests/      # practice-test-v1 simulated exams (not yet scored)
+└── practice-tests/      # practice-test-v2 fixed exam simulations
     └── practice-test-1.json
 ```
 
 The build discovers learning sources by path (`**/learning/**/*.json`),
 practice tests by `**/practice-tests/**/*.json`, and quiz sources as every
 other JSON file, so none can be silently parsed as another. `ContentRegistry`
-validates and exposes quiz and learning content; practice tests are embedded as
-a separate type but are not consumed yet, so their schema can evolve before
-scoring support lands.
+validates and exposes all three: quiz bundles, learning maps, and `PracticeTest`
+values.
 
 At runtime the API loads embedded content leniently: a file that fails to parse
 or validate is skipped, and the error is logged with its repository-relative
 path. Strict validation still runs in the test suite (`ContentRegistry::embedded`)
 so bad content fails CI rather than reaching learners.
+
+### Practice tests (`practice-test-v2`)
+
+A practice test is a fixed, authored exam simulation, not an adaptive quiz:
+
+- The item order is fixed and every question is presented exactly once.
+- There is a wall-clock `time_limit_minutes`.
+- No correctness, feedback, score, or reward is revealed until the whole
+  attempt is submitted.
+- Adaptive selection never runs against a practice test, and practice-test
+  results never update concept mastery.
+
+Each item wraps a shared `Question` in a `PracticeTestItem` that also carries the
+exam-only fields: `order`, `is_scored`, and `scenario_style`. Exam concerns
+(order, timer, hiding answers, scored/unscored visibility) stay on the
+practice-test layer and never move onto the shared `Question`.
+
+The embedded SOA-C03 test has 65 items: 50 scored and 15 authored unscored
+simulation items. Only `is_scored = true` items count toward the practice score
+and the per-domain breakdown; all totals are derived from the authored content,
+never hardcoded. Before submission the learner-safe payload never reveals which
+items are scored.
+
+Practice-test questions may omit concept mappings (the current migration authors
+none), which is why their results never feed mastery. `blueprint_skill_ids` are
+official exam-objective references, never concept ids. If explicit concept
+mappings are authored later, practice-test results can feed the learning model
+then.
+
+Canonical answers (`canonical_answer`, `choice_feedback`, `explanation`, and
+`is_scored`) live only in server content. The API serves learner-safe DTOs
+before submission and returns answers only in the submission response.
+
+### Multiple choice and multiple response
+
+`multiple_choice` and `multiple_response` are shared interaction types usable by
+any content, adaptive or exam. `multiple_choice` carries `choices`;
+`multiple_response` adds `required_selections`. Canonical scoring compares stable
+choice ids and never depends on display order. A multiple-response answer is
+scored as an exact set with no partial credit: a missing, extra, substituted, or
+duplicate id is incorrect. Learners may leave a multiple-response question
+partially selected during an exam and return later; the selection limit is
+enforced only when selecting.
 
 Each `LearningDomain` contains ordered `LearningModule`s of `KnowledgeNode`s.
 A node carries `concept_ids` (the bridge to quiz evidence), authored

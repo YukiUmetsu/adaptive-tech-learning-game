@@ -175,6 +175,12 @@ fn canonical_answer_value(question: &adaptive_learn_content::Question) -> Value 
                 .collect();
             json!({ "positions": positions })
         }
+        adaptive_learn_content::CanonicalAnswer::MultipleChoice { choice_id } => {
+            json!({ "choice_id": choice_id })
+        }
+        adaptive_learn_content::CanonicalAnswer::MultipleResponse { choice_ids } => {
+            json!({ "choice_ids": choice_ids })
+        }
     }
 }
 

@@ -110,6 +110,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/certifications/{certification_id}/practice-tests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lists the practice tests (exam simulations) for a certification. */
+        get: operations["list_practice_tests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/certifications/{certification_id}/practice-tests/{practice_test_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns learner-safe practice-test content, before submission.
+         * @description Canonical answers, per-choice feedback, and scored flags are never included.
+         */
+        get: operations["get_practice_test"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/certifications/{certification_id}/practice-tests/{practice_test_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scores and reviews a complete practice-test attempt.
+         * @description The whole attempt is submitted at once; the response reveals canonical
+         *     answers, explanations, and per-choice feedback. The raw practice score is
+         *     not an AWS scaled score.
+         */
+        post: operations["submit_practice_test"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/daily-missions/{mission_id}/items/{position}/complete": {
         parameters: {
             query?: never;
@@ -490,6 +549,10 @@ export interface components {
             assignments?: {
                 [key: string]: string;
             } | null;
+            /** @description Selected choice id for multiple choice. */
+            choice_id?: string | null;
+            /** @description Selected choice ids for multiple response. */
+            choice_ids?: string[] | null;
             /** @description Ordered choice ids for troubleshooting or a scenario chain. */
             choice_path?: string[] | null;
             /** @description Directed `[from, to]` pairs for node connection. */
@@ -702,6 +765,16 @@ export interface components {
             };
             /** @enum {string} */
             type: "typed_fill_blank";
+        } | {
+            /** @description Correct choice id. */
+            choice_id: string;
+            /** @enum {string} */
+            type: "multiple_choice";
+        } | {
+            /** @description Correct choice ids; order is not significant. */
+            choice_ids: string[];
+            /** @enum {string} */
+            type: "multiple_response";
         };
         /** @description Response for the certification catalog. */
         CatalogResponse: {
@@ -1262,12 +1335,24 @@ export interface components {
             slots: components["schemas"]["TypedBlankSlot"][];
             /** @enum {string} */
             type: "typed_fill_blank";
+        } | {
+            /** @description Selectable options, including distractors. */
+            choices: components["schemas"]["Choice"][];
+            /** @enum {string} */
+            type: "multiple_choice";
+        } | {
+            /** @description Selectable options, including distractors. */
+            choices: components["schemas"]["Choice"][];
+            /** @description Number of options the learner must select. */
+            required_selections: number;
+            /** @enum {string} */
+            type: "multiple_response";
         };
         /**
          * @description The tactile interaction family a question uses.
          * @enum {string}
          */
-        InteractionType: "classification" | "ordering" | "node_connection" | "reconstruction" | "evidence_selection" | "spot_the_fault" | "fill_slots" | "troubleshooting" | "scenario_choice_chain" | "configuration_builder" | "two_dimensional_placement" | "command_assembly" | "typed_fill_blank";
+        InteractionType: "classification" | "ordering" | "node_connection" | "reconstruction" | "evidence_selection" | "spot_the_fault" | "fill_slots" | "troubleshooting" | "scenario_choice_chain" | "configuration_builder" | "two_dimensional_placement" | "command_assembly" | "typed_fill_blank" | "multiple_choice" | "multiple_response";
         /** @description Request to issue a mission for a quiz mode. */
         IssueMissionRequest: {
             /** @description Certification identifier. */
@@ -1666,6 +1751,172 @@ export interface components {
          * @enum {string}
          */
         PlannerAction: "learn_node" | "review_node" | "practice_question" | "practice_domain";
+        /** @description The learner's answer to one practice-test item. */
+        PracticeTestAnswerRequest: {
+            /** @description Answer primitives, keyed by the question's interaction type. */
+            answer: components["schemas"]["AnswerPayload"];
+            /** @description Question being answered. */
+            question_id: string;
+        };
+        /** @description Scored accuracy for one exam domain, over scored items only. */
+        PracticeTestDomainResult: {
+            /** @description Scored items answered correctly in this domain. */
+            correct: number;
+            /** @description Domain identifier. */
+            domain_id: string;
+            /** @description Scored items in this domain. */
+            scored_count: number;
+        };
+        /** @description One reviewed practice-test item, available only after submission. */
+        PracticeTestItemResult: {
+            /** @description Whether the learner submitted any answer. */
+            answered: boolean;
+            /** @description Evidence mode. */
+            assessment_mode: components["schemas"]["AssessmentMode"];
+            /** @description Canonical answer, safe to reveal after submission. */
+            canonical_answer: components["schemas"]["CanonicalAnswer"];
+            /** @description Per-choice feedback keyed by choice id, safe after submission. */
+            choice_feedback: {
+                [key: string]: string;
+            };
+            /** @description Whether the submission was fully correct; `None` when unanswered. */
+            correct?: boolean | null;
+            /** @description Owning domain. */
+            domain_id: string;
+            /** @description Short explanation. */
+            explanation: string;
+            /** @description Optional authored instruction. */
+            instruction?: string | null;
+            /** @description Interaction definition, used to render labels in review. */
+            interaction: components["schemas"]["Interaction"];
+            /** @description Interaction family. */
+            interaction_type: components["schemas"]["InteractionType"];
+            /** @description Whether the item counts toward the practice score. */
+            is_scored: boolean;
+            /**
+             * Format: int64
+             * @description 1-based authored position.
+             */
+            order: number;
+            /** @description Learner-facing prompt. */
+            prompt: string;
+            /** @description Question identifier. */
+            question_id: string;
+            submitted_answer?: null | components["schemas"]["AnswerPayload"];
+            /** @description Owning task. */
+            task_id: string;
+        };
+        /**
+         * @description One learner-safe practice-test item, before submission.
+         *
+         *     No answer key, per-choice feedback, or scored flag is present.
+         */
+        PracticeTestItemView: {
+            /**
+             * Format: int64
+             * @description 1-based authored position.
+             */
+            order: number;
+            /** @description The question to present, in authored order. */
+            question: components["schemas"]["QuestionView"];
+        };
+        /** @description Practice tests available for one certification. */
+        PracticeTestListResponse: {
+            /** @description Available practice tests. */
+            practice_tests: components["schemas"]["PracticeTestSummaryDto"][];
+        };
+        /** @description Learner-safe practice-test content served before submission. */
+        PracticeTestResponse: {
+            /** @description Certification version identifier. */
+            certification_version: string;
+            /** @description Immutable content version. */
+            content_version: string;
+            /** @description Official exam code. */
+            exam_code: string;
+            /** @description Stable practice-test identifier. */
+            id: string;
+            /** @description Items in authored presentation order. */
+            items: components["schemas"]["PracticeTestItemView"][];
+            /** @description Total authored items. */
+            question_count: number;
+            /** @description Response types present. */
+            question_types: string[];
+            /** @description Items that count toward the practice score. */
+            scored_question_count: number;
+            /**
+             * Format: int64
+             * @description Exam time limit in minutes.
+             */
+            time_limit_minutes: number;
+            /** @description Learner-facing title. */
+            title: string;
+        };
+        /** @description Full practice-test result and review, available only after submission. */
+        PracticeTestResultResponse: {
+            /** @description Items with a submitted answer. */
+            answered_count: number;
+            /** @description Scored items answered correctly. */
+            correct_count: number;
+            /** @description Per-domain scored accuracy, derived from authored content. */
+            domain_breakdown: components["schemas"]["PracticeTestDomainResult"][];
+            /** @description Official exam code. */
+            exam_code: string;
+            /** @description Practice-test identifier. */
+            id: string;
+            /** @description Per-item review in authored order. */
+            questions: components["schemas"]["PracticeTestItemResult"][];
+            /**
+             * Format: double
+             * @description Raw accuracy across scored items, in `[0, 1]`.
+             */
+            raw_accuracy: number;
+            /** @description Explicit note that this raw score is not an AWS scaled score. */
+            score_note: string;
+            /** @description Items that count toward the practice score. */
+            scored_question_count: number;
+            /** @description Learner-facing title. */
+            title: string;
+            /** @description Total authored items. */
+            total_questions: number;
+            /** @description Items without a submitted answer. */
+            unanswered_count: number;
+        };
+        /**
+         * @description One-shot submission of a practice-test attempt.
+         *
+         *     Answers are keyed by question id; unanswered items are simply omitted.
+         */
+        PracticeTestSubmissionRequest: {
+            /** @description Submitted answers, at most one per question. */
+            answers?: components["schemas"]["PracticeTestAnswerRequest"][];
+        };
+        /**
+         * @description Summary of one available practice test (exam simulation).
+         *
+         *     Metadata only: it never contains questions or answers. The scored count is
+         *     an aggregate and does not reveal which items are unscored.
+         */
+        PracticeTestSummaryDto: {
+            /** @description Certification version identifier. */
+            certification_version: string;
+            /** @description Official exam code. */
+            exam_code: string;
+            /** @description Stable practice-test identifier. */
+            id: string;
+            /** @description Total authored items. */
+            question_count: number;
+            /** @description Response types present, for example `multiple_choice`. */
+            question_types: string[];
+            /** @description Items that count toward the practice score. */
+            scored_question_count: number;
+            /**
+             * Format: int64
+             * @description Exam time limit in minutes.
+             */
+            time_limit_minutes: number;
+            /** @description Learner-facing title. */
+            title: string;
+        };
         /**
          * @description The shared prompt vocabulary. Icons are selected by the UI from this kind,
          *     so content can change labels without the renderer special-casing nodes.
@@ -1689,6 +1940,11 @@ export interface components {
             hints: string[];
             /** @description Question identifier. */
             id: string;
+            /**
+             * @description Optional authored instruction shown with the prompt, for example
+             *     `Choose TWO.`. Never reveals the answer.
+             */
+            instruction?: string | null;
             /** @description Interaction definition. */
             interaction: components["schemas"]["Interaction"];
             /** @description Interaction family. */
@@ -2520,6 +2776,110 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_practice_tests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Certification identifier */
+                certification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Available practice tests */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeTestListResponse"];
+                };
+            };
+        };
+    };
+    get_practice_test: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Certification identifier */
+                certification_id: string;
+                /** @description Practice-test identifier */
+                practice_test_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Learner-safe practice test */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeTestResponse"];
+                };
+            };
+            /** @description Unknown practice test */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    submit_practice_test: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Certification identifier */
+                certification_id: string;
+                /** @description Practice-test identifier */
+                practice_test_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticeTestSubmissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Scored practice test */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeTestResultResponse"];
+                };
+            };
+            /** @description Invalid submission */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown practice test */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
             };
         };
     };

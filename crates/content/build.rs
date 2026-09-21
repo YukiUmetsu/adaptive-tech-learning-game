@@ -4,7 +4,7 @@
 //! Three content types are discovered, by path:
 //!
 //! - `**/learning/**/*.json`       -> learning knowledge maps (`LearningDomain`)
-//! - `**/practice-tests/**/*.json` -> practice-test exams (`practice-test-v1`)
+//! - `**/practice-tests/**/*.json` -> practice-test exams (`practice-test-v2`)
 //! - every other JSON file         -> quiz content bundles (`ContentBundle`)
 //!
 //! The distinction is made from the directory, never by trial deserialization,
@@ -36,7 +36,7 @@ fn is_learning(path: &Path) -> bool {
 
 /// Returns whether a path sits under a `practice-tests/` directory.
 ///
-/// Practice tests use the `practice-test-v1` schema, which is distinct from a
+/// Practice tests use the `practice-test-v2` schema, which is distinct from a
 /// scored `ContentBundle`. They are embedded as their own content type so a
 /// practice test is never misparsed as a quiz bundle.
 fn is_practice_test(path: &Path) -> bool {
@@ -134,9 +134,9 @@ fn main() {
         &[
             "Practice-test JSON sources discovered at build time.",
             "",
-            "These use the `practice-test-v1` schema and are not consumed by",
-            "`ContentRegistry` yet; they are embedded so the content type is",
-            "recognized and never parsed as a scored quiz bundle.",
+            "These use the `practice-test-v2` schema and are parsed as a",
+            "distinct content type by `ContentRegistry`; they are never parsed",
+            "as a scored quiz bundle.",
         ],
         "EMBEDDED_PRACTICE_TEST_SOURCES",
         &practice,

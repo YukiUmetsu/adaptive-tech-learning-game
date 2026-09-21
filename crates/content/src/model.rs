@@ -450,6 +450,18 @@ pub enum Interaction {
         /// Blanks referenced anywhere in the content, in declaration order.
         slots: Vec<TypedBlankSlot>,
     },
+    /// Choose exactly one option.
+    MultipleChoice {
+        /// Selectable options, including distractors.
+        choices: Vec<Choice>,
+    },
+    /// Choose an exact set of options.
+    MultipleResponse {
+        /// Selectable options, including distractors.
+        choices: Vec<Choice>,
+        /// Number of options the learner must select.
+        required_selections: usize,
+    },
 }
 
 /// The canonical answer for a question.
@@ -528,6 +540,16 @@ pub enum CanonicalAnswer {
         /// Slot id to the authored accepted answers.
         answers: std::collections::BTreeMap<String, TypedBlankAnswer>,
     },
+    /// The single correct choice id.
+    MultipleChoice {
+        /// Correct choice id.
+        choice_id: String,
+    },
+    /// The exact set of correct choice ids.
+    MultipleResponse {
+        /// Correct choice ids; order is not significant.
+        choice_ids: Vec<String>,
+    },
 }
 
 /// A structured error the scorer may emit for a question.
@@ -569,14 +591,40 @@ pub struct Question {
     pub difficulty_prior: f64,
     /// Learner-facing prompt.
     pub prompt: String,
+    /// Optional authored instruction shown with the prompt, for example
+    /// `Choose TWO.`. Learner-safe: it never reveals the answer.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub instruction: Option<String>,
     /// Interaction definition.
     pub interaction: Interaction,
     /// Canonical answer. Never sent before scoring.
     pub canonical_answer: CanonicalAnswer,
     /// Concept mappings with weights.
+    ///
+    /// Normal adaptive quiz questions must map at least one concept. Practice
+    /// tests may omit mappings, in which case the question carries no mastery
+    /// signal.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub concepts: Vec<QuestionConcept>,
     /// Short explanation shown after scoring.
     pub explanation: String,
+    /// Per-choice feedback keyed by choice id.
+    ///
+    /// Post-answer information: it must never be sent to a learner before the
+    /// exercise is submitted/scored.
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub choice_feedback: std::collections::BTreeMap<String, String>,
+    /// Official exam-objective/skill ids this question maps to.
+    ///
+    /// Blueprint references, never concept-mastery ids.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub blueprint_skill_ids: Vec<String>,
+    /// Authored difficulty label, for example `medium`.
+    ///
+    /// Display/authoring metadata; [`Question::difficulty_prior`] stays the
+    /// numeric machine-readable value the learning model uses.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub difficulty_label: Option<String>,
     /// Optional hints.
     pub hints: Vec<String>,
     /// Structured error definitions the scorer may return.

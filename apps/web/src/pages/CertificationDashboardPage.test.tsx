@@ -167,6 +167,7 @@ interface MockOptions {
   streak?: boolean;
   recommendation?: boolean;
   dailyMission?: boolean;
+  practiceTests?: unknown[];
 }
 
 function stubHub(options: MockOptions = {}) {
@@ -176,12 +177,16 @@ function stubHub(options: MockOptions = {}) {
     streak: withStreak = true,
     recommendation = false,
     dailyMission = false,
+    practiceTests = [],
   } = options;
 
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL) => {
       const url = requestUrl(input);
+      if (url.includes("/practice-tests")) {
+        return jsonResponse({ practice_tests: practiceTests });
+      }
       if (url.includes("/v1/certifications")) {
         return jsonResponse(catalog);
       }
@@ -281,6 +286,10 @@ function renderHub(authenticated = true) {
             element={<CertificationDashboardPage />}
           />
           <Route path="/missions/:missionId" element={<p>Mission runner</p>} />
+          <Route
+            path="/tracks/:certificationId/practice-tests/:practiceTestId"
+            element={<p>Exam simulation page</p>}
+          />
           <Route
             path="/tracks/:certificationId/domains/:domainId/learn"
             element={<p>Domain learning page</p>}
@@ -568,5 +577,57 @@ describe("CertificationDashboardPage (Track Hub)", () => {
     expect(metrics.className).toContain("signal-node--reduced");
 
     window.matchMedia = original;
+  });
+
+  it("does not offer an exam simulation when no practice test is authored", async () => {
+    stubHub({ practiceTests: [] });
+    renderHub();
+    await ready();
+    await screen.findByRole("button", { name: /Metrics/ });
+
+    expect(screen.queryByText(/Exam Simulation/)).not.toBeInTheDocument();
+  });
+
+  it("starts the exam simulation from Full Practice when one is authored", async () => {
+    stubHub({
+      practiceTests: [
+        {
+          id: "aws-soa-c03-practice-test-1",
+          title: "SOA-C03 Practice Test 1",
+          exam_code: "SOA-C03",
+          certification_version: "soa-c03",
+          time_limit_minutes: 130,
+          question_count: 65,
+          scored_question_count: 50,
+          question_types: ["multiple_choice"],
+        },
+      ],
+    });
+    renderHub();
+    await ready();
+    await screen.findByRole("button", { name: /Metrics/ });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /Start Full Practice/ }),
+    );
+
+    // Full Practice is the exam simulation, so it navigates instead of issuing
+    // an adaptive mission.
+    expect(await screen.findByText("Exam simulation page")).toBeInTheDocument();
+    expect(posted).toHaveLength(0);
+  });
+
+  it("falls back to the adaptive full-practice mission when no exam is authored", async () => {
+    stubHub({ practiceTests: [] });
+    renderHub();
+    await ready();
+    await screen.findByRole("button", { name: /Metrics/ });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /Start Full Practice/ }),
+    );
+
+    await waitFor(() => expect(posted).toHaveLength(1));
+    expect(posted[0]).toMatchObject({ mode: "full_practice" });
   });
 });

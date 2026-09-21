@@ -58,6 +58,10 @@ pub enum InteractionType {
     CommandAssembly,
     /// Type the missing word, phrase, service, concept, or value into inline blanks.
     TypedFillBlank,
+    /// Choose exactly one option from a list.
+    MultipleChoice,
+    /// Choose an exact set of options from a list.
+    MultipleResponse,
 }
 
 impl AssessmentMode {
@@ -110,6 +114,8 @@ impl InteractionType {
             Self::TwoDimensionalPlacement => "two_dimensional_placement",
             Self::CommandAssembly => "command_assembly",
             Self::TypedFillBlank => "typed_fill_blank",
+            Self::MultipleChoice => "multiple_choice",
+            Self::MultipleResponse => "multiple_response",
         }
     }
 }
@@ -132,6 +138,8 @@ impl TryFrom<&str> for InteractionType {
             "two_dimensional_placement" => Ok(Self::TwoDimensionalPlacement),
             "command_assembly" => Ok(Self::CommandAssembly),
             "typed_fill_blank" => Ok(Self::TypedFillBlank),
+            "multiple_choice" => Ok(Self::MultipleChoice),
+            "multiple_response" => Ok(Self::MultipleResponse),
             _ => Err(DomainError::invalid(
                 "interaction_type",
                 "unknown interaction type",

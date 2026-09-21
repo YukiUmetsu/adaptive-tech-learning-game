@@ -40,6 +40,10 @@ pub enum SubmittedAnswer {
     CommandAssembly(BTreeMap<String, String>),
     /// Slot id to raw typed text for inline blanks.
     TypedFillBlank(BTreeMap<String, String>),
+    /// Selected choice id for a multiple-choice question.
+    MultipleChoice(String),
+    /// Selected choice ids for a multiple-response question.
+    MultipleResponse(Vec<String>),
 }
 
 /// The outcome of scoring one attempt.
@@ -100,6 +104,12 @@ pub enum ScoringError {
     /// A token id is not part of the question.
     #[error("unknown token id {0}")]
     UnknownToken(String),
+    /// A choice id is not part of the question.
+    #[error("unknown choice id {0}")]
+    UnknownChoice(String),
+    /// A multiple-response answer repeats a choice id.
+    #[error("duplicate choice id {0}")]
+    DuplicateChoice(String),
 }
 
 impl ScoringError {
@@ -120,6 +130,8 @@ impl ScoringError {
             Self::InvalidScenarioPath => "invalid_scenario_path",
             Self::InvalidPlacement => "invalid_placement",
             Self::UnknownToken(_) => "unknown_token",
+            Self::UnknownChoice(_) => "unknown_choice",
+            Self::DuplicateChoice(_) => "duplicate_choice",
         }
     }
 }
@@ -194,6 +206,13 @@ pub fn score(question: &Question, answer: &SubmittedAnswer) -> Result<ScoredAnsw
         (Interaction::TypedFillBlank { slots, .. }, SubmittedAnswer::TypedFillBlank(values)) => {
             score_typed_fill_blank(question, slots, values)
         }
+        (Interaction::MultipleChoice { choices }, SubmittedAnswer::MultipleChoice(choice_id)) => {
+            score_multiple_choice(question, choices, choice_id)
+        }
+        (
+            Interaction::MultipleResponse { choices, .. },
+            SubmittedAnswer::MultipleResponse(choice_ids),
+        ) => score_multiple_response(question, choices, choice_ids),
         _ => Err(ScoringError::InteractionMismatch),
     }
 }
@@ -1032,6 +1051,97 @@ fn score_typed_fill_blank(
     })
 }
 
+/// Scores a single-selection answer.
+///
+/// The submitted choice must be an authored choice; scoring compares stable
+/// choice ids, never display order or label text.
+fn score_multiple_choice(
+    question: &Question,
+    choices: &[crate::model::Choice],
+    choice_id: &str,
+) -> Result<ScoredAnswer, ScoringError> {
+    let available: HashSet<&str> = choices.iter().map(|choice| choice.id.as_str()).collect();
+    if !available.contains(choice_id) {
+        return Err(ScoringError::UnknownChoice(choice_id.to_owned()));
+    }
+
+    let CanonicalAnswer::MultipleChoice {
+        choice_id: canonical_choice,
+    } = &question.canonical_answer
+    else {
+        return Err(ScoringError::InteractionMismatch);
+    };
+
+    let correct = choice_id == canonical_choice;
+    let error_codes = if correct {
+        Vec::new()
+    } else {
+        vec!["multiple_choice_incorrect".to_owned()]
+    };
+
+    Ok(ScoredAnswer {
+        correct,
+        score: if correct { 1.0 } else { 0.0 },
+        error_codes,
+        canonical: question.canonical_answer.clone(),
+    })
+}
+
+/// Scores a multiple-response answer as an exact set.
+///
+/// There is no partial credit: the submitted set must equal the canonical set.
+/// Ordering is irrelevant, duplicate submissions are rejected, and every
+/// submitted id must be an authored choice.
+fn score_multiple_response(
+    question: &Question,
+    choices: &[crate::model::Choice],
+    choice_ids: &[String],
+) -> Result<ScoredAnswer, ScoringError> {
+    let available: HashSet<&str> = choices.iter().map(|choice| choice.id.as_str()).collect();
+    for choice_id in choice_ids {
+        if !available.contains(choice_id.as_str()) {
+            return Err(ScoringError::UnknownChoice(choice_id.clone()));
+        }
+    }
+
+    let mut submitted: HashSet<&str> = HashSet::with_capacity(choice_ids.len());
+    for choice_id in choice_ids {
+        if !submitted.insert(choice_id.as_str()) {
+            return Err(ScoringError::DuplicateChoice(choice_id.clone()));
+        }
+    }
+
+    let CanonicalAnswer::MultipleResponse {
+        choice_ids: canonical_ids,
+    } = &question.canonical_answer
+    else {
+        return Err(ScoringError::InteractionMismatch);
+    };
+
+    let canonical: HashSet<&str> = canonical_ids.iter().map(String::as_str).collect();
+    let correct = submitted == canonical;
+
+    let mut error_codes = Vec::new();
+    if !correct {
+        if submitted.len() < canonical.len() {
+            error_codes.push("multiple_response_incomplete".to_owned());
+        }
+        if submitted.len() > canonical.len() {
+            error_codes.push("multiple_response_extra".to_owned());
+        }
+        if submitted.len() == canonical.len() {
+            error_codes.push("multiple_response_incorrect".to_owned());
+        }
+    }
+
+    Ok(ScoredAnswer {
+        correct,
+        score: if correct { 1.0 } else { 0.0 },
+        error_codes,
+        canonical: question.canonical_answer.clone(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1048,10 +1158,14 @@ mod tests {
             interaction_type: adaptive_learn_domain::InteractionType::Classification,
             difficulty_prior: 0.3,
             prompt: "prompt".to_owned(),
+            instruction: None,
             interaction,
             canonical_answer: canonical,
             concepts: Vec::new(),
             explanation: "because".to_owned(),
+            choice_feedback: BTreeMap::new(),
+            blueprint_skill_ids: Vec::new(),
+            difficulty_label: None,
             hints: Vec::new(),
             error_codes: Vec::new(),
             source_refs: Vec::new(),
@@ -2351,6 +2465,164 @@ mod tests {
                 )])),
             ),
             Err(ScoringError::UnknownSlot("ghost".to_owned()))
+        );
+    }
+
+    fn choices(ids: &[&str]) -> Vec<Choice> {
+        ids.iter()
+            .map(|id| Choice {
+                id: (*id).to_owned(),
+                label: id.to_uppercase(),
+            })
+            .collect()
+    }
+
+    fn multiple_choice_question() -> Question {
+        let mut q = question(
+            Interaction::MultipleChoice {
+                choices: choices(&["A", "B", "C", "D"]),
+            },
+            CanonicalAnswer::MultipleChoice {
+                choice_id: "C".to_owned(),
+            },
+        );
+        q.interaction_type = adaptive_learn_domain::InteractionType::MultipleChoice;
+        q
+    }
+
+    fn multiple_response_question() -> Question {
+        let mut q = question(
+            Interaction::MultipleResponse {
+                choices: choices(&["A", "B", "C", "D", "E"]),
+                required_selections: 2,
+            },
+            CanonicalAnswer::MultipleResponse {
+                choice_ids: vec!["B".to_owned(), "C".to_owned()],
+            },
+        );
+        q.interaction_type = adaptive_learn_domain::InteractionType::MultipleResponse;
+        q
+    }
+
+    #[test]
+    fn multiple_choice_scores_correct_and_incorrect() {
+        let q = multiple_choice_question();
+
+        let correct = score(&q, &SubmittedAnswer::MultipleChoice("C".to_owned())).expect("score");
+        assert!(correct.correct);
+        assert_eq!(correct.score, 1.0);
+        assert!(correct.error_codes.is_empty());
+
+        let wrong = score(&q, &SubmittedAnswer::MultipleChoice("A".to_owned())).expect("score");
+        assert!(!wrong.correct);
+        assert_eq!(wrong.score, 0.0);
+        assert_eq!(wrong.error_codes, vec!["multiple_choice_incorrect"]);
+    }
+
+    #[test]
+    fn multiple_choice_rejects_unknown_choice() {
+        let q = multiple_choice_question();
+        assert_eq!(
+            score(&q, &SubmittedAnswer::MultipleChoice("Z".to_owned())),
+            Err(ScoringError::UnknownChoice("Z".to_owned()))
+        );
+    }
+
+    #[test]
+    fn multiple_response_requires_the_exact_set() {
+        let q = multiple_response_question();
+
+        let correct = score(
+            &q,
+            &SubmittedAnswer::MultipleResponse(vec!["B".to_owned(), "C".to_owned()]),
+        )
+        .expect("score");
+        assert!(correct.correct);
+        assert_eq!(correct.score, 1.0);
+    }
+
+    #[test]
+    fn multiple_response_ignores_answer_order() {
+        let q = multiple_response_question();
+        let reversed = score(
+            &q,
+            &SubmittedAnswer::MultipleResponse(vec!["C".to_owned(), "B".to_owned()]),
+        )
+        .expect("score");
+        assert!(reversed.correct);
+        assert_eq!(reversed.score, 1.0);
+    }
+
+    #[test]
+    fn multiple_response_missing_a_response_is_incorrect() {
+        let q = multiple_response_question();
+        let missing =
+            score(&q, &SubmittedAnswer::MultipleResponse(vec!["B".to_owned()])).expect("score");
+        assert!(!missing.correct);
+        assert_eq!(missing.score, 0.0);
+        assert_eq!(missing.error_codes, vec!["multiple_response_incomplete"]);
+
+        let empty = score(&q, &SubmittedAnswer::MultipleResponse(Vec::new())).expect("score");
+        assert!(!empty.correct);
+        assert_eq!(empty.score, 0.0);
+    }
+
+    #[test]
+    fn multiple_response_extra_response_is_incorrect() {
+        let q = multiple_response_question();
+        let extra = score(
+            &q,
+            &SubmittedAnswer::MultipleResponse(vec![
+                "B".to_owned(),
+                "C".to_owned(),
+                "D".to_owned(),
+            ]),
+        )
+        .expect("score");
+        assert!(!extra.correct);
+        assert_eq!(extra.score, 0.0);
+        assert_eq!(extra.error_codes, vec!["multiple_response_extra"]);
+    }
+
+    #[test]
+    fn multiple_response_substituting_a_response_is_incorrect() {
+        let q = multiple_response_question();
+        let swapped = score(
+            &q,
+            &SubmittedAnswer::MultipleResponse(vec!["B".to_owned(), "D".to_owned()]),
+        )
+        .expect("score");
+        assert!(!swapped.correct);
+        assert_eq!(swapped.score, 0.0);
+        assert_eq!(swapped.error_codes, vec!["multiple_response_incorrect"]);
+    }
+
+    #[test]
+    fn multiple_response_rejects_duplicates_and_unknown_choices() {
+        let q = multiple_response_question();
+        assert_eq!(
+            score(
+                &q,
+                &SubmittedAnswer::MultipleResponse(vec!["B".to_owned(), "B".to_owned()]),
+            ),
+            Err(ScoringError::DuplicateChoice("B".to_owned()))
+        );
+
+        assert_eq!(
+            score(
+                &q,
+                &SubmittedAnswer::MultipleResponse(vec!["B".to_owned(), "Z".to_owned()]),
+            ),
+            Err(ScoringError::UnknownChoice("Z".to_owned()))
+        );
+    }
+
+    #[test]
+    fn multiple_choice_rejects_a_mismatched_answer_shape() {
+        let q = multiple_choice_question();
+        assert_eq!(
+            score(&q, &SubmittedAnswer::MultipleResponse(vec!["C".to_owned()])),
+            Err(ScoringError::InteractionMismatch)
         );
     }
 }

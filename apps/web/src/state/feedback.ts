@@ -544,5 +544,59 @@ export function reviewDetails(
     return details;
   }
 
+  if (
+    interaction.type === "multiple_choice" &&
+    canonical.type === "multiple_choice"
+  ) {
+    const chosen = submitted.choice_id;
+    if (!chosen || chosen === canonical.choice_id) {
+      return [];
+    }
+
+    const labels = new Map(
+      interaction.choices.map((choice) => [choice.id, choice.label]),
+    );
+    const label = (id: string) => labels.get(id) ?? id;
+    return [
+      {
+        kind: "wrong",
+        text: `You chose “${label(chosen)}”; the correct answer is “${label(
+          canonical.choice_id,
+        )}”`,
+      },
+    ];
+  }
+
+  if (
+    interaction.type === "multiple_response" &&
+    canonical.type === "multiple_response"
+  ) {
+    const selected = submitted.choice_ids;
+    if (!selected) {
+      return [];
+    }
+
+    const labels = new Map(
+      interaction.choices.map((choice) => [choice.id, choice.label]),
+    );
+    const label = (id: string) => labels.get(id) ?? id;
+    const chosen = new Set(selected);
+    const required = new Set(canonical.choice_ids);
+    const details: ReviewDetail[] = [];
+
+    for (const id of canonical.choice_ids) {
+      if (!chosen.has(id)) {
+        details.push({ kind: "missing", text: `Missing required answer: ${label(id)}` });
+      }
+    }
+    for (const id of selected) {
+      if (!required.has(id)) {
+        details.push({ kind: "invalid", text: `Not a required answer: ${label(id)}` });
+      }
+    }
+
+    return details;
+  }
+
   return [];
 }

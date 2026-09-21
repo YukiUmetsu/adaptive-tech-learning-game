@@ -10,8 +10,8 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use adaptive_learn_content::{
-    DomainDiscoveryInput, Question, SubmittedAnswer, derive_domain_discovery,
-    merge_domain_discovery, score,
+    DomainDiscoveryInput, PracticeTest, PracticeTestItem, Question, SubmittedAnswer,
+    derive_domain_discovery, merge_domain_discovery, score,
 };
 use adaptive_learn_db as db;
 use adaptive_learn_domain::concept_state::SUCCESS_THRESHOLD;
@@ -32,11 +32,14 @@ use crate::dto::{
     DailyMissionStatus, DiscoveryResponse, DiscoveryState, DiscoveryUpdateRequest, DomainDto,
     DomainProgressDto, EvaluationSliceDto, FeedbackResponse, IssueMissionRequest,
     LearningDomainResponse, MissionResponse, MissionReviewResponse, ModelEvaluationResponse,
-    NodeProgressDto, QuestionView, RecommendationEventRequest, RecommendationEventResponse,
-    RecommendationResponse, ReviewedAttempt, ReviewedQuestion, StreakDto, StudySessionRequest,
-    StudySessionResponse, SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse,
-    SyncSectionResult, TaskDto, TrackMapResponse, TrackProgressResponse, UpdateSettingsRequest,
-    UserSettingsDto, WalletResponse,
+    NodeProgressDto, PracticeTestDomainResult, PracticeTestItemResult, PracticeTestItemView,
+    PracticeTestListResponse, PracticeTestResponse, PracticeTestResultResponse,
+    PracticeTestSubmissionRequest, PracticeTestSummaryDto, QuestionView,
+    RecommendationEventRequest, RecommendationEventResponse, RecommendationResponse,
+    ReviewedAttempt, ReviewedQuestion, StreakDto, StudySessionRequest, StudySessionResponse,
+    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, SyncSectionResult, TaskDto,
+    TrackMapResponse, TrackProgressResponse, UpdateSettingsRequest, UserSettingsDto,
+    WalletResponse,
 };
 use crate::error::ApiError;
 use crate::planner::{
@@ -2723,6 +2726,8 @@ fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError> {
         positions,
         token_values,
         typed_answers,
+        choice_id,
+        choice_ids,
     } = payload;
 
     let shapes = usize::from(placements.is_some())
@@ -2736,7 +2741,9 @@ fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError> {
         + usize::from(assignments.is_some())
         + usize::from(positions.is_some())
         + usize::from(token_values.is_some())
-        + usize::from(typed_answers.is_some());
+        + usize::from(typed_answers.is_some())
+        + usize::from(choice_id.is_some())
+        + usize::from(choice_ids.is_some());
 
     if shapes != 1 {
         return Err(ApiError::BadRequest(
@@ -2783,6 +2790,12 @@ fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError> {
     if let Some(typed_answers) = typed_answers {
         return Ok(SubmittedAnswer::TypedFillBlank(typed_answers));
     }
+    if let Some(choice_id) = choice_id {
+        return Ok(SubmittedAnswer::MultipleChoice(choice_id));
+    }
+    if let Some(choice_ids) = choice_ids {
+        return Ok(SubmittedAnswer::MultipleResponse(choice_ids));
+    }
 
     Err(ApiError::BadRequest(
         "answer must contain exactly one answer shape".to_owned(),
@@ -2819,6 +2832,7 @@ fn question_view(question: &adaptive_learn_content::Question) -> QuestionView {
         domain_id: question.domain_id.clone(),
         task_id: question.task_id.clone(),
         prompt: question.prompt.clone(),
+        instruction: question.instruction.clone(),
         interaction_type: question.interaction_type,
         assessment_mode: question.assessment_mode,
         difficulty_prior: question.difficulty_prior,
@@ -2826,6 +2840,290 @@ fn question_view(question: &adaptive_learn_content::Question) -> QuestionView {
         hints: question.hints.clone(),
         interaction: question.interaction.clone(),
     }
+}
+
+/// Note shown with every practice-test result.
+///
+/// The raw practice score is a study aid, not an official AWS scaled score.
+pub const PRACTICE_TEST_SCORE_NOTE: &str =
+    "This is a raw practice score, not an AWS scaled score or an official pass/fail result.";
+
+/// Lists the practice tests available for a certification.
+pub fn list_practice_tests(state: &AppState, certification_id: &str) -> PracticeTestListResponse {
+    let practice_tests = state
+        .content
+        .practice_tests_for_certification(certification_id)
+        .into_iter()
+        .map(practice_test_summary)
+        .collect();
+    PracticeTestListResponse { practice_tests }
+}
+
+fn practice_test_summary(test: &PracticeTest) -> PracticeTestSummaryDto {
+    PracticeTestSummaryDto {
+        id: test.id.clone(),
+        title: test.title.clone(),
+        exam_code: test.exam_code.clone(),
+        certification_version: test.certification_version.clone(),
+        time_limit_minutes: test.time_limit_minutes,
+        question_count: test.items.len(),
+        scored_question_count: test.scored_question_count(),
+        question_types: test.question_types.clone(),
+    }
+}
+
+/// Returns learner-safe practice-test content, scoped to a certification.
+///
+/// The response never contains canonical answers, per-choice feedback, or
+/// scored/unscored flags.
+pub fn get_practice_test(
+    state: &AppState,
+    certification_id: &str,
+    practice_test_id: &str,
+) -> Result<PracticeTestResponse, ApiError> {
+    let test = practice_test_for_certification(state, certification_id, practice_test_id)?;
+    Ok(practice_test_view(test))
+}
+
+fn practice_test_view(test: &PracticeTest) -> PracticeTestResponse {
+    PracticeTestResponse {
+        id: test.id.clone(),
+        title: test.title.clone(),
+        exam_code: test.exam_code.clone(),
+        certification_version: test.certification_version.clone(),
+        content_version: test.content_version.clone(),
+        time_limit_minutes: test.time_limit_minutes,
+        question_count: test.items.len(),
+        scored_question_count: test.scored_question_count(),
+        question_types: test.question_types.clone(),
+        items: test
+            .items
+            .iter()
+            .map(|item| PracticeTestItemView {
+                order: item.order,
+                question: practice_test_question_view(&item.question),
+            })
+            .collect(),
+    }
+}
+
+/// Learner-safe question projection for a pre-submission practice-test item.
+///
+/// Like [`question_view`], but never includes hints: a hint could reveal the
+/// answer before the exam is submitted.
+fn practice_test_question_view(question: &Question) -> QuestionView {
+    QuestionView {
+        hints: Vec::new(),
+        ..question_view(question)
+    }
+}
+
+/// Resolves a practice test, ensuring it belongs to the requested certification.
+fn practice_test_for_certification<'a>(
+    state: &'a AppState,
+    certification_id: &str,
+    practice_test_id: &str,
+) -> Result<&'a PracticeTest, ApiError> {
+    state
+        .content
+        .practice_tests_for_certification(certification_id)
+        .into_iter()
+        .find(|test| test.id == practice_test_id)
+        .ok_or(ApiError::NotFound)
+}
+
+/// Scores a full practice-test submission against canonical content.
+///
+/// The whole attempt is scored in one call: there is no per-question feedback
+/// while the exam is in progress, and answers are only revealed here. Scoring
+/// is pure and idempotent, so retrying a submission yields the same result.
+/// Only items marked scored count toward the practice score.
+pub fn submit_practice_test(
+    state: &AppState,
+    certification_id: &str,
+    practice_test_id: &str,
+    request: PracticeTestSubmissionRequest,
+) -> Result<PracticeTestResultResponse, ApiError> {
+    let test = practice_test_for_certification(state, certification_id, practice_test_id)?;
+
+    let items_by_id: HashMap<&str, &PracticeTestItem> = test
+        .items
+        .iter()
+        .map(|item| (item.question.id.as_str(), item))
+        .collect();
+
+    let mut provided: HashMap<String, (AnswerPayload, SubmittedAnswer)> = HashMap::new();
+    for entry in request.answers {
+        let Some(item) = items_by_id.get(entry.question_id.as_str()) else {
+            return Err(ApiError::BadRequest(format!(
+                "unknown practice-test question {}",
+                entry.question_id
+            )));
+        };
+        if provided.contains_key(entry.question_id.as_str()) {
+            return Err(ApiError::BadRequest(format!(
+                "question {} was submitted more than once",
+                entry.question_id
+            )));
+        }
+        let submitted = to_submitted(entry.answer.clone())?;
+        // Validate against the authored interaction even if the learner left it
+        // blank; a shape mismatch is a client bug, not a wrong answer.
+        if !matches_submitted_shape(item, &submitted) {
+            return Err(ApiError::BadRequest(format!(
+                "answer shape does not match question {}",
+                entry.question_id
+            )));
+        }
+        provided.insert(entry.question_id, (entry.answer, submitted));
+    }
+
+    let mut questions = Vec::with_capacity(test.items.len());
+    let mut correct_count = 0_usize;
+    let mut answered_count = 0_usize;
+    let mut domain_order: Vec<String> = Vec::new();
+    let mut domains: HashMap<String, (usize, usize)> = HashMap::new();
+
+    for item in &test.items {
+        let question = &item.question;
+        let entry = provided.remove(question.id.as_str());
+        let (submitted_answer, correct) = match entry {
+            Some((payload, submitted)) => {
+                let scored = score(question, &submitted).map_err(|error| {
+                    ApiError::BadRequest(format!(
+                        "could not score question {}: {}",
+                        question.id,
+                        error.code()
+                    ))
+                })?;
+                answered_count += 1;
+                (Some(payload), Some(scored.correct))
+            }
+            None => (None, None),
+        };
+
+        if item.is_scored {
+            let domain = domains
+                .entry(question.domain_id.clone())
+                .or_insert_with(|| {
+                    domain_order.push(question.domain_id.clone());
+                    (0, 0)
+                });
+            domain.1 += 1;
+            if correct == Some(true) {
+                correct_count += 1;
+                domain.0 += 1;
+            }
+        }
+
+        questions.push(PracticeTestItemResult {
+            order: item.order,
+            question_id: question.id.clone(),
+            domain_id: question.domain_id.clone(),
+            task_id: question.task_id.clone(),
+            prompt: question.prompt.clone(),
+            instruction: question.instruction.clone(),
+            interaction_type: question.interaction_type,
+            assessment_mode: question.assessment_mode,
+            interaction: question.interaction.clone(),
+            canonical_answer: question.canonical_answer.clone(),
+            explanation: question.explanation.clone(),
+            choice_feedback: question.choice_feedback.clone(),
+            is_scored: item.is_scored,
+            answered: submitted_answer.is_some(),
+            submitted_answer,
+            correct,
+        });
+    }
+
+    let scored_question_count = test.scored_question_count();
+    let total_questions = test.items.len();
+    let raw_accuracy = if scored_question_count == 0 {
+        0.0
+    } else {
+        correct_count as f64 / scored_question_count as f64
+    };
+
+    let domain_breakdown = domain_order
+        .into_iter()
+        .map(|domain_id| {
+            let (correct, scored_count) = domains.remove(&domain_id).unwrap_or((0, 0));
+            PracticeTestDomainResult {
+                domain_id,
+                correct,
+                scored_count,
+            }
+        })
+        .collect();
+
+    Ok(PracticeTestResultResponse {
+        id: test.id.clone(),
+        title: test.title.clone(),
+        exam_code: test.exam_code.clone(),
+        total_questions,
+        scored_question_count,
+        correct_count,
+        raw_accuracy,
+        answered_count,
+        unanswered_count: total_questions.saturating_sub(answered_count),
+        domain_breakdown,
+        questions,
+        score_note: PRACTICE_TEST_SCORE_NOTE.to_owned(),
+    })
+}
+
+/// Whether a submitted answer's shape matches the question's interaction.
+///
+/// `score` already rejects mismatches, but this keeps the error specific to the
+/// item before any scoring side effects.
+fn matches_submitted_shape(item: &PracticeTestItem, submitted: &SubmittedAnswer) -> bool {
+    matches!(
+        (&item.question.interaction, submitted),
+        (
+            adaptive_learn_content::Interaction::MultipleChoice { .. },
+            SubmittedAnswer::MultipleChoice(_)
+        ) | (
+            adaptive_learn_content::Interaction::MultipleResponse { .. },
+            SubmittedAnswer::MultipleResponse(_)
+        ) | (
+            adaptive_learn_content::Interaction::Classification { .. },
+            SubmittedAnswer::Classification(_)
+        ) | (
+            adaptive_learn_content::Interaction::Ordering { .. },
+            SubmittedAnswer::Ordering(_)
+        ) | (
+            adaptive_learn_content::Interaction::NodeConnection { .. },
+            SubmittedAnswer::NodeConnection(_)
+        ) | (
+            adaptive_learn_content::Interaction::Reconstruction { .. },
+            SubmittedAnswer::Reconstruction { .. }
+        ) | (
+            adaptive_learn_content::Interaction::EvidenceSelection { .. },
+            SubmittedAnswer::EvidenceSelection(_)
+        ) | (
+            adaptive_learn_content::Interaction::SpotTheFault { .. },
+            SubmittedAnswer::SpotTheFault(_)
+        ) | (
+            adaptive_learn_content::Interaction::FillSlots { .. },
+            SubmittedAnswer::FillSlots(_)
+        ) | (
+            adaptive_learn_content::Interaction::Troubleshooting { .. }
+                | adaptive_learn_content::Interaction::ScenarioChoiceChain { .. },
+            SubmittedAnswer::Branching(_)
+        ) | (
+            adaptive_learn_content::Interaction::ConfigurationBuilder { .. },
+            SubmittedAnswer::ConfigurationBuilder(_)
+        ) | (
+            adaptive_learn_content::Interaction::TwoDimensionalPlacement { .. },
+            SubmittedAnswer::TwoDimensionalPlacement(_)
+        ) | (
+            adaptive_learn_content::Interaction::CommandAssembly { .. },
+            SubmittedAnswer::CommandAssembly(_)
+        ) | (
+            adaptive_learn_content::Interaction::TypedFillBlank { .. },
+            SubmittedAnswer::TypedFillBlank(_)
+        )
+    )
 }
 
 #[cfg(test)]
@@ -3286,6 +3584,8 @@ mod tests {
             positions: None,
             token_values: None,
             typed_answers: None,
+            choice_id: None,
+            choice_ids: None,
         });
         assert!(empty.is_err());
 
@@ -3302,6 +3602,8 @@ mod tests {
             positions: None,
             token_values: None,
             typed_answers: None,
+            choice_id: None,
+            choice_ids: None,
         });
         assert!(two_shapes.is_err());
     }
@@ -3321,6 +3623,8 @@ mod tests {
             positions: None,
             token_values: None,
             typed_answers: None,
+            choice_id: None,
+            choice_ids: None,
         });
         assert!(bad.is_err());
 
@@ -3337,6 +3641,8 @@ mod tests {
             positions: None,
             token_values: None,
             typed_answers: None,
+            choice_id: None,
+            choice_ids: None,
         });
         assert_eq!(
             good.expect("valid edge"),
@@ -3365,6 +3671,8 @@ mod tests {
             positions: None,
             token_values: None,
             typed_answers: None,
+            choice_id: None,
+            choice_ids: None,
         })
         .expect("valid reconstruction");
 
@@ -3395,6 +3703,8 @@ mod tests {
             positions: None,
             token_values: None,
             typed_answers: None,
+            choice_id: None,
+            choice_ids: None,
         })
         .expect("valid evidence");
         assert_eq!(
@@ -3415,6 +3725,8 @@ mod tests {
             positions: None,
             token_values: None,
             typed_answers: None,
+            choice_id: None,
+            choice_ids: None,
         })
         .expect("valid fault selection");
         assert_eq!(
@@ -3437,6 +3749,8 @@ mod tests {
             positions: None,
             token_values: None,
             typed_answers: None,
+            choice_id: None,
+            choice_ids: None,
         })
         .expect("valid slots");
         assert_eq!(slots, SubmittedAnswer::FillSlots(values));
@@ -3457,6 +3771,8 @@ mod tests {
                 "policy_result".to_owned(),
                 "Deny".to_owned(),
             )])),
+            choice_id: None,
+            choice_ids: None,
         })
         .expect("valid typed answers");
         assert_eq!(

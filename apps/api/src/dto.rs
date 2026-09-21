@@ -6,8 +6,8 @@
 use std::collections::BTreeMap;
 
 use adaptive_learn_content::{
-    CanonicalAnswer, GlossaryTerm, Interaction, LearningDesign, LearningDomainMeta,
-    LearningModule, PlacementPoint, SourceRef,
+    CanonicalAnswer, GlossaryTerm, Interaction, LearningDesign, LearningDomainMeta, LearningModule,
+    PlacementPoint, SourceRef,
 };
 use adaptive_learn_domain::{
     AssessmentMode, ConceptWeight, InteractionType, MissionStatus, QuizMode,
@@ -173,6 +173,9 @@ pub struct QuestionView {
     pub task_id: String,
     /// Learner-facing prompt.
     pub prompt: String,
+    /// Optional authored instruction shown with the prompt, for example
+    /// `Choose TWO.`. Never reveals the answer.
+    pub instruction: Option<String>,
     /// Interaction family.
     pub interaction_type: InteractionType,
     /// Evidence mode.
@@ -188,7 +191,7 @@ pub struct QuestionView {
 }
 
 /// Answer primitives for one attempt. Exactly one field is set.
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct AnswerPayload {
     /// Item id to category id placements for classification.
     pub placements: Option<BTreeMap<String, String>>,
@@ -214,10 +217,14 @@ pub struct AnswerPayload {
     pub token_values: Option<BTreeMap<String, String>>,
     /// Slot id to raw typed text for typed fill-in-the-blank.
     pub typed_answers: Option<BTreeMap<String, String>>,
+    /// Selected choice id for multiple choice.
+    pub choice_id: Option<String>,
+    /// Selected choice ids for multiple response.
+    pub choice_ids: Option<Vec<String>>,
 }
 
 /// Reconstruction answer primitives.
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ReconstructionAnswerPayload {
     /// Slot id to piece id placements.
     pub placements: BTreeMap<String, String>,
@@ -1027,4 +1034,167 @@ pub struct ModelEvaluationResponse {
     /// Metrics sliced by assessment mode, source, track, domain, difficulty,
     /// spacing, and delayed-retrieval flag.
     pub slices: Vec<EvaluationSliceDto>,
+}
+
+/// Summary of one available practice test (exam simulation).
+///
+/// Metadata only: it never contains questions or answers. The scored count is
+/// an aggregate and does not reveal which items are unscored.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PracticeTestSummaryDto {
+    /// Stable practice-test identifier.
+    pub id: String,
+    /// Learner-facing title.
+    pub title: String,
+    /// Official exam code.
+    pub exam_code: String,
+    /// Certification version identifier.
+    pub certification_version: String,
+    /// Exam time limit in minutes.
+    pub time_limit_minutes: i64,
+    /// Total authored items.
+    pub question_count: usize,
+    /// Items that count toward the practice score.
+    pub scored_question_count: usize,
+    /// Response types present, for example `multiple_choice`.
+    pub question_types: Vec<String>,
+}
+
+/// Practice tests available for one certification.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PracticeTestListResponse {
+    /// Available practice tests.
+    pub practice_tests: Vec<PracticeTestSummaryDto>,
+}
+
+/// One learner-safe practice-test item, before submission.
+///
+/// No answer key, per-choice feedback, or scored flag is present.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PracticeTestItemView {
+    /// 1-based authored position.
+    pub order: i64,
+    /// The question to present, in authored order.
+    pub question: QuestionView,
+}
+
+/// Learner-safe practice-test content served before submission.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PracticeTestResponse {
+    /// Stable practice-test identifier.
+    pub id: String,
+    /// Learner-facing title.
+    pub title: String,
+    /// Official exam code.
+    pub exam_code: String,
+    /// Certification version identifier.
+    pub certification_version: String,
+    /// Immutable content version.
+    pub content_version: String,
+    /// Exam time limit in minutes.
+    pub time_limit_minutes: i64,
+    /// Total authored items.
+    pub question_count: usize,
+    /// Items that count toward the practice score.
+    pub scored_question_count: usize,
+    /// Response types present.
+    pub question_types: Vec<String>,
+    /// Items in authored presentation order.
+    pub items: Vec<PracticeTestItemView>,
+}
+
+/// The learner's answer to one practice-test item.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct PracticeTestAnswerRequest {
+    /// Question being answered.
+    pub question_id: String,
+    /// Answer primitives, keyed by the question's interaction type.
+    pub answer: AnswerPayload,
+}
+
+/// One-shot submission of a practice-test attempt.
+///
+/// Answers are keyed by question id; unanswered items are simply omitted.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct PracticeTestSubmissionRequest {
+    /// Submitted answers, at most one per question.
+    #[serde(default)]
+    pub answers: Vec<PracticeTestAnswerRequest>,
+}
+
+/// Scored accuracy for one exam domain, over scored items only.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PracticeTestDomainResult {
+    /// Domain identifier.
+    pub domain_id: String,
+    /// Scored items answered correctly in this domain.
+    pub correct: usize,
+    /// Scored items in this domain.
+    pub scored_count: usize,
+}
+
+/// One reviewed practice-test item, available only after submission.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PracticeTestItemResult {
+    /// 1-based authored position.
+    pub order: i64,
+    /// Question identifier.
+    pub question_id: String,
+    /// Owning domain.
+    pub domain_id: String,
+    /// Owning task.
+    pub task_id: String,
+    /// Learner-facing prompt.
+    pub prompt: String,
+    /// Optional authored instruction.
+    pub instruction: Option<String>,
+    /// Interaction family.
+    pub interaction_type: InteractionType,
+    /// Evidence mode.
+    pub assessment_mode: AssessmentMode,
+    /// Interaction definition, used to render labels in review.
+    pub interaction: Interaction,
+    /// Canonical answer, safe to reveal after submission.
+    pub canonical_answer: CanonicalAnswer,
+    /// Short explanation.
+    pub explanation: String,
+    /// Per-choice feedback keyed by choice id, safe after submission.
+    pub choice_feedback: BTreeMap<String, String>,
+    /// Whether the item counts toward the practice score.
+    pub is_scored: bool,
+    /// Whether the learner submitted any answer.
+    pub answered: bool,
+    /// The learner's submitted answer, when any.
+    pub submitted_answer: Option<AnswerPayload>,
+    /// Whether the submission was fully correct; `None` when unanswered.
+    pub correct: Option<bool>,
+}
+
+/// Full practice-test result and review, available only after submission.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PracticeTestResultResponse {
+    /// Practice-test identifier.
+    pub id: String,
+    /// Learner-facing title.
+    pub title: String,
+    /// Official exam code.
+    pub exam_code: String,
+    /// Total authored items.
+    pub total_questions: usize,
+    /// Items that count toward the practice score.
+    pub scored_question_count: usize,
+    /// Scored items answered correctly.
+    pub correct_count: usize,
+    /// Raw accuracy across scored items, in `[0, 1]`.
+    pub raw_accuracy: f64,
+    /// Items with a submitted answer.
+    pub answered_count: usize,
+    /// Items without a submitted answer.
+    pub unanswered_count: usize,
+    /// Per-domain scored accuracy, derived from authored content.
+    pub domain_breakdown: Vec<PracticeTestDomainResult>,
+    /// Per-item review in authored order.
+    pub questions: Vec<PracticeTestItemResult>,
+    /// Explicit note that this raw score is not an AWS scaled score.
+    pub score_note: String,
 }
