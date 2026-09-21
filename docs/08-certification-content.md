@@ -97,19 +97,30 @@ source references
 
 ## Learning modules (knowledge maps)
 
-Quiz bundles and learning content are distinct first-class content types:
+Quiz bundles, learning content, and practice tests are distinct first-class
+content types:
 
 ```text
 content/<category>/<certification>/<version>/
 ├── learning/            # LearningDomain knowledge maps (pre-quiz)
 │   └── learning-domain-1.json
-└── questions/           # ContentBundle quiz content (scored)
-    └── domain-1.json
+├── questions/           # ContentBundle quiz content (scored)
+│   └── domain-1.json
+└── practice-tests/      # practice-test-v1 simulated exams (not yet scored)
+    └── practice-test-1.json
 ```
 
-The build discovers learning sources by path (`**/learning/**/*.json`) and quiz
-sources as every other JSON file, so neither can be silently parsed as the
-other. `ContentRegistry` validates and exposes both; it does not merge them.
+The build discovers learning sources by path (`**/learning/**/*.json`),
+practice tests by `**/practice-tests/**/*.json`, and quiz sources as every
+other JSON file, so none can be silently parsed as another. `ContentRegistry`
+validates and exposes quiz and learning content; practice tests are embedded as
+a separate type but are not consumed yet, so their schema can evolve before
+scoring support lands.
+
+At runtime the API loads embedded content leniently: a file that fails to parse
+or validate is skipped, and the error is logged with its repository-relative
+path. Strict validation still runs in the test suite (`ContentRegistry::embedded`)
+so bad content fails CI rather than reaching learners.
 
 Each `LearningDomain` contains ordered `LearningModule`s of `KnowledgeNode`s.
 A node carries `concept_ids` (the bridge to quiz evidence), authored
