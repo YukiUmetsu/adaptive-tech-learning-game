@@ -8,6 +8,8 @@ import {
   type DerivedLearningState,
   type NodeState,
 } from "../state/learningProgress";
+import { stripInlineCode } from "../lib/inlineCode";
+import InlineText from "./InlineText";
 
 interface KnowledgeMapProps {
   domain: LearningDomainResponse;
@@ -79,11 +81,13 @@ export default function KnowledgeMap({
   return (
     <section
       className={`knowledge-module${available ? "" : " knowledge-module--locked"}`}
-      aria-label={module.title}
+      aria-label={stripInlineCode(module.title)}
     >
       <header className="knowledge-module-header">
         <div>
-          <h3>{module.title}</h3>
+          <h3>
+            <InlineText text={module.title} />
+          </h3>
           <p className="muted">
             {progress ? `${progress.unlocked} / ${progress.total} Nodes Online` : ""}
           </p>
@@ -95,12 +99,15 @@ export default function KnowledgeMap({
 
       {!available && lockedBy.length > 0 ? (
         <p className="knowledge-module-lock-note">
-          🔒 Complete {lockedBy.map((candidate) => candidate.title).join(", ")} to
-          unlock this path.
+          🔒 Complete{" "}
+          <InlineText
+            text={lockedBy.map((candidate) => candidate.title).join(", ")}
+          />{" "}
+          to unlock this path.
         </p>
       ) : null}
 
-      <ol className="knowledge-path" role="list" aria-label={module.title}>
+      <ol className="knowledge-path" role="list" aria-label={stripInlineCode(module.title)}>
         {orderedNodes.map((node, index) => {
           const previous = index > 0 ? orderedNodes[index - 1] : null;
           const nodeState = state.nodeState[node.id] ?? "locked";
@@ -144,7 +151,7 @@ export default function KnowledgeMap({
                     ? " knowledge-node--just-unlocked"
                     : ""
                 }`}
-                aria-label={`${node.title}, ${NODE_STATE_LABEL[nodeState]}`}
+                aria-label={`${stripInlineCode(node.title)}, ${NODE_STATE_LABEL[nodeState]}`}
                 aria-disabled={nodeState === "locked"}
                 onClick={() => {
                   if (nodeState !== "locked") {
@@ -156,9 +163,13 @@ export default function KnowledgeMap({
                   {NODE_ICON[nodeState]}
                 </span>
                 <span className="knowledge-node-body">
-                  <span className="knowledge-node-title">{node.title}</span>
+                  <span className="knowledge-node-title">
+                    <InlineText text={node.title} />
+                  </span>
                   <span className="knowledge-node-meta">
-                    {metaText(node, nodeState, domain, state)}
+                    <InlineText
+                      text={metaText(node, nodeState, domain, state)}
+                    />
                   </span>
                 </span>
                 <span className="knowledge-node-side">

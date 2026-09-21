@@ -17,7 +17,19 @@ pub use discovery::{
     is_prompt_complete, merge_domain_discovery,
 };
 
-pub use embedded::{EMBEDDED_LEARNING_SOURCES, EMBEDDED_SOURCES};
+/// A content JSON file embedded at build time.
+///
+/// `path` is repository-relative and used for diagnostics, so a validation
+/// error can name the file an author needs to fix.
+#[derive(Debug, Clone, Copy)]
+pub struct EmbeddedSource {
+    /// Repository-relative path, for diagnostics.
+    pub path: &'static str,
+    /// Raw JSON contents.
+    pub json: &'static str,
+}
+
+pub use embedded::{EMBEDDED_LEARNING_SOURCES, EMBEDDED_PRACTICE_TEST_SOURCES, EMBEDDED_SOURCES};
 pub use learning::*;
 pub use model::*;
 pub use registry::ContentRegistry;

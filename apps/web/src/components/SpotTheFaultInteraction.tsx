@@ -1,4 +1,5 @@
 import type { Choice } from "../api/types";
+import InlineText from "./InlineText";
 
 interface SpotTheFaultInteractionProps {
   elements: Choice[];
@@ -51,7 +52,9 @@ export default function SpotTheFaultInteraction({
                 <span className="selection-marker" aria-hidden="true">
                   {isSelected ? "⚑" : "○"}
                 </span>
-                <span>{element.label}</span>
+                <span>
+                  <InlineText text={element.label} />
+                </span>
                 <span className="sr-only">
                   {isSelected ? "flagged as faulty" : "not flagged"}
                 </span>

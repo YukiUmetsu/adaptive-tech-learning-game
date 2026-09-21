@@ -320,6 +320,7 @@ mod tests {
                 mastery_note: "Note".to_owned(),
             },
             source_refs: Vec::new(),
+            glossary: Vec::new(),
             coverage: LearningCoverage {
                 task_ids: Vec::new(),
                 skill_ids: Vec::new(),

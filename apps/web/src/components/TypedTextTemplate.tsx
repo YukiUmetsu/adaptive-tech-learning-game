@@ -2,6 +2,7 @@ import { useMemo } from "react";
 
 import type { TypedBlankSlot } from "../api/types";
 import { parseTypedText, type TypedBlankStatus } from "../lib/typedBlank";
+import InlineText from "./InlineText";
 import TypedBlankInput from "./TypedBlankInput";
 
 interface TypedTextTemplateProps {
@@ -32,7 +33,11 @@ export default function TypedTextTemplate({
     <p className="typed-fill-text">
       {segments.map((segment, index) => {
         if (segment.kind === "text") {
-          return <span key={`text-${index}`}>{segment.text}</span>;
+          return (
+            <span key={`text-${index}`}>
+              <InlineText text={segment.text} />
+            </span>
+          );
         }
 
         const slot = slotById.get(segment.slotId);

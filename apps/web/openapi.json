@@ -860,7 +860,7 @@
             }
           },
           "403": {
-            "description": "Mission belongs to another account or is not complete",
+            "description": "Mission belongs to another account",
             "content": {
               "application/json": {
                 "schema": {
@@ -871,6 +871,16 @@
           },
           "404": {
             "description": "Unknown mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Mission is not complete yet",
             "content": {
               "application/json": {
                 "schema": {
@@ -3062,6 +3072,24 @@
           "due"
         ]
       },
+      "GlossaryTerm": {
+        "type": "object",
+        "description": "One clickable term in learner-facing text, with its explanation.\n\nAuthors list terms here; the app highlights matching occurrences in learning\ntext and reveals the definition when the learner activates the term.",
+        "required": [
+          "term",
+          "definition"
+        ],
+        "properties": {
+          "definition": {
+            "type": "string",
+            "description": "Short learner-facing explanation shown when the term is activated."
+          },
+          "term": {
+            "type": "string",
+            "description": "The text to highlight, for example `guest memory`."
+          }
+        }
+      },
       "HealthResponse": {
         "type": "object",
         "description": "Safe operational health payload. Never includes connection strings, hosts,\nversions of dependencies, or other internals.",
@@ -3720,6 +3748,7 @@
           "domain",
           "learning_design",
           "source_refs",
+          "glossary",
           "modules"
         ],
         "properties": {
@@ -3745,6 +3774,13 @@
               "null"
             ],
             "description": "Official exam guide revision."
+          },
+          "glossary": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GlossaryTerm"
+            },
+            "description": "Clickable terms with short explanations, highlighted in learner text."
           },
           "learning_design": {
             "$ref": "#/components/schemas/LearningDesign",

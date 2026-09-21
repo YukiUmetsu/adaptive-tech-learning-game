@@ -1132,6 +1132,18 @@ export interface components {
          */
         FreshnessState: "unknown" | "fresh" | "becoming_due" | "due";
         /**
+         * @description One clickable term in learner-facing text, with its explanation.
+         *
+         *     Authors list terms here; the app highlights matching occurrences in learning
+         *     text and reveals the definition when the learner activates the term.
+         */
+        GlossaryTerm: {
+            /** @description Short learner-facing explanation shown when the term is activated. */
+            definition: string;
+            /** @description The text to highlight, for example `guest memory`. */
+            term: string;
+        };
+        /**
          * @description Safe operational health payload. Never includes connection strings, hosts,
          *     versions of dependencies, or other internals.
          */
@@ -1358,6 +1370,8 @@ export interface components {
             domain: components["schemas"]["LearningDomainMeta"];
             /** @description Official exam guide revision. */
             exam_guide_revision?: string | null;
+            /** @description Clickable terms with short explanations, highlighted in learner text. */
+            glossary: components["schemas"]["GlossaryTerm"][];
             /** @description Learner-facing vocabulary and unlock rules. */
             learning_design: components["schemas"]["LearningDesign"];
             /** @description Modules with their knowledge nodes. */
@@ -2974,7 +2988,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Mission belongs to another account or is not complete */
+            /** @description Mission belongs to another account */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2985,6 +2999,15 @@ export interface operations {
             };
             /** @description Unknown mission */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Mission is not complete yet */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

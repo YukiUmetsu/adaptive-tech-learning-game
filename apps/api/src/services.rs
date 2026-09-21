@@ -137,6 +137,7 @@ fn learning_domain_response(
         domain: domain.domain.clone(),
         learning_design: domain.learning_design.clone(),
         source_refs: domain.source_refs.clone(),
+        glossary: domain.glossary.clone(),
         modules: domain.modules.clone(),
     }
 }

@@ -7,6 +7,8 @@ import {
 } from "react";
 
 import type { GraphNode } from "../api/types";
+import { stripInlineCode } from "../lib/inlineCode";
+import InlineText from "./InlineText";
 import {
   boundaryOffset as boundaryOffsetFor,
   edgeGeometry as lineGeometry,
@@ -335,7 +337,7 @@ export default function NodeConnectionInteraction({
               dragStart.current = null;
             }}
           >
-            {node.label}
+            <InlineText text={node.label} />
           </button>
         ))}
       </div>
@@ -348,19 +350,21 @@ export default function NodeConnectionInteraction({
             <li key={`${from}->${to}`}>
               <span>
                 <span className="edge-chip">
-                  {nodeById.get(from)?.label ?? from}
+                  <InlineText text={nodeById.get(from)?.label ?? from} />
                 </span>
                 <span aria-hidden="true" className="edge-arrow">
                   →
                 </span>
                 <span className="edge-chip">
-                  {nodeById.get(to)?.label ?? to}
+                  <InlineText text={nodeById.get(to)?.label ?? to} />
                 </span>
               </span>
               <button
                 type="button"
                 disabled={disabled}
-                aria-label={`Remove connection ${nodeById.get(from)?.label ?? from} to ${nodeById.get(to)?.label ?? to}`}
+                aria-label={`Remove connection ${stripInlineCode(
+                  nodeById.get(from)?.label ?? from,
+                )} to ${stripInlineCode(nodeById.get(to)?.label ?? to)}`}
                 onClick={() => toggleEdge(from, to)}
               >
                 Remove

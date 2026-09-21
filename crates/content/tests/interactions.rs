@@ -49,8 +49,8 @@ fn canonical_kind(answer: &CanonicalAnswer) -> &'static str {
 fn demo_source() -> &'static str {
     adaptive_learn_content::EMBEDDED_SOURCES
         .iter()
-        .copied()
-        .find(|source| source.contains("\"aws-soa-c03-demo\""))
+        .map(|source| source.json)
+        .find(|json| json.contains("\"aws-soa-c03-demo\""))
         .expect("demo bundle is embedded")
 }
 
@@ -72,8 +72,8 @@ fn demo_question(id: &str) -> adaptive_learn_content::Question {
 fn pytorch_source() -> &'static str {
     adaptive_learn_content::EMBEDDED_SOURCES
         .iter()
-        .copied()
-        .find(|source| source.contains("\"pytorch-typed-fill-demo\""))
+        .map(|source| source.json)
+        .find(|json| json.contains("\"pytorch-typed-fill-demo\""))
         .expect("pytorch demo bundle is embedded")
 }
 

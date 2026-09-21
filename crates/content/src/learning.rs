@@ -38,6 +38,9 @@ pub struct LearningDomain {
     pub learning_design: LearningDesign,
     /// Domain-level official references.
     pub source_refs: Vec<SourceRef>,
+    /// Clickable terms with short explanations, highlighted in learner text.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub glossary: Vec<GlossaryTerm>,
     /// Authored coverage metadata, used to validate the curriculum shape.
     pub coverage: LearningCoverage,
     /// Authoring notes. Not learner-facing.
@@ -69,10 +72,21 @@ pub struct LearningDesign {
     pub mastery_note: String,
 }
 
+/// One clickable term in learner-facing text, with its explanation.
+///
+/// Authors list terms here; the app highlights matching occurrences in learning
+/// text and reveals the definition when the learner activates the term.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+pub struct GlossaryTerm {
+    /// The text to highlight, for example `guest memory`.
+    pub term: String,
+    /// Short learner-facing explanation shown when the term is activated.
+    pub definition: String,
+}
+
 /// Authored counts used to validate the curriculum at load time.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
-pub struct LearningCoverage {
-    /// Exam task ids covered by the domain's modules.
+pub struct LearningCoverage {    /// Exam task ids covered by the domain's modules.
     pub task_ids: Vec<String>,
     /// Exam skill ids covered by the domain's modules.
     pub skill_ids: Vec<String>,
@@ -492,9 +506,31 @@ pub fn validate_learning_domain(domain: &LearningDomain) -> Result<(), Vec<Conte
     }
 
     validate_modules(domain, &mut errors);
+    validate_glossary(domain, &mut errors);
     validate_coverage(domain, &mut errors);
 
     errors_or_ok(errors)
+}
+
+/// Validates authored glossary terms: non-empty fields and unique terms.
+fn validate_glossary(domain: &LearningDomain, errors: &mut Vec<ContentError>) {
+    let mut seen: HashSet<String> = HashSet::new();
+    for term in &domain.glossary {
+        if term.term.trim().is_empty() || term.definition.trim().is_empty() {
+            errors.push(ContentError::new(
+                "learning_glossary_field_missing",
+                "glossary terms need a non-empty term and definition",
+            ));
+            continue;
+        }
+        let key = term.term.trim().to_lowercase();
+        if !seen.insert(key) {
+            errors.push(ContentError::new(
+                "learning_glossary_duplicate_term",
+                format!("glossary term `{}` is defined more than once", term.term),
+            ));
+        }
+    }
 }
 
 fn validate_modules(domain: &LearningDomain, errors: &mut Vec<ContentError>) {

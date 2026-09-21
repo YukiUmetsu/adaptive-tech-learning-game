@@ -16,6 +16,10 @@ pub struct ContentError {
     pub code: &'static str,
     /// Human-readable explanation.
     pub message: String,
+    /// Repository-relative source file, when the error came from a discovered
+    /// file. `None` for errors that only make sense across sources or that come
+    /// from in-memory validation.
+    pub source: Option<String>,
 }
 
 impl ContentError {
@@ -23,7 +27,14 @@ impl ContentError {
         Self {
             code,
             message: message.into(),
+            source: None,
         }
+    }
+
+    /// Attaches the source file this error came from.
+    pub(crate) fn with_source(mut self, source: impl Into<String>) -> Self {
+        self.source = Some(source.into());
+        self
     }
 }
 

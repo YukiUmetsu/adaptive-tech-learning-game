@@ -1,8 +1,10 @@
 import { useMemo } from "react";
 
 import type { NodeProgressDto, TrackMapResponse } from "../api/types";
+import { stripInlineCode } from "../lib/inlineCode";
 import { deriveNodeVisual, type NodeVisual } from "../state/knowledgeSignal";
 import type { DerivedLearningState } from "../state/learningProgress";
+import InlineText from "./InlineText";
 import KnowledgeNodeGlyph from "./KnowledgeNodeGlyph";
 
 interface TrackKnowledgeMapProps {
@@ -72,7 +74,10 @@ export default function TrackKnowledgeMap({
   }
 
   return (
-    <div className="track-map" aria-label={`${domain.domain.name} Knowledge Map`}>
+    <div
+      className="track-map"
+      aria-label={`${stripInlineCode(domain.domain.name)} Knowledge Map`}
+    >
       {domain.modules.map((module) => {
         const ordered = [...module.nodes].sort(
           (a, b) =>
@@ -81,7 +86,9 @@ export default function TrackKnowledgeMap({
         );
         return (
           <div key={module.id} className="track-map-module">
-            <p className="track-map-module-title">{module.title}</p>
+            <p className="track-map-module-title">
+              <InlineText text={module.title} />
+            </p>
             <ol className="track-map-nodes" role="list">
               {ordered.map((node, index) => {
                 const visual = visuals.get(node.id);

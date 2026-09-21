@@ -7,8 +7,8 @@ use serde_json::Value;
 fn embedded_source() -> &'static str {
     EMBEDDED_SOURCES
         .iter()
-        .copied()
-        .find(|source| source.contains("\"aws-soa-c03\""))
+        .map(|source| source.json)
+        .find(|json| json.contains("\"aws-soa-c03\""))
         .expect("SOA-C03 content is embedded")
 }
 

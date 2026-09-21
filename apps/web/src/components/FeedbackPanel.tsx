@@ -6,9 +6,10 @@ import type {
   QuestionView,
 } from "../api/types";
 import { emitBitsEarned } from "../lib/bitsFly";
-import { canonicalConnectionCount, reviewDetails } from "../state/feedback";
+import { reviewDetails, canonicalConnectionCount } from "../state/feedback";
 import { playCorrect, playWrong } from "../state/sound";
 import AnimatedCheck from "./AnimatedCheck";
+import InlineText from "./InlineText";
 
 interface FeedbackPanelProps {
   feedback: FeedbackResponse;
@@ -92,7 +93,7 @@ export default function FeedbackPanel({
       </div>
 
       <p>
-        {feedback.explanation}
+        <InlineText text={feedback.explanation} />
         {connectionCount != null ? (
           <span className="feedback-connection-count">
             {feedback.explanation ? " " : ""}
@@ -111,7 +112,7 @@ export default function FeedbackPanel({
                 key={`${detail.kind}-${index}`}
                 className={`review-${detail.kind}`}
               >
-                {detail.text}
+                <InlineText text={detail.text} />
               </li>
             ))}
           </ul>

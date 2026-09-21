@@ -1,6 +1,8 @@
 import type { EvidenceLevel, FreshnessState, KnowledgeNode } from "../api/types";
+import { stripInlineCode } from "../lib/inlineCode";
 import { assessmentModeLabel, type NodeVisual } from "../state/knowledgeSignal";
 import { ANSWER_REWARD_RANGE, DAILY_MISSION_BONUS_BITS } from "../state/rewards";
+import InlineText from "./InlineText";
 
 interface NodeSignalPanelProps {
   node: KnowledgeNode;
@@ -58,7 +60,10 @@ export default function NodeSignalPanel({
   const hasData = visual.modes.length > 0 || visual.evidence !== "none";
 
   return (
-    <aside className="node-panel" aria-label={`${node.title} details`}>
+    <aside
+      className="node-panel"
+      aria-label={`${stripInlineCode(node.title)} details`}
+    >
       <button
         type="button"
         className="node-panel-close"
@@ -86,9 +91,15 @@ export default function NodeSignalPanel({
         </span>
 
         <div className="node-panel-hero-text">
-          <p className="node-panel-domain">{domainName}</p>
-          <h3>{node.title}</h3>
-          <p className="node-panel-module">{moduleTitle}</p>
+          <p className="node-panel-domain">
+            <InlineText text={domainName} />
+          </p>
+          <h3>
+            <InlineText text={node.title} />
+          </h3>
+          <p className="node-panel-module">
+            <InlineText text={moduleTitle} />
+          </p>
         </div>
       </div>
 

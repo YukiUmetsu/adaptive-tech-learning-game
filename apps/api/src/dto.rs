@@ -6,8 +6,8 @@
 use std::collections::BTreeMap;
 
 use adaptive_learn_content::{
-    CanonicalAnswer, Interaction, LearningDesign, LearningDomainMeta, LearningModule,
-    PlacementPoint, SourceRef,
+    CanonicalAnswer, GlossaryTerm, Interaction, LearningDesign, LearningDomainMeta,
+    LearningModule, PlacementPoint, SourceRef,
 };
 use adaptive_learn_domain::{
     AssessmentMode, ConceptWeight, InteractionType, MissionStatus, QuizMode,
@@ -564,6 +564,8 @@ pub struct LearningDomainResponse {
     pub learning_design: LearningDesign,
     /// Domain-level references.
     pub source_refs: Vec<SourceRef>,
+    /// Clickable terms with short explanations, highlighted in learner text.
+    pub glossary: Vec<GlossaryTerm>,
     /// Modules with their knowledge nodes.
     pub modules: Vec<LearningModule>,
 }

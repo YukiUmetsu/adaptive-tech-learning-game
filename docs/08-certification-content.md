@@ -136,6 +136,13 @@ hand-count offsets and the raw `code` stays valid and copyable. A code file is
 never editable or executed. See `crates/content/src/learning.rs` for the
 authoritative schema and validation.
 
+A `LearningDomain` may carry a `glossary`: a list of `{ "term", "definition" }`
+entries. The app highlights each term where it appears in learner-facing
+learning text (case-insensitive, whole words, and never inside a `code` span)
+and reveals the definition when the learner activates it. Terms and definitions
+must be non-empty and unique. The glossary is explanation only: it never affects
+discovery progress, scoring, or rewards.
+
 A `table` may carry optional `progressive_reveal` to reveal discovery one row,
 one column, or one cell at a time. Its `initially_visible` lists combine: a cell
 is visible before any reveal when its column, its row, or its derived cell id

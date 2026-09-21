@@ -13,9 +13,9 @@ use serde_json::{Value, json};
 fn learning_source(certification_id: &str, domain_id: &str) -> &'static str {
     EMBEDDED_LEARNING_SOURCES
         .iter()
-        .copied()
-        .find(|source| {
-            serde_json::from_str::<Value>(source)
+        .map(|source| source.json)
+        .find(|json| {
+            serde_json::from_str::<Value>(json)
                 .ok()
                 .is_some_and(|value| {
                     value["certification_id"].as_str() == Some(certification_id)

@@ -5,6 +5,7 @@ import {
 } from "../lib/comparison";
 import { isProgressiveTable } from "../lib/learningElements";
 import { PROMPT_KIND_META, promptAccessibleName, promptWords } from "../state/learningVocabulary";
+import InlineText from "./InlineText";
 import RevealContent from "./RevealContent";
 
 interface KnowledgePromptProps {
@@ -71,7 +72,9 @@ export default function KnowledgePrompt({
       {interactive ? (
         <>
           {prompt.placeholder.trim().length > 0 ? (
-            <p className="knowledge-prompt-context">{prompt.placeholder}</p>
+            <p className="knowledge-prompt-context">
+              <InlineText text={prompt.placeholder} />
+            </p>
           ) : null}
           <RevealContent
             reveal={prompt.reveal}
@@ -122,12 +125,12 @@ export default function KnowledgePrompt({
                   key={`${index}-${segment}`}
                   className="knowledge-prompt-blank-cell"
                 >
-                  {segment}
+                  <InlineText text={segment} terms={[]} />
                 </span>
               ))}
             </span>
           ) : (
-            prompt.placeholder
+            <InlineText text={prompt.placeholder} terms={[]} />
           )}
         </button>
       )}

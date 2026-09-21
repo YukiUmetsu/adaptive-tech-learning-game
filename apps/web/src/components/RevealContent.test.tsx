@@ -14,6 +14,22 @@ describe("RevealContent", () => {
     expect(screen.getByText("Records API activity.")).toBeInTheDocument();
   });
 
+  it("renders backticked code terms in prose as inline code", () => {
+    const { container } = render(
+      <RevealContent
+        reveal={{
+          type: "text",
+          text: "Publish `mem_used_percent = 78.4` and ship `/var/log/app.log`.",
+        }}
+      />,
+    );
+
+    const codes = container.querySelectorAll("code.inline-code");
+    expect(codes).toHaveLength(2);
+    expect(codes[0]).toHaveTextContent("mem_used_percent = 78.4");
+    expect(codes[1]).toHaveTextContent("/var/log/app.log");
+  });
+
   it("renders a sequence with directional arrows", () => {
     const { container } = render(
       <RevealContent reveal={{ type: "sequence", items: ["Alpha", "Beta", "Gamma"] }} />,

@@ -103,4 +103,49 @@ describe("KnowledgeCard charge", () => {
       screen.getByLabelText("1 of 2 prompts revealed"),
     ).toBeInTheDocument();
   });
+
+  it("highlights glossary terms in revealed learning text", () => {
+    render(
+      <KnowledgeCard
+        node={node}
+        moduleTitle="Foundations"
+        state="in_progress"
+        revealedPromptIds={["what"]}
+        revealedElementIds={{}}
+        nextNode={null}
+        reducedMotion
+        onReveal={() => {}}
+        onRevealElement={() => {}}
+        onClose={() => {}}
+        onDiscoverNext={() => {}}
+        glossary={[{ term: "IaC", definition: "Infrastructure as Code." }]}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /IaC/ })).toBeInTheDocument();
+  });
+
+  it("does not make the card heading a glossary term", () => {
+    render(
+      <KnowledgeCard
+        node={node}
+        moduleTitle="Foundations"
+        state="in_progress"
+        revealedPromptIds={["what"]}
+        revealedElementIds={{}}
+        nextNode={null}
+        reducedMotion
+        onReveal={() => {}}
+        onRevealElement={() => {}}
+        onClose={() => {}}
+        onDiscoverNext={() => {}}
+        glossary={[{ term: "Terraform", definition: "Infrastructure as Code." }]}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Terraform versions" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Terraform/ })).toBeNull();
+  });
 });

@@ -1,4 +1,5 @@
 import type { Choice } from "../api/types";
+import InlineText from "./InlineText";
 
 interface EvidenceSelectionInteractionProps {
   evidence: Choice[];
@@ -52,7 +53,9 @@ export default function EvidenceSelectionInteraction({
                 <span className="selection-marker" aria-hidden="true">
                   {isSelected ? "✓" : "○"}
                 </span>
-                <span>{option.label}</span>
+                <span>
+                  <InlineText text={option.label} />
+                </span>
                 <span className="sr-only">
                   {isSelected ? "selected" : "not selected"}
                 </span>

@@ -17,9 +17,9 @@ fn registry() -> ContentRegistry {
 fn learning_source_for(certification_id: &str, domain_id: &str) -> &'static str {
     EMBEDDED_LEARNING_SOURCES
         .iter()
-        .copied()
-        .find(|source| {
-            serde_json::from_str::<Value>(source)
+        .map(|source| source.json)
+        .find(|json| {
+            serde_json::from_str::<Value>(json)
                 .ok()
                 .is_some_and(|value| {
                     value["certification_id"].as_str() == Some(certification_id)
@@ -27,6 +27,10 @@ fn learning_source_for(certification_id: &str, domain_id: &str) -> &'static str 
                 })
         })
         .unwrap_or_else(|| panic!("learning source for {certification_id}/{domain_id} is embedded"))
+}
+
+fn embedded_quiz_sources() -> Vec<&'static str> {
+    EMBEDDED_SOURCES.iter().map(|source| source.json).collect()
 }
 
 fn learning_value(certification_id: &str, domain_id: &str) -> Value {
@@ -407,7 +411,7 @@ fn rejects_unknown_concept_against_quiz_bundle() {
     value["modules"][0]["nodes"][0]["concept_ids"] = Value::from(vec!["aws.does_not_exist"]);
     let mutated = serde_json::to_string(&value).expect("serialize mutation");
 
-    let errors = ContentRegistry::from_sources(EMBEDDED_SOURCES, &[mutated.as_str()])
+    let errors = ContentRegistry::from_sources(&embedded_quiz_sources(), &[mutated.as_str()])
         .expect_err("unknown concept must be rejected");
     assert!(
         errors
@@ -740,7 +744,7 @@ fn rejects_duplicate_code_annotation_anchor() {
 
 #[test]
 fn rejects_malformed_learning_json_distinctly() {
-    let errors = ContentRegistry::from_sources(EMBEDDED_SOURCES, &["{\"not\":\"a map\"}"])
+    let errors = ContentRegistry::from_sources(&embedded_quiz_sources(), &["{\"not\":\"a map\"}"])
         .expect_err("malformed learning json must be rejected");
     assert!(
         errors

@@ -7,6 +7,8 @@ import {
   tableColumnWidths,
   type TableCellState,
 } from "../lib/learningElements";
+import { stripInlineCode } from "../lib/inlineCode";
+import InlineText from "./InlineText";
 
 /** Discovery state and callbacks for one progressive table. */
 export interface ProgressiveTableInteraction {
@@ -74,7 +76,7 @@ export default function ProgressiveLearningTable({
       identityColumn !== undefined &&
       state.isCellInitiallyVisible(rowId, identityColumn.id)
     ) {
-      return cells[identityColumn.id] ?? rowId;
+      return stripInlineCode(cells[identityColumn.id] ?? rowId);
     }
     return rowId;
   };
@@ -103,7 +105,7 @@ export default function ProgressiveLearningTable({
           <button
             type="button"
             className="learning-table-reveal"
-            aria-label={`Reveal ${column.label} for ${rowLabel(rowId, row.cells)}`}
+            aria-label={`Reveal ${stripInlineCode(column.label)} for ${rowLabel(rowId, row.cells)}`}
             disabled={disabled}
             onClick={() => interaction?.onRevealElement(unit)}
           >
@@ -132,7 +134,7 @@ export default function ProgressiveLearningTable({
         inner = hiddenPlaceholder();
       }
     } else {
-      inner = row.cells[column.id] ?? "";
+      inner = <InlineText text={row.cells[column.id] ?? ""} />;
     }
 
     const key = `${row.id ?? rowIndex}-${column.id}`;
@@ -172,12 +174,12 @@ export default function ProgressiveLearningTable({
                     <button
                       type="button"
                       className="learning-table-reveal learning-table-reveal--column"
-                      aria-label={`Reveal column ${column.label}`}
+                      aria-label={`Reveal column ${stripInlineCode(column.label)}`}
                       disabled={disabled}
                       onClick={() => interaction?.onRevealElement(unit)}
                     >
                       <span className="learning-table-reveal-column-label">
-                        {column.label}
+                        <InlineText text={column.label} terms={[]} />
                       </span>
                       <span
                         className="learning-table-reveal-column-hint"
@@ -195,7 +197,7 @@ export default function ProgressiveLearningTable({
                   scope="col"
                   className={isUnit ? "learning-table-th--revealed" : undefined}
                 >
-                  {column.label}
+                  <InlineText text={column.label} />
                 </th>
               );
             })}

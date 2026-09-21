@@ -14,7 +14,9 @@ import type {
   ReconstructionSlot,
 } from "../api/types";
 import { edgeGeometry as lineGeometry, type NodeSize } from "../lib/connection";
+import { stripInlineCode } from "../lib/inlineCode";
 import { stableShuffle } from "../lib/shuffle";
+import InlineText from "./InlineText";
 
 interface ReconstructionInteractionProps {
   layout: ReconstructionLayout;
@@ -259,7 +261,7 @@ export default function ReconstructionInteraction({
                   setSelectedPiece(selectedPiece === piece.id ? null : piece.id)
                 }
               >
-                {piece.label}
+                <InlineText text={piece.label} />
               </button>
             </li>
           ))}
@@ -449,9 +451,9 @@ export default function ReconstructionInteraction({
                       .join(" ")}
                     aria-label={
                       node.kind === "fixed"
-                        ? `Provided component ${node.label}`
+                        ? `Provided component ${stripInlineCode(node.label)}`
                         : node.filled
-                          ? `Placed component ${node.label}; click to remove, drag to move`
+                          ? `Placed component ${stripInlineCode(node.label)}; click to remove, drag to move`
                           : "Empty slot; drop a component here"
                     }
                     disabled={disabled}
@@ -477,14 +479,14 @@ export default function ReconstructionInteraction({
                       bodyActivate(node);
                     }}
                   >
-                    {node.label}
+                    <InlineText text={node.label} />
                   </button>
 
                   {node.edgeId ? (
                     <button
                       type="button"
                       className="reconstruction-handle"
-                      aria-label={`Relationship from ${node.label}`}
+                      aria-label={`Relationship from ${stripInlineCode(node.label)}`}
                       aria-pressed={selected}
                       disabled={disabled}
                       draggable={!disabled}
@@ -598,7 +600,9 @@ export default function ReconstructionInteraction({
       <ol className="reconstruction-scaffold" aria-label="Reconstruction slots">
         {startNodes.map((node) => (
           <li key={node.id} className="reconstruction-step">
-            <span className="reconstruction-node fixed">{node.label}</span>
+            <span className="reconstruction-node fixed">
+              <InlineText text={node.label} />
+            </span>
             <span className="reconstruction-arrow" aria-hidden="true">
               ↓
             </span>
@@ -629,7 +633,9 @@ export default function ReconstructionInteraction({
 
         {endNodes.map((node) => (
           <li key={node.id} className="reconstruction-step">
-            <span className="reconstruction-node fixed">{node.label}</span>
+            <span className="reconstruction-node fixed">
+              <InlineText text={node.label} />
+            </span>
           </li>
         ))}
       </ol>

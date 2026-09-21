@@ -34,19 +34,30 @@ async fn main() -> anyhow::Result<()> {
         db::MIGRATOR.run(&pool).await.context("apply migrations")?;
     }
 
-    let content = ContentRegistry::embedded().map_err(|errors| {
-        let details = errors
-            .iter()
-            .map(|error| format!("{}: {}", error.code, error.message))
-            .collect::<Vec<_>>()
-            .join("; ");
-        anyhow::anyhow!("content validation failed: {details}")
-    })?;
+    // Content problems are logged with their source file instead of aborting
+    // startup: one malformed authoring file must not take the API offline.
+    let (content, content_errors) = ContentRegistry::embedded_lenient();
+    for error in &content_errors {
+        tracing::error!(
+            code = error.code,
+            source = error.source.as_deref().unwrap_or("<unknown>"),
+            "content validation error: {}",
+            error.message
+        );
+    }
     let content = Arc::new(content);
-    tracing::info!(
-        bundles = content.bundles().len(),
-        "loaded and validated content"
-    );
+    if content_errors.is_empty() {
+        tracing::info!(
+            bundles = content.bundles().len(),
+            "loaded and validated content"
+        );
+    } else {
+        tracing::warn!(
+            bundles = content.bundles().len(),
+            errors = content_errors.len(),
+            "starting with partially valid content; see content validation errors above"
+        );
+    }
 
     let state = AppState::new(pool.clone(), content, auth::build_authenticator(&config));
     let app = build_router(state, &config);

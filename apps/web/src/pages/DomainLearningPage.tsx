@@ -390,6 +390,7 @@ export default function DomainLearningPage() {
           }
           onClose={() => setSelectedNodeId(null)}
           onDiscoverNext={selectNode}
+          glossary={data.glossary}
         />
       ) : (
         <KnowledgeMap

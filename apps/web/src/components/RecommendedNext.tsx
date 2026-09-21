@@ -6,6 +6,7 @@ import { useRecommendation } from "../hooks/useRecommendation";
 import { loadTrackDiscovery } from "../state/learningProgress";
 import { startMission } from "../state/mission";
 import { reportRecommendationEvent } from "../state/recommendation";
+import InlineText from "./InlineText";
 
 interface RecommendedNextProps {
   /** Learning track identifier. */
@@ -160,7 +161,9 @@ export default function RecommendedNext({
     <section className="recommended-next" aria-label="Recommended next">
       <div className="recommended-next-body">
         <p className="recommended-next-kicker">Recommended next</p>
-        <h2 className="recommended-next-title">{recommendation.title}</h2>
+        <h2 className="recommended-next-title">
+          <InlineText text={recommendation.title} />
+        </h2>
         <p className="recommended-next-reason muted">
           {REASON_LABELS[recommendation.reason] ?? "Suggested next step"}
         </p>

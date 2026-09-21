@@ -1,6 +1,8 @@
 import { memo } from "react";
 
+import { stripInlineCode } from "../lib/inlineCode";
 import { describeNodeVisual, type NodeVisual } from "../state/knowledgeSignal";
+import InlineText from "./InlineText";
 
 interface KnowledgeNodeGlyphProps {
   nodeId: string;
@@ -45,7 +47,7 @@ function KnowledgeNodeGlyph({
       ]
         .filter(Boolean)
         .join(" ")}
-      aria-label={describeNodeVisual(title, visual)}
+      aria-label={describeNodeVisual(stripInlineCode(title), visual)}
       aria-pressed={selected}
       onClick={() => onSelect(nodeId)}
     >
@@ -72,7 +74,9 @@ function KnowledgeNodeGlyph({
           ))}
         </span>
       ) : null}
-      <span className="signal-node-label">{title}</span>
+      <span className="signal-node-label">
+        <InlineText text={title} />
+      </span>
     </button>
   );
 }

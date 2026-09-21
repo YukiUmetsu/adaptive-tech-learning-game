@@ -5,6 +5,7 @@ import type { AuthStatus } from "../auth/context";
 import { useDailyMission } from "../hooks/useDailyMission";
 import { completedItemCount, dailyActivityPresentation } from "../state/dailyMission";
 import { loadTrackDiscovery } from "../state/learningProgress";
+import InlineText from "./InlineText";
 
 interface DailyMissionCardProps {
   /** Learning track identifier. */
@@ -120,10 +121,10 @@ export default function DailyMissionCard({
               </span>
               <span className="daily-mission-item-body">
                 <span className="daily-mission-item-title">
-                  {presentation.primary}
+                  <InlineText text={presentation.primary} />
                 </span>
                 <span className="muted daily-mission-item-meta">
-                  {presentation.kind} · {item.domain_name}
+                  {presentation.kind} · <InlineText text={item.domain_name} />
                 </span>
               </span>
             </li>

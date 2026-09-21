@@ -4,6 +4,7 @@ import type {
   TypedFillTableRow,
 } from "../api/types";
 import type { TypedBlankStatus } from "../lib/typedBlank";
+import InlineText from "./InlineText";
 import TypedCodeTemplate from "./TypedCodeTemplate";
 import TypedTextTemplate from "./TypedTextTemplate";
 
@@ -39,7 +40,7 @@ export default function TypedTableTemplate({
           <tr>
             {columns.map((column) => (
               <th key={column.id} scope="col">
-                {column.label}
+                <InlineText text={column.label} />
               </th>
             ))}
           </tr>

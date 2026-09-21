@@ -30,6 +30,7 @@ import { loadDailyItemReview } from "../state/missionReview";
 import { playCheck } from "../state/sound";
 import { flushAuxiliary, loadServerDiscovery } from "../state/syncAuxiliary";
 import { useLearningDomain } from "../hooks/useLearningDomain";
+import InlineText from "./InlineText";
 import KnowledgeCard from "./KnowledgeCard";
 
 interface DailyMissionRunnerProps {
@@ -235,7 +236,9 @@ function DailyStep({
         {presentation.icon}
       </span>
       <span className="daily-mission-item-body">
-        <span className="daily-mission-item-title">{presentation.primary}</span>
+        <span className="daily-mission-item-title">
+          <InlineText text={presentation.primary} />
+        </span>
         <span className="muted daily-mission-item-meta">
           {presentation.kind} · {item.domain_name}
         </span>
@@ -416,7 +419,9 @@ function DailyNodeActivity({
   if (state.status === "error" || !data || !node || !derived) {
     return (
       <section className="daily-runner-activity">
-        <h2>{item.title}</h2>
+        <h2>
+          <InlineText text={item.title} />
+        </h2>
         <p role="alert">This task is unavailable right now.</p>
       </section>
     );
@@ -437,6 +442,7 @@ function DailyNodeActivity({
         onClose={onAdvanced}
         onDiscoverNext={() => {}}
         headerAction={null}
+        glossary={data.glossary}
         unlockedActions={
           completed ? (
             <button type="button" className="primary" onClick={onAdvanced}>
@@ -485,7 +491,9 @@ function DailyPracticeActivity({
 
   return (
     <section className="daily-runner-activity" aria-label="Current task">
-      <h2>{presentation.primary}</h2>
+      <h2>
+        <InlineText text={presentation.primary} />
+      </h2>
       <p className="muted">
         {presentation.kind} · {item.domain_name} · ~{item.estimated_minutes} min
       </p>
@@ -544,7 +552,9 @@ function DailyNodeReview({
   if (!data || !node || !full) {
     return (
       <section className="daily-runner-activity">
-        <h2>{item.title}</h2>
+        <h2>
+          <InlineText text={item.title} />
+        </h2>
         <p role="alert">This review is unavailable right now.</p>
         <button type="button" onClick={onBack}>
           Back to mission
@@ -573,6 +583,7 @@ function DailyNodeReview({
             Back to mission
           </button>
         }
+        glossary={data.glossary}
       />
     </section>
   );
@@ -616,7 +627,9 @@ function DailyPracticeReview({
   return (
     <section className="daily-runner-activity daily-review" aria-label="Review">
       <header className="daily-review-head">
-        <h2>{presentation.primary}</h2>
+        <h2>
+          <InlineText text={presentation.primary} />
+        </h2>
         <button type="button" onClick={onBack}>
           Back to mission
         </button>
@@ -639,7 +652,9 @@ function DailyPracticeReview({
             const attempt = attemptFor(question.id);
             return (
               <li key={question.id} className="daily-review-question">
-                <p className="daily-review-prompt">{question.prompt}</p>
+                <p className="daily-review-prompt">
+                  <InlineText text={question.prompt} />
+                </p>
                 <p className="muted daily-review-meta">
                   {question.assessment_mode.replace(/_/g, " ")}
                   {attempt
@@ -655,17 +670,19 @@ function DailyPracticeReview({
                       <li key={`${question.id}-${index}`}>
                         {line.label ? (
                           <span className="daily-review-answer-label">
-                            {line.label}
+                            <InlineText text={line.label} />
                           </span>
                         ) : null}
-                        <span>{line.value}</span>
+                        <span>
+                          <InlineText text={line.value} />
+                        </span>
                       </li>
                     ))}
                   </ul>
                 </div>
                 {question.explanation ? (
                   <p className="daily-review-explanation">
-                    {question.explanation}
+                    <InlineText text={question.explanation} />
                   </p>
                 ) : null}
               </li>

@@ -1,12 +1,13 @@
 import { useMemo, type ReactNode } from "react";
 
-import type { KnowledgeNode } from "../api/types";
+import type { KnowledgeNode, GlossaryTerm } from "../api/types";
 import {
   isPromptComplete,
   nodePromptProgress,
   type NodeState,
 } from "../state/learningProgress";
-import KnowledgePrompt from "./KnowledgePrompt";
+import GlossaryProvider from "./GlossaryProvider";
+import InlineText from "./InlineText";import KnowledgePrompt from "./KnowledgePrompt";
 
 interface KnowledgeCardProps {
   node: KnowledgeNode;
@@ -36,6 +37,8 @@ interface KnowledgeCardProps {
    * Omitted keeps the default, preserving existing map behavior.
    */
   unlockedActions?: ReactNode;
+  /** Domain glossary terms highlighted in the card's learner-facing text. */
+  glossary?: readonly GlossaryTerm[];
 }
 
 /**
@@ -60,6 +63,7 @@ export default function KnowledgeCard({
   readOnly = false,
   headerAction,
   unlockedActions,
+  glossary = [],
 }: KnowledgeCardProps) {
   const elementSets = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -79,14 +83,19 @@ export default function KnowledgeCard({
   const unlocked = state === "unlocked" && !readOnly;
 
   return (
-    <section
-      className={`knowledge-card-panel${unlocked ? " knowledge-card-panel--unlocked" : ""}`}
-      aria-labelledby={`knowledge-card-title-${node.id}`}
-    >
+    <GlossaryProvider terms={glossary} subject={node.title}>
+      <section
+        className={`knowledge-card-panel${unlocked ? " knowledge-card-panel--unlocked" : ""}`}
+        aria-labelledby={`knowledge-card-title-${node.id}`}
+      >
       <header className="knowledge-card-header">
         <div>
-          <p className="knowledge-card-kicker">Knowledge Node · {moduleTitle}</p>
-          <h2 id={`knowledge-card-title-${node.id}`}>{node.title}</h2>
+          <p className="knowledge-card-kicker">
+            Knowledge Node · <InlineText text={moduleTitle} terms={[]} />
+          </p>
+          <h2 id={`knowledge-card-title-${node.id}`}>
+            <InlineText text={node.title} terms={[]} />
+          </h2>
         </div>
         {headerAction === undefined ? (
           <button type="button" className="knowledge-card-close" onClick={onClose}>
@@ -154,7 +163,9 @@ export default function KnowledgeCard({
           }`}
         >
           <p className="knowledge-card-unlocked-title">✨ UNLOCKED! ✨</p>
-          <p className="knowledge-card-unlocked-node">{node.title}</p>
+          <p className="knowledge-card-unlocked-node">
+            <InlineText text={node.title} terms={[]} />
+          </p>
           <div className="knowledge-card-actions">
             {unlockedActions === undefined ? (
               <>
@@ -167,7 +178,7 @@ export default function KnowledgeCard({
                     className="primary"
                     onClick={() => onDiscoverNext(nextNode.id)}
                   >
-                    Discover {nextNode.title} →
+                    Discover <InlineText text={nextNode.title} terms={[]} /> →
                   </button>
                 ) : null}
               </>
@@ -177,6 +188,7 @@ export default function KnowledgeCard({
           </div>
         </div>
       ) : null}
-    </section>
+      </section>
+    </GlossaryProvider>
   );
 }

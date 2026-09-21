@@ -63,6 +63,7 @@ export type ReviewedAttempt = components["schemas"]["ReviewedAttempt"];
 export type UserSettingsDto = components["schemas"]["UserSettingsDto"];
 export type LearningDomainResponse =
   components["schemas"]["LearningDomainResponse"];
+export type GlossaryTerm = components["schemas"]["GlossaryTerm"];
 export type LearningModule = components["schemas"]["LearningModule"];
 export type KnowledgeNode = components["schemas"]["KnowledgeNode"];
 export type KnowledgePrompt = components["schemas"]["KnowledgePrompt"];
