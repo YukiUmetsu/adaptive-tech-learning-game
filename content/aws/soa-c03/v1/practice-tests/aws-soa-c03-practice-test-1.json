@@ -1,0 +1,3168 @@
+{
+  "schema_version": "practice-test-v1",
+  "id": "aws-soa-c03-practice-test-1",
+  "title": "AWS Certified CloudOps Engineer - Associate (SOA-C03) Practice Test 1 - Exam Simulation V2",
+  "exam_code": "SOA-C03",
+  "content_version": "soa-c03-practice-test-1-v2-2026-09-21",
+  "created_at": "2026-09-21",
+  "language": "en",
+  "time_limit_minutes": 130,
+  "question_count": 65,
+  "question_types": [
+    "multiple_choice",
+    "multiple_response"
+  ],
+  "authorship": {
+    "original": true,
+    "note": "All questions are original. They were revised after studying the public SOA-C03 blueprint, AWS documentation, publicly available practice-question style, and high-level candidate reports. Public/recalled questions were used only to learn scenario structure and difficulty patterns; no question, scenario, option set, or answer wording was copied."
+  },
+  "official_exam_reference": {
+    "official_question_count": 65,
+    "official_scored_questions": 50,
+    "official_unscored_questions": 15,
+    "official_minimum_scaled_score": 720,
+    "official_response_types": [
+      "multiple_choice",
+      "multiple_response"
+    ],
+    "domain_weights_scored_content": {
+      "domain-1": 0.22,
+      "domain-2": 0.22,
+      "domain-3": 0.22,
+      "domain-4": 0.16,
+      "domain-5": 0.18
+    },
+    "note": "AWS does not identify unscored items to candidates. Domain weights apply to scored content."
+  },
+  "practice_test_behavior": {
+    "hide_correct_answers_until_submission": true,
+    "hide_scored_status_during_attempt": true,
+    "score_only_questions_marked_scored": true,
+    "raw_score_is_not_equivalent_to_aws_scaled_score": true,
+    "recommended_review": "Review every incorrect answer and every answer marked low-confidence."
+  },
+  "design_notes": {
+    "style": [
+      "Realistic CloudOps scenarios with architecture, evidence, constraints, and an explicit operational decision",
+      "A mix of full scenarios, focused scenarios, troubleshooting/configuration diagnosis, and shorter applied items",
+      "Plausible distractors that usually solve a nearby problem rather than obviously unrelated services",
+      "Frequent multi-service reasoning and operational evidence such as metrics, logs, routes, policies, health states, and error messages",
+      "Exam-simulation readability: scenarios may be longer, but sentences stay compact and the decision requirement is explicit",
+      "Only multiple-choice and multiple-response formats, matching the current SOA-C03 exam"
+    ],
+    "research_basis": [
+      "AWS Certified CloudOps Engineer - Associate SOA-C03 Exam Guide revision 1.1",
+      "AWS Certified CloudOps Engineer - Associate official exam page",
+      "AWS current SOA-C03 in-scope and out-of-scope service lists",
+      "AWS public guidance on certification multiple-choice and multiple-response items",
+      "Public SOA-C03 sample/practice-question pages used only to study scenario structure and distractor patterns",
+      "Recent candidate reports used only to calibrate reading density and operational emphasis"
+    ],
+    "scenario_mix_target": {
+      "full_operational_scenario": "about 50%",
+      "focused_scenario": "about 30%",
+      "short_applied_or_configuration_item": "about 20%"
+    }
+  },
+  "questions": [
+    {
+      "id": "pt1-q01",
+      "domain_id": "domain-1",
+      "task_id": "1.1",
+      "skill_ids": [
+        "1.1.2"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A media company runs a Java API on 120 EC2 instances in an Auto Scaling group. CloudWatch already shows `CPUUtilization`, `NetworkIn`, and status-check metrics. During incidents, the team also needs `mem_used_percent` and `/var/log/api/error.log` from every instance. The company wants one managed collection mechanism and does not want to rewrite the application. Which solution requires the least operational effort?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Create a CloudTrail trail with EC2 data events and send the trail to CloudWatch Logs."
+        },
+        {
+          "id": "B",
+          "text": "Enable Systems Manager Inventory and configure it to publish memory utilization and the application log."
+        },
+        {
+          "id": "C",
+          "text": "Install and centrally configure the unified CloudWatch agent to publish the guest metric and ship the log file."
+        },
+        {
+          "id": "D",
+          "text": "Enable EC2 detailed monitoring and configure a CloudWatch Logs subscription filter for the instances."
+        }
+      ],
+      "correct_option_ids": [
+        "C"
+      ],
+      "explanation": "The CloudWatch agent can collect guest OS metrics that EC2 does not publish by default and can ship local log files to CloudWatch Logs. Detailed monitoring only increases the frequency of standard EC2 metrics.",
+      "option_explanations": {
+        "A": "CloudTrail records AWS API activity. It does not collect operating-system memory or application log files.",
+        "B": "Systems Manager Inventory collects software and configuration inventory, not arbitrary guest performance metrics and application logs.",
+        "C": "Correct. One CloudWatch agent configuration can collect guest memory metrics and local log files.",
+        "D": "Detailed monitoring changes standard metric frequency; it does not collect guest memory. A subscription filter also requires logs to already be in CloudWatch Logs."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 1,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q02",
+      "domain_id": "domain-1",
+      "task_id": "1.1",
+      "skill_ids": [
+        "1.1.1",
+        "1.1.3"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A checkout service writes one line to CloudWatch Logs for every failed payment, for example `2026-09-21T14:04:17Z ERROR PAYMENT_FAILED order_id=8472`. The application does not publish a payment-failure metric. Operations must page the on-call engineer when at least 10 failures occur during any 5-minute period. The solution should evaluate continuously and avoid scheduled custom code. What should the CloudOps engineer configure?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Create a scheduled CloudWatch Logs Insights query and use EventBridge to invoke Lambda when the query returns at least 10 rows."
+        },
+        {
+          "id": "B",
+          "text": "Create a CloudWatch anomaly-detection alarm directly on the log group's incoming bytes metric."
+        },
+        {
+          "id": "C",
+          "text": "Create an EventBridge rule that matches the text `PAYMENT_FAILED` in CloudWatch Logs and sends the event to SNS."
+        },
+        {
+          "id": "D",
+          "text": "Create a CloudWatch Logs metric filter for `PAYMENT_FAILED`, publish a custom metric, and create an alarm on the metric."
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "A metric filter converts matching log events into metric data as the events arrive. A CloudWatch alarm can then evaluate the custom metric over 5-minute periods.",
+      "option_explanations": {
+        "A": "This can be engineered, but it adds scheduled querying and custom orchestration that the requirement says to avoid.",
+        "B": "IncomingBytes measures log volume, not the number of payment failures.",
+        "C": "EventBridge does not directly match arbitrary CloudWatch Logs message text in this way.",
+        "D": "Correct. This is the direct continuous log-pattern → metric → alarm design."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 2,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q03",
+      "domain_id": "domain-1",
+      "task_id": "1.1",
+      "skill_ids": [
+        "1.1.3"
+      ],
+      "question_type": "multiple_response",
+      "prompt": "A company monitors a public API with two CloudWatch alarms. `HighLatency` enters ALARM when p95 latency is above 900 ms for 3 periods, and `High5xx` enters ALARM when the 5xx rate exceeds 5%. Either condition by itself is common during short maintenance events. The on-call team wants a page only when both alarms are in ALARM, while preserving the two alarms for separate dashboards. Which TWO actions should the engineer take?",
+      "instruction": "Choose TWO.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Create an EventBridge rule that polls both alarm states every minute."
+        },
+        {
+          "id": "B",
+          "text": "Configure the composite alarm to publish to the existing SNS topic used by the paging system."
+        },
+        {
+          "id": "C",
+          "text": "Create a CloudWatch composite alarm whose rule requires `HighLatency` AND `High5xx` to be in ALARM."
+        },
+        {
+          "id": "D",
+          "text": "Replace both metric alarms with one metric-math expression and delete the original alarms."
+        },
+        {
+          "id": "E",
+          "text": "Configure each underlying metric alarm to invoke the same Auto Scaling policy."
+        }
+      ],
+      "correct_option_ids": [
+        "B",
+        "C"
+      ],
+      "explanation": "A composite alarm combines the states of existing alarms and is designed to reduce alert noise. The composite alarm can notify the paging path through SNS while the underlying alarms remain available.",
+      "option_explanations": {
+        "A": "Polling with EventBridge is unnecessary when CloudWatch composite alarms already provide the state combination.",
+        "B": "Correct. SNS is a supported notification path for the composite alarm.",
+        "C": "Correct. The Boolean alarm rule can require both underlying alarms.",
+        "D": "This removes the existing alarm objects that the company wants to preserve and is unnecessary.",
+        "E": "Scaling actions do not implement the requirement to page only when both conditions are true."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 3,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q04",
+      "domain_id": "domain-1",
+      "task_id": "1.1",
+      "skill_ids": [
+        "1.1.4"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "An organization has 18 workload accounts across three AWS Regions. A central operations account must display EC2, RDS, and custom application metrics from those accounts on one CloudWatch dashboard. Resource ownership must remain in the workload accounts, and the team wants to avoid copying metrics into a custom data store. Which design best meets the requirement?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Create one CloudTrail Lake event data store in the operations account and use it as the CloudWatch dashboard data source."
+        },
+        {
+          "id": "B",
+          "text": "Create metric streams in every account and deliver all metrics to one Firehose stream, then rebuild the dashboard from S3."
+        },
+        {
+          "id": "C",
+          "text": "Configure CloudWatch cross-account observability with the operations account as the monitoring account and link the workload accounts as sources."
+        },
+        {
+          "id": "D",
+          "text": "Create identical dashboards in every workload account and use IAM role switching to view them one at a time."
+        }
+      ],
+      "correct_option_ids": [
+        "C"
+      ],
+      "explanation": "CloudWatch cross-account observability is designed for centralized telemetry visibility while resources and telemetry remain associated with their source accounts.",
+      "option_explanations": {
+        "A": "CloudTrail Lake stores audit events, not CloudWatch metric time series.",
+        "B": "Metric streams can export metrics, but this adds an unnecessary export and custom visualization path.",
+        "C": "Correct. It centralizes operational visibility without moving ownership.",
+        "D": "This does not provide the required single central dashboard."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 4,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q05",
+      "domain_id": "domain-1",
+      "task_id": "1.1",
+      "skill_ids": [
+        "1.1.5"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A CPU alarm for a production EC2 fleet entered ALARM at 03:14. The alarm history shows that CloudWatch successfully attempted its configured SNS action, but the on-call engineer received no email. In the SNS console, the email subscription shows `PendingConfirmation`; other subscriptions on the topic are confirmed. What is the most appropriate next step?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Change the alarm from 5-minute periods to 1-minute periods and wait for the next state change."
+        },
+        {
+          "id": "B",
+          "text": "Confirm the email subscription, then publish a controlled test message to the SNS topic."
+        },
+        {
+          "id": "C",
+          "text": "Enable EC2 detailed monitoring so CloudWatch can retry the email delivery."
+        },
+        {
+          "id": "D",
+          "text": "Create a second SNS topic and configure both topics as alarm actions."
+        }
+      ],
+      "correct_option_ids": [
+        "B"
+      ],
+      "explanation": "A pending email subscription does not receive SNS messages. Confirming it fixes the delivery path, and a controlled SNS publish verifies the path independently of the alarm.",
+      "option_explanations": {
+        "A": "Alarm evaluation frequency does not confirm an SNS subscription.",
+        "B": "Correct. It addresses the observed delivery failure directly.",
+        "C": "Detailed monitoring affects metric frequency, not SNS subscription state.",
+        "D": "A second topic does not fix the unconfirmed subscription."
+      },
+      "difficulty": "easy",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 5,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q06",
+      "domain_id": "domain-1",
+      "task_id": "1.2",
+      "skill_ids": [
+        "1.2.2"
+      ],
+      "question_type": "multiple_response",
+      "prompt": "An EventBridge rule should invoke a Lambda function whenever an EC2 instance enters the `stopped` state. CloudTrail confirms that instances are stopping, and the default event bus is receiving EC2 state-change events. The rule shows zero invocations of the Lambda target. The function works when invoked manually. Which TWO checks should the engineer perform first?",
+      "instruction": "Choose TWO.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Verify that an SQS dead-letter queue is configured on the rule."
+        },
+        {
+          "id": "B",
+          "text": "Verify that the Lambda execution role includes `ec2:DescribeInstances` for every instance in the VPC."
+        },
+        {
+          "id": "C",
+          "text": "Verify that the rule's event pattern matches the actual EC2 state-change event fields and values."
+        },
+        {
+          "id": "D",
+          "text": "Verify that the Lambda resource-based policy allows `events.amazonaws.com` to invoke the function."
+        },
+        {
+          "id": "E",
+          "text": "Verify that the function's security group allows inbound TCP 443 from the EventBridge service."
+        }
+      ],
+      "correct_option_ids": [
+        "C",
+        "D"
+      ],
+      "explanation": "The first layers are event matching and target authorization. EventBridge invokes Lambda through the function's resource-based policy; a nonmatching rule or missing invoke permission prevents delivery.",
+      "option_explanations": {
+        "A": "A DLQ helps retain failed deliveries but is not required for successful invocation.",
+        "B": "The execution role controls what the function can do after invocation, not whether EventBridge can invoke it.",
+        "C": "Correct. If the event pattern does not match, the target is never attempted.",
+        "D": "Correct. Lambda must allow EventBridge to invoke the function.",
+        "E": "EventBridge does not require inbound security-group access to invoke Lambda."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 6,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q07",
+      "domain_id": "domain-1",
+      "task_id": "1.2",
+      "skill_ids": [
+        "1.2.3"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A Systems Manager Automation runbook remediates a registry setting on 800 managed Windows instances. The operations team wants no more than 40 instances running the remediation at the same time. The run should stop if more than 5% of targets fail, so a bad change does not continue through the fleet. Which runbook execution controls should the engineer use?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Set `MaxConcurrency` to 40 and set `MaxErrors` to 5%."
+        },
+        {
+          "id": "B",
+          "text": "Set the maintenance window `Cutoff` to 40 and `Duration` to 5."
+        },
+        {
+          "id": "C",
+          "text": "Set `MaxConcurrency` to 5% and set `MaxErrors` to 40."
+        },
+        {
+          "id": "D",
+          "text": "Set the Auto Scaling group `MaxSize` to 40 and the health check grace period to 5%."
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "Systems Manager Automation rate controls use `MaxConcurrency` to limit simultaneous targets and `MaxErrors` to stop after a failure threshold.",
+      "option_explanations": {
+        "A": "Correct. The values map directly to the parallelism and failure requirements.",
+        "B": "Maintenance window duration and cutoff do not express this target concurrency and error threshold.",
+        "C": "The values are reversed and do not match the stated controls.",
+        "D": "Auto Scaling settings do not control Automation execution rate."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 7,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q08",
+      "domain_id": "domain-1",
+      "task_id": "1.3",
+      "skill_ids": [
+        "1.3.2"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A database server on EC2 uses four `io2` EBS volumes in a striped set. Each volume is provisioned well above its observed IOPS and throughput, but application throughput plateaus during batch processing. CloudWatch shows all four volumes active, while the aggregate EBS throughput stays near the documented limit for the EC2 instance type. What should the engineer change first?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Enable EBS fast snapshot restore for the four existing volumes."
+        },
+        {
+          "id": "B",
+          "text": "Convert the striped set to four separate file systems without changing the instance type."
+        },
+        {
+          "id": "C",
+          "text": "Move the workload to an EC2 instance type with higher EBS bandwidth."
+        },
+        {
+          "id": "D",
+          "text": "Increase the provisioned throughput on every `io2` volume by the same percentage."
+        }
+      ],
+      "correct_option_ids": [
+        "C"
+      ],
+      "explanation": "The evidence points to the EC2 instance's aggregate EBS bandwidth ceiling. Increasing volume performance does not help when the instance is the bottleneck.",
+      "option_explanations": {
+        "A": "Fast snapshot restore affects initialization from snapshots, not steady-state instance EBS bandwidth.",
+        "B": "Changing the file-system layout does not remove the EC2 instance's aggregate EBS limit.",
+        "C": "Correct. The instance-level EBS limit is the constrained layer.",
+        "D": "The volumes already have unused provisioned capacity, so this does not remove the instance ceiling."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 8,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q09",
+      "domain_id": "domain-1",
+      "task_id": "1.3",
+      "skill_ids": [
+        "1.3.3"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A design team in South America uploads 300-500 GB media packages directly to an S3 bucket in `us-east-1`. The files travel over the public internet, and long-distance network variability makes uploads slow. The company wants to keep the S3 destination unchanged and use AWS edge locations to improve the transfer path. Which feature should the team enable?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "AWS DataSync agent with an NFS task for each user's laptop."
+        },
+        {
+          "id": "B",
+          "text": "CloudFront Origin Shield in front of the S3 upload endpoint."
+        },
+        {
+          "id": "C",
+          "text": "S3 Multi-Region Access Points with the bucket remaining only in `us-east-1`."
+        },
+        {
+          "id": "D",
+          "text": "S3 Transfer Acceleration on the destination bucket."
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "S3 Transfer Acceleration uses AWS edge locations and the AWS global network to accelerate suitable long-distance transfers into S3.",
+      "option_explanations": {
+        "A": "DataSync is useful for managed bulk or scheduled transfers, but it is not the direct edge-accelerated upload feature described.",
+        "B": "CloudFront is not used as a generic upload accelerator to an S3 origin in this way.",
+        "C": "A Multi-Region Access Point is for routing among buckets in multiple Regions; the scenario has one destination bucket.",
+        "D": "Correct. It directly matches client-to-S3 long-distance transfer acceleration."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 9,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q10",
+      "domain_id": "domain-1",
+      "task_id": "1.3",
+      "skill_ids": [
+        "1.3.4"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A company is moving a Windows-based engineering application to AWS. The application expects shared SMB storage, uses Windows ACLs, and depends on integration with the company's Microsoft Active Directory. Multiple EC2 instances must mount the same file system. Which managed storage service best fits the existing application with the fewest changes?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Amazon FSx for Windows File Server"
+        },
+        {
+          "id": "B",
+          "text": "Amazon EFS with NFSv4.1"
+        },
+        {
+          "id": "C",
+          "text": "Amazon S3 with an S3 gateway endpoint"
+        },
+        {
+          "id": "D",
+          "text": "General Purpose SSD EBS volumes with Multi-Attach"
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "FSx for Windows File Server provides managed SMB file storage with Windows-native features and Active Directory integration.",
+      "option_explanations": {
+        "A": "Correct. It directly supports the application's Windows file-system requirements.",
+        "B": "EFS is an NFS file system and does not provide Windows SMB semantics.",
+        "C": "S3 is object storage and does not behave like a shared SMB file system.",
+        "D": "EBS is block storage and does not provide this shared Windows file-service model."
+      },
+      "difficulty": "easy",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 10,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q11",
+      "domain_id": "domain-1",
+      "task_id": "1.3",
+      "skill_ids": [
+        "1.3.5"
+      ],
+      "question_type": "multiple_response",
+      "prompt": "A serverless API uses Lambda functions to query an Amazon RDS PostgreSQL database. During traffic bursts, Lambda concurrency rises from 50 to more than 2,000. `DatabaseConnections` approaches the engine limit, connection errors increase, and database CPU remains below 45%. The team cannot substantially rewrite the data-access layer. Which TWO actions are most appropriate?",
+      "instruction": "Choose TWO.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Increase the DB instance class solely because CPU is below 45%."
+        },
+        {
+          "id": "B",
+          "text": "Deploy RDS Proxy and update the application configuration to connect through the proxy endpoint."
+        },
+        {
+          "id": "C",
+          "text": "Add an RDS read replica and direct all Lambda write traffic to the replica."
+        },
+        {
+          "id": "D",
+          "text": "Enable Multi-AZ and use the standby DB instance as a connection pool."
+        },
+        {
+          "id": "E",
+          "text": "Load test the change and verify `DatabaseConnections`, connection errors, and application latency under representative concurrency."
+        }
+      ],
+      "correct_option_ids": [
+        "B",
+        "E"
+      ],
+      "explanation": "The bottleneck is connection churn rather than CPU. RDS Proxy can pool and reuse database connections. The change should be validated with connection and application telemetry.",
+      "option_explanations": {
+        "A": "The evidence does not show CPU pressure, so vertical scaling is not the most targeted first action.",
+        "B": "Correct. RDS Proxy directly addresses bursts of short-lived database connections.",
+        "C": "Read replicas do not accept normal writes and do not solve connection pooling for the primary.",
+        "D": "A Multi-AZ standby is for high availability and is not an application connection pool.",
+        "E": "Correct. Verification should prove the connection-pressure and error symptoms improve."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 11,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q12",
+      "domain_id": "domain-1",
+      "task_id": "1.1",
+      "skill_ids": [
+        "1.1.1"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "At 11:42, an EC2 instance that hosts a production reporting job changed from `running` to `stopped`. No scheduled automation was expected at that time. The team must identify the IAM principal that issued the stop operation, the source IP address, and the exact API request parameters. Which AWS service provides the most direct evidence?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "CloudWatch `StatusCheckFailed` metric history"
+        },
+        {
+          "id": "B",
+          "text": "AWS Config resource timeline only"
+        },
+        {
+          "id": "C",
+          "text": "VPC Flow Logs for the instance's subnet"
+        },
+        {
+          "id": "D",
+          "text": "AWS CloudTrail event history or a trail containing the EC2 API event"
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "CloudTrail records AWS API activity, including the caller identity, source IP, API action, time, and request context.",
+      "option_explanations": {
+        "A": "Status-check metrics can show instance health but not the IAM principal that called StopInstances.",
+        "B": "Config can show resource configuration changes but is not the most direct source for API caller and source IP.",
+        "C": "Flow Logs contain network-flow metadata, not IAM API caller identity.",
+        "D": "Correct. It directly answers who called the API and from where."
+      },
+      "difficulty": "easy",
+      "scoring": {
+        "is_scored": false
+      },
+      "order": 12,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q13",
+      "domain_id": "domain-1",
+      "task_id": "1.3",
+      "skill_ids": [
+        "1.3.6",
+        "1.3.1"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A risk-modeling application runs tightly coupled MPI jobs on 32 EC2 instances. Benchmarking shows that inter-instance network latency is the primary performance constraint. The application can run within one Availability Zone, and the team accepts the reduced placement flexibility that comes with optimizing network proximity. Which EC2 placement strategy should the engineer choose?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Cluster placement group"
+        },
+        {
+          "id": "B",
+          "text": "Capacity Reservation without a placement group"
+        },
+        {
+          "id": "C",
+          "text": "Spread placement group"
+        },
+        {
+          "id": "D",
+          "text": "Partition placement group"
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "A cluster placement group places instances close together within one Availability Zone and is designed for low-latency, high-throughput inter-instance networking.",
+      "option_explanations": {
+        "A": "Correct. The requirement prioritizes network proximity for a tightly coupled workload.",
+        "B": "A Capacity Reservation reserves capacity but does not provide cluster placement behavior by itself.",
+        "C": "Spread placement reduces correlated hardware failure for a small number of instances but does not optimize lowest latency.",
+        "D": "Partition placement isolates groups of instances for large distributed workloads."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": false
+      },
+      "order": 13,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q14",
+      "domain_id": "domain-1",
+      "task_id": "1.2",
+      "skill_ids": [
+        "1.2.1"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A company deploys a new version of a web service to an Auto Scaling group at 15:00. Within two minutes, the ALB `HTTPCode_Target_5XX_Count` rises sharply and application logs show `InvalidConfiguration` errors. `CPUUtilization` remains near 30%, memory is normal, and the previous version had no errors. The deployment system supports an automated rollback to the last known-good version. What is the best first remediation?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Increase the Auto Scaling group desired capacity to double the number of instances."
+        },
+        {
+          "id": "B",
+          "text": "Raise the ALB unhealthy threshold so targets remain in service longer."
+        },
+        {
+          "id": "C",
+          "text": "Create a new VPC and redeploy the same application version there."
+        },
+        {
+          "id": "D",
+          "text": "Roll back to the last known-good version, then verify that 5xx errors and application exceptions return to baseline."
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "The timing and evidence strongly associate the failure with the new deployment rather than resource saturation. A controlled rollback is the most direct, low-risk remediation.",
+      "option_explanations": {
+        "A": "CPU and memory are normal, so more capacity does not target the configuration error.",
+        "B": "Keeping failing targets in service longer can worsen the user impact.",
+        "C": "A VPC migration is unrelated to the observed application configuration failure.",
+        "D": "Correct. It addresses the strongest evidence-backed cause and supports fast verification."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": false
+      },
+      "order": 14,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q15",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "skill_ids": [
+        "2.1.1"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "An online ticketing platform runs on EC2 instances in an Auto Scaling group. Historical traffic shows a sharp, repeatable increase every weekday at 09:00, and instances need about 6 minutes to boot and pass health checks. The company wants capacity ready before users arrive, while still allowing dynamic scaling later in the day. Which scaling mechanism should the engineer add?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Step scaling triggered only after an ALB request-count alarm enters ALARM."
+        },
+        {
+          "id": "B",
+          "text": "An instance refresh scheduled for 09:00."
+        },
+        {
+          "id": "C",
+          "text": "Target tracking on CPU with no scheduled action."
+        },
+        {
+          "id": "D",
+          "text": "Scheduled scaling that raises desired capacity before 09:00."
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "Scheduled scaling is appropriate for known, time-based demand and can add capacity before the predictable spike. Dynamic policies can still operate alongside it.",
+      "option_explanations": {
+        "A": "Step scaling is also reactive and does not guarantee warm capacity before 09:00.",
+        "B": "Instance refresh replaces instances; it is not a capacity-scheduling mechanism.",
+        "C": "Target tracking reacts to current demand and may scale after the spike begins.",
+        "D": "Correct. It prepares capacity before the known event."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 15,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q16",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "skill_ids": [
+        "2.1.1"
+      ],
+      "question_type": "multiple_response",
+      "prompt": "A video-processing service reads jobs from Amazon SQS. An Auto Scaling group runs the workers. During bursts, queue depth can rise to 20,000 messages even when worker CPU stays below 40% because each job waits on external I/O. The operations team wants scaling to reflect pending work per worker and to keep that value near a target. Which TWO actions should the engineer take?",
+      "instruction": "Choose TWO.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Create a scheduled scaling action for every possible queue burst."
+        },
+        {
+          "id": "B",
+          "text": "Use a target tracking scaling policy based on the backlog-per-instance metric."
+        },
+        {
+          "id": "C",
+          "text": "Use average worker CPU as the only scaling metric because CPU is already below 40%."
+        },
+        {
+          "id": "D",
+          "text": "Publish or calculate a backlog-per-instance metric from queue depth and the number of active workers."
+        },
+        {
+          "id": "E",
+          "text": "Configure SQS long polling to set the Auto Scaling group desired capacity directly."
+        }
+      ],
+      "correct_option_ids": [
+        "B",
+        "D"
+      ],
+      "explanation": "A workload metric such as backlog per worker better represents queue pressure than CPU for an I/O-bound worker fleet. Target tracking can then maintain that metric near a desired value.",
+      "option_explanations": {
+        "A": "The bursts are not described as predictable, so scheduled scaling is not the best fit.",
+        "B": "Correct. Target tracking can adjust capacity around the chosen backlog target.",
+        "C": "CPU is specifically shown to be a poor indicator in this workload.",
+        "D": "Correct. It expresses the amount of pending work relative to current processing capacity.",
+        "E": "Long polling reduces empty receives; it does not control ASG desired capacity."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 16,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q17",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "skill_ids": [
+        "2.1.2"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A CloudFront distribution caches product images from an S3 origin. The image returned for `/catalog/item.jpg` is identical for all users. A recent configuration added `X-Request-ID` and a per-user analytics cookie to the cache key. The cache hit ratio fell from 91% to 28%, while origin request volume increased. What change should the engineer make first?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Forward the same values to the origin but exclude them from the cache key."
+        },
+        {
+          "id": "B",
+          "text": "Remove the request ID and irrelevant analytics cookie from the cache key."
+        },
+        {
+          "id": "C",
+          "text": "Shorten the TTL so CloudFront creates fresh variants more often."
+        },
+        {
+          "id": "D",
+          "text": "Disable caching for the behavior so every request reaches the origin."
+        }
+      ],
+      "correct_option_ids": [
+        "B"
+      ],
+      "explanation": "Values should be in the cache key only when they can change the response. Unique, irrelevant values fragment the cache and lower the hit ratio.",
+      "option_explanations": {
+        "A": "This may be valid if the origin still needs the values, but the question asks what change should fix cache fragmentation first; excluding them from the key is the key action.",
+        "B": "Correct. It directly removes unnecessary cache variation.",
+        "C": "A shorter TTL would further reduce reuse and does not remove unnecessary variants.",
+        "D": "This eliminates caching instead of fixing the cache key."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 17,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q18",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "skill_ids": [
+        "2.1.3"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A SaaS application uses Amazon Aurora PostgreSQL. For most of the day, database load is minimal, but customer import jobs create short periods of intense activity. The team wants database compute to scale automatically within configured lower and upper bounds, and it wants to avoid manually resizing instances for each burst. Which database option best matches the requirement?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Aurora provisioned with one fixed writer instance"
+        },
+        {
+          "id": "B",
+          "text": "RDS Proxy"
+        },
+        {
+          "id": "C",
+          "text": "Aurora Serverless v2"
+        },
+        {
+          "id": "D",
+          "text": "DynamoDB Accelerator (DAX)"
+        }
+      ],
+      "correct_option_ids": [
+        "C"
+      ],
+      "explanation": "Aurora Serverless v2 automatically adjusts Aurora capacity within configured minimum and maximum values.",
+      "option_explanations": {
+        "A": "A fixed provisioned writer does not automatically scale compute capacity in this way.",
+        "B": "RDS Proxy manages database connections; it does not scale Aurora compute capacity.",
+        "C": "Correct. It matches bursty Aurora compute demand with bounded automatic scaling.",
+        "D": "DAX is an in-memory cache for DynamoDB, not Aurora."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 18,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q19",
+      "domain_id": "domain-2",
+      "task_id": "2.2",
+      "skill_ids": [
+        "2.2.1"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "An ECS service runs behind an Application Load Balancer. New tasks register successfully, but every target becomes unhealthy within two minutes. The target health reason shows repeated HTTP 500 responses from `/health`, and `HealthyHostCount` falls to zero. The ECS service events do not show image-pull failures. What should the engineer investigate first?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Application or container logs for the health endpoint and the target group's health-check configuration."
+        },
+        {
+          "id": "B",
+          "text": "The ECS service's deployment minimum healthy percent only."
+        },
+        {
+          "id": "C",
+          "text": "The ALB access-log S3 bucket lifecycle policy."
+        },
+        {
+          "id": "D",
+          "text": "Route 53 DNS TTL and the public hosted zone's SOA record."
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "The evidence already points to the application health endpoint or its health-check settings. Logs and the target health configuration are the most direct next evidence sources.",
+      "option_explanations": {
+        "A": "Correct. It follows the failing health-check path.",
+        "B": "Deployment percentages affect rollout capacity but do not explain the target returning 500.",
+        "C": "Log retention is unrelated to why the health endpoint fails.",
+        "D": "DNS TTL does not explain HTTP 500 responses from registered targets."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 19,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q20",
+      "domain_id": "domain-2",
+      "task_id": "2.2",
+      "skill_ids": [
+        "2.2.2"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A regional application uses an Application Load Balancer across three Availability Zones. AWS reports a service impairment in one AZ, and latency from targets in that AZ increases sharply. Targets in the other two AZs remain healthy. The company wants to move new traffic away from the impaired AZ without performing a full regional failover. Which capability should the team use, if the resource is supported?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Route 53 failover routing to another Region"
+        },
+        {
+          "id": "B",
+          "text": "ALB deregistration delay"
+        },
+        {
+          "id": "C",
+          "text": "EC2 Auto Scaling instance refresh"
+        },
+        {
+          "id": "D",
+          "text": "Amazon Application Recovery Controller zonal shift"
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "ARC zonal shift is designed to move traffic away from an impaired Availability Zone for supported resources without requiring a whole-Region failover.",
+      "option_explanations": {
+        "A": "Regional DNS failover is broader than the requested AZ-level traffic shift.",
+        "B": "Deregistration delay controls connection draining for targets.",
+        "C": "Instance refresh replaces instances but does not provide this zonal traffic-control capability.",
+        "D": "Correct. It directly addresses a zonal impairment."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 20,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q21",
+      "domain_id": "domain-2",
+      "task_id": "2.2",
+      "skill_ids": [
+        "2.2.2"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A production Amazon RDS database uses a Multi-AZ DB instance deployment. Monitoring detects an infrastructure failure on the primary host. The application connects using the normal RDS endpoint, and the operations team has not configured any application-side failover logic. What behavior should the team expect from RDS?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "RDS exposes the standby as a read replica and requires the application to use a new endpoint."
+        },
+        {
+          "id": "B",
+          "text": "RDS fails over to the standby and the application continues using the same DB endpoint after DNS changes."
+        },
+        {
+          "id": "C",
+          "text": "RDS restores the most recent snapshot into the same Availability Zone."
+        },
+        {
+          "id": "D",
+          "text": "RDS converts the deployment to Aurora and promotes a new writer."
+        }
+      ],
+      "correct_option_ids": [
+        "B"
+      ],
+      "explanation": "A Multi-AZ DB instance deployment provides managed failover to a standby. Applications keep using the DB endpoint while DNS is updated to the new primary.",
+      "option_explanations": {
+        "A": "The standby is not a normal read replica endpoint in this deployment model.",
+        "B": "Correct. This is the expected high-availability behavior.",
+        "C": "Failover does not normally require restoring from snapshot.",
+        "D": "RDS does not convert the engine to Aurora during failover."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 21,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q22",
+      "domain_id": "domain-2",
+      "task_id": "2.3",
+      "skill_ids": [
+        "2.3.1"
+      ],
+      "question_type": "multiple_response",
+      "prompt": "A regulated company uses AWS Backup for EBS, RDS, and supported file systems. Compliance requires central policies that define schedules and retention. Auditors also require periodic evidence that selected recovery points can actually be restored, rather than relying only on successful backup-job status. Which TWO AWS Backup capabilities should the company use?",
+      "instruction": "Choose TWO.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Vault lock only"
+        },
+        {
+          "id": "B",
+          "text": "Backup Audit Manager only"
+        },
+        {
+          "id": "C",
+          "text": "Backup plans"
+        },
+        {
+          "id": "D",
+          "text": "Cross-Region copy only"
+        },
+        {
+          "id": "E",
+          "text": "Restore testing"
+        }
+      ],
+      "correct_option_ids": [
+        "C",
+        "E"
+      ],
+      "explanation": "Backup plans define policy-based backup schedules and retention. Restore testing validates recoverability by periodically testing restores from selected recovery points.",
+      "option_explanations": {
+        "A": "Vault Lock protects backup retention but does not define the full schedule or test restores.",
+        "B": "Audit Manager can help with compliance evidence but does not replace the backup schedule or the restore test itself.",
+        "C": "Correct. It provides the centralized backup policy.",
+        "D": "Cross-Region copy improves resilience but does not prove restore success.",
+        "E": "Correct. It verifies that backups can be restored."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 22,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q23",
+      "domain_id": "domain-2",
+      "task_id": "2.3",
+      "skill_ids": [
+        "2.3.2"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A payment system has a documented business-continuity target. After an outage, the service must be available again within 20 minutes. The business can tolerate losing no more than the final 2 minutes of committed transactions. The architect is selecting a recovery design and asks the CloudOps engineer to interpret these objectives correctly. Which statement is accurate?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Both the RTO and RPO are 20 minutes."
+        },
+        {
+          "id": "B",
+          "text": "Both the RTO and RPO are 2 minutes."
+        },
+        {
+          "id": "C",
+          "text": "The RTO is 2 minutes and the RPO is 20 minutes."
+        },
+        {
+          "id": "D",
+          "text": "The RTO is 20 minutes and the RPO is 2 minutes."
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "RTO is the maximum acceptable time to restore service. RPO is the maximum acceptable data-loss window.",
+      "option_explanations": {
+        "A": "The data-loss objective is 2 minutes, not 20.",
+        "B": "The service-restoration objective is 20 minutes, not 2.",
+        "C": "The two concepts are reversed.",
+        "D": "Correct. Service restoration is 20 minutes; acceptable data loss is 2 minutes."
+      },
+      "difficulty": "easy",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 23,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q24",
+      "domain_id": "domain-2",
+      "task_id": "2.3",
+      "skill_ids": [
+        "2.3.3"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A versioned S3 bucket stores customer-generated reports. An operator accidentally deletes `report.csv` with a normal DELETE request. The application now receives a 404, but no lifecycle rule has expired old versions and no one deleted a specific version ID. The team needs the previous object contents available again with the least recovery effort. What should the operator do?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Remove the current delete marker or restore/copy the desired previous version."
+        },
+        {
+          "id": "B",
+          "text": "Restore the bucket from the latest AWS Backup recovery point."
+        },
+        {
+          "id": "C",
+          "text": "Enable S3 Cross-Region Replication and wait for the deleted object to reappear."
+        },
+        {
+          "id": "D",
+          "text": "Create a new object with the same ETag as the deleted version."
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "With Versioning enabled, a normal delete creates a delete marker while prior versions remain. Recovery can expose a previous version again by removing the marker or copying the desired version.",
+      "option_explanations": {
+        "A": "Correct. It uses the retained version history directly.",
+        "B": "A full backup restore is unnecessary when the prior object version still exists.",
+        "C": "Replication does not make a deleted current object automatically reappear in the source.",
+        "D": "An ETag is not a mechanism for reconstructing the deleted object."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 24,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q25",
+      "domain_id": "domain-2",
+      "task_id": "2.3",
+      "skill_ids": [
+        "2.3.4"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A company is designing regional disaster recovery for a customer portal. The recovery Region should already run a reduced-capacity copy of the full application stack, including compute and database components. During a disaster, the team will scale the environment and redirect traffic. The target RTO is much lower than a pilot-light design, but the company wants lower steady-state cost than active/active. Which DR strategy fits?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Backup and restore"
+        },
+        {
+          "id": "B",
+          "text": "Warm standby"
+        },
+        {
+          "id": "C",
+          "text": "Pilot light"
+        },
+        {
+          "id": "D",
+          "text": "Multi-site active/active"
+        }
+      ],
+      "correct_option_ids": [
+        "B"
+      ],
+      "explanation": "Warm standby keeps a scaled-down but functional copy of the full environment running, providing faster recovery than pilot light at lower cost than full active/active.",
+      "option_explanations": {
+        "A": "Backup and restore has a longer recovery path because resources must be restored or rebuilt.",
+        "B": "Correct. It matches the always-running reduced-capacity requirement.",
+        "C": "Pilot light keeps only critical core components active, not the full stack at reduced capacity.",
+        "D": "Active/active keeps full production capacity serving traffic in multiple locations and costs more."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 25,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q26",
+      "domain_id": "domain-2",
+      "task_id": "2.2",
+      "skill_ids": [
+        "2.2.1"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "During a blue/green deployment, an old ALB target is deregistered while it is still serving several long-running HTTP requests. New requests stop reaching the target, but some existing client requests are terminated before completion. The application itself is healthy. Which target group setting should the engineer review first?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Health check timeout"
+        },
+        {
+          "id": "B",
+          "text": "Slow start duration"
+        },
+        {
+          "id": "C",
+          "text": "Stickiness duration"
+        },
+        {
+          "id": "D",
+          "text": "Deregistration delay"
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "Deregistration delay controls how long the load balancer allows in-flight requests or connections to drain after deregistration begins.",
+      "option_explanations": {
+        "A": "Health check timeout concerns health evaluation, not draining existing requests.",
+        "B": "Slow start affects how traffic ramps to newly healthy targets.",
+        "C": "Stickiness affects client-to-target affinity, not deregistration draining.",
+        "D": "Correct. It directly controls draining behavior."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": false
+      },
+      "order": 26,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q27",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "skill_ids": [
+        "2.1.2"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A shopping application stores session metadata in DynamoDB. More than 95% of reads are repeated strongly consistent point lookups for a small set of hot keys, and read latency must be reduced to microseconds. The team wants a managed cache that integrates specifically with DynamoDB and requires minimal application architecture change. Which service should the engineer evaluate?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Amazon ElastiCache for Redis"
+        },
+        {
+          "id": "B",
+          "text": "Amazon CloudFront"
+        },
+        {
+          "id": "C",
+          "text": "Amazon RDS Proxy"
+        },
+        {
+          "id": "D",
+          "text": "Amazon DynamoDB Accelerator (DAX)"
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "DAX is a managed in-memory cache designed specifically for DynamoDB and can provide microsecond read latency for suitable access patterns.",
+      "option_explanations": {
+        "A": "ElastiCache can be used as an application cache, but it does not provide the same DynamoDB-specific integration.",
+        "B": "CloudFront caches HTTP content at edge locations, not DynamoDB API results directly.",
+        "C": "RDS Proxy is for relational database connection pooling.",
+        "D": "Correct. It is purpose-built for DynamoDB caching."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": false
+      },
+      "order": 27,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q28",
+      "domain_id": "domain-2",
+      "task_id": "2.3",
+      "skill_ids": [
+        "2.3.1",
+        "2.3.4"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A company backs up production RDS and EBS resources with AWS Backup in `us-east-1`. Compliance requires a second copy of supported recovery points in `us-west-2` so a regional event does not leave the organization dependent on one Region. The company wants this copy operation managed by AWS Backup policies. Which capability should the engineer configure?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Backup Vault Lock"
+        },
+        {
+          "id": "B",
+          "text": "Restore testing"
+        },
+        {
+          "id": "C",
+          "text": "Cross-Region backup copy"
+        },
+        {
+          "id": "D",
+          "text": "Cross-account backup copy only"
+        }
+      ],
+      "correct_option_ids": [
+        "C"
+      ],
+      "explanation": "AWS Backup copy actions can copy supported recovery points to a backup vault in another Region.",
+      "option_explanations": {
+        "A": "Vault Lock protects retention settings; it does not create a regional copy.",
+        "B": "Restore testing validates recoverability but does not create the second copy.",
+        "C": "Correct. It directly creates the required second regional recovery copy.",
+        "D": "Cross-account copy addresses account isolation, not necessarily the requested Region change by itself."
+      },
+      "difficulty": "easy",
+      "scoring": {
+        "is_scored": false
+      },
+      "order": 28,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q29",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "skill_ids": [
+        "3.1.2"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A platform team manages a production application with CloudFormation. A proposed update changes the launch template, security group rules, and an RDS property that might require replacement. The change must be reviewed during a change-control meeting before anyone modifies the stack. Which CloudFormation feature should the team create first?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "A change set for the existing stack"
+        },
+        {
+          "id": "B",
+          "text": "An EC2 Image Builder pipeline using the current template"
+        },
+        {
+          "id": "C",
+          "text": "A drift-detection operation on the existing stack"
+        },
+        {
+          "id": "D",
+          "text": "A StackSet instance for the same account and Region"
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "A CloudFormation change set previews how a proposed template or parameter update will affect stack resources before the update is executed.",
+      "option_explanations": {
+        "A": "Correct. It shows additions, modifications, and replacements before execution.",
+        "B": "Image Builder creates machine images and does not preview CloudFormation resource changes.",
+        "C": "Drift detection compares current resources with the existing stack definition; it does not preview a proposed update.",
+        "D": "StackSets are for multi-account or multi-Region stack deployment."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 29,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q30",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "skill_ids": [
+        "3.1.2"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A security group was deployed by CloudFormation six months ago. During an audit, the operations team notices an inbound rule that is not present in the current template. CloudTrail shows several security-group API calls, but the team first wants a CloudFormation-native comparison of the stack's expected resource properties with the actual deployed configuration. Which feature should the team use?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "A CloudFormation change set"
+        },
+        {
+          "id": "B",
+          "text": "CloudFormation drift detection"
+        },
+        {
+          "id": "C",
+          "text": "CloudTrail Insights"
+        },
+        {
+          "id": "D",
+          "text": "AWS Config advanced queries only"
+        }
+      ],
+      "correct_option_ids": [
+        "B"
+      ],
+      "explanation": "CloudFormation drift detection compares supported current resource properties with the properties expected from the stack definition.",
+      "option_explanations": {
+        "A": "A change set previews a future stack update rather than comparing current state with the deployed template.",
+        "B": "Correct. It directly answers whether the stack resource has drifted.",
+        "C": "CloudTrail Insights detects unusual API activity patterns; it does not calculate stack drift.",
+        "D": "Config can help investigate configuration, but the requirement specifically asks for the CloudFormation-native comparison."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 30,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q31",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "skill_ids": [
+        "3.1.4"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A company has 35 AWS accounts organized into development and production OUs. The infrastructure team must deploy the same CloudFormation baseline to selected accounts in `us-east-1`, `us-west-2`, and `eu-west-1`. Future template updates should be rolled out centrally, and the team wants to avoid logging in to each account. Which CloudFormation capability best fits?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "AWS Resource Access Manager resource shares"
+        },
+        {
+          "id": "B",
+          "text": "AWS CloudFormation StackSets"
+        },
+        {
+          "id": "C",
+          "text": "CloudFormation change sets exported to each member account"
+        },
+        {
+          "id": "D",
+          "text": "Nested stacks from a stack in the management account only"
+        }
+      ],
+      "correct_option_ids": [
+        "B"
+      ],
+      "explanation": "CloudFormation StackSets are designed to create and manage stack instances across multiple accounts and Regions from a central definition.",
+      "option_explanations": {
+        "A": "AWS RAM shares supported resources but does not deploy CloudFormation stacks.",
+        "B": "Correct. It matches centralized multi-account, multi-Region deployment.",
+        "C": "Change sets preview changes but do not provide centralized multi-account deployment.",
+        "D": "Nested stacks organize resources within a stack hierarchy; they are not a replacement for multi-account StackSets."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 31,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q32",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "skill_ids": [
+        "3.1.3"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A CloudFormation stack creates a fleet of application servers in a private subnet with CIDR `10.20.8.0/28`. The first instances launch, but later EC2 resources fail with insufficient subnet capacity. The stack event shows no IAM error, and the launch template is valid. The template requests 25 instances in that subnet. What should the CloudOps engineer investigate first?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "The number of available IPv4 addresses remaining in the subnet"
+        },
+        {
+          "id": "B",
+          "text": "The CloudFormation service role's permission to create network interfaces"
+        },
+        {
+          "id": "C",
+          "text": "The EC2 instance type's EBS bandwidth"
+        },
+        {
+          "id": "D",
+          "text": "The VPC's DNS hostnames setting"
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "A `/28` subnet has only a small number of usable IPv4 addresses after AWS-reserved addresses are accounted for. The requested instance count can exhaust the subnet.",
+      "option_explanations": {
+        "A": "Correct. The error and requested scale point directly to subnet IP capacity.",
+        "B": "The prompt states there is no IAM error; some instances already launched successfully.",
+        "C": "EBS bandwidth does not prevent ENI address allocation.",
+        "D": "DNS hostnames do not determine subnet IP capacity."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 32,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q33",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "skill_ids": [
+        "3.1.3"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A CI/CD role can create an ECS service and register a task definition. The task definition references an existing IAM task execution role. Deployment fails with `AccessDenied` when ECS is given that role, even though the CI/CD role has the required ECS API permissions. The task execution role itself already trusts ECS tasks. Which permission should be added to the CI/CD role?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "`iam:CreateServiceLinkedRole` on all IAM roles"
+        },
+        {
+          "id": "B",
+          "text": "`sts:AssumeRole` on the task execution role"
+        },
+        {
+          "id": "C",
+          "text": "`iam:PassRole` scoped to the task execution role"
+        },
+        {
+          "id": "D",
+          "text": "`ecs:ExecuteCommand` on the ECS cluster"
+        }
+      ],
+      "correct_option_ids": [
+        "C"
+      ],
+      "explanation": "The deploying principal needs `iam:PassRole` when it passes an IAM role to an AWS service. The service then uses the role according to its trust policy.",
+      "option_explanations": {
+        "A": "A service-linked role permission is a different IAM operation and is broader than required.",
+        "B": "The CI/CD principal does not need to assume the task role itself.",
+        "C": "Correct. This is the permission required to pass the existing role to ECS.",
+        "D": "ECS Exec permission is unrelated to assigning the task execution role."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 33,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q34",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "skill_ids": [
+        "3.1.1",
+        "3.1.5"
+      ],
+      "question_type": "multiple_response",
+      "prompt": "A security team wants every new EC2 AMI to start from an approved base image and install a standard set of hardening components. The image must also run validation tests before release. After approval, the company wants the AMI copied to two Regions. The team chooses EC2 Image Builder. Which TWO Image Builder configuration elements directly define the build contents and image destinations?",
+      "instruction": "Choose TWO.",
+      "options": [
+        {
+          "id": "A",
+          "text": "A distribution configuration that specifies where completed images are copied or shared"
+        },
+        {
+          "id": "B",
+          "text": "An SQS queue that stores the AMI after validation"
+        },
+        {
+          "id": "C",
+          "text": "An image recipe that specifies the base image and components"
+        },
+        {
+          "id": "D",
+          "text": "A Route 53 traffic policy that selects the image Region"
+        },
+        {
+          "id": "E",
+          "text": "A launch template that replaces the Image Builder recipe"
+        }
+      ],
+      "correct_option_ids": [
+        "A",
+        "C"
+      ],
+      "explanation": "The image recipe defines the source image and build components. Distribution configuration controls where completed images are distributed after the pipeline succeeds.",
+      "option_explanations": {
+        "A": "Correct. Distribution configuration defines destinations and sharing.",
+        "B": "AMIs are not stored in SQS.",
+        "C": "Correct. The recipe defines the image build inputs.",
+        "D": "Route 53 is not part of Image Builder image distribution.",
+        "E": "A launch template can consume an AMI but does not replace the image recipe."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 34,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q35",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "skill_ids": [
+        "3.1.1"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "An ECS service in private subnets deploys a new task revision that references an image in Amazon ECR. The new tasks fail before application startup with `CannotPullContainerError`. Existing tasks using the previous image continue serving traffic. VPC Flow Logs show no traffic leaving the subnets through the NAT gateway. What should the engineer verify first?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "The application container's health-check command and ALB path"
+        },
+        {
+          "id": "B",
+          "text": "Connectivity to the required ECR/S3 endpoints and the task execution role permissions needed to pull the image"
+        },
+        {
+          "id": "C",
+          "text": "The ECS service's deployment circuit breaker rollback setting"
+        },
+        {
+          "id": "D",
+          "text": "The task role's permission to query the production database"
+        }
+      ],
+      "correct_option_ids": [
+        "B"
+      ],
+      "explanation": "The failure occurs while pulling the image, before application startup. The task needs network reachability to ECR-related services and an execution role with the required ECR image-pull permissions.",
+      "option_explanations": {
+        "A": "Health checks happen after the container can start; the image is not being pulled.",
+        "B": "Correct. It follows the failed image-pull path directly.",
+        "C": "Rollback behavior can limit impact but does not explain why the image pull fails.",
+        "D": "The task role affects application calls after startup, not ECR image retrieval by the execution role."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 35,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q36",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "skill_ids": [
+        "3.2.1"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "An operations team manages 200 Linux EC2 instances with Systems Manager. During an incident, the team must run `systemctl restart telemetry-agent` once on every instance and capture command output. No approval, branching, or multi-step orchestration is required. Which Systems Manager capability provides the most direct solution?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "State Manager"
+        },
+        {
+          "id": "B",
+          "text": "Automation"
+        },
+        {
+          "id": "C",
+          "text": "Run Command"
+        },
+        {
+          "id": "D",
+          "text": "Session Manager"
+        }
+      ],
+      "correct_option_ids": [
+        "C"
+      ],
+      "explanation": "Systems Manager Run Command is designed to execute commands remotely across managed nodes and collect results.",
+      "option_explanations": {
+        "A": "State Manager maintains desired configuration over time rather than running a one-time incident command.",
+        "B": "Automation is useful for multi-step runbooks and orchestration; it is more than this task requires.",
+        "C": "Correct. It is the direct one-time fleet command capability.",
+        "D": "Session Manager provides interactive shell or port-forwarding access."
+      },
+      "difficulty": "easy",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 36,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q37",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "skill_ids": [
+        "3.2.1"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A company requires the `amazon-cloudwatch-agent` package to remain installed and a specific configuration file to remain present on all managed EC2 instances. Engineers sometimes change instances manually, so the desired configuration must be checked and reapplied on a schedule when drift occurs. Which Systems Manager capability should the team use?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "State Manager associations"
+        },
+        {
+          "id": "B",
+          "text": "Run Command executed manually after every audit"
+        },
+        {
+          "id": "C",
+          "text": "Session Manager preferences"
+        },
+        {
+          "id": "D",
+          "text": "Automation executed only when an operator opens an incident"
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "State Manager associations define and periodically apply desired state to managed nodes.",
+      "option_explanations": {
+        "A": "Correct. It is designed for maintaining configuration over time.",
+        "B": "Manual Run Command does not continuously maintain the desired state.",
+        "C": "Session Manager preferences configure session behavior, not package/configuration compliance.",
+        "D": "Incident-only Automation does not meet the scheduled desired-state requirement."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 37,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q38",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "skill_ids": [
+        "3.2.2"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A remediation workflow receives a failed-deployment event. It must request manual approval, call three AWS services in order, and wait up to 10 minutes for a resource state change. The workflow must also branch on the result and retry one failed API call with exponential backoff. The team wants a managed orchestration service instead of custom workflow code. Which service should it use?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Amazon EventBridge rules only"
+        },
+        {
+          "id": "B",
+          "text": "Systems Manager Run Command"
+        },
+        {
+          "id": "C",
+          "text": "Amazon SNS message filtering"
+        },
+        {
+          "id": "D",
+          "text": "AWS Step Functions"
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "Step Functions provides stateful orchestration with sequencing, waits, branching, retries, and service integrations.",
+      "option_explanations": {
+        "A": "EventBridge routes events but does not by itself model this stateful multi-step workflow.",
+        "B": "Run Command executes commands on managed nodes and does not provide this general orchestration.",
+        "C": "SNS filters and distributes messages; it does not provide the required workflow control.",
+        "D": "Correct. The workflow requirements match state-machine orchestration."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 38,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q39",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "skill_ids": [
+        "3.2.2"
+      ],
+      "question_type": "multiple_response",
+      "prompt": "A security team wants an EventBridge rule to start a Systems Manager Automation runbook when AWS Config reports a specific noncompliant resource. The event arrives on the bus, but the Automation execution never starts. The runbook succeeds when started manually. Which TWO items should the engineer verify first?",
+      "instruction": "Choose TWO.",
+      "options": [
+        {
+          "id": "A",
+          "text": "The EventBridge target execution path has permission to call `ssm:StartAutomationExecution` for the runbook."
+        },
+        {
+          "id": "B",
+          "text": "The affected EC2 instance security group allows inbound HTTPS from EventBridge."
+        },
+        {
+          "id": "C",
+          "text": "The runbook is stored in an S3 bucket in the same Region as the event bus."
+        },
+        {
+          "id": "D",
+          "text": "The CloudWatch dashboard that shows Config compliance is shared with the security account."
+        },
+        {
+          "id": "E",
+          "text": "The EventBridge event pattern matches the actual Config compliance-change event."
+        }
+      ],
+      "correct_option_ids": [
+        "A",
+        "E"
+      ],
+      "explanation": "Event-driven remediation requires both a matching event rule and authorization for EventBridge to start the Automation execution.",
+      "option_explanations": {
+        "A": "Correct. The target path must be authorized to start the runbook.",
+        "B": "EventBridge does not invoke SSM Automation through an EC2 security group.",
+        "C": "SSM Automation documents are not required to be stored in S3.",
+        "D": "Dashboard sharing has no effect on rule invocation.",
+        "E": "Correct. A nonmatching event pattern prevents target invocation."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 39,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q40",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "skill_ids": [
+        "3.1.6"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A team manages VPCs and IAM roles with Terraform. An engineer manually changed a security group in the AWS console during an incident, and the change was never added to the Terraform configuration. A new Terraform change is now ready for production. Before applying it, the team wants to understand how Terraform will reconcile configuration, saved state, and the actual resources. What should the team do first?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Run `terraform plan`, review the detected differences, and decide how the out-of-band change should be reconciled."
+        },
+        {
+          "id": "B",
+          "text": "Import every resource into a second state file and apply both states."
+        },
+        {
+          "id": "C",
+          "text": "Run `terraform destroy` and rebuild the environment from scratch."
+        },
+        {
+          "id": "D",
+          "text": "Delete the Terraform state and run `terraform apply` so all resources are rediscovered automatically."
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "A plan is the safe review step before applying changes. It shows proposed actions based on configuration, state, and refreshed resource information.",
+      "option_explanations": {
+        "A": "Correct. The team can review the proposed reconciliation before changing production.",
+        "B": "Maintaining competing states for the same resources is not the correct fix.",
+        "C": "Destroying production is unnecessary and high risk.",
+        "D": "Deleting state is dangerous and not the normal way to reconcile one manual change."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": false
+      },
+      "order": 40,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q41",
+      "domain_id": "domain-3",
+      "task_id": "3.1",
+      "skill_ids": [
+        "3.1.2"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A development team wants to define a VPC, ECS service, and IAM roles with TypeScript. The team wants reusable programming constructs and tests in its normal language, but the deployed infrastructure should still be managed by CloudFormation after synthesis. Which AWS service or framework is the best fit?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "EC2 Image Builder"
+        },
+        {
+          "id": "B",
+          "text": "AWS Systems Manager Automation"
+        },
+        {
+          "id": "C",
+          "text": "AWS Service Catalog"
+        },
+        {
+          "id": "D",
+          "text": "AWS Cloud Development Kit (AWS CDK)"
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "AWS CDK lets teams model infrastructure with supported programming languages and synthesizes the result into CloudFormation templates.",
+      "option_explanations": {
+        "A": "Image Builder creates machine images.",
+        "B": "Automation runs operational runbooks.",
+        "C": "Service Catalog distributes governed products but is not the programming-language IaC framework described.",
+        "D": "Correct. It matches both the programming-language and CloudFormation requirements."
+      },
+      "difficulty": "easy",
+      "scoring": {
+        "is_scored": false
+      },
+      "order": 41,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q42",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "skill_ids": [
+        "3.2.2"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A company operates dozens of production workloads across EC2, containers, and managed AWS services. During incidents, engineers spend significant time correlating operational telemetry and identifying likely causes before choosing remediation. The company wants an in-scope AWS capability that can assist with operational investigation and recommended actions across supported resources. Which service is the best match?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "AWS DevOps Agent"
+        },
+        {
+          "id": "B",
+          "text": "AWS Security Agent"
+        },
+        {
+          "id": "C",
+          "text": "AWS Trusted Advisor"
+        },
+        {
+          "id": "D",
+          "text": "AWS Health Dashboard"
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "AWS DevOps Agent is the operational-analysis service among these choices and is in scope for CloudOps investigation and remediation scenarios.",
+      "option_explanations": {
+        "A": "Correct. It is aimed at assisting with operational analysis across supported AWS resources.",
+        "B": "AWS Security Agent focuses on application security analysis and testing rather than general production operations.",
+        "C": "Trusted Advisor provides best-practice checks and recommendations, not this incident-analysis workflow.",
+        "D": "AWS Health Dashboard reports AWS service and account-specific health events but does not provide the same operational analysis role."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": false
+      },
+      "order": 42,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q43",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "skill_ids": [
+        "4.1.1"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A company has 22 AWS accounts in AWS Organizations. Employees already authenticate to a corporate SAML identity provider, and the security team does not want separate long-lived IAM users in each AWS account. Developers need administrator access in sandbox accounts and read-only access in production, using the same corporate sign-in. Which design best meets the requirement with the least identity-management overhead?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Create cross-account IAM roles only and require each employee to keep a long-lived IAM access key in the management account."
+        },
+        {
+          "id": "B",
+          "text": "Integrate IAM Identity Center with the corporate identity provider and assign permission sets to users or groups."
+        },
+        {
+          "id": "C",
+          "text": "Create IAM users in every member account and synchronize passwords with a custom Lambda function."
+        },
+        {
+          "id": "D",
+          "text": "Create one IAM user per employee in the management account and share access keys with member accounts."
+        }
+      ],
+      "correct_option_ids": [
+        "B"
+      ],
+      "explanation": "IAM Identity Center provides centralized workforce access to multiple AWS accounts and can integrate with an external identity provider while using temporary credentials and permission sets.",
+      "option_explanations": {
+        "A": "Cross-account roles are useful, but this option still depends on long-lived IAM-user credentials that the company wants to avoid.",
+        "B": "Correct. It centralizes workforce access and avoids long-lived IAM users in each account.",
+        "C": "Duplicating IAM users across accounts increases operational overhead and long-lived credentials.",
+        "D": "Shared or centralized IAM-user access keys do not provide the requested workforce federation model."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 43,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q44",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "skill_ids": [
+        "4.1.1"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A developer role in a member account has an identity policy that allows `s3:GetObject` on a production bucket. The bucket policy also permits the role. However, the account belongs to an OU with an AWS Organizations SCP that explicitly denies `s3:*`. The developer receives `AccessDenied`. What explains the result?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "The IAM role needs MFA before an SCP deny can be ignored."
+        },
+        {
+          "id": "B",
+          "text": "The SCP deny applies only to the management account, so the error must come from S3 encryption."
+        },
+        {
+          "id": "C",
+          "text": "The explicit deny in the applicable SCP overrides the allows."
+        },
+        {
+          "id": "D",
+          "text": "The bucket policy should override the SCP because it is a resource-based policy."
+        }
+      ],
+      "correct_option_ids": [
+        "C"
+      ],
+      "explanation": "An applicable explicit deny wins over allows. SCPs act as organization-level permission guardrails and can restrict the effective permissions available in member accounts.",
+      "option_explanations": {
+        "A": "MFA does not override an SCP deny unless the policy itself is written around MFA conditions.",
+        "B": "SCPs apply to governed member accounts according to their attachment hierarchy.",
+        "C": "Correct. The explicit deny prevents the action.",
+        "D": "A resource-based allow does not bypass an applicable explicit deny in an SCP."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 44,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q45",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "skill_ids": [
+        "4.1.2"
+      ],
+      "question_type": "multiple_response",
+      "prompt": "An application role that previously downloaded reports from S3 now receives `AccessDenied`. The IAM team recently changed several policies, and CloudTrail shows that someone also edited the bucket policy yesterday. The engineer needs to answer two questions: would the current policy set allow `s3:GetObject`, and who made the bucket-policy change? Which TWO tools provide the most direct evidence?",
+      "instruction": "Choose TWO.",
+      "options": [
+        {
+          "id": "A",
+          "text": "AWS Config conformance packs only"
+        },
+        {
+          "id": "B",
+          "text": "AWS CloudTrail"
+        },
+        {
+          "id": "C",
+          "text": "IAM Access Analyzer only"
+        },
+        {
+          "id": "D",
+          "text": "Amazon GuardDuty"
+        },
+        {
+          "id": "E",
+          "text": "IAM Policy Simulator"
+        }
+      ],
+      "correct_option_ids": [
+        "B",
+        "E"
+      ],
+      "explanation": "Policy Simulator evaluates authorization behavior for policies, while CloudTrail records the API activity that changed the bucket policy and identifies the caller.",
+      "option_explanations": {
+        "A": "Config can track configuration and compliance but does not replace the direct authorization simulation plus API audit trail.",
+        "B": "Correct. It records the policy-change API call and caller identity.",
+        "C": "Access Analyzer is useful for external/unintended access analysis, but it does not replace both requested checks.",
+        "D": "GuardDuty detects suspicious activity; it is not the primary tool for these two questions.",
+        "E": "Correct. It helps test whether the policy set would allow the requested action."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 45,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q46",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "skill_ids": [
+        "4.1.3"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A multinational company has more than 60 AWS accounts in AWS Organizations. Due to data-residency policy, application teams may deploy resources only in `us-east-1` and `us-west-2`, except for a small set of approved global services. The security team wants one centrally managed guardrail that limits permissions across member accounts rather than configuring each IAM role individually. Which feature should the team use?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "An AWS Organizations service control policy with Region-based conditions and required exceptions"
+        },
+        {
+          "id": "B",
+          "text": "An AWS Config rule that deletes resources after they are created in unapproved Regions"
+        },
+        {
+          "id": "C",
+          "text": "A CloudFormation StackSet that creates one deny policy in each application stack"
+        },
+        {
+          "id": "D",
+          "text": "An IAM permissions boundary attached manually to every existing user and role"
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "SCPs provide centrally managed permission guardrails across Organizations. They can restrict actions by requested Region while accounting for services that require exceptions.",
+      "option_explanations": {
+        "A": "Correct. It is the organization-level preventive control.",
+        "B": "Config is detective/remediative after resource changes, not the requested preventive permission guardrail.",
+        "C": "A StackSet can deploy resources, but an SCP is the native organization-level control for maximum permissions.",
+        "D": "Permissions boundaries are principal-level controls and would require broader account-by-account administration."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 46,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q47",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "skill_ids": [
+        "4.1.5"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "An AWS Config rule in a security account evaluates member-account security groups. A developer changes one production group to allow TCP/22 from `0.0.0.0/0`. The organization wants the resource marked noncompliant within the Config evaluation cycle and wants the unsafe rule removed automatically using an approved runbook. Which design best meets the requirement?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Use the AWS Config rule with automatic remediation through Systems Manager Automation."
+        },
+        {
+          "id": "B",
+          "text": "Use CloudTrail Insights to detect the API call and rely on an operator to edit the security group."
+        },
+        {
+          "id": "C",
+          "text": "Use IAM Access Analyzer to remove the ingress rule automatically."
+        },
+        {
+          "id": "D",
+          "text": "Use GuardDuty to block the security-group rule before it is created."
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "AWS Config evaluates resource configuration and can invoke approved remediation, including Systems Manager Automation, when a resource is noncompliant.",
+      "option_explanations": {
+        "A": "Correct. It combines continuous configuration evaluation with automated remediation.",
+        "B": "CloudTrail can record the change, but this is manual and does not satisfy automatic remediation.",
+        "C": "Access Analyzer analyzes access paths and policies, not security-group remediation.",
+        "D": "GuardDuty detects threats; it does not act as a preventive security-group policy engine."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 47,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q48",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "skill_ids": [
+        "4.2.2"
+      ],
+      "question_type": "multiple_response",
+      "prompt": "A Lambda function reads objects from an S3 bucket. The function's role has `s3:GetObject`, and the bucket policy does not deny access. New objects are encrypted with a customer-managed KMS key, and reads of those objects now fail with an access-denied error from KMS. Which TWO authorization areas should the engineer verify?",
+      "instruction": "Choose TWO.",
+      "options": [
+        {
+          "id": "A",
+          "text": "The role's permission to read the S3 object and any applicable bucket policy conditions"
+        },
+        {
+          "id": "B",
+          "text": "The KMS key's CloudWatch alarm actions"
+        },
+        {
+          "id": "C",
+          "text": "The Lambda function's security group inbound rules from S3"
+        },
+        {
+          "id": "D",
+          "text": "The S3 bucket's Route 53 alias record"
+        },
+        {
+          "id": "E",
+          "text": "The role and KMS key policy/grant permissions required to decrypt with the customer-managed key"
+        }
+      ],
+      "correct_option_ids": [
+        "A",
+        "E"
+      ],
+      "explanation": "Access to an SSE-KMS encrypted S3 object can require authorization for both the S3 object request and the KMS decrypt operation.",
+      "option_explanations": {
+        "A": "Correct. S3 authorization must still permit the object read.",
+        "B": "CloudWatch alarm actions on a KMS key are unrelated.",
+        "C": "S3 does not invoke Lambda object reads through inbound security-group rules.",
+        "D": "DNS alias records do not control S3 object/KMS authorization.",
+        "E": "Correct. The principal or service path must also be authorized to use the KMS key."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 48,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q49",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "skill_ids": [
+        "4.2.3"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A public web application uses an Application Load Balancer. The security team requires HTTPS with a publicly trusted certificate and wants AWS to handle certificate renewal so operators do not manually replace certificates before expiration. The DNS name is controlled by the company. Which service should the engineer use for the ALB certificate?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "AWS Certificate Manager (ACM)"
+        },
+        {
+          "id": "B",
+          "text": "AWS Private Certificate Authority only"
+        },
+        {
+          "id": "C",
+          "text": "AWS Secrets Manager with a stored PEM file"
+        },
+        {
+          "id": "D",
+          "text": "AWS KMS asymmetric key"
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "ACM can issue and manage public certificates for supported AWS integrations such as Application Load Balancers and handles renewal when requirements are met.",
+      "option_explanations": {
+        "A": "Correct. It is the managed public TLS certificate service for the ALB.",
+        "B": "Private CA issues private certificates; the requirement calls for public trust.",
+        "C": "Secrets Manager can store secrets but does not provide ACM's managed certificate issuance and renewal integration.",
+        "D": "A KMS key is not a publicly trusted TLS certificate."
+      },
+      "difficulty": "easy",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 49,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q50",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "skill_ids": [
+        "4.2.4"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A production application stores an RDS database password. Security policy requires the password to be encrypted at rest, retrieved by the application at runtime, and rotated every 30 days without operators manually updating the application configuration. Which AWS service is the best fit for the secret and rotation workflow?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Systems Manager Parameter Store SecureString without a rotation workflow"
+        },
+        {
+          "id": "B",
+          "text": "IAM Identity Center"
+        },
+        {
+          "id": "C",
+          "text": "AWS KMS only"
+        },
+        {
+          "id": "D",
+          "text": "AWS Secrets Manager"
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "Secrets Manager is designed to store secrets securely and supports automated rotation workflows for supported credentials and custom rotation designs.",
+      "option_explanations": {
+        "A": "SecureString can store encrypted parameters, but this option does not provide the required managed rotation workflow.",
+        "B": "Identity Center manages workforce access, not application database secrets.",
+        "C": "KMS provides cryptographic keys but is not a secret-value lifecycle service by itself.",
+        "D": "Correct. It matches secure secret storage plus rotation."
+      },
+      "difficulty": "easy",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 50,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q51",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "skill_ids": [
+        "4.2.5"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A security operations team receives GuardDuty findings about suspicious API activity, Inspector findings about vulnerable EC2 packages, and Macie findings about sensitive S3 data. Analysts currently open each service separately. The team wants a centralized service that aggregates supported findings and provides one place to prioritize security posture and response. Which service should they use?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "AWS Trusted Advisor"
+        },
+        {
+          "id": "B",
+          "text": "AWS Security Hub"
+        },
+        {
+          "id": "C",
+          "text": "AWS Control Tower"
+        },
+        {
+          "id": "D",
+          "text": "Amazon Detective"
+        }
+      ],
+      "correct_option_ids": [
+        "B"
+      ],
+      "explanation": "Security Hub aggregates and normalizes findings from supported AWS security services and integrations.",
+      "option_explanations": {
+        "A": "Trusted Advisor provides best-practice checks but is not the central finding aggregator described.",
+        "B": "Correct. It provides centralized security finding visibility.",
+        "C": "Control Tower establishes and governs multi-account landing zones.",
+        "D": "Detective can support investigation, but it is not the requested multi-service finding aggregation hub."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": false
+      },
+      "order": 51,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q52",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "skill_ids": [
+        "4.2.5",
+        "4.2.1"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A compliance team must find S3 buckets that contain personally identifiable information and other sensitive data. The organization has thousands of buckets and does not want to write custom classifiers for every object. Which AWS service is specifically designed to discover and classify sensitive data in Amazon S3?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Amazon Macie"
+        },
+        {
+          "id": "B",
+          "text": "Amazon Inspector"
+        },
+        {
+          "id": "C",
+          "text": "IAM Access Analyzer"
+        },
+        {
+          "id": "D",
+          "text": "Amazon GuardDuty"
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "Amazon Macie is designed to discover and classify sensitive data in S3.",
+      "option_explanations": {
+        "A": "Correct. Sensitive-data discovery in S3 is Macie's core use case.",
+        "B": "Inspector evaluates software vulnerabilities and exposure on supported workloads.",
+        "C": "Access Analyzer identifies external or unintended access paths and policy findings.",
+        "D": "GuardDuty detects threats and suspicious activity."
+      },
+      "difficulty": "easy",
+      "scoring": {
+        "is_scored": false
+      },
+      "order": 52,
+      "scenario_style": "short_applied_item"
+    },
+    {
+      "id": "pt1-q53",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "skill_ids": [
+        "4.1.4"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "Trusted Advisor flags a production security group because TCP/22 is allowed from `0.0.0.0/0`. Administrators still need emergency access to the EC2 instances, but corporate policy allows that access only from the company's management network or through a managed AWS access service. What remediation best addresses the finding without removing legitimate administration?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Enable GuardDuty and leave the unrestricted rule unchanged."
+        },
+        {
+          "id": "B",
+          "text": "Move the instances to a larger subnet so fewer clients share the same route table."
+        },
+        {
+          "id": "C",
+          "text": "Keep the rule open and add an NACL deny for all outbound ephemeral ports."
+        },
+        {
+          "id": "D",
+          "text": "Restrict the rule to approved management sources or replace direct SSH with an approved managed access path such as Session Manager."
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "The finding is about overly broad administrative exposure. The direct remediation is to reduce the source scope or use a safer managed access mechanism.",
+      "option_explanations": {
+        "A": "Detection does not substitute for removing the unnecessary exposure.",
+        "B": "Subnet size does not address who can connect to port 22.",
+        "C": "Outbound NACL blocking does not safely solve the inbound exposure and can break return traffic.",
+        "D": "Correct. It preserves approved administration while removing internet-wide SSH exposure."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": false
+      },
+      "order": 53,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q54",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "skill_ids": [
+        "5.1.1"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A web server runs on an EC2 instance in a subnet whose route table contains only the VPC local route. The instance has a public IPv4 address, and its security group allows HTTPS from the internet. Users still cannot reach the server. The company intends this subnet to be public. Which route must be added to provide direct IPv4 internet connectivity?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "`0.0.0.0/0` with a NAT gateway in a private subnet as the target"
+        },
+        {
+          "id": "B",
+          "text": "`0.0.0.0/0` with the VPC internet gateway as the target"
+        },
+        {
+          "id": "C",
+          "text": "The instance's public IPv4 address as a host route to the local target"
+        },
+        {
+          "id": "D",
+          "text": "`::/0` with an egress-only internet gateway as the target"
+        }
+      ],
+      "correct_option_ids": [
+        "B"
+      ],
+      "explanation": "A public IPv4 subnet needs a route to an internet gateway, and the instance also needs a public IPv4 address plus appropriate security controls.",
+      "option_explanations": {
+        "A": "A NAT gateway provides outbound translation for private IPv4 resources; it is not the direct inbound path to this public instance.",
+        "B": "Correct. This is the required internet route for direct public IPv4 connectivity.",
+        "C": "The local route already handles VPC CIDRs and a public-IP host route is not the correct internet path.",
+        "D": "An egress-only internet gateway is for outbound-only IPv6."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 54,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q55",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "skill_ids": [
+        "5.1.1",
+        "5.1.3"
+      ],
+      "question_type": "multiple_response",
+      "prompt": "An internet client connects to an HTTPS application on an EC2 instance. The instance security group allows inbound TCP 443 and, because security groups are stateful, return traffic is allowed there. A custom subnet network ACL allows inbound TCP 443 but blocks the response packets. The engineer wants to fix only the NACL rules. Which TWO facts are relevant?",
+      "instruction": "Choose TWO.",
+      "options": [
+        {
+          "id": "A",
+          "text": "A NAT gateway overrides a network ACL deny for established connections."
+        },
+        {
+          "id": "B",
+          "text": "Network ACLs are stateless, so the return direction needs an explicit allow rule."
+        },
+        {
+          "id": "C",
+          "text": "Security groups are stateless and therefore require the same return-port rule."
+        },
+        {
+          "id": "D",
+          "text": "Network ACLs automatically allow return traffic for any allowed inbound connection."
+        },
+        {
+          "id": "E",
+          "text": "Return traffic to the client can use ephemeral destination ports that must be allowed by the NACL."
+        }
+      ],
+      "correct_option_ids": [
+        "B",
+        "E"
+      ],
+      "explanation": "Network ACLs are stateless, so both directions must be allowed. For client/server TCP connections, return traffic can involve the client's ephemeral port range.",
+      "option_explanations": {
+        "A": "NAT does not override NACL rules.",
+        "B": "Correct. NACLs do not track connection state.",
+        "C": "Security groups are stateful.",
+        "D": "NACLs do not automatically allow return traffic.",
+        "E": "Correct. The return path must permit the appropriate ephemeral ports."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 55,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q56",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "skill_ids": [
+        "5.1.2"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A data-processing fleet runs on EC2 instances in private subnets. The instances read several terabytes from S3 every day. They currently reach S3 through a NAT gateway, creating significant NAT processing charges. The company wants S3 traffic to remain private and wants the lowest-cost VPC endpoint option that does not require a public IP on the instances. What should the engineer deploy?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "An S3 interface VPC endpoint in every Availability Zone solely to reduce endpoint cost"
+        },
+        {
+          "id": "B",
+          "text": "An internet gateway attached directly to each private subnet"
+        },
+        {
+          "id": "C",
+          "text": "A Site-to-Site VPN from the VPC to the regional S3 public endpoint"
+        },
+        {
+          "id": "D",
+          "text": "An S3 gateway VPC endpoint associated with the private-subnet route tables"
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "S3 supports gateway endpoints, which provide private VPC-to-S3 connectivity through route tables and avoid NAT processing for supported S3 traffic.",
+      "option_explanations": {
+        "A": "An interface endpoint is valid for some designs but carries endpoint charges and is not the lowest-cost fit described.",
+        "B": "Subnets do not attach internet gateways individually, and this would not preserve the private design.",
+        "C": "A VPN is unnecessary for traffic from a VPC to S3.",
+        "D": "Correct. It meets both the private-connectivity and cost requirements."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 56,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q57",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "skill_ids": [
+        "5.1.2"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A company has a corporate data center and a VPC in `us-east-1`. Administrators need private IP connectivity between the two networks within days. The company has a compatible customer gateway device but no Direct Connect circuit, and the traffic must be encrypted while crossing the public internet. Which AWS connectivity option best meets the immediate requirement?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "AWS Client VPN"
+        },
+        {
+          "id": "B",
+          "text": "AWS Direct Connect with a private virtual interface"
+        },
+        {
+          "id": "C",
+          "text": "AWS PrivateLink"
+        },
+        {
+          "id": "D",
+          "text": "AWS Site-to-Site VPN"
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "Site-to-Site VPN provides encrypted IPsec tunnels between an on-premises customer gateway and AWS over the public internet and can be deployed faster than a new Direct Connect circuit.",
+      "option_explanations": {
+        "A": "Client VPN is for individual client devices, not site-to-site network connectivity.",
+        "B": "Direct Connect can provide dedicated connectivity, but there is no circuit and the requirement is immediate encrypted internet-based connectivity.",
+        "C": "PrivateLink provides private access to services, not general routing between the data center and VPC.",
+        "D": "Correct. It matches network-to-network encrypted connectivity over the public internet."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 57,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q58",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "skill_ids": [
+        "5.2.1"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "EC2 instances in a VPC use the Amazon-provided DNS resolver. Queries for `corp.example.com` must be sent to DNS servers in the company's data center over an existing Site-to-Site VPN. Other DNS names should continue using normal VPC resolution. Which Route 53 Resolver configuration should the engineer create?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "An outbound Resolver endpoint plus a forwarding rule for `corp.example.com` that targets the on-premises DNS servers"
+        },
+        {
+          "id": "B",
+          "text": "A Route 53 public hosted zone that delegates `corp.example.com` to the on-premises servers"
+        },
+        {
+          "id": "C",
+          "text": "A Route 53 private hosted zone named `corp.example.com` with no records"
+        },
+        {
+          "id": "D",
+          "text": "An inbound Resolver endpoint plus a system rule for `corp.example.com`"
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "Outbound Resolver endpoints forward selected VPC DNS queries to external resolvers. A forwarding rule specifies the domain and target DNS servers.",
+      "option_explanations": {
+        "A": "Correct. The query direction is VPC to on-premises DNS.",
+        "B": "A public hosted zone is not the private conditional-forwarding solution described.",
+        "C": "An empty private hosted zone would not forward the queries to the on-premises servers.",
+        "D": "Inbound endpoints support DNS queries coming from external networks into the VPC Resolver."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 58,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q59",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "skill_ids": [
+        "5.2.2"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A customer portal is deployed in two AWS Regions. `us-east-1` is the normal production endpoint, and `us-west-2` is a fully prepared secondary endpoint. The DNS response should use the primary while its health check is healthy and automatically return the secondary only when the primary becomes unhealthy. Which Route 53 routing policy should be configured?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Failover routing"
+        },
+        {
+          "id": "B",
+          "text": "Geoproximity routing with bias"
+        },
+        {
+          "id": "C",
+          "text": "Latency-based routing"
+        },
+        {
+          "id": "D",
+          "text": "Weighted routing with weights 100 and 0"
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "Route 53 failover routing models primary and secondary resources and uses health evaluation to decide when to return the secondary.",
+      "option_explanations": {
+        "A": "Correct. It directly matches primary/secondary DNS failover.",
+        "B": "Geoproximity routing uses geography and optional bias.",
+        "C": "Latency routing selects the Region that provides lower latency.",
+        "D": "Weighted routing controls proportions and is not the native health-based primary/secondary design."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 59,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q60",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "skill_ids": [
+        "5.2.3"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A global ecommerce site serves static images and dynamic HTTPS requests from an ALB in `us-east-1`. Most users are far from the Region. The company wants a global edge network, caching for cacheable objects, TLS termination at edge locations, and origin protection without changing the application's protocol. Which AWS service should be placed in front of the ALB?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Amazon Route 53 latency routing only"
+        },
+        {
+          "id": "B",
+          "text": "Amazon CloudFront"
+        },
+        {
+          "id": "C",
+          "text": "AWS Transit Gateway"
+        },
+        {
+          "id": "D",
+          "text": "AWS Global Accelerator"
+        }
+      ],
+      "correct_option_ids": [
+        "B"
+      ],
+      "explanation": "CloudFront is a CDN that provides edge caching and HTTP(S) delivery features in front of origins such as an ALB.",
+      "option_explanations": {
+        "A": "Latency routing chooses DNS answers but does not provide edge caching or TLS termination.",
+        "B": "Correct. It provides the requested CDN and caching behavior.",
+        "C": "Transit Gateway connects networks and is not a public CDN.",
+        "D": "Global Accelerator improves network paths for TCP/UDP and static anycast IPs but does not provide CloudFront-style content caching."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 60,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q61",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "skill_ids": [
+        "5.3.1",
+        "5.3.2"
+      ],
+      "question_type": "multiple_response",
+      "prompt": "An application server in subnet A cannot open TCP 443 to an internal service in subnet B. Both instances are running. The engineer wants observed flow records that show whether traffic is accepted or rejected. The engineer also wants an analysis of the configured VPC path that can identify a blocking route, security group, or network ACL. Which TWO tools should the engineer use?",
+      "instruction": "Choose TWO.",
+      "options": [
+        {
+          "id": "A",
+          "text": "VPC Reachability Analyzer"
+        },
+        {
+          "id": "B",
+          "text": "CloudTrail Insights"
+        },
+        {
+          "id": "C",
+          "text": "Amazon CloudWatch Internet Monitor"
+        },
+        {
+          "id": "D",
+          "text": "VPC Flow Logs"
+        },
+        {
+          "id": "E",
+          "text": "Route 53 Resolver query logging"
+        }
+      ],
+      "correct_option_ids": [
+        "A",
+        "D"
+      ],
+      "explanation": "VPC Flow Logs provide observed network-flow metadata including ACCEPT/REJECT status. Reachability Analyzer evaluates the configured path between supported resources and identifies blocking components.",
+      "option_explanations": {
+        "A": "Correct. It analyzes the VPC configuration path.",
+        "B": "CloudTrail Insights detects unusual API activity, not packet-path reachability.",
+        "C": "Internet Monitor focuses on internet performance affecting end users, not this private VPC path.",
+        "D": "Correct. It gives observed flow evidence.",
+        "E": "Resolver query logs show DNS queries, not the full TCP path between the instances."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 61,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q62",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "skill_ids": [
+        "5.3.3"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A company publishes a JavaScript bundle through CloudFront. The origin object was corrected after a production bug, but users still receive the old cached version. The cache behavior has a 24-hour TTL, and the business cannot wait for expiration. The object path must remain unchanged because the application is already deployed. What should the CloudOps engineer do?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Change the Route 53 record from alias to CNAME and back."
+        },
+        {
+          "id": "B",
+          "text": "Set the origin's Cache-Control header to `no-cache` and wait for all existing edge objects to expire."
+        },
+        {
+          "id": "C",
+          "text": "Restart the origin application servers."
+        },
+        {
+          "id": "D",
+          "text": "Create a CloudFront invalidation for the affected object path."
+        }
+      ],
+      "correct_option_ids": [
+        "D"
+      ],
+      "explanation": "A CloudFront invalidation removes cached copies before normal TTL expiration. Versioned object names are another good deployment pattern, but the path cannot change here.",
+      "option_explanations": {
+        "A": "DNS record type changes do not invalidate CloudFront cache entries.",
+        "B": "Changing origin headers does not instantly remove copies that are already cached until CloudFront revalidates or expires them.",
+        "C": "Restarting the origin does not evict edge-cache objects.",
+        "D": "Correct. It addresses already-cached stale content immediately."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": true
+      },
+      "order": 62,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q63",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "skill_ids": [
+        "5.3.4"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A Site-to-Site VPN between an on-premises network and a VPC shows both tunnels UP. On-premises hosts can reach two existing VPC subnets, but they cannot reach a new subnet `10.40.30.0/24`. VPC Flow Logs on the new subnet show no incoming records from the data center. Security groups are consistent with the working subnets. What should the engineer inspect first?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Whether the new subnet CIDR is present in the relevant VPC/transit routes and advertised or configured on the on-premises side"
+        },
+        {
+          "id": "B",
+          "text": "The ALB deregistration delay in the new subnet"
+        },
+        {
+          "id": "C",
+          "text": "The VPN tunnel's IKE version, because both tunnels are already UP"
+        },
+        {
+          "id": "D",
+          "text": "The new subnet's S3 gateway endpoint policy"
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "When existing networks work and only a newly added CIDR fails, missing route propagation, static routes, or on-premises route advertisement is the strongest first hypothesis.",
+      "option_explanations": {
+        "A": "Correct. The new CIDR must be known on both sides of the hybrid path.",
+        "B": "ALB draining is unrelated to network routing.",
+        "C": "The established tunnels and working existing subnets make this less likely than missing routes for the new network.",
+        "D": "An S3 endpoint policy does not control general on-premises reachability to the subnet."
+      },
+      "difficulty": "hard",
+      "scoring": {
+        "is_scored": false
+      },
+      "order": 63,
+      "scenario_style": "full_operational_scenario"
+    },
+    {
+      "id": "pt1-q64",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "skill_ids": [
+        "5.3.5"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A SaaS application is healthy according to ALB target health and internal application metrics. However, users served through several internet service providers in one metropolitan area report periodic latency spikes and connection failures. The network team wants AWS-provided visibility into internet performance and availability affecting the application's end users by geography and network provider. Which service should the team use?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Amazon CloudWatch Internet Monitor"
+        },
+        {
+          "id": "B",
+          "text": "VPC Reachability Analyzer"
+        },
+        {
+          "id": "C",
+          "text": "Route 53 Resolver query logging"
+        },
+        {
+          "id": "D",
+          "text": "Network Flow Monitor"
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "Internet Monitor is designed to observe internet performance and availability affecting users of an application, including geographic and network-provider perspectives.",
+      "option_explanations": {
+        "A": "Correct. It matches internet path visibility for end users.",
+        "B": "Reachability Analyzer evaluates configured VPC paths, not broad internet performance.",
+        "C": "Resolver query logging captures DNS queries and responses, not end-user internet latency.",
+        "D": "Network Flow Monitor focuses on supported workload network flows rather than end-user internet performance by ISP/geography."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": false
+      },
+      "order": 64,
+      "scenario_style": "focused_scenario"
+    },
+    {
+      "id": "pt1-q65",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "skill_ids": [
+        "5.1.4"
+      ],
+      "question_type": "multiple_choice",
+      "prompt": "A batch-processing fleet in three private subnets downloads about 12 TB from S3 every day. The route tables send `0.0.0.0/0` to NAT gateways, so S3 traffic is also crossing the NAT path and generating significant processing charges. The instances must remain private, and the team does not need private connectivity to arbitrary AWS services. Which change should reduce cost with the least operational overhead?",
+      "instruction": "Choose ONE.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Create an S3 gateway VPC endpoint and associate it with the private-subnet route tables."
+        },
+        {
+          "id": "B",
+          "text": "Create an S3 interface endpoint in each subnet and keep routing S3 traffic through the NAT gateway."
+        },
+        {
+          "id": "C",
+          "text": "Add more NAT gateways so S3 traffic is distributed evenly across Availability Zones."
+        },
+        {
+          "id": "D",
+          "text": "Assign public IPv4 addresses to the batch instances and route S3 traffic through the internet gateway."
+        }
+      ],
+      "correct_option_ids": [
+        "A"
+      ],
+      "explanation": "An S3 gateway endpoint provides private connectivity to S3 through route-table entries and avoids NAT processing for supported S3 traffic.",
+      "option_explanations": {
+        "A": "Correct. It directly removes S3 traffic from the NAT path with low operational overhead.",
+        "B": "Keeping the NAT route does not achieve the requested cost reduction, and interface endpoints introduce endpoint charges.",
+        "C": "More NAT gateways can improve AZ-local routing but do not remove S3 NAT processing costs.",
+        "D": "Public IPs violate the private-instance requirement."
+      },
+      "difficulty": "medium",
+      "scoring": {
+        "is_scored": false
+      },
+      "order": 65,
+      "scenario_style": "full_operational_scenario"
+    }
+  ],
+  "validation": {
+    "status": "PASS",
+    "question_count": 65,
+    "scored_questions": 50,
+    "unscored_questions": 15,
+    "scored_domain_distribution": {
+      "domain-1": 11,
+      "domain-2": 11,
+      "domain-3": 11,
+      "domain-4": 8,
+      "domain-5": 9
+    },
+    "question_type_distribution": {
+      "multiple_choice": 54,
+      "multiple_response": 11
+    },
+    "scenario_style_distribution": {
+      "full_operational_scenario": 41,
+      "focused_scenario": 23,
+      "short_applied_item": 1
+    },
+    "difficulty_distribution": {
+      "medium": 37,
+      "hard": 18,
+      "easy": 10
+    },
+    "published_skill_coverage": "53/53",
+    "all_65_stems_remade": true,
+    "stem_words": {
+      "mean": 56.8,
+      "median": 56,
+      "min": 46,
+      "max": 71,
+      "p90": 64
+    },
+    "stem_sentence_words": {
+      "mean": 13.1,
+      "median": 12,
+      "max": 28
+    },
+    "option_words": {
+      "mean": 8.8,
+      "median": 9,
+      "max": 21
+    },
+    "questions_with_operational_evidence": 30,
+    "questions_with_explicit_constraint_or_decision_language": 58,
+    "mc_correct_letter_distribution": {
+      "C": 8,
+      "D": 16,
+      "B": 11,
+      "A": 19
+    },
+    "mr_correct_position_patterns": {
+      "B+C": 1,
+      "C+D": 1,
+      "B+E": 3,
+      "B+D": 1,
+      "C+E": 1,
+      "A+C": 1,
+      "A+E": 2,
+      "A+D": 1
+    },
+    "public_sample_phrase_matches": 0,
+    "exact_duplicate_prompts": 0,
+    "issues": []
+  },
+  "quality_review": {
+    "scenario_detail": {
+      "status": "PASS",
+      "criteria": [
+        "Full scenarios include existing architecture or operating context.",
+        "Scenario questions include evidence, observed behavior, or a concrete constraint when it materially affects the decision.",
+        "Longer exam-style stems are allowed; readability is enforced at the sentence level rather than by making every scenario short."
+      ]
+    },
+    "distractor_quality": {
+      "status": "PASS",
+      "criteria": [
+        "Distractors are generally adjacent AWS services, settings, or operational actions that solve a nearby problem.",
+        "Avoid obviously unrelated joke-like distractors when a plausible misconception is available.",
+        "Multiple-response items include plausible partial solutions."
+      ]
+    },
+    "scope_alignment": {
+      "status": "PASS",
+      "criteria": [
+        "Scored-domain distribution matches the published SOA-C03 weights on 50 scored items.",
+        "All 53 published skill IDs are represented at least once across the 65-question simulation.",
+        "Question topics remain within the current SOA-C03 scope."
+      ]
+    },
+    "originality": {
+      "status": "PASS",
+      "criteria": [
+        "Questions are newly authored.",
+        "Public practice and recall-style material was used only to learn structure and difficulty.",
+        "No viewed public question stem, scenario, option set, or answer explanation was intentionally copied."
+      ]
+    }
+  }
+}

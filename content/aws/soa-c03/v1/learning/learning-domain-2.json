@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "soa-c03-learning-2026-09-19-v3",
+  "content_version": "soa-c03-learning-2026-09-21-v9",
   "certification_id": "aws-soa-c03",
   "certification_version": "soa-c03",
   "exam_guide_revision": "1.1",
@@ -11,12 +11,12 @@
   },
   "learning_design": {
     "progress_label": "Discovery Progress",
-    "unlock_rule": "A knowledge node unlocks after all required prompts are completed, including required table or code discoveries.",
-    "mastery_note": "Exploration progress is not mastery evidence; quiz attempts remain the scored retrieval signal."
+    "unlock_rule": "A knowledge node unlocks after all required definition and core-understanding prompts are completed.",
+    "mastery_note": "Discovery builds understanding; scored quiz attempts remain the evidence used for adaptive mastery."
   },
   "modules": [
     {
-      "id": "d2-compute-scaling",
+      "id": "d2-scaling",
       "title": "Compute Scaling",
       "order": 1,
       "task_ids": [
@@ -28,19 +28,127 @@
       "prerequisite_module_ids": [],
       "nodes": [
         {
-          "id": "d2-asg-basics",
-          "title": "EC2 Auto Scaling capacity",
+          "id": "d2-asg-bounds",
+          "title": "EC2 Auto Scaling groups and capacity",
           "concept_ids": [
             "aws.autoscaling.ec2",
-            "aws.autoscaling.capacity_bounds"
+            "aws.autoscaling.capacity_bounds",
+            "aws.autoscaling.launch_template",
+            "aws.autoscaling.instance_refresh",
+            "aws.autoscaling.lifecycle_hooks",
+            "aws.autoscaling.warm_pools"
           ],
           "prompts": [
             {
-              "id": "bounds",
+              "id": "definition",
               "kind": "what",
-              "label": "UNDERSTAND ASG BOUNDS",
-              "placeholder": "Reveal the role of each capacity value.",
+              "label": "WHAT IS EC2 AUTO SCALING GROUPS AND CAPACITY?",
+              "placeholder": "An EC2 Auto Scaling group (ASG) maintains a fleet of EC2 instances from a launch…",
               "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "An EC2 Auto Scaling group (ASG) maintains a fleet of EC2 instances from a launch template and works toward a desired capacity within configured minimum and maximum bounds."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Use an ASG when instance capacity should recover from failures or change with demand.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use an ASG when instance capacity should recover from failures or change with demand."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "An Auto Scaling group has `Min=2`, `Desired=4`, and `Max=10`.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "An Auto Scaling group has `Min=2`, `Desired=4`, and `Max=10`. A scaling policy requests 12 instances during a spike, but the group stops at 10 because `MaxSize` is the hard upper bound."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "not_this",
+              "label": "DON'T CONFUSE THESE",
+              "placeholder": "Compare: Minimum • Desired • Maximum",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "option",
+                    "label": "Option"
+                  },
+                  {
+                    "id": "what",
+                    "label": "What it means / does"
+                  },
+                  {
+                    "id": "use",
+                    "label": "When to use / key distinction"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "option-1",
+                    "cells": {
+                      "option": "Minimum",
+                      "what": "Lower bound",
+                      "use": "ASG does not intentionally scale below it"
+                    }
+                  },
+                  {
+                    "id": "option-2",
+                    "cells": {
+                      "option": "Desired",
+                      "what": "Current target",
+                      "use": "ASG works toward this capacity"
+                    }
+                  },
+                  {
+                    "id": "option-3",
+                    "cells": {
+                      "option": "Maximum",
+                      "what": "Upper bound",
+                      "use": "Scaling cannot exceed it"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "option"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "If scaling stops unexpectedly, verify maximum capacity and launch-template/instance-launch errors.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "If scaling stops unexpectedly, verify maximum capacity and launch-template/instance-launch errors."
+              }
+            },
+            {
+              "id": "capacity-table",
+              "kind": "mental_model",
+              "label": "ASG CAPACITY BOUNDS",
+              "placeholder": "Compare: Minimum • Desired • Maximum",
+              "required": false,
               "reveal": {
                 "type": "table",
                 "columns": [
@@ -49,37 +157,37 @@
                     "label": "Setting"
                   },
                   {
-                    "id": "role",
-                    "label": "What it controls"
+                    "id": "meaning",
+                    "label": "Meaning"
                   },
                   {
-                    "id": "effect",
-                    "label": "Operational effect"
+                    "id": "failure",
+                    "label": "Common exam symptom"
                   }
                 ],
                 "rows": [
                   {
                     "id": "min",
                     "cells": {
-                      "setting": "Minimum capacity",
-                      "role": "Lower bound",
-                      "effect": "Auto Scaling will not intentionally scale below this capacity."
+                      "setting": "Minimum",
+                      "meaning": "Lowest capacity the ASG should maintain.",
+                      "failure": "Unexpected scale-in stops at this floor."
                     }
                   },
                   {
                     "id": "desired",
                     "cells": {
-                      "setting": "Desired capacity",
-                      "role": "Current target capacity",
-                      "effect": "The group works toward this number of instances."
+                      "setting": "Desired",
+                      "meaning": "Current target capacity.",
+                      "failure": "ASG works back toward this number."
                     }
                   },
                   {
                     "id": "max",
                     "cells": {
-                      "setting": "Maximum capacity",
-                      "role": "Upper bound",
-                      "effect": "Scaling policies cannot take the group above this capacity."
+                      "setting": "Maximum",
+                      "meaning": "Hard upper capacity bound.",
+                      "failure": "Scale-out stops even while demand remains high."
                     }
                   }
                 ],
@@ -96,14 +204,123 @@
               }
             },
             {
-              "id": "health",
-              "kind": "what",
-              "label": "CAPACITY IS NOT HEALTH",
-              "placeholder": "What else must the group do besides launch instances?",
-              "required": true,
+              "id": "code-example",
+              "kind": "mental_model",
+              "label": "READ THE REAL CONFIG",
+              "placeholder": "Key lines: Minimum capacity • Desired capacity • Maximum capacity • Launch template",
+              "required": false,
               "reveal": {
-                "type": "text",
-                "text": "An Auto Scaling group also evaluates instance health and replaces unhealthy capacity according to its health checks and configuration."
+                "type": "code_file",
+                "filename": "asg.yaml",
+                "language": "yaml",
+                "code": "Resources:\n  WebAsg:\n    Type: AWS::AutoScaling::AutoScalingGroup\n    Properties:\n      MinSize: '2'\n      DesiredCapacity: '4'\n      MaxSize: '10'\n      LaunchTemplate:\n        LaunchTemplateId: lt-0123456789abcdef0\n        Version: '3' ",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "min",
+                    "anchor": {
+                      "line": 5,
+                      "text": "MinSize: '2'",
+                      "occurrence": 1
+                    },
+                    "title": "Minimum capacity",
+                    "explanation": "The ASG should not intentionally scale below this floor.",
+                    "required": false
+                  },
+                  {
+                    "id": "desired",
+                    "anchor": {
+                      "line": 6,
+                      "text": "DesiredCapacity: '4'",
+                      "occurrence": 1
+                    },
+                    "title": "Desired capacity",
+                    "explanation": "The ASG works toward this current target.",
+                    "required": false
+                  },
+                  {
+                    "id": "max",
+                    "anchor": {
+                      "line": 7,
+                      "text": "MaxSize: '10'",
+                      "occurrence": 1
+                    },
+                    "title": "Maximum capacity",
+                    "explanation": "Scale-out cannot exceed this bound.",
+                    "required": false
+                  },
+                  {
+                    "id": "lt",
+                    "anchor": {
+                      "line": 9,
+                      "text": "LaunchTemplateId: lt-0123456789abcdef0",
+                      "occurrence": 1
+                    },
+                    "title": "Launch template",
+                    "explanation": "New instances use the referenced launch configuration.",
+                    "required": false
+                  }
+                ]
+              }
+            },
+            {
+              "id": "asg-advanced",
+              "kind": "mental_model",
+              "label": "AUTO SCALING OPERATIONAL FEATURES",
+              "placeholder": "Instance Refresh = roll out new config • lifecycle hook = pause launch/terminate for custom action • warm pool = pre-initialized capacity.",
+              "required": false,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "feature",
+                    "label": "Feature"
+                  },
+                  {
+                    "id": "job",
+                    "label": "What it does"
+                  },
+                  {
+                    "id": "clue",
+                    "label": "Use case"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "refresh",
+                    "cells": {
+                      "feature": "Instance Refresh",
+                      "job": "Gradually replace instances to roll out a new launch template/configuration",
+                      "clue": "Safely update an ASG fleet"
+                    }
+                  },
+                  {
+                    "id": "hook",
+                    "cells": {
+                      "feature": "Lifecycle hook",
+                      "job": "Pause launch or termination so automation can run before the lifecycle continues",
+                      "clue": "Drain, bootstrap, capture logs, or perform custom action"
+                    }
+                  },
+                  {
+                    "id": "pool",
+                    "cells": {
+                      "feature": "Warm pool",
+                      "job": "Keep pre-initialized instances ready for faster scale-out",
+                      "clue": "Startup time is long and sudden scale-out is too slow"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "feature"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             }
           ],
@@ -125,58 +342,91 @@
           ],
           "prompts": [
             {
-              "id": "policies",
+              "id": "definition",
               "kind": "what",
-              "label": "MATCH THE SCALING POLICY",
-              "placeholder": "Reveal one scaling style at a time.",
+              "label": "WHAT IS SCALING POLICIES?",
+              "placeholder": "A scaling policy tells Auto Scaling when and how to change capacity.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A scaling policy tells Auto Scaling when and how to change capacity."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Choose target tracking for continuous metric targets, step scaling for different reactions to alarm severity…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choose target tracking for continuous metric targets, step scaling for different reactions to alarm severity, scheduled scaling for known time-based demand, and predictive scaling for forecastable recurring demand."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "Traffic rises predictably every weekday at 08:00.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Traffic rises predictably every weekday at 08:00. Scheduled scaling can add capacity before the rush. If the goal is instead to keep average CPU near 50% as demand changes, target tracking is the better mental model."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "not_this",
+              "label": "DON'T CONFUSE THESE",
+              "placeholder": "Compare: Target tracking • Step scaling • Scheduled • Predictive",
               "required": true,
               "reveal": {
                 "type": "table",
                 "columns": [
                   {
-                    "id": "policy",
-                    "label": "Policy"
+                    "id": "option",
+                    "label": "Option"
                   },
                   {
-                    "id": "signal",
-                    "label": "What drives it"
+                    "id": "what",
+                    "label": "What it means / does"
                   },
                   {
-                    "id": "fit",
-                    "label": "Typical fit"
+                    "id": "use",
+                    "label": "When to use / key distinction"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "target",
+                    "id": "option-1",
                     "cells": {
-                      "policy": "Target tracking",
-                      "signal": "Keep a metric near a target value",
-                      "fit": "Continuous automatic scaling with a clear utilization target."
+                      "option": "Target tracking",
+                      "what": "Keep a metric near a target",
+                      "use": "Simple reactive scaling"
                     }
                   },
                   {
-                    "id": "step",
+                    "id": "option-2",
                     "cells": {
-                      "policy": "Step scaling",
-                      "signal": "Alarm breach size maps to scaling adjustments",
-                      "fit": "Different scaling responses for different levels of demand."
+                      "option": "Step scaling",
+                      "what": "Different adjustments for different breach sizes",
+                      "use": "Alarm-driven graduated response"
                     }
                   },
                   {
-                    "id": "scheduled",
+                    "id": "option-3",
                     "cells": {
-                      "policy": "Scheduled scaling",
-                      "signal": "Known time/calendar",
-                      "fit": "Predictable events at known times."
+                      "option": "Scheduled",
+                      "what": "Scale at known times",
+                      "use": "Predictable timetable"
                     }
                   },
                   {
-                    "id": "predictive",
+                    "id": "option-4",
                     "cells": {
-                      "policy": "Predictive scaling",
-                      "signal": "Forecast based on recurring patterns",
-                      "fit": "Recurring demand patterns where capacity can be prepared ahead of time."
+                      "option": "Predictive",
+                      "what": "Forecast future demand",
+                      "use": "Recurring patterns where advance capacity helps"
                     }
                   }
                 ],
@@ -184,17 +434,45 @@
                   "mode": "row",
                   "initially_visible": {
                     "column_ids": [
-                      "policy"
+                      "option"
                     ],
                     "row_ids": [],
                     "cell_ids": []
                   }
                 }
               }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "Known Monday 8 AM demand -> scheduled; maintain ~50% CPU -> target tracking.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Known Monday 8 AM demand -> scheduled; maintain ~50% CPU -> target tracking."
+              }
+            },
+            {
+              "id": "workflow-sequence",
+              "kind": "mental_model",
+              "label": "HOW IT FLOWS",
+              "placeholder": "Flow: Observe demand → … → Warm up and verify",
+              "required": false,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Observe demand",
+                  "Choose the right signal / schedule",
+                  "Scaling policy changes desired capacity",
+                  "Instances launch or terminate",
+                  "Warm up and verify"
+                ]
+              }
             }
           ],
           "prerequisite_node_ids": [
-            "d2-asg-basics"
+            "d2-asg-bounds"
           ],
           "map_position": {
             "x": 0.36,
@@ -203,48 +481,107 @@
           "source_refs": []
         },
         {
-          "id": "d2-warmup-health",
-          "title": "Instance warmup and health grace",
+          "id": "d2-warmup-grace",
+          "title": "Instance warmup and health-check grace period",
           "concept_ids": [
             "aws.autoscaling.instance_warmup",
             "aws.autoscaling.health_check_grace"
           ],
           "prompts": [
             {
-              "id": "timers",
-              "kind": "not_this",
-              "label": "DON'T CONFUSE THE TIMERS",
-              "placeholder": "What question does each timer answer?",
-              "required": true,
-              "reveal": {
-                "type": "comparison",
-                "columns": [
-                  {
-                    "title": "Instance warmup",
-                    "items": [
-                      "When should a newly launched instance contribute fully to scaling metrics/decisions?",
-                      "Prevents fresh instances from causing premature additional scaling"
-                    ]
-                  },
-                  {
-                    "title": "Health check grace period",
-                    "items": [
-                      "How long should Auto Scaling wait before acting on health-check failures for a new instance?",
-                      "Allows initialization before replacement decisions"
-                    ]
-                  }
-                ]
-              }
-            },
-            {
-              "id": "design",
+              "id": "definition",
               "kind": "what",
-              "label": "SET THEM FROM STARTUP REALITY",
-              "placeholder": "What should determine the values?",
+              "label": "WHAT IS INSTANCE WARMUP AND HEALTH-CHECK GRACE PERIOD?",
+              "placeholder": "Instance warmup controls when a new instance fully contributes to scaling decisions. Health-check grace period…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Base the timers on actual application boot, registration, and stabilization behavior. If the application needs several minutes to become ready, zero or very short timers can cause churn."
+                "text": "Instance warmup controls when a new instance fully contributes to scaling decisions. Health-check grace period gives a new instance time to initialize before Auto Scaling reacts to health-check failures."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Tune them to real startup behavior. Very short values can cause scaling churn or premature…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Tune them to real startup behavior. Very short values can cause scaling churn or premature replacement."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "A new instance needs 4 minutes to start the application, but Auto Scaling begins acting on health failures after 1 minute and replaces it.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A new instance needs 4 minutes to start the application, but Auto Scaling begins acting on health failures after 1 minute and replaces it. Increase the health-check grace period to match real startup behavior; warmup solves a different scaling-stabilization problem."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "not_this",
+              "label": "DON'T CONFUSE THESE",
+              "placeholder": "Compare: Warmup • Health-check grace",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "option",
+                    "label": "Option"
+                  },
+                  {
+                    "id": "what",
+                    "label": "What it means / does"
+                  },
+                  {
+                    "id": "use",
+                    "label": "When to use / key distinction"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "option-1",
+                    "cells": {
+                      "option": "Warmup",
+                      "what": "Scaling-decision stabilization",
+                      "use": "Avoids reacting too soon to fresh capacity"
+                    }
+                  },
+                  {
+                    "id": "option-2",
+                    "cells": {
+                      "option": "Health-check grace",
+                      "what": "Health replacement protection during startup",
+                      "use": "Avoids terminating instances before the app is ready"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "option"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "New instances are replaced before startup completes -> health-check grace is a primary clue.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "New instances are replaced before startup completes -> health-check grace is a primary clue."
               }
             }
           ],
@@ -261,41 +598,120 @@
           "id": "d2-queue-scaling",
           "title": "Queue-driven scaling",
           "concept_ids": [
-            "aws.autoscaling.ec2",
-            "aws.autoscaling.target_tracking"
+            "aws.autoscaling.queue",
+            "aws.sqs",
+            "aws.sqs.standard",
+            "aws.sqs.fifo",
+            "aws.sqs.dlq"
           ],
           "prompts": [
             {
-              "id": "metric",
+              "id": "definition",
               "kind": "what",
-              "label": "SCALE ON WORK, NOT JUST CPU",
-              "placeholder": "Why can queue depth be a better signal?",
+              "label": "WHAT IS QUEUE-DRIVEN SCALING?",
+              "placeholder": "Queue-driven scaling adjusts worker capacity based on outstanding work, often using backlog per worker rather…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "For worker fleets, the amount of outstanding work—often expressed as backlog per instance—can correlate more directly with required capacity than CPU utilization."
+                "text": "Queue-driven scaling adjusts worker capacity based on outstanding work, often using backlog per worker rather than CPU alone."
               }
             },
             {
-              "id": "flow",
-              "kind": "action",
-              "label": "QUEUE-DRIVEN LOOP",
-              "placeholder": "How does the control loop work?",
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Use it when the amount of queued work better represents demand than host utilization.",
               "required": true,
               "reveal": {
-                "type": "sequence",
-                "items": [
-                  "Measure queue backlog",
-                  "Normalize by active worker capacity if appropriate",
-                  "Scaling policy adjusts desired capacity",
-                  "Workers consume backlog",
-                  "Metric falls toward target"
-                ]
+                "type": "text",
+                "text": "Use it when the amount of queued work better represents demand than host utilization."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "An SQS queue has 12,000 visible messages and 20 workers, so backlog is about 600 messages per worker.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "An SQS queue has 12,000 visible messages and 20 workers, so backlog is about 600 messages per worker. CPU is only 25%. Scaling on backlog per worker can represent demand better than CPU for this workload."
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "Workers have low CPU but the queue keeps growing -> scale on backlog or backlog…",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Workers have low CPU but the queue keeps growing -> scale on backlog or backlog per instance."
+              }
+            },
+            {
+              "id": "sqs-queue-choices",
+              "kind": "mental_model",
+              "label": "SQS QUEUE CHOICES",
+              "placeholder": "Standard = very high throughput + at-least-once • FIFO = ordered/deduplicated semantics • DLQ = isolate repeatedly failing messages.",
+              "required": false,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "choice",
+                    "label": "Choice"
+                  },
+                  {
+                    "id": "behavior",
+                    "label": "Behavior"
+                  },
+                  {
+                    "id": "use",
+                    "label": "Use it when"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "standard",
+                    "cells": {
+                      "choice": "Standard queue",
+                      "behavior": "At-least-once delivery; best-effort ordering; very high throughput",
+                      "use": "Order is not strict and consumers are idempotent"
+                    }
+                  },
+                  {
+                    "id": "fifo",
+                    "cells": {
+                      "choice": "FIFO queue",
+                      "behavior": "Preserves message-group ordering and supports deduplication/exactly-once processing semantics within SQS constraints",
+                      "use": "Order and duplicate suppression matter"
+                    }
+                  },
+                  {
+                    "id": "dlq",
+                    "cells": {
+                      "choice": "Dead-letter queue",
+                      "behavior": "Receives messages that fail processing repeatedly after the configured receive threshold",
+                      "use": "Isolate poison/failing messages for investigation"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "choice"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             }
           ],
           "prerequisite_node_ids": [
-            "d2-warmup-health"
+            "d2-warmup-grace"
           ],
           "map_position": {
             "x": 0.84,
@@ -306,7 +722,7 @@
       ]
     },
     {
-      "id": "d2-cache-database-scaling",
+      "id": "d2-cache-db",
       "title": "Caching and Database Scaling",
       "order": 2,
       "task_ids": [
@@ -317,65 +733,89 @@
         "2.1.3"
       ],
       "prerequisite_module_ids": [
-        "d2-compute-scaling"
+        "d2-scaling"
       ],
       "nodes": [
         {
           "id": "d2-cloudfront-cache",
-          "title": "CloudFront caching",
+          "title": "CloudFront caching policies",
           "concept_ids": [
-            "aws.cloudfront.caching"
+            "aws.cloudfront.caching",
+            "aws.cloudfront.cache_key",
+            "aws.cloudfront.cache_policy",
+            "aws.cloudfront.origin_request_policy"
           ],
           "prompts": [
             {
-              "id": "model",
+              "id": "definition",
               "kind": "what",
-              "label": "WHAT DOES THE CACHE KEY DECIDE?",
-              "placeholder": "What makes two requests the same cached object?",
+              "label": "WHAT IS CLOUDFRONT CACHING POLICIES?",
+              "placeholder": "CloudFront caches content at edge locations. The cache key decides which request attributes create separate…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "The cache key determines which request attributes CloudFront uses to distinguish cached objects. A smaller key can improve cache hit ratio, but only if omitted attributes do not change the response."
+                "text": "CloudFront caches content at edge locations. The cache key decides which request attributes create separate cached objects; origin request policy controls additional values sent to the origin without necessarily varying the cache."
               }
             },
             {
-              "id": "ttl",
-              "kind": "what",
-              "label": "CACHE LIFETIME CONTROLS",
-              "placeholder": "Reveal each control and what it changes.",
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Keep the cache key as small as correctness allows. Unnecessary headers, cookies, or query strings…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Keep the cache key as small as correctness allows. Unnecessary headers, cookies, or query strings reduce cache-hit ratio."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "Requests `/logo.png?tracking_user=123` and `/logo.png?tracking_user=456` return identical content.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Requests `/logo.png?tracking_user=123` and `/logo.png?tracking_user=456` return identical content. If that tracking parameter is included in the cache key, CloudFront stores separate variants and hit ratio drops for no benefit."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "not_this",
+              "label": "DON'T CONFUSE THESE",
+              "placeholder": "Compare: Cache policy • Origin request policy",
               "required": true,
               "reveal": {
                 "type": "table",
                 "columns": [
                   {
-                    "id": "control",
-                    "label": "Control"
+                    "id": "option",
+                    "label": "Option"
                   },
                   {
-                    "id": "effect",
-                    "label": "Effect"
+                    "id": "what",
+                    "label": "What it means / does"
+                  },
+                  {
+                    "id": "use",
+                    "label": "When to use / key distinction"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "ttl",
+                    "id": "option-1",
                     "cells": {
-                      "control": "TTL",
-                      "effect": "How long an object can remain cached before CloudFront treats it as stale."
+                      "option": "Cache policy",
+                      "what": "Controls cache key and TTL-related behavior",
+                      "use": "Determines cache variation"
                     }
                   },
                   {
-                    "id": "invalidate",
+                    "id": "option-2",
                     "cells": {
-                      "control": "Invalidation",
-                      "effect": "Explicitly removes cached paths before normal expiration."
-                    }
-                  },
-                  {
-                    "id": "version",
-                    "cells": {
-                      "control": "Versioned object name",
-                      "effect": "Changes the URL/key so clients request a new object without waiting for an old object to expire."
+                      "option": "Origin request policy",
+                      "what": "Controls additional request values forwarded to origin",
+                      "use": "Can forward values without putting all of them in the cache key"
                     }
                   }
                 ],
@@ -383,12 +823,23 @@
                   "mode": "row",
                   "initially_visible": {
                     "column_ids": [
-                      "control"
+                      "option"
                     ],
                     "row_ids": [],
                     "cell_ids": []
                   }
                 }
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "Low cache-hit ratio caused by tracking query parameters -> remove irrelevant values from the cache…",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Low cache-hit ratio caused by tracking query parameters -> remove irrelevant values from the cache key."
               }
             }
           ],
@@ -400,64 +851,157 @@
           "source_refs": []
         },
         {
-          "id": "d2-redis-memcached",
-          "title": "Valkey/Redis OSS vs Memcached",
+          "id": "d2-elasticache",
+          "title": "ElastiCache: Valkey/Redis OSS vs Memcached",
           "concept_ids": [
             "aws.elasticache.redis_valkey",
-            "aws.elasticache.memcached"
+            "aws.elasticache.memcached",
+            "aws.elasticache.multi_az",
+            "aws.elasticache.scaling",
+            "aws.dax"
           ],
           "prompts": [
             {
-              "id": "engines",
+              "id": "definition",
               "kind": "what",
-              "label": "COMPARE CACHE ENGINES",
-              "placeholder": "Reveal one capability column at a time.",
+              "label": "WHAT IS ELASTICACHE: VALKEY/REDIS OSS VS MEMCACHED?",
+              "placeholder": "Amazon ElastiCache is a managed in-memory caching service. Valkey/Redis OSS and Memcached have different data…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Amazon ElastiCache is a managed in-memory caching service. Valkey/Redis OSS and Memcached have different data models and availability features."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Choose Valkey/Redis OSS for richer data structures, replication, and Multi-AZ patterns; choose Memcached for a…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choose Valkey/Redis OSS for richer data structures, replication, and Multi-AZ patterns; choose Memcached for a simpler distributed cache where those Redis-style features are not needed."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "A shopping-cart service needs replicated in-memory data and automatic failover, which fits Valkey/Redis OSS features better than Memcached.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A shopping-cart service needs replicated in-memory data and automatic failover, which fits Valkey/Redis OSS features better than Memcached. A disposable, simple distributed cache where replication semantics are unnecessary can fit Memcached."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "not_this",
+              "label": "DON'T CONFUSE THESE",
+              "placeholder": "Compare: Valkey / Redis OSS • Memcached",
               "required": true,
               "reveal": {
                 "type": "table",
                 "columns": [
                   {
-                    "id": "engine",
-                    "label": "Engine"
+                    "id": "option",
+                    "label": "Option"
                   },
                   {
-                    "id": "structure",
-                    "label": "Data model"
+                    "id": "what",
+                    "label": "What it means / does"
                   },
                   {
-                    "id": "ha",
-                    "label": "HA / replication"
-                  },
-                  {
-                    "id": "fit",
-                    "label": "Typical fit"
+                    "id": "use",
+                    "label": "When to use / key distinction"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "redis",
+                    "id": "option-1",
                     "cells": {
-                      "engine": "Valkey / Redis OSS",
-                      "structure": "Rich data structures",
-                      "ha": "Replication and Multi-AZ patterns available",
-                      "fit": "Caching plus richer data structures, replication, and durability options."
+                      "option": "Valkey / Redis OSS",
+                      "what": "Rich data structures and replication options",
+                      "use": "Supports HA patterns such as Multi-AZ"
                     }
                   },
                   {
-                    "id": "memcached",
+                    "id": "option-2",
                     "cells": {
-                      "engine": "Memcached",
-                      "structure": "Simple key/value cache",
-                      "ha": "Scale-out nodes; no Redis-style replication model",
-                      "fit": "Simple distributed caching where the application can tolerate cache-node loss."
+                      "option": "Memcached",
+                      "what": "Simple distributed key/value cache",
+                      "use": "Scale-out cache without Redis-style replication model"
                     }
                   }
                 ],
                 "progressive_reveal": {
-                  "mode": "column",
+                  "mode": "row",
                   "initially_visible": {
                     "column_ids": [
-                      "engine"
+                      "option"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "Need replication/failover or richer data structures -> Valkey/Redis OSS.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Need replication/failover or richer data structures -> Valkey/Redis OSS."
+              }
+            },
+            {
+              "id": "dax-vs-elasticache",
+              "kind": "mental_model",
+              "label": "DAX VS ELASTICACHE",
+              "placeholder": "DAX = DynamoDB-compatible read cache • ElastiCache = general in-memory cache for application/database patterns.",
+              "required": false,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "service",
+                    "label": "Service"
+                  },
+                  {
+                    "id": "fit",
+                    "label": "Best fit"
+                  },
+                  {
+                    "id": "clue",
+                    "label": "Exam clue"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "dax",
+                    "cells": {
+                      "service": "DynamoDB Accelerator (DAX)",
+                      "fit": "Microsecond caching for eventually consistent DynamoDB reads with a DynamoDB-compatible API",
+                      "clue": "DynamoDB is the source and read latency must drop to microseconds"
+                    }
+                  },
+                  {
+                    "id": "elasticache",
+                    "cells": {
+                      "service": "ElastiCache",
+                      "fit": "General-purpose application/database caching, sessions, rich Redis/Valkey structures, or Memcached",
+                      "clue": "Cache is not specifically a transparent DynamoDB read accelerator"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "service"
                     ],
                     "row_ids": [],
                     "cell_ids": []
@@ -477,76 +1021,72 @@
         },
         {
           "id": "d2-rds-scaling",
-          "title": "RDS scaling options",
+          "title": "RDS and Aurora scaling",
           "concept_ids": [
-            "aws.rds.storage_autoscaling",
             "aws.rds.instance_scaling",
-            "aws.rds.read_replica"
+            "aws.rds.storage_autoscaling",
+            "aws.aurora.auto_scaling",
+            "aws.aurora.serverless_v2"
           ],
           "prompts": [
             {
-              "id": "choices",
+              "id": "definition",
               "kind": "what",
-              "label": "SCALE THE RIGHT LAYER",
-              "placeholder": "Reveal one scaling option at a time.",
+              "label": "WHAT IS RDS AND AURORA SCALING?",
+              "placeholder": "Managed database scaling can change compute, storage, or read capacity depending on which resource is…",
               "required": true,
               "reveal": {
-                "type": "table",
-                "columns": [
-                  {
-                    "id": "option",
-                    "label": "Option"
-                  },
-                  {
-                    "id": "changes",
-                    "label": "What changes"
-                  },
-                  {
-                    "id": "use",
-                    "label": "Use when"
-                  }
-                ],
-                "rows": [
-                  {
-                    "id": "storage",
-                    "cells": {
-                      "option": "Storage autoscaling",
-                      "changes": "Allocated database storage",
-                      "use": "Storage consumption is growing and you want automatic storage expansion within configured limits."
-                    }
-                  },
-                  {
-                    "id": "instance",
-                    "cells": {
-                      "option": "DB instance class change",
-                      "changes": "Compute and memory capacity",
-                      "use": "The primary database host needs more or less compute/memory."
-                    }
-                  },
-                  {
-                    "id": "replica",
-                    "cells": {
-                      "option": "Read replica",
-                      "changes": "Adds read capacity",
-                      "use": "Read traffic needs horizontal scaling or read isolation."
-                    }
-                  }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "option"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
+                "type": "text",
+                "text": "Managed database scaling can change compute, storage, or read capacity depending on which resource is constrained."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Scale the layer that is actually under pressure: DB instance class for compute/memory, storage autoscaling…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Scale the layer that is actually under pressure: DB instance class for compute/memory, storage autoscaling for allocated storage growth, and read replicas/Aurora replica scaling for read demand."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "A database has `CPUUtilization Avg=28%` and plenty of read capacity, but free storage is falling toward zero.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A database has `CPUUtilization Avg=28%` and plenty of read capacity, but free storage is falling toward zero. Storage autoscaling addresses storage growth. Adding a read replica would solve the wrong problem."
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "Do not solve a storage-capacity problem by adding read replicas, or a read-scaling problem by…",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Do not solve a storage-capacity problem by adding read replicas, or a read-scaling problem by only increasing storage."
+              }
+            },
+            {
+              "id": "aurora-serverless-v2",
+              "kind": "when",
+              "label": "AURORA SERVERLESS V2",
+              "placeholder": "Aurora Serverless v2 scales database compute in Aurora Capacity Units (ACUs) inside a configured range as demand changes.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Use Aurora Serverless v2 when an Aurora workload needs fine-grained automatic database compute scaling instead of manually sizing fixed DB instances. Each serverless writer or reader has capacity measured in ACUs and scales within configured minimum and maximum capacity settings."
               }
             }
           ],
           "prerequisite_node_ids": [
-            "d2-redis-memcached"
+            "d2-elasticache"
           ],
           "map_position": {
             "x": 0.6,
@@ -563,42 +1103,75 @@
           ],
           "prompts": [
             {
-              "id": "modes",
+              "id": "definition",
               "kind": "what",
-              "label": "ON-DEMAND OR PROVISIONED?",
-              "placeholder": "Reveal one capacity model at a time.",
+              "label": "WHAT IS DYNAMODB CAPACITY MODES?",
+              "placeholder": "DynamoDB offers on-demand capacity, where AWS handles request capacity automatically, and provisioned capacity, where read/write…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "DynamoDB offers on-demand capacity, where AWS handles request capacity automatically, and provisioned capacity, where read/write capacity is configured and can use auto scaling."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Use on-demand for unpredictable/spiky workloads or operational simplicity; use provisioned with auto scaling when planned…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use on-demand for unpredictable/spiky workloads or operational simplicity; use provisioned with auto scaling when planned capacity and utilization management fit the workload."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "A new ticket-sale workload can jump from almost no traffic to thousands of requests per second without a predictable schedule.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A new ticket-sale workload can jump from almost no traffic to thousands of requests per second without a predictable schedule. On-demand capacity reduces planning. A stable workload with known throughput can justify provisioned capacity with auto scaling."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "not_this",
+              "label": "DON'T CONFUSE THESE",
+              "placeholder": "Compare: On-demand • Provisioned",
               "required": true,
               "reveal": {
                 "type": "table",
                 "columns": [
                   {
-                    "id": "mode",
-                    "label": "Mode"
+                    "id": "option",
+                    "label": "Option"
                   },
                   {
-                    "id": "capacity",
-                    "label": "How capacity is managed"
+                    "id": "what",
+                    "label": "What it means / does"
                   },
                   {
-                    "id": "fit",
-                    "label": "Typical fit"
+                    "id": "use",
+                    "label": "When to use / key distinction"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "ondemand",
+                    "id": "option-1",
                     "cells": {
-                      "mode": "On-demand",
-                      "capacity": "AWS handles capacity automatically per request pattern",
-                      "fit": "Unpredictable, spiky, or newly launched workloads where simplicity matters."
+                      "option": "On-demand",
+                      "what": "Automatic capacity per request pattern",
+                      "use": "Unpredictable or new workloads"
                     }
                   },
                   {
-                    "id": "provisioned",
+                    "id": "option-2",
                     "cells": {
-                      "mode": "Provisioned",
-                      "capacity": "You configure read/write capacity; auto scaling can adjust it",
-                      "fit": "Workloads where capacity planning and utilization control are desirable."
+                      "option": "Provisioned",
+                      "what": "Configured RCU/WCU with optional auto scaling",
+                      "use": "More planned/predictable capacity management"
                     }
                   }
                 ],
@@ -606,7 +1179,7 @@
                   "mode": "row",
                   "initially_visible": {
                     "column_ids": [
-                      "mode"
+                      "option"
                     ],
                     "row_ids": [],
                     "cell_ids": []
@@ -615,14 +1188,14 @@
               }
             },
             {
-              "id": "throttle",
-              "kind": "what",
-              "label": "THROTTLING IS EVIDENCE",
-              "placeholder": "What should you investigate when requests throttle?",
-              "required": true,
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "Unknown or highly variable traffic with minimal capacity planning -> on-demand.",
+              "required": false,
               "reveal": {
                 "type": "text",
-                "text": "Check capacity mode, consumed capacity, partition-key distribution, limits, and retry behavior. Increasing table-level capacity does not fix every hot-partition or access-pattern problem."
+                "text": "Unknown or highly variable traffic with minimal capacity planning -> on-demand."
               }
             }
           ],
@@ -638,7 +1211,7 @@
       ]
     },
     {
-      "id": "d2-high-availability",
+      "id": "d2-ha",
       "title": "High Availability and Health",
       "order": 3,
       "task_ids": [
@@ -649,71 +1222,96 @@
         "2.2.2"
       ],
       "prerequisite_module_ids": [
-        "d2-cache-database-scaling"
+        "d2-cache-db"
       ],
       "nodes": [
         {
-          "id": "d2-elb-types",
-          "title": "Load balancer types",
+          "id": "d2-load-balancers",
+          "title": "ALB, NLB, and GWLB",
           "concept_ids": [
-            "aws.elb",
             "aws.alb",
             "aws.nlb",
             "aws.gwlb"
           ],
           "prompts": [
             {
-              "id": "types",
+              "id": "definition",
               "kind": "what",
-              "label": "CHOOSE THE LOAD BALANCER",
-              "placeholder": "Reveal one load balancer family at a time.",
+              "label": "WHAT IS ALB, NLB, AND GWLB?",
+              "placeholder": "Elastic Load Balancing distributes traffic to healthy targets. ALB, NLB, and GWLB serve different network…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Elastic Load Balancing distributes traffic to healthy targets. ALB, NLB, and GWLB serve different network layers and use cases."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Choose ALB for HTTP/HTTPS Layer 7 routing, NLB for high-performance Layer 4 TCP/UDP/TLS, and GWLB…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choose ALB for HTTP/HTTPS Layer 7 routing, NLB for high-performance Layer 4 TCP/UDP/TLS, and GWLB for inserting and scaling virtual network appliances."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "An HTTP API must route `/images/*` to one target group and `/api/*` to another, which points to ALB Layer-7 routing.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "An HTTP API must route `/images/*` to one target group and `/api/*` to another, which points to ALB Layer-7 routing. A high-throughput TCP service on port 443 that does not need HTTP-aware routing is a different NLB-style requirement."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "not_this",
+              "label": "DON'T CONFUSE THESE",
+              "placeholder": "Compare: ALB • NLB • GWLB",
               "required": true,
               "reveal": {
                 "type": "table",
                 "columns": [
                   {
-                    "id": "type",
-                    "label": "Type"
+                    "id": "option",
+                    "label": "Option"
                   },
                   {
-                    "id": "layer",
-                    "label": "Traffic model"
+                    "id": "what",
+                    "label": "What it means / does"
                   },
                   {
-                    "id": "strength",
-                    "label": "Best fit"
-                  },
-                  {
-                    "id": "clue",
-                    "label": "Common clue"
+                    "id": "use",
+                    "label": "When to use / key distinction"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "alb",
+                    "id": "option-1",
                     "cells": {
-                      "type": "ALB",
-                      "layer": "HTTP/HTTPS",
-                      "strength": "Layer 7 routing by host/path/header and web application traffic",
-                      "clue": "Content-based HTTP routing"
+                      "option": "ALB",
+                      "what": "HTTP/HTTPS, host/path/header routing",
+                      "use": "Web/API Layer 7 traffic"
                     }
                   },
                   {
-                    "id": "nlb",
+                    "id": "option-2",
                     "cells": {
-                      "type": "NLB",
-                      "layer": "TCP/UDP/TLS",
-                      "strength": "Very high-performance Layer 4 connections and static IP style requirements",
-                      "clue": "Transport-layer load balancing"
+                      "option": "NLB",
+                      "what": "TCP/UDP/TLS, high performance, static-IP-style needs",
+                      "use": "Layer 4 traffic"
                     }
                   },
                   {
-                    "id": "gwlb",
+                    "id": "option-3",
                     "cells": {
-                      "type": "GWLB",
-                      "layer": "Network appliance traffic",
-                      "strength": "Deploying and scaling virtual network appliances",
-                      "clue": "Firewalls/inspection appliances in the traffic path"
+                      "option": "GWLB",
+                      "what": "Geneve-based appliance insertion",
+                      "use": "Firewalls/inspection appliances"
                     }
                   }
                 ],
@@ -721,12 +1319,23 @@
                   "mode": "row",
                   "initially_visible": {
                     "column_ids": [
-                      "type"
+                      "option"
                     ],
                     "row_ids": [],
                     "cell_ids": []
                   }
                 }
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "Path-based HTTP routing -> ALB; TCP/UDP transport load balancing -> NLB.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Path-based HTTP routing -> ALB; TCP/UDP transport load balancing -> NLB."
               }
             }
           ],
@@ -739,43 +1348,188 @@
         },
         {
           "id": "d2-target-health",
-          "title": "Target groups and health checks",
+          "title": "Target groups, health checks, deregistration, and cross-zone",
           "concept_ids": [
             "aws.elb.target_group",
-            "aws.elb.health_checks"
+            "aws.elb.health_checks",
+            "aws.elb.deregistration_delay",
+            "aws.elb.cross_zone",
+            "aws.ecs"
           ],
           "prompts": [
             {
-              "id": "life",
-              "kind": "action",
-              "label": "TARGET LIFE CYCLE",
-              "placeholder": "How does a target become usable?",
-              "required": true,
-              "reveal": {
-                "type": "sequence",
-                "items": [
-                  "Register target",
-                  "Health checks begin",
-                  "Target becomes healthy",
-                  "Load balancer routes traffic",
-                  "Unhealthy target is removed from normal routing"
-                ]
-              }
-            },
-            {
-              "id": "diagnose",
+              "id": "definition",
               "kind": "what",
-              "label": "HEALTH CHECK FAILURES ARE LAYERED",
-              "placeholder": "What should you verify before blaming the load balancer?",
+              "label": "WHAT IS TARGET GROUPS, HEALTH CHECKS, DEREGISTRATION, AND CROSS-ZONE?",
+              "placeholder": "A target group defines where a load balancer sends traffic and how target health is…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Verify the health-check protocol, port, path, expected response, security rules, application listener, and application readiness on the target."
+                "text": "A target group defines where a load balancer sends traffic and how target health is checked. Deregistration delay lets in-flight work drain when a target is removed."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Troubleshoot target eligibility from health checks first. Cross-zone behavior affects how load-balancer nodes distribute traffic…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Troubleshoot target eligibility from health checks first. Cross-zone behavior affects how load-balancer nodes distribute traffic across Availability Zones."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "An ALB target is registered but shows `unhealthy` because `/health` returns HTTP 500.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "An ALB target is registered but shows `unhealthy` because `/health` returns HTTP 500. The load balancer does not send normal traffic to it. When a healthy target is later removed, deregistration delay gives in-flight requests time to finish."
+              }
+            },
+            {
+              "id": "health-metric-example",
+              "kind": "mental_model",
+              "label": "WHAT HEALTH DATA CAN LOOK LIKE",
+              "placeholder": "ALB shows HealthyHostCount=0 while ECS tasks restart: inspect target-health reason and task/container logs.",
+              "required": false,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "signal",
+                    "label": "Signal"
+                  },
+                  {
+                    "id": "example",
+                    "label": "Example"
+                  },
+                  {
+                    "id": "meaning",
+                    "label": "Interpretation"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "healthy",
+                    "cells": {
+                      "signal": "HealthyHostCount",
+                      "example": "0",
+                      "meaning": "No target is currently considered healthy"
+                    }
+                  },
+                  {
+                    "id": "unhealthy",
+                    "cells": {
+                      "signal": "UnHealthyHostCount",
+                      "example": "3",
+                      "meaning": "Three registered targets are unhealthy"
+                    }
+                  },
+                  {
+                    "id": "reason",
+                    "cells": {
+                      "signal": "Target health reason",
+                      "example": "Health checks failed with HTTP 500",
+                      "meaning": "The app health endpoint is failing"
+                    }
+                  },
+                  {
+                    "id": "logs",
+                    "cells": {
+                      "signal": "Container log",
+                      "example": "ERROR dependency_not_ready",
+                      "meaning": "Application startup/readiness is likely the root cause"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "signal"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "elb-vs-route53-health",
+              "kind": "mental_model",
+              "label": "ELB HEALTH CHECK VS ROUTE 53 HEALTH CHECK",
+              "placeholder": "ELB decides whether to send traffic to a target; Route 53 can make DNS routing/failover decisions.",
+              "required": false,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "check",
+                    "label": "Health check"
+                  },
+                  {
+                    "id": "scope",
+                    "label": "What it evaluates"
+                  },
+                  {
+                    "id": "effect",
+                    "label": "What the result changes"
+                  },
+                  {
+                    "id": "example",
+                    "label": "Example"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "elb",
+                    "cells": {
+                      "check": "ELB target health",
+                      "scope": "Registered load-balancer targets",
+                      "effect": "Whether the load balancer routes normal traffic to that target",
+                      "example": "GET /health returns 500 → target becomes unhealthy"
+                    }
+                  },
+                  {
+                    "id": "r53",
+                    "cells": {
+                      "check": "Route 53 health evaluation",
+                      "scope": "DNS endpoint/record health or supported alias target health",
+                      "effect": "Which DNS answer is selected for policies such as failover",
+                      "example": "Primary endpoint unhealthy → answer secondary failover record"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "check"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "A target is registered but receives no traffic -> verify health-check status and target-group settings…",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A target is registered but receives no traffic -> verify health-check status and target-group settings before changing DNS."
               }
             }
           ],
           "prerequisite_node_ids": [
-            "d2-elb-types"
+            "d2-load-balancers"
           ],
           "map_position": {
             "x": 0.36,
@@ -785,7 +1539,7 @@
         },
         {
           "id": "d2-route53-health",
-          "title": "Route 53 health and failover",
+          "title": "Route 53 health checks and failover",
           "concept_ids": [
             "aws.route53.health_checks",
             "aws.route53.failover",
@@ -793,63 +1547,96 @@
           ],
           "prompts": [
             {
-              "id": "health",
+              "id": "definition",
               "kind": "what",
-              "label": "HOW ROUTE 53 KNOWS HEALTH",
-              "placeholder": "Reveal each health source.",
+              "label": "WHAT IS ROUTE 53 HEALTH CHECKS AND FAILOVER?",
+              "placeholder": "Route 53 can make DNS routing decisions using health checks or supported alias-target health through…",
               "required": true,
               "reveal": {
-                "type": "table",
-                "columns": [
+                "type": "text",
+                "text": "Route 53 can make DNS routing decisions using health checks or supported alias-target health through Evaluate Target Health."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Use failover routing for active/passive DNS behavior when traffic should move from a primary endpoint…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use failover routing for active/passive DNS behavior when traffic should move from a primary endpoint to a secondary endpoint based on health."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "The primary application endpoint in `us-east-1` fails its Route 53 health evaluation.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "The primary application endpoint in `us-east-1` fails its Route 53 health evaluation. With failover records configured, DNS answers can shift to the secondary endpoint. DNS caching means clients may not all switch at exactly the same instant."
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "DNS active/passive routing with a primary and secondary endpoint -> Route 53 failover.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "DNS active/passive routing with a primary and secondary endpoint -> Route 53 failover."
+              }
+            },
+            {
+              "id": "code-example",
+              "kind": "mental_model",
+              "label": "READ THE REAL CONFIG",
+              "placeholder": "Key lines: Primary record • Health evaluation • Secondary record",
+              "required": false,
+              "reveal": {
+                "type": "code_file",
+                "filename": "route53-failover.yaml",
+                "language": "yaml",
+                "code": "PrimaryRecord:\n  Type: AWS::Route53::RecordSet\n  Properties:\n    Name: app.example.com\n    Type: A\n    SetIdentifier: primary\n    Failover: PRIMARY\n    HealthCheckId: hc-primary\nSecondaryRecord:\n  Type: AWS::Route53::RecordSet\n  Properties:\n    Name: app.example.com\n    Type: A\n    SetIdentifier: secondary\n    Failover: SECONDARY",
+                "line_numbers": true,
+                "annotations": [
                   {
-                    "id": "method",
-                    "label": "Method"
+                    "id": "primary",
+                    "anchor": {
+                      "line": 7,
+                      "text": "Failover: PRIMARY",
+                      "occurrence": 1
+                    },
+                    "title": "Primary record",
+                    "explanation": "Route 53 normally returns the primary when it is healthy.",
+                    "required": false
                   },
                   {
-                    "id": "what",
-                    "label": "What it evaluates"
+                    "id": "health",
+                    "anchor": {
+                      "line": 8,
+                      "text": "HealthCheckId: hc-primary",
+                      "occurrence": 1
+                    },
+                    "title": "Health evaluation",
+                    "explanation": "The primary's health determines failover behavior.",
+                    "required": false
                   },
                   {
-                    "id": "use",
-                    "label": "Use when"
+                    "id": "secondary",
+                    "anchor": {
+                      "line": 15,
+                      "text": "Failover: SECONDARY",
+                      "occurrence": 1
+                    },
+                    "title": "Secondary record",
+                    "explanation": "The secondary is used according to failover routing behavior.",
+                    "required": false
                   }
-                ],
-                "rows": [
-                  {
-                    "id": "endpoint",
-                    "cells": {
-                      "method": "Route 53 health check",
-                      "what": "Directly probes an endpoint or evaluates another health-check construct",
-                      "use": "You need DNS routing decisions based on endpoint health."
-                    }
-                  },
-                  {
-                    "id": "alias",
-                    "cells": {
-                      "method": "Evaluate Target Health",
-                      "what": "Uses health information from certain AWS alias targets",
-                      "use": "An alias record points at a supported AWS resource and you want Route 53 to consider its health."
-                    }
-                  },
-                  {
-                    "id": "calculated",
-                    "cells": {
-                      "method": "Calculated health check",
-                      "what": "Combines the status of child health checks",
-                      "use": "A higher-level health decision depends on multiple components."
-                    }
-                  }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "method"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
+                ]
               }
             }
           ],
@@ -863,69 +1650,108 @@
           "source_refs": []
         },
         {
-          "id": "d2-rds-multiaz",
-          "title": "RDS Multi-AZ",
+          "id": "d2-rds-ha",
+          "title": "RDS Multi-AZ vs read replicas",
           "concept_ids": [
             "aws.rds.multi_az",
-            "aws.rds.multi_az_cluster"
+            "aws.rds.multi_az_cluster",
+            "aws.rds.read_replica"
           ],
           "prompts": [
             {
-              "id": "compare",
+              "id": "definition",
               "kind": "what",
-              "label": "MULTI-AZ OR READ REPLICA?",
-              "placeholder": "Reveal one property column at a time.",
+              "label": "WHAT IS RDS MULTI-AZ VS READ REPLICAS?",
+              "placeholder": "RDS Multi-AZ is primarily an availability/failover design. Read replicas are primarily for read scaling and…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "RDS Multi-AZ is primarily an availability/failover design. Read replicas are primarily for read scaling and can support some disaster-recovery patterns."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Choose based on the requirement: automatic managed HA failover points to Multi-AZ; additional read capacity…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choose based on the requirement: automatic managed HA failover points to Multi-AZ; additional read capacity points to read replicas."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "The primary RDS instance fails.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "The primary RDS instance fails. In a Multi-AZ design, AWS can fail over to a standby for availability. A read replica is primarily for read scaling; it should not be chosen just because the word 'replica' sounds highly available."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "not_this",
+              "label": "DON'T CONFUSE THESE",
+              "placeholder": "Compare: Multi-AZ • Read replica",
               "required": true,
               "reveal": {
                 "type": "table",
                 "columns": [
                   {
-                    "id": "design",
-                    "label": "Design"
+                    "id": "option",
+                    "label": "Option"
                   },
                   {
-                    "id": "primary_goal",
-                    "label": "Primary goal"
+                    "id": "what",
+                    "label": "What it means / does"
                   },
                   {
-                    "id": "reads",
-                    "label": "Read scaling"
-                  },
-                  {
-                    "id": "failover",
-                    "label": "Failover role"
+                    "id": "use",
+                    "label": "When to use / key distinction"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "multiaz",
+                    "id": "option-1",
                     "cells": {
-                      "design": "Multi-AZ deployment",
-                      "primary_goal": "High availability / failover",
-                      "reads": "Standby is not the normal read-scaling target in the classic Multi-AZ model",
-                      "failover": "Designed for managed failover."
+                      "option": "Multi-AZ",
+                      "what": "High availability and managed failover",
+                      "use": "Standby/cluster design is not chosen mainly for read scaling"
                     }
                   },
                   {
-                    "id": "replica",
+                    "id": "option-2",
                     "cells": {
-                      "design": "Read replica",
-                      "primary_goal": "Read scaling and optional DR patterns",
-                      "reads": "Yes—serve read traffic",
-                      "failover": "Promotion is a separate operation/design choice."
+                      "option": "Read replica",
+                      "what": "Serve read traffic",
+                      "use": "Asynchronous replication and optional promotion depending on engine/design"
                     }
                   }
                 ],
                 "progressive_reveal": {
-                  "mode": "column",
+                  "mode": "row",
                   "initially_visible": {
                     "column_ids": [
-                      "design"
+                      "option"
                     ],
                     "row_ids": [],
                     "cell_ids": []
                   }
                 }
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "\"Automatic failover\" -> Multi-AZ. \"Scale read traffic\" -> read replica.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "\"Automatic failover\" -> Multi-AZ. \"Scale read traffic\" -> read replica."
               }
             }
           ],
@@ -942,80 +1768,85 @@
           "id": "d2-ha-web",
           "title": "Highly available web tier",
           "concept_ids": [
-            "aws.ha.web_tier"
+            "aws.ha.web_tier",
+            "aws.application_recovery_controller"
           ],
           "prompts": [
             {
-              "id": "layers",
+              "id": "definition",
               "kind": "what",
-              "label": "BUILD HA BY LAYER",
-              "placeholder": "Reveal each layer and its redundancy requirement.",
+              "label": "WHAT IS HIGHLY AVAILABLE WEB TIER?",
+              "placeholder": "A highly available web tier spreads entry points, load balancing, compute capacity, and data services…",
               "required": true,
               "reveal": {
-                "type": "table",
-                "columns": [
-                  {
-                    "id": "layer",
-                    "label": "Layer"
-                  },
-                  {
-                    "id": "ha",
-                    "label": "HA design idea"
-                  },
-                  {
-                    "id": "failure",
-                    "label": "Failure handled"
-                  }
-                ],
-                "rows": [
-                  {
-                    "id": "dns",
-                    "cells": {
-                      "layer": "DNS / entry",
-                      "ha": "Health-aware routing or resilient endpoint",
-                      "failure": "Regional or endpoint failure"
-                    }
-                  },
-                  {
-                    "id": "lb",
-                    "cells": {
-                      "layer": "Load balancing",
-                      "ha": "Multi-AZ load balancer and healthy target groups",
-                      "failure": "Individual target/AZ capacity loss"
-                    }
-                  },
-                  {
-                    "id": "compute",
-                    "cells": {
-                      "layer": "Compute",
-                      "ha": "Auto Scaling across multiple AZs",
-                      "failure": "Instance or AZ loss"
-                    }
-                  },
-                  {
-                    "id": "data",
-                    "cells": {
-                      "layer": "Data",
-                      "ha": "Service-specific Multi-AZ/replication/backup strategy",
-                      "failure": "Database/storage component failure"
-                    }
-                  }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "layer"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
+                "type": "text",
+                "text": "A highly available web tier spreads entry points, load balancing, compute capacity, and data services across independent failure zones where possible."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Design by failure layer: Route 53 or resilient endpoint, multi-AZ load balancing, Auto Scaling across…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Design by failure layer: Route 53 or resilient endpoint, multi-AZ load balancing, Auto Scaling across AZs, and an HA data tier."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "A resilient web app uses Route 53, an ALB across multiple AZs, an Auto Scaling group spanning those AZs, and an HA database tier.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A resilient web app uses Route 53, an ALB across multiple AZs, an Auto Scaling group spanning those AZs, and an HA database tier. If one AZ fails, healthy capacity remains in another AZ instead of the whole request path disappearing."
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "Avoid a single-AZ dependency anywhere in the request path when the requirement is AZ fault…",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Avoid a single-AZ dependency anywhere in the request path when the requirement is AZ fault tolerance."
+              }
+            },
+            {
+              "id": "workflow-sequence",
+              "kind": "mental_model",
+              "label": "HOW IT FLOWS",
+              "placeholder": "Flow: DNS / entry point → … → Highly available data tier",
+              "required": false,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "DNS / entry point",
+                  "Load balancer",
+                  "Healthy compute across AZs",
+                  "Application tier",
+                  "Highly available data tier"
+                ]
+              }
+            },
+            {
+              "id": "arc-zonal-shift",
+              "kind": "when",
+              "label": "APPLICATION RECOVERY CONTROLLER: ZONAL SHIFT",
+              "placeholder": "An Availability Zone is impaired but the Region is healthy → ARC zonal shift can move supported resource traffic away from that AZ.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Amazon Application Recovery Controller (ARC) includes zonal shift for supported resources. During a zonal impairment, a zonal shift can move traffic away from the affected Availability Zone. This differs from Route 53 regional DNS failover, which works at another routing layer."
               }
             }
           ],
           "prerequisite_node_ids": [
-            "d2-rds-multiaz"
+            "d2-rds-ha"
           ],
           "map_position": {
             "x": 0.12,
@@ -1026,7 +1857,7 @@
       ]
     },
     {
-      "id": "d2-backup-recovery",
+      "id": "d2-backup-dr",
       "title": "Backup, Restore, and Disaster Recovery",
       "order": 4,
       "task_ids": [
@@ -1039,34 +1870,84 @@
         "2.3.4"
       ],
       "prerequisite_module_ids": [
-        "d2-high-availability"
+        "d2-ha"
       ],
       "nodes": [
         {
           "id": "d2-aws-backup",
-          "title": "AWS Backup",
+          "title": "AWS Backup plans, vaults, copies, and restore testing",
           "concept_ids": [
             "aws.backup",
             "aws.backup.plan",
-            "aws.backup.vault"
+            "aws.backup.vault",
+            "aws.backup.copy",
+            "aws.backup.restore_testing"
           ],
           "prompts": [
             {
-              "id": "parts",
+              "id": "definition",
               "kind": "what",
-              "label": "READ AN AWS BACKUP DESIGN",
-              "placeholder": "Reveal one component at a time.",
+              "label": "WHAT IS AWS BACKUP PLANS, VAULTS, COPIES, AND RESTORE TESTING?",
+              "placeholder": "AWS Backup centrally manages supported backup policies, schedules, lifecycle/retention, vault storage, and copy operations.",
               "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "AWS Backup centrally manages supported backup policies, schedules, lifecycle/retention, vault storage, and copy operations."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Use backup copies for supported cross-Region/cross-account resilience and restore testing to verify that recovery points…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use backup copies for supported cross-Region/cross-account resilience and restore testing to verify that recovery points can actually restore successfully."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "A backup plan runs daily at 05:00, retains recovery points for 35 days, and copies supported backups to another Region.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A backup plan runs daily at 05:00, retains recovery points for 35 days, and copies supported backups to another Region. Monthly restore testing restores selected recovery points so the team verifies that backups are actually usable."
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "A compliant backup is not enough if it has never been restored; restore testing validates…",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A compliant backup is not enough if it has never been restored; restore testing validates recoverability."
+              }
+            },
+            {
+              "id": "backup-parts-table",
+              "kind": "mental_model",
+              "label": "AWS BACKUP PARTS",
+              "placeholder": "Compare: Backup plan • Backup vault • Copy action • Restore testing",
+              "required": false,
               "reveal": {
                 "type": "table",
                 "columns": [
                   {
                     "id": "part",
-                    "label": "Component"
+                    "label": "Part"
                   },
                   {
-                    "id": "role",
-                    "label": "Role"
+                    "id": "meaning",
+                    "label": "What it does"
+                  },
+                  {
+                    "id": "why",
+                    "label": "Why it matters"
                   }
                 ],
                 "rows": [
@@ -1074,28 +1955,32 @@
                     "id": "plan",
                     "cells": {
                       "part": "Backup plan",
-                      "role": "Defines schedule, lifecycle, retention, and copy behavior for protected resources."
-                    }
-                  },
-                  {
-                    "id": "selection",
-                    "cells": {
-                      "part": "Resource assignment / selection",
-                      "role": "Determines which resources are protected by the plan."
+                      "meaning": "Schedule, windows, lifecycle, retention, copy rules.",
+                      "why": "Defines policy."
                     }
                   },
                   {
                     "id": "vault",
                     "cells": {
                       "part": "Backup vault",
-                      "role": "Logical storage and policy boundary for recovery points."
+                      "meaning": "Logical container for recovery points.",
+                      "why": "Storage/control boundary."
                     }
                   },
                   {
                     "id": "copy",
                     "cells": {
                       "part": "Copy action",
-                      "role": "Copies recovery points across Regions/accounts when configured."
+                      "meaning": "Copies supported backups to another vault/Region/account.",
+                      "why": "Resilience and separation."
+                    }
+                  },
+                  {
+                    "id": "test",
+                    "cells": {
+                      "part": "Restore testing",
+                      "meaning": "Periodically restores selected recovery points.",
+                      "why": "Proves recoverability, not just backup success."
                     }
                   }
                 ],
@@ -1110,6 +1995,66 @@
                   }
                 }
               }
+            },
+            {
+              "id": "code-example",
+              "kind": "mental_model",
+              "label": "READ THE REAL CONFIG",
+              "placeholder": "Key lines: Backup plan • Backup vault • Schedule • Lifecycle / retention",
+              "required": false,
+              "reveal": {
+                "type": "code_file",
+                "filename": "backup-plan.yaml",
+                "language": "yaml",
+                "code": "Resources:\n  DailyBackupPlan:\n    Type: AWS::Backup::BackupPlan\n    Properties:\n      BackupPlan:\n        BackupPlanName: daily-prod\n        BackupPlanRule:\n          - RuleName: daily\n            TargetBackupVault: prod-vault\n            ScheduleExpression: cron(0 5 * * ? *)\n            Lifecycle:\n              DeleteAfterDays: 35",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "plan",
+                    "anchor": {
+                      "line": 3,
+                      "text": "Type: AWS::Backup::BackupPlan",
+                      "occurrence": 1
+                    },
+                    "title": "Backup plan",
+                    "explanation": "The resource defines centralized backup policy.",
+                    "required": false
+                  },
+                  {
+                    "id": "vault",
+                    "anchor": {
+                      "line": 9,
+                      "text": "TargetBackupVault: prod-vault",
+                      "occurrence": 1
+                    },
+                    "title": "Backup vault",
+                    "explanation": "Recovery points produced by the rule are stored in this vault.",
+                    "required": false
+                  },
+                  {
+                    "id": "schedule",
+                    "anchor": {
+                      "line": 10,
+                      "text": "ScheduleExpression: cron(0 5 * * ? *)",
+                      "occurrence": 1
+                    },
+                    "title": "Schedule",
+                    "explanation": "The rule runs on a defined schedule.",
+                    "required": false
+                  },
+                  {
+                    "id": "retention",
+                    "anchor": {
+                      "line": 12,
+                      "text": "DeleteAfterDays: 35",
+                      "occurrence": 1
+                    },
+                    "title": "Lifecycle / retention",
+                    "explanation": "Recovery points are expired according to lifecycle policy.",
+                    "required": false
+                  }
+                ]
+              }
             }
           ],
           "prerequisite_node_ids": [],
@@ -1120,50 +2065,107 @@
           "source_refs": []
         },
         {
-          "id": "d2-ebs-ami",
-          "title": "EBS snapshots and AMIs",
+          "id": "d2-snapshot-ami",
+          "title": "EBS snapshots vs AMIs",
           "concept_ids": [
             "aws.ebs.snapshot",
             "aws.ec2.ami"
           ],
           "prompts": [
             {
-              "id": "snapshot-vs-ami",
-              "kind": "not_this",
-              "label": "SNAPSHOT OR AMI?",
-              "placeholder": "Separate block-data backup from an instance launch template.",
-              "required": true,
-              "reveal": {
-                "type": "comparison",
-                "columns": [
-                  {
-                    "title": "EBS snapshot",
-                    "items": [
-                      "Point-in-time backup of EBS volume data",
-                      "Can create/restore volumes",
-                      "Incremental storage behavior after the first snapshot"
-                    ]
-                  },
-                  {
-                    "title": "AMI",
-                    "items": [
-                      "Image definition used to launch EC2 instances",
-                      "References one or more block-device snapshots plus image metadata",
-                      "Useful for repeatable instance replacement/launch"
-                    ]
-                  }
-                ]
-              }
-            },
-            {
-              "id": "restore",
+              "id": "definition",
               "kind": "what",
-              "label": "TEST THE RESTORE PATH",
-              "placeholder": "Why is taking a backup not enough?",
+              "label": "WHAT IS EBS SNAPSHOTS VS AMIS?",
+              "placeholder": "An EBS snapshot is a point-in-time backup of EBS volume data. An Amazon Machine Image…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "A backup is operationally useful only if you can restore it within the required recovery objectives and the restored system is complete and usable."
+                "text": "An EBS snapshot is a point-in-time backup of EBS volume data. An Amazon Machine Image (AMI) is a launchable EC2 image definition that references block-device snapshots plus image metadata."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Use snapshots for volume backup/restore and AMIs for repeatable instance launch/replacement.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use snapshots for volume backup/restore and AMIs for repeatable instance launch/replacement."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "A data volume is accidentally deleted: restore from an EBS snapshot.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A data volume is accidentally deleted: restore from an EBS snapshot. A fleet needs to launch new EC2 instances with a known OS/application image: use an AMI. The snapshot is volume backup data; the AMI is a launchable machine-image definition."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "not_this",
+              "label": "DON'T CONFUSE THESE",
+              "placeholder": "Compare: EBS snapshot • AMI",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "option",
+                    "label": "Option"
+                  },
+                  {
+                    "id": "what",
+                    "label": "What it means / does"
+                  },
+                  {
+                    "id": "use",
+                    "label": "When to use / key distinction"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "option-1",
+                    "cells": {
+                      "option": "EBS snapshot",
+                      "what": "Back up/restore a volume",
+                      "use": "Data-focused"
+                    }
+                  },
+                  {
+                    "id": "option-2",
+                    "cells": {
+                      "option": "AMI",
+                      "what": "Launch EC2 instances with an image definition",
+                      "use": "Machine-image-focused"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "option"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "Need to create replacement EC2 instances from a known image -> AMI.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Need to create replacement EC2 instances from a known image -> AMI."
               }
             }
           ],
@@ -1177,22 +2179,476 @@
           "source_refs": []
         },
         {
-          "id": "d2-data-recovery",
-          "title": "Database and object recovery",
+          "id": "d2-database-recovery",
+          "title": "Database point-in-time recovery",
           "concept_ids": [
             "aws.rds.backup",
             "aws.rds.pitr",
             "aws.dynamodb.backup",
-            "aws.dynamodb.pitr",
-            "aws.s3.versioning"
+            "aws.dynamodb.pitr"
           ],
           "prompts": [
             {
-              "id": "services",
+              "id": "definition",
               "kind": "what",
-              "label": "MATCH THE RECOVERY FEATURE",
-              "placeholder": "Reveal each service's common recovery mechanism.",
+              "label": "WHAT IS DATABASE POINT-IN-TIME RECOVERY?",
+              "placeholder": "Point-in-time recovery (PITR) restores a database or table to a selected time within the available…",
               "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Point-in-time recovery (PITR) restores a database or table to a selected time within the available recovery window, typically into a new resource."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Use it for accidental changes or corruption when the recovery point must be more precise…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use it for accidental changes or corruption when the recovery point must be more precise than the latest manual snapshot."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "At 10:17 a user deletes rows accidentally.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "At 10:17 a user deletes rows accidentally. PITR is enabled, so the team restores the database to 10:16 into a new restored resource, validates the data, and then performs the application recovery steps."
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "Recover to the state just before an accidental deletion -> PITR.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Recover to the state just before an accidental deletion -> PITR."
+              }
+            }
+          ],
+          "prerequisite_node_ids": [
+            "d2-snapshot-ami"
+          ],
+          "map_position": {
+            "x": 0.6,
+            "y": 0.12
+          },
+          "source_refs": []
+        },
+        {
+          "id": "d2-storage-versioning",
+          "title": "S3 replication and FSx recovery features",
+          "concept_ids": [
+            "aws.s3.versioning",
+            "aws.s3.replication",
+            "aws.fsx.backup",
+            "aws.fsx.shadow_copies",
+            "aws.fsx.high_availability",
+            "aws.efs.availability",
+            "aws.datasync.replication",
+            "aws.datasync"
+          ],
+          "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IS S3 REPLICATION AND FSX RECOVERY FEATURES?",
+              "placeholder": "Storage recovery can use versioning, replication, backups, snapshots, or file-system-specific recovery features depending on the…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Storage recovery can use versioning, replication, backups, snapshots, or file-system-specific recovery features depending on the service."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "S3 versioning protects object versions; replication can maintain copies under configured rules. FSx families provide…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "S3 versioning protects object versions; replication can maintain copies under configured rules. FSx families provide engine-specific backup, HA, and recovery features such as shadow copies where supported."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "An S3 object `config.json` is overwritten at 12:05.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "An S3 object `config.json` is overwritten at 12:05. With versioning, the previous object version can be recovered. For a supported FSx workload, backups or file-system-specific features such as shadow copies solve a different recovery path."
+              }
+            },
+            {
+              "id": "file-storage-resilience-example",
+              "kind": "mental_model",
+              "label": "FILE-STORAGE RESILIENCE EXAMPLE",
+              "placeholder": "EFS Regional spans AZs; single-AZ designs accept a narrower failure boundary.",
+              "required": false,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "design",
+                    "label": "Design"
+                  },
+                  {
+                    "id": "example",
+                    "label": "Example requirement"
+                  },
+                  {
+                    "id": "tradeoff",
+                    "label": "Resilience idea"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "efsreg",
+                    "cells": {
+                      "design": "EFS Regional",
+                      "example": "Shared Linux files must remain available through an AZ failure",
+                      "tradeoff": "Regional EFS stores data across multiple AZs"
+                    }
+                  },
+                  {
+                    "id": "efsone",
+                    "cells": {
+                      "design": "EFS One Zone",
+                      "example": "Workload accepts single-AZ resilience for the storage layer",
+                      "tradeoff": "Data is confined to one AZ"
+                    }
+                  },
+                  {
+                    "id": "fsxmulti",
+                    "cells": {
+                      "design": "FSx Multi-AZ option where supported",
+                      "example": "Managed file service requires automatic failover across AZs",
+                      "tradeoff": "Use the file-system family's HA deployment option"
+                    }
+                  },
+                  {
+                    "id": "copy",
+                    "cells": {
+                      "design": "Scheduled DataSync copy",
+                      "example": "Maintain a periodically refreshed second file-system copy",
+                      "tradeoff": "A transfer/copy pattern is not the same thing as synchronous HA"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "design"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "First identify the storage service; recovery/versioning mechanisms are service-specific.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "First identify the storage service; recovery/versioning mechanisms are service-specific."
+              }
+            }
+          ],
+          "prerequisite_node_ids": [
+            "d2-database-recovery"
+          ],
+          "map_position": {
+            "x": 0.84,
+            "y": 0.12
+          },
+          "source_refs": []
+        },
+        {
+          "id": "d2-rto-rpo",
+          "title": "RTO and RPO",
+          "concept_ids": [
+            "aws.dr.rto_rpo"
+          ],
+          "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IS RTO AND RPO?",
+              "placeholder": "Recovery Time Objective (RTO) is the maximum acceptable recovery time. Recovery Point Objective (RPO) is…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Recovery Time Objective (RTO) is the maximum acceptable recovery time. Recovery Point Objective (RPO) is the maximum acceptable amount of data loss measured in time."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Lower RTO usually requires more ready infrastructure. Lower RPO requires more frequent or continuous replication/backup.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Lower RTO usually requires more ready infrastructure. Lower RPO requires more frequent or continuous replication/backup."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "RTO = restore service within 15 min. RPO = lose at most 1 min of data.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "The business says the service must be usable again within 15 minutes. That makes the RTO 15 minutes. It can lose at most 1 minute of data, so the RPO is 1 minute."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "not_this",
+              "label": "DON'T CONFUSE THESE",
+              "placeholder": "Compare: RTO • RPO",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "option",
+                    "label": "Option"
+                  },
+                  {
+                    "id": "what",
+                    "label": "What it means / does"
+                  },
+                  {
+                    "id": "use",
+                    "label": "When to use / key distinction"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "option-1",
+                    "cells": {
+                      "option": "RTO",
+                      "what": "How long can the service be unavailable?",
+                      "use": "Recovery speed"
+                    }
+                  },
+                  {
+                    "id": "option-2",
+                    "cells": {
+                      "option": "RPO",
+                      "what": "How much recent data can be lost?",
+                      "use": "Recovery point/data-loss window"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "option"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "10 minutes of downtime -> RTO. Lose at most 1 minute of data -> RPO.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "10 minutes of downtime -> RTO. Lose at most 1 minute of data -> RPO."
+              }
+            }
+          ],
+          "prerequisite_node_ids": [
+            "d2-storage-versioning"
+          ],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.34
+          },
+          "source_refs": []
+        },
+        {
+          "id": "d2-dr-strategies",
+          "title": "Disaster recovery strategies",
+          "concept_ids": [
+            "aws.dr.backup_restore",
+            "aws.dr.pilot_light",
+            "aws.dr.warm_standby",
+            "aws.dr.active_active",
+            "aws.storage_gateway",
+            "aws.datasync"
+          ],
+          "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IS DISASTER RECOVERY STRATEGIES?",
+              "placeholder": "AWS disaster-recovery strategies trade steady-state cost for recovery speed and readiness.",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "AWS disaster-recovery strategies trade steady-state cost for recovery speed and readiness."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "when",
+              "label": "WHEN DOES IT MATTER?",
+              "placeholder": "Backup/restore has the least running standby capacity; pilot light keeps core components; warm standby runs…",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Backup/restore has the least running standby capacity; pilot light keeps core components; warm standby runs a reduced environment; active/active runs production capacity in multiple locations."
+              }
+            },
+            {
+              "id": "concrete-example",
+              "kind": "mental_model",
+              "label": "CONCRETE EXAMPLE",
+              "placeholder": "A system needs a short recovery time but cannot justify full production capacity in a second Region.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A system needs a short recovery time but cannot justify full production capacity in a second Region. A warm standby can keep a smaller functional environment running, then scale it up during a disaster."
+              }
+            },
+            {
+              "id": "storage-gateway-datasync-example",
+              "kind": "mental_model",
+              "label": "DATASYNC VS STORAGE GATEWAY EXAMPLE",
+              "placeholder": "Move 40 TB on-prem NFS → S3 on a schedule: DataSync. Keep an on-prem tape/file/volume interface backed by AWS storage: Storage Gateway.",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "DataSync moves data between supported storage locations. Example: copy 40 TB from an on-premises NFS server to S3, then run incremental transfers every night. Storage Gateway is different. It provides an ongoing file, volume, or tape-style interface backed by AWS storage."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "not_this",
+              "label": "DON'T CONFUSE THESE",
+              "placeholder": "Compare: Backup & restore • Pilot light • Warm standby • Active/active",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "option",
+                    "label": "Option"
+                  },
+                  {
+                    "id": "what",
+                    "label": "What it means / does"
+                  },
+                  {
+                    "id": "use",
+                    "label": "When to use / key distinction"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "option-1",
+                    "cells": {
+                      "option": "Backup & restore",
+                      "what": "Backups only / rebuild on disaster",
+                      "use": "Lowest steady-state cost, slowest recovery"
+                    }
+                  },
+                  {
+                    "id": "option-2",
+                    "cells": {
+                      "option": "Pilot light",
+                      "what": "Critical core/data kept ready",
+                      "use": "Scale remaining components during recovery"
+                    }
+                  },
+                  {
+                    "id": "option-3",
+                    "cells": {
+                      "option": "Warm standby",
+                      "what": "Reduced but functional environment running",
+                      "use": "Faster recovery with higher cost"
+                    }
+                  },
+                  {
+                    "id": "option-4",
+                    "cells": {
+                      "option": "Active/active",
+                      "what": "Multiple active production environments",
+                      "use": "Fastest failover, highest complexity/cost"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "option"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "exam-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / SCENARIO CLUE",
+              "placeholder": "Match the DR strategy to RTO/RPO and cost instead of choosing the most resilient option…",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Match the DR strategy to RTO/RPO and cost instead of choosing the most resilient option automatically."
+              }
+            },
+            {
+              "id": "workflow-sequence",
+              "kind": "mental_model",
+              "label": "HOW IT FLOWS",
+              "placeholder": "Flow: Define RTO/RPO → … → Test recovery against objectives",
+              "required": false,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Define RTO/RPO",
+                  "Choose DR readiness level",
+                  "Replicate / back up data",
+                  "Fail over or restore",
+                  "Test recovery against objectives"
+                ]
+              }
+            },
+            {
+              "id": "storage-gateway-vs-datasync",
+              "kind": "mental_model",
+              "label": "STORAGE GATEWAY VS DATASYNC",
+              "placeholder": "Storage Gateway = ongoing hybrid storage interface • DataSync = managed data movement/migration.",
+              "required": false,
               "reveal": {
                 "type": "table",
                 "columns": [
@@ -1201,37 +2657,29 @@
                     "label": "Service"
                   },
                   {
-                    "id": "feature",
-                    "label": "Recovery feature"
+                    "id": "job",
+                    "label": "Primary job"
                   },
                   {
-                    "id": "helps",
-                    "label": "Helps recover from"
+                    "id": "example",
+                    "label": "Example"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "rds",
+                    "id": "sg",
                     "cells": {
-                      "service": "RDS",
-                      "feature": "Automated backups / point-in-time restore",
-                      "helps": "Database changes or failures within the configured recovery window."
+                      "service": "AWS Storage Gateway",
+                      "job": "Give on-premises applications ongoing file/volume/tape-style access backed by AWS storage",
+                      "example": "Replace physical tape workflow with Tape Gateway"
                     }
                   },
                   {
-                    "id": "dynamodb",
+                    "id": "ds",
                     "cells": {
-                      "service": "DynamoDB",
-                      "feature": "PITR and on-demand backups",
-                      "helps": "Table data loss/corruption and point-in-time recovery."
-                    }
-                  },
-                  {
-                    "id": "s3",
-                    "cells": {
-                      "service": "S3",
-                      "feature": "Versioning",
-                      "helps": "Accidental overwrite or deletion by preserving object versions/delete markers."
+                      "service": "AWS DataSync",
+                      "job": "Move/copy data between supported on-premises/AWS storage locations",
+                      "example": "Migrate tens of TB from NFS to S3 on a schedule"
                     }
                   }
                 ],
@@ -1249,175 +2697,10 @@
             }
           ],
           "prerequisite_node_ids": [
-            "d2-ebs-ami"
-          ],
-          "map_position": {
-            "x": 0.6,
-            "y": 0.12
-          },
-          "source_refs": []
-        },
-        {
-          "id": "d2-rto-rpo",
-          "title": "RTO and RPO",
-          "concept_ids": [
-            "aws.dr.rto_rpo"
-          ],
-          "prompts": [
-            {
-              "id": "objectives",
-              "kind": "what",
-              "label": "RTO OR RPO?",
-              "placeholder": "Reveal one recovery objective at a time.",
-              "required": true,
-              "reveal": {
-                "type": "table",
-                "columns": [
-                  {
-                    "id": "objective",
-                    "label": "Objective"
-                  },
-                  {
-                    "id": "question",
-                    "label": "Question"
-                  },
-                  {
-                    "id": "lower_means",
-                    "label": "A lower target usually requires"
-                  }
-                ],
-                "rows": [
-                  {
-                    "id": "rto",
-                    "cells": {
-                      "objective": "RTO",
-                      "question": "How long can the service be unavailable?",
-                      "lower_means": "Faster recovery and more pre-provisioned capability."
-                    }
-                  },
-                  {
-                    "id": "rpo",
-                    "cells": {
-                      "objective": "RPO",
-                      "question": "How much data loss, measured in time, can the business tolerate?",
-                      "lower_means": "More frequent/continuous replication or backup."
-                    }
-                  }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "objective"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
-              }
-            }
-          ],
-          "prerequisite_node_ids": [
-            "d2-data-recovery"
-          ],
-          "map_position": {
-            "x": 0.84,
-            "y": 0.12
-          },
-          "source_refs": []
-        },
-        {
-          "id": "d2-dr-strategies",
-          "title": "Disaster recovery strategies",
-          "concept_ids": [
-            "aws.dr.backup_restore",
-            "aws.dr.pilot_light",
-            "aws.dr.warm_standby",
-            "aws.dr.active_active"
-          ],
-          "prompts": [
-            {
-              "id": "strategies",
-              "kind": "what",
-              "label": "PLACE THE DR STRATEGIES",
-              "placeholder": "Reveal one strategy at a time. Focus on readiness, not memorized marketing labels.",
-              "required": true,
-              "reveal": {
-                "type": "table",
-                "columns": [
-                  {
-                    "id": "strategy",
-                    "label": "Strategy"
-                  },
-                  {
-                    "id": "ready",
-                    "label": "What is already running"
-                  },
-                  {
-                    "id": "recovery",
-                    "label": "Recovery pattern"
-                  },
-                  {
-                    "id": "cost",
-                    "label": "Relative steady-state cost"
-                  }
-                ],
-                "rows": [
-                  {
-                    "id": "backup",
-                    "cells": {
-                      "strategy": "Backup and restore",
-                      "ready": "Backups, not a full standby environment",
-                      "recovery": "Rebuild/restore after disaster",
-                      "cost": "Lowest"
-                    }
-                  },
-                  {
-                    "id": "pilot",
-                    "cells": {
-                      "strategy": "Pilot light",
-                      "ready": "Core critical services/data kept ready",
-                      "recovery": "Scale up the rest of the environment",
-                      "cost": "Low to medium"
-                    }
-                  },
-                  {
-                    "id": "warm",
-                    "cells": {
-                      "strategy": "Warm standby",
-                      "ready": "Smaller but functional environment running",
-                      "recovery": "Scale the standby environment to production capacity",
-                      "cost": "Medium to high"
-                    }
-                  },
-                  {
-                    "id": "active",
-                    "cells": {
-                      "strategy": "Multi-site active/active",
-                      "ready": "Multiple production-capable sites serving traffic",
-                      "recovery": "Shift/continue traffic to surviving site(s)",
-                      "cost": "Highest"
-                    }
-                  }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "strategy"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
-              }
-            }
-          ],
-          "prerequisite_node_ids": [
             "d2-rto-rpo"
           ],
           "map_position": {
-            "x": 0.12,
+            "x": 0.36,
             "y": 0.34
           },
           "source_refs": []
@@ -1431,12 +2714,8 @@
       "url": "https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03-domain2.html"
     },
     {
-      "title": "SOA-C03 revisions (exam guide version 1.1)",
+      "title": "SOA-C03 exam guide revisions",
       "url": "https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/soa-03-revisions.html"
-    },
-    {
-      "title": "AWS Well-Architected Framework",
-      "url": "https://aws.amazon.com/architecture/well-architected/"
     },
     {
       "title": "SOA-C03 in-scope AWS services",
@@ -1461,8 +2740,8 @@
       "2.3.4"
     ],
     "module_count": 4,
-    "knowledge_node_count": 18,
-    "prompt_count": 25
+    "knowledge_node_count": 19,
+    "prompt_count": 105
   },
-  "authoring_notes": "Re-authored for the learning-v2 discovery system. The curriculum uses progressive row/column/cell tables and annotated code/configuration examples where they improve operational understanding. Official SOA-C03 exam guide revision 1.1 remains the scope authority."
+  "authoring_notes": "V9: published-scope coverage audit plus concrete-example pass. Every Knowledge Node includes a realistic example; observability/network/security topics include representative metric/log/event/config data; definition-first, progressive tables, code examples, service comparisons, and teach-before-test alignment are preserved."
 }
