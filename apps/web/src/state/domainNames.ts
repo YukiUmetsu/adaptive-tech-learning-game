@@ -11,6 +11,7 @@
 const EXACT: Record<string, string> = {
   "Monitoring, Logging, Analysis, Remediation, and Performance Optimization":
     "Observability",
+  "Monitoring and Observability": "Observability",
   "Deployment, Provisioning, and Automation": "Automation",
   "Design Cost-Optimized Architectures": "Cost Optimization",
   "Design High-Performing Architectures": "Performance",

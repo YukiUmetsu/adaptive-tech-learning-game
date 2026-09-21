@@ -7,10 +7,12 @@ import BitsHud from "../components/BitsHud";
 import FocusRuntime from "../components/FocusRuntime";
 import FocusWidget from "../components/FocusWidget";
 import PreferencesEffects from "../components/PreferencesEffects";
+import { MOBILE_NAV_QUERY, useMediaQuery } from "../hooks/useMediaQuery";
 import { useSignOut } from "../hooks/useSignOut";
 import { flushAuxiliary } from "../state/syncAuxiliary";
 import { refreshWallet, resetWallet } from "../state/wallet";
 import LearningTracksNav from "./LearningTracksNav";
+import MobileTabBar from "./MobileTabBar";
 
 /** Generic account glyph used when the provider has no profile picture. */
 function AccountIcon() {
@@ -45,6 +47,7 @@ function SettingsIcon() {
 export default function AppShell() {
   const { status, user } = useAuth();
   const handleSignOut = useSignOut();
+  const isMobileNav = useMediaQuery(MOBILE_NAV_QUERY);
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -65,66 +68,80 @@ export default function AppShell() {
   }, []);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${isMobileNav ? " app-shell--mobile" : ""}`}>
       <PreferencesEffects />
       <FocusRuntime />
       <header className="app-header">
         <NavLink to="/" className="app-brand">
           Adaptive Learning
         </NavLink>
-        <nav aria-label="Primary">
-          <NavLink to="/" end>
-            Home
-          </NavLink>
-          <LearningTracksNav />
-          <NavLink to="/demo">Demo</NavLink>
-          {status === "authenticated" ? (
-            <>
-              <BitsHud size="sm" />
-              <div className="account-menu">
-                <NavLink
-                  to="/account"
-                  className="account-avatar"
-                  aria-label="Account"
-                  title={user?.name ?? "Account"}
-                >
-                  {user?.avatarUrl ? (
-                    <img
-                      src={user.avatarUrl}
-                      alt=""
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <AccountIcon />
-                  )}
-                </NavLink>
-                <button
-                  type="button"
-                  className="account-signout"
-                  onClick={() => void handleSignOut()}
-                >
-                  Sign out
-                </button>
-              </div>
-            </>
-          ) : status === "loading" ? (
-            <span className="muted auth-loading" role="status">
-              Checking session…
-            </span>
-          ) : (
-            <NavLink to="/login" className="auth-sign-in">
-              Sign in
+        {isMobileNav ? (
+          <div className="app-header-actions">
+            {status === "authenticated" ? <BitsHud size="sm" /> : null}
+            <NavLink
+              to="/settings"
+              className="settings-link"
+              aria-label="Settings"
+              title="Settings"
+            >
+              <SettingsIcon />
             </NavLink>
-          )}
-          <NavLink
-            to="/settings"
-            className="settings-link"
-            aria-label="Settings"
-            title="Settings"
-          >
-            <SettingsIcon />
-          </NavLink>
-        </nav>
+          </div>
+        ) : (
+          <nav aria-label="Primary">
+            <NavLink to="/" end>
+              Home
+            </NavLink>
+            <LearningTracksNav />
+            <NavLink to="/demo">Demo</NavLink>
+            {status === "authenticated" ? (
+              <>
+                <BitsHud size="sm" />
+                <div className="account-menu">
+                  <NavLink
+                    to="/account"
+                    className="account-avatar"
+                    aria-label="Account"
+                    title={user?.name ?? "Account"}
+                  >
+                    {user?.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl}
+                        alt=""
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <AccountIcon />
+                    )}
+                  </NavLink>
+                  <button
+                    type="button"
+                    className="account-signout"
+                    onClick={() => void handleSignOut()}
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </>
+            ) : status === "loading" ? (
+              <span className="muted auth-loading" role="status">
+                Checking session…
+              </span>
+            ) : (
+              <NavLink to="/login" className="auth-sign-in">
+                Sign in
+              </NavLink>
+            )}
+            <NavLink
+              to="/settings"
+              className="settings-link"
+              aria-label="Settings"
+              title="Settings"
+            >
+              <SettingsIcon />
+            </NavLink>
+          </nav>
+        )}
       </header>
       <main className="app-main">
         <Outlet />
@@ -147,6 +164,7 @@ export default function AppShell() {
           © {new Date().getFullYear()} Adaptive Learning. All rights reserved.
         </p>
       </footer>
+      {isMobileNav ? <MobileTabBar /> : null}
       <BitsFlyOverlay />
       <FocusWidget />
     </div>

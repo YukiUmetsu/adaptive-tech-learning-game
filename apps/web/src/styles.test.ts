@@ -58,3 +58,11 @@ describe("focus widget CSS", () => {
     expect(css).not.toContain(".focus-widget:hover .focus-widget-panel");
   });
 });
+
+describe("mobile node detail sheet CSS", () => {
+  it("pins the node panel and its action above the tab bar on phones", () => {
+    expect(css).toContain(".track-hub-side .node-panel");
+    expect(css).toContain(".track-hub-side .node-panel-explore");
+    expect(css).toContain("node-sheet-in");
+  });
+});

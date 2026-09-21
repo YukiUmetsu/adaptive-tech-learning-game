@@ -6,7 +6,9 @@ export default function NotFoundPage() {
       <h1>Not found</h1>
       <p>That page does not exist yet.</p>
       <p>
-        <Link to="/">Back to home</Link>
+        <Link to="/" className="not-found-link">
+          Back to home
+        </Link>
       </p>
     </section>
   );

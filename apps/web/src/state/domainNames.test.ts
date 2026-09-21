@@ -9,6 +9,7 @@ describe("shortDomainName", () => {
         "Monitoring, Logging, Analysis, Remediation, and Performance Optimization",
       ),
     ).toBe("Observability");
+    expect(shortDomainName("Monitoring and Observability")).toBe("Observability");
   });
 
   it("keeps already-short names", () => {
