@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { prefersReducedMotion } from "../lib/motion";
+import { bitsAnimationsEnabled } from "../state/preferences";
 
 export interface CountUpOptions {
   /** When false (or reduced motion), the final value renders immediately. */
@@ -22,7 +23,8 @@ function easeOutCubic(progress: number): number {
  */
 export function useCountUp(target: number, options: CountUpOptions = {}): number {
   const { enabled = true, durationMs = 900 } = options;
-  const instant = !enabled || prefersReducedMotion() || target <= 0;
+  const instant =
+    !enabled || prefersReducedMotion() || !bitsAnimationsEnabled() || target <= 0;
 
   const [value, setValue] = useState(() => (instant ? target : 0));
 

@@ -1,4 +1,8 @@
-import { useSyncExternalStore } from "react";
+import {
+  getPreferences,
+  updatePreferences,
+  useUserPreferences,
+} from "./preferences";
 
 /**
  * Tiny synthesized sound service.
@@ -7,68 +11,34 @@ import { useSyncExternalStore } from "react";
  * (`playCorrect` / `playWrong`) is intentionally small so real `.ogg`/`.mp3`
  * files can replace the synthesis later without touching feedback components.
  *
- * Requirements honoured here: sound only follows a user interaction, mute is
- * persisted, volume is conservative, overlapping plays are throttled, and the
- * service never throws when `AudioContext` is unavailable (for example in
- * tests).
+ * Requirements honoured here: sound only follows a user interaction, the mute
+ * preference lives in the unified Personal Settings model, volume is
+ * conservative, overlapping plays are throttled, and the service never throws
+ * when `AudioContext` is unavailable (for example in tests).
  */
-const MUTE_KEY = "adaptive-learn.sound-muted";
 const MIN_INTERVAL_MS = 120;
 
-let muted = readMuted();
 let context: AudioContext | null = null;
 let lastPlayedAt = 0;
-const listeners = new Set<() => void>();
 
-function readMuted(): boolean {
-  try {
-    return window.localStorage.getItem(MUTE_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-
-function writeMuted(value: boolean): void {
-  try {
-    window.localStorage.setItem(MUTE_KEY, String(value));
-  } catch {
-    // Storage can be unavailable; mute still applies for this session.
-  }
-}
-
-function emit(): void {
-  for (const listener of listeners) {
-    listener();
-  }
-}
-
-function subscribe(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
-/** Current mute preference. */
+/** Current mute preference, derived from the Personal Settings audio master. */
 export function isSoundMuted(): boolean {
-  return muted;
+  return !getPreferences().audio.enabled;
 }
 
 /** Updates and persists the mute preference. */
 export function setSoundMuted(value: boolean): void {
-  muted = value;
-  writeMuted(value);
-  emit();
+  updatePreferences({ audio: { enabled: !value } });
 }
 
 /** Flips the mute preference. */
 export function toggleSoundMuted(): void {
-  setSoundMuted(!muted);
+  setSoundMuted(!isSoundMuted());
 }
 
 /** React binding for the mute preference. */
 export function useSoundMuted(): boolean {
-  return useSyncExternalStore(subscribe, isSoundMuted, isSoundMuted);
+  return !useUserPreferences().audio.enabled;
 }
 
 function audioContextCtor():
@@ -175,9 +145,18 @@ const SOUNDS: Record<SoundName, SoundShape> = {
 };
 
 function play(name: SoundName): void {
-  if (muted) {
+  const audio = getPreferences().audio;
+  if (!audio.enabled) {
     return;
   }
+  // Per-category switches only gate the categories that already exist.
+  if ((name === "correct" || name === "wrong") && !audio.answerFeedbackSounds) {
+    return;
+  }
+  if (name === "complete" && !audio.missionCompletionSounds) {
+    return;
+  }
+
   const now = Date.now();
   if (now - lastPlayedAt < MIN_INTERVAL_MS) {
     return;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 import {
   BITS_EARNED_EVENT,
@@ -6,6 +6,7 @@ import {
   type BitsEarnedDetail,
 } from "../lib/bitsFly";
 import { prefersReducedMotion } from "../lib/motion";
+import { useUserPreferences } from "../state/preferences";
 import { playBits } from "../state/sound";
 
 interface Particle {
@@ -44,7 +45,9 @@ let burstCounter = 0;
  * experience stays informative without animation.
  */
 export default function BitsFlyOverlay() {
-  const reduced = useMemo(() => prefersReducedMotion(), []);
+  const preferences = useUserPreferences();
+  const reduced =
+    prefersReducedMotion() || !preferences.gamification.bitsAnimations;
   const [bursts, setBursts] = useState<Burst[]>([]);
 
   useEffect(() => {

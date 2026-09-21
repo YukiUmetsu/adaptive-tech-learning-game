@@ -1,10 +1,11 @@
 import { useEffect } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 
 import { useAuth } from "../auth/context";
 import BitsFlyOverlay from "../components/BitsFlyOverlay";
 import BitsHud from "../components/BitsHud";
-import { toggleSoundMuted, useSoundMuted } from "../state/sound";
+import PreferencesEffects from "../components/PreferencesEffects";
+import { useSignOut } from "../hooks/useSignOut";
 import { flushAuxiliary } from "../state/syncAuxiliary";
 import { refreshWallet, resetWallet } from "../state/wallet";
 import LearningTracksNav from "./LearningTracksNav";
@@ -24,10 +25,24 @@ function AccountIcon() {
   );
 }
 
+/** Settings gear glyph used in the header in place of the old audio toggle. */
+function SettingsIcon() {
+  return (
+    <svg
+      className="settings-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  );
+}
+
 export default function AppShell() {
-  const muted = useSoundMuted();
-  const { status, user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { status, user } = useAuth();
+  const handleSignOut = useSignOut();
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -47,14 +62,9 @@ export default function AppShell() {
     return () => window.removeEventListener("online", handleOnline);
   }, []);
 
-  const handleSignOut = async () => {
-    await signOut();
-    resetWallet();
-    navigate("/");
-  };
-
   return (
     <div className="app-shell">
+      <PreferencesEffects />
       <header className="app-header">
         <NavLink to="/" className="app-brand">
           Adaptive Learning
@@ -103,15 +113,14 @@ export default function AppShell() {
               Sign in
             </NavLink>
           )}
-          <button
-            type="button"
-            className="sound-toggle"
-            aria-pressed={muted}
-            aria-label={muted ? "Unmute sound effects" : "Mute sound effects"}
-            onClick={toggleSoundMuted}
+          <NavLink
+            to="/settings"
+            className="settings-link"
+            aria-label="Settings"
+            title="Settings"
           >
-            <span aria-hidden="true">{muted ? "🔇" : "🔊"}</span>
-          </button>
+            <SettingsIcon />
+          </NavLink>
         </nav>
       </header>
       <main className="app-main">

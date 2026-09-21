@@ -18,6 +18,7 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import MissionPage from "./pages/MissionPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import SettingsPage from "./pages/SettingsPage";
 import TaskPage from "./pages/TaskPage";
 
 export default function App() {
@@ -67,6 +68,14 @@ export default function App() {
           element={
             <RequireAuth>
               <AccountPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="settings"
+          element={
+            <RequireAuth>
+              <SettingsPage />
             </RequireAuth>
           }
         />

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { readStoredPreferences, resetPreferences } from "./preferences";
 import {
   isSoundMuted,
   playCorrect,
@@ -11,6 +12,7 @@ import {
 
 beforeEach(() => {
   window.localStorage.clear();
+  resetPreferences();
   setSoundMuted(false);
 });
 
@@ -19,15 +21,14 @@ afterEach(() => {
 });
 
 describe("sound", () => {
-  it("persists the mute preference", () => {
+  it("persists the mute preference through Personal Settings", () => {
     setSoundMuted(true);
     expect(isSoundMuted()).toBe(true);
-    expect(window.localStorage.getItem("adaptive-learn.sound-muted")).toBe(
-      "true",
-    );
+    expect(readStoredPreferences().audio.enabled).toBe(false);
 
     toggleSoundMuted();
     expect(isSoundMuted()).toBe(false);
+    expect(readStoredPreferences().audio.enabled).toBe(true);
   });
 
   it("does not throw when AudioContext is unavailable", () => {
