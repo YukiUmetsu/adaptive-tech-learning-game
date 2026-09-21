@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "soa-c03-learning-2026-09-21-v9",
+  "content_version": "soa-c03-learning-2026-09-21-v9-fact-reviewed",
   "certification_id": "aws-soa-c03",
   "certification_version": "soa-c03",
   "exam_guide_revision": "1.1",
@@ -896,7 +896,7 @@
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "Standard EC2 metrics do not include guest-memory utilization. After installing and configuring the CloudWatch agent, the same instance can publish a guest metric such as `mem_used_percent = 78.4` and send a local log file such as `/var/log/app.log` to a CloudWatch Logs log group."
+                "text": "Standard EC2 metrics do not include guest-memory utilization. After installing/configuring the CloudWatch agent, the same server can publish a metric such as `mem_used_percent = 78.4` and send `/var/log/app.log` into a CloudWatch Logs log group."
               }
             },
             {
@@ -926,7 +926,7 @@
                     "id": "memory",
                     "cells": {
                       "need": "Guest memory",
-                      "example": "`mem_used_percent = 78.4%`",
+                      "example": "mem_used_percent = 78.4%",
                       "why_agent": "EC2 does not publish guest OS memory as a standard instance metric"
                     }
                   },
@@ -934,7 +934,7 @@
                     "id": "process",
                     "cells": {
                       "need": "One process",
-                      "example": "`procstat CPU for nginx = 38.2%`",
+                      "example": "procstat CPU for nginx = 38.2%",
                       "why_agent": "Lets you monitor a selected process rather than only whole-instance CPU"
                     }
                   },
@@ -942,7 +942,7 @@
                     "id": "log",
                     "cells": {
                       "need": "Local application log",
-                      "example": "`ERROR payment_gateway_timeout request_id=abc123`",
+                      "example": "ERROR payment_gateway_timeout request_id=abc123",
                       "why_agent": "Agent can ship a local file into CloudWatch Logs"
                     }
                   }
@@ -2654,7 +2654,7 @@
                 "type": "code_file",
                 "filename": "automation-runbook.yaml",
                 "language": "yaml",
-                "code": "schemaVersion: '0.3'\ndescription: Stop an instance, create a snapshot, then continue\nparameters:\n  InstanceId:\n    type: String\nmainSteps:\n  - name: stopInstance\n    action: aws:changeInstanceState\n    inputs:\n      InstanceIds:\n        - '{{ InstanceId }}'\n      DesiredState: stopped\n  - name: createSnapshot\n    action: aws:executeAwsApi\n    inputs:\n      Service: ec2\n      Api: CreateSnapshot",
+                "code": "schemaVersion: '0.3'\ndescription: Stop an instance and snapshot a specified EBS volume\nparameters:\n  InstanceId:\n    type: String\n  VolumeId:\n    type: String\nmainSteps:\n  - name: stopInstance\n    action: aws:changeInstanceState\n    inputs:\n      InstanceIds:\n        - '{{ InstanceId }}'\n      DesiredState: stopped\n  - name: createSnapshot\n    action: aws:executeAwsApi\n    inputs:\n      Service: ec2\n      Api: CreateSnapshot\n      VolumeId: '{{ VolumeId }}'\n      Description: 'Snapshot before maintenance on {{ InstanceId }}'",
                 "line_numbers": true,
                 "annotations": [
                   {
@@ -2669,25 +2669,36 @@
                     "required": false
                   },
                   {
+                    "id": "volume",
+                    "anchor": {
+                      "line": 6,
+                      "text": "VolumeId:",
+                      "occurrence": 1
+                    },
+                    "title": "Required snapshot input",
+                    "explanation": "EC2 CreateSnapshot requires the EBS volume ID.",
+                    "required": false
+                  },
+                  {
                     "id": "step",
                     "anchor": {
-                      "line": 8,
+                      "line": 10,
                       "text": "action: aws:changeInstanceState",
                       "occurrence": 1
                     },
                     "title": "Automation action",
-                    "explanation": "A runbook step can invoke a Systems Manager Automation action.",
+                    "explanation": "This step stops the specified EC2 instance.",
                     "required": false
                   },
                   {
                     "id": "api",
                     "anchor": {
-                      "line": 14,
+                      "line": 16,
                       "text": "action: aws:executeAwsApi",
                       "occurrence": 1
                     },
                     "title": "AWS API step",
-                    "explanation": "Automation can call AWS APIs as part of a multi-step workflow.",
+                    "explanation": "Automation can call an AWS API from a runbook step.",
                     "required": false
                   }
                 ]
@@ -4203,5 +4214,5 @@
     "knowledge_node_count": 24,
     "prompt_count": 148
   },
-  "authoring_notes": "V9: published-scope coverage audit plus concrete-example pass. Every Knowledge Node includes a realistic example; observability/network/security topics include representative metric/log/event/config data; definition-first, progressive tables, code examples, service comparisons, and teach-before-test alignment are preserved."
+  "authoring_notes": "V9 fact-reviewed: current official-document factual audit applied after the coverage, concrete-example, and ADHD/readability passes. Known factual errors, ambiguous service behavior, outdated service limits, and incomplete configuration examples were corrected."
 }

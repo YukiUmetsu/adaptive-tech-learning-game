@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "soa-c03-learning-2026-09-21-v9",
+  "content_version": "soa-c03-learning-2026-09-21-v9-fact-reviewed",
   "certification_id": "aws-soa-c03",
   "certification_version": "soa-c03",
   "exam_guide_revision": "1.1",
@@ -532,7 +532,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "These tools answer different access questions. Access Analyzer finds unintended or external access paths. Policy Simulator evaluates whether policies would allow an action. CloudTrail records AWS API activity that actually occurred."
+                "text": "IAM Access Analyzer can identify external access, internal access, and unused access depending on analyzer type. It also provides policy validation and policy generation. Policy Simulator evaluates whether policies would allow an action. CloudTrail records AWS API activity that actually occurred."
               }
             },
             {
@@ -584,8 +584,8 @@
                     "id": "option-1",
                     "cells": {
                       "option": "Access Analyzer",
-                      "what": "Who can access this resource from outside the intended trust zone?",
-                      "use": "Analyze access paths/resource policies"
+                      "what": "External/internal/unused access findings and policy analysis",
+                      "use": "Analyze access paths, unused access, or policy quality"
                     }
                   },
                   {
@@ -675,7 +675,7 @@
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "A developer has `AdministratorAccess` in a member account, but an SCP denies leaving approved Regions. The developer still cannot perform denied actions because an SCP limits the maximum permissions available to the account."
+                "text": "A developer has broad IAM permissions in a member account, but an SCP denies actions outside approved Regions. The developer still cannot perform denied actions. A Region-deny SCP should also account for required global services whose requests use fixed endpoints."
               }
             },
             {
@@ -699,7 +699,7 @@
                 "type": "code_file",
                 "filename": "scp.json",
                 "language": "json",
-                "code": "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Sid\": \"DenyLeavingRegion\",\n      \"Effect\": \"Deny\",\n      \"Action\": \"*\",\n      \"Resource\": \"*\",\n      \"Condition\": {\n        \"StringNotEquals\": {\n          \"aws:RequestedRegion\": [\"us-east-1\", \"us-west-2\"]\n        }\n      }\n    }\n  ]\n}",
+                "code": "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Sid\": \"DenyOutsideApprovedRegions\",\n      \"Effect\": \"Deny\",\n      \"NotAction\": [\n        \"cloudfront:*\",\n        \"iam:*\",\n        \"route53:*\",\n        \"support:*\"\n      ],\n      \"Resource\": \"*\",\n      \"Condition\": {\n        \"StringNotEquals\": {\n          \"aws:RequestedRegion\": [\"us-east-1\", \"us-west-2\"]\n        }\n      }\n    }\n  ]\n}",
                 "line_numbers": true,
                 "annotations": [
                   {
@@ -710,29 +710,29 @@
                       "occurrence": 1
                     },
                     "title": "Guardrail deny",
-                    "explanation": "An SCP can restrict the maximum permissions available in affected accounts.",
+                    "explanation": "The SCP denies actions outside the approved Regions.",
                     "required": false
                   },
                   {
-                    "id": "action",
+                    "id": "exceptions",
                     "anchor": {
                       "line": 7,
-                      "text": "\"Action\": \"*\"",
+                      "text": "\"NotAction\": [",
                       "occurrence": 1
                     },
-                    "title": "Scope of actions",
-                    "explanation": "This example applies broadly to actions subject to the condition.",
+                    "title": "Global-service exceptions",
+                    "explanation": "Global-service exceptions must be tailored to the organization.",
                     "required": false
                   },
                   {
                     "id": "condition",
                     "anchor": {
-                      "line": 11,
+                      "line": 16,
                       "text": "\"aws:RequestedRegion\": [\"us-east-1\", \"us-west-2\"]",
                       "occurrence": 1
                     },
-                    "title": "Condition",
-                    "explanation": "The deny applies outside the listed Regions.",
+                    "title": "Region condition",
+                    "explanation": "The condition applies the deny outside these requested Regions.",
                     "required": false
                   }
                 ]
@@ -1904,5 +1904,5 @@
     "knowledge_node_count": 16,
     "prompt_count": 80
   },
-  "authoring_notes": "V9: published-scope coverage audit plus concrete-example pass. Every Knowledge Node includes a realistic example; observability/network/security topics include representative metric/log/event/config data; definition-first, progressive tables, code examples, service comparisons, and teach-before-test alignment are preserved."
+  "authoring_notes": "V9 fact-reviewed: current official-document factual audit applied after the coverage, concrete-example, and ADHD/readability passes. Known factual errors, ambiguous service behavior, outdated service limits, and incomplete configuration examples were corrected."
 }

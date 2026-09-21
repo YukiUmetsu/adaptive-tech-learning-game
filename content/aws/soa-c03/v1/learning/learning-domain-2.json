@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "soa-c03-learning-2026-09-21-v9",
+  "content_version": "soa-c03-learning-2026-09-21-v9-fact-reviewed",
   "certification_id": "aws-soa-c03",
   "certification_version": "soa-c03",
   "exam_guide_revision": "1.1",
@@ -1242,7 +1242,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Elastic Load Balancing distributes traffic to healthy targets. ALB, NLB, and GWLB serve different network layers and use cases."
+                "text": "Elastic Load Balancing normally distributes traffic to healthy targets. ALB, NLB, and GWLB serve different network layers and use cases. ALB and NLB also have documented fail-open behavior when healthy targets are unavailable."
               }
             },
             {
@@ -1387,7 +1387,7 @@
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "An ALB target is registered but shows `unhealthy` because `/health` returns HTTP 500. The load balancer does not send normal traffic to it. When a healthy target is later removed, deregistration delay gives in-flight requests time to finish."
+                "text": "An ALB target is registered but shows `unhealthy` because `/health` returns HTTP 500. While healthy alternatives remain, the load balancer normally stops routing new requests to that target. If all registered targets are unhealthy, ALB can fail open and route to unhealthy targets. When a healthy target is later removed, deregistration delay gives in-flight requests time to finish."
               }
             },
             {
@@ -1490,7 +1490,7 @@
                     "cells": {
                       "check": "ELB target health",
                       "scope": "Registered load-balancer targets",
-                      "effect": "Whether the load balancer routes normal traffic to that target",
+                      "effect": "Normally controls target eligibility; ALB can fail open if all targets are unhealthy",
                       "example": "GET /health returns 500 → target becomes unhealthy"
                     }
                   },
@@ -1524,7 +1524,7 @@
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "A target is registered but receives no traffic -> verify health-check status and target-group settings before changing DNS."
+                "text": "A target is registered but receives no traffic -> verify target health and target-group settings first. Remember the documented fail-open exception when no healthy targets remain."
               }
             }
           ],
@@ -1600,40 +1600,51 @@
                 "type": "code_file",
                 "filename": "route53-failover.yaml",
                 "language": "yaml",
-                "code": "PrimaryRecord:\n  Type: AWS::Route53::RecordSet\n  Properties:\n    Name: app.example.com\n    Type: A\n    SetIdentifier: primary\n    Failover: PRIMARY\n    HealthCheckId: hc-primary\nSecondaryRecord:\n  Type: AWS::Route53::RecordSet\n  Properties:\n    Name: app.example.com\n    Type: A\n    SetIdentifier: secondary\n    Failover: SECONDARY",
+                "code": "Parameters:\n  PrimaryHealthCheckId:\n    Type: String\n  SecondaryHealthCheckId:\n    Type: String\nResources:\n  PrimaryRecord:\n    Type: AWS::Route53::RecordSet\n    Properties:\n      HostedZoneName: example.com.\n      Name: app.example.com.\n      Type: A\n      TTL: '60'\n      ResourceRecords:\n        - 192.0.2.10\n      SetIdentifier: primary\n      Failover: PRIMARY\n      HealthCheckId: !Ref PrimaryHealthCheckId\n  SecondaryRecord:\n    Type: AWS::Route53::RecordSet\n    Properties:\n      HostedZoneName: example.com.\n      Name: app.example.com.\n      Type: A\n      TTL: '60'\n      ResourceRecords:\n        - 192.0.2.20\n      SetIdentifier: secondary\n      Failover: SECONDARY\n      HealthCheckId: !Ref SecondaryHealthCheckId",
                 "line_numbers": true,
                 "annotations": [
                   {
+                    "id": "zone",
+                    "anchor": {
+                      "line": 10,
+                      "text": "HostedZoneName: example.com.",
+                      "occurrence": 1
+                    },
+                    "title": "Hosted zone",
+                    "explanation": "Each record set must identify the hosted zone.",
+                    "required": false
+                  },
+                  {
                     "id": "primary",
                     "anchor": {
-                      "line": 7,
+                      "line": 17,
                       "text": "Failover: PRIMARY",
                       "occurrence": 1
                     },
                     "title": "Primary record",
-                    "explanation": "Route 53 normally returns the primary when it is healthy.",
+                    "explanation": "The primary record is preferred while its health check passes.",
                     "required": false
                   },
                   {
                     "id": "health",
                     "anchor": {
-                      "line": 8,
-                      "text": "HealthCheckId: hc-primary",
+                      "line": 18,
+                      "text": "HealthCheckId: !Ref PrimaryHealthCheckId",
                       "occurrence": 1
                     },
                     "title": "Health evaluation",
-                    "explanation": "The primary's health determines failover behavior.",
+                    "explanation": "The primary record references a Route 53 health check.",
                     "required": false
                   },
                   {
                     "id": "secondary",
                     "anchor": {
-                      "line": 15,
+                      "line": 29,
                       "text": "Failover: SECONDARY",
                       "occurrence": 1
                     },
                     "title": "Secondary record",
-                    "explanation": "The secondary is used according to failover routing behavior.",
+                    "explanation": "The secondary record is returned according to failover health behavior.",
                     "required": false
                   }
                 ]
@@ -1914,7 +1925,7 @@
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "A backup plan runs daily at 05:00, retains recovery points for 35 days, and copies supported backups to another Region. Monthly restore testing restores selected recovery points so the team verifies that backups are actually usable."
+                "text": "A backup plan runs daily at 05:00, retains recovery points for 35 days, and copies supported backups to another Region. Monthly restore testing starts real restore jobs from selected recovery points and records completion and duration. An optional validation workflow can then check the restored workload."
               }
             },
             {
@@ -1925,7 +1936,7 @@
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "A compliant backup is not enough if it has never been restored; restore testing validates recoverability."
+                "text": "Restore testing verifies that scheduled restore jobs can complete from selected recovery points. Use optional restore-test validation when the requirement is to verify application or workload health after restore."
               }
             },
             {
@@ -2743,5 +2754,5 @@
     "knowledge_node_count": 19,
     "prompt_count": 105
   },
-  "authoring_notes": "V9: published-scope coverage audit plus concrete-example pass. Every Knowledge Node includes a realistic example; observability/network/security topics include representative metric/log/event/config data; definition-first, progressive tables, code examples, service comparisons, and teach-before-test alignment are preserved."
+  "authoring_notes": "V9 fact-reviewed: current official-document factual audit applied after the coverage, concrete-example, and ADHD/readability passes. Known factual errors, ambiguous service behavior, outdated service limits, and incomplete configuration examples were corrected."
 }

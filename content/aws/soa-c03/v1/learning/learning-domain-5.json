@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "soa-c03-learning-2026-09-21-v9",
+  "content_version": "soa-c03-learning-2026-09-21-v9-fact-reviewed",
   "certification_id": "aws-soa-c03",
   "certification_version": "soa-c03",
   "exam_guide_revision": "1.1",
@@ -371,51 +371,51 @@
                 "type": "code_file",
                 "filename": "security-controls.yaml",
                 "language": "yaml",
-                "code": "WebSecurityGroup:\n  Type: AWS::EC2::SecurityGroup\n  Properties:\n    SecurityGroupIngress:\n      - IpProtocol: tcp\n        FromPort: 443\n        ToPort: 443\n        CidrIp: 203.0.113.0/24\n\nPublicNaclEntry:\n  Type: AWS::EC2::NetworkAclEntry\n  Properties:\n    RuleNumber: 100\n    Protocol: 6\n    RuleAction: allow\n    Egress: false",
+                "code": "Parameters:\n  VpcId:\n    Type: AWS::EC2::VPC::Id\n  NetworkAclId:\n    Type: String\nResources:\n  WebSecurityGroup:\n    Type: AWS::EC2::SecurityGroup\n    Properties:\n      GroupDescription: Allow HTTPS from the approved client network\n      VpcId: !Ref VpcId\n      SecurityGroupIngress:\n        - IpProtocol: tcp\n          FromPort: 443\n          ToPort: 443\n          CidrIp: 203.0.113.0/24\n\n  PublicNaclEntry:\n    Type: AWS::EC2::NetworkAclEntry\n    Properties:\n      NetworkAclId: !Ref NetworkAclId\n      RuleNumber: 100\n      Protocol: 6\n      RuleAction: allow\n      Egress: false\n      CidrBlock: 203.0.113.0/24\n      PortRange:\n        From: 443\n        To: 443",
                 "line_numbers": true,
                 "annotations": [
                   {
                     "id": "sg",
                     "anchor": {
-                      "line": 2,
+                      "line": 8,
                       "text": "Type: AWS::EC2::SecurityGroup",
                       "occurrence": 1
                     },
                     "title": "Security group",
-                    "explanation": "A stateful resource/ENI-level control.",
+                    "explanation": "A security group is a stateful resource/ENI-level control.",
                     "required": false
                   },
                   {
-                    "id": "ingress",
+                    "id": "sgdesc",
                     "anchor": {
-                      "line": 4,
-                      "text": "SecurityGroupIngress:",
+                      "line": 10,
+                      "text": "GroupDescription:",
                       "occurrence": 1
                     },
-                    "title": "Security-group ingress",
-                    "explanation": "Security groups use allow rules and automatically allow response traffic for established flows.",
+                    "title": "Required description",
+                    "explanation": "CloudFormation requires GroupDescription for a security group.",
                     "required": false
                   },
                   {
                     "id": "nacl",
                     "anchor": {
-                      "line": 11,
+                      "line": 19,
                       "text": "Type: AWS::EC2::NetworkAclEntry",
                       "occurrence": 1
                     },
                     "title": "Network ACL entry",
-                    "explanation": "A NACL is a stateless subnet-level control.",
+                    "explanation": "A NACL entry belongs to a specific network ACL.",
                     "required": false
                   },
                   {
-                    "id": "rule",
+                    "id": "ports",
                     "anchor": {
-                      "line": 13,
-                      "text": "RuleNumber: 100",
+                      "line": 27,
+                      "text": "PortRange:",
                       "occurrence": 1
                     },
-                    "title": "NACL rule order",
-                    "explanation": "NACL entries are evaluated by rule number, with the first matching rule applied.",
+                    "title": "TCP port range",
+                    "explanation": "TCP and UDP NACL entries require the applicable port range.",
                     "required": false
                   }
                 ]
@@ -1147,7 +1147,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "A Route 53 hosted zone stores DNS records for a domain. Public hosted zones answer on the public internet; private hosted zones answer inside associated VPC environments."
+                "text": "A Route 53 hosted zone stores DNS records for a domain. Public hosted zones provide public DNS answers. Private hosted zones provide private answers through VPC Resolver for associated VPCs and can also be queried from connected networks through a properly configured Resolver inbound setup."
               }
             },
             {
@@ -1169,7 +1169,7 @@
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "A private hosted zone contains `db.internal.example.com -> 10.0.20.15` and resolves only inside associated VPCs. A public hosted zone for `www.example.com` answers users on the public internet."
+                "text": "A private hosted zone contains `db.internal.example.com -> 10.0.20.15` for workloads in associated VPCs. An on-premises DNS resolver can also reach those private records through an inbound Resolver endpoint in an associated VPC. A public hosted zone for `www.example.com` answers public-internet DNS queries."
               }
             },
             {
@@ -1523,7 +1523,7 @@
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "A weighted policy sends 90% of DNS responses to the current version and 10% to a new endpoint. A failover policy instead uses primary/secondary health, while latency routing chooses a Region based on measured DNS routing latency."
+                "text": "A weighted policy can send 90% of DNS responses to the current version and 10% to a new endpoint. A failover policy instead uses primary/secondary health. Latency routing selects among configured AWS Regions using AWS latency data about users and AWS data centers."
               }
             },
             {
@@ -2485,7 +2485,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "CloudWatch network monitoring services focus on different parts of network health. Network Flow Monitor examines supported workload flows. Internet Monitor shows internet performance that affects users. Synthetic monitoring actively probes configured paths or endpoints."
+                "text": "CloudWatch network monitoring services answer different network-health questions. Network Flow Monitor uses agents on supported compute resources to observe workload TCP flows. Internet Monitor measures internet performance affecting application users. Network Synthetic Monitor is fully managed and agentless; it probes hybrid paths from selected VPC subnets to on-premises destination IP addresses."
               }
             },
             {
@@ -2507,7 +2507,7 @@
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "Users in one geography report high latency to the public application while the AWS resources are healthy. Internet Monitor can help identify internet-path performance affecting users. A synthetic canary instead actively tests a configured endpoint/path."
+                "text": "Users in one geography report slow access to a public application while its AWS resources are healthy. Internet Monitor can show internet-path impact. For a hybrid path, Network Synthetic Monitor can probe from a selected VPC subnet to an on-premises IP and report latency and packet loss. CloudWatch Synthetics canaries are different: they run scheduled scripts that test endpoints and APIs."
               }
             },
             {
@@ -2552,9 +2552,17 @@
                   {
                     "id": "option-3",
                     "cells": {
-                      "option": "Synthetic monitoring",
-                      "what": "Active probes/tests",
-                      "use": "Proactively verify reachability/performance"
+                      "option": "Network Synthetic Monitor",
+                      "what": "Agentless hybrid-path probes from VPC subnets to on-premises IPs",
+                      "use": "Measure hybrid latency and packet loss"
+                    }
+                  },
+                  {
+                    "id": "option-4",
+                    "cells": {
+                      "option": "CloudWatch Synthetics canary",
+                      "what": "Scheduled script that exercises an endpoint or API",
+                      "use": "Application endpoint/customer-journey checks, not hybrid network probes"
                     }
                   }
                 ],
@@ -2690,5 +2698,5 @@
     "knowledge_node_count": 21,
     "prompt_count": 108
   },
-  "authoring_notes": "V9: published-scope coverage audit plus concrete-example pass. Every Knowledge Node includes a realistic example; observability/network/security topics include representative metric/log/event/config data; definition-first, progressive tables, code examples, service comparisons, and teach-before-test alignment are preserved."
+  "authoring_notes": "V9 fact-reviewed: current official-document factual audit applied after the coverage, concrete-example, and ADHD/readability passes. Known factual errors, ambiguous service behavior, outdated service limits, and incomplete configuration examples were corrected."
 }
