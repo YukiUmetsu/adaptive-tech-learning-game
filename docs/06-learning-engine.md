@@ -362,7 +362,9 @@ order, available learning nodes, domain practice), persisted with
 state or adaptive APIs, and it is not silently replaced later.
 
 Progress is server-authoritative and survives navigation, refresh, and
-reopening the app; the runner resumes the first incomplete item. Completing all
+reopening the app. A mission with no progress yet opens on the ordered task list
+so the learner can see the plan and start it deliberately; once started, or when
+progress already exists, the runner resumes the first incomplete item. Completing all
 items marks the mission complete and settles a single idempotent
 `daily_mission_complete` Bits bonus (see `DAILY_MISSION_BONUS_BITS`), awarded at
 most once even under retries or concurrent requests. Daily Mission completion is

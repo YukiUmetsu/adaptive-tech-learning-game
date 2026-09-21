@@ -93,6 +93,32 @@ describe("DailyMissionRunner", () => {
     expect(recordStudyActivity).toHaveBeenCalledWith("daily_mission");
   });
 
+  it("opens on the task list and starts the first task on request", async () => {
+    renderRunner(mission([practiceItem(0, "pending"), practiceItem(1, "pending")]));
+
+    // The plan is shown first: no task activity until the learner starts.
+    expect(
+      screen.getByRole("heading", { name: "Today's mission" }),
+    ).toBeInTheDocument();
+    // The quest header previews the reward and the plan.
+    expect(screen.getByText("+25")).toBeInTheDocument();
+    expect(screen.getByText(/Adaptive path/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Start task" }),
+    ).not.toBeInTheDocument();
+    // The ordered checklist is the plan: one row per task.
+    expect(screen.getAllByText("3 questions")).toHaveLength(2);
+
+    await userEvent.click(screen.getByRole("button", { name: "Start mission" }));
+
+    expect(
+      screen.getByRole("heading", { name: /Task 1 of 2/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Start task" }),
+    ).toBeInTheDocument();
+  });
+
   it("records study activity when a Daily Mission practice task starts", async () => {
     vi.stubGlobal(
       "fetch",
@@ -100,6 +126,7 @@ describe("DailyMissionRunner", () => {
     );
     renderRunner(mission([practiceItem(0, "pending")]));
 
+    await userEvent.click(screen.getByRole("button", { name: "Start mission" }));
     await userEvent.click(screen.getByRole("button", { name: "Start task" }));
 
     expect(recordStudyActivity).toHaveBeenCalledWith("daily_mission");

@@ -43,9 +43,11 @@ interface DailyMissionRunnerProps {
  * The Daily Mission runner, embedded in the Track Hub and reused by the
  * standalone route.
  *
- * Shows only the current task plus the ordered checklist, with a single way to
- * advance. Completed tasks can be revisited read-only so the material and
- * questions can be reviewed without redoing them.
+ * A fresh mission opens on the ordered task list so the learner can see the
+ * plan and choose to start. Once started (or once progress already exists) it
+ * shows only the current task plus the checklist, with a single way to advance.
+ * Completed tasks can be revisited read-only so the material and questions can
+ * be reviewed without redoing them.
  */
 export default function DailyMissionRunner({
   trackId,
@@ -58,6 +60,8 @@ export default function DailyMissionRunner({
   // auto-advancing the card the learner is reading.
   const [locallyCompleted, setLocallyCompleted] = useState<Set<number>>(new Set());
   const [displayedPosition, setDisplayedPosition] = useState<number | null>(null);
+  // A mission with no progress yet opens on the plan, not on the first task.
+  const [started, setStarted] = useState(false);
 
   const isDone = useCallback(
     (item: DailyMissionItemDto) =>
@@ -75,6 +79,26 @@ export default function DailyMissionRunner({
     mission.status === "completed" ||
     (mission.items.length > 0 && mission.items.every(isDone));
   const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+  // First visit of the day: show the plan and let the learner start. Resuming a
+  // mission that already has progress keeps going straight to the next task.
+  const showPlan = !started && !done && completed === 0 && total > 0;
+
+  const totalMinutes = mission.items.reduce(
+    (sum, item) => sum + item.estimated_minutes,
+    0,
+  );
+  const planLabel =
+    mission.plan_type === "adaptive" ? "Adaptive path" : "Standard path";
+  const heading = done
+    ? "Today's mission complete 🎉"
+    : showPlan
+      ? "Today's mission"
+      : `Task ${Math.min(completed + 1, total)} of ${total}`;
+
+  const startMission = useCallback(() => {
+    recordStudyActivity("daily_mission");
+    setStarted(true);
+  }, []);
 
   const markCompleted = useCallback((position: number) => {
     // Keep the completed card visible (with its celebration and "Next task"
@@ -98,13 +122,14 @@ export default function DailyMissionRunner({
     void onRefresh();
   }, [onRefresh]);
 
-  // Beginning or resuming a Daily Mission activity is meaningful study.
+  // Beginning or resuming a Daily Mission activity is meaningful study, but
+  // merely previewing the plan is not.
   const displayedItemPosition = displayed?.position ?? null;
   useEffect(() => {
-    if (displayedItemPosition != null) {
+    if (!showPlan && displayedItemPosition != null) {
       recordStudyActivity("daily_mission");
     }
-  }, [displayedItemPosition]);
+  }, [showPlan, displayedItemPosition]);
 
   // Keep the floating widget's Daily Mission projection in sync with the
   // learner's local progress. This is a display cache, never mission state.
@@ -125,33 +150,38 @@ export default function DailyMissionRunner({
 
   return (
     <section className="daily-runner">
-      <header className="daily-runner-head">
-        <div>
-          <p className="daily-mission-kicker">Daily Mission</p>
-          <h1>
-            {done
-              ? "Today's mission complete 🎉"
-              : `Task ${Math.min(completed + 1, total)} of ${total}`}
-          </h1>
+      <header className="quest-head">
+        <div className="quest-head-top">
+          <p className="quest-kicker">Daily Mission</p>
+          <span className="quest-reward">
+            <span aria-hidden="true">💰</span>
+            <strong>+{mission.reward_bits}</strong>
+            <span className="quest-reward-label">Bits</span>
+          </span>
         </div>
-        <p className="muted daily-mission-progress-label">
-          {completed} / {total} complete
+        <h1 className="quest-title">{heading}</h1>
+        <p className="quest-meta">
+          {planLabel} · ~{totalMinutes} min
         </p>
+        <div className="quest-progress-row">
+          <div
+            className="daily-mission-progress"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={total}
+            aria-valuenow={completed}
+            aria-label="Daily Mission progress"
+          >
+            <div
+              className="daily-mission-progress-fill"
+              style={{ width: `${percent}%` }}
+            />
+          </div>
+          <span className="quest-progress-count">
+            {completed}/{total}
+          </span>
+        </div>
       </header>
-
-      <div
-        className="daily-mission-progress"
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={total}
-        aria-valuenow={completed}
-        aria-label="Daily Mission progress"
-      >
-        <div
-          className="daily-mission-progress-fill"
-          style={{ width: `${percent}%` }}
-        />
-      </div>
 
       {reviewItem ? (
         reviewItem.kind === "learn_node" || reviewItem.kind === "review_node" ? (
@@ -167,6 +197,8 @@ export default function DailyMissionRunner({
             onBack={() => setReviewItem(null)}
           />
         )
+      ) : showPlan ? (
+        <DailyMissionPlan onStart={startMission} />
       ) : displayed ? (
         displayed.kind === "learn_node" || displayed.kind === "review_node" ? (
           <DailyNodeActivity
@@ -193,13 +225,13 @@ export default function DailyMissionRunner({
         />
       )}
 
-      <ol className="daily-runner-steps" aria-label="Daily Mission tasks">
+      <ol className="quest-steps" aria-label="Daily Mission tasks">
         {mission.items.map((item) => (
           <DailyStep
             key={item.position}
             item={item}
             done={isDone(item)}
-            current={displayed?.position === item.position}
+            current={!showPlan && displayed?.position === item.position}
             onReview={
               isDone(item) ? () => setReviewItem(item) : undefined
             }
@@ -223,30 +255,34 @@ function DailyStep({
   onReview?: () => void;
 }) {
   const presentation = dailyActivityPresentation(item);
+  const status = done ? "Cleared" : current ? "In progress" : "Up next";
   return (
     <li
-      className={`daily-runner-step${done ? " daily-runner-step-done" : ""}${
-        current ? " daily-runner-step-current" : ""
+      className={`quest-step${done ? " quest-step--done" : ""}${
+        current ? " quest-step--current" : ""
       }`}
+      aria-current={current ? "step" : undefined}
     >
-      <span className="daily-mission-check" aria-hidden="true">
-        {done ? "✓" : current ? "●" : "○"}
+      <span className="quest-step-marker" aria-hidden="true">
+        {done ? "✓" : item.position + 1}
       </span>
-      <span className="daily-mission-icon" aria-hidden="true">
-        {presentation.icon}
-      </span>
-      <span className="daily-mission-item-body">
-        <span className="daily-mission-item-title">
+      <span className="quest-step-body">
+        <span className="quest-step-title">
+          <span className="quest-step-icon" aria-hidden="true">
+            {presentation.icon}
+          </span>
           <InlineText text={presentation.primary} />
         </span>
-        <span className="muted daily-mission-item-meta">
-          {presentation.kind} · {item.domain_name}
+        <span className="quest-step-meta">
+          {presentation.kind} · {item.domain_name} · ~{item.estimated_minutes} min
         </span>
       </span>
+      <span className="sr-only">{status}</span>
+      {current ? <span className="quest-step-now">Now</span> : null}
       {onReview ? (
         <button
           type="button"
-          className="daily-step-review"
+          className="quest-step-review"
           onClick={onReview}
           aria-label={`Review ${presentation.primary}`}
         >
@@ -254,6 +290,27 @@ function DailyStep({
         </button>
       ) : null}
     </li>
+  );
+}
+
+/**
+ * Opening plan for a fresh mission. The step list below is the plan itself;
+ * this row only carries the one explicit action that starts the first task.
+ */
+function DailyMissionPlan({ onStart }: { onStart: () => void }) {
+  return (
+    <section className="quest-plan" aria-label="Today's plan">
+      <p className="quest-plan-note">
+        Clear every step to claim the reward.
+      </p>
+      <button
+        type="button"
+        className="primary quest-plan-start"
+        onClick={onStart}
+      >
+        Start mission
+      </button>
+    </section>
   );
 }
 
@@ -418,7 +475,7 @@ function DailyNodeActivity({
 
   if (state.status === "error" || !data || !node || !derived) {
     return (
-      <section className="daily-runner-activity">
+      <section className="quest-task">
         <h2>
           <InlineText text={item.title} />
         </h2>
@@ -428,7 +485,8 @@ function DailyNodeActivity({
   }
 
   return (
-    <section className="daily-runner-activity" aria-label="Current task">
+    <section className="quest-task" aria-label="Current task">
+      <p className="quest-task-kicker">Current step</p>
       <KnowledgeCard
         node={node}
         moduleTitle={moduleTitle}
@@ -490,7 +548,8 @@ function DailyPracticeActivity({
   };
 
   return (
-    <section className="daily-runner-activity" aria-label="Current task">
+    <section className="quest-task" aria-label="Current task">
+      <p className="quest-task-kicker">Current step</p>
       <h2>
         <InlineText text={presentation.primary} />
       </h2>
@@ -551,7 +610,7 @@ function DailyNodeReview({
   }
   if (!data || !node || !full) {
     return (
-      <section className="daily-runner-activity">
+      <section className="quest-task">
         <h2>
           <InlineText text={item.title} />
         </h2>
@@ -564,7 +623,7 @@ function DailyNodeReview({
   }
 
   return (
-    <section className="daily-runner-activity" aria-label="Review">
+    <section className="quest-task" aria-label="Review">
       <KnowledgeCard
         node={node}
         moduleTitle={moduleTitle}
@@ -625,7 +684,7 @@ function DailyPracticeReview({
     review?.attempts.find((attempt) => attempt.question_id === questionId);
 
   return (
-    <section className="daily-runner-activity daily-review" aria-label="Review">
+    <section className="quest-task daily-review" aria-label="Review">
       <header className="daily-review-head">
         <h2>
           <InlineText text={presentation.primary} />

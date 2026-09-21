@@ -1690,8 +1690,7 @@ button.primary:hover:not(:disabled) {
   transition: width 240ms ease;
 }
 
-.daily-mission-list,
-.daily-runner-steps {
+.daily-mission-list {
   display: grid;
   gap: 0.5rem;
   margin: 0;
@@ -1699,8 +1698,7 @@ button.primary:hover:not(:disabled) {
   list-style: none;
 }
 
-.daily-mission-item,
-.daily-runner-step {
+.daily-mission-item {
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -1710,15 +1708,9 @@ button.primary:hover:not(:disabled) {
   background: var(--surface-raised, var(--surface));
 }
 
-.daily-mission-item-done,
-.daily-runner-step-done {
+.daily-mission-item-done {
   border-color: rgba(34, 197, 94, 0.5);
   background: rgba(34, 197, 94, 0.08);
-}
-
-.daily-runner-step-current {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
 }
 
 .daily-mission-check {
@@ -1734,8 +1726,7 @@ button.primary:hover:not(:disabled) {
   font-weight: 800;
 }
 
-.daily-mission-item-done .daily-mission-check,
-.daily-runner-step-done .daily-mission-check {
+.daily-mission-item-done .daily-mission-check {
   border-color: #22c55e;
   background: #22c55e;
   color: #06121f;
@@ -1763,38 +1754,273 @@ button.primary:hover:not(:disabled) {
   font-size: 0.8rem;
 }
 
+/* --- Daily Mission quest tracker ------------------------------------------- */
+
 .daily-runner {
   display: grid;
-  gap: 1.1rem;
+  gap: 1rem;
 }
 
-.daily-runner-head {
+/*
+ * Quest header. One clear hierarchy: label + reward, title, one meta line,
+ * then progress. No decorative chrome competing with the content.
+ */
+.quest-head {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.quest-head-top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.quest-kicker {
+  margin: 0;
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.quest-reward {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  background: rgba(251, 191, 36, 0.1);
+  color: var(--warning);
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.quest-reward-label {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.quest-title {
+  margin: 0;
+}
+
+.quest-meta {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.quest-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.35rem;
+}
+
+.daily-mission-progress {
+  flex: 1;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--surface-raised, rgba(148, 163, 184, 0.2));
+  overflow: hidden;
+}
+
+.daily-mission-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+  transition: width 240ms ease;
+}
+
+.quest-progress-count {
+  flex: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/*
+ * Quest steps. One list with dividers and aligned columns (status | task |
+ * action) instead of a stack of individual cards.
+ */
+.quest-steps {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.quest-step {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem 0.85rem;
+}
+
+.quest-step + .quest-step {
+  border-top: 1px solid var(--border);
+}
+
+.quest-step--current {
+  background: rgba(56, 189, 248, 0.08);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.quest-step-marker {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.quest-step--done .quest-step-marker {
+  border-color: var(--success);
+  background: var(--success-bg);
+  color: var(--success);
+  animation: daily-check-pop 320ms ease;
+}
+
+.quest-step--current .quest-step-marker {
+  border-color: var(--accent);
+  background: rgba(56, 189, 248, 0.16);
+  color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+.quest-step-body {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.quest-step-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.quest-step--done .quest-step-title {
+  color: var(--text-muted);
+}
+
+.quest-step-icon {
+  flex: none;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.quest-step-meta {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.quest-step-now {
+  flex: none;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.quest-step-review {
+  flex: none;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.quest-step-review:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+/* Plan intro: a plain note plus the one primary action. */
+.quest-plan {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
 }
 
-.daily-runner-activity {
-  display: grid;
-  gap: 0.6rem;
-  justify-items: start;
+.quest-plan-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
 }
 
+.quest-plan-start {
+  flex: none;
+}
+
+/*
+ * Active task: the single primary focus. Marked with one accent edge rather
+ * than a glow, so it does not compete with the quest list.
+ */
+.quest-task {
+  display: grid;
+  gap: 0.55rem;
+  justify-items: start;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.quest-task-kicker {
+  margin: 0;
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Completion: a calm success panel, not a light show. */
 .daily-page-complete {
   display: grid;
   gap: 0.5rem;
   justify-items: start;
   padding: 1.2rem 1.3rem;
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(34, 197, 94, 0.5);
-  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  border-radius: var(--radius);
+  background: var(--success-bg);
 }
 
 .daily-page-complete-title {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 800;
 }
 
@@ -1822,7 +2048,7 @@ button.primary:hover:not(:disabled) {
   }
 
   .daily-mission-item-done .daily-mission-check,
-  .daily-runner-step-done .daily-mission-check {
+  .quest-step--done .quest-step-marker {
     animation: none;
   }
 }
@@ -6232,23 +6458,6 @@ button.primary:hover:not(:disabled) {
 
 /* --- Daily Mission review -------------------------------------------------- */
 
-.daily-step-review {
-  margin-left: auto;
-  padding: 0.25rem 0.6rem;
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--text-muted);
-  font: inherit;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-
-.daily-step-review:hover {
-  color: var(--text);
-  border-color: var(--accent);
-}
-
 .daily-review-head {
   display: flex;
   align-items: center;
@@ -6371,11 +6580,6 @@ button.primary:hover:not(:disabled) {
   }
 }
 
-.daily-runner-step-done .daily-mission-check {
-  color: var(--success);
-  animation: check-pop 0.35s ease-out;
-}
-
 @keyframes check-pop {
   0% {
     transform: scale(0.4);
@@ -6441,7 +6645,6 @@ button.primary:hover:not(:disabled) {
 @media (prefers-reduced-motion: reduce) {
   .animated-check-ring,
   .animated-check-mark,
-  .daily-runner-step-done .daily-mission-check,
   .bits-fly-label,
   .bits-fly-particle {
     animation: none;

@@ -112,13 +112,20 @@ afterEach(() => {
 });
 
 describe("DailyMissionPage", () => {
-  it("shows only the current task and the checklist, and starts practice", async () => {
+  it("opens on the plan, then shows the current task and starts practice", async () => {
     stubFetch(baseMission());
     renderPage();
 
-    expect(await screen.findByText("Task 1 of 1")).toBeInTheDocument();
-    // Checklist row plus the current activity, with only one action.
+    // A fresh mission opens on the task list, not the first task.
+    expect(await screen.findByText("Today's mission")).toBeInTheDocument();
     expect(screen.getAllByText("3 questions").length).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole("button", { name: "Start task" }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Start mission" }));
+
+    expect(await screen.findByText("Task 1 of 1")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Open/ })).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Start task" }));
@@ -147,7 +154,11 @@ describe("DailyMissionPage", () => {
     );
     renderPage();
 
-    // The focused Knowledge Card renders directly, not the Knowledge Map.
+    // Start from the plan, then the focused Knowledge Card renders directly,
+    // not the Knowledge Map.
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Start mission" }),
+    );
     expect(
       await screen.findByRole("heading", { name: "Alpha" }),
     ).toBeInTheDocument();
