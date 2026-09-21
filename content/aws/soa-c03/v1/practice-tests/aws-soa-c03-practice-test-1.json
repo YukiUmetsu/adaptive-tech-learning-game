@@ -1,9 +1,9 @@
 {
   "schema_version": "practice-test-v1",
   "id": "aws-soa-c03-practice-test-1",
-  "title": "AWS Certified CloudOps Engineer - Associate (SOA-C03) Practice Test 1 - Exam Simulation V2",
+  "title": "AWS Certified CloudOps Engineer - Associate (SOA-C03) Practice Test 1 - Exam Simulation V2 (Fact Reviewed)",
   "exam_code": "SOA-C03",
-  "content_version": "soa-c03-practice-test-1-v2-2026-09-21",
+  "content_version": "soa-c03-practice-test-1-v2-fact-reviewed-2026-09-21",
   "created_at": "2026-09-21",
   "language": "en",
   "time_limit_minutes": 130,
@@ -215,35 +215,35 @@
         "1.1.4"
       ],
       "question_type": "multiple_choice",
-      "prompt": "An organization has 18 workload accounts across three AWS Regions. A central operations account must display EC2, RDS, and custom application metrics from those accounts on one CloudWatch dashboard. Resource ownership must remain in the workload accounts, and the team wants to avoid copying metrics into a custom data store. Which design best meets the requirement?",
+      "prompt": "An organization has 18 workload accounts across three AWS Regions. A central operations account must display EC2, RDS, and custom application metrics from those accounts on one CloudWatch dashboard. Resource ownership must remain in the workload accounts, and the team does not want to copy metrics into a separate data store. Which design best meets the requirement?",
       "instruction": "Choose ONE.",
       "options": [
         {
           "id": "A",
-          "text": "Create one CloudTrail Lake event data store in the operations account and use it as the CloudWatch dashboard data source."
+          "text": "Create one CloudWatch cross-account observability link in `us-east-1` and rely on that link to expose source-account metrics from all other Regions automatically."
         },
         {
           "id": "B",
-          "text": "Create metric streams in every account and deliver all metrics to one Firehose stream, then rebuild the dashboard from S3."
+          "text": "Export every source metric with CloudWatch metric streams into one S3 data lake and rebuild the operational dashboard from the exported data."
         },
         {
           "id": "C",
-          "text": "Configure CloudWatch cross-account observability with the operations account as the monitoring account and link the workload accounts as sources."
+          "text": "Configure CloudWatch cross-account observability between the monitoring account and source accounts in each required Region, then build one dashboard with widgets that specify the source account and Region."
         },
         {
           "id": "D",
-          "text": "Create identical dashboards in every workload account and use IAM role switching to view them one at a time."
+          "text": "Create identical dashboards in every workload account and switch accounts and Regions whenever the operations team investigates an incident."
         }
       ],
       "correct_option_ids": [
         "C"
       ],
-      "explanation": "CloudWatch cross-account observability is designed for centralized telemetry visibility while resources and telemetry remain associated with their source accounts.",
+      "explanation": "CloudWatch cross-account observability works across accounts within a Region, so the source-to-monitoring relationship must exist in each Region that contains telemetry. CloudWatch dashboards can include metrics from multiple accounts and multiple Regions by specifying account and Region in dashboard widgets.",
       "option_explanations": {
-        "A": "CloudTrail Lake stores audit events, not CloudWatch metric time series.",
-        "B": "Metric streams can export metrics, but this adds an unnecessary export and custom visualization path.",
-        "C": "Correct. It centralizes operational visibility without moving ownership.",
-        "D": "This does not provide the required single central dashboard."
+        "A": "Incorrect. CloudWatch cross-account observability is regional; a link in one Region does not automatically expose telemetry from every other Region.",
+        "B": "This can centralize exported data, but it adds a copy/export pipeline that the requirement explicitly wants to avoid.",
+        "C": "Correct. Configure the cross-account observability relationship in each required Region, then use CloudWatch dashboard widgets that identify the source account and Region.",
+        "D": "This does not satisfy the requirement for one central dashboard."
       },
       "difficulty": "medium",
       "scoring": {
@@ -305,16 +305,16 @@
         "1.2.2"
       ],
       "question_type": "multiple_response",
-      "prompt": "An EventBridge rule should invoke a Lambda function whenever an EC2 instance enters the `stopped` state. CloudTrail confirms that instances are stopping, and the default event bus is receiving EC2 state-change events. The rule shows zero invocations of the Lambda target. The function works when invoked manually. Which TWO checks should the engineer perform first?",
+      "prompt": "An EventBridge rule should invoke a Lambda function whenever an EC2 instance enters the `stopped` state. EC2 state-change events are reaching the event bus, but the function never runs. The team has not yet determined whether the rule is failing to match or the target invocation is unauthorized. Which TWO checks should the engineer perform first?",
       "instruction": "Choose TWO.",
       "options": [
         {
           "id": "A",
-          "text": "Verify that an SQS dead-letter queue is configured on the rule."
+          "text": "Verify that the Lambda execution role includes `ec2:DescribeInstances` for every instance in the VPC."
         },
         {
           "id": "B",
-          "text": "Verify that the Lambda execution role includes `ec2:DescribeInstances` for every instance in the VPC."
+          "text": "Verify that the function's security group allows inbound TCP 443 from the EventBridge service."
         },
         {
           "id": "C",
@@ -322,24 +322,24 @@
         },
         {
           "id": "D",
-          "text": "Verify that the Lambda resource-based policy allows `events.amazonaws.com` to invoke the function."
+          "text": "Verify target authorization: the configured EventBridge execution role has `lambda:InvokeFunction`, or, if no role is configured, the Lambda resource-based policy permits EventBridge to invoke the function."
         },
         {
           "id": "E",
-          "text": "Verify that the function's security group allows inbound TCP 443 from the EventBridge service."
+          "text": "Verify that an SQS dead-letter queue is configured on the rule."
         }
       ],
       "correct_option_ids": [
         "C",
         "D"
       ],
-      "explanation": "The first layers are event matching and target authorization. EventBridge invokes Lambda through the function's resource-based policy; a nonmatching rule or missing invoke permission prevents delivery.",
+      "explanation": "Troubleshoot the rule in layers: first confirm that the event pattern matches, then confirm authorization for the target invocation. For Lambda targets, EventBridge can use an IAM execution role with `lambda:InvokeFunction`, or it can use the function's resource-based policy when no target role is configured.",
       "option_explanations": {
-        "A": "A DLQ helps retain failed deliveries but is not required for successful invocation.",
-        "B": "The execution role controls what the function can do after invocation, not whether EventBridge can invoke it.",
-        "C": "Correct. If the event pattern does not match, the target is never attempted.",
-        "D": "Correct. Lambda must allow EventBridge to invoke the function.",
-        "E": "EventBridge does not require inbound security-group access to invoke Lambda."
+        "A": "The Lambda execution role controls what the function can do after it starts; it does not determine whether the EventBridge rule matches or can invoke the function.",
+        "B": "EventBridge does not invoke Lambda through an inbound security-group connection.",
+        "C": "Correct. A nonmatching event pattern means the target is never selected for invocation.",
+        "D": "Correct. EventBridge currently supports Lambda target authorization with either a target execution role or the Lambda resource-based policy, depending on the target configuration.",
+        "E": "A DLQ can retain failed deliveries, but it is not required for successful matching and invocation."
       },
       "difficulty": "hard",
       "scoring": {
@@ -356,7 +356,7 @@
         "1.2.3"
       ],
       "question_type": "multiple_choice",
-      "prompt": "A Systems Manager Automation runbook remediates a registry setting on 800 managed Windows instances. The operations team wants no more than 40 instances running the remediation at the same time. The run should stop if more than 5% of targets fail, so a bad change does not continue through the fleet. Which runbook execution controls should the engineer use?",
+      "prompt": "A Systems Manager Automation runbook remediates a registry setting on 800 managed Windows instances. The team wants no more than 40 targets running the automation at the same time. If failures exceed 5% of the target set, Systems Manager should stop starting the automation on additional targets; executions already in progress may finish. Which rate controls should the engineer set?",
       "instruction": "Choose ONE.",
       "options": [
         {
@@ -379,7 +379,7 @@
       "correct_option_ids": [
         "A"
       ],
-      "explanation": "Systems Manager Automation rate controls use `MaxConcurrency` to limit simultaneous targets and `MaxErrors` to stop after a failure threshold.",
+      "explanation": "Systems Manager Automation rate controls use `MaxConcurrency` to limit simultaneous target execution and `MaxErrors` to stop scheduling additional targets after the configured failure threshold is reached. Already-running Automation executions are allowed to complete.",
       "option_explanations": {
         "A": "Correct. The values map directly to the parallelism and failure requirements.",
         "B": "Maintenance window duration and cutoff do not express this target concurrency and error threshold.",
@@ -819,35 +819,35 @@
         "2.1.2"
       ],
       "question_type": "multiple_choice",
-      "prompt": "A CloudFront distribution caches product images from an S3 origin. The image returned for `/catalog/item.jpg` is identical for all users. A recent configuration added `X-Request-ID` and a per-user analytics cookie to the cache key. The cache hit ratio fell from 91% to 28%, while origin request volume increased. What change should the engineer make first?",
+      "prompt": "A CloudFront distribution caches product images from an S3-compatible custom origin. The image returned for `/catalog/item.jpg` is identical for every user. The origin needs an `analytics_id` cookie only for telemetry, but the cookie does not change the response. A recent configuration added both `analytics_id` and a unique `X-Request-ID` header to the cache key. The cache hit ratio fell from 91% to 28%. What should the engineer change?",
       "instruction": "Choose ONE.",
       "options": [
         {
           "id": "A",
-          "text": "Forward the same values to the origin but exclude them from the cache key."
+          "text": "Keep `analytics_id` in the cache key because the origin reads it, and remove only `X-Request-ID`."
         },
         {
           "id": "B",
-          "text": "Remove the request ID and irrelevant analytics cookie from the cache key."
+          "text": "Remove both values from the cache key, and use an origin request policy to forward only `analytics_id` to the origin."
         },
         {
           "id": "C",
-          "text": "Shorten the TTL so CloudFront creates fresh variants more often."
+          "text": "Disable caching for the behavior so every request reaches the origin with both values."
         },
         {
           "id": "D",
-          "text": "Disable caching for the behavior so every request reaches the origin."
+          "text": "Keep both values in the cache key and shorten the TTL so each unique variant expires faster."
         }
       ],
       "correct_option_ids": [
         "B"
       ],
-      "explanation": "Values should be in the cache key only when they can change the response. Unique, irrelevant values fragment the cache and lower the hit ratio.",
+      "explanation": "CloudFront separates cache-key controls from origin-request controls. Values that change the representation belong in the cache key. A cookie needed only by the origin can be forwarded with an origin request policy without varying the cache, which preserves cache efficiency.",
       "option_explanations": {
-        "A": "This may be valid if the origin still needs the values, but the question asks what change should fix cache fragmentation first; excluding them from the key is the key action.",
-        "B": "Correct. It directly removes unnecessary cache variation.",
-        "C": "A shorter TTL would further reduce reuse and does not remove unnecessary variants.",
-        "D": "This eliminates caching instead of fixing the cache key."
+        "A": "The origin can receive a cookie without putting it in the cache key. Keeping a per-user analytics cookie in the key still fragments the cache when it does not affect the response.",
+        "B": "Correct. Cache policies control the cache key; an origin request policy can forward a value to the origin without adding it to the cache key.",
+        "C": "This preserves telemetry but discards the CDN caching benefit instead of fixing the unnecessary cache variation.",
+        "D": "A shorter TTL does not fix the unnecessary per-request and per-user cache-key dimensions."
       },
       "difficulty": "hard",
       "scoring": {
@@ -1275,7 +1275,7 @@
         "2.1.2"
       ],
       "question_type": "multiple_choice",
-      "prompt": "A shopping application stores session metadata in DynamoDB. More than 95% of reads are repeated strongly consistent point lookups for a small set of hot keys, and read latency must be reduced to microseconds. The team wants a managed cache that integrates specifically with DynamoDB and requires minimal application architecture change. Which service should the engineer evaluate?",
+      "prompt": "A shopping application stores session metadata in DynamoDB. More than 95% of reads are repeated eventually consistent `GetItem` requests for a small set of hot keys. The application can tolerate eventual consistency and needs microsecond-scale read latency with a managed cache designed specifically for DynamoDB. Which service should the engineer evaluate?",
       "instruction": "Choose ONE.",
       "options": [
         {
@@ -1298,12 +1298,12 @@
       "correct_option_ids": [
         "D"
       ],
-      "explanation": "DAX is a managed in-memory cache designed specifically for DynamoDB and can provide microsecond read latency for suitable access patterns.",
+      "explanation": "DynamoDB Accelerator (DAX) is an in-memory cache designed specifically for DynamoDB and can serve suitable eventually consistent reads with microsecond latency. DAX passes strongly consistent reads through to DynamoDB and does not cache those results.",
       "option_explanations": {
         "A": "ElastiCache can be used as an application cache, but it does not provide the same DynamoDB-specific integration.",
         "B": "CloudFront caches HTTP content at edge locations, not DynamoDB API results directly.",
         "C": "RDS Proxy is for relational database connection pooling.",
-        "D": "Correct. It is purpose-built for DynamoDB caching."
+        "D": "Correct. DAX is purpose-built for DynamoDB and can cache suitable eventually consistent reads."
       },
       "difficulty": "medium",
       "scoring": {
@@ -1643,35 +1643,35 @@
         "3.1.1"
       ],
       "question_type": "multiple_choice",
-      "prompt": "An ECS service in private subnets deploys a new task revision that references an image in Amazon ECR. The new tasks fail before application startup with `CannotPullContainerError`. Existing tasks using the previous image continue serving traffic. VPC Flow Logs show no traffic leaving the subnets through the NAT gateway. What should the engineer verify first?",
+      "prompt": "An ECS service runs Linux Fargate tasks on platform version 1.4 or later in private subnets. The subnets have no NAT gateway or other internet egress; the design is intended to use VPC endpoints. A new task revision references a private Amazon ECR image and fails before application startup with `CannotPullContainerError`. Which configuration should the engineer verify first?",
       "instruction": "Choose ONE.",
       "options": [
         {
           "id": "A",
-          "text": "The application container's health-check command and ALB path"
+          "text": "The application's ALB health-check path and container health check, because they control whether Fargate can download the image."
         },
         {
           "id": "B",
-          "text": "Connectivity to the required ECR/S3 endpoints and the task execution role permissions needed to pull the image"
+          "text": "The `ecr.api` and `ecr.dkr` interface endpoints, the S3 gateway endpoint used for ECR image layers, and the task execution role permissions required to pull from ECR."
         },
         {
           "id": "C",
-          "text": "The ECS service's deployment circuit breaker rollback setting"
+          "text": "The task role's database permissions and the ECS service's desired count."
         },
         {
           "id": "D",
-          "text": "The task role's permission to query the production database"
+          "text": "The Route 53 public hosted zone for the application and the ALB deregistration delay."
         }
       ],
       "correct_option_ids": [
         "B"
       ],
-      "explanation": "The failure occurs while pulling the image, before application startup. The task needs network reachability to ECR-related services and an execution role with the required ECR image-pull permissions.",
+      "explanation": "For Fargate platform 1.4 or later pulling a private ECR image through VPC endpoints, the task needs private connectivity to the ECR API and Docker registry endpoints and to S3 for image layers. The Fargate task execution role also needs the permissions used to pull the private ECR image.",
       "option_explanations": {
-        "A": "Health checks happen after the container can start; the image is not being pulled.",
-        "B": "Correct. It follows the failed image-pull path directly.",
-        "C": "Rollback behavior can limit impact but does not explain why the image pull fails.",
-        "D": "The task role affects application calls after startup, not ECR image retrieval by the execution role."
+        "A": "Health checks happen after the image can be pulled and the container can start; they do not provide the image-download path.",
+        "B": "Correct. Fargate 1.4+ private ECR pulls without internet egress require the ECR interface endpoints and S3 access for image layers, plus the task execution role must have the ECR pull permissions.",
+        "C": "The application task role is for calls made by the running application. The failure occurs earlier, during image retrieval.",
+        "D": "Public application DNS and target draining do not provide the private ECR image-pull path."
       },
       "difficulty": "hard",
       "scoring": {
@@ -3129,7 +3129,9 @@
     },
     "public_sample_phrase_matches": 0,
     "exact_duplicate_prompts": 0,
-    "issues": []
+    "issues": [],
+    "fact_review_status": "PASS_AFTER_CORRECTIONS",
+    "fact_review_unresolved_contradictions": 0
   },
   "quality_review": {
     "scenario_detail": {
@@ -3164,5 +3166,22 @@
         "No viewed public question stem, scenario, option set, or answer explanation was intentionally copied."
       ]
     }
+  },
+  "factual_review": {
+    "status": "PASS_AFTER_CORRECTIONS",
+    "reviewed_at": "2026-09-21",
+    "questions_reviewed": 65,
+    "questions_corrected_or_precision_refined": 6,
+    "corrected_question_ids": [
+      "pt1-q04",
+      "pt1-q06",
+      "pt1-q07",
+      "pt1-q17",
+      "pt1-q27",
+      "pt1-q35"
+    ],
+    "unresolved_factual_contradictions": 0,
+    "basis": "Line-by-line review against current official AWS documentation; Terraform item checked against official HashiCorp documentation.",
+    "caveat": "This review substantially reduces factual-error risk but cannot mathematically guarantee that no future AWS behavior change or overlooked nuance exists."
   }
 }
