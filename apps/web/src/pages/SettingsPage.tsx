@@ -228,7 +228,7 @@ export default function SettingsPage() {
           >
             <SettingsToggle
               label="Focus tracker"
-              note="Track focused study sessions. The timer ships in a coming update."
+              note="Shows the floating Focus widget while you study, tracks active time, and gently suggests breaks."
               checked={focus.enabled}
               onChange={(enabled) => updatePreferences({ focus: { enabled } })}
             />
@@ -287,15 +287,6 @@ export default function SettingsPage() {
               }))}
               onChange={(idleTimeoutMinutes) =>
                 updatePreferences({ focus: { idleTimeoutMinutes } })
-              }
-            />
-
-            <SettingsToggle
-              label="Show floating Focus widget"
-              note="Keep a small focus timer visible while you study."
-              checked={focus.showFloatingWidget}
-              onChange={(showFloatingWidget) =>
-                updatePreferences({ focus: { showFloatingWidget } })
               }
             />
           </SettingsSection>

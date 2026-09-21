@@ -18,7 +18,11 @@ import { useSyncExternalStore } from "react";
 
 /** Versioned storage key. The suffix is bumped on a breaking schema change. */
 export const USER_PREFERENCES_KEY = "adaptive-learn.user-preferences.v1";
-const SCHEMA_VERSION = 1;
+/**
+ * Internal schema version. v2 turned Focus auto-detection on by default; a
+ * stored v1 payload is migrated on read so existing installs adopt it.
+ */
+const SCHEMA_VERSION = 2;
 
 /**
  * Pre-V1 mute key. Read once so an existing mute choice survives the upgrade
@@ -37,14 +41,13 @@ export interface StudyPreferences {
 }
 
 export interface FocusPreferences {
-  /** Master switch for the (not yet implemented) Focus tracker. */
+  /** Master switch for the Focus tracker and floating widget. */
   enabled: boolean;
   autoDetectStudy: boolean;
   breakReminders: boolean;
   breakAfterMinutes: number;
   breakDurationMinutes: number;
   idleTimeoutMinutes: number;
-  showFloatingWidget: boolean;
 }
 
 export interface AudioPreferences {
@@ -98,13 +101,12 @@ export function defaultPreferences(): UserPreferences {
       autoContinueMissionItems: false,
     },
     focus: {
-      enabled: false,
-      autoDetectStudy: false,
+      enabled: true,
+      autoDetectStudy: true,
       breakReminders: true,
       breakAfterMinutes: 25,
       breakDurationMinutes: 5,
       idleTimeoutMinutes: 5,
-      showFloatingWidget: false,
     },
     audio: {
       enabled: true,
@@ -162,13 +164,18 @@ export function parsePreferences(raw: unknown): UserPreferences {
     return base;
   }
 
+  const storedVersion =
+    typeof raw.version === "number" && Number.isFinite(raw.version)
+      ? raw.version
+      : 1;
+
   const study = isRecord(raw.study) ? raw.study : {};
   const focus = isRecord(raw.focus) ? raw.focus : {};
   const audio = isRecord(raw.audio) ? raw.audio : {};
   const accessibility = isRecord(raw.accessibility) ? raw.accessibility : {};
   const gamification = isRecord(raw.gamification) ? raw.gamification : {};
 
-  return {
+  const parsed: UserPreferences = {
     study: {
       dailyMissionMinutes: asOption(
         study.dailyMissionMinutes,
@@ -206,10 +213,6 @@ export function parsePreferences(raw: unknown): UserPreferences {
         focus.idleTimeoutMinutes,
         IDLE_TIMEOUT_OPTIONS,
         base.focus.idleTimeoutMinutes,
-      ),
-      showFloatingWidget: asBoolean(
-        focus.showFloatingWidget,
-        base.focus.showFloatingWidget,
       ),
     },
     audio: {
@@ -249,6 +252,14 @@ export function parsePreferences(raw: unknown): UserPreferences {
       ),
     },
   };
+
+  // Schema v1 defaulted Focus auto-detection off. Adopt the new default for
+  // existing installs; an explicit choice made under v2 is preserved.
+  if (storedVersion < 2) {
+    parsed.focus.autoDetectStudy = true;
+  }
+
+  return parsed;
 }
 
 /**

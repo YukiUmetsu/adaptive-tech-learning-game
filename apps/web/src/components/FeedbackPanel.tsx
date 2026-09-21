@@ -6,7 +6,7 @@ import type {
   QuestionView,
 } from "../api/types";
 import { emitBitsEarned } from "../lib/bitsFly";
-import { reviewDetails } from "../state/feedback";
+import { canonicalConnectionCount, reviewDetails } from "../state/feedback";
 import { playCorrect, playWrong } from "../state/sound";
 import AnimatedCheck from "./AnimatedCheck";
 
@@ -56,6 +56,9 @@ export default function FeedbackPanel({
     ? []
     : reviewDetails(question, submitted, feedback.canonical_answer);
 
+  // Tell the learner how many relationships a correct connection answer needs.
+  const connectionCount = canonicalConnectionCount(feedback.canonical_answer);
+
   return (
     <section
       ref={panelRef}
@@ -88,7 +91,16 @@ export default function FeedbackPanel({
         </span>
       </div>
 
-      <p>{feedback.explanation}</p>
+      <p>
+        {feedback.explanation}
+        {connectionCount != null ? (
+          <span className="feedback-connection-count">
+            {feedback.explanation ? " " : ""}
+            ({connectionCount} relationship{connectionCount === 1 ? "" : "s"}{" "}
+            needed)
+          </span>
+        ) : null}
+      </p>
 
       {details.length > 0 ? (
         <div className="feedback-review">

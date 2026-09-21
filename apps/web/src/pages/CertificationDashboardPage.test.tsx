@@ -490,11 +490,18 @@ describe("CertificationDashboardPage (Track Hub)", () => {
     // Defaults to the first domain.
     expect(await screen.findByRole("button", { name: /Metrics/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Route Tables/ })).not.toBeInTheDocument();
+    // The full authored domain name is shown above the map (not the short pill).
+    expect(
+      screen.getByRole("heading", { name: "Monitoring and Observability" }),
+    ).toBeInTheDocument();
 
     // Switching domains shows only the other domain's nodes.
     await userEvent.click(screen.getByRole("button", { name: /Networking/ }));
     expect(await screen.findByRole("button", { name: /Route Tables/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Metrics/ })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Networking" }),
+    ).toBeInTheDocument();
   });
 
   it("persists the unlock-all setting", async () => {

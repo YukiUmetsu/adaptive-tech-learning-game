@@ -4,6 +4,8 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/context";
 import BitsFlyOverlay from "../components/BitsFlyOverlay";
 import BitsHud from "../components/BitsHud";
+import FocusRuntime from "../components/FocusRuntime";
+import FocusWidget from "../components/FocusWidget";
 import PreferencesEffects from "../components/PreferencesEffects";
 import { useSignOut } from "../hooks/useSignOut";
 import { flushAuxiliary } from "../state/syncAuxiliary";
@@ -65,6 +67,7 @@ export default function AppShell() {
   return (
     <div className="app-shell">
       <PreferencesEffects />
+      <FocusRuntime />
       <header className="app-header">
         <NavLink to="/" className="app-brand">
           Adaptive Learning
@@ -145,6 +148,7 @@ export default function AppShell() {
         </p>
       </footer>
       <BitsFlyOverlay />
+      <FocusWidget />
     </div>
   );
 }

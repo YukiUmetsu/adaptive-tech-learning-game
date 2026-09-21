@@ -1,10 +1,20 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DailyMissionResponse } from "../api/types";
 import DailyMissionRunner from "./DailyMissionRunner";
+
+vi.mock("../state/focus", () => ({
+  recordStudyActivity: vi.fn(),
+}));
+vi.mock("../state/focusDaily", () => ({
+  publishFocusDaily: vi.fn(),
+}));
+
+import { recordStudyActivity } from "../state/focus";
+import { publishFocusDaily } from "../state/focusDaily";
 
 function practiceItem(
   position: number,
@@ -61,7 +71,40 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 describe("DailyMissionRunner", () => {
+  it("publishes Daily Mission progress for the Focus widget", () => {
+    renderRunner(
+      mission([practiceItem(0, "completed"), practiceItem(1, "pending")]),
+    );
+
+    expect(publishFocusDaily).toHaveBeenCalledWith(
+      expect.objectContaining({
+        trackId: "aws-soa-c03",
+        completed: 1,
+        total: 2,
+        nextMinutes: 6,
+      }),
+    );
+    // Beginning the displayed activity is meaningful study.
+    expect(recordStudyActivity).toHaveBeenCalledWith("daily_mission");
+  });
+
+  it("records study activity when a Daily Mission practice task starts", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("{}", { status: 404 })),
+    );
+    renderRunner(mission([practiceItem(0, "pending")]));
+
+    await userEvent.click(screen.getByRole("button", { name: "Start task" }));
+
+    expect(recordStudyActivity).toHaveBeenCalledWith("daily_mission");
+  });
+
   it("shows the next task and lets completed items be reviewed", () => {
     renderRunner(mission([practiceItem(0, "completed"), practiceItem(1, "pending")]));
     expect(

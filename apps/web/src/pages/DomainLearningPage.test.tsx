@@ -19,11 +19,16 @@ vi.mock("../state/sound", async (importOriginal) => {
   };
 });
 
+vi.mock("../state/focus", () => ({
+  recordStudyActivity: vi.fn(),
+}));
+
 import {
   playModuleComplete,
   playNodeUnlock,
   playReveal,
 } from "../state/sound";
+import { recordStudyActivity } from "../state/focus";
 
 interface RecordedRequest {
   url: string;
@@ -189,6 +194,17 @@ describe("DomainLearningPage", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText(/UNLOCKED!/).length).toBeGreaterThan(0);
     expect(playNodeUnlock).toHaveBeenCalledTimes(1);
+  });
+
+  it("records meaningful study activity for node and reveal interactions", async () => {
+    renderPage();
+    await ready();
+
+    await openNode("Alpha", "Ready to discover");
+    expect(recordStudyActivity).toHaveBeenCalledWith("knowledge_node");
+
+    await revealPrompt("WHAT?");
+    expect(recordStudyActivity).toHaveBeenCalledWith("reveal");
   });
 
   it("celebrates an unlock inside the card, with no transient banner", async () => {

@@ -8,6 +8,7 @@ import KnowledgeMapHud from "../components/KnowledgeMapHud";
 import ModuleCompleteCelebration from "../components/ModuleCompleteCelebration";
 import { useLearningDomain } from "../hooks/useLearningDomain";
 import { prefersReducedMotion } from "../lib/motion";
+import { recordStudyActivity } from "../state/focus";
 import {
   deriveLearningState,
   loadDomainProgress,
@@ -179,6 +180,7 @@ export default function DomainLearningPage() {
       if (!data) {
         return;
       }
+      recordStudyActivity("knowledge_node");
       const module = data.modules.find((candidate) =>
         candidate.nodes.some((node) => node.id === nodeId),
       );
@@ -254,6 +256,7 @@ export default function DomainLearningPage() {
       if (derived.nodeState[node.id] === "locked") {
         return;
       }
+      recordStudyActivity("reveal");
       const updated = revealPrompt(
         data.certification_version,
         data.domain.id,
@@ -274,6 +277,7 @@ export default function DomainLearningPage() {
       if (derived.nodeState[node.id] === "locked") {
         return;
       }
+      recordStudyActivity("table_reveal");
       const updated = revealElementInProgress(
         data.certification_version,
         data.domain.id,
@@ -293,6 +297,7 @@ export default function DomainLearningPage() {
     }
     setStartingQuiz(true);
     setQuizError(null);
+    recordStudyActivity("question");
     try {
       const mission = await startMission({
         certificationId: data.certification_id,

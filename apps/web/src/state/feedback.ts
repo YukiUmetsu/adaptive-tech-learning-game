@@ -13,6 +13,21 @@ export interface ReviewDetail {
 }
 
 /**
+ * Number of directed connections in a canonical `node_connection` answer.
+ *
+ * Returns `null` for any other interaction type. Used to tell the learner how
+ * many relationships a correct answer requires.
+ */
+export function canonicalConnectionCount(
+  canonical: CanonicalAnswer,
+): number | null {
+  if (canonical.type !== "node_connection") {
+    return null;
+  }
+  return canonical.edges.filter((edge) => edge.length === 2).length;
+}
+
+/**
  * Turns a submitted answer and the canonical answer into specific, learner-safe
  * review notes. Used for immediate corrective feedback.
  */

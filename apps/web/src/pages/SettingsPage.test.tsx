@@ -101,12 +101,15 @@ describe("SettingsPage", () => {
     expect(stored.study.dailyMissionMinutes).toBe(25);
   });
 
-  it("stores Focus preferences even though the tracker is not built yet", async () => {
+  it("stores Focus preferences", async () => {
     renderSettings();
 
-    await userEvent.click(
-      section("Focus & Breaks").getByRole("checkbox", { name: /Focus tracker/ }),
-    );
+    const tracker = section("Focus & Breaks").getByRole("checkbox", {
+      name: /Focus tracker/,
+    });
+    // Toggle off then back on to exercise persistence of the setting.
+    await userEvent.click(tracker);
+    await userEvent.click(tracker);
     await userEvent.click(
       section("Focus & Breaks").getByRole("radio", { name: "15 min" }),
     );

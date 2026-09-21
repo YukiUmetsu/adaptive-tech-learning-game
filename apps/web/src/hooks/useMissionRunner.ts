@@ -8,6 +8,7 @@ import type {
   QuestionView,
 } from "../api/types";
 import { newId } from "../lib/id";
+import { recordStudyActivity } from "../state/focus";
 import {
   loadPendingAuxiliary,
   loadPendingDiscovery,
@@ -80,6 +81,14 @@ export function useMissionRunner(missionId: string): MissionRunner {
 
   const question = progress?.mission.questions[progress.currentIndex] ?? null;
   const timer = useQuestionTimer(question?.id ?? "none", phase === "answering");
+
+  // Beginning meaningful question interaction is a semantic boundary that
+  // resumes Focus. Low-level input components never touch the timer.
+  useEffect(() => {
+    if (phase === "answering" && question) {
+      recordStudyActivity("question");
+    }
+  }, [phase, question]);
 
   useEffect(() => {
     const stored = loadMission();
@@ -197,6 +206,7 @@ export function useMissionRunner(missionId: string): MissionRunner {
         return;
       }
 
+      recordStudyActivity("answer_submit");
       setSubmitting(true);
       setError(null);
 
@@ -285,6 +295,7 @@ export function useMissionRunner(missionId: string): MissionRunner {
   );
 
   const retry = useCallback(() => {
+    recordStudyActivity("question");
     setFeedback(null);
     setLastAnswer(null);
     setError(null);
@@ -296,6 +307,7 @@ export function useMissionRunner(missionId: string): MissionRunner {
       return;
     }
 
+    recordStudyActivity("mission_next");
     if (progress.currentIndex < progress.mission.questions.length - 1) {
       persist({ ...progress, currentIndex: progress.currentIndex + 1 });
       setFeedback(null);

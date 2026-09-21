@@ -47,7 +47,7 @@ describe("preferences parsing", () => {
     expect(parsed.study.dailyMissionMinutes).toBe(20);
     expect(parsed.study.studyBalance).toBe("balanced");
     expect(parsed.focus.breakAfterMinutes).toBe(25);
-    expect(parsed.focus.enabled).toBe(false);
+    expect(parsed.focus.enabled).toBe(defaultPreferences().focus.enabled);
     expect(parsed.accessibility.animationIntensity).toBe("full");
   });
 
@@ -75,6 +75,24 @@ describe("preferences parsing", () => {
     expect(restored.audio.enabled).toBe(true);
   });
 
+  it("migrates a legacy v1 payload to auto-detect study on", () => {
+    window.localStorage.setItem(
+      USER_PREFERENCES_KEY,
+      JSON.stringify({
+        version: 1,
+        focus: { enabled: true, autoDetectStudy: false },
+      }),
+    );
+
+    expect(readStoredPreferences().focus.autoDetectStudy).toBe(true);
+  });
+
+  it("preserves an explicit auto-detect choice at the current schema", () => {
+    updatePreferences({ focus: { autoDetectStudy: false } });
+
+    expect(readStoredPreferences().focus.autoDetectStudy).toBe(false);
+  });
+
   it("migrates the legacy mute key on first run", () => {
     window.localStorage.setItem("adaptive-learn.sound-muted", "true");
 
@@ -94,13 +112,12 @@ describe("preferences store", () => {
     expect(readStoredPreferences().focus.enabled).toBe(true);
   });
 
-  it("stores Focus preferences even though the tracker does not exist yet", () => {
+  it("stores Focus preferences", () => {
     updatePreferences({
       focus: {
         enabled: true,
         autoDetectStudy: true,
         breakAfterMinutes: 15,
-        showFloatingWidget: true,
       },
     });
 
@@ -108,7 +125,6 @@ describe("preferences store", () => {
     expect(stored.enabled).toBe(true);
     expect(stored.autoDetectStudy).toBe(true);
     expect(stored.breakAfterMinutes).toBe(15);
-    expect(stored.showFloatingWidget).toBe(true);
   });
 
   it("reset restores defaults and leaves unrelated state untouched", () => {

@@ -13,6 +13,8 @@ import { useDailyMission } from "../hooks/useDailyMission";
 import { useRecommendation } from "../hooks/useRecommendation";
 import { prefersReducedMotion } from "../lib/motion";
 import { certificationQuestionCount, domainQuestionCount } from "../state/demo";
+import { dailyActivityPresentation } from "../state/dailyMission";
+import { publishFocusDaily } from "../state/focusDaily";
 import { deriveNodeVisual } from "../state/knowledgeSignal";
 import {
   deriveLearningState,
@@ -113,6 +115,30 @@ export default function CertificationDashboardPage() {
     enabled: authenticated,
     discovery,
   });
+
+  // Publish the Daily Mission projection for the floating Focus widget when the
+  // runner is not mounted. The runner owns it while the daily view is open, so
+  // this never fights the learner's local progress.
+  useEffect(() => {
+    if (view === "daily" || dailyState.status !== "loaded") {
+      return;
+    }
+    const mission = dailyState.mission;
+    if (mission.status === "completed") {
+      publishFocusDaily(null);
+      return;
+    }
+    const nextItem =
+      mission.items.find((item) => item.status === "pending") ?? null;
+    const presentation = nextItem ? dailyActivityPresentation(nextItem) : null;
+    publishFocusDaily({
+      trackId: certification?.id ?? mission.track_id,
+      completed: mission.completed_items,
+      total: mission.total_items,
+      nextTitle: presentation?.primary ?? null,
+      nextMinutes: nextItem?.estimated_minutes ?? null,
+    });
+  }, [view, dailyState, certification?.id]);
 
   // Map content: one aggregate request. Failing here falls back to the normal
   // per-domain navigation instead of breaking the page.
@@ -383,6 +409,12 @@ export default function CertificationDashboardPage() {
   const dailyMission =
     dailyState.status === "loaded" ? dailyState.mission : null;
 
+  // Full name (not the short pill label) of the domain currently shown.
+  const activeDomain =
+    trackMap?.domains.find((entry) => entry.domain.id === activeDomainId) ??
+    trackMap?.domains[0] ??
+    null;
+
   const practiceControls = (
     <div className="hub-practice">
       <button
@@ -637,6 +669,12 @@ export default function CertificationDashboardPage() {
                   );
                 })}
               </nav>
+            ) : null}
+
+            {activeDomain ? (
+              <h2 className="track-hub-map-domain">
+                {activeDomain.domain.name}
+              </h2>
             ) : null}
 
             {mapStatus === "loading" ? (

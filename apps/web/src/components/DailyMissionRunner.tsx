@@ -13,6 +13,8 @@ import {
   completeDailyNodeItem,
   dailyActivityPresentation,
 } from "../state/dailyMission";
+import { recordStudyActivity } from "../state/focus";
+import { publishFocusDaily } from "../state/focusDaily";
 import {
   deriveLearningState,
   fullPromptReveals,
@@ -76,6 +78,7 @@ export default function DailyMissionRunner({
   const markCompleted = useCallback((position: number) => {
     // Keep the completed card visible (with its celebration and "Next task"
     // action) instead of auto-advancing, while the checklist updates.
+    recordStudyActivity("daily_mission");
     setDisplayedPosition(position);
     playCheck();
     setLocallyCompleted((previous) => {
@@ -89,9 +92,35 @@ export default function DailyMissionRunner({
   }, []);
 
   const advance = useCallback(() => {
+    recordStudyActivity("daily_mission");
     setDisplayedPosition(null);
     void onRefresh();
   }, [onRefresh]);
+
+  // Beginning or resuming a Daily Mission activity is meaningful study.
+  const displayedItemPosition = displayed?.position ?? null;
+  useEffect(() => {
+    if (displayedItemPosition != null) {
+      recordStudyActivity("daily_mission");
+    }
+  }, [displayedItemPosition]);
+
+  // Keep the floating widget's Daily Mission projection in sync with the
+  // learner's local progress. This is a display cache, never mission state.
+  useEffect(() => {
+    if (done || !current) {
+      publishFocusDaily(null);
+      return;
+    }
+    const presentation = dailyActivityPresentation(current);
+    publishFocusDaily({
+      trackId,
+      completed,
+      total,
+      nextTitle: presentation.primary,
+      nextMinutes: current.estimated_minutes,
+    });
+  }, [trackId, completed, total, current, done]);
 
   return (
     <section className="daily-runner">
@@ -343,6 +372,7 @@ function DailyNodeActivity({
       if (derived.nodeState[node.id] === "locked") {
         return;
       }
+      recordStudyActivity("reveal");
       setProgress(
         revealPrompt(
           data.certification_version,
@@ -364,6 +394,7 @@ function DailyNodeActivity({
       if (derived.nodeState[node.id] === "locked") {
         return;
       }
+      recordStudyActivity("table_reveal");
       setProgress(
         revealElementInProgress(
           data.certification_version,
@@ -439,6 +470,7 @@ function DailyPracticeActivity({
   const start = async () => {
     setStarting(true);
     setError(null);
+    recordStudyActivity("daily_mission");
     try {
       const mission = await startDailyItem({
         dailyMissionId: missionId,
