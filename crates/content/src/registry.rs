@@ -2,21 +2,32 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::hash_map::Entry;
 
-use crate::EMBEDDED_SOURCES;
 use crate::learning::{KnowledgeNode, LearningDomain, LearningModule, validate_learning_domain};
 use crate::model::{Certification, ContentBundle, Domain, Question, Task};
+use crate::practice_test::{PracticeTest, validate_practice_test};
 use crate::validate::{ContentError, validate};
+use crate::{
+    EMBEDDED_LEARNING_SOURCES, EMBEDDED_PRACTICE_TEST_SOURCES, EMBEDDED_SOURCES, EmbeddedSource,
+};
 
-/// An immutable set of validated content bundles and learning domains.
+/// A raw content source plus the file it came from, when known.
+struct SourceRef<'a> {
+    path: Option<&'a str>,
+    json: &'a str,
+}
+
+/// An immutable set of validated content bundles, learning domains, and
+/// practice tests.
 ///
 /// Quiz bundles that declare the same certification version are merged into one
 /// logical bundle, so a certification's content can be split across files (for
 /// example one file per exam domain) without a code change. Learning knowledge
-/// maps are a distinct content type and are kept separate.
+/// maps and practice tests are distinct content types and are kept separate.
 #[derive(Debug, Clone)]
 pub struct ContentRegistry {
     bundles: Vec<ContentBundle>,
     learning_domains: Vec<LearningDomain>,
+    practice_tests: Vec<PracticeTest>,
 }
 
 impl ContentRegistry {
@@ -26,15 +37,44 @@ impl ContentRegistry {
     /// `<category>/<certification>/<version>/<file>.json` and learning content
     /// as `.../learning/<file>.json` under `content/`; adding or splitting
     /// content requires no code change.
+    ///
+    /// This is strict: any invalid source fails the load. Use
+    /// [`ContentRegistry::embedded_lenient`] when a single bad authoring file
+    /// must not take the service down.
     pub fn embedded() -> Result<Self, Vec<ContentError>> {
         if EMBEDDED_SOURCES.is_empty() {
-            return Err(vec![ContentError {
-                code: "no_content",
-                message: "no content bundles were embedded".to_owned(),
-            }]);
+            return Err(vec![ContentError::new(
+                "no_content",
+                "no content bundles were embedded",
+            )]);
         }
 
-        Self::from_sources(EMBEDDED_SOURCES, crate::EMBEDDED_LEARNING_SOURCES)
+        let quiz = embedded_refs(EMBEDDED_SOURCES);
+        let learning = embedded_refs(EMBEDDED_LEARNING_SOURCES);
+        let practice = embedded_refs(EMBEDDED_PRACTICE_TEST_SOURCES);
+        Self::from_source_refs(&quiz, &learning, &practice)
+    }
+
+    /// Loads embedded content without failing on individual malformed files.
+    ///
+    /// Returns the valid subset together with every error found, each naming
+    /// the file it came from. A file that fails to parse or validate is skipped
+    /// so one bad authoring file cannot take the API offline. Strict validation
+    /// stays available through [`ContentRegistry::embedded`] and the test suite.
+    pub fn embedded_lenient() -> (Self, Vec<ContentError>) {
+        let quiz = embedded_refs(EMBEDDED_SOURCES);
+        let learning = embedded_refs(EMBEDDED_LEARNING_SOURCES);
+        let practice = embedded_refs(EMBEDDED_PRACTICE_TEST_SOURCES);
+        let (bundles, learning_domains, practice_tests, errors) =
+            assemble(&quiz, &learning, &practice);
+        (
+            Self {
+                bundles,
+                learning_domains,
+                practice_tests,
+            },
+            errors,
+        )
     }
 
     /// Parses, validates, and merges quiz bundle sources only.
@@ -54,19 +94,34 @@ impl ContentRegistry {
         sources: &[&str],
         learning_sources: &[&str],
     ) -> Result<Self, Vec<ContentError>> {
-        let mut errors = Vec::new();
-        let bundles = parse_bundles(sources, &mut errors);
-        let learning_domains = parse_learning_domains(learning_sources, &mut errors);
+        Self::from_all_sources(sources, learning_sources, &[])
+    }
 
-        for domain in &learning_domains {
-            validate_learning_against_bundles(domain, &bundles, &mut errors);
-        }
-        validate_unique_learning_domains(&learning_domains, &mut errors);
+    /// Parses, validates, and merges quiz, learning, and practice-test sources.
+    pub fn from_all_sources(
+        sources: &[&str],
+        learning_sources: &[&str],
+        practice_test_sources: &[&str],
+    ) -> Result<Self, Vec<ContentError>> {
+        let quiz = inline_refs(sources);
+        let learning = inline_refs(learning_sources);
+        let practice = inline_refs(practice_test_sources);
+        Self::from_source_refs(&quiz, &learning, &practice)
+    }
+
+    fn from_source_refs(
+        sources: &[SourceRef<'_>],
+        learning_sources: &[SourceRef<'_>],
+        practice_test_sources: &[SourceRef<'_>],
+    ) -> Result<Self, Vec<ContentError>> {
+        let (bundles, learning_domains, practice_tests, errors) =
+            assemble(sources, learning_sources, practice_test_sources);
 
         if errors.is_empty() {
             Ok(Self {
                 bundles,
                 learning_domains,
+                practice_tests,
             })
         } else {
             Err(errors)
@@ -81,6 +136,48 @@ impl ContentRegistry {
     /// All bundles.
     pub fn bundles(&self) -> &[ContentBundle] {
         &self.bundles
+    }
+
+    /// All validated practice tests.
+    pub fn practice_tests(&self) -> &[PracticeTest] {
+        &self.practice_tests
+    }
+
+    /// Finds a practice test by its stable id.
+    pub fn practice_test(&self, practice_test_id: &str) -> Option<&PracticeTest> {
+        self.practice_tests
+            .iter()
+            .find(|test| test.id == practice_test_id)
+    }
+
+    /// Practice tests for a certification version, in embedded order.
+    ///
+    /// A practice test is keyed by certification version (`soa-c03`).
+    pub fn practice_tests_for_version(&self, certification_version: &str) -> Vec<&PracticeTest> {
+        self.practice_tests
+            .iter()
+            .filter(|test| test.certification_version == certification_version)
+            .collect()
+    }
+
+    /// Practice tests for a certification id (`aws-soa-c03`).
+    ///
+    /// Resolves the certification to its versions so callers can address tests
+    /// by the same certification id used elsewhere in the API.
+    pub fn practice_tests_for_certification(&self, certification_id: &str) -> Vec<&PracticeTest> {
+        let versions: HashSet<&str> = self
+            .bundles
+            .iter()
+            .filter(|bundle| bundle.certification.id == certification_id)
+            .map(|bundle| bundle.version.id.as_str())
+            .collect();
+        if versions.is_empty() {
+            return Vec::new();
+        }
+        self.practice_tests
+            .iter()
+            .filter(|test| versions.contains(test.certification_version.as_str()))
+            .collect()
     }
 
     /// Finds a bundle by certification id.
@@ -231,6 +328,69 @@ impl ContentRegistry {
     }
 }
 
+/// Borrows embedded sources, keeping their repository-relative paths.
+fn embedded_refs(sources: &[EmbeddedSource]) -> Vec<SourceRef<'_>> {
+    sources
+        .iter()
+        .map(|source| SourceRef {
+            path: Some(source.path),
+            json: source.json,
+        })
+        .collect()
+}
+
+/// Borrows in-memory sources that have no file path.
+fn inline_refs<'a>(sources: &'a [&'a str]) -> Vec<SourceRef<'a>> {
+    sources
+        .iter()
+        .map(|json| SourceRef { path: None, json })
+        .collect()
+}
+
+/// Parses, validates, and cross-checks sources, collecting every error.
+///
+/// Invalid sources are skipped rather than aborting, so the returned bundles
+/// and learning domains are the valid subset.
+fn assemble(
+    sources: &[SourceRef<'_>],
+    learning_sources: &[SourceRef<'_>],
+    practice_test_sources: &[SourceRef<'_>],
+) -> (
+    Vec<ContentBundle>,
+    Vec<LearningDomain>,
+    Vec<PracticeTest>,
+    Vec<ContentError>,
+) {
+    let mut errors = Vec::new();
+    let bundles = parse_bundles(sources, &mut errors);
+    let learning_domains = parse_learning_domains(learning_sources, &mut errors);
+    let practice_tests = parse_practice_tests(practice_test_sources, &mut errors);
+
+    for domain in &learning_domains {
+        validate_learning_against_bundles(domain, &bundles, &mut errors);
+    }
+    validate_unique_learning_domains(&learning_domains, &mut errors);
+    validate_unique_practice_tests(&practice_tests, &mut errors);
+
+    for test in &practice_tests {
+        validate_practice_test_against_bundles(test, &bundles, &mut errors);
+    }
+
+    (bundles, learning_domains, practice_tests, errors)
+}
+
+/// Fills in the source file for errors that do not already name one.
+fn attribute(errors: &mut [ContentError], path: Option<&str>) {
+    let Some(path) = path else {
+        return;
+    };
+    for error in errors.iter_mut() {
+        if error.source.is_none() {
+            error.source = Some(path.to_owned());
+        }
+    }
+}
+
 fn questions_in_order(bundle: &ContentBundle) -> Vec<&Question> {
     let mut questions = Vec::new();
     let mut seen = HashSet::new();
@@ -266,10 +426,10 @@ fn collect_task_questions<'a>(
 fn merge_group(group: Vec<ContentBundle>) -> Result<ContentBundle, Vec<ContentError>> {
     let mut iter = group.into_iter();
     let Some(base) = iter.next() else {
-        return Err(vec![ContentError {
-            code: "empty_content_group",
-            message: "content group has no bundles".to_owned(),
-        }]);
+        return Err(vec![ContentError::new(
+            "empty_content_group",
+            "content group has no bundles",
+        )]);
     };
 
     let ContentBundle {
@@ -390,32 +550,38 @@ fn validate_task_content_versions(bundle: &ContentBundle, errors: &mut Vec<Conte
                 }
             }
             if mixed {
-                errors.push(ContentError {
-                    code: "task_content_version_mixed",
-                    message: format!(
+                errors.push(ContentError::new(
+                    "task_content_version_mixed",
+                    format!(
                         "task {} spans multiple content versions; a mission must use one",
                         task.id
                     ),
-                });
+                ));
             }
         }
     }
 }
 
 /// Parses and merges quiz bundle sources, recording every error found.
-fn parse_bundles(sources: &[&str], errors: &mut Vec<ContentError>) -> Vec<ContentBundle> {
+fn parse_bundles(sources: &[SourceRef<'_>], errors: &mut Vec<ContentError>) -> Vec<ContentBundle> {
     let mut parsed = Vec::new();
 
     for source in sources {
-        match serde_json::from_str::<ContentBundle>(source) {
+        match serde_json::from_str::<ContentBundle>(source.json) {
             Ok(bundle) => match validate(&bundle) {
                 Ok(()) => parsed.push(bundle),
-                Err(mut found) => errors.append(&mut found),
+                Err(mut found) => {
+                    attribute(&mut found, source.path);
+                    errors.append(&mut found);
+                }
             },
-            Err(error) => errors.push(ContentError {
-                code: "invalid_json",
-                message: error.to_string(),
-            }),
+            Err(error) => {
+                let error = ContentError::new("invalid_json", error.to_string());
+                errors.push(match source.path {
+                    Some(path) => error.with_source(path),
+                    None => error,
+                });
+            }
         }
     }
 
@@ -444,23 +610,124 @@ fn parse_bundles(sources: &[&str], errors: &mut Vec<ContentError>) -> Vec<Conten
 }
 
 /// Parses and validates learning domain sources, recording every error found.
-fn parse_learning_domains(sources: &[&str], errors: &mut Vec<ContentError>) -> Vec<LearningDomain> {
+fn parse_learning_domains(
+    sources: &[SourceRef<'_>],
+    errors: &mut Vec<ContentError>,
+) -> Vec<LearningDomain> {
     let mut domains = Vec::new();
 
     for source in sources {
-        match serde_json::from_str::<LearningDomain>(source) {
+        match serde_json::from_str::<LearningDomain>(source.json) {
             Ok(domain) => match validate_learning_domain(&domain) {
                 Ok(()) => domains.push(domain),
-                Err(mut found) => errors.append(&mut found),
+                Err(mut found) => {
+                    attribute(&mut found, source.path);
+                    errors.append(&mut found);
+                }
             },
-            Err(error) => errors.push(ContentError {
-                code: "invalid_learning_json",
-                message: error.to_string(),
-            }),
+            Err(error) => {
+                let error = ContentError::new("invalid_learning_json", error.to_string());
+                errors.push(match source.path {
+                    Some(path) => error.with_source(path),
+                    None => error,
+                });
+            }
         }
     }
 
     domains
+}
+
+/// Parses and validates practice-test sources, recording every error found.
+fn parse_practice_tests(
+    sources: &[SourceRef<'_>],
+    errors: &mut Vec<ContentError>,
+) -> Vec<PracticeTest> {
+    let mut tests = Vec::new();
+
+    for source in sources {
+        match serde_json::from_str::<PracticeTest>(source.json) {
+            Ok(test) => match validate_practice_test(&test) {
+                Ok(()) => tests.push(test),
+                Err(mut found) => {
+                    attribute(&mut found, source.path);
+                    errors.append(&mut found);
+                }
+            },
+            Err(error) => {
+                let error = ContentError::new("invalid_practice_test_json", error.to_string());
+                errors.push(match source.path {
+                    Some(path) => error.with_source(path),
+                    None => error,
+                });
+            }
+        }
+    }
+
+    tests
+}
+
+/// Rejects two practice tests claiming the same id.
+fn validate_unique_practice_tests(tests: &[PracticeTest], errors: &mut Vec<ContentError>) {
+    let mut seen = HashSet::new();
+    for test in tests {
+        if !seen.insert(test.id.as_str()) {
+            errors.push(ContentError::new(
+                "duplicate_practice_test_id",
+                format!("duplicate practice test id {}", test.id),
+            ));
+        }
+    }
+}
+
+/// Cross-checks a practice test against the quiz bundle for its version.
+///
+/// Practice tests never load as bundles, but they share a certification version
+/// and domain ids. When no bundle exists yet the cross-check is skipped so a
+/// practice test can be authored ahead of its quiz content.
+fn validate_practice_test_against_bundles(
+    test: &PracticeTest,
+    bundles: &[ContentBundle],
+    errors: &mut Vec<ContentError>,
+) {
+    let Some(bundle) = bundles
+        .iter()
+        .find(|bundle| bundle.version.id == test.certification_version)
+    else {
+        return;
+    };
+
+    if !bundle
+        .certification
+        .exam_code
+        .eq_ignore_ascii_case(&test.exam_code)
+    {
+        errors.push(ContentError::new(
+            "practice_test_exam_code_mismatch",
+            format!(
+                "practice test {} exam_code {} does not match certification exam code {}",
+                test.id, test.exam_code, bundle.certification.exam_code
+            ),
+        ));
+    }
+
+    let domain_ids: HashSet<&str> = bundle
+        .version
+        .domains
+        .iter()
+        .map(|domain| domain.id.as_str())
+        .collect();
+    for item in &test.items {
+        if !domain_ids.contains(item.question.domain_id.as_str()) {
+            errors.push(ContentError::new(
+                "practice_test_unknown_domain",
+                format!(
+                    "practice test {} question {} references unknown domain {}",
+                    test.id, item.question.id, item.question.domain_id
+                ),
+            ));
+        }
+    }
 }
 
 /// Rejects two learning domains claiming the same certification/version/domain.
@@ -473,13 +740,13 @@ fn validate_unique_learning_domains(domains: &[LearningDomain], errors: &mut Vec
             domain.domain.id.as_str(),
         );
         if !seen.insert(key) {
-            errors.push(ContentError {
-                code: "duplicate_learning_domain",
-                message: format!(
+            errors.push(ContentError::new(
+                "duplicate_learning_domain",
+                format!(
                     "duplicate learning domain {} for certification version {}",
                     domain.domain.id, domain.certification_version
                 ),
-            });
+            ));
         }
     }
 }
@@ -506,24 +773,24 @@ fn validate_learning_against_bundles(
         .iter()
         .find(|candidate| candidate.id == domain.domain.id)
     else {
-        errors.push(ContentError {
-            code: "learning_domain_unknown",
-            message: format!(
+        errors.push(ContentError::new(
+            "learning_domain_unknown",
+            format!(
                 "learning domain {} is not part of certification version {}",
                 domain.domain.id, domain.certification_version
             ),
-        });
+        ));
         return;
     };
 
     if (official_domain.weight - domain.domain.weight).abs() > 1e-6 {
-        errors.push(ContentError {
-            code: "learning_domain_weight_mismatch",
-            message: format!(
+        errors.push(ContentError::new(
+            "learning_domain_weight_mismatch",
+            format!(
                 "learning domain {} weight {} does not match the blueprint weight {}",
                 domain.domain.id, domain.domain.weight, official_domain.weight
             ),
-        });
+        ));
     }
 
     let concept_ids: HashSet<&str> = bundle
@@ -534,13 +801,13 @@ fn validate_learning_against_bundles(
     for node in domain.nodes() {
         for concept_id in &node.concept_ids {
             if !concept_ids.contains(concept_id.as_str()) {
-                errors.push(ContentError {
-                    code: "learning_unknown_concept",
-                    message: format!(
+                errors.push(ContentError::new(
+                    "learning_unknown_concept",
+                    format!(
                         "knowledge node {} references unknown concept {}",
                         node.id, concept_id
                     ),
-                });
+                ));
             }
         }
     }
@@ -553,14 +820,55 @@ fn validate_learning_against_bundles(
     for module in &domain.modules {
         for task_id in &module.task_ids {
             if !official_tasks.contains(task_id.as_str()) {
-                errors.push(ContentError {
-                    code: "learning_unknown_task",
-                    message: format!(
+                errors.push(ContentError::new(
+                    "learning_unknown_task",
+                    format!(
                         "learning module {} references unknown task {} for domain {}",
                         module.id, task_id, domain.domain.id
                     ),
-                });
+                ));
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn invalid_source_error_names_the_file() {
+        let sources = [SourceRef {
+            path: Some("content/bad/quiz.json"),
+            json: "{}",
+        }];
+        let mut errors = Vec::new();
+
+        let bundles = parse_bundles(&sources, &mut errors);
+
+        assert!(bundles.is_empty());
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].code, "invalid_json");
+        assert_eq!(errors[0].source.as_deref(), Some("content/bad/quiz.json"));
+    }
+
+    #[test]
+    fn assemble_keeps_valid_sources_and_skips_invalid_ones() {
+        let sources = [
+            SourceRef {
+                path: Some("content/good/bundle.json"),
+                json: EMBEDDED_SOURCES[0].json,
+            },
+            SourceRef {
+                path: Some("content/bad/quiz.json"),
+                json: "{\"not\":\"a bundle\"}",
+            },
+        ];
+
+        let (bundles, _learning, _practice, errors) = assemble(&sources, &[], &[]);
+
+        assert!(!bundles.is_empty(), "the valid source must survive");
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].source.as_deref(), Some("content/bad/quiz.json"));
     }
 }

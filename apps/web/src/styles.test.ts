@@ -49,3 +49,20 @@ describe("learning CSS readability", () => {
     expect(fontSizeOf(".learning-code-file-bar")).toBeLessThanOrEqual(0.8);
   });
 });
+
+describe("focus widget CSS", () => {
+  it("reveals the panel from widget state, not raw CSS hover", () => {
+    expect(css).toContain(".focus-widget--open .focus-widget-panel");
+    expect(css).toContain(".focus-widget--reduced .focus-widget-panel");
+    // The fragile pointer-only hover rule must not come back.
+    expect(css).not.toContain(".focus-widget:hover .focus-widget-panel");
+  });
+});
+
+describe("mobile node detail sheet CSS", () => {
+  it("pins the node panel and its action above the tab bar on phones", () => {
+    expect(css).toContain(".track-hub-side .node-panel");
+    expect(css).toContain(".track-hub-side .node-panel-explore");
+    expect(css).toContain("node-sheet-in");
+  });
+});

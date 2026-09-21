@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 
 import type { Choice } from "../api/types";
+import { stripInlineCode } from "../lib/inlineCode";
+import InlineText from "./InlineText";
 
 interface ClassificationInteractionProps {
   items: Choice[];
@@ -60,14 +62,13 @@ export default function ClassificationInteraction({
                     event.dataTransfer.setData("text/plain", item.id);
                   }}
                 >
-                  {item.label}
+                  <InlineText text={item.label} />
                 </button>
               </li>
             ))}
           </ul>
         )}
       </div>
-
       <div className="classification-categories">
         {categories.map((category) => {
           const placed = items.filter(
@@ -78,7 +79,7 @@ export default function ClassificationInteraction({
               key={category.id}
               className="classification-category"
               role="group"
-              aria-label={category.label}
+              aria-label={stripInlineCode(category.label)}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => {
                 event.preventDefault();
@@ -88,7 +89,9 @@ export default function ClassificationInteraction({
                 }
               }}
             >
-              <h3>{category.label}</h3>
+              <h3>
+                <InlineText text={category.label} />
+              </h3>
               <button
                 type="button"
                 className="place-button"
@@ -115,7 +118,7 @@ export default function ClassificationInteraction({
                         )
                       }
                     >
-                      {item.label}
+                      <InlineText text={item.label} />
                     </button>
                   </li>
                 ))}

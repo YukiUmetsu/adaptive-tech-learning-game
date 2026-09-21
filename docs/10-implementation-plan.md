@@ -16,12 +16,14 @@ Deliver:
 
 Exit: authenticated user can load and sync a trivial state.
 
-> Phase 0 implementation note: this repository currently implements the local
-> foundation only — Rust/Axum skeleton, React/Vite/PWA shell, local PostgreSQL
-> with SQLx migrations, and OpenAPI → TypeScript generation. WorkOS staging
-> auth, deployed Cloud Run/Neon/R2 environments, and IaC are deliberately
-> deferred until credentials and environments exist. See
-> [Local development](11-local-development.md).
+> Phase 0 implementation note: the repository implements the local foundation —
+> Rust/Axum skeleton, React/Vite/PWA shell, local PostgreSQL with SQLx
+> migrations, and OpenAPI → TypeScript generation — and WorkOS AuthKit is wired
+> end to end (API token verification plus the web sign-in flow). The web app is
+> hosted on Cloudflare (Worker static assets, see `apps/web/wrangler.jsonc`).
+> The Cloud Run API, Neon database, R2 storage, and IaC are deferred until those
+> environments exist. See [Local development](11-local-development.md) and
+> [Deployment](12-deployment.md).
 
 ## Phase 1 — Narrow learning MVP
 
@@ -40,14 +42,23 @@ Deliver:
 
 Exit: useful study sessions work without game mechanics and events are deterministic/replayable.
 
-> Phase 1 implementation note: the repository currently implements one narrow
-> slice — AWS SOA-C03, Domain 1, Task 1.1 — with classification, ordering, and
-> node-connection interactions, server-side scoring, a normalized learning
-> event, local-first persistence, and a batched sync endpoint. This is
-> deliberately smaller than the 100-300 interaction target below: the current
-> bundle has a small validated set for one task, and the equation mechanic is
-> not implemented yet. Domains 2-5 and other tasks are blueprint metadata only.
-> Adaptive scheduling, mastery prediction, and gamification remain out of scope.
+> Phase 1 implementation note: the MVP now spans more than the original narrow
+> slice. All five AWS SOA-C03 domains are authored, joined by AWS SAA-C03,
+> AWS AIP-C01, HashiCorp Terraform Associate 004, and AI/Python tracks
+> (Python fluency, Python data stack, PyTorch core), with original demo bundles
+> for every interaction type. The web app has a certification catalog, a
+> certification dashboard, three quiz modes with server-side selection, a
+> pre-quiz Knowledge Map (progressive `table`/`code_file` reveals), a
+> server-authoritative Bits currency, and a full set of tactile interaction
+> types.
+>
+> Adaptive selection now reads a persistent derived `user_concept_state` cache
+> (the deterministic, bounded `heuristic-v1` model) keyed per assessment mode.
+> Accepted events preserve the canonical question `difficulty_prior`, and
+> selection combines concept state, forgetting risk, domain weight, uncertainty,
+> difficulty fit, novelty, and repeat penalty with a deterministic tie-break.
+> It remains a heuristic, not mastery: trained student models (HLR/FSRS/DAS3H),
+> calibration, and the persistent game world remain out of scope.
 
 ## Phase 2 — Authoritative mission + sync protocol
 
@@ -76,6 +87,15 @@ Deliver:
 
 Exit: recall predictions are measured, calibrated, and reproducible.
 
+> Phase 3 implementation note: the measurement foundation is in place while
+> `heuristic-v1` remains the production model. Pre-answer prediction snapshots
+> are captured at question issuance and linked to accepted learning events, with
+> pure Brier/log-loss/calibration metrics, slicing, and an internal
+> aggregate-only evaluation endpoint. Daily Missions can include a bounded,
+> tagged delayed-retrieval item for due concepts. HLR/FSRS/DAS3H training and
+> calibration dashboards are still to come, and will be benchmarked against the
+> same dataset.
+
 ## Phase 4 — Adaptive planning
 
 Deliver:
@@ -88,6 +108,42 @@ Deliver:
 - separate teaching-policy evaluation
 
 Exit: scheduler selects plausible sessions and is evaluated separately from the predictor.
+
+> Phase 4 implementation note: an optional, deterministic planner V1 ships early
+> as a pure `PlannerInput -> Recommendation` function (`apps/api/src/planner.rs`)
+> exposed at `POST /v1/tracks/{track_id}/recommendation`. It recommends
+> `learn_node`, `review_node`, `practice_question`, or `practice_domain` with a
+> stable reason code, using concept state, difficulties, prerequisites, and
+> optional client discovery progress. Discovery is derived server-side with the
+> exact Knowledge Map rules, so a module prerequisite is satisfied only when the
+> module is complete. It is track-agnostic and works for non-certification
+> Learning Tracks.
+>
+> Recommendations now execute: `learn_node`/`review_node` open the exact node,
+> `practice_question` starts a server-built `recommended_practice` mission that
+> guarantees the anchor question, and `practice_domain` starts a domain quiz.
+> A recommendation carries a stable `recommendation_id`, and lifecycle stages
+> (`shown`, `clicked`, `started`, `node_opened`, `completed`) are recorded as
+> auxiliary telemetry. A recommendation request is not treated as "shown", and
+> telemetry is never learning evidence.
+>
+> A short session planner composes these actions into one deterministic study
+> session (`apps/api/src/planner/session.rs`). The learner-facing plan is now a
+> **Daily Mission**: one immutable, persisted snapshot per track and canonical
+> UTC day (`daily_missions` / `daily_mission_items`), generated once (adaptively,
+> or a standard content-only fallback if adaptive planning is unavailable) and
+> never regenerated by progress, state changes, refreshes, or repeated requests.
+> A fresh mission opens on the ordered task list so the learner can start it
+> deliberately; after that the runner works through items sequentially, reusing
+> Knowledge Node and mission completion and resuming the first incomplete item.
+> Completing every item
+> settles a single idempotent `daily_mission_complete` Bits bonus. Daily Mission
+> completion is never mastery evidence.
+>
+> It remains a heuristic: exam-date goals, availability constraints, the full
+> "why this plan?" surface, and separate teaching-policy evaluation are still to
+> come. Recommendation, session, Daily Mission, and telemetry failures never
+> block the dashboard, knowledge maps, quizzes, missions, or sync.
 
 ## Phase 5 — Economy
 

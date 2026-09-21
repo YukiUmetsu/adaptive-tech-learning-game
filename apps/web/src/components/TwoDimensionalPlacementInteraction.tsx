@@ -10,6 +10,8 @@ import type {
   PlacementAxis,
   PlacementPoint,
 } from "../api/types";
+import { stripInlineCode } from "../lib/inlineCode";
+import InlineText from "./InlineText";
 import { clampPlacement } from "../lib/placement";
 
 interface TwoDimensionalPlacementInteractionProps {
@@ -157,7 +159,7 @@ export default function TwoDimensionalPlacementInteraction({
           dropActive ? "placement-map drop-active" : "placement-map"
         }
         role="group"
-        aria-label={`${xAxis.label} and ${yAxis.label} placement area`}
+        aria-label={`${stripInlineCode(xAxis.label)} and ${stripInlineCode(yAxis.label)} placement area`}
         onDragOver={(event) => {
           if (!disabled) {
             event.preventDefault();
@@ -230,7 +232,7 @@ export default function TwoDimensionalPlacementInteraction({
                 top: `${(1 - point.y) * 100}%`,
               }}
               aria-pressed={selectedItem === item.id}
-              aria-label={`${item.label} on ${xAxis.label} and ${yAxis.label}`}
+              aria-label={`${stripInlineCode(item.label)} on ${stripInlineCode(xAxis.label)} and ${stripInlineCode(yAxis.label)}`}
               disabled={disabled}
               onPointerDown={onMarkerPointerDown(item.id)}
               onPointerMove={onMarkerPointerMove(item.id)}
@@ -242,12 +244,11 @@ export default function TwoDimensionalPlacementInteraction({
               }}
               onKeyDown={onMarkerKeyDown(item.id)}
             >
-              {item.label}
+              <InlineText text={item.label} />
             </button>
           );
         })}
       </div>
-
       <div>
         <h3>{items.some((item) => value[item.id]) ? "Items" : "Drag an item onto the map"}</h3>
         <ul className="item-list placement-palette" aria-label="Items to place">
@@ -274,7 +275,7 @@ export default function TwoDimensionalPlacementInteraction({
                     setSelectedItem(item.id);
                   }}
                 >
-                  {item.label}
+                  <InlineText text={item.label} />
                   {isPlaced ? (
                     <span className="muted"> · placed</span>
                   ) : null}

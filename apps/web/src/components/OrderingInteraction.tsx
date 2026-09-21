@@ -1,4 +1,6 @@
 import type { Choice } from "../api/types";
+import { stripInlineCode } from "../lib/inlineCode";
+import InlineText from "./InlineText";
 
 interface OrderingInteractionProps {
   items: Choice[];
@@ -63,12 +65,14 @@ export default function OrderingInteraction({
               }
             }}
           >
-            <span className="ordering-label">{label}</span>
+            <span className="ordering-label">
+              <InlineText text={label} />
+            </span>
             <span className="ordering-controls">
               <button
                 type="button"
                 disabled={disabled || index === 0}
-                aria-label={`Move ${label} up`}
+                aria-label={`Move ${stripInlineCode(label)} up`}
                 onClick={() => move(index, -1)}
               >
                 Move up
@@ -76,7 +80,7 @@ export default function OrderingInteraction({
               <button
                 type="button"
                 disabled={disabled || index === value.length - 1}
-                aria-label={`Move ${label} down`}
+                aria-label={`Move ${stripInlineCode(label)} down`}
                 onClick={() => move(index, 1)}
               >
                 Move down

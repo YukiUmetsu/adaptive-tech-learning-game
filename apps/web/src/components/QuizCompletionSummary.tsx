@@ -23,6 +23,8 @@ interface QuizCompletionSummaryProps {
   mission: MissionResponse;
   attempts: AttemptRecord[];
   syncState: SyncState;
+  /** When set, offers a "Continue Daily Mission" action back to the runner. */
+  dailyReturnTo?: string;
   onRetrySync: () => void;
 }
 
@@ -128,6 +130,7 @@ export default function QuizCompletionSummary({
   mission,
   attempts,
   syncState,
+  dailyReturnTo,
   onRetrySync,
 }: QuizCompletionSummaryProps) {
   const summary = useMemo(
@@ -288,6 +291,18 @@ export default function QuizCompletionSummary({
         label: "Return to Study Dashboard",
         variant: "primary",
         to: dashboardPath,
+      },
+    ];
+  }
+
+  if (dailyReturnTo) {
+    // Daily Mission tasks are a single flow: the only action is to continue.
+    actions = [
+      {
+        key: "daily",
+        label: "Continue Daily Mission →",
+        variant: "primary",
+        to: dailyReturnTo,
       },
     ];
   }

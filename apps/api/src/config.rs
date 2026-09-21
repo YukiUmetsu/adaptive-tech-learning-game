@@ -129,6 +129,27 @@ pub struct Config {
     pub auth: AuthMode,
     /// WorkOS settings, or `None` when authentication is not configured.
     pub workos: Option<WorkosConfig>,
+    /// Whether the internal evaluation endpoint is reachable at all.
+    ///
+    /// Defaults to on for local/test and off everywhere else, so a normal
+    /// production deployment never exposes per-model analytics to learners.
+    pub internal_evaluation_enabled: bool,
+    /// Optional shared secret required by the internal evaluation endpoint.
+    ///
+    /// Required whenever the endpoint is enabled outside local/test.
+    pub internal_api_token: Option<String>,
+}
+
+/// Access policy for the internal evaluation endpoint.
+///
+/// Passed to the router as an `Extension` so handlers never read the environment
+/// and the policy is decided once at startup.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InternalAccess {
+    /// Whether the endpoint is reachable.
+    pub enabled: bool,
+    /// Shared secret required in the `X-Internal-Token` header, when configured.
+    pub token: Option<String>,
 }
 
 impl Config {
@@ -241,6 +262,21 @@ impl Config {
             }
         };
 
+        // The internal evaluation endpoint is a developer/operator tool. It is
+        // off by default outside local/test and, when enabled there, must be
+        // protected by an explicit shared secret.
+        let internal_api_token = raw("INTERNAL_API_TOKEN");
+        let internal_evaluation_enabled = match raw("INTERNAL_EVALUATION_ENABLED") {
+            Some(value) => parse_bool("INTERNAL_EVALUATION_ENABLED", &value)?,
+            None => matches!(app_env, AppEnv::Local | AppEnv::Test),
+        };
+        if internal_evaluation_enabled
+            && !matches!(app_env, AppEnv::Local | AppEnv::Test)
+            && internal_api_token.is_none()
+        {
+            return Err(ConfigError::InternalEvaluationInsecure);
+        }
+
         Ok(Self {
             app_env,
             bind_addr,
@@ -253,7 +289,17 @@ impl Config {
             log_format,
             auth,
             workos,
+            internal_evaluation_enabled,
+            internal_api_token,
         })
+    }
+
+    /// Access policy for the internal evaluation endpoint.
+    pub fn internal_access(&self) -> InternalAccess {
+        InternalAccess {
+            enabled: self.internal_evaluation_enabled,
+            token: self.internal_api_token.clone(),
+        }
     }
 }
 
@@ -306,6 +352,9 @@ pub enum ConfigError {
         "authentication is required outside local/test: set WORKOS_CLIENT_ID and WORKOS_API_KEY"
     )]
     AuthRequired,
+    /// The internal evaluation endpoint was enabled without a shared secret.
+    #[error("INTERNAL_EVALUATION_ENABLED requires INTERNAL_API_TOKEN outside local/test")]
+    InternalEvaluationInsecure,
 }
 
 impl ConfigError {
@@ -337,6 +386,8 @@ mod tests {
         assert_eq!(config.log_format, LogFormat::Pretty);
         assert!(config.workos.is_none());
         assert_eq!(config.auth, AuthMode::Dev);
+        assert!(config.internal_evaluation_enabled);
+        assert!(config.internal_api_token.is_none());
         assert_eq!(
             config.cors_allowed_origins,
             vec![HeaderValue::from_static("http://localhost:5173")]
@@ -376,6 +427,45 @@ mod tests {
         assert!(!config.run_migrations);
         assert!(config.cors_allowed_origins.is_empty());
         assert_eq!(config.auth, AuthMode::Workos);
+        assert!(
+            !config.internal_evaluation_enabled,
+            "internal evaluation is off by default in production"
+        );
+    }
+
+    #[test]
+    fn production_can_enable_internal_evaluation_with_a_token() {
+        let mut source = minimal();
+        source.push(("APP_ENV", "production"));
+        source.push(("WORKOS_CLIENT_ID", "client_123"));
+        source.push(("WORKOS_API_KEY", "sk_test_123"));
+        source.push(("INTERNAL_EVALUATION_ENABLED", "true"));
+        source.push(("INTERNAL_API_TOKEN", "internal-secret"));
+        let config = Config::from_source(source).expect("valid config");
+
+        assert!(config.internal_evaluation_enabled);
+        assert_eq!(
+            config.internal_api_token.as_deref(),
+            Some("internal-secret")
+        );
+        assert_eq!(
+            config.internal_access(),
+            InternalAccess {
+                enabled: true,
+                token: Some("internal-secret".to_owned()),
+            }
+        );
+    }
+
+    #[test]
+    fn production_rejects_internal_evaluation_without_a_token() {
+        let mut source = minimal();
+        source.push(("APP_ENV", "production"));
+        source.push(("WORKOS_CLIENT_ID", "client_123"));
+        source.push(("WORKOS_API_KEY", "sk_test_123"));
+        source.push(("INTERNAL_EVALUATION_ENABLED", "true"));
+        let error = Config::from_source(source).expect_err("insecure internal endpoint");
+        assert_eq!(error, ConfigError::InternalEvaluationInsecure);
     }
 
     #[test]

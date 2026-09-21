@@ -8,6 +8,13 @@ import type {
   QuestionView,
 } from "../api/types";
 import { newId } from "../lib/id";
+import { recordStudyActivity } from "../state/focus";
+import {
+  loadPendingAuxiliary,
+  loadPendingDiscovery,
+  markAuxiliarySynced,
+  markDiscoverySent,
+} from "../state/auxiliaryQueue";
 import {
   appendPendingEvent,
   getDeviceId,
@@ -75,6 +82,14 @@ export function useMissionRunner(missionId: string): MissionRunner {
   const question = progress?.mission.questions[progress.currentIndex] ?? null;
   const timer = useQuestionTimer(question?.id ?? "none", phase === "answering");
 
+  // Beginning meaningful question interaction is a semantic boundary that
+  // resumes Focus. Low-level input components never touch the timer.
+  useEffect(() => {
+    if (phase === "answering" && question) {
+      recordStudyActivity("question");
+    }
+  }, [phase, question]);
+
   useEffect(() => {
     const stored = loadMission();
     if (!stored || stored.mission.id !== missionId) {
@@ -92,7 +107,9 @@ export function useMissionRunner(missionId: string): MissionRunner {
 
   const sync = useCallback(async () => {
     const pending = loadPendingEvents();
-    if (pending.length === 0) {
+    const discovery = loadPendingDiscovery();
+    const auxiliary = loadPendingAuxiliary();
+    if (pending.length === 0 && discovery.length === 0 && auxiliary.length === 0) {
       setSyncState({ status: "synced", pending: 0 });
       return;
     }
@@ -113,6 +130,23 @@ export function useMissionRunner(missionId: string): MissionRunner {
             occurred_at: event.occurredAt,
             answer: event.answer,
           })),
+          // Auxiliary work rides along on the same request but is logically
+          // isolated server-side. Only accepted sections are cleared below.
+          discovery_updates: discovery.map((entry) => ({
+            track_version: entry.trackVersion,
+            content_version: entry.contentVersion,
+            domains: entry.domains,
+          })),
+          auxiliary_events: auxiliary.map((entry) => ({
+            event_id: entry.eventId,
+            track_id: entry.trackId,
+            recommendation_id: entry.recommendationId,
+            event: entry.event,
+            action: entry.action,
+            domain_id: entry.domainId,
+            node_id: entry.nodeId,
+            question_id: entry.questionId,
+          })),
         },
       });
 
@@ -129,6 +163,12 @@ export function useMissionRunner(missionId: string): MissionRunner {
         .filter((entry) => entry.accepted)
         .map((entry) => entry.event_id);
       markEventsSynced(accepted);
+      if (result.data.discovery?.accepted) {
+        markDiscoverySent(discovery);
+      }
+      if (result.data.auxiliary?.accepted) {
+        markAuxiliarySynced(auxiliary.map((entry) => entry.id));
+      }
       reconcileBits(result.data.bits_balance);
       const remaining = pendingEventCount();
       setSyncState({
@@ -155,6 +195,9 @@ export function useMissionRunner(missionId: string): MissionRunner {
       body: { device_id: getDeviceId() },
     });
     void sync();
+    // Notify the app that authoritative study state may have changed so the
+    // Track Hub can refresh the streak and Daily Mission at this boundary.
+    window.dispatchEvent(new Event("adaptive-learn:study-updated"));
   }, [phase, progress, sync]);
 
   const submit = useCallback(
@@ -163,6 +206,7 @@ export function useMissionRunner(missionId: string): MissionRunner {
         return;
       }
 
+      recordStudyActivity("answer_submit");
       setSubmitting(true);
       setError(null);
 
@@ -251,6 +295,7 @@ export function useMissionRunner(missionId: string): MissionRunner {
   );
 
   const retry = useCallback(() => {
+    recordStudyActivity("question");
     setFeedback(null);
     setLastAnswer(null);
     setError(null);
@@ -262,6 +307,7 @@ export function useMissionRunner(missionId: string): MissionRunner {
       return;
     }
 
+    recordStudyActivity("mission_next");
     if (progress.currentIndex < progress.mission.questions.length - 1) {
       persist({ ...progress, currentIndex: progress.currentIndex + 1 });
       setFeedback(null);

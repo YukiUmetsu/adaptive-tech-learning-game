@@ -167,6 +167,17 @@ Every interaction needs a non-drag alternative:
 
 PWA V1 should rely on visual/audio satisfaction. iPhone web haptics are not dependable; native packaging can add real haptic APIs later.
 
+## Feedback feel
+
+Correct answers draw an animated checkmark, and earned Bits fly into the wallet
+HUD as a small particle burst with a bright coin chime. Mission completion sends
+its earned Bits to the wallet the same way, and a checklist step completing plays
+a crisp tick. Sounds are synthesized (no audio assets), follow the existing mute
+preference, and are throttled; every animation degrades to a static, equally
+informative state under `prefers-reduced-motion` (sound still plays). The reward
+is never gated on the animation succeeding: the wallet balance updates
+independently and the animation is decorative.
+
 ## Momentum
 
 Prefer gentle momentum over destructive streaks.

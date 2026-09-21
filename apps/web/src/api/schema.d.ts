@@ -25,6 +25,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/model-evaluation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Internal calibration summary for a model version.
+         * @description Analytics only: returns aggregate metrics, never per-user data. Disabled
+         *     outside local/test by default, and when enabled outside local/test it
+         *     requires an explicit `X-Internal-Token`. A learner token alone is never
+         *     enough, so this is not part of the learner-facing surface.
+         */
+        get: operations["get_model_evaluation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/openapi.json": {
         parameters: {
             query?: never;
@@ -87,6 +110,120 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/certifications/{certification_id}/practice-tests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lists the practice tests (exam simulations) for a certification. */
+        get: operations["list_practice_tests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/certifications/{certification_id}/practice-tests/{practice_test_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns learner-safe practice-test content, before submission.
+         * @description Canonical answers, per-choice feedback, and scored flags are never included.
+         */
+        get: operations["get_practice_test"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/certifications/{certification_id}/practice-tests/{practice_test_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scores and reviews a complete practice-test attempt.
+         * @description The whole attempt is submitted at once; the response reveals canonical
+         *     answers, explanations, and per-choice feedback. The raw practice score is
+         *     not an AWS scaled score.
+         */
+        post: operations["submit_practice_test"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/daily-missions/{mission_id}/items/{position}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Completes a learning-node Daily Mission item from discovery progress. */
+        post: operations["complete_daily_item"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/daily-missions/{mission_id}/items/{position}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reviews the questions and answers of a Daily Mission item.
+         * @description Available after the item's practice mission completes, so a learner can
+         *     revisit the material without redoing it. It never creates evidence.
+         */
+        get: operations["review_daily_item"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/daily-missions/{mission_id}/items/{position}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Starts the mission for one Daily Mission practice item. */
+        post: operations["start_daily_item"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me": {
         parameters: {
             query?: never;
@@ -97,10 +234,33 @@ export interface paths {
         /**
          * Returns safe application account data for the authenticated learner.
          * @description Used to confirm server-side auth and to power the account UI. It never
-         *     returns tokens, secrets, or provider internals.
+         *     returns tokens, secrets, or provider internals. The account-wide study streak
+         *     and study settings are bundled here so the Track Hub needs no extra request;
+         *     a query failure returns neutral values and never fails authentication.
          */
         get: operations["get_me"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Updates learner study settings.
+         * @description Settings are preferences only: they never affect scoring, evidence, concept
+         *     state, or rewards.
+         */
+        put: operations["update_settings"];
         post?: never;
         delete?: never;
         options?: never;
@@ -163,6 +323,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/missions/{mission_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns a read-only review of a completed mission.
+         * @description Canonical answers are included only after completion, so in-progress work
+         *     never leaks answers. Review never creates evidence or changes scores.
+         */
+        get: operations["review_mission"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/sync": {
         parameters: {
             query?: never;
@@ -179,6 +360,158 @@ export interface paths {
          *     accepted for demo missions but never settle Bits.
          */
         post: operations["sync"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tracks/{track_id}/daily-mission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Returns today's immutable Daily Mission, generating it once if needed.
+         * @description The plan never changes after creation, and generation is optional: if
+         *     adaptive planning fails, a standard non-adaptive plan is persisted instead.
+         */
+        post: operations["get_today_daily_mission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tracks/{track_id}/discovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns a learner's persisted Knowledge Map discovery progress for a track.
+         * @description This is an enhancement, not a prerequisite: the Knowledge Map renders from
+         *     local progress immediately and merges this response asynchronously. It is raw
+         *     monotonic discovery data and never scored knowledge evidence.
+         */
+        get: operations["get_track_discovery"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tracks/{track_id}/map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns every learning domain for a track in one response.
+         * @description The Track Hub renders one track-wide Knowledge Map, so this avoids a request
+         *     per domain. It is authored content only: no scored answers, no learner state.
+         */
+        get: operations["get_track_map"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tracks/{track_id}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns the aggregate Knowledge Signal for a track.
+         * @description One request covers every domain and node. Coarse semantic states only: no raw
+         *     model probabilities, percentages, or pass estimates. This is an enhancement:
+         *     if it fails, the client renders the normal Knowledge Map from discovery
+         *     progress and omits the adaptive decoration.
+         */
+        get: operations["get_track_progress"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tracks/{track_id}/recommendation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Returns a best-effort next-action recommendation for a learning track.
+         * @description This is an optional, explainable layer over the derived concept state. It
+         *     never gates the dashboard, knowledge maps, or quizzes, and it never creates
+         *     learning evidence. Requires an authenticated account.
+         */
+        post: operations["create_recommendation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tracks/{track_id}/recommendations/{recommendation_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Records one recommendation lifecycle event.
+         * @description Telemetry is auxiliary: the request succeeds even when the write fails, so it
+         *     can never block the learner.
+         */
+        post: operations["record_recommendation_event"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tracks/{track_id}/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Builds an optional adaptive study session for a learning track.
+         * @description Session planning is optional and best-effort: the client falls back to a
+         *     standard non-adaptive session when this fails. The server selects all
+         *     practice questions. Requires an authenticated account.
+         */
+        post: operations["create_study_session"];
         delete?: never;
         options?: never;
         head?: never;
@@ -216,6 +549,10 @@ export interface components {
             assignments?: {
                 [key: string]: string;
             } | null;
+            /** @description Selected choice id for multiple choice. */
+            choice_id?: string | null;
+            /** @description Selected choice ids for multiple response. */
+            choice_ids?: string[] | null;
             /** @description Ordered choice ids for troubleshooting or a scenario chain. */
             choice_path?: string[] | null;
             /** @description Directed `[from, to]` pairs for node connection. */
@@ -297,6 +634,47 @@ export interface components {
          * @enum {string}
          */
         AssessmentMode: "recognition" | "recall" | "application" | "structural_reconstruction" | "relationship_recall" | "procedural_recall";
+        /** @description One auxiliary recommendation lifecycle event sent in a sync batch. */
+        AuxiliaryEventRequest: {
+            action?: null | components["schemas"]["PlannerAction"];
+            /** @description Domain/topic, when known. */
+            domain_id?: string | null;
+            /** @description Lifecycle stage being reported. */
+            event: components["schemas"]["RecommendationEventKind"];
+            /**
+             * Format: uuid
+             * @description Stable client-generated id, used to make retried telemetry idempotent.
+             */
+            event_id: string;
+            /** @description Knowledge node, when known. */
+            node_id?: string | null;
+            /** @description Question, when known. */
+            question_id?: string | null;
+            /**
+             * Format: uuid
+             * @description Recommendation the event refers to.
+             */
+            recommendation_id: string;
+            /** @description Learning track identifier. */
+            track_id: string;
+        };
+        /** @description One calibration bucket in an internal evaluation summary. */
+        CalibrationBucketDto: {
+            /** @description Bucket label, for example `0.6-0.8`. */
+            bucket: string;
+            /** @description Number of samples in the bucket. */
+            count: number;
+            /**
+             * Format: double
+             * @description Mean observed score in the bucket.
+             */
+            mean_observed: number;
+            /**
+             * Format: double
+             * @description Mean predicted probability in the bucket.
+             */
+            mean_prediction: number;
+        };
         /** @description The canonical answer for a question. */
         CanonicalAnswer: {
             /** @description Item id to category id. */
@@ -387,6 +765,16 @@ export interface components {
             };
             /** @enum {string} */
             type: "typed_fill_blank";
+        } | {
+            /** @description Correct choice id. */
+            choice_id: string;
+            /** @enum {string} */
+            type: "multiple_choice";
+        } | {
+            /** @description Correct choice ids; order is not significant. */
+            choice_ids: string[];
+            /** @enum {string} */
+            type: "multiple_response";
         };
         /** @description Response for the certification catalog. */
         CatalogResponse: {
@@ -510,11 +898,172 @@ export interface components {
             /** @description Learner-facing label for the role, for example `IPv4 default route target`. */
             label: string;
         };
+        /** @description Request to complete a learning-node Daily Mission item. */
+        DailyItemCompleteRequest: {
+            /** @description Raw Knowledge Map discovery progress used to derive node completion. */
+            discovery?: components["schemas"]["DomainDiscoveryInput"][];
+        };
+        /** @description Result of completing one Daily Mission item. */
+        DailyItemCompleteResponse: {
+            /** @description Whether the item is now complete. */
+            item_completed: boolean;
+            /** @description The updated Daily Mission. */
+            mission: components["schemas"]["DailyMissionResponse"];
+        };
+        /** @description One item of the learner's Daily Mission. */
+        DailyMissionItemDto: {
+            /**
+             * Format: date-time
+             * @description Completion time, when complete.
+             */
+            completed_at?: string | null;
+            /** @description Owning domain/topic. */
+            domain_id: string;
+            /** @description Learner-facing domain name. */
+            domain_name: string;
+            /**
+             * Format: int32
+             * @description Estimated minutes.
+             */
+            estimated_minutes: number;
+            /** @description Activity kind. */
+            kind: components["schemas"]["DailyMissionItemKind"];
+            /** @description Knowledge node, for node items. */
+            node_id?: string | null;
+            /**
+             * Format: int32
+             * @description Zero-based position in the immutable plan.
+             */
+            position: number;
+            /** @description Number of server-selected questions, for practice items. */
+            question_count: number;
+            /** @description Completion status. */
+            status: components["schemas"]["DailyMissionItemStatus"];
+            /** @description Learner-facing title. */
+            title: string;
+        };
+        /**
+         * @description One Daily Mission activity kind.
+         * @enum {string}
+         */
+        DailyMissionItemKind: "learn_node" | "review_node" | "practice" | "domain_practice";
+        /**
+         * @description Completion status of one Daily Mission item.
+         * @enum {string}
+         */
+        DailyMissionItemStatus: "pending" | "completed";
+        /**
+         * @description How a Daily Mission was generated.
+         * @enum {string}
+         */
+        DailyMissionPlanType: "adaptive" | "standard";
+        /** @description Request for the learner's Daily Mission for today. */
+        DailyMissionRequest: {
+            /** @description Raw Knowledge Map discovery progress, if available. */
+            discovery?: components["schemas"]["DomainDiscoveryInput"][];
+            /** @description Client IANA timezone. Stored as metadata; the day boundary is canonical UTC. */
+            timezone?: string | null;
+        };
+        /** @description The learner's immutable Daily Mission snapshot for the canonical day. */
+        DailyMissionResponse: {
+            /**
+             * Format: date-time
+             * @description Completion time, when complete.
+             */
+            completed_at?: string | null;
+            /** @description Completed item count. */
+            completed_items: number;
+            /**
+             * Format: date-time
+             * @description Creation time.
+             */
+            created_at: string;
+            /** @description Canonical UTC day key, `YYYY-MM-DD`. */
+            day_key: string;
+            /**
+             * Format: uuid
+             * @description Mission identifier.
+             */
+            id: string;
+            /** @description Immutable, ordered items. */
+            items: components["schemas"]["DailyMissionItemDto"][];
+            /** @description How the plan was generated. */
+            plan_type: components["schemas"]["DailyMissionPlanType"];
+            /**
+             * Format: int64
+             * @description Bits bonus for completing the whole mission.
+             */
+            reward_bits: number;
+            /** @description Whether the completion bonus has been settled. */
+            reward_granted: boolean;
+            /** @description Lifecycle status. */
+            status: components["schemas"]["DailyMissionStatus"];
+            /** @description Total item count. */
+            total_items: number;
+            /** @description Learning track identifier. */
+            track_id: string;
+            /** @description Learning track version identifier. */
+            track_version: string;
+        };
+        /**
+         * @description Daily Mission lifecycle status.
+         * @enum {string}
+         */
+        DailyMissionStatus: "active" | "completed";
         /**
          * @description Database reachability.
          * @enum {string}
          */
         DatabaseStatus: "ok" | "unavailable";
+        /**
+         * @description Server-persisted Knowledge Map discovery progress for a learning track.
+         *
+         *     Discovery is raw and monotonic: node/module state is derived by the client
+         *     with the same rules as the Knowledge Map. It is never learning evidence.
+         */
+        DiscoveryResponse: {
+            /** @description Raw per-domain discovery progress. */
+            domains: components["schemas"]["DomainDiscoveryInput"][];
+            /** @description Learning track version the progress belongs to. */
+            track_version: string;
+        };
+        /**
+         * @description Discovery dimension of the Knowledge Signal.
+         *
+         *     Whether the learner explored the node's learning content. This is separate
+         *     from scored evidence and is never a mastery claim.
+         * @enum {string}
+         */
+        DiscoveryState: "unexplored" | "explored" | "completed";
+        /**
+         * @description A monotonic Knowledge Map discovery delta for one track version.
+         *
+         *     Discovery is set-union based, so duplicates are harmless and an older device
+         *     can never remove a newer reveal.
+         */
+        DiscoveryUpdateRequest: {
+            /** @description Learning content version the reveals were recorded against. */
+            content_version: string;
+            /** @description Raw per-domain discovery progress. */
+            domains?: components["schemas"]["DomainDiscoveryInput"][];
+            /** @description Learning track version the discovery belongs to. */
+            track_version: string;
+        };
+        /** @description Raw discovery progress for one learning domain, as stored on the client. */
+        DomainDiscoveryInput: {
+            /** @description Domain identifier. */
+            domain_id: string;
+            /** @description Knowledge node id to prompt id to revealed discovery element ids. */
+            revealed_element_ids?: {
+                [key: string]: {
+                    [key: string]: string[];
+                };
+            };
+            /** @description Knowledge node id to the prompt ids the learner has revealed. */
+            revealed_prompt_ids?: {
+                [key: string]: string[];
+            };
+        };
         /** @description A content domain. */
         DomainDto: {
             /** @description Domain identifier. */
@@ -531,6 +1080,13 @@ export interface components {
              */
             weight: number;
         };
+        /** @description Knowledge Signal for one domain's nodes. */
+        DomainProgressDto: {
+            /** @description Domain identifier. */
+            domain_id: string;
+            /** @description Per-node signals. */
+            nodes: components["schemas"]["NodeProgressDto"][];
+        };
         /** @description Structured error details. */
         ErrorBody: {
             /** @description Stable error code. */
@@ -543,6 +1099,43 @@ export interface components {
             /** @description Error payload. */
             error: components["schemas"]["ErrorBody"];
         };
+        /** @description Metrics for one slice of the evaluation set. */
+        EvaluationSliceDto: {
+            /**
+             * Format: double
+             * @description Brier score for the slice.
+             */
+            brier_score?: number | null;
+            /** @description Slice dimension, for example `assessment_mode`. */
+            dimension: string;
+            /** @description Slice key within the dimension, for example `recall`. */
+            key: string;
+            /**
+             * Format: double
+             * @description Log loss for the slice.
+             */
+            log_loss?: number | null;
+            /**
+             * Format: double
+             * @description Mean observed score for the slice.
+             */
+            mean_observed?: number | null;
+            /**
+             * Format: double
+             * @description Mean predicted probability for the slice.
+             */
+            mean_prediction?: number | null;
+            /** @description Number of samples in the slice. */
+            samples: number;
+        };
+        /**
+         * @description Coarse evidence level for a node or one assessment mode.
+         *
+         *     This is an amount-of-evidence signal, never a mastery claim. A node with
+         *     little evidence looks "early", not deficient.
+         * @enum {string}
+         */
+        EvidenceLevel: "none" | "early" | "developing" | "substantial";
         /** @description Feedback for one scored attempt. */
         FeedbackResponse: {
             /**
@@ -606,6 +1199,23 @@ export interface components {
          * @enum {string}
          */
         FixedNodePosition: "start" | "end";
+        /**
+         * @description Coarse freshness signal, used only for the outer ring.
+         * @enum {string}
+         */
+        FreshnessState: "unknown" | "fresh" | "becoming_due" | "due";
+        /**
+         * @description One clickable term in learner-facing text, with its explanation.
+         *
+         *     Authors list terms here; the app highlights matching occurrences in learning
+         *     text and reveals the definition when the learner activates the term.
+         */
+        GlossaryTerm: {
+            /** @description Short learner-facing explanation shown when the term is activated. */
+            definition: string;
+            /** @description The text to highlight, for example `guest memory`. */
+            term: string;
+        };
         /**
          * @description Safe operational health payload. Never includes connection strings, hosts,
          *     versions of dependencies, or other internals.
@@ -725,12 +1335,24 @@ export interface components {
             slots: components["schemas"]["TypedBlankSlot"][];
             /** @enum {string} */
             type: "typed_fill_blank";
+        } | {
+            /** @description Selectable options, including distractors. */
+            choices: components["schemas"]["Choice"][];
+            /** @enum {string} */
+            type: "multiple_choice";
+        } | {
+            /** @description Selectable options, including distractors. */
+            choices: components["schemas"]["Choice"][];
+            /** @description Number of options the learner must select. */
+            required_selections: number;
+            /** @enum {string} */
+            type: "multiple_response";
         };
         /**
          * @description The tactile interaction family a question uses.
          * @enum {string}
          */
-        InteractionType: "classification" | "ordering" | "node_connection" | "reconstruction" | "evidence_selection" | "spot_the_fault" | "fill_slots" | "troubleshooting" | "scenario_choice_chain" | "configuration_builder" | "two_dimensional_placement" | "command_assembly" | "typed_fill_blank";
+        InteractionType: "classification" | "ordering" | "node_connection" | "reconstruction" | "evidence_selection" | "spot_the_fault" | "fill_slots" | "troubleshooting" | "scenario_choice_chain" | "configuration_builder" | "two_dimensional_placement" | "command_assembly" | "typed_fill_blank" | "multiple_choice" | "multiple_response";
         /** @description Request to issue a mission for a quiz mode. */
         IssueMissionRequest: {
             /** @description Certification identifier. */
@@ -747,6 +1369,18 @@ export interface components {
             domain_id?: string | null;
             /** @description Quiz mode deciding how the server selects questions. */
             mode: components["schemas"]["QuizMode"];
+            /**
+             * @description Anchor question for `recommended_practice`. The server validates it
+             *     belongs to the certification version; it never trusts it as the whole
+             *     practice set.
+             */
+            question_id?: string | null;
+            /**
+             * Format: uuid
+             * @description Recommendation that produced this mission, when it was recommended.
+             *     Context only, never an authorization key.
+             */
+            recommendation_id?: string | null;
             /** @description Task to scope a task practice to. Required for `task_practice`. */
             task_id?: string | null;
         };
@@ -821,6 +1455,8 @@ export interface components {
             domain: components["schemas"]["LearningDomainMeta"];
             /** @description Official exam guide revision. */
             exam_guide_revision?: string | null;
+            /** @description Clickable terms with short explanations, highlighted in learner text. */
+            glossary: components["schemas"]["GlossaryTerm"][];
             /** @description Learner-facing vocabulary and unlock rules. */
             learning_design: components["schemas"]["LearningDesign"];
             /** @description Modules with their knowledge nodes. */
@@ -925,6 +1561,16 @@ export interface components {
              * @description Internal application user id. The stable ownership key.
              */
             id: string;
+            /** @description Learner study settings. */
+            settings: components["schemas"]["UserSettingsDto"];
+            /**
+             * @description Account-wide daily study streak.
+             *
+             *     Bundled here so the Track Hub does not need a separate streak request.
+             *     Best-effort: a streak query failure returns a neutral streak and never
+             *     fails authentication.
+             */
+            streak: components["schemas"]["StreakDto"];
         };
         /** @description A server-issued mission with its questions. */
         MissionResponse: {
@@ -964,10 +1610,81 @@ export interface components {
             task_id?: string | null;
         };
         /**
+         * @description Read-only review of a completed mission.
+         *
+         *     Lets a learner revisit the questions and answers of completed work without
+         *     redoing it. It is never learning evidence.
+         */
+        MissionReviewResponse: {
+            /** @description Accepted attempts for this mission. */
+            attempts: components["schemas"]["ReviewedAttempt"][];
+            /**
+             * Format: date-time
+             * @description Completion time, when completed.
+             */
+            completed_at?: string | null;
+            /**
+             * Format: uuid
+             * @description Mission identifier.
+             */
+            mission_id: string;
+            /** @description Quiz mode the mission used. */
+            mode: components["schemas"]["QuizMode"];
+            /** @description Questions in presentation order, with canonical answers. */
+            questions: components["schemas"]["ReviewedQuestion"][];
+        };
+        /**
          * @description Lifecycle of a server-issued mission.
          * @enum {string}
          */
         MissionStatus: "issued" | "completed";
+        /** @description One assessment mode's signal for a node. */
+        ModeSignal: {
+            /** @description Evidence mode this signal measures. */
+            assessment_mode: components["schemas"]["AssessmentMode"];
+            /** @description Amount-of-evidence level in this mode. */
+            evidence_level: components["schemas"]["EvidenceLevel"];
+            /** @description Freshness of the evidence in this mode. */
+            freshness_state: components["schemas"]["FreshnessState"];
+        };
+        /**
+         * @description Internal calibration summary for one model version.
+         *
+         *     Analytics only: no per-user data is exposed.
+         */
+        ModelEvaluationResponse: {
+            /**
+             * Format: double
+             * @description Brier score over all samples.
+             */
+            brier_score?: number | null;
+            /** @description Calibration buckets. */
+            calibration: components["schemas"]["CalibrationBucketDto"][];
+            /**
+             * Format: double
+             * @description Log loss over all samples.
+             */
+            log_loss?: number | null;
+            /**
+             * Format: double
+             * @description Mean observed score.
+             */
+            mean_observed?: number | null;
+            /**
+             * Format: double
+             * @description Mean predicted probability.
+             */
+            mean_prediction?: number | null;
+            /** @description Model version evaluated, for example `heuristic-v1`. */
+            model_version: string;
+            /** @description Number of resolved prediction/outcome pairs. */
+            samples: number;
+            /**
+             * @description Metrics sliced by assessment mode, source, track, domain, difficulty,
+             *     spacing, and delayed-retrieval flag.
+             */
+            slices: components["schemas"]["EvaluationSliceDto"][];
+        };
         /** @description A node in a connection graph. */
         Node: {
             /** @description Stable identifier within the question. */
@@ -984,6 +1701,19 @@ export interface components {
              * @description Vertical position in an abstract `0..=1` layout space.
              */
             y: number;
+        };
+        /** @description Knowledge Signal for one knowledge node. */
+        NodeProgressDto: {
+            /** @description Whether the learner explored the node's content. */
+            discovery_state: components["schemas"]["DiscoveryState"];
+            /** @description Amount of scored evidence (coarse; never a percentage). */
+            evidence_level: components["schemas"]["EvidenceLevel"];
+            /** @description Freshness of that evidence (outer-ring treatment only). */
+            freshness_state: components["schemas"]["FreshnessState"];
+            /** @description Per-assessment-mode signals, present only for modes with evidence. */
+            mode_signals: components["schemas"]["ModeSignal"][];
+            /** @description Knowledge node identifier. */
+            node_id: string;
         };
         /** @description One axis of a two-dimensional conceptual map. */
         PlacementAxis: {
@@ -1017,6 +1747,177 @@ export interface components {
             y: number[];
         };
         /**
+         * @description A next action the learner can take.
+         * @enum {string}
+         */
+        PlannerAction: "learn_node" | "review_node" | "practice_question" | "practice_domain";
+        /** @description The learner's answer to one practice-test item. */
+        PracticeTestAnswerRequest: {
+            /** @description Answer primitives, keyed by the question's interaction type. */
+            answer: components["schemas"]["AnswerPayload"];
+            /** @description Question being answered. */
+            question_id: string;
+        };
+        /** @description Scored accuracy for one exam domain, over scored items only. */
+        PracticeTestDomainResult: {
+            /** @description Scored items answered correctly in this domain. */
+            correct: number;
+            /** @description Domain identifier. */
+            domain_id: string;
+            /** @description Scored items in this domain. */
+            scored_count: number;
+        };
+        /** @description One reviewed practice-test item, available only after submission. */
+        PracticeTestItemResult: {
+            /** @description Whether the learner submitted any answer. */
+            answered: boolean;
+            /** @description Evidence mode. */
+            assessment_mode: components["schemas"]["AssessmentMode"];
+            /** @description Canonical answer, safe to reveal after submission. */
+            canonical_answer: components["schemas"]["CanonicalAnswer"];
+            /** @description Per-choice feedback keyed by choice id, safe after submission. */
+            choice_feedback: {
+                [key: string]: string;
+            };
+            /** @description Whether the submission was fully correct; `None` when unanswered. */
+            correct?: boolean | null;
+            /** @description Owning domain. */
+            domain_id: string;
+            /** @description Short explanation. */
+            explanation: string;
+            /** @description Optional authored instruction. */
+            instruction?: string | null;
+            /** @description Interaction definition, used to render labels in review. */
+            interaction: components["schemas"]["Interaction"];
+            /** @description Interaction family. */
+            interaction_type: components["schemas"]["InteractionType"];
+            /** @description Whether the item counts toward the practice score. */
+            is_scored: boolean;
+            /**
+             * Format: int64
+             * @description 1-based authored position.
+             */
+            order: number;
+            /** @description Learner-facing prompt. */
+            prompt: string;
+            /** @description Question identifier. */
+            question_id: string;
+            submitted_answer?: null | components["schemas"]["AnswerPayload"];
+            /** @description Owning task. */
+            task_id: string;
+        };
+        /**
+         * @description One learner-safe practice-test item, before submission.
+         *
+         *     No answer key, per-choice feedback, or scored flag is present.
+         */
+        PracticeTestItemView: {
+            /**
+             * Format: int64
+             * @description 1-based authored position.
+             */
+            order: number;
+            /** @description The question to present, in authored order. */
+            question: components["schemas"]["QuestionView"];
+        };
+        /** @description Practice tests available for one certification. */
+        PracticeTestListResponse: {
+            /** @description Available practice tests. */
+            practice_tests: components["schemas"]["PracticeTestSummaryDto"][];
+        };
+        /** @description Learner-safe practice-test content served before submission. */
+        PracticeTestResponse: {
+            /** @description Certification version identifier. */
+            certification_version: string;
+            /** @description Immutable content version. */
+            content_version: string;
+            /** @description Official exam code. */
+            exam_code: string;
+            /** @description Stable practice-test identifier. */
+            id: string;
+            /** @description Items in authored presentation order. */
+            items: components["schemas"]["PracticeTestItemView"][];
+            /** @description Total authored items. */
+            question_count: number;
+            /** @description Response types present. */
+            question_types: string[];
+            /** @description Items that count toward the practice score. */
+            scored_question_count: number;
+            /**
+             * Format: int64
+             * @description Exam time limit in minutes.
+             */
+            time_limit_minutes: number;
+            /** @description Learner-facing title. */
+            title: string;
+        };
+        /** @description Full practice-test result and review, available only after submission. */
+        PracticeTestResultResponse: {
+            /** @description Items with a submitted answer. */
+            answered_count: number;
+            /** @description Scored items answered correctly. */
+            correct_count: number;
+            /** @description Per-domain scored accuracy, derived from authored content. */
+            domain_breakdown: components["schemas"]["PracticeTestDomainResult"][];
+            /** @description Official exam code. */
+            exam_code: string;
+            /** @description Practice-test identifier. */
+            id: string;
+            /** @description Per-item review in authored order. */
+            questions: components["schemas"]["PracticeTestItemResult"][];
+            /**
+             * Format: double
+             * @description Raw accuracy across scored items, in `[0, 1]`.
+             */
+            raw_accuracy: number;
+            /** @description Explicit note that this raw score is not an AWS scaled score. */
+            score_note: string;
+            /** @description Items that count toward the practice score. */
+            scored_question_count: number;
+            /** @description Learner-facing title. */
+            title: string;
+            /** @description Total authored items. */
+            total_questions: number;
+            /** @description Items without a submitted answer. */
+            unanswered_count: number;
+        };
+        /**
+         * @description One-shot submission of a practice-test attempt.
+         *
+         *     Answers are keyed by question id; unanswered items are simply omitted.
+         */
+        PracticeTestSubmissionRequest: {
+            /** @description Submitted answers, at most one per question. */
+            answers?: components["schemas"]["PracticeTestAnswerRequest"][];
+        };
+        /**
+         * @description Summary of one available practice test (exam simulation).
+         *
+         *     Metadata only: it never contains questions or answers. The scored count is
+         *     an aggregate and does not reveal which items are unscored.
+         */
+        PracticeTestSummaryDto: {
+            /** @description Certification version identifier. */
+            certification_version: string;
+            /** @description Official exam code. */
+            exam_code: string;
+            /** @description Stable practice-test identifier. */
+            id: string;
+            /** @description Total authored items. */
+            question_count: number;
+            /** @description Response types present, for example `multiple_choice`. */
+            question_types: string[];
+            /** @description Items that count toward the practice score. */
+            scored_question_count: number;
+            /**
+             * Format: int64
+             * @description Exam time limit in minutes.
+             */
+            time_limit_minutes: number;
+            /** @description Learner-facing title. */
+            title: string;
+        };
+        /**
          * @description The shared prompt vocabulary. Icons are selected by the UI from this kind,
          *     so content can change labels without the renderer special-casing nodes.
          * @enum {string}
@@ -1039,6 +1940,11 @@ export interface components {
             hints: string[];
             /** @description Question identifier. */
             id: string;
+            /**
+             * @description Optional authored instruction shown with the prompt, for example
+             *     `Choose TWO.`. Never reveals the answer.
+             */
+            instruction?: string | null;
             /** @description Interaction definition. */
             interaction: components["schemas"]["Interaction"];
             /** @description Interaction family. */
@@ -1055,7 +1961,95 @@ export interface components {
          *     three learner-facing modes are quick, domain, and full practice.
          * @enum {string}
          */
-        QuizMode: "quick_adaptive" | "domain_quiz" | "full_practice" | "task_practice";
+        QuizMode: "quick_adaptive" | "domain_quiz" | "full_practice" | "task_practice" | "recommended_practice";
+        /** @description A structured, explainable recommendation. */
+        Recommendation: {
+            /** @description Action to take. */
+            action: components["schemas"]["PlannerAction"];
+            assessment_mode?: null | components["schemas"]["AssessmentMode"];
+            /** @description Concepts the recommendation targets. */
+            concept_ids: string[];
+            /** @description Domain/topic the action belongs to. */
+            domain_id: string;
+            /** @description Learner-facing domain name. */
+            domain_name: string;
+            /** @description Knowledge node to open, when the action is node-based. */
+            node_id?: string | null;
+            /** @description Learner-facing node title, when the action is node-based. */
+            node_title?: string | null;
+            /** @description Question to practice, when the action targets one. */
+            question_id?: string | null;
+            /** @description Why this action was chosen. */
+            reason: components["schemas"]["RecommendationReason"];
+            /** @description Short learner-facing title, for example `Learn tensor broadcasting`. */
+            title: string;
+            /** @description Learning track the recommendation belongs to. */
+            track_id: string;
+        };
+        /**
+         * @description A recommendation lifecycle stage.
+         * @enum {string}
+         */
+        RecommendationEventKind: "shown" | "clicked" | "started" | "node_opened" | "completed";
+        /** @description One recommendation lifecycle event. */
+        RecommendationEventRequest: {
+            action?: null | components["schemas"]["PlannerAction"];
+            /** @description Domain/topic, when known. */
+            domain_id?: string | null;
+            /** @description Lifecycle stage being reported. */
+            event: components["schemas"]["RecommendationEventKind"];
+            /**
+             * Format: uuid
+             * @description Stable client-generated id for idempotent retries. Generated by the
+             *     server when absent.
+             */
+            event_id?: string | null;
+            /** @description Knowledge node, when known. */
+            node_id?: string | null;
+            /** @description Question, when known. */
+            question_id?: string | null;
+        };
+        /**
+         * @description Result of recording a lifecycle event.
+         *
+         *     `recorded` is `false` when the auxiliary write failed; the request still
+         *     succeeds because telemetry must never block learning.
+         */
+        RecommendationEventResponse: {
+            /** @description Whether the event was persisted. */
+            recorded: boolean;
+        };
+        /**
+         * @description A stable, explainable reason code for a recommendation.
+         * @enum {string}
+         */
+        RecommendationReason: "cold_start" | "weak_concept" | "weak_prerequisite" | "needs_practice" | "stale_knowledge" | "domain_review" | "strong_and_fresh";
+        /**
+         * @description Request body for a recommendation.
+         *
+         *     Discovery progress is optional and best-effort: it lets the planner mirror
+         *     the Knowledge Map's exact unlock semantics. It is never learning evidence.
+         */
+        RecommendationRequest: {
+            /** @description Raw Knowledge Map discovery progress for the track, if available. */
+            discovery?: components["schemas"]["DomainDiscoveryInput"][];
+        };
+        /**
+         * @description Best-effort next-action recommendation for a learning track.
+         *
+         *     Recommendations are optional and explainable. `recommendation` is `null` when
+         *     the track has nothing actionable yet, and the field is never required for the
+         *     dashboard to render.
+         */
+        RecommendationResponse: {
+            recommendation?: null | components["schemas"]["Recommendation"];
+            /**
+             * Format: uuid
+             * @description Stable id for this recommendation, used by lifecycle telemetry. `null`
+             *     only when no recommendation was produced.
+             */
+            recommendation_id?: string | null;
+        };
         /** @description Reconstruction answer primitives. */
         ReconstructionAnswerPayload: {
             /** @description Directed `[from, to]` relationships the learner drew. */
@@ -1111,6 +2105,61 @@ export interface components {
              */
             id?: string | null;
         };
+        /** @description One accepted attempt in a read-only mission review. */
+        ReviewedAttempt: {
+            /**
+             * Format: int32
+             * @description Server-derived attempt number.
+             */
+            attempt_number: number;
+            /** @description Whether the attempt cleared the success threshold. */
+            correct: boolean;
+            /**
+             * Format: int32
+             * @description Hints used.
+             */
+            hint_count: number;
+            /**
+             * Format: date-time
+             * @description When the attempt occurred.
+             */
+            occurred_at: string;
+            /** @description Question answered. */
+            question_id: string;
+            /**
+             * Format: double
+             * @description Accepted partial score in `[0, 1]`.
+             */
+            score: number;
+        };
+        /**
+         * @description One question in a read-only mission review.
+         *
+         *     Canonical answers are included because the mission is already completed;
+         *     review never creates evidence or changes scores.
+         */
+        ReviewedQuestion: {
+            /** @description Evidence mode. */
+            assessment_mode: components["schemas"]["AssessmentMode"];
+            /** @description Canonical answer, safe to show after completion. */
+            canonical_answer: components["schemas"]["CanonicalAnswer"];
+            /** @description Concept mappings. */
+            concepts: components["schemas"]["ConceptWeight"][];
+            /** @description Owning domain. */
+            domain_id: string;
+            /** @description Short explanation. */
+            explanation: string;
+            /** @description Optional hints. */
+            hints: string[];
+            /** @description Question identifier. */
+            id: string;
+            /** @description Interaction definition, used to render labels in review. */
+            interaction: components["schemas"]["Interaction"];
+            /** @description Learner-facing prompt. */
+            prompt: string;
+            /** @description Owning task. */
+            task_id: string;
+        };
         /**
          * @description The operational stage a branching-scenario decision belongs to.
          *
@@ -1134,12 +2183,119 @@ export interface components {
             /** @description What kind of decision this step represents. */
             stage: components["schemas"]["ScenarioStage"];
         };
+        /** @description One planned activity. */
+        SessionActivity: {
+            /** @description Concepts the activity targets. */
+            concept_ids: string[];
+            /** @description Owning domain/topic. */
+            domain_id: string;
+            /** @description Learner-facing domain name. */
+            domain_name: string;
+            /**
+             * Format: int32
+             * @description Estimated minutes for this activity.
+             */
+            estimated_minutes: number;
+            /** @description Activity kind. */
+            kind: components["schemas"]["SessionActivityKind"];
+            /** @description Knowledge node, for node activities. */
+            node_id?: string | null;
+            /** @description Learner-facing node title, for node activities. */
+            node_title?: string | null;
+            /**
+             * @description Server-selected questions, for `practice` activities. The client never
+             *     supplies these; it only anchors the mission on the first one.
+             */
+            question_ids: string[];
+            /** @description Short learner-facing title, for example `Review VPC route tables`. */
+            title: string;
+        };
+        /**
+         * @description What one session activity asks the learner to do.
+         * @enum {string}
+         */
+        SessionActivityKind: "learn_node" | "review_node" | "practice" | "practice_domain";
+        /**
+         * @description How the learner wants a session balanced.
+         * @enum {string}
+         */
+        SessionPreference: "balanced" | "more_practice" | "more_learning";
         /** @description A reference to the official source of a content unit. */
         SourceRef: {
             /** @description Display title. */
             title: string;
             /** @description URL. */
             url: string;
+        };
+        /**
+         * @description Account-wide daily study streak.
+         *
+         *     Motivational only: it never feeds concept state, scoring, or rewards. It
+         *     spans every learning track.
+         */
+        StreakDto: {
+            /** @description Whether today is already a qualified study day. */
+            active_today: boolean;
+            /**
+             * Format: int32
+             * @description Consecutive active days ending today or yesterday.
+             */
+            current: number;
+            /** @description Most recent qualified local day, `YYYY-MM-DD`, when any. */
+            last_active_day?: string | null;
+            /**
+             * Format: int32
+             * @description Longest consecutive run ever recorded.
+             */
+            longest: number;
+        };
+        /** @description A planned study session. */
+        StudySession: {
+            /** @description Ordered activities. */
+            activities: components["schemas"]["SessionActivity"][];
+            /**
+             * Format: int32
+             * @description Estimated total minutes.
+             */
+            estimated_minutes: number;
+            /** @description Learning track the session belongs to. */
+            track_id: string;
+        };
+        /**
+         * @description Request body for an adaptive study session.
+         *
+         *     Session planning is optional; a failed request never blocks the dashboard.
+         */
+        StudySessionRequest: {
+            /**
+             * Format: int32
+             * @description Requested approximate session length in minutes. Clamped to a sane range.
+             */
+            available_minutes?: number;
+            /** @description Raw Knowledge Map discovery progress for the track, if available. */
+            discovery?: components["schemas"]["DomainDiscoveryInput"][];
+            /** @description How to balance learning and retrieval practice. */
+            preference?: components["schemas"]["SessionPreference"];
+        };
+        /** @description A planned study session. */
+        StudySessionResponse: {
+            /**
+             * @description Ordered activities. Empty when nothing is actionable; the client then
+             *     builds a standard non-adaptive session.
+             */
+            activities: components["schemas"]["SessionActivity"][];
+            /**
+             * Format: int32
+             * @description Estimated total minutes.
+             */
+            estimated_minutes: number;
+            /**
+             * Format: uuid
+             * @description Stable id for this session, used by auxiliary telemetry.
+             */
+            session_id: string;
+            /** @description Learning track the session belongs to. */
+            track_id: string;
         };
         /** @description One attempt in a sync batch. */
         SyncEventRequest: {
@@ -1197,25 +2353,63 @@ export interface components {
              */
             event_id: string;
         };
-        /** @description Request to sync a batch of evaluated attempts. */
+        /**
+         * @description Request to sync a batch of evaluated attempts.
+         *
+         *     The request may also carry optional auxiliary sections. They share one HTTP
+         *     request to reduce chatter, but their transactional semantics are isolated:
+         *     an auxiliary failure never rejects or rolls back accepted learning events.
+         */
         SyncRequest: {
+            /**
+             * @description Optional recommendation lifecycle telemetry. Never authoritative.
+             *
+             *     Deserialized leniently for the same reason as `discovery_updates`.
+             */
+            auxiliary_events?: components["schemas"]["AuxiliaryEventRequest"][];
             /**
              * Format: uuid
              * @description Device/install context. Ownership comes from the authenticated user.
              */
             device_id?: string | null;
-            /** @description Attempts to reconcile. */
-            events: components["schemas"]["SyncEventRequest"][];
+            /**
+             * @description Optional Knowledge Map discovery deltas. Never learning evidence.
+             *
+             *     Deserialized leniently: a malformed entry is dropped rather than failing
+             *     the whole request, so it can never block accepted learning events.
+             */
+            discovery_updates?: components["schemas"]["DiscoveryUpdateRequest"][];
+            /** @description Attempts to reconcile. Strict: authoritative events must be well-formed. */
+            events?: components["schemas"]["SyncEventRequest"][];
+            /**
+             * @description Client IANA timezone. Captured once if absent so the account-wide study
+             *     streak uses the learner's local day boundary, matching Daily Missions.
+             */
+            timezone?: string | null;
         };
         /** @description Result of a sync batch. */
         SyncResponse: {
+            /** @description Disposition of the optional auxiliary telemetry section. */
+            auxiliary: components["schemas"]["SyncSectionResult"];
             /**
              * Format: int64
              * @description Authoritative settled Bits balance after this batch.
              */
             bits_balance: number;
+            /** @description Disposition of the optional discovery section. */
+            discovery: components["schemas"]["SyncSectionResult"];
             /** @description Per-event results. */
             results: components["schemas"]["SyncEventResult"][];
+        };
+        /**
+         * @description Disposition of one optional sync section.
+         *
+         *     `accepted` is `false` when the auxiliary work failed; the request still
+         *     succeeds and the client only retains the failed section for retry.
+         */
+        SyncSectionResult: {
+            /** @description Whether the section was persisted. */
+            accepted: boolean;
         };
         /**
          * @description Information that is visible before the learner reveals anything.
@@ -1258,6 +2452,40 @@ export interface components {
             name: string;
             /** @description Number of authored questions available. */
             question_count: number;
+        };
+        /**
+         * @description All learner-facing learning content for one learning track.
+         *
+         *     This is a read-only aggregate over authored content so the Track Hub can
+         *     render one track-wide Knowledge Map without a request per domain. It carries
+         *     no scored answers and no learner state.
+         */
+        TrackMapResponse: {
+            /** @description Immutable learning content version. */
+            content_version: string;
+            /** @description Learning domains with modules, nodes, and reveals. */
+            domains: components["schemas"]["LearningDomainResponse"][];
+            /** @description Learning track identifier. */
+            track_id: string;
+            /** @description Learning track version identifier. */
+            track_version: string;
+        };
+        /**
+         * @description Aggregate Knowledge Signal for one learning track.
+         *
+         *     One request returns every domain and node so the Track Hub never fetches
+         *     per-node state. Coarse semantic states only: no raw model probabilities,
+         *     percentages, or pass estimates.
+         */
+        TrackProgressResponse: {
+            /** @description Immutable learning content version. */
+            content_version: string;
+            /** @description Per-domain node signals. */
+            domains: components["schemas"]["DomainProgressDto"][];
+            /** @description Learning track identifier. */
+            track_id: string;
+            /** @description Learning track version identifier. */
+            track_version: string;
         };
         /**
          * @description Accepted typed answers for one blank.
@@ -1360,6 +2588,19 @@ export interface components {
             /** @description Stable identifier within the interaction. */
             id: string;
         };
+        /** @description Request to update learner study settings. */
+        UpdateSettingsRequest: {
+            /** @description Whether all study materials should be unlocked. */
+            unlock_all_materials: boolean;
+        };
+        /** @description Learner study settings. */
+        UserSettingsDto: {
+            /**
+             * @description Whether the learner unlocks all study materials instead of the guided,
+             *     in-order path. A preference only; it never affects scoring or evidence.
+             */
+            unlock_all_materials: boolean;
+        };
         /**
          * @description A learner's settled Bits balance.
          *
@@ -1412,6 +2653,49 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    get_model_evaluation: {
+        parameters: {
+            query?: {
+                /** @description Model version to evaluate. Defaults to the current model. */
+                model_version?: string;
+                /** @description Number of calibration buckets (1-20). Defaults to 5. */
+                bucket_count?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Evaluation summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelEvaluationResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Endpoint unavailable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };
@@ -1495,6 +2779,297 @@ export interface operations {
             };
         };
     };
+    list_practice_tests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Certification identifier */
+                certification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Available practice tests */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeTestListResponse"];
+                };
+            };
+        };
+    };
+    get_practice_test: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Certification identifier */
+                certification_id: string;
+                /** @description Practice-test identifier */
+                practice_test_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Learner-safe practice test */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeTestResponse"];
+                };
+            };
+            /** @description Unknown practice test */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    submit_practice_test: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Certification identifier */
+                certification_id: string;
+                /** @description Practice-test identifier */
+                practice_test_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticeTestSubmissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Scored practice test */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeTestResultResponse"];
+                };
+            };
+            /** @description Invalid submission */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown practice test */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    complete_daily_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Daily Mission identifier. */
+                mission_id: string;
+                /** @description Zero-based item position. */
+                position: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DailyItemCompleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Item completion result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyItemCompleteResponse"];
+                };
+            };
+            /** @description Item completes through a mission */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Mission belongs to another account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown mission or item */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    review_daily_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Daily Mission identifier. */
+                mission_id: string;
+                /** @description Zero-based item position. */
+                position: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Item review */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionReviewResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Mission belongs to another account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown mission or item */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    start_daily_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Daily Mission identifier. */
+                mission_id: string;
+                /** @description Zero-based item position. */
+                position: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Started mission */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionResponse"];
+                };
+            };
+            /** @description Item is completed on the knowledge map */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Mission belongs to another account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown mission or item */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Item or mission already complete */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     get_me: {
         parameters: {
             query?: never;
@@ -1511,6 +3086,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    update_settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserSettingsDto"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Authentication required */
@@ -1701,6 +3318,65 @@ export interface operations {
             };
         };
     };
+    review_mission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Mission identifier */
+                mission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mission review */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionReviewResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Mission belongs to another account */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown mission */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Mission is not complete yet */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     sync: {
         parameters: {
             query?: never;
@@ -1734,6 +3410,338 @@ export interface operations {
             };
             /** @description Authentication required */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_today_daily_mission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Learning track identifier, for example `ai-python-fluency`. */
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DailyMissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Today's Daily Mission */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyMissionResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown learning track */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_track_discovery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Learning track identifier, for example `aws-soa-c03`. */
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Persisted discovery progress */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown learning track */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_track_map: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Learning track identifier, for example `aws-soa-c03`. */
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Track knowledge map content */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrackMapResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown learning track */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_track_progress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Learning track identifier, for example `aws-soa-c03`. */
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Track knowledge signal */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrackProgressResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown learning track */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_recommendation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Learning track identifier, for example `ai-python-fluency`. */
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecommendationRequest"];
+            };
+        };
+        responses: {
+            /** @description Next-action recommendation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown learning track */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    record_recommendation_event: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Learning track identifier. */
+                track_id: string;
+                /** @description Recommendation the event refers to. */
+                recommendation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecommendationEventRequest"];
+            };
+        };
+        responses: {
+            /** @description Event disposition */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationEventResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_study_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Learning track identifier, for example `ai-python-fluency`. */
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudySessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Planned study session */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudySessionResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown learning track */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

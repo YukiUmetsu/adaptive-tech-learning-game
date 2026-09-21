@@ -1,6 +1,8 @@
 import { useState } from "react";
 
 import type { Choice, FillSlot } from "../api/types";
+import { stripInlineCode } from "../lib/inlineCode";
+import InlineText from "./InlineText";
 
 interface FillSlotsInteractionProps {
   slots: FillSlot[];
@@ -71,7 +73,7 @@ export default function FillSlotsInteraction({
                   )
                 }
               >
-                {option.label}
+                <InlineText text={option.label} />
               </button>
             </li>
           ))}
@@ -104,20 +106,22 @@ export default function FillSlotsInteraction({
                 placeOption(slot.id, event.dataTransfer.getData("text/plain"));
               }}
             >
-              <span className="fill-slot-label">{slot.label}</span>
+              <span className="fill-slot-label">
+                <InlineText text={slot.label} />
+              </span>
               <button
                 type="button"
                 className="fill-slot-value"
-                aria-label={`${slot.label}: ${chosenLabel}`}
+                aria-label={`${stripInlineCode(slot.label)}: ${stripInlineCode(chosenLabel)}`}
                 disabled={disabled || selectedOption === null}
                 onClick={() => placeOption(slot.id, selectedOption)}
               >
-                {chosenLabel}
+                <InlineText text={chosenLabel} />
               </button>
               <button
                 type="button"
                 className="fill-slot-clear"
-                aria-label={`Clear ${slot.label}`}
+                aria-label={`Clear ${stripInlineCode(slot.label)}`}
                 disabled={disabled || !chosen}
                 onClick={() => clear(slot.id)}
               >

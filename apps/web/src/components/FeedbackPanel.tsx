@@ -1,12 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import type {
   AnswerPayload,
   FeedbackResponse,
   QuestionView,
 } from "../api/types";
-import { reviewDetails } from "../state/feedback";
+import { emitBitsEarned } from "../lib/bitsFly";
+import { reviewDetails, canonicalConnectionCount } from "../state/feedback";
 import { playCorrect, playWrong } from "../state/sound";
+import AnimatedCheck from "./AnimatedCheck";
+import InlineText from "./InlineText";
 
 interface FeedbackPanelProps {
   feedback: FeedbackResponse;
@@ -33,6 +36,7 @@ export default function FeedbackPanel({
   // slightly by the score. Never a harsh failure state.
   const partial = !feedback.correct && feedback.score > 0;
   const state = feedback.correct ? "correct" : partial ? "partial" : "incorrect";
+  const panelRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (feedback.correct) {
@@ -42,12 +46,23 @@ export default function FeedbackPanel({
     }
   }, [feedback.event_id, feedback.correct]);
 
+  // Send earned Bits flying into the wallet from this panel.
+  useEffect(() => {
+    if (feedback.correct && feedback.bits_preview > 0) {
+      emitBitsEarned(feedback.bits_preview, panelRef.current);
+    }
+  }, [feedback.event_id, feedback.correct, feedback.bits_preview]);
+
   const details = feedback.correct
     ? []
     : reviewDetails(question, submitted, feedback.canonical_answer);
 
+  // Tell the learner how many relationships a correct connection answer needs.
+  const connectionCount = canonicalConnectionCount(feedback.canonical_answer);
+
   return (
     <section
+      ref={panelRef}
       className={`feedback ${state}`}
       aria-live="polite"
       data-testid="feedback"
@@ -59,9 +74,13 @@ export default function FeedbackPanel({
       ) : null}
 
       <div className="feedback-heading">
-        <span className="feedback-badge" aria-hidden="true">
-          {feedback.correct ? "✓" : partial ? "≈" : "!"}
-        </span>
+        {feedback.correct ? (
+          <AnimatedCheck className="feedback-check" label={null} />
+        ) : (
+          <span className="feedback-badge" aria-hidden="true">
+            {partial ? "≈" : "!"}
+          </span>
+        )}
         <h3>{feedback.correct ? "Correct" : "Not quite"}</h3>
         {feedback.bits_preview > 0 ? (
           <span className="bits-reward" data-testid="bits-reward">
@@ -73,7 +92,16 @@ export default function FeedbackPanel({
         </span>
       </div>
 
-      <p>{feedback.explanation}</p>
+      <p>
+        <InlineText text={feedback.explanation} />
+        {connectionCount != null ? (
+          <span className="feedback-connection-count">
+            {feedback.explanation ? " " : ""}
+            ({connectionCount} relationship{connectionCount === 1 ? "" : "s"}{" "}
+            needed)
+          </span>
+        ) : null}
+      </p>
 
       {details.length > 0 ? (
         <div className="feedback-review">
@@ -84,7 +112,7 @@ export default function FeedbackPanel({
                 key={`${detail.kind}-${index}`}
                 className={`review-${detail.kind}`}
               >
-                {detail.text}
+                <InlineText text={detail.text} />
               </li>
             ))}
           </ul>

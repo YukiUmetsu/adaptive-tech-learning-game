@@ -1,12 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 
-import type { KnowledgeNode } from "../api/types";
+import type { KnowledgeNode, GlossaryTerm } from "../api/types";
 import {
   isPromptComplete,
   nodePromptProgress,
   type NodeState,
 } from "../state/learningProgress";
-import KnowledgePrompt from "./KnowledgePrompt";
+import GlossaryProvider from "./GlossaryProvider";
+import InlineText from "./InlineText";import KnowledgePrompt from "./KnowledgePrompt";
 
 interface KnowledgeCardProps {
   node: KnowledgeNode;
@@ -21,6 +22,23 @@ interface KnowledgeCardProps {
   onRevealElement: (promptId: string, elementId: string) => void;
   onClose: () => void;
   onDiscoverNext: (nodeId: string) => void;
+  /**
+   * Read-only review mode: every prompt is shown revealed and interactions are
+   * disabled, so completed material can be revisited without any clicks.
+   */
+  readOnly?: boolean;
+  /**
+   * Replaces the "Back to map" header control. Pass `null` to hide it.
+   * Omitted keeps the default, preserving existing map behavior.
+   */
+  headerAction?: ReactNode;
+  /**
+   * Replaces the default unlocked actions. Pass `null` to hide them.
+   * Omitted keeps the default, preserving existing map behavior.
+   */
+  unlockedActions?: ReactNode;
+  /** Domain glossary terms highlighted in the card's learner-facing text. */
+  glossary?: readonly GlossaryTerm[];
 }
 
 /**
@@ -42,6 +60,10 @@ export default function KnowledgeCard({
   onRevealElement,
   onClose,
   onDiscoverNext,
+  readOnly = false,
+  headerAction,
+  unlockedActions,
+  glossary = [],
 }: KnowledgeCardProps) {
   const elementSets = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -58,21 +80,30 @@ export default function KnowledgeCard({
     revealed,
     elementSets,
   );
-  const unlocked = state === "unlocked";
+  const unlocked = state === "unlocked" && !readOnly;
 
   return (
-    <section
-      className={`knowledge-card-panel${unlocked ? " knowledge-card-panel--unlocked" : ""}`}
-      aria-labelledby={`knowledge-card-title-${node.id}`}
-    >
+    <GlossaryProvider terms={glossary} subject={node.title}>
+      <section
+        className={`knowledge-card-panel${unlocked ? " knowledge-card-panel--unlocked" : ""}`}
+        aria-labelledby={`knowledge-card-title-${node.id}`}
+      >
       <header className="knowledge-card-header">
         <div>
-          <p className="knowledge-card-kicker">Knowledge Node · {moduleTitle}</p>
-          <h2 id={`knowledge-card-title-${node.id}`}>{node.title}</h2>
+          <p className="knowledge-card-kicker">
+            Knowledge Node · <InlineText text={moduleTitle} terms={[]} />
+          </p>
+          <h2 id={`knowledge-card-title-${node.id}`}>
+            <InlineText text={node.title} terms={[]} />
+          </h2>
         </div>
-        <button type="button" className="knowledge-card-close" onClick={onClose}>
-          Back to map
-        </button>
+        {headerAction === undefined ? (
+          <button type="button" className="knowledge-card-close" onClick={onClose}>
+            Back to map
+          </button>
+        ) : (
+          headerAction
+        )}
       </header>
 
       <div className="knowledge-card-charge">
@@ -103,6 +134,7 @@ export default function KnowledgeCard({
             prompt={prompt}
             revealed={promptComplete(prompt)}
             revealedElementIds={revealedElementIds[prompt.id] ?? []}
+            disabled={readOnly}
             onReveal={onReveal}
             onRevealElement={onRevealElement}
           />
@@ -131,23 +163,32 @@ export default function KnowledgeCard({
           }`}
         >
           <p className="knowledge-card-unlocked-title">✨ UNLOCKED! ✨</p>
-          <p className="knowledge-card-unlocked-node">{node.title}</p>
+          <p className="knowledge-card-unlocked-node">
+            <InlineText text={node.title} terms={[]} />
+          </p>
           <div className="knowledge-card-actions">
-            <button type="button" onClick={onClose}>
-              Continue to Knowledge Map
-            </button>
-            {nextNode && nextNode.id !== node.id ? (
-              <button
-                type="button"
-                className="primary"
-                onClick={() => onDiscoverNext(nextNode.id)}
-              >
-                Discover {nextNode.title} →
-              </button>
-            ) : null}
+            {unlockedActions === undefined ? (
+              <>
+                <button type="button" onClick={onClose}>
+                  Continue to Knowledge Map
+                </button>
+                {nextNode && nextNode.id !== node.id ? (
+                  <button
+                    type="button"
+                    className="primary"
+                    onClick={() => onDiscoverNext(nextNode.id)}
+                  >
+                    Discover <InlineText text={nextNode.title} terms={[]} /> →
+                  </button>
+                ) : null}
+              </>
+            ) : (
+              unlockedActions
+            )}
           </div>
         </div>
       ) : null}
-    </section>
+      </section>
+    </GlossaryProvider>
   );
 }

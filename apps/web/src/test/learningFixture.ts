@@ -20,6 +20,7 @@ export const learningFixture: LearningDomainResponse = {
     mastery_note: "Exploration progress is not mastery evidence.",
   },
   source_refs: [{ title: "Official test guide", url: "https://example.com/guide" }],
+  glossary: [],
   modules: [
     {
       id: "m1",

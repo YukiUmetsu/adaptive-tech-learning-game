@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import type { KnowledgeNode } from "../api/types";
 import KnowledgeCard from "../components/KnowledgeCard";
@@ -8,15 +8,18 @@ import KnowledgeMapHud from "../components/KnowledgeMapHud";
 import ModuleCompleteCelebration from "../components/ModuleCompleteCelebration";
 import { useLearningDomain } from "../hooks/useLearningDomain";
 import { prefersReducedMotion } from "../lib/motion";
+import { recordStudyActivity } from "../state/focus";
 import {
   deriveLearningState,
   loadDomainProgress,
+  mergeServerDiscovery,
   nextModuleAfter,
   revealElement as revealElementInProgress,
   revealPrompt,
   type DomainLearningProgress,
 } from "../state/learningProgress";
 import { startMission } from "../state/mission";
+import { loadServerDiscovery } from "../state/syncAuxiliary";
 import {
   playModuleComplete,
   playNodeUnlock,
@@ -49,6 +52,8 @@ export default function DomainLearningPage() {
   const { certificationId, domainId } = useParams();
   const navigate = useNavigate();
   const { state, reload } = useLearningDomain(certificationId, domainId);
+  const [searchParams] = useSearchParams();
+  const requestedNodeId = searchParams.get("node");
 
   const [progress, setProgress] = useState<DomainLearningProgress | null>(null);
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
@@ -78,10 +83,54 @@ export default function DomainLearningPage() {
     setJustUnlockedNodeId(null);
   }, [data]);
 
+  // Local-first: the map is already rendered from localStorage above. Merge any
+  // server-persisted discovery asynchronously; a failure is ignored and the map
+  // keeps working from local progress.
+  useEffect(() => {
+    if (!data) {
+      return;
+    }
+    let cancelled = false;
+    void loadServerDiscovery(data.certification_id, data.certification_version).then((server) => {
+      if (cancelled || !server) {
+        return;
+      }
+      mergeServerDiscovery(
+        data.certification_version,
+        data.content_version,
+        server,
+      );
+      setProgress(loadDomainProgress(data.certification_version, data.domain.id));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [data]);
+
   const derived = useMemo(
     () => (data ? deriveLearningState(data, progress) : null),
     [data, progress],
   );
+
+  // A recommendation can deep-link straight to a knowledge node.
+  useEffect(() => {
+    if (!data || !requestedNodeId) {
+      return;
+    }
+    const node = data.modules
+      .flatMap((module) => module.nodes)
+      .find((candidate) => candidate.id === requestedNodeId);
+    if (!node) {
+      return;
+    }
+    const module = data.modules.find((candidate) =>
+      candidate.nodes.some((candidateNode) => candidateNode.id === node.id),
+    );
+    if (module) {
+      setActiveModuleId(module.id);
+    }
+    setSelectedNodeId(node.id);
+  }, [data, requestedNodeId]);
 
   // Clear the one-shot map highlight after the celebration window so a later
   // re-render does not leave a stale animation class behind.
@@ -131,6 +180,7 @@ export default function DomainLearningPage() {
       if (!data) {
         return;
       }
+      recordStudyActivity("knowledge_node");
       const module = data.modules.find((candidate) =>
         candidate.nodes.some((node) => node.id === nodeId),
       );
@@ -206,6 +256,7 @@ export default function DomainLearningPage() {
       if (derived.nodeState[node.id] === "locked") {
         return;
       }
+      recordStudyActivity("reveal");
       const updated = revealPrompt(
         data.certification_version,
         data.domain.id,
@@ -226,6 +277,7 @@ export default function DomainLearningPage() {
       if (derived.nodeState[node.id] === "locked") {
         return;
       }
+      recordStudyActivity("table_reveal");
       const updated = revealElementInProgress(
         data.certification_version,
         data.domain.id,
@@ -245,6 +297,7 @@ export default function DomainLearningPage() {
     }
     setStartingQuiz(true);
     setQuizError(null);
+    recordStudyActivity("question");
     try {
       const mission = await startMission({
         certificationId: data.certification_id,
@@ -337,6 +390,7 @@ export default function DomainLearningPage() {
           }
           onClose={() => setSelectedNodeId(null)}
           onDiscoverNext={selectNode}
+          glossary={data.glossary}
         />
       ) : (
         <KnowledgeMap

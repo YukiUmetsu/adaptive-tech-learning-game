@@ -2,6 +2,7 @@ import type { LearningReveal } from "../api/types";
 import { comparisonGridClass } from "../lib/comparison";
 import { isProgressiveTable } from "../lib/learningElements";
 import CodeFile, { type CodeFileInteraction } from "./CodeFile";
+import InlineText from "./InlineText";
 import LearningTable from "./LearningTable";
 import ProgressiveLearningTable, {
   type ProgressiveTableInteraction,
@@ -36,13 +37,19 @@ export default function RevealContent({
 }: RevealContentProps) {
   switch (reveal.type) {
     case "text":
-      return <p className="reveal reveal-text">{reveal.text}</p>;
+      return (
+        <p className="reveal reveal-text">
+          <InlineText text={reveal.text} />
+        </p>
+      );
     case "sequence":
       return (
         <ol className="reveal reveal-sequence">
           {reveal.items.map((item, index) => (
             <li key={`${index}-${item}`} className="reveal-sequence-item">
-              <span>{item}</span>
+              <span>
+                <InlineText text={item} />
+              </span>
               {index < reveal.items.length - 1 ? (
                 <span className="reveal-sequence-arrow" aria-hidden="true">
                   ↓
@@ -56,7 +63,9 @@ export default function RevealContent({
       return (
         <ul className="reveal reveal-bullets">
           {reveal.items.map((item, index) => (
-            <li key={`${index}-${item}`}>{item}</li>
+            <li key={`${index}-${item}`}>
+              <InlineText text={item} />
+            </li>
           ))}
         </ul>
       );
@@ -65,7 +74,7 @@ export default function RevealContent({
         <ul className="reveal reveal-keywords" aria-label="Clues">
           {reveal.items.map((item, index) => (
             <li key={`${index}-${item}`} className="reveal-chip">
-              {item}
+              <InlineText text={item} />
             </li>
           ))}
         </ul>
@@ -80,10 +89,14 @@ export default function RevealContent({
         >
           {reveal.columns.map((column) => (
             <section key={column.title} className="reveal-comparison-column">
-              <h4>{column.title}</h4>
+              <h4>
+                <InlineText text={column.title} />
+              </h4>
               <ul>
                 {column.items.map((item, index) => (
-                  <li key={`${index}-${item}`}>{item}</li>
+                  <li key={`${index}-${item}`}>
+                    <InlineText text={item} />
+                  </li>
                 ))}
               </ul>
             </section>

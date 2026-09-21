@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 
 import type { ScenarioStep } from "../api/types";
+import { stripInlineCode } from "../lib/inlineCode";
+import InlineText from "./InlineText";
 
 interface BranchingScenarioInteractionProps {
   startStepId: string;
@@ -69,8 +71,13 @@ export default function BranchingScenarioInteraction({
       </ol>
 
       {currentStep ? (
-        <section className="branching-step" aria-label={currentStep.prompt}>
-          <p className="branching-prompt">{currentStep.prompt}</p>
+        <section
+          className="branching-step"
+          aria-label={stripInlineCode(currentStep.prompt)}
+        >
+          <p className="branching-prompt">
+            <InlineText text={currentStep.prompt} />
+          </p>
           <ul className="item-list">
             {currentStep.choices.map((choice) => (
               <li key={choice.id}>
@@ -80,7 +87,7 @@ export default function BranchingScenarioInteraction({
                   disabled={disabled}
                   onClick={() => onChange([...value, choice.id])}
                 >
-                  {choice.label}
+                  <InlineText text={choice.label} />
                 </button>
               </li>
             ))}

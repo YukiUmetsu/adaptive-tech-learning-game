@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from "react";
 
 import type { KnowledgeGroup } from "../state/knowledge";
+import InlineText from "./InlineText";
 
 interface KnowledgeReinforcementProps {
   groups: KnowledgeGroup[];
@@ -47,9 +48,13 @@ export default function KnowledgeReinforcement({
               ✓
             </span>
             <div className="knowledge-body">
-              <p className="knowledge-name">{group.name}</p>
+              <p className="knowledge-name">
+                <InlineText text={group.name} />
+              </p>
               {group.topics.length > 0 ? (
-                <p className="knowledge-topics">{group.topics.join(" · ")}</p>
+                <p className="knowledge-topics">
+                  <InlineText text={group.topics.join(" · ")} />
+                </p>
               ) : null}
             </div>
           </li>

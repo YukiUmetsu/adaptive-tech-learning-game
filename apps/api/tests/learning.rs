@@ -71,6 +71,8 @@ fn correct_answer(question: &Question) -> Value {
                 .collect();
             json!({ "typed_answers": typed })
         }
+        CanonicalAnswer::MultipleChoice { choice_id } => json!({ "choice_id": choice_id }),
+        CanonicalAnswer::MultipleResponse { choice_ids } => json!({ "choice_ids": choice_ids }),
     }
 }
 
@@ -1217,20 +1219,24 @@ fn wrong_classification_answer(question: &Question) -> Value {
     let Interaction::Classification { categories, .. } = &question.interaction else {
         panic!("expected classification interaction");
     };
-    let (item, correct) = placements.iter().next().expect("placement");
-    let other = categories
-        .iter()
-        .find(|category| &category.id != correct)
-        .expect("another category")
-        .id
-        .clone();
+    // Flip every placement into a different category so the answer is an
+    // unambiguous failure (partial credit for one flipped item can otherwise
+    // clear the success threshold).
     let mut wrong = placements.clone();
-    wrong.insert(item.clone(), other);
+    for (item, correct) in placements {
+        let other = categories
+            .iter()
+            .find(|category| &category.id != correct)
+            .expect("another category")
+            .id
+            .clone();
+        wrong.insert(item.clone(), other);
+    }
     json!({ "placements": wrong })
 }
 
 #[tokio::test]
-async fn quick_quiz_selects_ten_across_domains() {
+async fn quick_quiz_selects_a_short_cross_domain_set() {
     let Some(pool) = common::database_pool().await else {
         return;
     };
@@ -1241,7 +1247,7 @@ async fn quick_quiz_selects_ten_across_domains() {
     assert_eq!(body["mode"], "quick_adaptive");
 
     let questions = body["questions"].as_array().expect("questions");
-    assert_eq!(questions.len(), 10);
+    assert_eq!(questions.len(), 3);
     let mut domains: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut ids: std::collections::HashSet<&str> = std::collections::HashSet::new();
     for question in questions {
@@ -1251,7 +1257,7 @@ async fn quick_quiz_selects_ten_across_domains() {
         let resolved = registry.question("soa-c03", id).expect("question");
         domains.insert(resolved.domain_id.clone());
     }
-    assert_eq!(ids.len(), 10, "quick quiz must not repeat questions");
+    assert_eq!(ids.len(), 3, "quick quiz must not repeat questions");
     assert!(
         domains.len() >= 3,
         "quick quiz should cover several domains: {domains:?}"
@@ -1697,4 +1703,330 @@ async fn public_demo_missions_work_without_login_and_award_no_bits() {
     assert_eq!(body["results"][0]["accepted"], true);
     assert_eq!(body["results"][0]["bits_settled"], 0);
     assert_eq!(body["bits_balance"], 0);
+}
+
+async fn sync_one(app: &Router, subject: &str, batch: Value) -> Value {
+    let (status, body) =
+        common::send_as(app.clone(), subject, "POST", "/v1/sync", Some(batch)).await;
+    assert_eq!(status, StatusCode::OK, "sync failed: {body}");
+    body
+}
+
+fn event_body(
+    mission_uuid: Uuid,
+    question: &Question,
+    content_version: &str,
+    event_id: Uuid,
+    hint_count: i64,
+    answer: Value,
+) -> Value {
+    json!({
+        "event_id": event_id,
+        "mission_instance_id": mission_uuid,
+        "question_id": question.id,
+        "content_version": content_version,
+        "attempt_number": 1,
+        "hint_count": hint_count,
+        "response_ms": 1500,
+        "occurred_at": "2026-09-19T10:00:00Z",
+        "answer": answer
+    })
+}
+
+async fn user_id_for(pool: &adaptive_learn_db::PgPool, subject: &str) -> Uuid {
+    adaptive_learn_db::users::find_by_auth_subject(pool, "workos", subject)
+        .await
+        .expect("lookup user")
+        .expect("user exists")
+        .id
+}
+
+#[tokio::test]
+async fn sync_persists_canonical_difficulty_prior_in_accepted_evidence() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool.clone());
+    let registry = registry();
+    let subject = format!("difficulty-user-{}", Uuid::new_v4());
+    let device = Uuid::new_v4();
+    let mission = issue_as(&app, &subject, device).await;
+    let mission_uuid: Uuid = mission["id"]
+        .as_str()
+        .expect("mission id")
+        .parse()
+        .expect("uuid");
+    let question = question(&registry, "monitoring-classification-001");
+
+    sync_one(
+        &app,
+        &subject,
+        json!({
+            "device_id": device,
+            "events": [event_body(
+                mission_uuid,
+                &question,
+                mission["content_version"].as_str().expect("version"),
+                Uuid::new_v4(),
+                0,
+                correct_answer(&question),
+            )]
+        }),
+    )
+    .await;
+
+    let events = db::learning_events::list_for_mission(&pool, mission_uuid)
+        .await
+        .expect("list events");
+    assert_eq!(events.len(), 1);
+    assert_eq!(
+        events[0].difficulty_prior, question.difficulty_prior,
+        "accepted evidence must preserve the server difficulty prior"
+    );
+    assert_eq!(events[0].hint_count, 0);
+}
+
+#[tokio::test]
+async fn accepted_sync_updates_derived_concept_state_idempotently() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool.clone());
+    let registry = registry();
+    let subject = format!("concept-state-user-{}", Uuid::new_v4());
+    let device = Uuid::new_v4();
+    let mission = issue_as(&app, &subject, device).await;
+    let mission_uuid: Uuid = mission["id"]
+        .as_str()
+        .expect("mission id")
+        .parse()
+        .expect("uuid");
+    let question = question(&registry, "monitoring-classification-001");
+    let concept_id = question.concepts[0].concept_id.clone();
+    let event_id = Uuid::new_v4();
+    let batch = json!({
+        "device_id": device,
+        "events": [event_body(
+            mission_uuid,
+            &question,
+            mission["content_version"].as_str().expect("version"),
+            event_id,
+            0,
+            correct_answer(&question),
+        )]
+    });
+
+    sync_one(&app, &subject, batch.clone()).await;
+    let user_id = user_id_for(&pool, &subject).await;
+    let after_first = adaptive_learn_db::concept_state::find_one(
+        &pool,
+        user_id,
+        "soa-c03",
+        &concept_id,
+        question.assessment_mode,
+    )
+    .await
+    .expect("find state")
+    .expect("state row");
+    assert_eq!(after_first.model_version, "heuristic-v1");
+    assert_eq!(after_first.exposure_count, 1);
+    assert_eq!(after_first.success_count, 1);
+    assert!(after_first.estimate > 0.5);
+
+    // Replaying the exact same event must not advance the derived cache.
+    sync_one(&app, &subject, batch).await;
+    let after_replay = adaptive_learn_db::concept_state::find_one(
+        &pool,
+        user_id,
+        "soa-c03",
+        &concept_id,
+        question.assessment_mode,
+    )
+    .await
+    .expect("find state")
+    .expect("state row");
+    assert_eq!(
+        after_replay.exposure_count, 1,
+        "replay must not double count"
+    );
+    assert_eq!(after_replay.state_version, after_first.state_version);
+    assert_eq!(after_replay.estimate, after_first.estimate);
+}
+
+#[tokio::test]
+async fn failure_then_recovery_advances_counters_in_order() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool.clone());
+    let registry = registry();
+    let subject = format!("recovery-state-user-{}", Uuid::new_v4());
+    let device = Uuid::new_v4();
+    let mission = issue_as(&app, &subject, device).await;
+    let mission_uuid: Uuid = mission["id"]
+        .as_str()
+        .expect("mission id")
+        .parse()
+        .expect("uuid");
+    let content_version = mission["content_version"].as_str().expect("version");
+    let question = question(&registry, "monitoring-classification-001");
+    let concept_id = question.concepts[0].concept_id.clone();
+
+    sync_one(
+        &app,
+        &subject,
+        json!({
+            "device_id": device,
+            "events": [event_body(
+                mission_uuid,
+                &question,
+                content_version,
+                Uuid::new_v4(),
+                0,
+                wrong_classification_answer(&question),
+            )]
+        }),
+    )
+    .await;
+    sync_one(
+        &app,
+        &subject,
+        json!({
+            "device_id": device,
+            "events": [event_body(
+                mission_uuid,
+                &question,
+                content_version,
+                Uuid::new_v4(),
+                2,
+                correct_answer(&question),
+            )]
+        }),
+    )
+    .await;
+
+    let user_id = user_id_for(&pool, &subject).await;
+    let state = adaptive_learn_db::concept_state::find_one(
+        &pool,
+        user_id,
+        "soa-c03",
+        &concept_id,
+        question.assessment_mode,
+    )
+    .await
+    .expect("find state")
+    .expect("state row");
+    assert_eq!(state.exposure_count, 2);
+    assert_eq!(state.failure_count, 1);
+    assert_eq!(state.success_count, 1);
+    assert_eq!(state.state_version, 2);
+
+    // The hinted recovery is still recorded, including its hint count.
+    let events = db::learning_events::list_for_mission(&pool, mission_uuid)
+        .await
+        .expect("list events");
+    assert_eq!(events.len(), 2);
+    let recovery = events
+        .iter()
+        .find(|event| event.attempt_number == 2)
+        .expect("recovery event");
+    assert_eq!(recovery.hint_count, 2);
+}
+
+#[tokio::test]
+async fn anonymous_demo_attempts_create_no_derived_user_state() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool.clone());
+    let registry = registry();
+    let device = Uuid::new_v4();
+
+    let (status, mission) = common::send_anonymous(
+        app.clone(),
+        "POST",
+        "/v1/missions/issue",
+        Some(json!({
+            "device_id": device,
+            "certification_id": "aws-soa-c03-demo",
+            "certification_version": "soa-c03-demo",
+            "mode": "task_practice",
+            "task_id": "D2.1"
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{mission}");
+    let mission_uuid: Uuid = mission["id"]
+        .as_str()
+        .expect("mission id")
+        .parse()
+        .expect("uuid");
+    let question = version_question(&registry, "soa-c03-demo", "demo-reconstruction-nat-001");
+
+    let (status, body) = common::send_anonymous(
+        app.clone(),
+        "POST",
+        "/v1/sync",
+        Some(json!({
+            "device_id": device,
+            "events": [event_body(
+                mission_uuid,
+                &question,
+                "soa-c03-demo-content-v1",
+                Uuid::new_v4(),
+                0,
+                correct_answer(&question),
+            )]
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["results"][0]["accepted"], true);
+
+    // Anonymous attempts write immutable evidence but must not create a derived
+    // user row. Demo content never reaches this table, so the count stays zero.
+    let demo_state_count = sqlx::query_scalar::<_, i64>(
+        "SELECT count(*) FROM user_concept_state WHERE certification_version = 'soa-c03-demo'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("count demo state");
+    assert_eq!(demo_state_count, 0);
+}
+
+#[tokio::test]
+async fn sync_rejects_out_of_range_hints() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let registry = registry();
+    let subject = format!("hint-range-user-{}", Uuid::new_v4());
+    let device = Uuid::new_v4();
+    let mission = issue_as(&app, &subject, device).await;
+    let mission_uuid: Uuid = mission["id"]
+        .as_str()
+        .expect("mission id")
+        .parse()
+        .expect("uuid");
+    let question = question(&registry, "monitoring-classification-001");
+
+    let body = sync_one(
+        &app,
+        &subject,
+        json!({
+            "device_id": device,
+            "events": [event_body(
+                mission_uuid,
+                &question,
+                mission["content_version"].as_str().expect("version"),
+                Uuid::new_v4(),
+                99,
+                correct_answer(&question),
+            )]
+        }),
+    )
+    .await;
+    assert_eq!(body["results"][0]["accepted"], false);
+    assert_eq!(body["results"][0]["error_code"], "bad_request");
 }

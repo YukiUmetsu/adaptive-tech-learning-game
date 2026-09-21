@@ -120,6 +120,48 @@ describe("FeedbackPanel", () => {
     ).toBeInTheDocument();
   });
 
+  it("states how many connections a correct answer needs", () => {
+    const connectionQuestion: QuestionView = {
+      ...question,
+      interaction_type: "node_connection",
+      assessment_mode: "relationship_recall",
+      interaction: {
+        type: "node_connection",
+        nodes: [
+          { id: "alarm", label: "CloudWatch alarm", x: 0, y: 0 },
+          { id: "sns", label: "SNS topic", x: 1, y: 0 },
+          { id: "operator", label: "Operator", x: 1, y: 1 },
+        ],
+      },
+    };
+
+    render(
+      <FeedbackPanel
+        feedback={{
+          ...base,
+          correct: true,
+          score: 1,
+          error_codes: [],
+          explanation: "Alarms publish to a topic that notifies an operator.",
+          canonical_answer: {
+            type: "node_connection",
+            edges: [
+              ["alarm", "sns"],
+              ["sns", "operator"],
+            ],
+          },
+        }}
+        question={connectionQuestion}
+        submitted={{ edges: [["alarm", "sns"], ["sns", "operator"]] }}
+        isLast={false}
+        onRetry={vi.fn()}
+        onNext={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("(2 relationships needed)")).toBeInTheDocument();
+  });
+
   it("renders a Bits reward for a correct answer", () => {
     render(
       <FeedbackPanel
@@ -154,5 +196,53 @@ describe("FeedbackPanel", () => {
     );
 
     expect(screen.queryByTestId("bits-reward")).toBeNull();
+  });
+
+  it("sends earned Bits flying toward the wallet on a correct answer", () => {
+    const listener = vi.fn();
+    window.addEventListener("adaptive-learn:bits-earned", listener);
+
+    render(
+      <FeedbackPanel
+        feedback={{
+          ...base,
+          correct: true,
+          score: 1,
+          error_codes: [],
+          bits_preview: 12,
+        }}
+        question={question}
+        submitted={null}
+        isLast={false}
+        onRetry={vi.fn()}
+        onNext={vi.fn()}
+      />,
+    );
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    const detail = (listener.mock.calls[0][0] as CustomEvent).detail as {
+      amount: number;
+    };
+    expect(detail.amount).toBe(12);
+    window.removeEventListener("adaptive-learn:bits-earned", listener);
+  });
+
+  it("does not celebrate Bits for an incorrect answer", () => {
+    const listener = vi.fn();
+    window.addEventListener("adaptive-learn:bits-earned", listener);
+
+    render(
+      <FeedbackPanel
+        feedback={base}
+        question={question}
+        submitted={null}
+        isLast={false}
+        onRetry={vi.fn()}
+        onNext={vi.fn()}
+      />,
+    );
+
+    expect(listener).not.toHaveBeenCalled();
+    window.removeEventListener("adaptive-learn:bits-earned", listener);
   });
 });

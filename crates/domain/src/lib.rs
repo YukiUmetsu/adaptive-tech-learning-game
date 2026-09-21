@@ -5,16 +5,29 @@
 //! from these types. Phase 0 intentionally covers only the foundational
 //! `users` and `sync_batches` concepts.
 
+pub mod concept_state;
+pub mod evaluation;
 pub mod learning;
 pub mod reward;
+pub mod streak;
 pub mod sync;
 pub mod user;
 
+pub use concept_state::{
+    ConceptObservation, ConceptState, MODEL_VERSION, PRIOR_ESTIMATE, confidence, forgetting_risk,
+    retrievability, uncertainty, update_concept_state,
+};
+pub use evaluation::{
+    CalibrationBucket, ConceptPrediction, EvaluationSummary, PredictionSample, QuestionPrediction,
+    brier_score, calibration_buckets, evaluate, log_loss, mean_observed, mean_prediction,
+    predict_question,
+};
 pub use learning::{
     AssessmentMode, ConceptWeight, InteractionType, LearningEvent, MissionInstance, MissionStatus,
     QuizMode,
 };
-pub use reward::{BASE_BITS, reward_bits};
+pub use reward::{BASE_BITS, DAILY_MISSION_BONUS_BITS, reward_bits};
+pub use streak::{StreakSummary, summarize_streak};
 pub use sync::{NewSyncBatch, SyncBatch, SyncBatchStatus};
 pub use user::{NewUser, User};
 

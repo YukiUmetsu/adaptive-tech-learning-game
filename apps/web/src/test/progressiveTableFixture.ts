@@ -132,6 +132,7 @@ export const progressiveTableFixture: LearningDomainResponse = {
     mastery_note: "Exploration progress is not mastery evidence.",
   },
   source_refs: [sourceRef],
+  glossary: [],
   modules: [
     {
       id: "m1",

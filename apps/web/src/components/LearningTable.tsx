@@ -1,4 +1,5 @@
 import type { LearningTableReveal } from "../lib/learningElements";
+import InlineText from "./InlineText";
 
 /**
  * Renders a real table reveal with accessible HTML table semantics.
@@ -18,7 +19,7 @@ export default function LearningTable({ columns, rows }: LearningTableReveal) {
           <tr>
             {columns.map((column) => (
               <th key={column.id} scope="col">
-                {column.label}
+                <InlineText text={column.label} />
               </th>
             ))}
           </tr>
@@ -27,7 +28,9 @@ export default function LearningTable({ columns, rows }: LearningTableReveal) {
           {rows.map((row, rowIndex) => (
             <tr key={rowIndex}>
               {columns.map((column) => (
-                <td key={column.id}>{row.cells[column.id] ?? ""}</td>
+                <td key={column.id}>
+                  <InlineText text={row.cells[column.id] ?? ""} />
+                </td>
               ))}
             </tr>
           ))}

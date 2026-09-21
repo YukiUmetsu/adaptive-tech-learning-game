@@ -4,10 +4,10 @@ use axum::extract::State;
 use axum::extract::rejection::{JsonRejection, PathRejection};
 use uuid::Uuid;
 
-use crate::auth::OptionalUser;
+use crate::auth::{AuthenticatedUser, OptionalUser};
 use crate::dto::{
     AnswerRequest, CompleteMissionRequest, CompleteMissionResponse, FeedbackResponse,
-    IssueMissionRequest, MissionResponse,
+    IssueMissionRequest, MissionResponse, MissionReviewResponse,
 };
 use crate::error::{ApiError, ErrorResponse};
 use crate::routes::{json_body, uuid_path};
@@ -99,5 +99,34 @@ pub async fn complete_mission(
         .unwrap_or(CompleteMissionRequest { device_id: None });
     Ok(Json(
         services::complete_mission(&state, user.0.as_ref(), mission_id, request.device_id).await?,
+    ))
+}
+
+/// Returns a read-only review of a completed mission.
+///
+/// Canonical answers are included only after completion, so in-progress work
+/// never leaks answers. Review never creates evidence or changes scores.
+#[utoipa::path(
+    get,
+    path = "/v1/missions/{mission_id}/review",
+    tag = "missions",
+    params(("mission_id" = uuid::Uuid, Path, description = "Mission identifier")),
+    responses(
+        (status = 200, description = "Mission review", body = MissionReviewResponse),
+        (status = 401, description = "Authentication required", body = ErrorResponse),
+        (status = 403, description = "Mission belongs to another account", body = ErrorResponse),
+        (status = 404, description = "Unknown mission", body = ErrorResponse),
+        (status = 409, description = "Mission is not complete yet", body = ErrorResponse)
+    ),
+    security(("bearerAuth" = []))
+)]
+pub async fn review_mission(
+    State(state): State<AppState>,
+    user: AuthenticatedUser,
+    mission_id: Result<Path<Uuid>, PathRejection>,
+) -> Result<Json<MissionReviewResponse>, ApiError> {
+    let mission_id = uuid_path(mission_id)?;
+    Ok(Json(
+        services::mission_review(&state, &user, mission_id).await?,
     ))
 }

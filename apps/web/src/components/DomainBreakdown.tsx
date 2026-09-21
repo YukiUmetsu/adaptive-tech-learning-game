@@ -1,3 +1,5 @@
+import InlineText from "./InlineText";
+
 export interface BreakdownRow {
   id: string;
   label: string;
@@ -34,7 +36,9 @@ export default function DomainBreakdown({
           const perfect = row.firstAttemptCorrect === row.totalQuestions;
           return (
             <li key={row.id}>
-              <span className="domain-breakdown-label">{row.label}</span>
+              <span className="domain-breakdown-label">
+                <InlineText text={row.label} />
+              </span>
               <span className="domain-breakdown-score">
                 {showCheck && perfect ? (
                   <span

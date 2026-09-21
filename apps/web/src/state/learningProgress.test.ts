@@ -8,13 +8,18 @@ import {
   clearDomainProgress,
   deriveLearningState,
   emptyDomainProgress,
+  fullPromptReveals,
   isNodeUnlocked,
   isPromptComplete,
   loadDomainProgress,
+  loadTrackDiscovery,
+  loadTrackExploredNodeIds,
+  mergeServerDiscovery,
   nodePromptProgress,
   revealElement,
   revealPrompt,
 } from "./learningProgress";
+import { loadPendingDiscovery } from "./auxiliaryQueue";
 import { learningFixture } from "../test/learningFixture";
 import { codeLearningFixture } from "../test/codeLearningFixture";
 import { progressiveTableFixture } from "../test/progressiveTableFixture";
@@ -509,5 +514,172 @@ describe("progressive table progress", () => {
     );
     expect(state.nodeState["n-row"]).toBe("in_progress");
     expect(state.unlockedNodeIds.has("n-row")).toBe(false);
+  });
+});
+
+describe("loadTrackExploredNodeIds", () => {
+  it("collects explored node ids for one track version only", () => {
+    revealPrompt("v1", "domain-1", "c1", "n1", "p1");
+    revealElement("v1", "domain-1", "c1", "n2", "p1", elementId.row("r1"));
+    revealPrompt("v2", "domain-1", "c1", "n9", "p1");
+
+    expect(loadTrackExploredNodeIds("v1")).toEqual(["n1", "n2"]);
+    expect(loadTrackExploredNodeIds("v2")).toEqual(["n9"]);
+    expect(loadTrackExploredNodeIds("missing")).toEqual([]);
+  });
+
+  it("returns a sorted, repeatable list", () => {
+    revealPrompt("v1", "domain-1", "c1", "n-b", "p1");
+    revealPrompt("v1", "domain-2", "c1", "n-a", "p1");
+    expect(loadTrackExploredNodeIds("v1")).toEqual(["n-a", "n-b"]);
+  });
+});
+
+describe("loadTrackDiscovery", () => {
+  it("returns raw prompt and element progress for one track version", () => {
+    revealPrompt("v1", "domain-2", "c1", "n2", "p1");
+    revealElement("v1", "domain-1", "c1", "n1", "p1", elementId.row("r1"));
+    revealPrompt("v2", "domain-1", "c1", "n9", "p1");
+
+    expect(loadTrackDiscovery("v1")).toEqual([
+      {
+        domain_id: "domain-1",
+        revealed_prompt_ids: {},
+        revealed_element_ids: { n1: { p1: ["row:r1"] } },
+      },
+      {
+        domain_id: "domain-2",
+        revealed_prompt_ids: { n2: ["p1"] },
+        revealed_element_ids: {},
+      },
+    ]);
+  });
+
+  it("returns an empty list for an unknown track version", () => {
+    expect(loadTrackDiscovery("missing")).toEqual([]);
+  });
+});
+
+describe("mergeServerDiscovery", () => {
+  it("unions server progress with local progress", () => {
+    revealPrompt("v1", "domain-1", "c1", "n1", "p1");
+
+    mergeServerDiscovery("v1", "c1", [
+      {
+        domain_id: "domain-1",
+        revealed_prompt_ids: { n1: ["p2"], n2: ["p1"] },
+        revealed_element_ids: { n1: { p1: ["annotation:a1"] } },
+      },
+    ]);
+
+    const stored = loadDomainProgress("v1", "domain-1");
+    expect(stored?.revealedPromptIds).toEqual({
+      n1: ["p1", "p2"],
+      n2: ["p1"],
+    });
+    expect(stored?.revealedElementIds).toEqual({
+      n1: { p1: ["annotation:a1"] },
+    });
+  });
+
+  it("lets older server state not remove a newer local reveal", () => {
+    revealPrompt("v1", "domain-1", "c1", "n1", "p1");
+    revealPrompt("v1", "domain-1", "c1", "n1", "p2");
+
+    mergeServerDiscovery("v1", "c1", [
+      {
+        domain_id: "domain-1",
+        revealed_prompt_ids: { n1: ["p1"] },
+        revealed_element_ids: {},
+      },
+    ]);
+
+    expect(loadDomainProgress("v1", "domain-1")?.revealedPromptIds.n1).toEqual([
+      "p1",
+      "p2",
+    ]);
+  });
+
+  it("ignores an empty server payload", () => {
+    revealPrompt("v1", "domain-1", "c1", "n1", "p1");
+    mergeServerDiscovery("v1", "c1", []);
+    expect(loadDomainProgress("v1", "domain-1")?.revealedPromptIds).toEqual({
+      n1: ["p1"],
+    });
+  });
+
+  it("queues local reveals for later server sync", () => {
+    revealPrompt("v1", "domain-1", "c1", "n1", "p1");
+    revealElement("v1", "domain-1", "c1", "n1", "p1", elementId.row("r1"));
+
+    const pending = loadPendingDiscovery();
+    expect(pending).toHaveLength(1);
+    expect(pending[0].trackVersion).toBe("v1");
+    expect(pending[0].domains[0].revealed_prompt_ids).toEqual({ n1: ["p1"] });
+    expect(pending[0].domains[0].revealed_element_ids).toEqual({
+      n1: { p1: ["row:r1"] },
+    });
+  });
+
+  it("a reveal never creates a scored pending event", () => {
+    revealPrompt("v1", "domain-1", "c1", "n1", "p1");
+    // Discovery is queued separately and never becomes scored evidence.
+    expect(window.localStorage.getItem("adaptive-learn.pending-events")).toBeNull();
+    expect(loadPendingDiscovery()).toHaveLength(1);
+  });
+});
+
+describe("deriveLearningState availability options", () => {
+  // A linear module: two nodes with no node prerequisites, so guided order is
+  // the only thing that locks the second node.
+  const linear = {
+    ...learningFixture,
+    modules: [
+      {
+        ...learningFixture.modules[0],
+        nodes: learningFixture.modules[0].nodes.map((node) =>
+          node.id === "n2" ? { ...node, prerequisite_node_ids: [] } : node,
+        ),
+      },
+    ],
+  };
+
+  it("default behavior leaves both nodes available", () => {
+    const state = deriveLearningState(linear, null);
+    expect(state.nodeState.n1).toBe("ready");
+    expect(state.nodeState.n2).toBe("ready");
+  });
+
+  it("guided mode makes the learner follow content order", () => {
+    const state = deriveLearningState(linear, null, { guided: true });
+    expect(state.nodeState.n1).toBe("ready");
+    expect(state.nodeState.n2).toBe("locked");
+  });
+
+  it("guided mode unlocks the next node once the earlier one completes", () => {
+    revealPrompt("v1", "domain-1", "test-content-v1", "n1", "what");
+    revealPrompt("v1", "domain-1", "test-content-v1", "n1", "look");
+    const progress = loadDomainProgress("v1", "domain-1");
+
+    const state = deriveLearningState(linear, progress, { guided: true });
+    expect(state.nodeState.n1).toBe("unlocked");
+    expect(state.nodeState.n2).toBe("ready");
+  });
+
+  it("unlockAll makes every node available regardless of order", () => {
+    const state = deriveLearningState(learningFixture, null, { unlockAll: true });
+    expect(state.nodeState.n1).toBe("ready");
+    expect(state.nodeState.n2).toBe("ready");
+    // The gated second module is available too.
+    expect(state.moduleProgress.m2.available).toBe(true);
+  });
+});
+
+describe("fullPromptReveals", () => {
+  it("marks every prompt and required element revealed", () => {
+    const node = learningFixture.modules[0].nodes[0];
+    const full = fullPromptReveals(node);
+    expect(full.promptIds).toEqual(["what", "look"]);
+    expect(full.elementIds).toEqual({});
   });
 });

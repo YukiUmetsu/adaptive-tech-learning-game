@@ -1,5 +1,6 @@
 import type { LearningModule } from "../api/types";
 import type { DerivedLearningState } from "../state/learningProgress";
+import InlineText from "./InlineText";
 
 type ModuleProgressMap = DerivedLearningState["moduleProgress"];
 
@@ -47,7 +48,9 @@ export default function KnowledgeMapHud({
       <header className="knowledge-hud-top">
         <div className="knowledge-hud-heading">
           <p className="knowledge-hud-label">{label}</p>
-          <h2>{domainName}</h2>
+          <h2>
+            <InlineText text={domainName} />
+          </h2>
         </div>
         <div className="knowledge-hud-power">
           <span className="knowledge-hud-power-value">
@@ -119,7 +122,9 @@ export default function KnowledgeMapHud({
                       {entry ? `${entry.unlocked} / ${entry.total}` : ""}
                     </span>
                   </span>
-                  <span className="knowledge-group-card-title">{module.title}</span>
+                  <span className="knowledge-group-card-title">
+                    <InlineText text={module.title} />
+                  </span>
                   <span className="knowledge-group-card-bar" aria-hidden="true">
                     <span
                       className="knowledge-group-card-bar-fill"

@@ -18,8 +18,8 @@ export const QUICK_QUIZ: QuizModePresentation = {
   key: "quick_adaptive",
   label: "Quick Quiz",
   shortLabel: "Quick Quiz",
-  questionLabel: "10 adaptive questions",
-  duration: "~6 min",
+  questionLabel: "3 adaptive questions",
+  duration: "~2 min",
   icon: "⚡",
   horizon: "What should I practice right now?",
 };
@@ -86,6 +86,13 @@ export function quizCompletionPresentation(
         title: "Full Practice Complete",
         heroVariant: "celebration",
       };
+    case "recommended_practice":
+      return {
+        key: "recommended_practice",
+        icon: "✦",
+        title: "Recommended Practice Complete",
+        heroVariant: "standard",
+      };
     default:
       return {
         key: "task_practice",
@@ -107,6 +114,8 @@ export function quizModeLabel(mode: string | null | undefined): string {
       return FULL_PRACTICE.label;
     case "task_practice":
       return "Task Practice";
+    case "recommended_practice":
+      return "Recommended Practice";
     default:
       return "Quiz";
   }

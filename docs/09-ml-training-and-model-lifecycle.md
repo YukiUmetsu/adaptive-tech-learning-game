@@ -4,6 +4,12 @@
 
 Train locally daily while it remains convenient.
 
+> Measurement note: `heuristic-v1` prediction snapshots and their linked
+> outcomes are already captured (see `docs/06-learning-engine.md`). They form the
+> baseline prediction/outcome dataset that every later model must beat. Pure
+> metric functions and an internal aggregate-only evaluation endpoint exist for
+> Brier score, log loss, and calibration; no training pipeline is built yet.
+
 ```mermaid
 flowchart TB
     Data[Accepted learning data] --> Local[Local training]

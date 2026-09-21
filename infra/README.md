@@ -1,18 +1,19 @@
 # Infrastructure
 
-Documentation-only scaffolding for Phase 0. **Nothing is deployed yet, and no
+Infrastructure notes for the project. **The web frontend is deployed to
+Cloudflare; the API, database, and object storage are not, and no
 Terraform/OpenTofu resources are committed.** Add infrastructure as code when a
 real environment is provisioned, not for completeness.
 
 Selected providers and their role are defined in `docs/04-platform-costs.md` and
 `docs/12-deployment.md`.
 
-| Component | Provider | Phase 0 status |
+| Component | Provider | Status |
 |---|---|---|
+| Web assets | Cloudflare (Worker static assets) | `apps/web/wrangler.jsonc`; deploys from `main` |
 | API container | Google Cloud Run | Dockerfile at `apps/api/Dockerfile`; not deployed |
 | PostgreSQL | Neon | local Docker Postgres only |
 | Object storage | Cloudflare R2 | not used; documented for game media (`app-assets`), raw telemetry, training data, models |
-| Web assets | Cloudflare static assets | `apps/web` builds to `dist/`; not deployed |
 
 ## API container
 

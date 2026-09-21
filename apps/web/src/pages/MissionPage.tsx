@@ -1,19 +1,26 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import BitsIcon from "../components/BitsIcon";
 import FeedbackPanel from "../components/FeedbackPanel";
+import InlineText from "../components/InlineText";
 import QuestionCard from "../components/QuestionCard";
 import QuizCompletionSummary from "../components/QuizCompletionSummary";
 import { useCatalog } from "../hooks/useCatalog";
 import { useMissionRunner } from "../hooks/useMissionRunner";
+import { missionDomainName } from "../state/mission";
 import { quizModeLabel } from "../state/quizModes";
 import { useBitsBalance } from "../state/wallet";
 
 export default function MissionPage() {
   const { missionId } = useParams();
+  const [searchParams] = useSearchParams();
   const runner = useMissionRunner(missionId ?? "");
   const bits = useBitsBalance();
   const { state } = useCatalog();
+
+  // Missions started from a Daily Mission return to the runner afterwards.
+  const dailyTrack = searchParams.get("daily") ? searchParams.get("track") : null;
+  const dailyReturnTo = dailyTrack ? `/tracks/${dailyTrack}/daily` : undefined;
 
   if (runner.phase === "loading") {
     return <p role="status">Loading mission…</p>;
@@ -38,6 +45,7 @@ export default function MissionPage() {
           mission={runner.mission}
           attempts={runner.attempts}
           syncState={runner.syncState}
+          dailyReturnTo={dailyReturnTo}
           onRetrySync={() => void runner.sync()}
         />
       </div>
@@ -47,11 +55,8 @@ export default function MissionPage() {
   const isLast = runner.currentIndex === runner.total - 1;
 
   const domainName =
-    runner.mission.domain_id && state.status === "loaded"
-      ? state.data.certifications
-          .flatMap((certification) => certification.versions)
-          .flatMap((version) => version.domains)
-          .find((domain) => domain.id === runner.mission?.domain_id)?.name
+    state.status === "loaded"
+      ? missionDomainName(runner.mission, state.data)
       : undefined;
 
   return (
@@ -67,7 +72,9 @@ export default function MissionPage() {
             <BitsIcon className="bits-icon" /> {bits.toLocaleString()}
           </span>
         </div>
-        <h1>{runner.question.prompt}</h1>
+        <h1>
+          <InlineText text={runner.question.prompt} />
+        </h1>
         <div
           className="progress"
           role="progressbar"

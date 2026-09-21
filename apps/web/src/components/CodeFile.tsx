@@ -1,12 +1,14 @@
 import { useMemo } from "react";
 
 import type { LearningReveal } from "../api/types";
+import { stripInlineCode } from "../lib/inlineCode";
 import { elementId } from "../lib/learningElements";
 import {
   annotateCodeLines,
   tokenClassName,
   type CodeAnnotationTarget,
 } from "../lib/syntaxHighlight";
+import InlineText from "./InlineText";
 
 /** The `code_file` arm of the shared reveal union. */
 export type CodeFileReveal = Extract<LearningReveal, { type: "code_file" }>;
@@ -109,7 +111,7 @@ export default function CodeFile({ reveal, interaction }: CodeFileProps) {
                   elementId.annotation(item.annotationId),
                 );
                 const label = annotation
-                  ? `${annotation.title}: show explanation`
+                  ? `${stripInlineCode(annotation.title)}: show explanation`
                   : "Show explanation";
                 return (
                   <button
@@ -157,8 +159,12 @@ export default function CodeFile({ reveal, interaction }: CodeFileProps) {
         <div className="code-annotation-explanations" aria-live="polite">
           {revealedAnnotations.map((annotation) => (
             <section key={annotation.id} className="code-annotation-explanation">
-              <h4>{annotation.title}</h4>
-              <p>{annotation.explanation}</p>
+              <h4>
+                <InlineText text={annotation.title} />
+              </h4>
+              <p>
+                <InlineText text={annotation.explanation} />
+              </p>
             </section>
           ))}
         </div>

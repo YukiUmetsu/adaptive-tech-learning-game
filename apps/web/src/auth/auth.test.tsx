@@ -111,6 +111,47 @@ describe("AppShell authentication UI", () => {
     await waitFor(() => expect(signOut).toHaveBeenCalled());
   });
 
+  it("replaces the header audio toggle with a Settings gear", () => {
+    render(
+      <AuthContext.Provider value={authValue()}>
+        <MemoryRouter>
+          <Routes>
+            <Route element={<AppShell />}>
+              <Route index element={<p>Home body</p>} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+
+    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute(
+      "href",
+      "/settings",
+    );
+    expect(
+      screen.queryByRole("button", { name: /sound effects/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("navigates to the settings page from the gear", async () => {
+    render(
+      <AuthContext.Provider value={authValue()}>
+        <MemoryRouter initialEntries={["/"]}>
+          <Routes>
+            <Route element={<AppShell />}>
+              <Route index element={<p>Home body</p>} />
+              <Route path="settings" element={<p>Settings body</p>} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+
+    await userEvent.click(screen.getByRole("link", { name: "Settings" }));
+
+    expect(await screen.findByText("Settings body")).toBeInTheDocument();
+  });
+
   it("shows the provider avatar when one is available", () => {
     render(
       <AuthContext.Provider

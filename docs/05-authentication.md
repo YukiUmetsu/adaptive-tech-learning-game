@@ -96,12 +96,33 @@ almost always an issuer or JWKS mismatch:
   authentication domain.
 
 The post-login redirect is handled client-side through React Router (not a full
-page reload). The AuthKit SDK only persists the session across reloads on
-`localhost`/`127.0.0.1`, so a forced reload on any other host would drop the
-session and leave the UI looking signed out. If the header still shows “Sign in”
-after Google, open the browser console: a `[auth]` warning means the OAuth code
-could not be exchanged, usually because the registered redirect URI does not
-exactly match `window.location.origin` or sign-in was not started from the app.
+page reload), and the app does not navigate after `signIn` because WorkOS starts
+a full-page redirect and the AuthKit callback performs the navigation.
+
+Session persistence depends on the authentication host:
+
+- **Custom AuthKit authentication domain (recommended for production).** When
+  `VITE_WORKOS_API_HOSTNAME` is a domain under the app's own domain (for example
+  `auth.shidenlabs.com`), the SDK stores the refresh token in a first-party
+  httpOnly cookie, so the session survives reloads and is shared across tabs.
+- **Default `api.workos.com`.** The session cookie belongs to WorkOS's domain
+  and is third-party, so the browser cannot send or read it and the refresh call
+  fails. To keep sessions working, the app enables the SDK's `devMode`, which
+  persists the refresh token in `localStorage` for the app origin. This works
+  but exposes the refresh token to script; move to a custom auth domain when
+  practical.
+
+Because an installed PWA opens the WorkOS navigation in the browser, sign-in can
+complete in a different window than it started. The app then reloads once when
+it can see persisted session material, so the original window recovers. The
+authorization code is single-use, so the window that loses that race suppresses
+its error instead of showing "Sign-in didn't complete".
+
+If the header still shows "Sign in" after Google, open the browser console: an
+`[auth]` message means the OAuth code could not be exchanged, usually because
+the registered redirect URI (or the allowed-origins list) does not exactly match
+`window.location.origin`, or because sign-in was started from a different
+window than the callback landed in.
 
 ## Why code instead of magic link
 

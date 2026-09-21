@@ -96,7 +96,7 @@ Learners pick from three quiz modes, not from raw interaction types:
 
 | Mode | Questions | Purpose |
 |---|---:|---|
-| Quick Quiz | 10 | adaptive cross-domain practice |
+| Quick Quiz | 3 | adaptive cross-domain practice |
 | Domain Quiz | ~20 | one exam domain |
 | Full Practice | 65 | weighted full-certification coverage |
 

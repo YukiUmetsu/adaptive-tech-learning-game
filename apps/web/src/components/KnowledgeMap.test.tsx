@@ -22,6 +22,7 @@ const domain: LearningDomainResponse = {
     mastery_note: "Not mastery.",
   },
   source_refs: [{ title: "Guide", url: "https://example.com" }],
+  glossary: [],
   modules: [
     {
       id: "m1",

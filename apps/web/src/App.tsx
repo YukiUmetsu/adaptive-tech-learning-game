@@ -11,12 +11,15 @@ import AppShell from "./layout/AppShell";
 import AccountPage from "./pages/AccountPage";
 import CertificationDashboardPage from "./pages/CertificationDashboardPage";
 import CertificationsPage from "./pages/CertificationsPage";
+import DailyMissionPage from "./pages/DailyMissionPage";
 import DemoPage from "./pages/DemoPage";
 import DomainLearningPage from "./pages/DomainLearningPage";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import MissionPage from "./pages/MissionPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import PracticeTestPage from "./pages/PracticeTestPage";
+import SettingsPage from "./pages/SettingsPage";
 import TaskPage from "./pages/TaskPage";
 
 export default function App() {
@@ -38,6 +41,14 @@ export default function App() {
           }
         />
         <Route
+          path="tracks/:certificationId/daily"
+          element={
+            <RequireAuth>
+              <DailyMissionPage />
+            </RequireAuth>
+          }
+        />
+        <Route
           path="tracks/:certificationId/tasks/:taskId"
           element={<TaskPage />}
         />
@@ -51,6 +62,10 @@ export default function App() {
           element={<LegacyTrackRedirect />}
         />
         <Route path="missions/:missionId" element={<MissionPage />} />
+        <Route
+          path="tracks/:certificationId/practice-tests/:practiceTestId"
+          element={<PracticeTestPage />}
+        />
         <Route path="demo" element={<DemoPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route
@@ -58,6 +73,14 @@ export default function App() {
           element={
             <RequireAuth>
               <AccountPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="settings"
+          element={
+            <RequireAuth>
+              <SettingsPage />
             </RequireAuth>
           }
         />

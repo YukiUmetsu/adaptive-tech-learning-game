@@ -19,11 +19,16 @@ vi.mock("../state/sound", async (importOriginal) => {
   };
 });
 
+vi.mock("../state/focus", () => ({
+  recordStudyActivity: vi.fn(),
+}));
+
 import {
   playModuleComplete,
   playNodeUnlock,
   playReveal,
 } from "../state/sound";
+import { recordStudyActivity } from "../state/focus";
 
 interface RecordedRequest {
   url: string;
@@ -189,6 +194,17 @@ describe("DomainLearningPage", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText(/UNLOCKED!/).length).toBeGreaterThan(0);
     expect(playNodeUnlock).toHaveBeenCalledTimes(1);
+  });
+
+  it("records meaningful study activity for node and reveal interactions", async () => {
+    renderPage();
+    await ready();
+
+    await openNode("Alpha", "Ready to discover");
+    expect(recordStudyActivity).toHaveBeenCalledWith("knowledge_node");
+
+    await revealPrompt("WHAT?");
+    expect(recordStudyActivity).toHaveBeenCalledWith("reveal");
   });
 
   it("celebrates an unlock inside the card, with no transient banner", async () => {
@@ -403,5 +419,27 @@ describe("DomainLearningPage", () => {
     expect(
       container.querySelectorAll(".knowledge-node").length,
     ).toBeGreaterThan(0);
+  });
+
+  it("deep-links to a knowledge node from the query string", async () => {
+    render(
+      <MemoryRouter
+        initialEntries={[
+          "/tracks/test-cert/domains/domain-1/learn?node=n1",
+        ]}
+      >
+        <Routes>
+          <Route
+            path="/tracks/:certificationId/domains/:domainId/learn"
+            element={<DomainLearningPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await ready();
+
+    expect(
+      await screen.findByRole("heading", { name: "Alpha" }),
+    ).toBeInTheDocument();
   });
 });

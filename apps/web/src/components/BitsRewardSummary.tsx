@@ -1,3 +1,6 @@
+import { useEffect, useRef } from "react";
+
+import { emitBitsEarned } from "../lib/bitsFly";
 import { useCountUp } from "../hooks/useCountUp";
 import BitsIcon from "./BitsIcon";
 
@@ -58,8 +61,18 @@ export default function BitsRewardSummary({
   total,
   animate,
 }: BitsRewardSummaryProps) {
+  const summaryRef = useRef<HTMLElement>(null);
+
+  // Celebrate a completed mission by sending its Bits into the wallet.
+  useEffect(() => {
+    if (animate && earned > 0) {
+      emitBitsEarned(earned, summaryRef.current);
+    }
+  }, [animate, earned]);
+
   return (
     <section
+      ref={summaryRef}
       className="bits-reward-summary"
       aria-label={`Earned ${earned} Bits, ${total} total`}
     >

@@ -1,9 +1,16 @@
 pub mod certifications;
+pub mod daily_missions;
+pub mod discovery;
 pub mod health;
+pub mod internal;
 pub mod learning;
 pub mod me;
 pub mod missions;
 pub mod openapi;
+pub mod practice_tests;
+pub mod progress;
+pub mod recommendations;
+pub mod sessions;
 pub mod sync;
 pub mod wallet;
 

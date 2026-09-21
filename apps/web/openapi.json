@@ -42,6 +42,74 @@
         }
       }
     },
+    "/internal/model-evaluation": {
+      "get": {
+        "tags": [
+          "internal"
+        ],
+        "summary": "Internal calibration summary for a model version.",
+        "description": "Analytics only: returns aggregate metrics, never per-user data. Disabled\noutside local/test by default, and when enabled outside local/test it\nrequires an explicit `X-Internal-Token`. A learner token alone is never\nenough, so this is not part of the learner-facing surface.",
+        "operationId": "get_model_evaluation",
+        "parameters": [
+          {
+            "name": "model_version",
+            "in": "query",
+            "description": "Model version to evaluate. Defaults to the current model.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bucket_count",
+            "in": "query",
+            "description": "Number of calibration buckets (1-20). Defaults to 5.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Evaluation summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelEvaluationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Endpoint unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/openapi.json": {
       "get": {
         "tags": [
@@ -138,13 +206,444 @@
         ]
       }
     },
+    "/v1/certifications/{certification_id}/practice-tests": {
+      "get": {
+        "tags": [
+          "practice-tests"
+        ],
+        "summary": "Lists the practice tests (exam simulations) for a certification.",
+        "operationId": "list_practice_tests",
+        "parameters": [
+          {
+            "name": "certification_id",
+            "in": "path",
+            "description": "Certification identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available practice tests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeTestListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/certifications/{certification_id}/practice-tests/{practice_test_id}": {
+      "get": {
+        "tags": [
+          "practice-tests"
+        ],
+        "summary": "Returns learner-safe practice-test content, before submission.",
+        "description": "Canonical answers, per-choice feedback, and scored flags are never included.",
+        "operationId": "get_practice_test",
+        "parameters": [
+          {
+            "name": "certification_id",
+            "in": "path",
+            "description": "Certification identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "practice_test_id",
+            "in": "path",
+            "description": "Practice-test identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Learner-safe practice test",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeTestResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown practice test",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/certifications/{certification_id}/practice-tests/{practice_test_id}/submit": {
+      "post": {
+        "tags": [
+          "practice-tests"
+        ],
+        "summary": "Scores and reviews a complete practice-test attempt.",
+        "description": "The whole attempt is submitted at once; the response reveals canonical\nanswers, explanations, and per-choice feedback. The raw practice score is\nnot an AWS scaled score.",
+        "operationId": "submit_practice_test",
+        "parameters": [
+          {
+            "name": "certification_id",
+            "in": "path",
+            "description": "Certification identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "practice_test_id",
+            "in": "path",
+            "description": "Practice-test identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeTestSubmissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Scored practice test",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeTestResultResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid submission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown practice test",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/daily-missions/{mission_id}/items/{position}/complete": {
+      "post": {
+        "tags": [
+          "daily-missions"
+        ],
+        "summary": "Completes a learning-node Daily Mission item from discovery progress.",
+        "operationId": "complete_daily_item",
+        "parameters": [
+          {
+            "name": "mission_id",
+            "in": "path",
+            "description": "Daily Mission identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "position",
+            "in": "path",
+            "description": "Zero-based item position.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DailyItemCompleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Item completion result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyItemCompleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Item completes through a mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Mission belongs to another account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown mission or item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/daily-missions/{mission_id}/items/{position}/review": {
+      "get": {
+        "tags": [
+          "daily-missions"
+        ],
+        "summary": "Reviews the questions and answers of a Daily Mission item.",
+        "description": "Available after the item's practice mission completes, so a learner can\nrevisit the material without redoing it. It never creates evidence.",
+        "operationId": "review_daily_item",
+        "parameters": [
+          {
+            "name": "mission_id",
+            "in": "path",
+            "description": "Daily Mission identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "position",
+            "in": "path",
+            "description": "Zero-based item position.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Item review",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissionReviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Mission belongs to another account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown mission or item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/daily-missions/{mission_id}/items/{position}/start": {
+      "post": {
+        "tags": [
+          "daily-missions"
+        ],
+        "summary": "Starts the mission for one Daily Mission practice item.",
+        "operationId": "start_daily_item",
+        "parameters": [
+          {
+            "name": "mission_id",
+            "in": "path",
+            "description": "Daily Mission identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "position",
+            "in": "path",
+            "description": "Zero-based item position.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Started mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Item is completed on the knowledge map",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Mission belongs to another account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown mission or item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Item or mission already complete",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/me": {
       "get": {
         "tags": [
           "account"
         ],
         "summary": "Returns safe application account data for the authenticated learner.",
-        "description": "Used to confirm server-side auth and to power the account UI. It never\nreturns tokens, secrets, or provider internals.",
+        "description": "Used to confirm server-side auth and to power the account UI. It never\nreturns tokens, secrets, or provider internals. The account-wide study streak\nand study settings are bundled here so the Track Hub needs no extra request;\na query failure returns neutral values and never fails authentication.",
         "operationId": "get_me",
         "responses": {
           "200": {
@@ -153,6 +652,63 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/me/settings": {
+      "put": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Updates learner study settings.",
+        "description": "Settings are preferences only: they never affect scoring, evidence, concept\nstate, or rewards.",
+        "operationId": "update_settings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSettingsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -418,6 +974,85 @@
         ]
       }
     },
+    "/v1/missions/{mission_id}/review": {
+      "get": {
+        "tags": [
+          "missions"
+        ],
+        "summary": "Returns a read-only review of a completed mission.",
+        "description": "Canonical answers are included only after completion, so in-progress work\nnever leaks answers. Review never creates evidence or changes scores.",
+        "operationId": "review_mission",
+        "parameters": [
+          {
+            "name": "mission_id",
+            "in": "path",
+            "description": "Mission identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mission review",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissionReviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Mission belongs to another account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Mission is not complete yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/sync": {
       "post": {
         "tags": [
@@ -459,6 +1094,492 @@
           },
           "401": {
             "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tracks/{track_id}/daily-mission": {
+      "post": {
+        "tags": [
+          "daily-missions"
+        ],
+        "summary": "Returns today's immutable Daily Mission, generating it once if needed.",
+        "description": "The plan never changes after creation, and generation is optional: if\nadaptive planning fails, a standard non-adaptive plan is persisted instead.",
+        "operationId": "get_today_daily_mission",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `ai-python-fluency`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DailyMissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Today's Daily Mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyMissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown learning track",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tracks/{track_id}/discovery": {
+      "get": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Returns a learner's persisted Knowledge Map discovery progress for a track.",
+        "description": "This is an enhancement, not a prerequisite: the Knowledge Map renders from\nlocal progress immediately and merges this response asynchronously. It is raw\nmonotonic discovery data and never scored knowledge evidence.",
+        "operationId": "get_track_discovery",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `aws-soa-c03`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Persisted discovery progress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown learning track",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tracks/{track_id}/map": {
+      "get": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Returns every learning domain for a track in one response.",
+        "description": "The Track Hub renders one track-wide Knowledge Map, so this avoids a request\nper domain. It is authored content only: no scored answers, no learner state.",
+        "operationId": "get_track_map",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `aws-soa-c03`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Track knowledge map content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackMapResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown learning track",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tracks/{track_id}/progress": {
+      "get": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Returns the aggregate Knowledge Signal for a track.",
+        "description": "One request covers every domain and node. Coarse semantic states only: no raw\nmodel probabilities, percentages, or pass estimates. This is an enhancement:\nif it fails, the client renders the normal Knowledge Map from discovery\nprogress and omits the adaptive decoration.",
+        "operationId": "get_track_progress",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `aws-soa-c03`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Track knowledge signal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackProgressResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown learning track",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tracks/{track_id}/recommendation": {
+      "post": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Returns a best-effort next-action recommendation for a learning track.",
+        "description": "This is an optional, explainable layer over the derived concept state. It\nnever gates the dashboard, knowledge maps, or quizzes, and it never creates\nlearning evidence. Requires an authenticated account.",
+        "operationId": "create_recommendation",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `ai-python-fluency`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Next-action recommendation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown learning track",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tracks/{track_id}/recommendations/{recommendation_id}/events": {
+      "post": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Records one recommendation lifecycle event.",
+        "description": "Telemetry is auxiliary: the request succeeds even when the write fails, so it\ncan never block the learner.",
+        "operationId": "record_recommendation_event",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recommendation_id",
+            "in": "path",
+            "description": "Recommendation the event refers to.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Event disposition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationEventResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tracks/{track_id}/session": {
+      "post": {
+        "tags": [
+          "recommendations"
+        ],
+        "summary": "Builds an optional adaptive study session for a learning track.",
+        "description": "Session planning is optional and best-effort: the client falls back to a\nstandard non-adaptive session when this fails. The server selects all\npractice questions. Requires an authenticated account.",
+        "operationId": "create_study_session",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `ai-python-fluency`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudySessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Planned study session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudySessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown learning track",
             "content": {
               "application/json": {
                 "schema": {
@@ -531,6 +1652,23 @@
             "propertyNames": {
               "type": "string"
             }
+          },
+          "choice_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Selected choice id for multiple choice."
+          },
+          "choice_ids": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Selected choice ids for multiple response."
           },
           "choice_path": {
             "type": [
@@ -735,6 +1873,99 @@
           "relationship_recall",
           "procedural_recall"
         ]
+      },
+      "AuxiliaryEventRequest": {
+        "type": "object",
+        "description": "One auxiliary recommendation lifecycle event sent in a sync batch.",
+        "required": [
+          "event_id",
+          "track_id",
+          "recommendation_id",
+          "event"
+        ],
+        "properties": {
+          "action": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlannerAction",
+                "description": "Planner action the recommendation had, when known."
+              }
+            ]
+          },
+          "domain_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Domain/topic, when known."
+          },
+          "event": {
+            "$ref": "#/components/schemas/RecommendationEventKind",
+            "description": "Lifecycle stage being reported."
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Stable client-generated id, used to make retried telemetry idempotent."
+          },
+          "node_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Knowledge node, when known."
+          },
+          "question_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Question, when known."
+          },
+          "recommendation_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Recommendation the event refers to."
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track identifier."
+          }
+        }
+      },
+      "CalibrationBucketDto": {
+        "type": "object",
+        "description": "One calibration bucket in an internal evaluation summary.",
+        "required": [
+          "bucket",
+          "count",
+          "mean_prediction",
+          "mean_observed"
+        ],
+        "properties": {
+          "bucket": {
+            "type": "string",
+            "description": "Bucket label, for example `0.6-0.8`."
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of samples in the bucket.",
+            "minimum": 0
+          },
+          "mean_observed": {
+            "type": "number",
+            "format": "double",
+            "description": "Mean observed score in the bucket."
+          },
+          "mean_prediction": {
+            "type": "number",
+            "format": "double",
+            "description": "Mean predicted probability in the bucket."
+          }
+        }
       },
       "CanonicalAnswer": {
         "oneOf": [
@@ -1098,6 +2329,49 @@
                 ]
               }
             }
+          },
+          {
+            "type": "object",
+            "description": "The single correct choice id.",
+            "required": [
+              "choice_id",
+              "type"
+            ],
+            "properties": {
+              "choice_id": {
+                "type": "string",
+                "description": "Correct choice id."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "multiple_choice"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The exact set of correct choice ids.",
+            "required": [
+              "choice_ids",
+              "type"
+            ],
+            "properties": {
+              "choice_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Correct choice ids; order is not significant."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "multiple_response"
+                ]
+              }
+            }
           }
         ],
         "description": "The canonical answer for a question."
@@ -1378,6 +2652,242 @@
           }
         }
       },
+      "DailyItemCompleteRequest": {
+        "type": "object",
+        "description": "Request to complete a learning-node Daily Mission item.",
+        "properties": {
+          "discovery": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDiscoveryInput"
+            },
+            "description": "Raw Knowledge Map discovery progress used to derive node completion."
+          }
+        }
+      },
+      "DailyItemCompleteResponse": {
+        "type": "object",
+        "description": "Result of completing one Daily Mission item.",
+        "required": [
+          "item_completed",
+          "mission"
+        ],
+        "properties": {
+          "item_completed": {
+            "type": "boolean",
+            "description": "Whether the item is now complete."
+          },
+          "mission": {
+            "$ref": "#/components/schemas/DailyMissionResponse",
+            "description": "The updated Daily Mission."
+          }
+        }
+      },
+      "DailyMissionItemDto": {
+        "type": "object",
+        "description": "One item of the learner's Daily Mission.",
+        "required": [
+          "position",
+          "kind",
+          "domain_id",
+          "domain_name",
+          "title",
+          "estimated_minutes",
+          "status",
+          "question_count"
+        ],
+        "properties": {
+          "completed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Completion time, when complete."
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "Owning domain/topic."
+          },
+          "domain_name": {
+            "type": "string",
+            "description": "Learner-facing domain name."
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Estimated minutes.",
+            "minimum": 0
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DailyMissionItemKind",
+            "description": "Activity kind."
+          },
+          "node_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Knowledge node, for node items."
+          },
+          "position": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Zero-based position in the immutable plan."
+          },
+          "question_count": {
+            "type": "integer",
+            "description": "Number of server-selected questions, for practice items.",
+            "minimum": 0
+          },
+          "status": {
+            "$ref": "#/components/schemas/DailyMissionItemStatus",
+            "description": "Completion status."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing title."
+          }
+        }
+      },
+      "DailyMissionItemKind": {
+        "type": "string",
+        "description": "One Daily Mission activity kind.",
+        "enum": [
+          "learn_node",
+          "review_node",
+          "practice",
+          "domain_practice"
+        ]
+      },
+      "DailyMissionItemStatus": {
+        "type": "string",
+        "description": "Completion status of one Daily Mission item.",
+        "enum": [
+          "pending",
+          "completed"
+        ]
+      },
+      "DailyMissionPlanType": {
+        "type": "string",
+        "description": "How a Daily Mission was generated.",
+        "enum": [
+          "adaptive",
+          "standard"
+        ]
+      },
+      "DailyMissionRequest": {
+        "type": "object",
+        "description": "Request for the learner's Daily Mission for today.",
+        "properties": {
+          "discovery": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDiscoveryInput"
+            },
+            "description": "Raw Knowledge Map discovery progress, if available."
+          },
+          "timezone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Client IANA timezone. Stored as metadata; the day boundary is canonical UTC."
+          }
+        }
+      },
+      "DailyMissionResponse": {
+        "type": "object",
+        "description": "The learner's immutable Daily Mission snapshot for the canonical day.",
+        "required": [
+          "id",
+          "track_id",
+          "track_version",
+          "day_key",
+          "plan_type",
+          "status",
+          "reward_bits",
+          "reward_granted",
+          "completed_items",
+          "total_items",
+          "created_at",
+          "items"
+        ],
+        "properties": {
+          "completed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Completion time, when complete."
+          },
+          "completed_items": {
+            "type": "integer",
+            "description": "Completed item count.",
+            "minimum": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation time."
+          },
+          "day_key": {
+            "type": "string",
+            "description": "Canonical UTC day key, `YYYY-MM-DD`."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Mission identifier."
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyMissionItemDto"
+            },
+            "description": "Immutable, ordered items."
+          },
+          "plan_type": {
+            "$ref": "#/components/schemas/DailyMissionPlanType",
+            "description": "How the plan was generated."
+          },
+          "reward_bits": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Bits bonus for completing the whole mission."
+          },
+          "reward_granted": {
+            "type": "boolean",
+            "description": "Whether the completion bonus has been settled."
+          },
+          "status": {
+            "$ref": "#/components/schemas/DailyMissionStatus",
+            "description": "Lifecycle status."
+          },
+          "total_items": {
+            "type": "integer",
+            "description": "Total item count.",
+            "minimum": 0
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track identifier."
+          },
+          "track_version": {
+            "type": "string",
+            "description": "Learning track version identifier."
+          }
+        }
+      },
+      "DailyMissionStatus": {
+        "type": "string",
+        "description": "Daily Mission lifecycle status.",
+        "enum": [
+          "active",
+          "completed"
+        ]
+      },
       "DatabaseStatus": {
         "type": "string",
         "description": "Database reachability.",
@@ -1385,6 +2895,106 @@
           "ok",
           "unavailable"
         ]
+      },
+      "DiscoveryResponse": {
+        "type": "object",
+        "description": "Server-persisted Knowledge Map discovery progress for a learning track.\n\nDiscovery is raw and monotonic: node/module state is derived by the client\nwith the same rules as the Knowledge Map. It is never learning evidence.",
+        "required": [
+          "track_version",
+          "domains"
+        ],
+        "properties": {
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDiscoveryInput"
+            },
+            "description": "Raw per-domain discovery progress."
+          },
+          "track_version": {
+            "type": "string",
+            "description": "Learning track version the progress belongs to."
+          }
+        }
+      },
+      "DiscoveryState": {
+        "type": "string",
+        "description": "Discovery dimension of the Knowledge Signal.\n\nWhether the learner explored the node's learning content. This is separate\nfrom scored evidence and is never a mastery claim.",
+        "enum": [
+          "unexplored",
+          "explored",
+          "completed"
+        ]
+      },
+      "DiscoveryUpdateRequest": {
+        "type": "object",
+        "description": "A monotonic Knowledge Map discovery delta for one track version.\n\nDiscovery is set-union based, so duplicates are harmless and an older device\ncan never remove a newer reveal.",
+        "required": [
+          "track_version",
+          "content_version"
+        ],
+        "properties": {
+          "content_version": {
+            "type": "string",
+            "description": "Learning content version the reveals were recorded against."
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDiscoveryInput"
+            },
+            "description": "Raw per-domain discovery progress."
+          },
+          "track_version": {
+            "type": "string",
+            "description": "Learning track version the discovery belongs to."
+          }
+        }
+      },
+      "DomainDiscoveryInput": {
+        "type": "object",
+        "description": "Raw discovery progress for one learning domain, as stored on the client.",
+        "required": [
+          "domain_id"
+        ],
+        "properties": {
+          "domain_id": {
+            "type": "string",
+            "description": "Domain identifier."
+          },
+          "revealed_element_ids": {
+            "type": "object",
+            "description": "Knowledge node id to prompt id to revealed discovery element ids.",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "propertyNames": {
+                "type": "string"
+              }
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "revealed_prompt_ids": {
+            "type": "object",
+            "description": "Knowledge node id to the prompt ids the learner has revealed.",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          }
+        }
       },
       "DomainDto": {
         "type": "object",
@@ -1423,6 +3033,27 @@
           }
         }
       },
+      "DomainProgressDto": {
+        "type": "object",
+        "description": "Knowledge Signal for one domain's nodes.",
+        "required": [
+          "domain_id",
+          "nodes"
+        ],
+        "properties": {
+          "domain_id": {
+            "type": "string",
+            "description": "Domain identifier."
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NodeProgressDto"
+            },
+            "description": "Per-node signals."
+          }
+        }
+      },
       "ErrorBody": {
         "type": "object",
         "description": "Structured error details.",
@@ -1453,6 +3084,72 @@
             "description": "Error payload."
           }
         }
+      },
+      "EvaluationSliceDto": {
+        "type": "object",
+        "description": "Metrics for one slice of the evaluation set.",
+        "required": [
+          "dimension",
+          "key",
+          "samples"
+        ],
+        "properties": {
+          "brier_score": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Brier score for the slice."
+          },
+          "dimension": {
+            "type": "string",
+            "description": "Slice dimension, for example `assessment_mode`."
+          },
+          "key": {
+            "type": "string",
+            "description": "Slice key within the dimension, for example `recall`."
+          },
+          "log_loss": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Log loss for the slice."
+          },
+          "mean_observed": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Mean observed score for the slice."
+          },
+          "mean_prediction": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Mean predicted probability for the slice."
+          },
+          "samples": {
+            "type": "integer",
+            "description": "Number of samples in the slice.",
+            "minimum": 0
+          }
+        }
+      },
+      "EvidenceLevel": {
+        "type": "string",
+        "description": "Coarse evidence level for a node or one assessment mode.\n\nThis is an amount-of-evidence signal, never a mastery claim. A node with\nlittle evidence looks \"early\", not deficient.",
+        "enum": [
+          "none",
+          "early",
+          "developing",
+          "substantial"
+        ]
       },
       "FeedbackResponse": {
         "type": "object",
@@ -1580,6 +3277,34 @@
           "start",
           "end"
         ]
+      },
+      "FreshnessState": {
+        "type": "string",
+        "description": "Coarse freshness signal, used only for the outer ring.",
+        "enum": [
+          "unknown",
+          "fresh",
+          "becoming_due",
+          "due"
+        ]
+      },
+      "GlossaryTerm": {
+        "type": "object",
+        "description": "One clickable term in learner-facing text, with its explanation.\n\nAuthors list terms here; the app highlights matching occurrences in learning\ntext and reveals the definition when the learner activates the term.",
+        "required": [
+          "term",
+          "definition"
+        ],
+        "properties": {
+          "definition": {
+            "type": "string",
+            "description": "Short learner-facing explanation shown when the term is activated."
+          },
+          "term": {
+            "type": "string",
+            "description": "The text to highlight, for example `guest memory`."
+          }
+        }
       },
       "HealthResponse": {
         "type": "object",
@@ -2008,6 +3733,58 @@
                 ]
               }
             }
+          },
+          {
+            "type": "object",
+            "description": "Choose exactly one option.",
+            "required": [
+              "choices",
+              "type"
+            ],
+            "properties": {
+              "choices": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Choice"
+                },
+                "description": "Selectable options, including distractors."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "multiple_choice"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Choose an exact set of options.",
+            "required": [
+              "choices",
+              "required_selections",
+              "type"
+            ],
+            "properties": {
+              "choices": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Choice"
+                },
+                "description": "Selectable options, including distractors."
+              },
+              "required_selections": {
+                "type": "integer",
+                "description": "Number of options the learner must select.",
+                "minimum": 0
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "multiple_response"
+                ]
+              }
+            }
           }
         ],
         "description": "Interaction definition shown to the learner. Contains no answer key."
@@ -2028,7 +3805,9 @@
           "configuration_builder",
           "two_dimensional_placement",
           "command_assembly",
-          "typed_fill_blank"
+          "typed_fill_blank",
+          "multiple_choice",
+          "multiple_response"
         ]
       },
       "IssueMissionRequest": {
@@ -2066,6 +3845,21 @@
           "mode": {
             "$ref": "#/components/schemas/QuizMode",
             "description": "Quiz mode deciding how the server selects questions."
+          },
+          "question_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Anchor question for `recommended_practice`. The server validates it\nbelongs to the certification version; it never trusts it as the whole\npractice set."
+          },
+          "recommendation_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Recommendation that produced this mission, when it was recommended.\nContext only, never an authorization key."
           },
           "task_id": {
             "type": [
@@ -2224,6 +4018,7 @@
           "domain",
           "learning_design",
           "source_refs",
+          "glossary",
           "modules"
         ],
         "properties": {
@@ -2249,6 +4044,13 @@
               "null"
             ],
             "description": "Official exam guide revision."
+          },
+          "glossary": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GlossaryTerm"
+            },
+            "description": "Clickable terms with short explanations, highlighted in learner text."
           },
           "learning_design": {
             "$ref": "#/components/schemas/LearningDesign",
@@ -2552,7 +4354,9 @@
         "description": "Safe application account data for the signed-in learner.",
         "required": [
           "id",
-          "authenticated"
+          "authenticated",
+          "streak",
+          "settings"
         ],
         "properties": {
           "authenticated": {
@@ -2570,6 +4374,14 @@
             "type": "string",
             "format": "uuid",
             "description": "Internal application user id. The stable ownership key."
+          },
+          "settings": {
+            "$ref": "#/components/schemas/UserSettingsDto",
+            "description": "Learner study settings."
+          },
+          "streak": {
+            "$ref": "#/components/schemas/StreakDto",
+            "description": "Account-wide daily study streak.\n\nBundled here so the Track Hub does not need a separate streak request.\nBest-effort: a streak query failure returns a neutral streak and never\nfails authentication."
           }
         }
       },
@@ -2647,6 +4459,49 @@
           }
         }
       },
+      "MissionReviewResponse": {
+        "type": "object",
+        "description": "Read-only review of a completed mission.\n\nLets a learner revisit the questions and answers of completed work without\nredoing it. It is never learning evidence.",
+        "required": [
+          "mission_id",
+          "mode",
+          "questions",
+          "attempts"
+        ],
+        "properties": {
+          "attempts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewedAttempt"
+            },
+            "description": "Accepted attempts for this mission."
+          },
+          "completed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Completion time, when completed."
+          },
+          "mission_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Mission identifier."
+          },
+          "mode": {
+            "$ref": "#/components/schemas/QuizMode",
+            "description": "Quiz mode the mission used."
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewedQuestion"
+            },
+            "description": "Questions in presentation order, with canonical answers."
+          }
+        }
+      },
       "MissionStatus": {
         "type": "string",
         "description": "Lifecycle of a server-issued mission.",
@@ -2654,6 +4509,96 @@
           "issued",
           "completed"
         ]
+      },
+      "ModeSignal": {
+        "type": "object",
+        "description": "One assessment mode's signal for a node.",
+        "required": [
+          "assessment_mode",
+          "evidence_level",
+          "freshness_state"
+        ],
+        "properties": {
+          "assessment_mode": {
+            "$ref": "#/components/schemas/AssessmentMode",
+            "description": "Evidence mode this signal measures."
+          },
+          "evidence_level": {
+            "$ref": "#/components/schemas/EvidenceLevel",
+            "description": "Amount-of-evidence level in this mode."
+          },
+          "freshness_state": {
+            "$ref": "#/components/schemas/FreshnessState",
+            "description": "Freshness of the evidence in this mode."
+          }
+        }
+      },
+      "ModelEvaluationResponse": {
+        "type": "object",
+        "description": "Internal calibration summary for one model version.\n\nAnalytics only: no per-user data is exposed.",
+        "required": [
+          "model_version",
+          "samples",
+          "calibration",
+          "slices"
+        ],
+        "properties": {
+          "brier_score": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Brier score over all samples."
+          },
+          "calibration": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalibrationBucketDto"
+            },
+            "description": "Calibration buckets."
+          },
+          "log_loss": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Log loss over all samples."
+          },
+          "mean_observed": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Mean observed score."
+          },
+          "mean_prediction": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Mean predicted probability."
+          },
+          "model_version": {
+            "type": "string",
+            "description": "Model version evaluated, for example `heuristic-v1`."
+          },
+          "samples": {
+            "type": "integer",
+            "description": "Number of resolved prediction/outcome pairs.",
+            "minimum": 0
+          },
+          "slices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvaluationSliceDto"
+            },
+            "description": "Metrics sliced by assessment mode, source, track, domain, difficulty,\nspacing, and delayed-retrieval flag."
+          }
+        }
       },
       "Node": {
         "type": "object",
@@ -2682,6 +4627,42 @@
             "type": "number",
             "format": "double",
             "description": "Vertical position in an abstract `0..=1` layout space."
+          }
+        }
+      },
+      "NodeProgressDto": {
+        "type": "object",
+        "description": "Knowledge Signal for one knowledge node.",
+        "required": [
+          "node_id",
+          "discovery_state",
+          "evidence_level",
+          "freshness_state",
+          "mode_signals"
+        ],
+        "properties": {
+          "discovery_state": {
+            "$ref": "#/components/schemas/DiscoveryState",
+            "description": "Whether the learner explored the node's content."
+          },
+          "evidence_level": {
+            "$ref": "#/components/schemas/EvidenceLevel",
+            "description": "Amount of scored evidence (coarse; never a percentage)."
+          },
+          "freshness_state": {
+            "$ref": "#/components/schemas/FreshnessState",
+            "description": "Freshness of that evidence (outer-ring treatment only)."
+          },
+          "mode_signals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModeSignal"
+            },
+            "description": "Per-assessment-mode signals, present only for modes with evidence."
+          },
+          "node_id": {
+            "type": "string",
+            "description": "Knowledge node identifier."
           }
         }
       },
@@ -2759,6 +4740,413 @@
           }
         }
       },
+      "PlannerAction": {
+        "type": "string",
+        "description": "A next action the learner can take.",
+        "enum": [
+          "learn_node",
+          "review_node",
+          "practice_question",
+          "practice_domain"
+        ]
+      },
+      "PracticeTestAnswerRequest": {
+        "type": "object",
+        "description": "The learner's answer to one practice-test item.",
+        "required": [
+          "question_id",
+          "answer"
+        ],
+        "properties": {
+          "answer": {
+            "$ref": "#/components/schemas/AnswerPayload",
+            "description": "Answer primitives, keyed by the question's interaction type."
+          },
+          "question_id": {
+            "type": "string",
+            "description": "Question being answered."
+          }
+        }
+      },
+      "PracticeTestDomainResult": {
+        "type": "object",
+        "description": "Scored accuracy for one exam domain, over scored items only.",
+        "required": [
+          "domain_id",
+          "correct",
+          "scored_count"
+        ],
+        "properties": {
+          "correct": {
+            "type": "integer",
+            "description": "Scored items answered correctly in this domain.",
+            "minimum": 0
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "Domain identifier."
+          },
+          "scored_count": {
+            "type": "integer",
+            "description": "Scored items in this domain.",
+            "minimum": 0
+          }
+        }
+      },
+      "PracticeTestItemResult": {
+        "type": "object",
+        "description": "One reviewed practice-test item, available only after submission.",
+        "required": [
+          "order",
+          "question_id",
+          "domain_id",
+          "task_id",
+          "prompt",
+          "interaction_type",
+          "assessment_mode",
+          "interaction",
+          "canonical_answer",
+          "explanation",
+          "choice_feedback",
+          "is_scored",
+          "answered"
+        ],
+        "properties": {
+          "answered": {
+            "type": "boolean",
+            "description": "Whether the learner submitted any answer."
+          },
+          "assessment_mode": {
+            "$ref": "#/components/schemas/AssessmentMode",
+            "description": "Evidence mode."
+          },
+          "canonical_answer": {
+            "$ref": "#/components/schemas/CanonicalAnswer",
+            "description": "Canonical answer, safe to reveal after submission."
+          },
+          "choice_feedback": {
+            "type": "object",
+            "description": "Per-choice feedback keyed by choice id, safe after submission.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "correct": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the submission was fully correct; `None` when unanswered."
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "Owning domain."
+          },
+          "explanation": {
+            "type": "string",
+            "description": "Short explanation."
+          },
+          "instruction": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional authored instruction."
+          },
+          "interaction": {
+            "$ref": "#/components/schemas/Interaction",
+            "description": "Interaction definition, used to render labels in review."
+          },
+          "interaction_type": {
+            "$ref": "#/components/schemas/InteractionType",
+            "description": "Interaction family."
+          },
+          "is_scored": {
+            "type": "boolean",
+            "description": "Whether the item counts toward the practice score."
+          },
+          "order": {
+            "type": "integer",
+            "format": "int64",
+            "description": "1-based authored position."
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Learner-facing prompt."
+          },
+          "question_id": {
+            "type": "string",
+            "description": "Question identifier."
+          },
+          "submitted_answer": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AnswerPayload",
+                "description": "The learner's submitted answer, when any."
+              }
+            ]
+          },
+          "task_id": {
+            "type": "string",
+            "description": "Owning task."
+          }
+        }
+      },
+      "PracticeTestItemView": {
+        "type": "object",
+        "description": "One learner-safe practice-test item, before submission.\n\nNo answer key, per-choice feedback, or scored flag is present.",
+        "required": [
+          "order",
+          "question"
+        ],
+        "properties": {
+          "order": {
+            "type": "integer",
+            "format": "int64",
+            "description": "1-based authored position."
+          },
+          "question": {
+            "$ref": "#/components/schemas/QuestionView",
+            "description": "The question to present, in authored order."
+          }
+        }
+      },
+      "PracticeTestListResponse": {
+        "type": "object",
+        "description": "Practice tests available for one certification.",
+        "required": [
+          "practice_tests"
+        ],
+        "properties": {
+          "practice_tests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PracticeTestSummaryDto"
+            },
+            "description": "Available practice tests."
+          }
+        }
+      },
+      "PracticeTestResponse": {
+        "type": "object",
+        "description": "Learner-safe practice-test content served before submission.",
+        "required": [
+          "id",
+          "title",
+          "exam_code",
+          "certification_version",
+          "content_version",
+          "time_limit_minutes",
+          "question_count",
+          "scored_question_count",
+          "question_types",
+          "items"
+        ],
+        "properties": {
+          "certification_version": {
+            "type": "string",
+            "description": "Certification version identifier."
+          },
+          "content_version": {
+            "type": "string",
+            "description": "Immutable content version."
+          },
+          "exam_code": {
+            "type": "string",
+            "description": "Official exam code."
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable practice-test identifier."
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PracticeTestItemView"
+            },
+            "description": "Items in authored presentation order."
+          },
+          "question_count": {
+            "type": "integer",
+            "description": "Total authored items.",
+            "minimum": 0
+          },
+          "question_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Response types present."
+          },
+          "scored_question_count": {
+            "type": "integer",
+            "description": "Items that count toward the practice score.",
+            "minimum": 0
+          },
+          "time_limit_minutes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Exam time limit in minutes."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing title."
+          }
+        }
+      },
+      "PracticeTestResultResponse": {
+        "type": "object",
+        "description": "Full practice-test result and review, available only after submission.",
+        "required": [
+          "id",
+          "title",
+          "exam_code",
+          "total_questions",
+          "scored_question_count",
+          "correct_count",
+          "raw_accuracy",
+          "answered_count",
+          "unanswered_count",
+          "domain_breakdown",
+          "questions",
+          "score_note"
+        ],
+        "properties": {
+          "answered_count": {
+            "type": "integer",
+            "description": "Items with a submitted answer.",
+            "minimum": 0
+          },
+          "correct_count": {
+            "type": "integer",
+            "description": "Scored items answered correctly.",
+            "minimum": 0
+          },
+          "domain_breakdown": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PracticeTestDomainResult"
+            },
+            "description": "Per-domain scored accuracy, derived from authored content."
+          },
+          "exam_code": {
+            "type": "string",
+            "description": "Official exam code."
+          },
+          "id": {
+            "type": "string",
+            "description": "Practice-test identifier."
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PracticeTestItemResult"
+            },
+            "description": "Per-item review in authored order."
+          },
+          "raw_accuracy": {
+            "type": "number",
+            "format": "double",
+            "description": "Raw accuracy across scored items, in `[0, 1]`."
+          },
+          "score_note": {
+            "type": "string",
+            "description": "Explicit note that this raw score is not an AWS scaled score."
+          },
+          "scored_question_count": {
+            "type": "integer",
+            "description": "Items that count toward the practice score.",
+            "minimum": 0
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing title."
+          },
+          "total_questions": {
+            "type": "integer",
+            "description": "Total authored items.",
+            "minimum": 0
+          },
+          "unanswered_count": {
+            "type": "integer",
+            "description": "Items without a submitted answer.",
+            "minimum": 0
+          }
+        }
+      },
+      "PracticeTestSubmissionRequest": {
+        "type": "object",
+        "description": "One-shot submission of a practice-test attempt.\n\nAnswers are keyed by question id; unanswered items are simply omitted.",
+        "properties": {
+          "answers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PracticeTestAnswerRequest"
+            },
+            "description": "Submitted answers, at most one per question."
+          }
+        }
+      },
+      "PracticeTestSummaryDto": {
+        "type": "object",
+        "description": "Summary of one available practice test (exam simulation).\n\nMetadata only: it never contains questions or answers. The scored count is\nan aggregate and does not reveal which items are unscored.",
+        "required": [
+          "id",
+          "title",
+          "exam_code",
+          "certification_version",
+          "time_limit_minutes",
+          "question_count",
+          "scored_question_count",
+          "question_types"
+        ],
+        "properties": {
+          "certification_version": {
+            "type": "string",
+            "description": "Certification version identifier."
+          },
+          "exam_code": {
+            "type": "string",
+            "description": "Official exam code."
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable practice-test identifier."
+          },
+          "question_count": {
+            "type": "integer",
+            "description": "Total authored items.",
+            "minimum": 0
+          },
+          "question_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Response types present, for example `multiple_choice`."
+          },
+          "scored_question_count": {
+            "type": "integer",
+            "description": "Items that count toward the practice score.",
+            "minimum": 0
+          },
+          "time_limit_minutes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Exam time limit in minutes."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing title."
+          }
+        }
+      },
       "PromptKind": {
         "type": "string",
         "description": "The shared prompt vocabulary. Icons are selected by the UI from this kind,\nso content can change labels without the renderer special-casing nodes.",
@@ -2820,6 +5208,13 @@
             "type": "string",
             "description": "Question identifier."
           },
+          "instruction": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional authored instruction shown with the prompt, for example\n`Choose TWO.`. Never reveals the answer."
+          },
           "interaction": {
             "$ref": "#/components/schemas/Interaction",
             "description": "Interaction definition."
@@ -2845,8 +5240,215 @@
           "quick_adaptive",
           "domain_quiz",
           "full_practice",
-          "task_practice"
+          "task_practice",
+          "recommended_practice"
         ]
+      },
+      "Recommendation": {
+        "type": "object",
+        "description": "A structured, explainable recommendation.",
+        "required": [
+          "action",
+          "reason",
+          "track_id",
+          "domain_id",
+          "domain_name",
+          "concept_ids",
+          "title"
+        ],
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/PlannerAction",
+            "description": "Action to take."
+          },
+          "assessment_mode": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AssessmentMode",
+                "description": "Assessment mode the recommendation is measured in, when known."
+              }
+            ]
+          },
+          "concept_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Concepts the recommendation targets."
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "Domain/topic the action belongs to."
+          },
+          "domain_name": {
+            "type": "string",
+            "description": "Learner-facing domain name."
+          },
+          "node_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Knowledge node to open, when the action is node-based."
+          },
+          "node_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Learner-facing node title, when the action is node-based."
+          },
+          "question_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Question to practice, when the action targets one."
+          },
+          "reason": {
+            "$ref": "#/components/schemas/RecommendationReason",
+            "description": "Why this action was chosen."
+          },
+          "title": {
+            "type": "string",
+            "description": "Short learner-facing title, for example `Learn tensor broadcasting`."
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track the recommendation belongs to."
+          }
+        }
+      },
+      "RecommendationEventKind": {
+        "type": "string",
+        "description": "A recommendation lifecycle stage.",
+        "enum": [
+          "shown",
+          "clicked",
+          "started",
+          "node_opened",
+          "completed"
+        ]
+      },
+      "RecommendationEventRequest": {
+        "type": "object",
+        "description": "One recommendation lifecycle event.",
+        "required": [
+          "event"
+        ],
+        "properties": {
+          "action": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlannerAction",
+                "description": "Planner action the recommendation had, when known."
+              }
+            ]
+          },
+          "domain_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Domain/topic, when known."
+          },
+          "event": {
+            "$ref": "#/components/schemas/RecommendationEventKind",
+            "description": "Lifecycle stage being reported."
+          },
+          "event_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Stable client-generated id for idempotent retries. Generated by the\nserver when absent."
+          },
+          "node_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Knowledge node, when known."
+          },
+          "question_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Question, when known."
+          }
+        }
+      },
+      "RecommendationEventResponse": {
+        "type": "object",
+        "description": "Result of recording a lifecycle event.\n\n`recorded` is `false` when the auxiliary write failed; the request still\nsucceeds because telemetry must never block learning.",
+        "required": [
+          "recorded"
+        ],
+        "properties": {
+          "recorded": {
+            "type": "boolean",
+            "description": "Whether the event was persisted."
+          }
+        }
+      },
+      "RecommendationReason": {
+        "type": "string",
+        "description": "A stable, explainable reason code for a recommendation.",
+        "enum": [
+          "cold_start",
+          "weak_concept",
+          "weak_prerequisite",
+          "needs_practice",
+          "stale_knowledge",
+          "domain_review",
+          "strong_and_fresh"
+        ]
+      },
+      "RecommendationRequest": {
+        "type": "object",
+        "description": "Request body for a recommendation.\n\nDiscovery progress is optional and best-effort: it lets the planner mirror\nthe Knowledge Map's exact unlock semantics. It is never learning evidence.",
+        "properties": {
+          "discovery": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDiscoveryInput"
+            },
+            "description": "Raw Knowledge Map discovery progress for the track, if available."
+          }
+        }
+      },
+      "RecommendationResponse": {
+        "type": "object",
+        "description": "Best-effort next-action recommendation for a learning track.\n\nRecommendations are optional and explainable. `recommendation` is `null` when\nthe track has nothing actionable yet, and the field is never required for the\ndashboard to render.",
+        "properties": {
+          "recommendation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Recommendation",
+                "description": "The chosen recommendation, or `null` when none is available."
+              }
+            ]
+          },
+          "recommendation_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Stable id for this recommendation, used by lifecycle telemetry. `null`\nonly when no recommendation was produced."
+          }
+        }
       },
       "ReconstructionAnswerPayload": {
         "type": "object",
@@ -2979,6 +5581,112 @@
           }
         }
       },
+      "ReviewedAttempt": {
+        "type": "object",
+        "description": "One accepted attempt in a read-only mission review.",
+        "required": [
+          "question_id",
+          "attempt_number",
+          "score",
+          "correct",
+          "hint_count",
+          "occurred_at"
+        ],
+        "properties": {
+          "attempt_number": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Server-derived attempt number."
+          },
+          "correct": {
+            "type": "boolean",
+            "description": "Whether the attempt cleared the success threshold."
+          },
+          "hint_count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Hints used."
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the attempt occurred."
+          },
+          "question_id": {
+            "type": "string",
+            "description": "Question answered."
+          },
+          "score": {
+            "type": "number",
+            "format": "double",
+            "description": "Accepted partial score in `[0, 1]`."
+          }
+        }
+      },
+      "ReviewedQuestion": {
+        "type": "object",
+        "description": "One question in a read-only mission review.\n\nCanonical answers are included because the mission is already completed;\nreview never creates evidence or changes scores.",
+        "required": [
+          "id",
+          "domain_id",
+          "task_id",
+          "prompt",
+          "assessment_mode",
+          "interaction",
+          "concepts",
+          "canonical_answer",
+          "explanation",
+          "hints"
+        ],
+        "properties": {
+          "assessment_mode": {
+            "$ref": "#/components/schemas/AssessmentMode",
+            "description": "Evidence mode."
+          },
+          "canonical_answer": {
+            "$ref": "#/components/schemas/CanonicalAnswer",
+            "description": "Canonical answer, safe to show after completion."
+          },
+          "concepts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConceptWeight"
+            },
+            "description": "Concept mappings."
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "Owning domain."
+          },
+          "explanation": {
+            "type": "string",
+            "description": "Short explanation."
+          },
+          "hints": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional hints."
+          },
+          "id": {
+            "type": "string",
+            "description": "Question identifier."
+          },
+          "interaction": {
+            "$ref": "#/components/schemas/Interaction",
+            "description": "Interaction definition, used to render labels in review."
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Learner-facing prompt."
+          },
+          "task_id": {
+            "type": "string",
+            "description": "Owning task."
+          }
+        }
+      },
       "ScenarioStage": {
         "type": "string",
         "description": "The operational stage a branching-scenario decision belongs to.\n\nThe stage is used only to attach a structured error code to a poor decision;\nit is not a measure of overall mastery.",
@@ -3031,6 +5739,90 @@
           }
         }
       },
+      "SessionActivity": {
+        "type": "object",
+        "description": "One planned activity.",
+        "required": [
+          "kind",
+          "domain_id",
+          "domain_name",
+          "question_ids",
+          "concept_ids",
+          "title",
+          "estimated_minutes"
+        ],
+        "properties": {
+          "concept_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Concepts the activity targets."
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "Owning domain/topic."
+          },
+          "domain_name": {
+            "type": "string",
+            "description": "Learner-facing domain name."
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Estimated minutes for this activity.",
+            "minimum": 0
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SessionActivityKind",
+            "description": "Activity kind."
+          },
+          "node_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Knowledge node, for node activities."
+          },
+          "node_title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Learner-facing node title, for node activities."
+          },
+          "question_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Server-selected questions, for `practice` activities. The client never\nsupplies these; it only anchors the mission on the first one."
+          },
+          "title": {
+            "type": "string",
+            "description": "Short learner-facing title, for example `Review VPC route tables`."
+          }
+        }
+      },
+      "SessionActivityKind": {
+        "type": "string",
+        "description": "What one session activity asks the learner to do.",
+        "enum": [
+          "learn_node",
+          "review_node",
+          "practice",
+          "practice_domain"
+        ]
+      },
+      "SessionPreference": {
+        "type": "string",
+        "description": "How the learner wants a session balanced.",
+        "enum": [
+          "balanced",
+          "more_practice",
+          "more_learning"
+        ]
+      },
       "SourceRef": {
         "type": "object",
         "description": "A reference to the official source of a content unit.",
@@ -3046,6 +5838,125 @@
           "url": {
             "type": "string",
             "description": "URL."
+          }
+        }
+      },
+      "StreakDto": {
+        "type": "object",
+        "description": "Account-wide daily study streak.\n\nMotivational only: it never feeds concept state, scoring, or rewards. It\nspans every learning track.",
+        "required": [
+          "current",
+          "longest",
+          "active_today"
+        ],
+        "properties": {
+          "active_today": {
+            "type": "boolean",
+            "description": "Whether today is already a qualified study day."
+          },
+          "current": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Consecutive active days ending today or yesterday.",
+            "minimum": 0
+          },
+          "last_active_day": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Most recent qualified local day, `YYYY-MM-DD`, when any."
+          },
+          "longest": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Longest consecutive run ever recorded.",
+            "minimum": 0
+          }
+        }
+      },
+      "StudySession": {
+        "type": "object",
+        "description": "A planned study session.",
+        "required": [
+          "track_id",
+          "estimated_minutes",
+          "activities"
+        ],
+        "properties": {
+          "activities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionActivity"
+            },
+            "description": "Ordered activities."
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Estimated total minutes.",
+            "minimum": 0
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track the session belongs to."
+          }
+        }
+      },
+      "StudySessionRequest": {
+        "type": "object",
+        "description": "Request body for an adaptive study session.\n\nSession planning is optional; a failed request never blocks the dashboard.",
+        "properties": {
+          "available_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Requested approximate session length in minutes. Clamped to a sane range.",
+            "minimum": 0
+          },
+          "discovery": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDiscoveryInput"
+            },
+            "description": "Raw Knowledge Map discovery progress for the track, if available."
+          },
+          "preference": {
+            "$ref": "#/components/schemas/SessionPreference",
+            "description": "How to balance learning and retrieval practice."
+          }
+        }
+      },
+      "StudySessionResponse": {
+        "type": "object",
+        "description": "A planned study session.",
+        "required": [
+          "session_id",
+          "track_id",
+          "estimated_minutes",
+          "activities"
+        ],
+        "properties": {
+          "activities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionActivity"
+            },
+            "description": "Ordered activities. Empty when nothing is actionable; the client then\nbuilds a standard non-adaptive session."
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Estimated total minutes.",
+            "minimum": 0
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Stable id for this session, used by auxiliary telemetry."
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track the session belongs to."
           }
         }
       },
@@ -3142,11 +6053,15 @@
       },
       "SyncRequest": {
         "type": "object",
-        "description": "Request to sync a batch of evaluated attempts.",
-        "required": [
-          "events"
-        ],
+        "description": "Request to sync a batch of evaluated attempts.\n\nThe request may also carry optional auxiliary sections. They share one HTTP\nrequest to reduce chatter, but their transactional semantics are isolated:\nan auxiliary failure never rejects or rolls back accepted learning events.",
         "properties": {
+          "auxiliary_events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuxiliaryEventRequest"
+            },
+            "description": "Optional recommendation lifecycle telemetry. Never authoritative.\n\nDeserialized leniently for the same reason as `discovery_updates`."
+          },
           "device_id": {
             "type": [
               "string",
@@ -3155,12 +6070,26 @@
             "format": "uuid",
             "description": "Device/install context. Ownership comes from the authenticated user."
           },
+          "discovery_updates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryUpdateRequest"
+            },
+            "description": "Optional Knowledge Map discovery deltas. Never learning evidence.\n\nDeserialized leniently: a malformed entry is dropped rather than failing\nthe whole request, so it can never block accepted learning events."
+          },
           "events": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SyncEventRequest"
             },
-            "description": "Attempts to reconcile."
+            "description": "Attempts to reconcile. Strict: authoritative events must be well-formed."
+          },
+          "timezone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Client IANA timezone. Captured once if absent so the account-wide study\nstreak uses the learner's local day boundary, matching Daily Missions."
           }
         }
       },
@@ -3169,13 +6098,23 @@
         "description": "Result of a sync batch.",
         "required": [
           "results",
-          "bits_balance"
+          "bits_balance",
+          "discovery",
+          "auxiliary"
         ],
         "properties": {
+          "auxiliary": {
+            "$ref": "#/components/schemas/SyncSectionResult",
+            "description": "Disposition of the optional auxiliary telemetry section."
+          },
           "bits_balance": {
             "type": "integer",
             "format": "int64",
             "description": "Authoritative settled Bits balance after this batch."
+          },
+          "discovery": {
+            "$ref": "#/components/schemas/SyncSectionResult",
+            "description": "Disposition of the optional discovery section."
           },
           "results": {
             "type": "array",
@@ -3183,6 +6122,19 @@
               "$ref": "#/components/schemas/SyncEventResult"
             },
             "description": "Per-event results."
+          }
+        }
+      },
+      "SyncSectionResult": {
+        "type": "object",
+        "description": "Disposition of one optional sync section.\n\n`accepted` is `false` when the auxiliary work failed; the request still\nsucceeds and the client only retains the failed section for retry.",
+        "required": [
+          "accepted"
+        ],
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "description": "Whether the section was persisted."
           }
         }
       },
@@ -3260,6 +6212,68 @@
             "type": "integer",
             "description": "Number of authored questions available.",
             "minimum": 0
+          }
+        }
+      },
+      "TrackMapResponse": {
+        "type": "object",
+        "description": "All learner-facing learning content for one learning track.\n\nThis is a read-only aggregate over authored content so the Track Hub can\nrender one track-wide Knowledge Map without a request per domain. It carries\nno scored answers and no learner state.",
+        "required": [
+          "track_id",
+          "track_version",
+          "content_version",
+          "domains"
+        ],
+        "properties": {
+          "content_version": {
+            "type": "string",
+            "description": "Immutable learning content version."
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearningDomainResponse"
+            },
+            "description": "Learning domains with modules, nodes, and reveals."
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track identifier."
+          },
+          "track_version": {
+            "type": "string",
+            "description": "Learning track version identifier."
+          }
+        }
+      },
+      "TrackProgressResponse": {
+        "type": "object",
+        "description": "Aggregate Knowledge Signal for one learning track.\n\nOne request returns every domain and node so the Track Hub never fetches\nper-node state. Coarse semantic states only: no raw model probabilities,\npercentages, or pass estimates.",
+        "required": [
+          "track_id",
+          "track_version",
+          "content_version",
+          "domains"
+        ],
+        "properties": {
+          "content_version": {
+            "type": "string",
+            "description": "Immutable learning content version."
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainProgressDto"
+            },
+            "description": "Per-domain node signals."
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track identifier."
+          },
+          "track_version": {
+            "type": "string",
+            "description": "Learning track version identifier."
           }
         }
       },
@@ -3496,6 +6510,32 @@
           }
         }
       },
+      "UpdateSettingsRequest": {
+        "type": "object",
+        "description": "Request to update learner study settings.",
+        "required": [
+          "unlock_all_materials"
+        ],
+        "properties": {
+          "unlock_all_materials": {
+            "type": "boolean",
+            "description": "Whether all study materials should be unlocked."
+          }
+        }
+      },
+      "UserSettingsDto": {
+        "type": "object",
+        "description": "Learner study settings.",
+        "required": [
+          "unlock_all_materials"
+        ],
+        "properties": {
+          "unlock_all_materials": {
+            "type": "boolean",
+            "description": "Whether the learner unlocks all study materials instead of the guided,\nin-order path. A preference only; it never affects scoring or evidence."
+          }
+        }
+      },
       "WalletResponse": {
         "type": "object",
         "description": "A learner's settled Bits balance.\n\nThe wallet is owned by the authenticated user, so it is read from the token\nrather than from a client-supplied identifier.",
@@ -3539,8 +6579,24 @@
       "description": "Pre-quiz knowledge maps and discovery progress"
     },
     {
+      "name": "recommendations",
+      "description": "Optional next-action recommendations for a track"
+    },
+    {
+      "name": "daily-missions",
+      "description": "Immutable daily study missions and their progress"
+    },
+    {
+      "name": "internal",
+      "description": "Internal, aggregate-only analytics"
+    },
+    {
       "name": "missions",
       "description": "Mission issuance, scoring, and completion"
+    },
+    {
+      "name": "practice-tests",
+      "description": "Fixed-order exam simulations with delayed feedback"
     },
     {
       "name": "sync",

@@ -1,5 +1,5 @@
 use adaptive_learn_domain::{
-    AssessmentMode, ConceptWeight, InteractionType, LearningEvent, reward_bits,
+    AssessmentMode, ConceptObservation, ConceptWeight, InteractionType, LearningEvent, reward_bits,
 };
 use chrono::{DateTime, Utc};
 use sqlx::PgPool;
@@ -21,6 +21,7 @@ struct LearningEventRow {
     task_id: String,
     question_id: String,
     content_version: String,
+    difficulty_prior: f64,
     concepts: Json<Vec<ConceptWeight>>,
     assessment_mode: String,
     interaction_type: String,
@@ -47,6 +48,7 @@ impl TryFrom<LearningEventRow> for LearningEvent {
             task_id: row.task_id,
             question_id: row.question_id,
             content_version: row.content_version,
+            difficulty_prior: row.difficulty_prior,
             concepts: row.concepts.0,
             assessment_mode: AssessmentMode::try_from(row.assessment_mode.as_str())?,
             interaction_type: InteractionType::try_from(row.interaction_type.as_str())?,
@@ -67,34 +69,36 @@ pub struct UserHistoryEntry {
     pub question_id: String,
     /// Accepted partial score in `[0, 1]`.
     pub score: f64,
+    /// Assessment/evidence mode the attempt was collected in.
+    pub assessment_mode: AssessmentMode,
     /// When the attempt occurred on the device.
     pub occurred_at: DateTime<Utc>,
-    /// Concept ids mapped to the question.
-    pub concepts: Vec<String>,
+    /// Concept mappings with their authored weights.
+    pub concepts: Vec<ConceptWeight>,
 }
 
 #[derive(sqlx::FromRow)]
 struct HistoryRow {
     question_id: String,
     score: f64,
+    assessment_mode: String,
     occurred_at: DateTime<Utc>,
     concepts: Json<Vec<ConceptWeight>>,
 }
 
 /// Accepts a learning event, assigns the next server-derived attempt number,
-/// and settles Bits for it in one transaction.
+/// settles Bits for it, and advances the derived concept state in one
+/// transaction.
 ///
 /// The mission row is locked so concurrent syncs cannot assign the same attempt
 /// number. Returns the attempt number when the event was newly inserted, or
-/// `None` when the `event_id` already existed (idempotent retry).
+/// `None` when the `event_id` already existed (idempotent retry). Duplicate
+/// events therefore never settle Bits or update concept state twice.
 ///
 /// Anonymous demo events (`user_id = None`) are recorded as evidence but never
-/// settle a wallet: there is no account to own the Bits.
-pub async fn accept_answer(
-    pool: &PgPool,
-    event: &LearningEvent,
-    difficulty_prior: f64,
-) -> Result<Option<i32>, DbError> {
+/// settle a wallet or create derived user state: there is no account to own
+/// either.
+pub async fn accept_answer(pool: &PgPool, event: &LearningEvent) -> Result<Option<i32>, DbError> {
     let mut tx = pool.begin().await?;
     crate::missions::lock_for_update(&mut *tx, event.mission_instance_id).await?;
 
@@ -112,10 +116,10 @@ pub async fn accept_answer(
     let inserted = sqlx::query_scalar::<_, Uuid>(
         "INSERT INTO learning_events
             (event_id, user_id, device_id, mission_instance_id, certification_id,
-             certification_version, domain_id, task_id, question_id, content_version, concepts,
-             assessment_mode, interaction_type, score, attempt_number, hint_count, response_ms,
-             structured_error_codes, occurred_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+             certification_version, domain_id, task_id, question_id, content_version,
+             difficulty_prior, concepts, assessment_mode, interaction_type, score,
+             attempt_number, hint_count, response_ms, structured_error_codes, occurred_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
          ON CONFLICT (event_id) DO NOTHING
          RETURNING event_id",
     )
@@ -129,6 +133,7 @@ pub async fn accept_answer(
     .bind(&event.task_id)
     .bind(&event.question_id)
     .bind(&event.content_version)
+    .bind(event.difficulty_prior)
     .bind(Json(&event.concepts))
     .bind(event.assessment_mode.as_str())
     .bind(event.interaction_type.as_str())
@@ -146,10 +151,10 @@ pub async fn accept_answer(
         return Ok(None);
     }
 
-    // Settlement requires an owning account. Anonymous demo attempts only
-    // produce evidence.
+    // Settlement and derived state require an owning account. Anonymous demo
+    // attempts only produce evidence.
     if let Some(user_id) = event.user_id {
-        let amount = reward_bits(attempt_number, event.score, difficulty_prior);
+        let amount = reward_bits(attempt_number, event.score, event.difficulty_prior);
         let reason = if attempt_number <= 1 {
             "first_attempt"
         } else {
@@ -165,6 +170,26 @@ pub async fn accept_answer(
             reason: reason.to_owned(),
         };
         wallets::settle(&mut tx, &transaction).await?;
+
+        // Accepted events are authoritative; this is only a derived cache. The
+        // server-derived attempt number is used, never the client's claim.
+        // Concepts are applied in id order so two concurrent events that share
+        // concepts always acquire row locks in the same order.
+        let mut concepts: Vec<&ConceptWeight> = event.concepts.iter().collect();
+        concepts.sort_by(|a, b| a.concept_id.cmp(&b.concept_id));
+        for concept in concepts {
+            let observation = ConceptObservation {
+                user_id,
+                certification_version: &event.certification_version,
+                concept,
+                assessment_mode: event.assessment_mode,
+                score: event.score,
+                attempt_number,
+                hint_count: event.hint_count,
+                occurred_at: event.occurred_at,
+            };
+            crate::concept_state::apply(&mut tx, &observation).await?;
+        }
     }
 
     tx.commit().await?;
@@ -180,7 +205,7 @@ pub async fn recent_for_user(
     limit: i64,
 ) -> Result<Vec<UserHistoryEntry>, DbError> {
     let rows = sqlx::query_as::<_, HistoryRow>(
-        "SELECT question_id, score, occurred_at, concepts
+        "SELECT question_id, score, assessment_mode, occurred_at, concepts
          FROM learning_events
          WHERE user_id = $1 AND certification_id = $2
          ORDER BY received_at DESC
@@ -192,15 +217,17 @@ pub async fn recent_for_user(
     .fetch_all(pool)
     .await?;
 
-    Ok(rows
-        .into_iter()
-        .map(|row| UserHistoryEntry {
-            question_id: row.question_id,
-            score: row.score,
-            occurred_at: row.occurred_at,
-            concepts: row.concepts.0.into_iter().map(|c| c.concept_id).collect(),
+    rows.into_iter()
+        .map(|row| {
+            Ok(UserHistoryEntry {
+                question_id: row.question_id,
+                score: row.score,
+                assessment_mode: AssessmentMode::try_from(row.assessment_mode.as_str())?,
+                occurred_at: row.occurred_at,
+                concepts: row.concepts.0,
+            })
         })
-        .collect())
+        .collect()
 }
 
 /// Lists accepted events for a mission in occurrence order.
@@ -210,9 +237,9 @@ pub async fn list_for_mission(
 ) -> Result<Vec<LearningEvent>, DbError> {
     let rows = sqlx::query_as::<_, LearningEventRow>(
         "SELECT event_id, user_id, device_id, mission_instance_id, certification_id,
-                certification_version, domain_id, task_id, question_id, content_version, concepts,
-                assessment_mode, interaction_type, score, attempt_number, hint_count, response_ms,
-                structured_error_codes, occurred_at
+                certification_version, domain_id, task_id, question_id, content_version,
+                difficulty_prior, concepts, assessment_mode, interaction_type, score,
+                attempt_number, hint_count, response_ms, structured_error_codes, occurred_at
          FROM learning_events
          WHERE mission_instance_id = $1
          ORDER BY occurred_at, attempt_number",

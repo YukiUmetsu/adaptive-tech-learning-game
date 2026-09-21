@@ -1,11 +1,37 @@
 //! Registry behavior for the embedded SOA-C03 bundle.
 
-use adaptive_learn_content::ContentRegistry;
+use adaptive_learn_content::{ContentRegistry, EMBEDDED_PRACTICE_TEST_SOURCES, EMBEDDED_SOURCES};
 
 #[test]
 fn embedded_registry_loads_and_validates() {
     let registry = ContentRegistry::embedded().expect("embedded content must be valid");
     assert!(!registry.bundles().is_empty());
+}
+
+#[test]
+fn embedded_lenient_loads_without_errors() {
+    let (registry, errors) = ContentRegistry::embedded_lenient();
+    assert!(
+        errors.is_empty(),
+        "embedded content must be valid: {errors:?}"
+    );
+    assert!(!registry.bundles().is_empty());
+}
+
+#[test]
+fn practice_tests_are_their_own_content_type() {
+    assert!(
+        EMBEDDED_PRACTICE_TEST_SOURCES
+            .iter()
+            .any(|source| source.path.contains("practice-tests/")),
+        "practice tests are embedded as their own content type"
+    );
+    assert!(
+        EMBEDDED_SOURCES
+            .iter()
+            .all(|source| !source.path.contains("practice-tests/")),
+        "practice tests must never be parsed as scored quiz bundles"
+    );
 }
 
 #[test]

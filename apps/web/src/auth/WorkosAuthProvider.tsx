@@ -154,11 +154,15 @@ function WorkosBridge({
     signOut({ returnTo: window.location.origin });
   }, [signOut]);
 
+  // Register the token getter during render so the first child effects (wallet,
+  // Daily Mission, recommendation) can attach a bearer token. React runs child
+  // effects before parent effects, so an effect-only registration would let the
+  // first protected requests go out unauthenticated. The getter is re-registered
+  // every render and cleared only on unmount.
+  setAccessTokenProvider(getToken);
   useEffect(() => {
-    setAccessTokenProvider(getToken);
     return () => setAccessTokenProvider(null);
-  }, [getToken]);
-
+  }, []);
   const value: AuthContextValue = useMemo(
     () => ({
       status: isLoading ? "loading" : user ? "authenticated" : "anonymous",

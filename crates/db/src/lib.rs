@@ -4,10 +4,17 @@
 //! and migrations that can be replayed. Phase 0 covers only the foundational
 //! `users` and `sync_batches` tables.
 
+pub mod concept_state;
+pub mod daily_missions;
 pub mod devices;
+pub mod discovery;
 pub mod error;
 pub mod learning_events;
 pub mod missions;
+pub mod predictions;
+pub mod recommendations;
+pub mod sessions;
+pub mod study_days;
 pub mod sync_batches;
 pub mod users;
 pub mod wallets;

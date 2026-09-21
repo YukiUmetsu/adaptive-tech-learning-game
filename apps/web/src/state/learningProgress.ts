@@ -1,10 +1,13 @@
 import type {
+  DomainDiscoveryInput,
   KnowledgeNode,
   KnowledgePrompt,
   LearningDomainResponse,
   LearningModule,
 } from "../api/types";
 import { deriveProgressiveTable, elementId } from "../lib/learningElements";
+import { enqueueDiscovery } from "./auxiliaryQueue";
+import { unionElementIds, unionPromptIds } from "./discovery";
 
 /**
  * Discovery progress for the pre-quiz knowledge maps.
@@ -298,6 +301,100 @@ export function loadDomainProgress(
   return stored;
 }
 
+/**
+ * Every knowledge-node id the learner has explored for a track version.
+ *
+ * Discovery progress lives on the client, so this is best-effort auxiliary
+ * input for recommendations: unknown or stale keys are ignored. The result is
+ * sorted so the recommendation query stays deterministic.
+ */
+export function loadTrackExploredNodeIds(certificationVersion: string): string[] {
+  const prefix = `${certificationVersion}::`;
+  const explored = new Set<string>();
+  for (const [key, domain] of Object.entries(readStore().domains)) {
+    if (!key.startsWith(prefix)) {
+      continue;
+    }
+    for (const [nodeId, prompts] of Object.entries(domain.revealedPromptIds)) {
+      if (prompts.length > 0) {
+        explored.add(nodeId);
+      }
+    }
+    for (const [nodeId, prompts] of Object.entries(domain.revealedElementIds)) {
+      if (Object.values(prompts).some((ids) => ids.length > 0)) {
+        explored.add(nodeId);
+      }
+    }
+  }
+  return [...explored].sort();
+}
+
+/**
+ * Raw discovery progress for every domain of a track version.
+ *
+ * This is the best-effort payload sent with a recommendation request. The server
+ * derives unlocked nodes and completed modules itself, so the planner and the
+ * Knowledge Map share one rule set. Unknown or stale keys are ignored.
+ */
+export function loadTrackDiscovery(
+  certificationVersion: string,
+): DomainDiscoveryInput[] {
+  const prefix = `${certificationVersion}::`;
+  const domains: DomainDiscoveryInput[] = [];
+  for (const [key, domain] of Object.entries(readStore().domains)) {
+    if (!key.startsWith(prefix)) {
+      continue;
+    }
+    domains.push({
+      domain_id: domain.domainId,
+      revealed_prompt_ids: { ...domain.revealedPromptIds },
+      revealed_element_ids: { ...domain.revealedElementIds },
+    });
+  }
+  return domains.sort((a, b) => a.domain_id.localeCompare(b.domain_id));
+}
+
+/**
+ * Unions server-persisted discovery into local progress.
+ *
+ * Local-first: the caller renders from localStorage first and calls this
+ * asynchronously. The union means persisted progress can never remove a local
+ * reveal, and local reveals remain queued for a later server sync.
+ */
+export function mergeServerDiscovery(
+  certificationVersion: string,
+  contentVersion: string,
+  domains: DomainDiscoveryInput[],
+): void {
+  if (domains.length === 0) {
+    return;
+  }
+  const store = readStore();
+  let changed = false;
+  for (const domain of domains) {
+    const key = domainKey(certificationVersion, domain.domain_id);
+    const existing = store.domains[key];
+    store.domains[key] = {
+      certificationVersion,
+      domainId: domain.domain_id,
+      contentVersion,
+      revealedPromptIds: unionPromptIds(
+        existing?.revealedPromptIds ?? {},
+        domain.revealed_prompt_ids ?? {},
+      ),
+      revealedElementIds: unionElementIds(
+        existing?.revealedElementIds ?? {},
+        domain.revealed_element_ids ?? {},
+      ),
+      updatedAt: new Date().toISOString(),
+    };
+    changed = true;
+  }
+  if (changed) {
+    writeStore(store);
+  }
+}
+
 const EMPTY_REVEALS: string[] = [];
 const EMPTY_ELEMENTS_SET: ReadonlySet<string> = new Set();
 
@@ -334,6 +431,20 @@ export function revealPrompt(
       updatedAt: new Date().toISOString(),
     };
     writeStore(store);
+  }
+
+  if (!alreadyRevealed) {
+    enqueueDiscovery({
+      trackVersion: certificationVersion,
+      contentVersion,
+      domains: [
+        {
+          domain_id: domainId,
+          revealed_prompt_ids: { [nodeId]: [promptId] },
+          revealed_element_ids: {},
+        },
+      ],
+    });
   }
 
   return store.domains[key];
@@ -378,6 +489,20 @@ export function revealElement(
       updatedAt: new Date().toISOString(),
     };
     writeStore(store);
+  }
+
+  if (!alreadyRevealed) {
+    enqueueDiscovery({
+      trackVersion: certificationVersion,
+      contentVersion,
+      domains: [
+        {
+          domain_id: domainId,
+          revealed_prompt_ids: {},
+          revealed_element_ids: { [nodeId]: { [promptId]: [element] } },
+        },
+      ],
+    });
   }
 
   return store.domains[key];
@@ -489,6 +614,35 @@ export function isPromptComplete(
   return revealedPromptIds.has(prompt.id);
 }
 
+/**
+ * Every prompt id and element id needed to render a node fully revealed.
+ *
+ * Used by read-only review so a completed node's content can be revisited
+ * without any reveals or clicks. Optional code annotations are included so the
+ * whole authored material is visible.
+ */
+export function fullPromptReveals(node: KnowledgeNode): {
+  promptIds: string[];
+  elementIds: Record<string, string[]>;
+} {
+  const promptIds: string[] = [];
+  const elementIds: Record<string, string[]> = {};
+  for (const prompt of node.prompts) {
+    promptIds.push(prompt.id);
+    if (prompt.reveal.type === "code_file") {
+      elementIds[prompt.id] = (prompt.reveal.annotations ?? []).map((annotation) =>
+        elementId.annotation(annotation.id),
+      );
+    } else if (
+      prompt.reveal.type === "table" &&
+      prompt.reveal.progressive_reveal != null
+    ) {
+      elementIds[prompt.id] = deriveProgressiveTable(prompt.reveal).requiredUnits;
+    }
+  }
+  return { promptIds, elementIds };
+}
+
 /** Whether every required prompt on a node has been completed. */
 export function isNodeUnlocked(
   node: KnowledgeNode,
@@ -513,6 +667,25 @@ export function isNodeUnlocked(
 }
 
 /**
+ * Options controlling how availability is derived.
+ *
+ * Defaults preserve the original prerequisite-based unlocking.
+ */
+export interface DeriveLearningOptions {
+  /**
+   * Guided, in-order path: a node is available only once every earlier node in
+   * its module is complete. Reduces choice for learners who prefer a single
+   * next step.
+   */
+  guided?: boolean;
+  /**
+   * Unlock everything regardless of module or node prerequisites. The map still
+   * presents nodes in content order.
+   */
+  unlockAll?: boolean;
+}
+
+/**
  * Derives per-node, per-module, and per-domain state from revealed prompt and
  * element ids.
  *
@@ -522,7 +695,10 @@ export function isNodeUnlocked(
 export function deriveLearningState(
   domain: Pick<LearningDomainResponse, "modules">,
   progress: DomainLearningProgress | null,
+  options: DeriveLearningOptions = {},
 ): DerivedLearningState {
+  const guided = options.guided ?? false;
+  const unlockAll = options.unlockAll ?? false;
   const revealedPromptIds = progress?.revealedPromptIds ?? {};
   const revealedElementIds = progress?.revealedElementIds ?? {};
 
@@ -560,9 +736,9 @@ export function deriveLearningState(
   const moduleAvailable: Record<string, boolean> = {};
   for (const module of domain.modules) {
     const prerequisites = module.prerequisite_module_ids ?? [];
-    moduleAvailable[module.id] = prerequisites.every(
-      (id) => moduleComplete[id] === true,
-    );
+    moduleAvailable[module.id] = unlockAll
+      ? true
+      : prerequisites.every((id) => moduleComplete[id] === true);
   }
 
   const moduleProgress: Record<string, ModuleProgress> = {};
@@ -582,6 +758,7 @@ export function deriveLearningState(
       available: moduleAvailable[module.id] === true,
     };
 
+    let earlierUnlocked = true;
     for (const node of module.nodes) {
       const moduleReady = moduleAvailable[module.id] === true;
       const prerequisites = node.prerequisite_node_ids ?? [];
@@ -594,11 +771,15 @@ export function deriveLearningState(
         (set) => set.size > 0,
       );
       const unlocked = unlockedNodeIds.has(node.id);
+      const guidedReady = !guided || earlierUnlocked;
 
       let state: NodeState;
       if (unlocked) {
         state = "unlocked";
-      } else if (!moduleReady || !prerequisitesUnlocked) {
+      } else if (unlockAll) {
+        state =
+          revealed.size > 0 || hasElementProgress ? "in_progress" : "ready";
+      } else if (!moduleReady || !prerequisitesUnlocked || !guidedReady) {
         state = "locked";
       } else if (revealed.size > 0 || hasElementProgress) {
         state = "in_progress";
@@ -610,6 +791,8 @@ export function deriveLearningState(
       if (nextNodeId === null && (state === "ready" || state === "in_progress")) {
         nextNodeId = node.id;
       }
+
+      earlierUnlocked = earlierUnlocked && unlocked;
     }
   }
 

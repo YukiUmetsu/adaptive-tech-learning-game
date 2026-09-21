@@ -11,8 +11,10 @@
 //! ```
 
 use adaptive_learn_db as db;
-use adaptive_learn_domain::{NewSyncBatch, NewUser, SyncBatchStatus};
-use chrono::Utc;
+use adaptive_learn_domain::{
+    MissionInstance, MissionStatus, NewSyncBatch, NewUser, QuizMode, SyncBatchStatus,
+};
+use chrono::{Duration, Utc};
 use db::PgPool;
 use uuid::Uuid;
 
@@ -179,6 +181,153 @@ async fn sync_batch_requires_an_existing_user() {
         result.is_err(),
         "batch for a missing user must violate the foreign key"
     );
+}
+
+#[tokio::test]
+async fn telemetry_failure_does_not_affect_mission_persistence() {
+    let Some(pool) = pool().await else {
+        return;
+    };
+
+    let user_id = insert_user(&pool).await;
+    let now = Utc::now();
+    let mission = MissionInstance {
+        id: Uuid::new_v4(),
+        user_id: Some(user_id),
+        device_id: Uuid::new_v4(),
+        certification_id: "track".to_owned(),
+        certification_version: "v1".to_owned(),
+        content_version: "c1".to_owned(),
+        mode: QuizMode::RecommendedPractice,
+        recommendation_id: Some(Uuid::new_v4()),
+        daily_mission_id: None,
+        daily_item_position: None,
+        domain_id: Some("d1".to_owned()),
+        task_id: None,
+        question_ids: vec!["q1".to_owned()],
+        status: MissionStatus::Issued,
+        issued_at: now,
+        expires_at: now + Duration::minutes(60),
+        completed_at: None,
+    };
+    let stored = db::missions::insert(&pool, &mission)
+        .await
+        .expect("insert mission");
+
+    // An invalid event string violates the auxiliary table's check constraint.
+    let bad_event = db::recommendations::RecommendationEventEntry {
+        event_id: Uuid::new_v4(),
+        recommendation_id: stored.recommendation_id.expect("recommendation id"),
+        user_id,
+        track_id: "track",
+        event: "not_a_real_event",
+        action: None,
+        domain_id: None,
+        node_id: None,
+        question_id: None,
+    };
+    assert!(
+        db::recommendations::record_event(&pool, &bad_event)
+            .await
+            .is_err(),
+        "an invalid telemetry event must fail on its own"
+    );
+
+    // The authoritative mission row is untouched by the telemetry failure.
+    let found = db::missions::find_by_id(&pool, stored.id)
+        .await
+        .expect("find mission")
+        .expect("mission exists");
+    assert_eq!(found.recommendation_id, stored.recommendation_id);
+
+    delete_user(&pool, user_id).await;
+}
+
+#[tokio::test]
+async fn study_session_log_accepts_valid_rows_and_rejects_bad_preferences() {
+    let Some(pool) = pool().await else {
+        return;
+    };
+
+    let user_id = insert_user(&pool).await;
+    let session_id = Uuid::new_v4();
+    let valid = db::sessions::StudySessionLogEntry {
+        session_id,
+        user_id,
+        track_id: "track",
+        track_version: "v1",
+        available_minutes: 20,
+        preference: "balanced",
+        estimated_minutes: 18,
+        activity_count: 4,
+    };
+    db::sessions::log(&pool, &valid)
+        .await
+        .expect("valid session log");
+
+    let invalid = db::sessions::StudySessionLogEntry {
+        preference: "nonsense",
+        ..valid
+    };
+    assert!(
+        db::sessions::log(&pool, &invalid).await.is_err(),
+        "an invalid preference must fail on its own"
+    );
+
+    delete_user(&pool, user_id).await;
+}
+
+#[tokio::test]
+async fn daily_missions_are_unique_per_user_track_and_day() {
+    let Some(pool) = pool().await else {
+        return;
+    };
+
+    let user_id = insert_user(&pool).await;
+    let today = Utc::now().date_naive();
+    let tomorrow = today + Duration::days(1);
+    let items = vec![db::daily_missions::NewDailyMissionItem {
+        position: 0,
+        kind: "domain_practice",
+        domain_id: "domain-1",
+        node_id: None,
+        title: "Domain review",
+        estimated_minutes: 6,
+        practice_context: serde_json::json!({}),
+    }];
+
+    let new_mission = db::daily_missions::NewDailyMission {
+        user_id,
+        track_id: "track",
+        track_version: "v1",
+        day_key: today,
+        timezone: Some("UTC"),
+        plan_type: "standard",
+        reward_bits: 25,
+    };
+    let first = db::daily_missions::create(&pool, &new_mission, &items)
+        .await
+        .expect("create mission");
+    assert_eq!(first.items.len(), 1);
+    assert_eq!(first.status, "active");
+
+    // A repeat for the same day returns the existing immutable snapshot.
+    let again = db::daily_missions::create(&pool, &new_mission, &items)
+        .await
+        .expect("reuse mission");
+    assert_eq!(first.id, again.id);
+
+    // A new canonical day creates a new plan.
+    let next_mission = db::daily_missions::NewDailyMission {
+        day_key: tomorrow,
+        ..new_mission.clone()
+    };
+    let next = db::daily_missions::create(&pool, &next_mission, &items)
+        .await
+        .expect("create next day");
+    assert_ne!(first.id, next.id);
+
+    delete_user(&pool, user_id).await;
 }
 
 #[tokio::test]

@@ -11,7 +11,7 @@ use crate::DomainError;
 /// The remaining two are explicit Phase 1 subtypes used by tactile
 /// interactions; they are still treated as evidence modes, not proven
 /// independent latent abilities.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum AssessmentMode {
     /// Recognizing a correct option.
@@ -58,6 +58,10 @@ pub enum InteractionType {
     CommandAssembly,
     /// Type the missing word, phrase, service, concept, or value into inline blanks.
     TypedFillBlank,
+    /// Choose exactly one option from a list.
+    MultipleChoice,
+    /// Choose an exact set of options from a list.
+    MultipleResponse,
 }
 
 impl AssessmentMode {
@@ -110,6 +114,8 @@ impl InteractionType {
             Self::TwoDimensionalPlacement => "two_dimensional_placement",
             Self::CommandAssembly => "command_assembly",
             Self::TypedFillBlank => "typed_fill_blank",
+            Self::MultipleChoice => "multiple_choice",
+            Self::MultipleResponse => "multiple_response",
         }
     }
 }
@@ -132,6 +138,8 @@ impl TryFrom<&str> for InteractionType {
             "two_dimensional_placement" => Ok(Self::TwoDimensionalPlacement),
             "command_assembly" => Ok(Self::CommandAssembly),
             "typed_fill_blank" => Ok(Self::TypedFillBlank),
+            "multiple_choice" => Ok(Self::MultipleChoice),
+            "multiple_response" => Ok(Self::MultipleResponse),
             _ => Err(DomainError::invalid(
                 "interaction_type",
                 "unknown interaction type",
@@ -205,6 +213,8 @@ pub enum QuizMode {
     FullPractice,
     /// A single task's questions (demo/internal).
     TaskPractice,
+    /// A short set anchored on one recommended question.
+    RecommendedPractice,
 }
 
 impl QuizMode {
@@ -215,6 +225,7 @@ impl QuizMode {
             Self::DomainQuiz => "domain_quiz",
             Self::FullPractice => "full_practice",
             Self::TaskPractice => "task_practice",
+            Self::RecommendedPractice => "recommended_practice",
         }
     }
 
@@ -230,6 +241,7 @@ impl QuizMode {
             Self::DomainQuiz => 120,
             Self::FullPractice => 180,
             Self::TaskPractice => 60,
+            Self::RecommendedPractice => 60,
         }
     }
 }
@@ -249,6 +261,7 @@ impl TryFrom<&str> for QuizMode {
             "domain_quiz" => Ok(Self::DomainQuiz),
             "full_practice" => Ok(Self::FullPractice),
             "task_practice" => Ok(Self::TaskPractice),
+            "recommended_practice" => Ok(Self::RecommendedPractice),
             _ => Err(DomainError::invalid("quiz_mode", "unknown quiz mode")),
         }
     }
@@ -272,6 +285,14 @@ pub struct MissionInstance {
     pub content_version: String,
     /// Quiz mode used to build the mission.
     pub mode: QuizMode,
+    /// Recommendation that started this mission, when it was recommended.
+    ///
+    /// Context only: it is never an ownership or authorization key.
+    pub recommendation_id: Option<Uuid>,
+    /// Daily Mission this mission executes, when it belongs to one.
+    pub daily_mission_id: Option<Uuid>,
+    /// Zero-based Daily Mission item position this mission executes.
+    pub daily_item_position: Option<i32>,
     /// Domain covered, when the mission is domain-scoped.
     pub domain_id: Option<String>,
     /// Task covered, when the mission is task-scoped.
@@ -315,6 +336,11 @@ pub struct LearningEvent {
     pub question_id: String,
     /// Content version the answer was scored against.
     pub content_version: String,
+    /// Canonical question difficulty prior in `[0, 1]`, copied from server
+    /// content. The client never supplies this; it is preserved with the
+    /// evidence so selection and later models can use the difficulty the item
+    /// actually had.
+    pub difficulty_prior: f64,
     /// Concept mappings with weights.
     pub concepts: Vec<ConceptWeight>,
     /// Assessment/evidence mode.
