@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "soa-c03-learning-2026-09-21-v9-fact-reviewed",
+  "content_version": "soa-c03-learning-2026-09-22-v10-domain3-editorial-glossary-reviewed",
   "certification_id": "aws-soa-c03",
   "certification_version": "soa-c03",
   "exam_guide_revision": "1.1",
@@ -66,17 +66,6 @@
               "reveal": {
                 "type": "text",
                 "text": "A company releases a hardened AMI every month. Image Builder starts from an approved base image, installs patches/security agents, runs tests, then distributes the approved AMI to target Regions/accounts."
-              }
-            },
-            {
-              "id": "exam-clue",
-              "kind": "exam_clue",
-              "label": "EXAM / SCENARIO CLUE",
-              "placeholder": "Base image -> recipe/components -> build -> test -> distribute points to EC2 Image Builder.",
-              "required": false,
-              "reveal": {
-                "type": "text",
-                "text": "Base image -> recipe/components -> build -> test -> distribute points to EC2 Image Builder."
               }
             },
             {
@@ -161,7 +150,7 @@
               "id": "container-flow",
               "kind": "when",
               "label": "CONTAINER IMAGE DEPLOYMENT FLOW",
-              "placeholder": "Build image → push to ECR → ECS/EKS pulls the image to run containers; registry success does not prove the runtime can pull it.",
+              "placeholder": "Trace a container image from the build pipeline to the running workload.",
               "required": false,
               "reveal": {
                 "type": "text",
@@ -568,7 +557,7 @@
       "nodes": [
         {
           "id": "d3-change-drift",
-          "title": "Change sets vs drift detection",
+          "title": "Change sets and drift detection",
           "concept_ids": [
             "aws.cloudformation.changesets",
             "aws.cloudformation.drift"
@@ -577,12 +566,12 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS CHANGE SETS VS DRIFT DETECTION?",
+              "label": "WHAT ARE CHANGE SETS AND DRIFT DETECTION?",
               "placeholder": "A CloudFormation change set previews proposed stack changes before execution. Drift detection compares supported actual…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "A CloudFormation change set previews proposed stack changes before execution. Drift detection compares supported actual resource configuration with the expected stack configuration."
+                "text": "A traditional CloudFormation change set previews proposed changes before execution. Drift detection compares supported live resource configuration with the expected stack configuration. A drift-aware change set adds the live state to the preview so supported drift can be reviewed and reconciled during deployment."
               }
             },
             {
@@ -593,7 +582,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Use change sets before applying a planned update; use drift detection when you suspect out-of-band changes."
+                "text": "Use a traditional change set to preview a planned update. Use drift detection when you only need to find out-of-band changes. Use a drift-aware change set when a deployment must account for and reconcile supported drift."
               }
             },
             {
@@ -604,70 +593,68 @@
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "A developer edits a security group manually in the console. Drift detection can show that the actual resource no longer matches the CloudFormation-managed configuration. A change set instead previews a future stack update."
+                "text": "A developer manually changes a security group that CloudFormation manages. Drift detection can report the difference. A drift-aware change set can show how the next deployment would affect the actual, previous, and desired states before you execute it."
               }
             },
             {
               "id": "compare",
               "kind": "not_this",
               "label": "DON'T CONFUSE THESE",
-              "placeholder": "Compare: Change set • Drift detection",
+              "placeholder": "Compare a traditional change set, drift detection, and a drift-aware change set.",
               "required": true,
               "reveal": {
                 "type": "table",
                 "columns": [
                   {
-                    "id": "option",
-                    "label": "Option"
+                    "id": "tool",
+                    "label": "Tool"
                   },
                   {
-                    "id": "what",
-                    "label": "What it means / does"
+                    "id": "question",
+                    "label": "Question it answers"
                   },
                   {
-                    "id": "use",
-                    "label": "When to use / key distinction"
+                    "id": "behavior",
+                    "label": "Key behavior"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "option-1",
+                    "id": "traditional",
                     "cells": {
-                      "option": "Change set",
-                      "what": "What would this update change?",
-                      "use": "Future/proposed change"
+                      "tool": "Traditional change set",
+                      "question": "What would this planned update change?",
+                      "behavior": "Previews previous deployment state versus the proposed desired state."
                     }
                   },
                   {
-                    "id": "option-2",
+                    "id": "drift",
                     "cells": {
-                      "option": "Drift detection",
-                      "what": "Has a managed resource changed outside CloudFormation?",
-                      "use": "Current actual vs expected state"
+                      "tool": "Drift detection",
+                      "question": "Has a managed resource changed outside CloudFormation?",
+                      "behavior": "Reports supported actual-versus-expected differences without itself applying the fix."
+                    }
+                  },
+                  {
+                    "id": "drift-aware",
+                    "cells": {
+                      "tool": "Drift-aware change set",
+                      "question": "How will this deployment affect the real drifted state?",
+                      "behavior": "Compares actual, previous deployment, and desired states and can reconcile supported drift when executed."
                     }
                   }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "option"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
+                ]
               }
             },
             {
               "id": "exam-clue",
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
-              "placeholder": "Preview -> change set. Console edit outside CloudFormation -> drift.",
+              "placeholder": "Use the scenario wording to choose among a change set, drift detection, and a drift-aware change set.",
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "Preview -> change set. Console edit outside CloudFormation -> drift."
+                "text": "Preview a planned update -> change set. Find an out-of-band console edit -> drift detection. Preview and reconcile supported drift during deployment -> drift-aware change set."
               }
             },
             {
@@ -679,11 +666,11 @@
               "reveal": {
                 "type": "sequence",
                 "items": [
-                  "Change IaC source",
-                  "Preview intended change",
-                  "Review",
-                  "Apply",
-                  "Later use drift detection for out-of-band changes"
+                  "Change the IaC source",
+                  "Create a traditional or drift-aware change set",
+                  "Review the proposed effects",
+                  "Execute the approved deployment",
+                  "Use drift detection when you only need to inspect out-of-band changes"
                 ]
               }
             }
@@ -693,7 +680,12 @@
             "x": 0.12,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Using drift-aware change sets",
+              "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/drift-aware-change-sets.html"
+            }
+          ]
         },
         {
           "id": "d3-nested",
@@ -705,7 +697,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS NESTED STACKS?",
+              "label": "WHAT ARE NESTED STACKS?",
               "placeholder": "A nested stack is a CloudFormation stack created as a resource inside another stack, allowing…",
               "required": true,
               "reveal": {
@@ -766,7 +758,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS CLOUDFORMATION STACKSETS?",
+              "label": "WHAT ARE CLOUDFORMATION STACKSETS?",
               "placeholder": "CloudFormation StackSets deploy a common CloudFormation stack configuration to multiple AWS accounts and Regions.",
               "required": true,
               "reveal": {
@@ -832,7 +824,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "AWS Resource Access Manager (AWS RAM) shares supported AWS resources with other accounts, organizational units, or principals without duplicating the resource."
+                "text": "AWS Resource Access Manager (AWS RAM) lets you share supported AWS resources without duplicating them. You can commonly share with AWS accounts or accounts in an organization or OU. Some resource types also support sharing with individual IAM roles or users, so always check the resource's sharing rules."
               }
             },
             {
@@ -928,7 +920,12 @@
             "x": 0.84,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "AWS RAM shareable resources",
+              "url": "https://docs.aws.amazon.com/ram/latest/userguide/shareable.html"
+            }
+          ]
         },
         {
           "id": "d3-retention",
@@ -940,12 +937,12 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS CLOUDFORMATION DELETION AND RETENTION?",
+              "label": "HOW DOES CLOUDFORMATION HANDLE DELETION AND REPLACEMENT?",
               "placeholder": "CloudFormation deletion policies and related replacement/update policies control what happens to stateful resources or snapshots…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "CloudFormation deletion policies and related replacement/update policies control what happens to stateful resources or snapshots when stacks or resources are removed or replaced."
+                "text": "`DeletionPolicy` controls what CloudFormation does when a resource is removed from a stack or the stack is deleted. `UpdateReplacePolicy` controls what happens to the old physical resource when an update replaces it."
               }
             },
             {
@@ -956,7 +953,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Use Retain or Snapshot-style policies where supported when stack deletion must not destroy important data."
+                "text": "Use `Retain` or `Snapshot` where supported when important state must survive the relevant lifecycle event. Do not assume `DeletionPolicy` also controls replacement during a stack update."
               }
             },
             {
@@ -967,18 +964,18 @@
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "A CloudFormation stack contains an RDS database. The stack is deleted, but the database data must survive. A suitable deletion/retention policy can retain or snapshot the stateful resource instead of deleting it with the stack."
+                "text": "A stack contains an RDS database. If stack deletion must keep the database, use an appropriate `DeletionPolicy`. If an update replaces the database and the old physical resource must be retained or snapshotted, use `UpdateReplacePolicy` where supported."
               }
             },
             {
               "id": "exam-clue",
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
-              "placeholder": "Delete the stack but keep the database/data -> inspect DeletionPolicy/retention behavior.",
+              "placeholder": "Stack deletion/removal and resource replacement use different CloudFormation policy attributes.",
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "Delete the stack but keep the database/data -> inspect DeletionPolicy/retention behavior."
+                "text": "Stack deletion or removal -> `DeletionPolicy`. Replacement during an update -> `UpdateReplacePolicy`."
               }
             }
           ],
@@ -989,7 +986,16 @@
             "x": 0.12,
             "y": 0.34
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "CloudFormation DeletionPolicy attribute",
+              "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-deletionpolicy.html"
+            },
+            {
+              "title": "CloudFormation UpdateReplacePolicy attribute",
+              "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatereplacepolicy.html"
+            }
+          ]
         },
         {
           "id": "d3-deploy-troubleshooting",
@@ -1003,7 +1009,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS DEPLOYMENT TROUBLESHOOTING AND SUBNET CAPACITY?",
+              "label": "HOW DO YOU TROUBLESHOOT DEPLOYMENTS AND SUBNET CAPACITY?",
               "placeholder": "Deployment troubleshooting starts with the first failed resource and its error, then checks permissions, service…",
               "required": true,
               "reveal": {
@@ -1048,7 +1054,7 @@
               "id": "passrole",
               "kind": "when",
               "label": "DEPLOYMENT PERMISSION TRAP: IAM:PASSROLE",
-              "placeholder": "A deployment can create a service resource but still fail when assigning its execution role if the caller lacks iam:PassRole.",
+              "placeholder": "A deployment can create a service resource but fails when assigning the service's IAM role.",
               "required": false,
               "reveal": {
                 "type": "text",
@@ -1093,7 +1099,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS GIT AND IAC WORKFLOW?",
+              "label": "WHAT IS A GIT AND IAC WORKFLOW?",
               "placeholder": "Git version control records infrastructure-code history and enables review, branching, collaboration, and rollback context.",
               "required": true,
               "reveal": {
@@ -1331,7 +1337,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS DEPLOYMENT STRATEGIES?",
+              "label": "WHAT ARE DEPLOYMENT STRATEGIES?",
               "placeholder": "A deployment strategy controls how new application or infrastructure versions replace old ones and how…",
               "required": true,
               "reveal": {
@@ -1436,7 +1442,7 @@
               "id": "service-catalog",
               "kind": "when",
               "label": "CONTROLLED SELF-SERVICE PROVISIONING",
-              "placeholder": "Need users to launch only approved infrastructure products with governed options/tags? AWS Service Catalog is designed for controlled self-service provisioning.",
+              "placeholder": "How can administrators offer approved infrastructure for controlled self-service provisioning?",
               "required": false,
               "reveal": {
                 "type": "text",
@@ -1479,7 +1485,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS SYSTEMS MANAGER OPERATIONS?",
+              "label": "WHAT CAN SYSTEMS MANAGER DO?",
               "placeholder": "AWS Systems Manager is a collection of operational capabilities for managing nodes and AWS resources…",
               "required": true,
               "reveal": {
@@ -1725,7 +1731,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS PATCH MANAGER VS STATE MANAGER?",
+              "label": "HOW DO PATCH MANAGER AND STATE MANAGER DIFFER?",
               "placeholder": "Patch Manager assesses and installs operating-system patches. State Manager creates associations that apply or verify…",
               "required": true,
               "reveal": {
@@ -1839,7 +1845,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS MAINTENANCE WINDOWS VS SESSION MANAGER?",
+              "label": "HOW DO MAINTENANCE WINDOWS AND SESSION MANAGER DIFFER?",
               "placeholder": "Maintenance Windows schedule recurring operational tasks against targets. Session Manager provides controlled interactive access to…",
               "required": true,
               "reveal": {
@@ -1978,7 +1984,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS EVENTBRIDGE AUTOMATION?",
+              "label": "HOW DOES EVENTBRIDGE AUTOMATION WORK?",
               "placeholder": "EventBridge routes matching events to configured targets using rules on event buses.",
               "required": true,
               "reveal": {
@@ -2040,7 +2046,7 @@
               "id": "workflow-choice",
               "kind": "mental_model",
               "label": "EVENTBRIDGE VS STEP FUNCTIONS VS LAMBDA VS SSM AUTOMATION",
-              "placeholder": "EventBridge routes events • Step Functions orchestrates application/service workflow state • Lambda runs code • SSM Automation runs operational runbooks.",
+              "placeholder": "Compare EventBridge, Step Functions, Lambda, and Systems Manager Automation.",
               "required": false,
               "reveal": {
                 "type": "table",
@@ -2183,12 +2189,12 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS S3 EVENT NOTIFICATIONS?",
+              "label": "WHAT ARE S3 EVENT NOTIFICATIONS?",
               "placeholder": "S3 Event Notifications publish notifications when configured object events occur in a bucket.",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "S3 Event Notifications publish notifications when configured object events occur in a bucket."
+                "text": "S3 Event Notifications publish messages when configured bucket events occur. Delivery is at least once, event order is not guaranteed, and duplicate notifications can occasionally occur."
               }
             },
             {
@@ -2199,7 +2205,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Use supported destinations such as SNS, SQS, or Lambda for simple bucket-event workflows; EventBridge can provide broader event routing patterns."
+                "text": "Use direct S3 notifications for simple bucket events sent to supported SNS, SQS, or Lambda destinations. Direct S3 notifications do not support SQS FIFO queues. Enable EventBridge when you need broader rule-based routing, including routing to an SQS FIFO queue."
               }
             },
             {
@@ -2210,14 +2216,14 @@
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "A video uploaded to `incoming/` generates an S3 object-created event. The notification sends object metadata to SQS, where background workers process videos asynchronously."
+                "text": "A video uploaded to `incoming/` generates an object-created notification and sends object metadata to an SQS queue. Workers process the video asynchronously. Because S3 notifications are at-least-once and can arrive out of order, the worker should tolerate duplicate or reordered events."
               }
             },
             {
               "id": "compare",
               "kind": "not_this",
               "label": "DON'T CONFUSE THESE",
-              "placeholder": "Compare: S3 Event Notifications • EventBridge",
+              "placeholder": "Compare direct S3 Event Notifications with EventBridge.",
               "required": true,
               "reveal": {
                 "type": "table",
@@ -2227,53 +2233,43 @@
                     "label": "Option"
                   },
                   {
-                    "id": "what",
-                    "label": "What it means / does"
+                    "id": "behavior",
+                    "label": "Behavior"
                   },
                   {
-                    "id": "use",
-                    "label": "When to use / key distinction"
+                    "id": "remember",
+                    "label": "Remember"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "option-1",
+                    "id": "direct",
                     "cells": {
-                      "option": "S3 Event Notifications",
-                      "what": "Bucket object events to supported destinations",
-                      "use": "Simple bucket-centric notifications"
+                      "option": "Direct S3 Event Notifications",
+                      "behavior": "Choose configured S3 event types and send to supported SNS, SQS, or Lambda destinations.",
+                      "remember": "At-least-once; ordering is not guaranteed; direct SQS FIFO is not supported."
                     }
                   },
                   {
-                    "id": "option-2",
+                    "id": "eventbridge",
                     "cells": {
                       "option": "EventBridge",
-                      "what": "Broader event routing/filtering to many targets",
-                      "use": "Central event-driven integration"
+                      "behavior": "Enable S3 event delivery to EventBridge, then use EventBridge rules to filter and route.",
+                      "remember": "All supported S3 events are sent to EventBridge after it is enabled; rules decide the downstream targets."
                     }
                   }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "option"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
+                ]
               }
             },
             {
               "id": "exam-clue",
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
-              "placeholder": "Object-created event should trigger a queue/function -> S3 event notification or EventBridge depending on routing…",
+              "placeholder": "Use the routing requirement to choose direct S3 notifications or EventBridge.",
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "Object-created event should trigger a queue/function -> S3 event notification or EventBridge depending on routing needs."
+                "text": "Simple bucket event to SNS/SQS/Lambda -> direct S3 notification can fit. SQS FIFO or broader rule-based routing -> EventBridge."
               }
             }
           ],
@@ -2284,7 +2280,16 @@
             "x": 0.6,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "S3 event notification types and destinations",
+              "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-event-types-and-destinations.html"
+            },
+            {
+              "title": "Using EventBridge with Amazon S3",
+              "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/EventBridge.html"
+            }
+          ]
         },
         {
           "id": "d3-devops-agent",
@@ -2301,7 +2306,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "AWS DevOps Agent is an AI-powered service that spans release management and production operations, including investigating operational issues and identifying improvements."
+                "text": "AWS DevOps Agent is an AI-powered service for production operations and release management. It can correlate resources, telemetry, code, and deployment context to investigate incidents and identify operational improvements."
               }
             },
             {
@@ -2312,7 +2317,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "For SOA-C03, know the role at a high level: AI-assisted operational investigation and automation context, not product-internal details."
+                "text": "For SOA-C03, focus on its high-level operational role. It helps investigate and improve software delivery and production operations; it does not replace IAM, CloudWatch, or your deployment controls."
               }
             },
             {
@@ -2345,7 +2350,12 @@
             "x": 0.84,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "About AWS DevOps Agent",
+              "url": "https://docs.aws.amazon.com/devopsagent/latest/userguide/about-aws-devops-agent.html"
+            }
+          ]
         }
       ]
     }
@@ -2381,7 +2391,125 @@
     ],
     "module_count": 5,
     "knowledge_node_count": 22,
-    "prompt_count": 108
+    "prompt_count": 107
   },
-  "authoring_notes": "V9 fact-reviewed: current official-document factual audit applied after the coverage, concrete-example, and ADHD/readability passes. Known factual errors, ambiguous service behavior, outdated service limits, and incomplete configuration examples were corrected."
+  "authoring_notes": "Domain 3 editorial/glossary review: corrected grammar, removed one redundant Image Builder prompt, simplified answer-heavy placeholders, added beginner-friendly supporting vocabulary, updated current CloudFormation drift-aware change-set behavior, clarified deletion vs replacement policies, current S3 notification semantics, AWS RAM sharing caveats, and DevOps Agent positioning, then recalculated coverage counts.",
+  "glossary": [
+    {
+      "term": "AMI",
+      "definition": "Amazon Machine Image. It is a reusable image used to launch EC2 instances with a chosen operating system and software."
+    },
+    {
+      "term": "image recipe",
+      "definition": "The EC2 Image Builder definition that describes the base image and the components used to build a new image."
+    },
+    {
+      "term": "image digest",
+      "definition": "A content-based identifier for a container image. Using a digest identifies one exact image version even if tags later change."
+    },
+    {
+      "term": "registry",
+      "definition": "A service that stores and distributes container images. Amazon ECR is an AWS-managed container registry."
+    },
+    {
+      "term": "declarative",
+      "definition": "Describing the end state you want instead of writing every step needed to create it."
+    },
+    {
+      "term": "stack",
+      "definition": "A collection of AWS resources that CloudFormation creates and manages together from a template."
+    },
+    {
+      "term": "construct",
+      "definition": "A reusable AWS CDK building block that represents one or more cloud resources and their configuration."
+    },
+    {
+      "term": "organizational unit",
+      "definition": "An AWS Organizations container used to group accounts so governance or deployments can target the group."
+    },
+    {
+      "term": "principal",
+      "definition": "An identity that can be granted permissions, such as an AWS account, IAM role, IAM user, or supported service principal."
+    },
+    {
+      "term": "ENI",
+      "definition": "Elastic Network Interface. It is a virtual network interface in a VPC and consumes an IP address from its subnet."
+    },
+    {
+      "term": "subnet",
+      "definition": "A range of IP addresses inside a VPC. Resources launched into a subnet need available addresses from that range."
+    },
+    {
+      "term": "usable IP address",
+      "definition": "An address in a subnet that AWS can assign to a resource. Some addresses in every IPv4 subnet are reserved by AWS and cannot be assigned."
+    },
+    {
+      "term": "iam:PassRole",
+      "definition": "An IAM permission that allows a principal to pass an IAM role to an AWS service. It does not let that principal assume the role itself."
+    },
+    {
+      "term": "Terraform provider",
+      "definition": "A Terraform plugin that lets Terraform manage resources through an API, such as the AWS provider for AWS resources."
+    },
+    {
+      "term": "Terraform state",
+      "definition": "Terraform's record that maps configuration objects to real managed resources and stores information needed to plan changes."
+    },
+    {
+      "term": "Terraform plan",
+      "definition": "A preview of the infrastructure changes Terraform proposes before those changes are applied."
+    },
+    {
+      "term": "rolling deployment",
+      "definition": "A deployment that replaces or updates part of the existing fleet at a time instead of switching the whole fleet at once."
+    },
+    {
+      "term": "blue/green",
+      "definition": "A deployment pattern with separate old and new environments so traffic can switch between them quickly."
+    },
+    {
+      "term": "canary",
+      "definition": "A deployment pattern that sends a small amount of traffic to a new version first, then increases exposure after validation."
+    },
+    {
+      "term": "blast radius",
+      "definition": "How much of the system could be affected if a deployment, automation, or change goes wrong."
+    },
+    {
+      "term": "managed node",
+      "definition": "A machine registered with Systems Manager so AWS can manage it, such as an EC2 instance or a supported hybrid server."
+    },
+    {
+      "term": "SSM document",
+      "definition": "A Systems Manager document that defines actions or configuration, such as commands that Run Command can execute."
+    },
+    {
+      "term": "association",
+      "definition": "A State Manager configuration that tells Systems Manager which document to apply to which managed nodes and when."
+    },
+    {
+      "term": "patch compliance",
+      "definition": "The reported state showing whether managed nodes have the patches required by the applicable patch rules or policy."
+    },
+    {
+      "term": "event bus",
+      "definition": "The EventBridge channel that receives events before rules evaluate them and route matching events to targets."
+    },
+    {
+      "term": "event pattern",
+      "definition": "The JSON matching rule EventBridge uses to decide whether an incoming event should trigger a rule."
+    },
+    {
+      "term": "at-least-once delivery",
+      "definition": "A delivery model where an event should arrive, but a duplicate can occasionally be delivered, so processing should tolerate repeats."
+    },
+    {
+      "term": "idempotent",
+      "definition": "Safe to run more than once without incorrectly changing the final result again. This is useful when an event can be delivered twice."
+    },
+    {
+      "term": "TagOption",
+      "definition": "An AWS Service Catalog managed key/value choice used as a template for tags on supported provisioned products."
+    }
+  ]
 }
