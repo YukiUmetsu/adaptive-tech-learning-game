@@ -36,10 +36,10 @@ use crate::dto::{
     PracticeTestListResponse, PracticeTestResponse, PracticeTestResultResponse,
     PracticeTestSubmissionRequest, PracticeTestSummaryDto, QuestionView,
     RecommendationEventRequest, RecommendationEventResponse, RecommendationResponse,
-    ReviewedAttempt, ReviewedQuestion, StreakDto, StudySessionRequest, StudySessionResponse,
-    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, SyncSectionResult, TaskDto,
-    TrackMapResponse, TrackProgressResponse, UpdateSettingsRequest, UserSettingsDto,
-    WalletResponse,
+    ReviewedAttempt, ReviewedQuestion, StreakDto, StudyQuestionView, StudySessionRequest,
+    StudySessionResponse, SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse,
+    SyncSectionResult, TaskDto, TrackMapResponse, TrackProgressResponse, UpdateSettingsRequest,
+    UserSettingsDto, WalletResponse,
 };
 use crate::error::ApiError;
 use crate::planner::{
@@ -1857,14 +1857,14 @@ pub async fn issue_mission(
 
 /// Maps a stored mission into its learner-facing response.
 fn mission_response(state: &AppState, stored: MissionInstance) -> MissionResponse {
-    let questions: Vec<QuestionView> = stored
+    let questions: Vec<StudyQuestionView> = stored
         .question_ids
         .iter()
         .filter_map(|id| {
             state
                 .content
                 .question(&stored.certification_version, id)
-                .map(question_view)
+                .map(study_question_view)
         })
         .collect();
 
@@ -2275,6 +2275,9 @@ pub async fn sync(
                     event_id,
                     accepted: true,
                     error_code: None,
+                    correct: applied.correct,
+                    score: applied.score,
+                    error_codes: applied.error_codes,
                     bits_settled: applied.bits_settled,
                 });
             }
@@ -2282,6 +2285,15 @@ pub async fn sync(
             Err(SyncRejection::Rejected(code)) => results.push(reject(event_id, code)),
         }
     }
+
+    // Completion is derived from server-known evidence, never from a client
+    // claim: a mission completes once every one of its questions has an accepted
+    // attempt. This lets a normal study session finish with two requests
+    // (issue + sync) instead of a separate completion call. It is checked for
+    // every mission referenced by the batch, so a retry after events were
+    // accepted but not yet finalized still completes it. Bookkeeping failure is
+    // logged and never fails the accepted events above.
+    complete_satisfied_missions(state, user, device_id, &missions).await;
 
     let bits_balance = match user {
         Some(user) => db::wallets::balance(&state.pool, user.id).await?,
@@ -2414,6 +2426,9 @@ fn reject(event_id: Uuid, code: impl Into<String>) -> SyncEventResult {
         event_id,
         accepted: false,
         error_code: Some(code.into()),
+        correct: false,
+        score: 0.0,
+        error_codes: Vec::new(),
         bits_settled: 0,
     }
 }
@@ -2444,6 +2459,12 @@ struct AppliedEvent {
     bits_settled: i64,
     /// Whether the event was newly accepted (not a duplicate retry).
     newly_accepted: bool,
+    /// Server-authoritative correctness verdict from canonical scoring.
+    correct: bool,
+    /// Server-authoritative partial score in `[0, 1]`.
+    score: f64,
+    /// Server-authoritative structured error codes.
+    error_codes: Vec<String>,
 }
 
 /// Marks a mission completed for its owner.
@@ -2456,19 +2477,42 @@ pub async fn complete_mission(
     let mission = load_mission(state, mission_id).await?;
     ensure_access(&mission, user, device_id)?;
 
+    let mission = finalize_mission_completion(state, &mission)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+
+    Ok(CompleteMissionResponse {
+        id: mission.id,
+        status: mission.status,
+        completed_at: mission.completed_at,
+    })
+}
+
+/// Marks a mission completed and performs every completion side effect.
+///
+/// Used by the explicit `/complete` endpoint and by `/v1/sync` when
+/// server-known completion criteria are met. Returns `None` when the mission row
+/// no longer matches its owner/device. The daily-mission side effects are
+/// idempotent, so a repeated call cannot double-settle a bonus.
+async fn finalize_mission_completion(
+    state: &AppState,
+    mission: &MissionInstance,
+) -> Result<Option<MissionInstance>, ApiError> {
     let updated = match mission.user_id {
-        Some(owner) => db::missions::mark_completed(&state.pool, mission_id, owner).await?,
+        Some(owner) => db::missions::mark_completed(&state.pool, mission.id, owner).await?,
         None => {
             db::missions::mark_completed_anonymous_device(
                 &state.pool,
-                mission_id,
+                mission.id,
                 mission.device_id,
             )
             .await?
         }
     };
 
-    let mission = updated.ok_or(ApiError::NotFound)?;
+    let Some(mission) = updated else {
+        return Ok(None);
+    };
 
     // Best-effort lifecycle telemetry: a mission started from a recommendation
     // was completed. Telemetry never affects mission completion.
@@ -2506,11 +2550,57 @@ pub async fn complete_mission(
         }
     }
 
-    Ok(CompleteMissionResponse {
-        id: mission.id,
-        status: mission.status,
-        completed_at: mission.completed_at,
-    })
+    Ok(Some(mission))
+}
+
+/// Completes every touched mission whose questions are all covered by accepted
+/// server-side evidence.
+///
+/// This is the server-known completion criterion for the local-scoring flow:
+/// the client finishes the mission and syncs its raw answers, and the server
+/// decides completion from what it has actually accepted. Any bookkeeping
+/// failure is logged; the accepted learning events, concept state, and Bits from
+/// this batch are already committed and must not be rolled back.
+async fn complete_satisfied_missions(
+    state: &AppState,
+    user: Option<&AuthenticatedUser>,
+    device_id: Option<Uuid>,
+    missions: &HashMap<Uuid, MissionInstance>,
+) {
+    for mission in missions.values() {
+        let mission_id = mission.id;
+        if mission.status == MissionStatus::Completed || mission.question_ids.is_empty() {
+            continue;
+        }
+
+        // Ownership must still hold for the batch's caller.
+        let authorized = match mission.user_id {
+            Some(owner) => user.is_some_and(|user| user.id == owner),
+            None => {
+                is_demo_certification(&mission.certification_id)
+                    && device_id == Some(mission.device_id)
+            }
+        };
+        if !authorized {
+            continue;
+        }
+
+        let covered =
+            match db::learning_events::covered_question_count(&state.pool, mission_id).await {
+                Ok(covered) => covered,
+                Err(error) => {
+                    tracing::debug!(error = %error, "could not check mission coverage");
+                    continue;
+                }
+            };
+        if covered < mission.question_ids.len() as i64 {
+            continue;
+        }
+
+        if let Err(error) = finalize_mission_completion(state, mission).await {
+            tracing::debug!(error = %error, "could not finalize completed mission");
+        }
+    }
 }
 
 /// Authorizes access to a mission.
@@ -2598,6 +2688,11 @@ async fn apply_event(
     let event_id = event.event_id;
     let question_id = event.question_id.clone();
     let occurred_at = event.occurred_at;
+    // The authoritative result is mirrored back to the client so it can
+    // reconcile its optimistic local score. Rejected events never reach here.
+    let scored_correct = scored.correct;
+    let scored_score = scored.score;
+    let scored_error_codes = scored.error_codes.clone();
 
     // Domain and task come from the actual question, not the mission: mixed
     // missions have no single task, and analytics must stay per-question.
@@ -2649,7 +2744,7 @@ async fn apply_event(
 
     let bits_settled = match attempt {
         Some(attempt_number) if owned_by_user => {
-            reward_bits(attempt_number, scored.score, question.difficulty_prior)
+            reward_bits(attempt_number, scored_score, question.difficulty_prior)
         }
         _ => 0,
     };
@@ -2657,6 +2752,9 @@ async fn apply_event(
     Ok(AppliedEvent {
         bits_settled,
         newly_accepted: attempt.is_some(),
+        correct: scored_correct,
+        score: scored_score,
+        error_codes: scored_error_codes,
     })
 }
 
@@ -2712,7 +2810,11 @@ fn validate_attempt_metadata(attempt_number: i32, hint_count: i32) -> Result<(),
     Ok(())
 }
 
-fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError> {
+/// Maps an answer payload into the normalized primitives the scorer consumes.
+///
+/// Public so the cross-language golden scoring tests exercise the exact same
+/// transport-to-scorer conversion the request path uses.
+pub fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError> {
     let AnswerPayload {
         placements,
         ordered_ids,
@@ -2839,6 +2941,32 @@ fn question_view(question: &adaptive_learn_content::Question) -> QuestionView {
         concepts: concept_weights(question),
         hints: question.hints.clone(),
         interaction: question.interaction.clone(),
+    }
+}
+
+/// Builds the locally scoreable view used by ordinary study missions.
+///
+/// This is the deliberate boundary between the hidden-answer [`QuestionView`]
+/// (practice tests, catalogs, pre-submit content) and study missions, which
+/// carry their canonical answer so the browser can score immediately. The
+/// server remains authoritative and re-scores every raw answer during sync.
+fn study_question_view(question: &adaptive_learn_content::Question) -> StudyQuestionView {
+    StudyQuestionView {
+        id: question.id.clone(),
+        domain_id: question.domain_id.clone(),
+        task_id: question.task_id.clone(),
+        prompt: question.prompt.clone(),
+        instruction: question.instruction.clone(),
+        interaction_type: question.interaction_type,
+        assessment_mode: question.assessment_mode,
+        difficulty_prior: question.difficulty_prior,
+        concepts: concept_weights(question),
+        hints: question.hints.clone(),
+        interaction: question.interaction.clone(),
+        canonical_answer: question.canonical_answer.clone(),
+        explanation: question.explanation.clone(),
+        choice_feedback: question.choice_feedback.clone(),
+        error_codes: question.error_codes.clone(),
     }
 }
 

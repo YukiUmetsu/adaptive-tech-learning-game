@@ -230,6 +230,26 @@ pub async fn recent_for_user(
         .collect()
 }
 
+/// Counts the distinct questions of a mission that have accepted evidence.
+///
+/// Used to derive server-known mission completion without trusting any client
+/// completion claim.
+pub async fn covered_question_count(
+    pool: &PgPool,
+    mission_instance_id: Uuid,
+) -> Result<i64, DbError> {
+    let count = sqlx::query_scalar::<_, i64>(
+        "SELECT count(DISTINCT question_id)
+         FROM learning_events
+         WHERE mission_instance_id = $1",
+    )
+    .bind(mission_instance_id)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(count)
+}
+
 /// Lists accepted events for a mission in occurrence order.
 pub async fn list_for_mission(
     pool: &PgPool,

@@ -95,6 +95,25 @@ The server:
 
 Offline rewards remain **pending** until reconciliation.
 
+### Local optimistic scoring
+
+Ordinary study missions intentionally ship their canonical scoring metadata with
+the issued mission (the `StudyQuestionView`). A question is therefore scored in
+the browser with **zero network requests**, so a normal 10-question quiz costs
+two API requests: `POST /v1/missions/issue` and `POST /v1/sync`.
+
+The local score is used only for immediate feedback, local mission state, and the
+Bits preview animation. It is never authoritative. `/v1/sync` independently
+re-scores every raw submitted answer against server-known content and returns the
+authoritative `correct`, `score`, `error_codes`, and `bits_settled` per event.
+When the local and server results differ, the server wins and the client
+reconciles its local attempt/summary cache. The authoritative event payload never
+includes a client score.
+
+Practice tests keep the hidden-answer model: their pre-submit content always uses
+the answer-key-free `QuestionView`, and their single submission is already
+batched, so exposing answer keys would save no requests.
+
 ## Trust model
 
 | State | Source of truth |
@@ -181,9 +200,9 @@ Use **SQLx** for PostgreSQL. Keep SQL explicit and avoid a heavy ORM.
 
 ```text
 POST /v1/missions/issue
-POST /v1/missions/:id/answers
+POST /v1/missions/:id/answers   # optional read-only preview; ordinary missions score locally
 GET  /v1/missions/:id/review
-POST /v1/sync
+POST /v1/sync                   # authoritative re-scoring + mission completion
 GET  /v1/tracks/:id/discovery
 GET  /v1/tracks/:id/map
 GET  /v1/tracks/:id/progress

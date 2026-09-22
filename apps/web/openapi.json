@@ -3072,6 +3072,24 @@
           }
         }
       },
+      "ErrorCodeDef": {
+        "type": "object",
+        "description": "A structured error the scorer may emit for a question.",
+        "required": [
+          "code",
+          "description"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Stable code, for example `classification_misplaced`."
+          },
+          "description": {
+            "type": "string",
+            "description": "Learner-safe description."
+          }
+        }
+      },
       "ErrorResponse": {
         "type": "object",
         "description": "Envelope returned for every API error.",
@@ -4446,9 +4464,9 @@
           "questions": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/QuestionView"
+              "$ref": "#/components/schemas/StudyQuestionView"
             },
-            "description": "Questions in presentation order."
+            "description": "Questions in presentation order.\n\nOrdinary study missions intentionally ship their canonical scoring data\nso they can be scored locally with zero per-question requests. The server\nstill re-scores every raw answer during `/v1/sync`; the client score is\nnever authoritative. Practice tests keep the answer-key-free\n[`QuestionView`]."
           },
           "task_id": {
             "type": [
@@ -5875,6 +5893,107 @@
           }
         }
       },
+      "StudyQuestionView": {
+        "type": "object",
+        "description": "A question for an ordinary study mission that supports local scoring.\n\nThis is the only mission-facing DTO that carries canonical answers. It keeps\nevery learner-facing field of [`QuestionView`] and adds the deterministic\nscoring metadata needed to score an attempt in the browser.\n\nThe extra fields are explicitly *not* authoritative: `/v1/sync` always\nre-scores the raw submitted answer against the server-known content before\naccepting evidence, settling Bits, or updating concept state. Practice tests\nand any pre-submit response keep using [`QuestionView`], which never exposes\nan answer key.",
+        "required": [
+          "id",
+          "domain_id",
+          "task_id",
+          "prompt",
+          "interaction_type",
+          "assessment_mode",
+          "difficulty_prior",
+          "concepts",
+          "hints",
+          "interaction",
+          "canonical_answer",
+          "explanation",
+          "choice_feedback",
+          "error_codes"
+        ],
+        "properties": {
+          "assessment_mode": {
+            "$ref": "#/components/schemas/AssessmentMode",
+            "description": "Evidence mode."
+          },
+          "canonical_answer": {
+            "$ref": "#/components/schemas/CanonicalAnswer",
+            "description": "Canonical answer, used for local scoring and immediate feedback."
+          },
+          "choice_feedback": {
+            "type": "object",
+            "description": "Per-choice feedback keyed by choice id.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "concepts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConceptWeight"
+            },
+            "description": "Concept mappings."
+          },
+          "difficulty_prior": {
+            "type": "number",
+            "format": "double",
+            "description": "Prior difficulty."
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "Owning domain."
+          },
+          "error_codes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErrorCodeDef"
+            },
+            "description": "Authored structured error-code definitions for this question."
+          },
+          "explanation": {
+            "type": "string",
+            "description": "Short explanation shown after scoring."
+          },
+          "hints": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional hints."
+          },
+          "id": {
+            "type": "string",
+            "description": "Question identifier."
+          },
+          "instruction": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional authored instruction shown with the prompt, for example\n`Choose TWO.`. Never reveals the answer."
+          },
+          "interaction": {
+            "$ref": "#/components/schemas/Interaction",
+            "description": "Interaction definition."
+          },
+          "interaction_type": {
+            "$ref": "#/components/schemas/InteractionType",
+            "description": "Interaction family."
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Learner-facing prompt."
+          },
+          "task_id": {
+            "type": "string",
+            "description": "Owning task."
+          }
+        }
+      },
       "StudySession": {
         "type": "object",
         "description": "A planned study session.",
@@ -6021,10 +6140,13 @@
       },
       "SyncEventResult": {
         "type": "object",
-        "description": "Result for one synced event.",
+        "description": "Result for one synced event.\n\nThe server re-scores every raw answer from canonical content, so this is the\nauthoritative outcome. The client compares it with its optimistic local score\nand reconciles any difference (the server always wins).",
         "required": [
           "event_id",
           "accepted",
+          "correct",
+          "score",
+          "error_codes",
           "bits_settled"
         ],
         "properties": {
@@ -6037,6 +6159,10 @@
             "format": "int64",
             "description": "Bits settled for this event (0 when rejected or already settled)."
           },
+          "correct": {
+            "type": "boolean",
+            "description": "Authoritative correctness verdict. `false` for rejected events."
+          },
           "error_code": {
             "type": [
               "string",
@@ -6044,10 +6170,22 @@
             ],
             "description": "Error code when not accepted."
           },
+          "error_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Authoritative structured error codes. Empty for rejected events."
+          },
           "event_id": {
             "type": "string",
             "format": "uuid",
             "description": "Event identifier."
+          },
+          "score": {
+            "type": "number",
+            "format": "double",
+            "description": "Authoritative partial score in `[0, 1]`. `0` for rejected events."
           }
         }
       },

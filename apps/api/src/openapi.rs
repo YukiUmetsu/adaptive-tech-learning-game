@@ -20,9 +20,9 @@ use crate::dto::{
     PracticeTestSubmissionRequest, PracticeTestSummaryDto, QuestionView,
     RecommendationEventRequest, RecommendationEventResponse, RecommendationRequest,
     RecommendationResponse, ReconstructionAnswerPayload, ReviewedAttempt, ReviewedQuestion,
-    StreakDto, StudySessionRequest, StudySessionResponse, SyncEventRequest, SyncEventResult,
-    SyncRequest, SyncResponse, SyncSectionResult, TaskDto, TrackMapResponse, TrackProgressResponse,
-    UpdateSettingsRequest, UserSettingsDto, WalletResponse,
+    StreakDto, StudyQuestionView, StudySessionRequest, StudySessionResponse, SyncEventRequest,
+    SyncEventResult, SyncRequest, SyncResponse, SyncSectionResult, TaskDto, TrackMapResponse,
+    TrackProgressResponse, UpdateSettingsRequest, UserSettingsDto, WalletResponse,
 };
 use crate::error::{ErrorBody, ErrorResponse};
 use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
@@ -79,6 +79,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         WalletResponse,
         MeResponse,
         QuestionView,
+        StudyQuestionView,
         AnswerPayload,
         ReconstructionAnswerPayload,
         AnswerRequest,
@@ -146,6 +147,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         crate::planner::RecommendationReason,
         adaptive_learn_content::Interaction,
         adaptive_learn_content::CanonicalAnswer,
+        adaptive_learn_content::ErrorCodeDef,
         adaptive_learn_content::Choice,
         adaptive_learn_content::Node,
         adaptive_learn_content::FillSlot,

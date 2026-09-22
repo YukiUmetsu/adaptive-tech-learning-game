@@ -4,8 +4,11 @@
 //! it can be used, so invalid concept references, broken answers, duplicate
 //! identifiers, and bad weights fail loudly instead of reaching learners.
 //!
-//! Canonical answers live only in the bundle. They are never sent with a
-//! mission and are returned only after an answer has been scored.
+//! Canonical answers live only in the bundle. The transport layer decides
+//! whether a given payload exposes them: ordinary study missions ship them for
+//! local optimistic scoring, while practice tests and pre-submit content never
+//! do. The server always re-scores raw answers authoritatively before recording
+//! evidence.
 
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;

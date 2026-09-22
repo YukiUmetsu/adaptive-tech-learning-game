@@ -205,3 +205,10 @@ Use immutable image digests for production promotion.
 ## Security limitation
 
 If canonical answer keys are delivered to the client for offline use, a determined user can inspect them. The design aims to prevent easy reward fabrication, not provide high-assurance exam proctoring.
+
+Ordinary study missions intentionally deliver canonical scoring metadata so they
+can be scored locally with zero per-question requests. This is an accepted
+trade-off: the client score is optimistic only, and `/v1/sync` always re-scores
+the raw answer against server-known content before recording evidence, settling
+Bits, or updating concept state. Practice tests never expose answer keys before
+submission.

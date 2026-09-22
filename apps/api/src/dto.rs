@@ -1,13 +1,16 @@
 //! Transport types for the Phase 1 learning API.
 //!
-//! Canonical answers never appear in mission payloads. They are returned only
-//! in scoring feedback, after an answer has been evaluated.
+//! Practice-test pre-submit content and the catalog never include an answer
+//! key. Ordinary issued study missions intentionally carry canonical scoring
+//! metadata via [`StudyQuestionView`] so they can be scored locally; the server
+//! still re-scores every raw answer during `/v1/sync`, where the authoritative
+//! score is produced.
 
 use std::collections::BTreeMap;
 
 use adaptive_learn_content::{
-    CanonicalAnswer, GlossaryTerm, Interaction, LearningDesign, LearningDomainMeta, LearningModule,
-    PlacementPoint, SourceRef,
+    CanonicalAnswer, ErrorCodeDef, GlossaryTerm, Interaction, LearningDesign, LearningDomainMeta,
+    LearningModule, PlacementPoint, SourceRef,
 };
 use adaptive_learn_domain::{
     AssessmentMode, ConceptWeight, InteractionType, MissionStatus, QuizMode,
@@ -147,7 +150,13 @@ pub struct MissionResponse {
     /// Expiry time.
     pub expires_at: DateTime<Utc>,
     /// Questions in presentation order.
-    pub questions: Vec<QuestionView>,
+    ///
+    /// Ordinary study missions intentionally ship their canonical scoring data
+    /// so they can be scored locally with zero per-question requests. The server
+    /// still re-scores every raw answer during `/v1/sync`; the client score is
+    /// never authoritative. Practice tests keep the answer-key-free
+    /// [`QuestionView`].
+    pub questions: Vec<StudyQuestionView>,
 }
 
 /// A learner's settled Bits balance.
@@ -188,6 +197,52 @@ pub struct QuestionView {
     pub hints: Vec<String>,
     /// Interaction definition.
     pub interaction: Interaction,
+}
+
+/// A question for an ordinary study mission that supports local scoring.
+///
+/// This is the only mission-facing DTO that carries canonical answers. It keeps
+/// every learner-facing field of [`QuestionView`] and adds the deterministic
+/// scoring metadata needed to score an attempt in the browser.
+///
+/// The extra fields are explicitly *not* authoritative: `/v1/sync` always
+/// re-scores the raw submitted answer against the server-known content before
+/// accepting evidence, settling Bits, or updating concept state. Practice tests
+/// and any pre-submit response keep using [`QuestionView`], which never exposes
+/// an answer key.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct StudyQuestionView {
+    /// Question identifier.
+    pub id: String,
+    /// Owning domain.
+    pub domain_id: String,
+    /// Owning task.
+    pub task_id: String,
+    /// Learner-facing prompt.
+    pub prompt: String,
+    /// Optional authored instruction shown with the prompt, for example
+    /// `Choose TWO.`. Never reveals the answer.
+    pub instruction: Option<String>,
+    /// Interaction family.
+    pub interaction_type: InteractionType,
+    /// Evidence mode.
+    pub assessment_mode: AssessmentMode,
+    /// Prior difficulty.
+    pub difficulty_prior: f64,
+    /// Concept mappings.
+    pub concepts: Vec<ConceptWeight>,
+    /// Optional hints.
+    pub hints: Vec<String>,
+    /// Interaction definition.
+    pub interaction: Interaction,
+    /// Canonical answer, used for local scoring and immediate feedback.
+    pub canonical_answer: CanonicalAnswer,
+    /// Short explanation shown after scoring.
+    pub explanation: String,
+    /// Per-choice feedback keyed by choice id.
+    pub choice_feedback: BTreeMap<String, String>,
+    /// Authored structured error-code definitions for this question.
+    pub error_codes: Vec<ErrorCodeDef>,
 }
 
 /// Answer primitives for one attempt. Exactly one field is set.
@@ -481,6 +536,10 @@ pub struct SyncEventRequest {
 }
 
 /// Result for one synced event.
+///
+/// The server re-scores every raw answer from canonical content, so this is the
+/// authoritative outcome. The client compares it with its optimistic local score
+/// and reconciles any difference (the server always wins).
 #[derive(Debug, Serialize, ToSchema)]
 pub struct SyncEventResult {
     /// Event identifier.
@@ -489,6 +548,12 @@ pub struct SyncEventResult {
     pub accepted: bool,
     /// Error code when not accepted.
     pub error_code: Option<String>,
+    /// Authoritative correctness verdict. `false` for rejected events.
+    pub correct: bool,
+    /// Authoritative partial score in `[0, 1]`. `0` for rejected events.
+    pub score: f64,
+    /// Authoritative structured error codes. Empty for rejected events.
+    pub error_codes: Vec<String>,
     /// Bits settled for this event (0 when rejected or already settled).
     pub bits_settled: i64,
 }

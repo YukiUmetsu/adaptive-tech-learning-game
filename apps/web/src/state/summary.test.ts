@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { MissionResponse, QuestionView } from "../api/types";
+import type { MissionResponse, StudyQuestionView } from "../api/types";
 import type { AttemptRecord } from "./persistence";
 import {
   completionMessage,
@@ -9,7 +9,7 @@ import {
   type MissionSummary,
 } from "./summary";
 
-function question(id: string, concepts: string[]): QuestionView {
+function question(id: string, concepts: string[]): StudyQuestionView {
   return {
     id,
     domain_id: "domain-1",
@@ -21,6 +21,10 @@ function question(id: string, concepts: string[]): QuestionView {
     concepts: concepts.map((concept_id) => ({ concept_id, weight: 1 })),
     hints: [],
     interaction: { type: "classification", items: [], categories: [] },
+    canonical_answer: { type: "classification", placements: {} },
+    explanation: "",
+    choice_feedback: {},
+    error_codes: [],
   };
 }
 

@@ -1705,6 +1705,134 @@ async fn public_demo_missions_work_without_login_and_award_no_bits() {
     assert_eq!(body["bits_balance"], 0);
 }
 
+#[tokio::test]
+async fn sync_reports_authoritative_scoring_fields() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let registry = registry();
+    let subject = format!("sync-result-user-{}", Uuid::new_v4());
+    let device = Uuid::new_v4();
+    let mission = issue_as(&app, &subject, device).await;
+    let mission_uuid: Uuid = mission["id"]
+        .as_str()
+        .expect("mission id")
+        .parse()
+        .expect("uuid");
+    let content_version = mission["content_version"].as_str().expect("version");
+    let question = question(&registry, "monitoring-classification-001");
+    let event_id = Uuid::new_v4();
+
+    let (status, body) = common::send_as(
+        app.clone(),
+        &subject,
+        "POST",
+        "/v1/sync",
+        Some(json!({
+            "device_id": device,
+            "events": [event_body(
+                mission_uuid,
+                &question,
+                content_version,
+                event_id,
+                0,
+                correct_answer(&question),
+            )]
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+
+    // The sync response mirrors the server's own scoring, never a client claim.
+    let result = &body["results"][0];
+    assert_eq!(result["event_id"], event_id.to_string());
+    assert_eq!(result["accepted"], true);
+    assert_eq!(result["correct"], true);
+    assert_eq!(result["score"], 1.0);
+    assert_eq!(result["error_codes"], json!([]));
+}
+
+#[tokio::test]
+async fn sync_completes_a_mission_once_every_question_is_answered() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool.clone());
+    let registry = registry();
+    let device = Uuid::new_v4();
+
+    // Anonymous demo task practice keeps the answer loop small and needs no
+    // account; completion semantics are the same.
+    let (status, mission) = common::send_anonymous(
+        app.clone(),
+        "POST",
+        "/v1/missions/issue",
+        Some(json!({
+            "device_id": device,
+            "certification_id": "aws-soa-c03-demo",
+            "certification_version": "soa-c03-demo",
+            "mode": "task_practice",
+            "task_id": "D2.1"
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{mission}");
+    let mission_uuid: Uuid = mission["id"]
+        .as_str()
+        .expect("mission id")
+        .parse()
+        .expect("uuid");
+    let content_version = mission["content_version"].as_str().expect("version");
+    let questions = mission["questions"].as_array().expect("questions").clone();
+    assert!(!questions.is_empty());
+
+    let events: Vec<Value> = questions
+        .iter()
+        .map(|entry| {
+            let question_id = entry["id"].as_str().expect("question id");
+            let question = version_question(&registry, "soa-c03-demo", question_id);
+            event_body(
+                mission_uuid,
+                &question,
+                content_version,
+                Uuid::new_v4(),
+                0,
+                correct_answer(&question),
+            )
+        })
+        .collect();
+
+    let (status, body) = common::send_anonymous(
+        app.clone(),
+        "POST",
+        "/v1/sync",
+        Some(json!({ "device_id": device, "events": events })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert!(
+        body["results"]
+            .as_array()
+            .expect("results")
+            .iter()
+            .all(|result| result["accepted"].as_bool() == Some(true)),
+        "every answer should be accepted: {body}"
+    );
+
+    // Completion is derived from accepted server-side evidence, not a client
+    // completion claim.
+    let stored = db::missions::find_by_id(&pool, mission_uuid)
+        .await
+        .expect("lookup mission")
+        .expect("mission exists");
+    assert_eq!(
+        stored.status,
+        adaptive_learn_domain::MissionStatus::Completed,
+        "mission should complete once every question has accepted evidence"
+    );
+}
+
 async fn sync_one(app: &Router, subject: &str, batch: Value) -> Value {
     let (status, body) =
         common::send_as(app.clone(), subject, "POST", "/v1/sync", Some(batch)).await;

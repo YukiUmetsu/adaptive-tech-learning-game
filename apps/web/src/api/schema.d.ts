@@ -1094,6 +1094,13 @@ export interface components {
             /** @description Safe, human-readable message. */
             message: string;
         };
+        /** @description A structured error the scorer may emit for a question. */
+        ErrorCodeDef: {
+            /** @description Stable code, for example `classification_misplaced`. */
+            code: string;
+            /** @description Learner-safe description. */
+            description: string;
+        };
         /** @description Envelope returned for every API error. */
         ErrorResponse: {
             /** @description Error payload. */
@@ -1604,8 +1611,16 @@ export interface components {
             issued_at: string;
             /** @description Quiz mode. */
             mode: components["schemas"]["QuizMode"];
-            /** @description Questions in presentation order. */
-            questions: components["schemas"]["QuestionView"][];
+            /**
+             * @description Questions in presentation order.
+             *
+             *     Ordinary study missions intentionally ship their canonical scoring data
+             *     so they can be scored locally with zero per-question requests. The server
+             *     still re-scores every raw answer during `/v1/sync`; the client score is
+             *     never authoritative. Practice tests keep the answer-key-free
+             *     [`QuestionView`].
+             */
+            questions: components["schemas"]["StudyQuestionView"][];
             /** @description Task covered, for task practice. */
             task_id?: string | null;
         };
@@ -2249,6 +2264,59 @@ export interface components {
              */
             longest: number;
         };
+        /**
+         * @description A question for an ordinary study mission that supports local scoring.
+         *
+         *     This is the only mission-facing DTO that carries canonical answers. It keeps
+         *     every learner-facing field of [`QuestionView`] and adds the deterministic
+         *     scoring metadata needed to score an attempt in the browser.
+         *
+         *     The extra fields are explicitly *not* authoritative: `/v1/sync` always
+         *     re-scores the raw submitted answer against the server-known content before
+         *     accepting evidence, settling Bits, or updating concept state. Practice tests
+         *     and any pre-submit response keep using [`QuestionView`], which never exposes
+         *     an answer key.
+         */
+        StudyQuestionView: {
+            /** @description Evidence mode. */
+            assessment_mode: components["schemas"]["AssessmentMode"];
+            /** @description Canonical answer, used for local scoring and immediate feedback. */
+            canonical_answer: components["schemas"]["CanonicalAnswer"];
+            /** @description Per-choice feedback keyed by choice id. */
+            choice_feedback: {
+                [key: string]: string;
+            };
+            /** @description Concept mappings. */
+            concepts: components["schemas"]["ConceptWeight"][];
+            /**
+             * Format: double
+             * @description Prior difficulty.
+             */
+            difficulty_prior: number;
+            /** @description Owning domain. */
+            domain_id: string;
+            /** @description Authored structured error-code definitions for this question. */
+            error_codes: components["schemas"]["ErrorCodeDef"][];
+            /** @description Short explanation shown after scoring. */
+            explanation: string;
+            /** @description Optional hints. */
+            hints: string[];
+            /** @description Question identifier. */
+            id: string;
+            /**
+             * @description Optional authored instruction shown with the prompt, for example
+             *     `Choose TWO.`. Never reveals the answer.
+             */
+            instruction?: string | null;
+            /** @description Interaction definition. */
+            interaction: components["schemas"]["Interaction"];
+            /** @description Interaction family. */
+            interaction_type: components["schemas"]["InteractionType"];
+            /** @description Learner-facing prompt. */
+            prompt: string;
+            /** @description Owning task. */
+            task_id: string;
+        };
         /** @description A planned study session. */
         StudySession: {
             /** @description Ordered activities. */
@@ -2336,7 +2404,13 @@ export interface components {
              */
             response_ms: number;
         };
-        /** @description Result for one synced event. */
+        /**
+         * @description Result for one synced event.
+         *
+         *     The server re-scores every raw answer from canonical content, so this is the
+         *     authoritative outcome. The client compares it with its optimistic local score
+         *     and reconciles any difference (the server always wins).
+         */
         SyncEventResult: {
             /** @description Whether the event is now accepted server-side. */
             accepted: boolean;
@@ -2345,13 +2419,22 @@ export interface components {
              * @description Bits settled for this event (0 when rejected or already settled).
              */
             bits_settled: number;
+            /** @description Authoritative correctness verdict. `false` for rejected events. */
+            correct: boolean;
             /** @description Error code when not accepted. */
             error_code?: string | null;
+            /** @description Authoritative structured error codes. Empty for rejected events. */
+            error_codes: string[];
             /**
              * Format: uuid
              * @description Event identifier.
              */
             event_id: string;
+            /**
+             * Format: double
+             * @description Authoritative partial score in `[0, 1]`. `0` for rejected events.
+             */
+            score: number;
         };
         /**
          * @description Request to sync a batch of evaluated attempts.

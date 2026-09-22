@@ -1,0 +1,970 @@
+{
+  "version": 1,
+  "description": "Shared golden scoring fixtures. Exercised by the Rust scorer test (apps/api/tests/scoring_golden.rs) and the TypeScript scorer test (src/scoring/scorer.test.ts). Both implementations must return the same observable result.",
+  "cases": [
+    {
+      "id": "classification_perfect",
+      "question": {
+        "id": "classification_perfect",
+        "interaction": {
+          "type": "classification",
+          "items": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }],
+          "categories": [{ "id": "x", "label": "X" }, { "id": "y", "label": "Y" }]
+        },
+        "canonical_answer": { "type": "classification", "placements": { "a": "x", "b": "y" } },
+        "explanation": "classification explanation"
+      },
+      "answer": { "placements": { "a": "x", "b": "y" } },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "classification_partial_misplaced",
+      "question": {
+        "id": "classification_partial_misplaced",
+        "interaction": {
+          "type": "classification",
+          "items": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }],
+          "categories": [{ "id": "x", "label": "X" }, { "id": "y", "label": "Y" }]
+        },
+        "canonical_answer": { "type": "classification", "placements": { "a": "x", "b": "y" } },
+        "explanation": "classification explanation"
+      },
+      "answer": { "placements": { "a": "x", "b": "x" } },
+      "expected": { "score": 0.5, "correct": false, "error_codes": ["classification_misplaced"] }
+    },
+    {
+      "id": "classification_incomplete",
+      "question": {
+        "id": "classification_incomplete",
+        "interaction": {
+          "type": "classification",
+          "items": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }],
+          "categories": [{ "id": "x", "label": "X" }, { "id": "y", "label": "Y" }]
+        },
+        "canonical_answer": { "type": "classification", "placements": { "a": "x", "b": "y" } },
+        "explanation": "classification explanation"
+      },
+      "answer": { "placements": { "a": "x" } },
+      "expected": { "score": 0.5, "correct": false, "error_codes": ["classification_incomplete"] }
+    },
+    {
+      "id": "classification_unknown_item",
+      "question": {
+        "id": "classification_unknown_item",
+        "interaction": {
+          "type": "classification",
+          "items": [{ "id": "a", "label": "A" }],
+          "categories": [{ "id": "x", "label": "X" }]
+        },
+        "canonical_answer": { "type": "classification", "placements": { "a": "x" } },
+        "explanation": "classification explanation"
+      },
+      "answer": { "placements": { "zzz": "x" } },
+      "expected_error": "unknown_item"
+    },
+
+    {
+      "id": "ordering_perfect",
+      "question": {
+        "id": "ordering_perfect",
+        "interaction": { "type": "ordering", "items": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }, { "id": "c", "label": "C" }] },
+        "canonical_answer": { "type": "ordering", "ordered_ids": ["a", "b", "c"] },
+        "explanation": "ordering explanation"
+      },
+      "answer": { "ordered_ids": ["a", "b", "c"] },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "ordering_partial",
+      "question": {
+        "id": "ordering_partial",
+        "interaction": { "type": "ordering", "items": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }, { "id": "c", "label": "C" }] },
+        "canonical_answer": { "type": "ordering", "ordered_ids": ["a", "b", "c"] },
+        "explanation": "ordering explanation"
+      },
+      "answer": { "ordered_ids": ["a", "c", "b"] },
+      "expected": { "score": 0.3333333333333333, "correct": false, "error_codes": ["ordering_invalid_sequence"] }
+    },
+    {
+      "id": "ordering_duplicate",
+      "question": {
+        "id": "ordering_duplicate",
+        "interaction": { "type": "ordering", "items": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }] },
+        "canonical_answer": { "type": "ordering", "ordered_ids": ["a", "b"] },
+        "explanation": "ordering explanation"
+      },
+      "answer": { "ordered_ids": ["a", "a"] },
+      "expected_error": "invalid_ordering"
+    },
+
+    {
+      "id": "connection_perfect",
+      "question": {
+        "id": "connection_perfect",
+        "interaction": {
+          "type": "node_connection",
+          "nodes": [
+            { "id": "a", "label": "A", "x": 0.0, "y": 0.0 },
+            { "id": "b", "label": "B", "x": 1.0, "y": 0.0 },
+            { "id": "c", "label": "C", "x": 1.0, "y": 1.0 }
+          ]
+        },
+        "canonical_answer": { "type": "node_connection", "edges": [["a", "b"], ["b", "c"]] },
+        "explanation": "connection explanation"
+      },
+      "answer": { "edges": [["a", "b"], ["b", "c"]] },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "connection_missing",
+      "question": {
+        "id": "connection_missing",
+        "interaction": {
+          "type": "node_connection",
+          "nodes": [
+            { "id": "a", "label": "A", "x": 0.0, "y": 0.0 },
+            { "id": "b", "label": "B", "x": 1.0, "y": 0.0 },
+            { "id": "c", "label": "C", "x": 1.0, "y": 1.0 }
+          ]
+        },
+        "canonical_answer": { "type": "node_connection", "edges": [["a", "b"], ["b", "c"]] },
+        "explanation": "connection explanation"
+      },
+      "answer": { "edges": [["a", "b"]] },
+      "expected": { "score": 0.5, "correct": false, "error_codes": ["connection_missing_relationship"] }
+    },
+    {
+      "id": "connection_invalid",
+      "question": {
+        "id": "connection_invalid",
+        "interaction": {
+          "type": "node_connection",
+          "nodes": [
+            { "id": "a", "label": "A", "x": 0.0, "y": 0.0 },
+            { "id": "b", "label": "B", "x": 1.0, "y": 0.0 },
+            { "id": "c", "label": "C", "x": 1.0, "y": 1.0 }
+          ]
+        },
+        "canonical_answer": { "type": "node_connection", "edges": [["a", "b"], ["b", "c"]] },
+        "explanation": "connection explanation"
+      },
+      "answer": { "edges": [["a", "b"], ["b", "c"], ["c", "a"]] },
+      "expected": { "score": 0.5, "correct": false, "error_codes": ["connection_invalid_relationship"] }
+    },
+    {
+      "id": "connection_unknown_node",
+      "question": {
+        "id": "connection_unknown_node",
+        "interaction": {
+          "type": "node_connection",
+          "nodes": [
+            { "id": "a", "label": "A", "x": 0.0, "y": 0.0 },
+            { "id": "b", "label": "B", "x": 1.0, "y": 0.0 }
+          ]
+        },
+        "canonical_answer": { "type": "node_connection", "edges": [["a", "b"]] },
+        "explanation": "connection explanation"
+      },
+      "answer": { "edges": [["a", "zzz"]] },
+      "expected_error": "unknown_node"
+    },
+
+    {
+      "id": "reconstruction_linear_perfect",
+      "question": {
+        "id": "reconstruction_linear_perfect",
+        "interaction": {
+          "type": "reconstruction",
+          "layout": "linear",
+          "fixed_nodes": [{ "id": "metric", "label": "Metric crosses threshold", "position": "start" }],
+          "pieces": [
+            { "id": "alarm", "label": "Alarm" },
+            { "id": "sns", "label": "SNS" },
+            { "id": "operator", "label": "Operator" },
+            { "id": "cloudtrail", "label": "CloudTrail" }
+          ],
+          "slots": [{ "id": "slot_1" }, { "id": "slot_2" }, { "id": "slot_3" }]
+        },
+        "canonical_answer": {
+          "type": "reconstruction",
+          "placements": { "slot_1": "alarm", "slot_2": "sns", "slot_3": "operator" },
+          "edges": []
+        },
+        "explanation": "reconstruction explanation"
+      },
+      "answer": {
+        "reconstruction": {
+          "placements": { "slot_1": "alarm", "slot_2": "sns", "slot_3": "operator" },
+          "edges": []
+        }
+      },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "reconstruction_linear_swapped",
+      "question": {
+        "id": "reconstruction_linear_swapped",
+        "interaction": {
+          "type": "reconstruction",
+          "layout": "linear",
+          "fixed_nodes": [],
+          "pieces": [
+            { "id": "alarm", "label": "Alarm" },
+            { "id": "sns", "label": "SNS" },
+            { "id": "operator", "label": "Operator" },
+            { "id": "cloudtrail", "label": "CloudTrail" }
+          ],
+          "slots": [{ "id": "slot_1" }, { "id": "slot_2" }, { "id": "slot_3" }]
+        },
+        "canonical_answer": {
+          "type": "reconstruction",
+          "placements": { "slot_1": "alarm", "slot_2": "sns", "slot_3": "operator" },
+          "edges": []
+        },
+        "explanation": "reconstruction explanation"
+      },
+      "answer": {
+        "reconstruction": {
+          "placements": { "slot_1": "alarm", "slot_2": "operator", "slot_3": "sns" },
+          "edges": []
+        }
+      },
+      "expected": { "score": 0.3333333333333333, "correct": false, "error_codes": ["reconstruction_wrong_position"] }
+    },
+    {
+      "id": "reconstruction_linear_distractor",
+      "question": {
+        "id": "reconstruction_linear_distractor",
+        "interaction": {
+          "type": "reconstruction",
+          "layout": "linear",
+          "fixed_nodes": [],
+          "pieces": [
+            { "id": "alarm", "label": "Alarm" },
+            { "id": "sns", "label": "SNS" },
+            { "id": "operator", "label": "Operator" },
+            { "id": "cloudtrail", "label": "CloudTrail" }
+          ],
+          "slots": [{ "id": "slot_1" }, { "id": "slot_2" }, { "id": "slot_3" }]
+        },
+        "canonical_answer": {
+          "type": "reconstruction",
+          "placements": { "slot_1": "alarm", "slot_2": "sns", "slot_3": "operator" },
+          "edges": []
+        },
+        "explanation": "reconstruction explanation"
+      },
+      "answer": {
+        "reconstruction": {
+          "placements": { "slot_1": "alarm", "slot_2": "cloudtrail", "slot_3": "operator" },
+          "edges": []
+        }
+      },
+      "expected": { "score": 0.6666666666666666, "correct": false, "error_codes": ["reconstruction_wrong_component", "reconstruction_missing_component"] }
+    },
+    {
+      "id": "reconstruction_graph_perfect",
+      "question": {
+        "id": "reconstruction_graph_perfect",
+        "interaction": {
+          "type": "reconstruction",
+          "layout": "graph",
+          "fixed_nodes": [{ "id": "f1", "label": "Start", "position": "start", "x": 0.0, "y": 0.0 }],
+          "pieces": [
+            { "id": "p1", "label": "P1" },
+            { "id": "p2", "label": "P2" },
+            { "id": "p3", "label": "P3" }
+          ],
+          "slots": [{ "id": "s1", "x": 0.2, "y": 0.0 }, { "id": "s2", "x": 0.5, "y": 0.0 }, { "id": "s3", "x": 0.8, "y": 0.0 }]
+        },
+        "canonical_answer": {
+          "type": "reconstruction",
+          "placements": { "s1": "p1", "s2": "p2", "s3": "p3" },
+          "edges": [["f1", "p1"], ["p1", "p2"], ["p2", "p3"]]
+        },
+        "explanation": "reconstruction explanation"
+      },
+      "answer": {
+        "reconstruction": {
+          "placements": { "s1": "p1", "s2": "p2", "s3": "p3" },
+          "edges": [["f1", "p1"], ["p1", "p2"], ["p2", "p3"]]
+        }
+      },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "reconstruction_graph_missing_edges",
+      "question": {
+        "id": "reconstruction_graph_missing_edges",
+        "interaction": {
+          "type": "reconstruction",
+          "layout": "graph",
+          "fixed_nodes": [{ "id": "f1", "label": "Start", "position": "start", "x": 0.0, "y": 0.0 }],
+          "pieces": [
+            { "id": "p1", "label": "P1" },
+            { "id": "p2", "label": "P2" },
+            { "id": "p3", "label": "P3" }
+          ],
+          "slots": [{ "id": "s1", "x": 0.2, "y": 0.0 }, { "id": "s2", "x": 0.5, "y": 0.0 }, { "id": "s3", "x": 0.8, "y": 0.0 }]
+        },
+        "canonical_answer": {
+          "type": "reconstruction",
+          "placements": { "s1": "p1", "s2": "p2", "s3": "p3" },
+          "edges": [["f1", "p1"], ["p1", "p2"], ["p2", "p3"]]
+        },
+        "explanation": "reconstruction explanation"
+      },
+      "answer": {
+        "reconstruction": {
+          "placements": { "s1": "p1", "s2": "p2", "s3": "p3" },
+          "edges": []
+        }
+      },
+      "expected": { "score": 0.7, "correct": false, "error_codes": ["reconstruction_missing_relationship"] }
+    },
+    {
+      "id": "reconstruction_graph_wrong_edge",
+      "question": {
+        "id": "reconstruction_graph_wrong_edge",
+        "interaction": {
+          "type": "reconstruction",
+          "layout": "graph",
+          "fixed_nodes": [{ "id": "f1", "label": "Start", "position": "start", "x": 0.0, "y": 0.0 }],
+          "pieces": [
+            { "id": "p1", "label": "P1" },
+            { "id": "p2", "label": "P2" },
+            { "id": "p3", "label": "P3" }
+          ],
+          "slots": [{ "id": "s1", "x": 0.2, "y": 0.0 }, { "id": "s2", "x": 0.5, "y": 0.0 }, { "id": "s3", "x": 0.8, "y": 0.0 }]
+        },
+        "canonical_answer": {
+          "type": "reconstruction",
+          "placements": { "s1": "p1", "s2": "p2", "s3": "p3" },
+          "edges": [["f1", "p1"], ["p1", "p2"], ["p2", "p3"]]
+        },
+        "explanation": "reconstruction explanation"
+      },
+      "answer": {
+        "reconstruction": {
+          "placements": { "s1": "p1", "s2": "p2", "s3": "p3" },
+          "edges": [["f1", "p1"], ["p1", "p3"], ["p2", "p3"]]
+        }
+      },
+      "expected": {
+        "score": 0.8,
+        "correct": false,
+        "error_codes": ["reconstruction_missing_relationship", "reconstruction_invalid_relationship"]
+      }
+    },
+
+    {
+      "id": "evidence_selection_perfect",
+      "question": {
+        "id": "evidence_selection_perfect",
+        "interaction": {
+          "type": "evidence_selection",
+          "evidence": [{ "id": "e1", "label": "E1" }, { "id": "e2", "label": "E2" }, { "id": "e3", "label": "E3" }]
+        },
+        "canonical_answer": { "type": "evidence_selection", "relevant_ids": ["e1", "e2"] },
+        "explanation": "evidence explanation"
+      },
+      "answer": { "evidence_ids": ["e1", "e2"] },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "evidence_selection_false_positive",
+      "question": {
+        "id": "evidence_selection_false_positive",
+        "interaction": {
+          "type": "evidence_selection",
+          "evidence": [{ "id": "e1", "label": "E1" }, { "id": "e2", "label": "E2" }, { "id": "e3", "label": "E3" }]
+        },
+        "canonical_answer": { "type": "evidence_selection", "relevant_ids": ["e1", "e2"] },
+        "explanation": "evidence explanation"
+      },
+      "answer": { "evidence_ids": ["e1", "e2", "e3"] },
+      "expected": { "score": 0.5, "correct": false, "error_codes": ["evidence_selected_irrelevant"] }
+    },
+    {
+      "id": "evidence_selection_missing",
+      "question": {
+        "id": "evidence_selection_missing",
+        "interaction": {
+          "type": "evidence_selection",
+          "evidence": [{ "id": "e1", "label": "E1" }, { "id": "e2", "label": "E2" }]
+        },
+        "canonical_answer": { "type": "evidence_selection", "relevant_ids": ["e1", "e2"] },
+        "explanation": "evidence explanation"
+      },
+      "answer": { "evidence_ids": ["e1"] },
+      "expected": { "score": 0.5, "correct": false, "error_codes": ["evidence_missing_relevant"] }
+    },
+
+    {
+      "id": "spot_the_fault_perfect",
+      "question": {
+        "id": "spot_the_fault_perfect",
+        "interaction": {
+          "type": "spot_the_fault",
+          "elements": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }, { "id": "c", "label": "C" }]
+        },
+        "canonical_answer": { "type": "spot_the_fault", "faulty_ids": ["a", "c"] },
+        "explanation": "fault explanation"
+      },
+      "answer": { "faulty_ids": ["a", "c"] },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "spot_the_fault_false_positive",
+      "question": {
+        "id": "spot_the_fault_false_positive",
+        "interaction": {
+          "type": "spot_the_fault",
+          "elements": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }, { "id": "c", "label": "C" }]
+        },
+        "canonical_answer": { "type": "spot_the_fault", "faulty_ids": ["a", "c"] },
+        "explanation": "fault explanation"
+      },
+      "answer": { "faulty_ids": ["a", "b"] },
+      "expected": { "score": 0.0, "correct": false, "error_codes": ["fault_missed", "fault_false_positive"] }
+    },
+
+    {
+      "id": "fill_slots_perfect",
+      "question": {
+        "id": "fill_slots_perfect",
+        "interaction": {
+          "type": "fill_slots",
+          "slots": [{ "id": "s1", "label": "S1" }, { "id": "s2", "label": "S2" }, { "id": "s3", "label": "S3" }],
+          "options": [{ "id": "o1", "label": "O1" }, { "id": "o2", "label": "O2" }, { "id": "o3", "label": "O3" }, { "id": "o4", "label": "O4" }]
+        },
+        "canonical_answer": { "type": "fill_slots", "values": { "s1": "o1", "s2": "o2", "s3": "o3" } },
+        "explanation": "fill explanation"
+      },
+      "answer": { "slot_values": { "s1": "o1", "s2": "o2", "s3": "o3" } },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "fill_slots_partial",
+      "question": {
+        "id": "fill_slots_partial",
+        "interaction": {
+          "type": "fill_slots",
+          "slots": [{ "id": "s1", "label": "S1" }, { "id": "s2", "label": "S2" }, { "id": "s3", "label": "S3" }],
+          "options": [{ "id": "o1", "label": "O1" }, { "id": "o2", "label": "O2" }, { "id": "o3", "label": "O3" }]
+        },
+        "canonical_answer": { "type": "fill_slots", "values": { "s1": "o1", "s2": "o2", "s3": "o3" } },
+        "explanation": "fill explanation"
+      },
+      "answer": { "slot_values": { "s1": "o1", "s2": "o1", "s3": "o3" } },
+      "expected": { "score": 0.6666666666666666, "correct": false, "error_codes": ["slot_incorrect"] }
+    },
+    {
+      "id": "fill_slots_unfilled",
+      "question": {
+        "id": "fill_slots_unfilled",
+        "interaction": {
+          "type": "fill_slots",
+          "slots": [{ "id": "s1", "label": "S1" }, { "id": "s2", "label": "S2" }, { "id": "s3", "label": "S3" }],
+          "options": [{ "id": "o1", "label": "O1" }, { "id": "o2", "label": "O2" }, { "id": "o3", "label": "O3" }]
+        },
+        "canonical_answer": { "type": "fill_slots", "values": { "s1": "o1", "s2": "o2", "s3": "o3" } },
+        "explanation": "fill explanation"
+      },
+      "answer": { "slot_values": { "s1": "o1" } },
+      "expected": { "score": 0.3333333333333333, "correct": false, "error_codes": ["slot_unfilled"] }
+    },
+    {
+      "id": "fill_slots_unknown_option",
+      "question": {
+        "id": "fill_slots_unknown_option",
+        "interaction": {
+          "type": "fill_slots",
+          "slots": [{ "id": "s1", "label": "S1" }],
+          "options": [{ "id": "o1", "label": "O1" }]
+        },
+        "canonical_answer": { "type": "fill_slots", "values": { "s1": "o1" } },
+        "explanation": "fill explanation"
+      },
+      "answer": { "slot_values": { "s1": "zzz" } },
+      "expected_error": "unknown_option"
+    },
+
+    {
+      "id": "troubleshooting_perfect",
+      "question": {
+        "id": "troubleshooting_perfect",
+        "interaction": {
+          "type": "troubleshooting",
+          "start_step_id": "step1",
+          "steps": [
+            { "id": "step1", "prompt": "Diagnose", "stage": "diagnosis", "choices": [{ "id": "c1", "label": "C1" }, { "id": "c2", "label": "C2" }], "next_step_by_choice": { "c1": "step2", "c2": "step2" } },
+            { "id": "step2", "prompt": "Act", "stage": "action", "choices": [{ "id": "c3", "label": "C3" }, { "id": "c4", "label": "C4" }], "next_step_by_choice": { "c3": "step3", "c4": "step3" } },
+            { "id": "step3", "prompt": "Verify", "stage": "verification", "choices": [{ "id": "c5", "label": "C5" }], "next_step_by_choice": {} }
+          ]
+        },
+        "canonical_answer": {
+          "type": "troubleshooting",
+          "correct_choice_ids": { "step1": ["c1"], "step2": ["c3"], "step3": ["c5"] },
+          "expected_path": ["c1", "c3", "c5"]
+        },
+        "explanation": "troubleshooting explanation"
+      },
+      "answer": { "choice_path": ["c1", "c3", "c5"] },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "troubleshooting_wrong_diagnosis",
+      "question": {
+        "id": "troubleshooting_wrong_diagnosis",
+        "interaction": {
+          "type": "troubleshooting",
+          "start_step_id": "step1",
+          "steps": [
+            { "id": "step1", "prompt": "Diagnose", "stage": "diagnosis", "choices": [{ "id": "c1", "label": "C1" }, { "id": "c2", "label": "C2" }], "next_step_by_choice": { "c1": "step2", "c2": "step2" } },
+            { "id": "step2", "prompt": "Act", "stage": "action", "choices": [{ "id": "c3", "label": "C3" }], "next_step_by_choice": { "c3": "step3" } },
+            { "id": "step3", "prompt": "Verify", "stage": "verification", "choices": [{ "id": "c5", "label": "C5" }], "next_step_by_choice": {} }
+          ]
+        },
+        "canonical_answer": {
+          "type": "troubleshooting",
+          "correct_choice_ids": { "step1": ["c1"], "step2": ["c3"], "step3": ["c5"] },
+          "expected_path": ["c1", "c3", "c5"]
+        },
+        "explanation": "troubleshooting explanation"
+      },
+      "answer": { "choice_path": ["c2", "c3", "c5"] },
+      "expected": { "score": 0.3333333333333333, "correct": false, "error_codes": ["troubleshooting_wrong_diagnosis"] }
+    },
+    {
+      "id": "troubleshooting_incomplete",
+      "question": {
+        "id": "troubleshooting_incomplete",
+        "interaction": {
+          "type": "troubleshooting",
+          "start_step_id": "step1",
+          "steps": [
+            { "id": "step1", "prompt": "Diagnose", "stage": "diagnosis", "choices": [{ "id": "c1", "label": "C1" }], "next_step_by_choice": { "c1": "step2" } },
+            { "id": "step2", "prompt": "Act", "stage": "action", "choices": [{ "id": "c3", "label": "C3" }], "next_step_by_choice": { "c3": "step3" } },
+            { "id": "step3", "prompt": "Verify", "stage": "verification", "choices": [{ "id": "c5", "label": "C5" }], "next_step_by_choice": {} }
+          ]
+        },
+        "canonical_answer": {
+          "type": "troubleshooting",
+          "correct_choice_ids": { "step1": ["c1"], "step2": ["c3"], "step3": ["c5"] },
+          "expected_path": ["c1", "c3", "c5"]
+        },
+        "explanation": "troubleshooting explanation"
+      },
+      "answer": { "choice_path": ["c1", "c3"] },
+      "expected": { "score": 0.6666666666666666, "correct": false, "error_codes": ["troubleshooting_incomplete_path"] }
+    },
+    {
+      "id": "troubleshooting_invalid_path",
+      "question": {
+        "id": "troubleshooting_invalid_path",
+        "interaction": {
+          "type": "troubleshooting",
+          "start_step_id": "step1",
+          "steps": [
+            { "id": "step1", "prompt": "Diagnose", "stage": "diagnosis", "choices": [{ "id": "c1", "label": "C1" }], "next_step_by_choice": { "c1": "step2" } },
+            { "id": "step2", "prompt": "Act", "stage": "action", "choices": [{ "id": "c3", "label": "C3" }], "next_step_by_choice": { "c3": "step3" } },
+            { "id": "step3", "prompt": "Verify", "stage": "verification", "choices": [{ "id": "c5", "label": "C5" }], "next_step_by_choice": {} }
+          ]
+        },
+        "canonical_answer": {
+          "type": "troubleshooting",
+          "correct_choice_ids": { "step1": ["c1"], "step2": ["c3"], "step3": ["c5"] },
+          "expected_path": ["c1", "c3", "c5"]
+        },
+        "explanation": "troubleshooting explanation"
+      },
+      "answer": { "choice_path": ["c1", "c3", "c9"] },
+      "expected_error": "invalid_scenario_path"
+    },
+
+    {
+      "id": "scenario_choice_chain_perfect",
+      "question": {
+        "id": "scenario_choice_chain_perfect",
+        "interaction": {
+          "type": "scenario_choice_chain",
+          "start_step_id": "step1",
+          "steps": [
+            { "id": "step1", "prompt": "Decide", "stage": "diagnosis", "choices": [{ "id": "c1", "label": "C1" }, { "id": "c2", "label": "C2" }], "next_step_by_choice": { "c1": "step2", "c2": "step2" } },
+            { "id": "step2", "prompt": "Remediate", "stage": "remediation", "choices": [{ "id": "c3", "label": "C3" }], "next_step_by_choice": {} }
+          ]
+        },
+        "canonical_answer": {
+          "type": "scenario_choice_chain",
+          "correct_choice_ids": { "step1": ["c1"], "step2": ["c3"] },
+          "expected_path": ["c1", "c3"]
+        },
+        "explanation": "scenario explanation"
+      },
+      "answer": { "choice_path": ["c1", "c3"] },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "scenario_choice_chain_wrong",
+      "question": {
+        "id": "scenario_choice_chain_wrong",
+        "interaction": {
+          "type": "scenario_choice_chain",
+          "start_step_id": "step1",
+          "steps": [
+            { "id": "step1", "prompt": "Decide", "stage": "diagnosis", "choices": [{ "id": "c1", "label": "C1" }, { "id": "c2", "label": "C2" }], "next_step_by_choice": { "c1": "step2", "c2": "step2" } },
+            { "id": "step2", "prompt": "Remediate", "stage": "remediation", "choices": [{ "id": "c3", "label": "C3" }], "next_step_by_choice": {} }
+          ]
+        },
+        "canonical_answer": {
+          "type": "scenario_choice_chain",
+          "correct_choice_ids": { "step1": ["c1"], "step2": ["c3"] },
+          "expected_path": ["c1", "c3"]
+        },
+        "explanation": "scenario explanation"
+      },
+      "answer": { "choice_path": ["c2", "c3"] },
+      "expected": { "score": 0.0, "correct": false, "error_codes": ["scenario_choice_wrong_diagnosis"] }
+    },
+
+    {
+      "id": "configuration_builder_perfect",
+      "question": {
+        "id": "configuration_builder_perfect",
+        "interaction": {
+          "type": "configuration_builder",
+          "slots": [{ "id": "s1", "label": "S1" }, { "id": "s2", "label": "S2" }, { "id": "s3", "label": "S3" }],
+          "pieces": [{ "id": "p1", "label": "P1" }, { "id": "p2", "label": "P2" }, { "id": "p3", "label": "P3" }, { "id": "p4", "label": "P4" }]
+        },
+        "canonical_answer": { "type": "configuration_builder", "assignments": { "s1": "p1", "s2": "p2", "s3": "p3" } },
+        "explanation": "config explanation"
+      },
+      "answer": { "assignments": { "s1": "p1", "s2": "p2", "s3": "p3" } },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "configuration_builder_unnecessary",
+      "question": {
+        "id": "configuration_builder_unnecessary",
+        "interaction": {
+          "type": "configuration_builder",
+          "slots": [{ "id": "s1", "label": "S1" }, { "id": "s2", "label": "S2" }, { "id": "s3", "label": "S3" }],
+          "pieces": [{ "id": "p1", "label": "P1" }, { "id": "p2", "label": "P2" }, { "id": "p3", "label": "P3" }, { "id": "p4", "label": "P4" }]
+        },
+        "canonical_answer": { "type": "configuration_builder", "assignments": { "s1": "p1", "s2": "p2", "s3": "p3" } },
+        "explanation": "config explanation"
+      },
+      "answer": { "assignments": { "s1": "p1", "s2": "p2", "s3": "p4" } },
+      "expected": { "score": 0.3333333333333333, "correct": false, "error_codes": ["config_unnecessary_component"] }
+    },
+    {
+      "id": "configuration_builder_wrong_assignment",
+      "question": {
+        "id": "configuration_builder_wrong_assignment",
+        "interaction": {
+          "type": "configuration_builder",
+          "slots": [{ "id": "s1", "label": "S1" }, { "id": "s2", "label": "S2" }, { "id": "s3", "label": "S3" }],
+          "pieces": [{ "id": "p1", "label": "P1" }, { "id": "p2", "label": "P2" }, { "id": "p3", "label": "P3" }]
+        },
+        "canonical_answer": { "type": "configuration_builder", "assignments": { "s1": "p1", "s2": "p2", "s3": "p3" } },
+        "explanation": "config explanation"
+      },
+      "answer": { "assignments": { "s1": "p1", "s2": "p3", "s3": "p3" } },
+      "expected": { "score": 0.6666666666666666, "correct": false, "error_codes": ["config_wrong_assignment"] }
+    },
+
+    {
+      "id": "placement_perfect",
+      "question": {
+        "id": "placement_perfect",
+        "interaction": {
+          "type": "two_dimensional_placement",
+          "x_axis": { "id": "x", "label": "X", "low_label": "low", "high_label": "high" },
+          "y_axis": { "id": "y", "label": "Y", "low_label": "low", "high_label": "high" },
+          "items": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }]
+        },
+        "canonical_answer": {
+          "type": "two_dimensional_placement",
+          "regions": { "a": { "x": [0.0, 0.5], "y": [0.0, 0.5] }, "b": { "x": [0.5, 1.0], "y": [0.5, 1.0] } }
+        },
+        "explanation": "placement explanation"
+      },
+      "answer": { "positions": { "a": { "x": 0.25, "y": 0.25 }, "b": { "x": 0.75, "y": 0.75 } } },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "placement_wrong_axis",
+      "question": {
+        "id": "placement_wrong_axis",
+        "interaction": {
+          "type": "two_dimensional_placement",
+          "x_axis": { "id": "x", "label": "X", "low_label": "low", "high_label": "high" },
+          "y_axis": { "id": "y", "label": "Y", "low_label": "low", "high_label": "high" },
+          "items": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }]
+        },
+        "canonical_answer": {
+          "type": "two_dimensional_placement",
+          "regions": { "a": { "x": [0.0, 0.5], "y": [0.0, 0.5] }, "b": { "x": [0.5, 1.0], "y": [0.5, 1.0] } }
+        },
+        "explanation": "placement explanation"
+      },
+      "answer": { "positions": { "a": { "x": 0.75, "y": 0.25 }, "b": { "x": 0.75, "y": 0.75 } } },
+      "expected": { "score": 0.75, "correct": false, "error_codes": ["placement_wrong_x"] }
+    },
+    {
+      "id": "placement_invalid_point",
+      "question": {
+        "id": "placement_invalid_point",
+        "interaction": {
+          "type": "two_dimensional_placement",
+          "x_axis": { "id": "x", "label": "X", "low_label": "low", "high_label": "high" },
+          "y_axis": { "id": "y", "label": "Y", "low_label": "low", "high_label": "high" },
+          "items": [{ "id": "a", "label": "A" }]
+        },
+        "canonical_answer": { "type": "two_dimensional_placement", "regions": { "a": { "x": [0.0, 0.5], "y": [0.0, 0.5] } } },
+        "explanation": "placement explanation"
+      },
+      "answer": { "positions": { "a": { "x": 1.5, "y": 0.25 } } },
+      "expected_error": "invalid_placement"
+    },
+
+    {
+      "id": "command_assembly_perfect",
+      "question": {
+        "id": "command_assembly_perfect",
+        "interaction": {
+          "type": "command_assembly",
+          "slots": [{ "id": "s1", "label": "S1" }, { "id": "s2", "label": "S2" }],
+          "tokens": [{ "id": "t1", "label": "T1" }, { "id": "t2", "label": "T2" }, { "id": "t3", "label": "T3" }]
+        },
+        "canonical_answer": { "type": "command_assembly", "values": { "s1": "t1", "s2": "t2" } },
+        "explanation": "command explanation"
+      },
+      "answer": { "token_values": { "s1": "t1", "s2": "t2" } },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "command_assembly_order_wrong",
+      "question": {
+        "id": "command_assembly_order_wrong",
+        "interaction": {
+          "type": "command_assembly",
+          "slots": [{ "id": "s1", "label": "S1" }, { "id": "s2", "label": "S2" }],
+          "tokens": [{ "id": "t1", "label": "T1" }, { "id": "t2", "label": "T2" }]
+        },
+        "canonical_answer": { "type": "command_assembly", "values": { "s1": "t1", "s2": "t2" } },
+        "explanation": "command explanation"
+      },
+      "answer": { "token_values": { "s1": "t2", "s2": "t1" } },
+      "expected": { "score": 0.0, "correct": false, "error_codes": ["command_order_wrong"] }
+    },
+    {
+      "id": "command_assembly_token_wrong",
+      "question": {
+        "id": "command_assembly_token_wrong",
+        "interaction": {
+          "type": "command_assembly",
+          "slots": [{ "id": "s1", "label": "S1" }, { "id": "s2", "label": "S2" }],
+          "tokens": [{ "id": "t1", "label": "T1" }, { "id": "t2", "label": "T2" }, { "id": "t3", "label": "T3" }]
+        },
+        "canonical_answer": { "type": "command_assembly", "values": { "s1": "t1", "s2": "t2" } },
+        "explanation": "command explanation"
+      },
+      "answer": { "token_values": { "s1": "t1", "s2": "t3" } },
+      "expected": { "score": 0.5, "correct": false, "error_codes": ["command_token_wrong"] }
+    },
+
+    {
+      "id": "typed_fill_blank_perfect_normalized",
+      "question": {
+        "id": "typed_fill_blank_perfect_normalized",
+        "interaction": {
+          "type": "typed_fill_blank",
+          "content": { "type": "text", "template": "{{s1}} then {{s2}}" },
+          "slots": [{ "id": "s1", "label": "S1" }, { "id": "s2", "label": "S2" }]
+        },
+        "canonical_answer": {
+          "type": "typed_fill_blank",
+          "answers": { "s1": { "accepted_answers": ["deny"] }, "s2": { "accepted_answers": ["allow"] } }
+        },
+        "explanation": "typed explanation"
+      },
+      "answer": { "typed_answers": { "s1": "  DENY. ", "s2": "Allow" } },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "typed_fill_blank_partial",
+      "question": {
+        "id": "typed_fill_blank_partial",
+        "interaction": {
+          "type": "typed_fill_blank",
+          "content": { "type": "text", "template": "{{s1}} then {{s2}}" },
+          "slots": [{ "id": "s1", "label": "S1" }, { "id": "s2", "label": "S2" }]
+        },
+        "canonical_answer": {
+          "type": "typed_fill_blank",
+          "answers": { "s1": { "accepted_answers": ["deny"] }, "s2": { "accepted_answers": ["allow"] } }
+        },
+        "explanation": "typed explanation"
+      },
+      "answer": { "typed_answers": { "s1": "deny", "s2": "yes" } },
+      "expected": { "score": 0.5, "correct": false, "error_codes": ["typed_fill_blank_incorrect"] }
+    },
+    {
+      "id": "typed_fill_blank_incomplete",
+      "question": {
+        "id": "typed_fill_blank_incomplete",
+        "interaction": {
+          "type": "typed_fill_blank",
+          "content": { "type": "text", "template": "{{s1}} then {{s2}}" },
+          "slots": [{ "id": "s1", "label": "S1" }, { "id": "s2", "label": "S2" }]
+        },
+        "canonical_answer": {
+          "type": "typed_fill_blank",
+          "answers": { "s1": { "accepted_answers": ["deny"] }, "s2": { "accepted_answers": ["allow"] } }
+        },
+        "explanation": "typed explanation"
+      },
+      "answer": { "typed_answers": { "s1": "deny", "s2": "" } },
+      "expected": { "score": 0.5, "correct": false, "error_codes": ["typed_fill_blank_incomplete"] }
+    },
+    {
+      "id": "typed_fill_blank_code_preserves_language",
+      "question": {
+        "id": "typed_fill_blank_code_preserves_language",
+        "interaction": {
+          "type": "typed_fill_blank",
+          "content": { "type": "code", "language": "python", "template": "model.eval()" },
+          "slots": [{ "id": "s1", "label": "S1" }]
+        },
+        "canonical_answer": {
+          "type": "typed_fill_blank",
+          "answers": { "s1": { "accepted_answers": ["model.eval()"] } }
+        },
+        "explanation": "typed explanation"
+      },
+      "answer": { "typed_answers": { "s1": "model.eval()" } },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+
+    {
+      "id": "multiple_choice_correct",
+      "question": {
+        "id": "multiple_choice_correct",
+        "interaction": {
+          "type": "multiple_choice",
+          "choices": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }, { "id": "c", "label": "C" }]
+        },
+        "canonical_answer": { "type": "multiple_choice", "choice_id": "b" },
+        "explanation": "mc explanation"
+      },
+      "answer": { "choice_id": "b" },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "multiple_choice_incorrect",
+      "question": {
+        "id": "multiple_choice_incorrect",
+        "interaction": {
+          "type": "multiple_choice",
+          "choices": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }]
+        },
+        "canonical_answer": { "type": "multiple_choice", "choice_id": "b" },
+        "explanation": "mc explanation"
+      },
+      "answer": { "choice_id": "a" },
+      "expected": { "score": 0.0, "correct": false, "error_codes": ["multiple_choice_incorrect"] }
+    },
+    {
+      "id": "multiple_choice_unknown",
+      "question": {
+        "id": "multiple_choice_unknown",
+        "interaction": {
+          "type": "multiple_choice",
+          "choices": [{ "id": "a", "label": "A" }]
+        },
+        "canonical_answer": { "type": "multiple_choice", "choice_id": "a" },
+        "explanation": "mc explanation"
+      },
+      "answer": { "choice_id": "z" },
+      "expected_error": "unknown_choice"
+    },
+
+    {
+      "id": "multiple_response_correct",
+      "question": {
+        "id": "multiple_response_correct",
+        "interaction": {
+          "type": "multiple_response",
+          "choices": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }, { "id": "c", "label": "C" }, { "id": "d", "label": "D" }],
+          "required_selections": 2
+        },
+        "canonical_answer": { "type": "multiple_response", "choice_ids": ["a", "b"] },
+        "explanation": "mr explanation"
+      },
+      "answer": { "choice_ids": ["b", "a"] },
+      "expected": { "score": 1.0, "correct": true, "error_codes": [] }
+    },
+    {
+      "id": "multiple_response_incomplete",
+      "question": {
+        "id": "multiple_response_incomplete",
+        "interaction": {
+          "type": "multiple_response",
+          "choices": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }, { "id": "c", "label": "C" }],
+          "required_selections": 2
+        },
+        "canonical_answer": { "type": "multiple_response", "choice_ids": ["a", "b"] },
+        "explanation": "mr explanation"
+      },
+      "answer": { "choice_ids": ["a"] },
+      "expected": { "score": 0.0, "correct": false, "error_codes": ["multiple_response_incomplete"] }
+    },
+    {
+      "id": "multiple_response_extra",
+      "question": {
+        "id": "multiple_response_extra",
+        "interaction": {
+          "type": "multiple_response",
+          "choices": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }, { "id": "c", "label": "C" }],
+          "required_selections": 2
+        },
+        "canonical_answer": { "type": "multiple_response", "choice_ids": ["a", "b"] },
+        "explanation": "mr explanation"
+      },
+      "answer": { "choice_ids": ["a", "b", "c"] },
+      "expected": { "score": 0.0, "correct": false, "error_codes": ["multiple_response_extra"] }
+    },
+    {
+      "id": "multiple_response_incorrect",
+      "question": {
+        "id": "multiple_response_incorrect",
+        "interaction": {
+          "type": "multiple_response",
+          "choices": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }, { "id": "c", "label": "C" }, { "id": "d", "label": "D" }],
+          "required_selections": 2
+        },
+        "canonical_answer": { "type": "multiple_response", "choice_ids": ["a", "b"] },
+        "explanation": "mr explanation"
+      },
+      "answer": { "choice_ids": ["a", "c"] },
+      "expected": { "score": 0.0, "correct": false, "error_codes": ["multiple_response_incorrect"] }
+    },
+    {
+      "id": "multiple_response_duplicate",
+      "question": {
+        "id": "multiple_response_duplicate",
+        "interaction": {
+          "type": "multiple_response",
+          "choices": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }],
+          "required_selections": 2
+        },
+        "canonical_answer": { "type": "multiple_response", "choice_ids": ["a", "b"] },
+        "explanation": "mr explanation"
+      },
+      "answer": { "choice_ids": ["a", "a"] },
+      "expected_error": "duplicate_choice"
+    }
+  ]
+}

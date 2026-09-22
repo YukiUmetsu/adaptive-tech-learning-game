@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { MissionResponse, QuestionView } from "../api/types";
+import type { MissionResponse, StudyQuestionView } from "../api/types";
 import type { SyncState } from "../hooks/useMissionRunner";
 import { clearCatalogCache } from "../hooks/useCatalog";
 import { resetMissionCelebrations } from "../state/celebration";
@@ -99,7 +99,7 @@ function question(
   domainId: string,
   taskId: string,
   conceptIds: string[],
-): QuestionView {
+): StudyQuestionView {
   return {
     id,
     domain_id: domainId,
@@ -114,6 +114,10 @@ function question(
     })),
     hints: [],
     interaction: { type: "classification", items: [], categories: [] },
+    canonical_answer: { type: "classification", placements: {} },
+    explanation: "",
+    choice_feedback: {},
+    error_codes: [],
   };
 }
 

@@ -3,7 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { MissionResponse } from "../api/types";
-import { saveMission, type MissionProgress } from "../state/persistence";
+import {
+  loadMission,
+  saveMission,
+  type MissionProgress,
+} from "../state/persistence";
 import { useMissionRunner } from "./useMissionRunner";
 
 vi.mock("../state/focus", () => ({
@@ -39,6 +43,13 @@ const mission = {
         items: [{ id: "cpu", label: "CPU" }],
         categories: [{ id: "metric", label: "Metric" }],
       },
+      canonical_answer: {
+        type: "classification",
+        placements: { cpu: "metric" },
+      },
+      explanation: "CPU is a metric.",
+      choice_feedback: {},
+      error_codes: [],
     },
   ],
 } as unknown as MissionResponse;
@@ -90,16 +101,13 @@ beforeEach(() => {
     "fetch",
     vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input instanceof Request ? input.url : input);
-      if (url.includes("/answers")) {
-        return jsonResponse({
-          correct: true,
-          score: 1,
-          error_codes: [],
-          bits_preview: 3,
-        });
-      }
       if (url.includes("/v1/sync")) {
-        return jsonResponse({ results: [], bits_balance: 3 });
+        return jsonResponse({
+          results: [],
+          bits_balance: 3,
+          discovery: { accepted: true },
+          auxiliary: { accepted: true },
+        });
       }
       return jsonResponse({});
     }),
@@ -126,5 +134,62 @@ describe("useMissionRunner focus activity", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "next" }));
     expect(recordStudyActivity).toHaveBeenCalledWith("mission_next");
+  });
+});
+
+describe("useMissionRunner scorer reconciliation", () => {
+  it("lets the authoritative server score win and reconciles local state", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input instanceof Request ? input.url : input);
+        if (!url.includes("/v1/sync")) {
+          return jsonResponse({});
+        }
+
+        let body: { events?: { event_id?: string }[] } = { events: [] };
+        if (input instanceof Request) {
+          body = (await input.clone().json()) as typeof body;
+        } else if (init?.body) {
+          body = JSON.parse(String(init.body)) as typeof body;
+        }
+
+        // The local attempt scored 1.0/correct; the server disagrees.
+        return jsonResponse({
+          results: [
+            {
+              event_id: body.events?.[0]?.event_id,
+              accepted: true,
+              correct: false,
+              score: 0.5,
+              error_codes: ["classification_misplaced"],
+              bits_settled: 0,
+            },
+          ],
+          bits_balance: 0,
+          discovery: { accepted: true },
+          auxiliary: { accepted: true },
+        });
+      }),
+    );
+
+    render(<Probe />);
+    await screen.findByText("answering");
+
+    await userEvent.click(screen.getByRole("button", { name: "submit" }));
+    await screen.findByText("feedback");
+
+    // Local optimistic state was correct before reconciliation.
+    expect(loadMission()?.attempts[0]?.correct).toBe(true);
+
+    await userEvent.click(screen.getByRole("button", { name: "next" }));
+
+    await waitFor(() => {
+      const attempt = loadMission()?.attempts[0];
+      expect(attempt?.correct).toBe(false);
+      expect(attempt?.score).toBeCloseTo(0.5);
+      expect(attempt?.errorCodes).toEqual(["classification_misplaced"]);
+      expect(attempt?.bits).toBe(0);
+    });
   });
 });

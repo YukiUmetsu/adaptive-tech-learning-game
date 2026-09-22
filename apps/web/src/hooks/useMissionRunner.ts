@@ -5,9 +5,12 @@ import type {
   AnswerPayload,
   FeedbackResponse,
   MissionResponse,
-  QuestionView,
+  StudyQuestionView,
+  SyncEventResult,
 } from "../api/types";
 import { newId } from "../lib/id";
+import { scoreQuestion, ScoringError } from "../scoring";
+import { rewardBits } from "../scoring/reward";
 import { recordStudyActivity } from "../state/focus";
 import {
   loadPendingAuxiliary,
@@ -45,7 +48,7 @@ export interface SyncState {
 export interface MissionRunner {
   phase: RunnerPhase;
   mission: MissionResponse | null;
-  question: QuestionView | null;
+  question: StudyQuestionView | null;
   currentIndex: number;
   total: number;
   attempts: AttemptRecord[];
@@ -63,8 +66,14 @@ export interface MissionRunner {
 /**
  * Runs one mission against persisted local state.
  *
- * Answers are scored by the API, then stored locally as pending events and
- * reconciled in a single batch when the mission finishes.
+ * Ordinary study missions are scored locally against the canonical answer that
+ * ships with the issued mission, so answering a question performs zero network
+ * requests. Raw answer primitives are queued in the pending-event outbox and
+ * reconciled at a natural boundary (mission completion, manual retry, or
+ * reconnect) with a single `/v1/sync` call.
+ *
+ * Local scoring is never authoritative: the server re-scores every raw answer
+ * and its result wins on reconciliation.
  */
 export function useMissionRunner(missionId: string): MissionRunner {
   const [progress, setProgress] = useState<MissionProgress | null>(null);
@@ -104,6 +113,89 @@ export function useMissionRunner(missionId: string): MissionRunner {
     setProgress(next);
     saveMission(next);
   }, []);
+
+  /**
+   * Reconciles local optimistic attempt results with the authoritative server
+   * scoring returned by sync. The server always wins.
+   */
+  const reconcileAttempts = useCallback((results: SyncEventResult[]) => {
+    if (results.length === 0) {
+      return;
+    }
+    const byEvent = new Map(results.map((entry) => [entry.event_id, entry]));
+    const stored = loadMission();
+    if (!stored) {
+      return;
+    }
+
+    let changed = false;
+    const nextAttempts = stored.attempts.map((attempt) => {
+      const result = byEvent.get(attempt.eventId);
+      if (!result || !result.accepted) {
+        return attempt;
+      }
+
+      const correctChanged = result.correct !== attempt.correct;
+      const scoreChanged = Math.abs(result.score - attempt.score) > 1e-9;
+      if (correctChanged || scoreChanged) {
+        warnScorerMismatch(attempt, result);
+      }
+
+      // Settled Bits are authoritative. A duplicate retry reports 0 without
+      // contradicting an already-settled attempt, so only a genuinely
+      // non-correct server score clears the optimistic preview.
+      const settledBits =
+        result.score < 1
+          ? 0
+          : result.bits_settled > 0
+            ? result.bits_settled
+            : attempt.bits;
+
+      if (
+        !correctChanged &&
+        !scoreChanged &&
+        settledBits === attempt.bits
+      ) {
+        return attempt;
+      }
+
+      changed = true;
+      return {
+        ...attempt,
+        correct: result.correct,
+        score: result.score,
+        errorCodes: result.error_codes,
+        bits: settledBits,
+      };
+    });
+
+    if (changed) {
+      const next = { ...stored, attempts: nextAttempts };
+      persist(next);
+    }
+
+    setFeedback((current) => {
+      if (!current) {
+        return current;
+      }
+      const result = byEvent.get(current.event_id);
+      if (!result || !result.accepted) {
+        return current;
+      }
+      return {
+        ...current,
+        correct: result.correct,
+        score: result.score,
+        error_codes: result.error_codes,
+        bits_preview:
+          result.score < 1
+            ? 0
+            : result.bits_settled > 0
+              ? result.bits_settled
+              : current.bits_preview,
+      };
+    });
+  }, [persist]);
 
   const sync = useCallback(async () => {
     const pending = loadPendingEvents();
@@ -159,10 +251,11 @@ export function useMissionRunner(missionId: string): MissionRunner {
         return;
       }
 
-      const accepted = result.data.results
-        .filter((entry) => entry.accepted)
-        .map((entry) => entry.event_id);
-      markEventsSynced(accepted);
+      const acceptedResults = result.data.results.filter(
+        (entry) => entry.accepted,
+      );
+      reconcileAttempts(acceptedResults);
+      markEventsSynced(acceptedResults.map((entry) => entry.event_id));
       if (result.data.discovery?.accepted) {
         markDiscoverySent(discovery);
       }
@@ -182,7 +275,7 @@ export function useMissionRunner(missionId: string): MissionRunner {
         message: caught instanceof Error ? caught.message : "Network error",
       });
     }
-  }, []);
+  }, [reconcileAttempts]);
 
   useEffect(() => {
     if (phase !== "summary" || !progress?.finished || completed.current) {
@@ -190,15 +283,23 @@ export function useMissionRunner(missionId: string): MissionRunner {
     }
     completed.current = true;
 
-    void api.POST("/v1/missions/{mission_id}/complete", {
-      params: { path: { mission_id: progress.mission.id } },
-      body: { device_id: getDeviceId() },
-    });
+    // Completion is derived server-side during sync from accepted evidence, so
+    // no separate completion request is needed.
     void sync();
     // Notify the app that authoritative study state may have changed so the
     // Track Hub can refresh the streak and Daily Mission at this boundary.
     window.dispatchEvent(new Event("adaptive-learn:study-updated"));
   }, [phase, progress, sync]);
+
+  // Returning online is a natural sync boundary. There is deliberately no
+  // timer and no per-answer background synchronization.
+  useEffect(() => {
+    const handleOnline = () => {
+      void sync();
+    };
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [sync]);
 
   const submit = useCallback(
     async (answer: AnswerPayload) => {
@@ -219,44 +320,38 @@ export function useMissionRunner(missionId: string): MissionRunner {
       const responseMs = timer.elapsedMs();
 
       try {
-        const result = await api.POST(
-          "/v1/missions/{mission_id}/answers",
-          {
-            params: { path: { mission_id: progress.mission.id } },
-            body: {
-              device_id: getDeviceId(),
-              event_id: eventId,
-              question_id: question.id,
-              content_version: progress.mission.content_version,
-              attempt_number: attemptNumber,
-              hint_count: 0,
-              response_ms: responseMs,
-              occurred_at: occurredAt,
-              answer,
-            },
-          },
-        );
-
-        if (result.error || !result.data) {
-          setError(`Scoring failed with HTTP ${result.response.status}`);
+        if (!question.canonical_answer) {
+          setError(
+            "This mission cannot be scored locally. Please start it again.",
+          );
           return;
         }
 
-        const scored = result.data;
+        // Zero network requests: score against the canonical answer that
+        // shipped with the mission.
+        const scored = scoreQuestion(question, answer);
+        const bitsPreview = rewardBits(
+          attemptNumber,
+          scored.score,
+          question.difficulty_prior,
+        );
+
         const record: AttemptRecord = {
           eventId,
           questionId: question.id,
           attemptNumber,
           correct: scored.correct,
           score: scored.score,
-          errorCodes: scored.error_codes,
+          errorCodes: scored.errorCodes,
           hintCount: 0,
           responseMs,
           occurredAt,
-          bits: scored.bits_preview,
+          bits: bitsPreview,
         };
-        previewBits(scored.bits_preview);
+        previewBits(bitsPreview);
 
+        // Persist local progress before queuing the raw event so a crash cannot
+        // silently lose the attempt.
         persist({
           ...progress,
           attempts: [...progress.attempts, record],
@@ -278,7 +373,17 @@ export function useMissionRunner(missionId: string): MissionRunner {
           );
         }
 
-        setFeedback(scored);
+        setFeedback({
+          event_id: eventId,
+          question_id: question.id,
+          correct: scored.correct,
+          score: scored.score,
+          error_codes: scored.errorCodes,
+          bits_preview: bitsPreview,
+          explanation: question.explanation,
+          canonical_answer: question.canonical_answer,
+          concepts: question.concepts,
+        });
         setLastAnswer(answer);
         setPhase("feedback");
         setSyncState((current) => ({
@@ -286,7 +391,11 @@ export function useMissionRunner(missionId: string): MissionRunner {
           pending: pendingEventCount(),
         }));
       } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Network error");
+        if (caught instanceof ScoringError) {
+          setError("This answer could not be scored. Please try again.");
+        } else {
+          setError(caught instanceof Error ? caught.message : "Scoring error");
+        }
       } finally {
         setSubmitting(false);
       }
@@ -338,4 +447,25 @@ export function useMissionRunner(missionId: string): MissionRunner {
     next,
     sync,
   };
+}
+
+/**
+ * Surfaces scorer drift in development/test builds only.
+ *
+ * A mismatch is not an error path: the server result already won and the local
+ * cache was reconciled. The diagnostic exists so parity bugs are visible during
+ * development instead of silently changing what learners see.
+ */
+function warnScorerMismatch(
+  attempt: AttemptRecord,
+  result: SyncEventResult,
+): void {
+  if (typeof import.meta !== "undefined" && import.meta.env?.DEV) {
+    console.warn("[scorer-parity] local and server scoring differ", {
+      eventId: attempt.eventId,
+      questionId: attempt.questionId,
+      local: { correct: attempt.correct, score: attempt.score },
+      server: { correct: result.correct, score: result.score },
+    });
+  }
 }

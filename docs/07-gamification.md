@@ -66,8 +66,10 @@ not fully correct:
 
 Settlement is server-authoritative and idempotent: the reward is written with
 the accepted learning event in one transaction, keyed by `event_id`, so a
-retried sync cannot award the same attempt twice. The scoring response returns a
-`bits_preview` for immediate feedback; only sync settles the wallet balance.
+retried sync cannot award the same attempt twice. A `bits_preview` is shown for
+immediate feedback. For ordinary study missions the client may compute that
+preview locally, but it is display-only and is neither persisted as settled
+currency nor trusted by the server; only sync settles the wallet balance.
 
 Conceptually:
 
