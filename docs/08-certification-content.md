@@ -218,6 +218,30 @@ Example:
 }
 ```
 
+A `text` reveal may carry optional `progressive_reveal` to hide individual words or
+phrases inside the sentence and reveal them one at a time. The sentence itself is
+always rendered; only the authored spans become inline reveal controls. Each span
+has a stable `id`, the exact `text` to hide (which may be several words), an
+optional 1-based `occurrence` for repeated wording, and an optional `required`
+flag that defaults to `true`. Spans are located by exact text plus occurrence, so
+repeated wording is unambiguous; spans may not overlap. A text reveal without
+`progressive_reveal` keeps the whole-prompt reveal.
+
+Example:
+
+```json
+{
+  "type": "text",
+  "text": "Security groups are stateful, while network ACLs are stateless.",
+  "progressive_reveal": {
+    "spans": [
+      { "id": "sg-state", "text": "stateful", "required": true },
+      { "id": "nacl-state", "text": "stateless", "required": true }
+    ]
+  }
+}
+```
+
 Rules:
 
 - Learning is a discovery layer before retrieval practice, not a fourth quiz
@@ -225,9 +249,10 @@ Rules:
   including individual code-annotation reveals.
 - Discovery progress (`adaptive-learn.learning-progress.v3` in local storage)
   stores revealed prompt ids and generic element-discovery ids. Code
-  annotations and progressive-table rows, columns, and cells share one
-  namespaced structure: `annotation:<id>`, `row:<id>`, `column:<id>`,
-  `cell:<row_id>:<column_id>`. A one-time, idempotent migration converts the v2
+  annotations, progressive-table rows, columns, and cells, and progressive-text
+  spans share one namespaced structure: `annotation:<id>`, `row:<id>`,
+  `column:<id>`, `cell:<row_id>:<column_id>`, `span:<id>`. A one-time,
+  idempotent migration converts the v2
   key (prompt progress plus raw code-annotation ids, re-prefixed as
   `annotation:`) and the v1 key (prompt progress only) without losing discovery
   progress, then drops the legacy key. Node and module state are derived, so
@@ -238,7 +263,11 @@ Rules:
   annotations (including an empty list) completes on an explicit mark-as-reviewed
   action. A progressive `table` completes when every non-given reveal unit is
   explored: hidden rows in `row` mode, hidden columns in `column` mode, or
-  hidden cells in `cell` mode. Static tables complete on the whole-prompt
+  hidden cells in `cell` mode. A progressive `text` reveal completes when every
+  span flagged `required` is revealed; optional spans never block completion,
+  and a progressive text reveal with no required spans completes on an explicit
+  mark-as-reviewed action. Static tables and ordinary text reveals complete on
+  the whole-prompt
   reveal. `ready`, `in_progress`, and `locked` are derived from node
   prerequisites, module prerequisites, and reveals.
 - Vocabulary stays game-like: Knowledge Map, Knowledge Node, Locked, Ready,
@@ -261,7 +290,10 @@ that do not resolve to a row and column, colliding reveal-unit ids, and a table
 whose initial visibility leaves nothing to reveal. For `code_file` reveals it
 rejects empty filename/language/code, duplicate annotation ids, duplicate
 anchors, missing titles/explanations, anchors on lines outside the code, target
-text that does not occur on its line, and out-of-range occurrences.
+text that does not occur on its line, and out-of-range occurrences. For
+progressive `text` reveals it rejects empty span lists, duplicate or empty span
+ids, empty span text, span text that does not occur in the sentence, out-of-range
+occurrences, and overlapping spans.
 
 ## Interaction schema
 

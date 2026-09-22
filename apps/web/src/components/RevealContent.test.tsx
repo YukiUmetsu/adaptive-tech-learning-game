@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import RevealContent from "./RevealContent";
+import { progressiveTextReveal } from "../test/progressiveTextFixture";
 import {
   PROMPT_KIND_META,
   promptAccessibleName,
@@ -12,6 +13,17 @@ describe("RevealContent", () => {
   it("renders a short prose reveal", () => {
     render(<RevealContent reveal={{ type: "text", text: "Records API activity." }} />);
     expect(screen.getByText("Records API activity.")).toBeInTheDocument();
+  });
+
+  it("routes a progressive text reveal to the inline span renderer", () => {
+    const { container } = render(<RevealContent reveal={progressiveTextReveal} />);
+
+    const paragraph = container.querySelector(".progressive-text");
+    expect(paragraph).not.toBeNull();
+    expect(paragraph).toHaveTextContent("Security groups are");
+    expect(container.querySelectorAll(".progressive-text-reveal")).toHaveLength(
+      2,
+    );
   });
 
   it("renders backticked code terms in prose as inline code", () => {

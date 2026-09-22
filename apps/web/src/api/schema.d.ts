@@ -1498,6 +1498,7 @@ export interface components {
          *     curriculum distinguishes prose, sequences, comparisons, and keyword clues.
          */
         LearningReveal: {
+            progressive_reveal?: null | components["schemas"]["TextProgressiveReveal"];
             /** @description Revealed text. Keep it to one or two sentences. */
             text: string;
             /** @enum {string} */
@@ -2535,6 +2536,34 @@ export interface components {
             name: string;
             /** @description Number of authored questions available. */
             question_count: number;
+        };
+        /**
+         * @description Progressive reveal configuration for a `text` reveal.
+         *
+         *     The sentence is always rendered in full. Discovery is limited to the
+         *     authored `spans` inside it: each span is replaced by an inline reveal
+         *     control until the learner activates it.
+         */
+        TextProgressiveReveal: {
+            /** @description Hidden words or phrases inside the reveal text, in any order. */
+            spans: components["schemas"]["TextRevealSpan"][];
+        };
+        /**
+         * @description One hidden word or phrase inside a progressive `text` reveal.
+         *
+         *     Span text may contain multiple words. It is located inside the parent
+         *     sentence by exact text plus an optional occurrence, so repeated wording is
+         *     disambiguated the same way code annotation anchors are.
+         */
+        TextRevealSpan: {
+            /** @description Stable span identifier, also the persisted progress key. */
+            id: string;
+            /** @description 1-based occurrence of `text` in the sentence. Defaults to the first. */
+            occurrence?: number;
+            /** @description Whether revealing this span is needed to complete the prompt. */
+            required?: boolean;
+            /** @description Exact authored text to hide. May contain multiple words. */
+            text: string;
         };
         /**
          * @description All learner-facing learning content for one learning track.

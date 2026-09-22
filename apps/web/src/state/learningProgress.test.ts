@@ -23,6 +23,10 @@ import { loadPendingDiscovery } from "./auxiliaryQueue";
 import { learningFixture } from "../test/learningFixture";
 import { codeLearningFixture } from "../test/codeLearningFixture";
 import { progressiveTableFixture } from "../test/progressiveTableFixture";
+import {
+  optionalProgressiveTextReveal,
+  progressiveTextFixture,
+} from "../test/progressiveTextFixture";
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -514,6 +518,99 @@ describe("progressive table progress", () => {
     );
     expect(state.nodeState["n-row"]).toBe("in_progress");
     expect(state.unlockedNodeIds.has("n-row")).toBe(false);
+  });
+});
+
+describe("progressive text progress", () => {
+  const span = (id: string) =>
+    revealElement(
+      "v1",
+      "domain-text",
+      "test-text-v1",
+      "n-text",
+      "sentence",
+      elementId.span(id),
+    );
+
+  it("completes when every required span is revealed", () => {
+    const prompt = progressiveTextFixture.modules[0].nodes[0].prompts[0];
+    expect(isPromptComplete(prompt, new Set(), new Set())).toBe(false);
+    expect(isPromptComplete(prompt, new Set(), new Set(["span:sg-state"]))).toBe(
+      false,
+    );
+    expect(
+      isPromptComplete(
+        prompt,
+        new Set(),
+        new Set(["span:sg-state", "span:nacl-state"]),
+      ),
+    ).toBe(true);
+    // Revealing the prompt itself is not enough when spans are required.
+    expect(isPromptComplete(prompt, new Set(["sentence"]), new Set())).toBe(
+      false,
+    );
+  });
+
+  it("does not complete an all-optional reveal from spans alone", () => {
+    const prompt = {
+      ...progressiveTextFixture.modules[0].nodes[0].prompts[0],
+      reveal: optionalProgressiveTextReveal,
+    };
+    expect(isPromptComplete(prompt, new Set(), new Set(["span:nat-out"]))).toBe(
+      false,
+    );
+    // With no required spans it falls back to an explicit prompt reveal.
+    expect(isPromptComplete(prompt, new Set(["sentence"]), new Set())).toBe(
+      true,
+    );
+  });
+
+  it("persists span:<id> and unlocks the node through the shared reveal path", () => {
+    span("sg-state");
+    let state = deriveLearningState(
+      progressiveTextFixture,
+      loadDomainProgress("v1", "domain-text"),
+    );
+    expect(state.nodeState["n-text"]).toBe("in_progress");
+    expect(state.unlockedNodeIds.has("n-text")).toBe(false);
+
+    span("nacl-state");
+    state = deriveLearningState(
+      progressiveTextFixture,
+      loadDomainProgress("v1", "domain-text"),
+    );
+    expect(state.nodeState["n-text"]).toBe("unlocked");
+    expect(
+      loadDomainProgress("v1", "domain-text")?.revealedElementIds["n-text"][
+        "sentence"
+      ],
+    ).toEqual(["span:sg-state", "span:nacl-state"]);
+  });
+
+  it("queues span reveals through the shared discovery path", () => {
+    span("sg-state");
+    const pending = loadPendingDiscovery();
+    expect(pending[0].domains[0].revealed_element_ids).toEqual({
+      "n-text": { sentence: ["span:sg-state"] },
+    });
+  });
+
+  it("fullPromptReveals includes required and optional spans for review", () => {
+    const base = progressiveTextFixture.modules[0].nodes[0];
+    const full = fullPromptReveals(base);
+    expect(full.promptIds).toEqual(["sentence"]);
+    expect(full.elementIds["sentence"]).toEqual([
+      "span:sg-state",
+      "span:nacl-state",
+    ]);
+
+    const optionalNode = {
+      ...base,
+      prompts: [{ ...base.prompts[0], reveal: optionalProgressiveTextReveal }],
+    };
+    expect(fullPromptReveals(optionalNode).elementIds["sentence"]).toEqual([
+      "span:nat-out",
+    ]);
   });
 });
 

@@ -2,6 +2,8 @@ import type {
   LearningReveal,
   TableProgressiveReveal,
   TableRevealMode,
+  TextProgressiveReveal,
+  TextRevealSpan,
 } from "../api/types";
 
 /** The `table` arm of the shared reveal union. */
@@ -12,19 +14,28 @@ export type ProgressiveTableReveal = LearningTableReveal & {
   progressive_reveal: TableProgressiveReveal;
 };
 
+/** The `text` arm of the shared reveal union. */
+export type LearningTextReveal = Extract<LearningReveal, { type: "text" }>;
+
+/** A progressive text reveal: the text arm with span configuration present. */
+export type ProgressiveTextReveal = LearningTextReveal & {
+  progressive_reveal: TextProgressiveReveal;
+};
+
 /**
  * Namespaced discovery element ids.
  *
  * Learning progress stores one flat list of discovered elements per prompt.
- * Namespacing keeps code annotations, table rows, columns, and cells in the
- * same structure without separate maps, and keeps ids stable across content
- * revisions.
+ * Namespacing keeps code annotations, table rows, columns, cells, and
+ * progressive-text spans in the same structure without separate maps, and keeps
+ * ids stable across content revisions.
  */
 export const elementId = {
   annotation: (annotationId: string) => `annotation:${annotationId}`,
   row: (rowId: string) => `row:${rowId}`,
   column: (columnId: string) => `column:${columnId}`,
   cell: (rowId: string, columnId: string) => `cell:${rowId}:${columnId}`,
+  span: (spanId: string) => `span:${spanId}`,
 };
 
 /** Derives the cell id authors never hand-write: `row_id:column_id`. */
@@ -37,6 +48,13 @@ export function isProgressiveTable(
   reveal: LearningReveal,
 ): reveal is ProgressiveTableReveal {
   return reveal.type === "table" && reveal.progressive_reveal != null;
+}
+
+/** Whether a text reveal is configured for progressive span discovery. */
+export function isProgressiveText(
+  reveal: LearningReveal,
+): reveal is ProgressiveTextReveal {
+  return reveal.type === "text" && reveal.progressive_reveal != null;
 }
 
 /** Visibility/discovery state of one progressive-table cell. */
@@ -166,4 +184,94 @@ export function deriveProgressiveTable(
     },
     requiredUnits,
   };
+}
+
+/** One ordered piece of a progressive `text` reveal. */
+export interface ProgressiveTextSegment {
+  /** Whether this piece is visible prose or a hidden span control. */
+  kind: "text" | "span";
+  /** Literal prose for `text`; the authored phrase for `span`. */
+  text: string;
+  /** Present only on `span` pieces: the stable authored span id. */
+  spanId?: string;
+  /** Present only on `span` pieces: whether it blocks completion. */
+  required?: boolean;
+}
+
+/** Returns the zero-based index of the `occurrence`-th match, or `-1`. */
+function occurrenceOffset(
+  haystack: string,
+  needle: string,
+  occurrence: number,
+): number {
+  if (needle.length === 0 || occurrence < 1) {
+    return -1;
+  }
+  let seen = 0;
+  let from = 0;
+  while (from <= haystack.length) {
+    const index = haystack.indexOf(needle, from);
+    if (index === -1) {
+      break;
+    }
+    seen += 1;
+    if (seen === occurrence) {
+      return index;
+    }
+    from = index + needle.length;
+  }
+  return -1;
+}
+
+/**
+ * Splits a progressive `text` reveal into ordered prose and hidden-span pieces.
+ *
+ * Spans are located by exact text plus the authored occurrence, so repeated
+ * wording resolves deterministically rather than revealing the wrong phrase.
+ * Content validation already rejects spans that cannot be located or that
+ * overlap; a span that cannot be located here is rendered as plain prose instead
+ * of being lost.
+ */
+export function deriveProgressiveText(
+  reveal: LearningTextReveal,
+): ProgressiveTextSegment[] {
+  const spans: TextRevealSpan[] = reveal.progressive_reveal?.spans ?? [];
+  const located = spans
+    .map((span) => {
+      const start = occurrenceOffset(reveal.text, span.text, span.occurrence ?? 1);
+      return start < 0
+        ? null
+        : { span, start, end: start + span.text.length };
+    })
+    .filter(
+      (
+        entry,
+      ): entry is { span: TextRevealSpan; start: number; end: number } =>
+        entry !== null,
+    )
+    .sort((a, b) => a.start - b.start);
+
+  const segments: ProgressiveTextSegment[] = [];
+  let cursor = 0;
+  for (const { span, start, end } of located) {
+    if (start < cursor) {
+      // Defensive only: content validation rejects overlaps, so this never
+      // happens with authored content.
+      continue;
+    }
+    if (start > cursor) {
+      segments.push({ kind: "text", text: reveal.text.slice(cursor, start) });
+    }
+    segments.push({
+      kind: "span",
+      text: span.text,
+      spanId: span.id,
+      required: span.required !== false,
+    });
+    cursor = end;
+  }
+  if (cursor < reveal.text.length) {
+    segments.push({ kind: "text", text: reveal.text.slice(cursor) });
+  }
+  return segments;
 }

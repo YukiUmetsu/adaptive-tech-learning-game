@@ -217,6 +217,12 @@ pub enum LearningReveal {
     Text {
         /// Revealed text. Keep it to one or two sentences.
         text: String,
+        /// Optional progressive reveal configuration. When present, the
+        /// sentence is always rendered and only the authored spans inside it
+        /// are hidden until the learner reveals each one. When omitted the
+        /// whole text is revealed as a unit exactly as before.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        progressive_reveal: Option<TextProgressiveReveal>,
     },
     /// An ordered sequence, rendered top-to-bottom with arrows.
     Sequence {
@@ -375,6 +381,36 @@ impl TableProgressiveReveal {
             .iter()
             .any(|id| id == &cell_id)
     }
+}
+
+/// Progressive reveal configuration for a `text` reveal.
+///
+/// The sentence is always rendered in full. Discovery is limited to the
+/// authored `spans` inside it: each span is replaced by an inline reveal
+/// control until the learner activates it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct TextProgressiveReveal {
+    /// Hidden words or phrases inside the reveal text, in any order.
+    pub spans: Vec<TextRevealSpan>,
+}
+
+/// One hidden word or phrase inside a progressive `text` reveal.
+///
+/// Span text may contain multiple words. It is located inside the parent
+/// sentence by exact text plus an optional occurrence, so repeated wording is
+/// disambiguated the same way code annotation anchors are.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct TextRevealSpan {
+    /// Stable span identifier, also the persisted progress key.
+    pub id: String,
+    /// Exact authored text to hide. May contain multiple words.
+    pub text: String,
+    /// 1-based occurrence of `text` in the sentence. Defaults to the first.
+    #[serde(default = "default_one")]
+    pub occurrence: usize,
+    /// Whether revealing this span is needed to complete the prompt.
+    #[serde(default = "default_true")]
+    pub required: bool,
 }
 
 /// A clickable region inside a `code_file` reveal.
@@ -720,9 +756,15 @@ fn validate_reveal(node: &KnowledgeNode, prompt: &KnowledgePrompt, errors: &mut 
     };
 
     match &prompt.reveal {
-        LearningReveal::Text { text } => {
+        LearningReveal::Text {
+            text,
+            progressive_reveal,
+        } => {
             if text.trim().is_empty() {
                 errors.push(invalid("text reveal must not be empty".to_owned()));
+            }
+            if let Some(progressive) = progressive_reveal {
+                validate_text_progressive_reveal(node, prompt, text, progressive, errors);
             }
         }
         LearningReveal::Sequence { items } => {
@@ -781,6 +823,125 @@ fn validate_reveal(node: &KnowledgeNode, prompt: &KnowledgePrompt, errors: &mut 
             validate_code_file(node, prompt, filename, language, code, annotations, errors);
         }
     }
+}
+
+/// Validates a progressive `text` reveal's spans.
+///
+/// Each span must have a unique, non-empty id and non-empty text that actually
+/// occurs in the parent sentence at the authored occurrence. Overlapping spans
+/// are rejected so a hidden phrase always has one unambiguous reveal control.
+/// Anchors are located the same way code annotation anchors are, which makes
+/// repeated wording deterministic instead of silently revealing the wrong
+/// occurrence.
+fn validate_text_progressive_reveal(
+    node: &KnowledgeNode,
+    prompt: &KnowledgePrompt,
+    text: &str,
+    progressive: &TextProgressiveReveal,
+    errors: &mut Vec<ContentError>,
+) {
+    let span_error = |code: &'static str, message: String| {
+        ContentError::new(
+            code,
+            format!("knowledge node {} prompt {} {message}", node.id, prompt.id),
+        )
+    };
+
+    if progressive.spans.is_empty() {
+        errors.push(span_error(
+            "learning_text_reveal_empty",
+            "progressive text reveal needs at least one span".to_owned(),
+        ));
+        return;
+    }
+
+    let mut seen_ids: HashSet<&str> = HashSet::new();
+    let mut ranges: Vec<(usize, usize, &str)> = Vec::new();
+
+    for span in &progressive.spans {
+        if span.id.trim().is_empty() {
+            errors.push(span_error(
+                "learning_text_span_field_missing",
+                "text reveal span id must not be empty".to_owned(),
+            ));
+        } else if !seen_ids.insert(span.id.as_str()) {
+            errors.push(span_error(
+                "learning_text_span_duplicate_id",
+                format!("duplicate text reveal span id {}", span.id),
+            ));
+        }
+
+        if span.text.trim().is_empty() {
+            errors.push(span_error(
+                "learning_text_span_field_missing",
+                format!("text reveal span {} text must not be empty", span.id),
+            ));
+            continue;
+        }
+
+        let occurrences = count_occurrences(text, &span.text);
+        if occurrences == 0 {
+            errors.push(span_error(
+                "learning_text_span_target_missing",
+                format!(
+                    "text reveal span {} text {:?} does not occur in the reveal text",
+                    span.id, span.text
+                ),
+            ));
+            continue;
+        }
+        if span.occurrence == 0 || span.occurrence > occurrences {
+            errors.push(span_error(
+                "learning_text_span_occurrence_invalid",
+                format!(
+                    "text reveal span {} occurrence {} is invalid for {:?} ({} found)",
+                    span.id, span.occurrence, span.text, occurrences
+                ),
+            ));
+            continue;
+        }
+
+        if let Some(start) = occurrence_offset(text, &span.text, span.occurrence) {
+            ranges.push((start, start + span.text.len(), span.id.as_str()));
+        }
+    }
+
+    // Two spans may never cover the same character, or one control would have
+    // to reveal overlapping content.
+    ranges.sort_by_key(|(start, _, _)| *start);
+    for pair in ranges.windows(2) {
+        let (_, previous_end, previous_id) = pair[0];
+        let (next_start, _, next_id) = pair[1];
+        if next_start < previous_end {
+            errors.push(span_error(
+                "learning_text_span_overlap",
+                format!("text reveal spans {previous_id} and {next_id} overlap"),
+            ));
+        }
+    }
+}
+
+/// Returns the byte offset of the `occurrence`-th non-overlapping match.
+fn occurrence_offset(haystack: &str, needle: &str, occurrence: usize) -> Option<usize> {
+    if needle.is_empty() || occurrence == 0 {
+        return None;
+    }
+    let mut seen = 0;
+    let mut search_from = 0;
+    while search_from <= haystack.len() {
+        match haystack[search_from..].find(needle) {
+            Some(index) => {
+                seen += 1;
+                let start = search_from + index;
+                if seen == occurrence {
+                    return Some(start);
+                }
+                search_from = start + needle.len();
+            }
+            None => break,
+        }
+    }
+    None
 }
 
 /// Validates a `table` reveal: known, unique columns; at least one row; and a

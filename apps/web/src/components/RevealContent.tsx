@@ -1,12 +1,15 @@
 import type { LearningReveal } from "../api/types";
 import { comparisonGridClass } from "../lib/comparison";
-import { isProgressiveTable } from "../lib/learningElements";
+import { isProgressiveTable, isProgressiveText } from "../lib/learningElements";
 import CodeFile, { type CodeFileInteraction } from "./CodeFile";
 import InlineText from "./InlineText";
 import LearningTable from "./LearningTable";
 import ProgressiveLearningTable, {
   type ProgressiveTableInteraction,
 } from "./ProgressiveLearningTable";
+import ProgressiveText, {
+  type ProgressiveTextInteraction,
+} from "./ProgressiveText";
 
 interface RevealContentProps {
   reveal: LearningReveal;
@@ -20,6 +23,11 @@ interface RevealContentProps {
    * `progressive_reveal` ignores it and uses the static whole-table reveal.
    */
   tableInteraction?: ProgressiveTableInteraction;
+  /**
+   * Discovery state for a progressive `text` reveal. A text reveal without
+   * `progressive_reveal` ignores it and renders as ordinary prose.
+   */
+  textInteraction?: ProgressiveTextInteraction;
 }
 
 /**
@@ -28,16 +36,20 @@ interface RevealContentProps {
  * Each reveal type gets a purpose-built layout instead of being flattened to
  * prose: sequences show arrows, comparisons are side-by-side (stacked on
  * mobile), keywords become clue chips, tables use real table semantics, and
- * code files render as a read-only highlighted editor.
+ * code files render as a read-only highlighted editor. A `text` reveal with
+ * `progressive_reveal` keeps its sentence visible and hides individual spans.
  */
 export default function RevealContent({
   reveal,
   codeInteraction,
   tableInteraction,
+  textInteraction,
 }: RevealContentProps) {
   switch (reveal.type) {
     case "text":
-      return (
+      return isProgressiveText(reveal) ? (
+        <ProgressiveText reveal={reveal} interaction={textInteraction} />
+      ) : (
         <p className="reveal reveal-text">
           <InlineText text={reveal.text} />
         </p>

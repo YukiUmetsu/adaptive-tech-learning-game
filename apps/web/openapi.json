@@ -4157,6 +4157,17 @@
               "type"
             ],
             "properties": {
+              "progressive_reveal": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TextProgressiveReveal",
+                    "description": "Optional progressive reveal configuration. When present, the\nsentence is always rendered and only the authored spans inside it\nare hidden until the learner reveals each one. When omitted the\nwhole text is revealed as a unit exactly as before."
+                  }
+                ]
+              },
               "text": {
                 "type": "string",
                 "description": "Revealed text. Keep it to one or two sentences."
@@ -6350,6 +6361,49 @@
             "type": "integer",
             "description": "Number of authored questions available.",
             "minimum": 0
+          }
+        }
+      },
+      "TextProgressiveReveal": {
+        "type": "object",
+        "description": "Progressive reveal configuration for a `text` reveal.\n\nThe sentence is always rendered in full. Discovery is limited to the\nauthored `spans` inside it: each span is replaced by an inline reveal\ncontrol until the learner activates it.",
+        "required": [
+          "spans"
+        ],
+        "properties": {
+          "spans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TextRevealSpan"
+            },
+            "description": "Hidden words or phrases inside the reveal text, in any order."
+          }
+        }
+      },
+      "TextRevealSpan": {
+        "type": "object",
+        "description": "One hidden word or phrase inside a progressive `text` reveal.\n\nSpan text may contain multiple words. It is located inside the parent\nsentence by exact text plus an optional occurrence, so repeated wording is\ndisambiguated the same way code annotation anchors are.",
+        "required": [
+          "id",
+          "text"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable span identifier, also the persisted progress key."
+          },
+          "occurrence": {
+            "type": "integer",
+            "description": "1-based occurrence of `text` in the sentence. Defaults to the first.",
+            "minimum": 0
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether revealing this span is needed to complete the prompt."
+          },
+          "text": {
+            "type": "string",
+            "description": "Exact authored text to hide. May contain multiple words."
           }
         }
       },

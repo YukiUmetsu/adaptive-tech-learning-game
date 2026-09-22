@@ -3,7 +3,7 @@ import {
   comparisonGridClass,
   comparisonPlaceholderColumns,
 } from "../lib/comparison";
-import { isProgressiveTable } from "../lib/learningElements";
+import { isProgressiveTable, isProgressiveText } from "../lib/learningElements";
 import { PROMPT_KIND_META, promptAccessibleName, promptWords } from "../state/learningVocabulary";
 import InlineText from "./InlineText";
 import RevealContent from "./RevealContent";
@@ -26,8 +26,9 @@ interface KnowledgePromptProps {
  * Before reveal the learner sees the prompt and its blank; activating the blank
  * reveals the authored information. Some reveals are interactive from the
  * start instead: a `code_file` renders immediately and reveals individual
- * annotations, and a progressive `table` renders immediately and reveals rows,
- * columns, or cells. No grading happens here.
+ * annotations, a progressive `table` renders immediately and reveals rows,
+ * columns, or cells, and a progressive `text` renders its sentence immediately
+ * and reveals individual spans. No grading happens here.
  */
 export default function KnowledgePrompt({
   prompt,
@@ -41,7 +42,8 @@ export default function KnowledgePrompt({
   const accessibleName = promptAccessibleName(prompt);
   const isCodeFile = prompt.reveal.type === "code_file";
   const isProgressive = isProgressiveTable(prompt.reveal);
-  const interactive = isCodeFile || isProgressive;
+  const isProgressiveTextReveal = isProgressiveText(prompt.reveal);
+  const interactive = isCodeFile || isProgressive || isProgressiveTextReveal;
   // A comparison prompt mirrors its columns in the blank, so show the blank as
   // aligned column cells instead of one running line.
   const columnSegments =
@@ -97,6 +99,18 @@ export default function KnowledgePrompt({
                     onRevealElement: (elementId) =>
                       onRevealElement?.(prompt.id, elementId),
                     disabled,
+                  }
+                : undefined
+            }
+            textInteraction={
+              isProgressiveTextReveal
+                ? {
+                    revealedElementIds: revealedElementIds ?? [],
+                    onRevealElement: (elementId) =>
+                      onRevealElement?.(prompt.id, elementId),
+                    disabled,
+                    complete: revealed,
+                    onComplete: () => onReveal(prompt.id),
                   }
                 : undefined
             }

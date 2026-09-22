@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { progressiveTextReveal } from "../test/progressiveTextFixture";
 import KnowledgePrompt from "./KnowledgePrompt";
 
 const comparisonReveal = {
@@ -87,6 +88,38 @@ describe("KnowledgePrompt", () => {
 
     expect(container.querySelector(".knowledge-prompt-blank--columns")).toBeNull();
     expect(container.querySelectorAll(".knowledge-prompt-blank-cell")).toHaveLength(0);
+  });
+
+  it("renders a progressive text reveal immediately with the sentence visible", () => {
+    const { container } = render(
+      <KnowledgePrompt
+        prompt={{
+          id: "model",
+          kind: "mental_model",
+          label: "🧠 MENTAL MODEL",
+          placeholder: "Reveal the hidden terms.",
+          required: true,
+          reveal: progressiveTextReveal,
+        }}
+        revealed={false}
+        revealedElementIds={[]}
+        onReveal={() => {}}
+        onRevealElement={() => {}}
+      />,
+    );
+
+    // No whole-prompt blank: the sentence is live from the start.
+    expect(container.querySelector(".knowledge-prompt-blank")).toBeNull();
+    const paragraph = container.querySelector(".progressive-text");
+    expect(paragraph).not.toBeNull();
+    expect(paragraph).toHaveTextContent("Security groups are");
+    expect(paragraph).toHaveTextContent("while network ACLs are");
+    // The hidden phrases are absent until revealed.
+    expect(screen.queryByText("stateful")).toBeNull();
+    expect(screen.queryByText("stateless")).toBeNull();
+    expect(container.querySelectorAll(".progressive-text-reveal")).toHaveLength(
+      2,
+    );
   });
 
   it("renders a code_file immediately and keeps explanations hidden", () => {

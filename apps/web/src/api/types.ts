@@ -80,6 +80,9 @@ export type TableProgressiveReveal =
 export type TableRevealMode = components["schemas"]["TableRevealMode"];
 export type TableInitialVisibility =
   components["schemas"]["TableInitialVisibility"];
+export type TextProgressiveReveal =
+  components["schemas"]["TextProgressiveReveal"];
+export type TextRevealSpan = components["schemas"]["TextRevealSpan"];
 export type CodeAnnotation = components["schemas"]["CodeAnnotation"];
 export type CodeAnnotationAnchor = components["schemas"]["CodeAnnotationAnchor"];
 export type MapPosition = components["schemas"]["MapPosition"];

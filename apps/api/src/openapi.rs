@@ -181,6 +181,8 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         adaptive_learn_content::TableProgressiveReveal,
         adaptive_learn_content::TableRevealMode,
         adaptive_learn_content::TableInitialVisibility,
+        adaptive_learn_content::TextProgressiveReveal,
+        adaptive_learn_content::TextRevealSpan,
         adaptive_learn_content::CodeAnnotation,
         adaptive_learn_content::CodeAnnotationAnchor,
         adaptive_learn_content::MapPosition,
