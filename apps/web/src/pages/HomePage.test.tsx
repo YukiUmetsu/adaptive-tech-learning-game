@@ -71,6 +71,9 @@ describe("HomePage", () => {
     expect(
       screen.getByRole("link", { name: /AWS Certified Generative AI Developer/ }),
     ).toHaveAttribute("href", "/tracks/aws-aip-c01");
+    expect(
+      screen.getByRole("link", { name: /CompTIA Security\+/ }),
+    ).toHaveAttribute("href", "/tracks/comptia-security-plus");
     expect(screen.getAllByText("WIP").length).toBeGreaterThan(0);
   });
 

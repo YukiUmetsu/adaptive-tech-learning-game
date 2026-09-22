@@ -96,14 +96,16 @@ Phase 1 ships real, multi-certification content:
   five domains, each with authored tasks and questions.
 - AWS Certified Solutions Architect - Associate (`aws-saa-c03`) and AWS
   Certified Generative AI Developer - Professional (`aws-aip-c01`).
+- CompTIA Security+ (`comptia-security-plus`, `SY0-701`): all five domains.
 - HashiCorp Certified: Terraform Associate (`hashicorp-terraform-associate-004`).
 - AI tracks: Python fluency, Python data stack (NumPy/pandas/Matplotlib/Seaborn),
   and PyTorch core.
 
 Each certification also has learning knowledge maps for pre-quiz discovery;
-AWS SOA-C03 and the AI tracks are fully covered, Terraform covers all eight
-domains. The web catalog and dashboard read certification metadata from
-`apps/web/src/state/catalogMeta.ts` plus the API catalog.
+AWS SOA-C03, CompTIA Security+, and the AI tracks are fully covered, and
+Terraform covers all eight domains. The web catalog and dashboard read
+certification metadata from `apps/web/src/state/catalogMeta.ts` plus the API
+catalog.
 
 Content is authored as versioned JSON organized as
 `content/<category>/<certification>/<version>/<file>.json`. The content crate

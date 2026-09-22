@@ -135,8 +135,9 @@ export const CATALOG: CatalogCategory[] = [
       {
         id: "comptia-security-plus",
         name: "CompTIA Security+",
+        shortName: "Security+",
         examCode: "SY0-701",
-        wip: true,
+        wip: false,
       },
     ],
   },
