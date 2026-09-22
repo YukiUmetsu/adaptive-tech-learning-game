@@ -1,5 +1,5 @@
 import {
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -11,6 +11,7 @@ import { stripInlineCode } from "../lib/inlineCode";
 import InlineText from "./InlineText";
 import {
   boundaryOffset as boundaryOffsetFor,
+  clampNodeCenter,
   edgeGeometry as lineGeometry,
   type NodeSize,
 } from "../lib/connection";
@@ -53,7 +54,7 @@ export default function NodeConnectionInteraction({
     [nodes],
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = containerRef.current;
     if (!element) {
       return;
@@ -75,7 +76,7 @@ export default function NodeConnectionInteraction({
 
   // Measure rendered node sizes so edges can stop at the node boundary instead
   // of hiding the arrowhead underneath a wide pill.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const measured: Record<string, NodeSize> = {};
     nodeElements.current.forEach((element, id) => {
       measured[id] = {
@@ -98,12 +99,35 @@ export default function NodeConnectionInteraction({
     });
   }, [nodes, size.width, size.height]);
 
+  // Nodes are centered on their authored point and clamped so their measured
+  // pill stays inside the canvas. This is very visible on phones, where labels
+  // are wide relative to the canvas and edge nodes were being clipped.
   const positionOf = (nodeId: string) => {
     const node = nodeById.get(nodeId);
     if (!node) {
       return null;
     }
-    return { x: node.x * size.width, y: node.y * size.height };
+    const measured = nodeSizes[nodeId];
+    const halfWidth = (measured?.width ?? 0) / 2;
+    const halfHeight = (measured?.height ?? 0) / 2;
+    return {
+      x: clampNodeCenter(node.x * size.width, halfWidth, size.width),
+      y: clampNodeCenter(node.y * size.height, halfHeight, size.height),
+    };
+  };
+
+  // Before the canvas has been measured, percentages keep the first paint in the
+  // authored layout; once measured, the clamped pixel position is used so nodes
+  // and their edges share one coordinate space.
+  const nodeStyle = (node: GraphNode) => {
+    if (size.width <= 0 || size.height <= 0) {
+      return { left: `${node.x * 100}%`, top: `${node.y * 100}%` };
+    }
+    const position = positionOf(node.id) ?? {
+      x: node.x * size.width,
+      y: node.y * size.height,
+    };
+    return { left: `${position.x}px`, top: `${position.y}px` };
   };
 
   const boundaryOffset = (nodeId: string, ux: number, uy: number) =>
@@ -143,9 +167,11 @@ export default function NodeConnectionInteraction({
       if (node.id === exclude) {
         continue;
       }
-      const dx = node.x * size.width - point.x;
-      const dy = node.y * size.height - point.y;
-      const distance = Math.hypot(dx, dy);
+      const position = positionOf(node.id);
+      if (!position) {
+        continue;
+      }
+      const distance = Math.hypot(position.x - point.x, position.y - point.y);
       if (distance < bestDistance) {
         bestDistance = distance;
         best = node.id;
@@ -267,7 +293,7 @@ export default function NodeConnectionInteraction({
             ]
               .filter(Boolean)
               .join(" ")}
-            style={{ left: `${node.x * 100}%`, top: `${node.y * 100}%` }}
+            style={nodeStyle(node)}
             aria-pressed={selected === node.id}
             disabled={disabled}
             draggable={false}

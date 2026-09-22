@@ -59,6 +59,15 @@ describe("focus widget CSS", () => {
   });
 });
 
+describe("mobile learning table cards", () => {
+  it("stacks the column label above its value on very narrow phones", () => {
+    const narrow = css.slice(css.lastIndexOf("@media (max-width: 420px)"));
+    expect(narrow).toContain(".learning-table td:not(:first-child)::before");
+    expect(narrow).toContain(".learning-table-value");
+    expect(narrow).toContain("display: block");
+  });
+});
+
 describe("mobile node detail sheet CSS", () => {
   it("pins the node panel and its action above the tab bar on phones", () => {
     expect(css).toContain(".track-hub-side .node-panel");

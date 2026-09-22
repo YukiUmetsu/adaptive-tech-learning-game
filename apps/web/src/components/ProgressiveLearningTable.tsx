@@ -134,7 +134,11 @@ export default function ProgressiveLearningTable({
         inner = hiddenPlaceholder();
       }
     } else {
-      inner = <InlineText text={row.cells[column.id] ?? ""} />;
+      inner = (
+        <span className="learning-table-value">
+          <InlineText text={row.cells[column.id] ?? ""} />
+        </span>
+      );
     }
 
     const key = `${row.id ?? rowIndex}-${column.id}`;
@@ -143,7 +147,11 @@ export default function ProgressiveLearningTable({
         {inner}
       </th>
     ) : (
-      <td key={key} className={className}>
+      <td
+        key={key}
+        className={className}
+        data-label={stripInlineCode(column.label)}
+      >
         {inner}
       </td>
     );
@@ -151,7 +159,9 @@ export default function ProgressiveLearningTable({
 
   return (
     <div className="learning-table-wrap">
-      <table className="learning-table learning-table--progressive">
+      <table
+        className={`learning-table learning-table--progressive learning-table--mode-${state.mode}`}
+      >
         <colgroup>
           {reveal.columns.map((column, index) => (
             <col
@@ -170,7 +180,11 @@ export default function ProgressiveLearningTable({
               const isRevealed = revealed.has(unit);
               if (isUnit && !isRevealed) {
                 return (
-                  <th key={column.id} scope="col">
+                  <th
+                    key={column.id}
+                    scope="col"
+                    className="learning-table-th--reveal"
+                  >
                     <button
                       type="button"
                       className="learning-table-reveal learning-table-reveal--column"
