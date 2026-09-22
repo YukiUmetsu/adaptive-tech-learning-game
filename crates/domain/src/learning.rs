@@ -62,6 +62,8 @@ pub enum InteractionType {
     MultipleChoice,
     /// Choose an exact set of options from a list.
     MultipleResponse,
+    /// Write Python that is executed and tested locally in the browser.
+    PythonCode,
 }
 
 impl AssessmentMode {
@@ -116,6 +118,7 @@ impl InteractionType {
             Self::TypedFillBlank => "typed_fill_blank",
             Self::MultipleChoice => "multiple_choice",
             Self::MultipleResponse => "multiple_response",
+            Self::PythonCode => "python_code",
         }
     }
 }
@@ -140,6 +143,7 @@ impl TryFrom<&str> for InteractionType {
             "typed_fill_blank" => Ok(Self::TypedFillBlank),
             "multiple_choice" => Ok(Self::MultipleChoice),
             "multiple_response" => Ok(Self::MultipleResponse),
+            "python_code" => Ok(Self::PythonCode),
             _ => Err(DomainError::invalid(
                 "interaction_type",
                 "unknown interaction type",

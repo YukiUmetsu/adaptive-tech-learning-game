@@ -1749,6 +1749,17 @@
               "type": "string"
             }
           },
+          "python_results": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PythonCodeAnswer",
+                "description": "Browser-executed Python test counts for a `python_code` question."
+              }
+            ]
+          },
           "reconstruction": {
             "oneOf": [
               {
@@ -2369,6 +2380,29 @@
                 "type": "string",
                 "enum": [
                   "multiple_response"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Data-driven tests the browser executes against the learner's program.\n\nThese are the canonical behavioral specification. They are inspectable\nbecause execution happens client-side, so they must not encode secrets.",
+            "required": [
+              "tests",
+              "type"
+            ],
+            "properties": {
+              "tests": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PythonTest"
+                },
+                "description": "Authored tests, run in declaration order."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "python_code"
                 ]
               }
             }
@@ -3803,6 +3837,42 @@
                 ]
               }
             }
+          },
+          {
+            "type": "object",
+            "description": "Write Python that is executed and checked locally in the browser.\n\nLearner source is never sent to the API for execution. The browser runs\nit in an isolated runtime and submits only the count of authored tests\nthat passed; the server re-scores that primitive against the canonical\ntest list. See `docs/14-security-privacy.md`.",
+            "required": [
+              "language",
+              "starter_code",
+              "type"
+            ],
+            "properties": {
+              "entrypoint": {
+                "type": "string",
+                "description": "Name of the callable under test. Empty for script-style exercises."
+              },
+              "language": {
+                "type": "string",
+                "description": "Runtime language. Only `python` is supported initially."
+              },
+              "packages": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Packages the content explicitly declares from the application\nallowlist. Empty for standard-library-only exercises."
+              },
+              "starter_code": {
+                "type": "string",
+                "description": "Learner-facing starter code."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "python_code"
+                ]
+              }
+            }
           }
         ],
         "description": "Interaction definition shown to the learner. Contains no answer key."
@@ -3825,7 +3895,8 @@
           "command_assembly",
           "typed_fill_blank",
           "multiple_choice",
-          "multiple_response"
+          "multiple_response",
+          "python_code"
         ]
       },
       "IssueMissionRequest": {
@@ -5196,6 +5267,102 @@
           "action",
           "look_for"
         ]
+      },
+      "PythonCodeAnswer": {
+        "type": "object",
+        "description": "Browser-executed Python result primitives.\n\nThe learner's source never reaches the API. The client runs the authored\ntests locally and reports only how many passed; the server re-scores those\ncounts against the canonical test list.",
+        "required": [
+          "passed",
+          "total"
+        ],
+        "properties": {
+          "passed": {
+            "type": "integer",
+            "description": "Number of authored tests the learner's program passed.",
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total tests executed. Must equal the question's authored test count.",
+            "minimum": 0
+          }
+        }
+      },
+      "PythonTest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Call the entrypoint with positional arguments and compare the returned\nvalue for equality.",
+            "required": [
+              "args",
+              "expected",
+              "type"
+            ],
+            "properties": {
+              "args": {
+                "type": "array",
+                "items": {},
+                "description": "Positional arguments as JSON values."
+              },
+              "expected": {
+                "description": "Expected return value as a JSON value."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "call"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Call the entrypoint and require it to raise a named exception.",
+            "required": [
+              "args",
+              "exception",
+              "type"
+            ],
+            "properties": {
+              "args": {
+                "type": "array",
+                "items": {},
+                "description": "Positional arguments as JSON values."
+              },
+              "exception": {
+                "type": "string",
+                "description": "Expected exception class name, for example `ValueError`."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "raises"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Compare the program's captured standard output.",
+            "required": [
+              "expected",
+              "type"
+            ],
+            "properties": {
+              "expected": {
+                "type": "string",
+                "description": "Expected standard output, compared after trimming trailing newlines."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "stdout"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "One data-driven assertion in a browser-executed Python exercise.\n\nTests are trusted authored content, never learner input. They ship to the\nbrowser so the learner's program can be executed and checked locally, which\nmeans they are inspectable rather than secret. Expected values are passed as\nstructured JSON data: they are never interpolated into generated Python\nsource and never evaluated by the server."
       },
       "QuestionView": {
         "type": "object",

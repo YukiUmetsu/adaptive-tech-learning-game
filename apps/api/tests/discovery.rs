@@ -181,6 +181,9 @@ fn canonical_answer_value(question: &adaptive_learn_content::Question) -> Value 
         adaptive_learn_content::CanonicalAnswer::MultipleResponse { choice_ids } => {
             json!({ "choice_ids": choice_ids })
         }
+        adaptive_learn_content::CanonicalAnswer::PythonCode { tests } => json!({
+            "python_results": { "passed": tests.len(), "total": tests.len() }
+        }),
     }
 }
 

@@ -97,6 +97,7 @@ export default function MissionPage() {
         question={runner.question}
         disabled={runner.submitting || runner.phase === "feedback"}
         feedback={runner.feedback}
+        canonicalAnswer={runner.question.canonical_answer}
         onSubmit={(answer) => void runner.submit(answer)}
       />
 

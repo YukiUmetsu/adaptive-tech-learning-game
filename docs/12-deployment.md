@@ -68,6 +68,54 @@ Cross-origin wiring that must match the deployed origin:
   must both include `https://learn.shidenlabs.com` (exact, no trailing slash),
   because the app sets `redirectUri={window.location.origin}`.
 
+### Python runtime assets
+
+Python exercises execute on a self-hosted, pinned Pyodide build. The assets are
+build output and are git-ignored, so a release must sync them before building:
+
+```bash
+cd apps/web
+pnpm sync:python   # public/python-runtime/pyodide/<pinned-version>/
+pnpm build
+pnpm verify:python # optional: exercise the pinned runtime and packages
+```
+
+- `sync:python` installs the interpreter plus the dependency closure of the
+  approved packages (`numpy`, `pandas`, `matplotlib`), about 30 MB total. Every
+  package wheel is verified against the SHA-256 in the pinned
+  `pyodide-lock.json`. Use `--core-only` to skip the package wheels.
+- `apps/web/public/_headers` serves `/python-runtime/*` with
+  `Cache-Control: public, max-age=31536000, immutable`. The pinned version is in
+  the URL, so bumping `PYODIDE_VERSION` is a new URL and no cache purge is
+  needed.
+- `/python-sandbox/*` gets a restrictive, sandbox-only CSP and a deny-all
+  `Permissions-Policy` (see [Security and Privacy](14-security-privacy.md)).
+- The PWA service worker excludes the runtime, the sandbox page, and the Python
+  editor chunk from its install-time precache, so non-Python learners do not
+  download them. `python-runtime` is also excluded from the SPA navigation
+  fallback.
+
+### Python sandbox origin
+
+No separate domain is required. The sandbox runs on the app origin by default,
+and learner Python is given **no JavaScript bridge** (`jsglobals: {}`), so it
+cannot reach the app's storage, files, or the network. The worker platform
+additionally has no `document`, `localStorage`, or `sessionStorage`.
+
+A distinct origin is optional, stronger (browser-enforced) isolation. To use it,
+set `VITE_PYTHON_SANDBOX_ORIGIN` to an origin that serves the same `dist`, for
+example `https://python-sandbox.example.com`. It must serve no authenticated
+content and share no auth cookies, tokens, or storage with the app, and the app
+origin must be allowed in the sandbox CSP `frame-ancestors` in `public/_headers`
+(the committed default allows `'self' https://*.shidenlabs.com`).
+
+The Python/WASM heap is capped at 384 MiB by default (`VITE_PYTHON_MAX_MEMORY_MB`).
+Over-budget allocations raise a catchable `MemoryError` rather than exhausting
+the device.
+
+`pnpm verify:python` asserts the empty JS bridge and the memory quota against the
+pinned runtime; run it when bumping `PYODIDE_VERSION`.
+
 ## API — Cloud Run
 
 Use a multi-stage Rust container build and deploy an immutable image digest.

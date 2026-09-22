@@ -27,6 +27,7 @@ fn interaction_kind(interaction: &Interaction) -> &'static str {
         Interaction::TypedFillBlank { .. } => "typed_fill_blank",
         Interaction::MultipleChoice { .. } => "multiple_choice",
         Interaction::MultipleResponse { .. } => "multiple_response",
+        Interaction::PythonCode { .. } => "python_code",
     }
 }
 
@@ -47,6 +48,7 @@ fn canonical_kind(answer: &CanonicalAnswer) -> &'static str {
         CanonicalAnswer::TypedFillBlank { .. } => "typed_fill_blank",
         CanonicalAnswer::MultipleChoice { .. } => "multiple_choice",
         CanonicalAnswer::MultipleResponse { .. } => "multiple_response",
+        CanonicalAnswer::PythonCode { .. } => "python_code",
     }
 }
 

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 
 import type {
   AnswerPayload,
+  CanonicalAnswer,
   FeedbackResponse,
   PlacementPoint,
   QuestionView,
@@ -9,6 +10,8 @@ import type {
 } from "../api/types";
 import { shuffledOrder } from "../lib/shuffle";
 import { typedBlankStatuses } from "../lib/typedBlank";
+import type { PythonExecutionResult } from "../pythonExecution";
+import { toRuntimeTests } from "../pythonExecution/protocol";
 import BranchingScenarioInteraction from "./BranchingScenarioInteraction";
 import ClassificationInteraction from "./ClassificationInteraction";
 import EvidenceSelectionInteraction from "./EvidenceSelectionInteraction";
@@ -22,11 +25,22 @@ import SpotTheFaultInteraction from "./SpotTheFaultInteraction";
 import TwoDimensionalPlacementInteraction from "./TwoDimensionalPlacementInteraction";
 import TypedFillBlankInteraction from "./TypedFillBlankInteraction";
 
+// Code-split the Python editor and execution client: only a rendered
+// `python_code` question downloads them. Non-Python learners never do.
+const PythonCodeInteraction = lazy(() => import("./PythonCodeInteraction"));
+
 interface QuestionCardProps {
   question: QuestionView;
   disabled?: boolean;
   /** Server feedback for this question, used for per-blank presentation state. */
   feedback?: FeedbackResponse | null;
+  /**
+   * Canonical answer shipped with ordinary study missions.
+   *
+   * Only used to read authored `python_code` tests, which the browser must have
+   * before it can execute them. Practice tests never receive it.
+   */
+  canonicalAnswer?: CanonicalAnswer;
   onSubmit: (answer: AnswerPayload) => void;
 }
 
@@ -34,6 +48,7 @@ export default function QuestionCard({
   question,
   disabled = false,
   feedback = null,
+  canonicalAnswer,
   onSubmit,
 }: QuestionCardProps) {
   const [classification, setClassification] = useState<Record<string, string>>(
@@ -61,6 +76,13 @@ export default function QuestionCard({
   );
   const [choiceId, setChoiceId] = useState<string | null>(null);
   const [choiceIds, setChoiceIds] = useState<string[]>([]);
+  const [pythonCode, setPythonCode] = useState<string>(() =>
+    question.interaction.type === "python_code"
+      ? question.interaction.starter_code
+      : "",
+  );
+  const [pythonResult, setPythonResult] =
+    useState<PythonExecutionResult | null>(null);
 
   const typedStatuses =
     question.interaction.type === "typed_fill_blank"
@@ -102,6 +124,13 @@ export default function QuestionCard({
         return choiceId !== null;
       case "multiple_response":
         return choiceIds.length > 0;
+      case "python_code":
+        // Tests must have run at least once. A syntax/runtime/timeout result
+        // has no test counts to submit, so it is not an attempt yet.
+        return (
+          pythonResult !== null &&
+          (pythonResult.status === "passed" || pythonResult.status === "failed")
+        );
     }
   })();
 
@@ -151,6 +180,29 @@ export default function QuestionCard({
         return;
       case "multiple_response":
         onSubmit({ choice_ids: choiceIds });
+        return;
+      case "python_code": {
+        const tests = pythonResult?.tests ?? [];
+        const total = tests.length;
+        const passed = tests.filter((test) => test.passed).length;
+        onSubmit({ python_results: { passed, total } });
+        return;
+      }
+    }
+  };
+
+  const pythonTests =
+    question.interaction.type === "python_code" &&
+    canonicalAnswer?.type === "python_code"
+      ? toRuntimeTests(canonicalAnswer.tests)
+      : [];
+
+  // If the isolated runtime cannot start, let the learner continue instead of
+  // being stuck on this question. It is recorded as a zero-pass attempt, which
+  // is the lowest reward tier, so it cannot be abused to gain progress.
+  const handlePythonUnavailable = () => {
+    if (pythonTests.length > 0) {
+      onSubmit({ python_results: { passed: 0, total: pythonTests.length } });
     }
   };
 
@@ -290,6 +342,28 @@ export default function QuestionCard({
           disabled={disabled}
           onChange={setChoiceIds}
         />
+      ) : null}
+
+      {question.interaction.type === "python_code" ? (
+        <Suspense
+          fallback={
+            <p role="status" className="python-code-status">
+              Preparing Python editor…
+            </p>
+          }
+        >
+          <PythonCodeInteraction
+            interaction={question.interaction}
+            tests={pythonTests}
+            value={pythonCode}
+            disabled={disabled}
+            onChange={setPythonCode}
+            onResult={setPythonResult}
+            onUnavailable={
+              pythonTests.length > 0 ? handlePythonUnavailable : undefined
+            }
+          />
+        </Suspense>
       ) : null}
 
       {question.interaction.type === "troubleshooting" ||

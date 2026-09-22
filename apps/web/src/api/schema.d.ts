@@ -571,6 +571,7 @@ export interface components {
             positions?: {
                 [key: string]: components["schemas"]["PlacementPoint"];
             } | null;
+            python_results?: null | components["schemas"]["PythonCodeAnswer"];
             reconstruction?: null | components["schemas"]["ReconstructionAnswerPayload"];
             /** @description Slot id to option id values for fill slots. */
             slot_values?: {
@@ -775,6 +776,11 @@ export interface components {
             choice_ids: string[];
             /** @enum {string} */
             type: "multiple_response";
+        } | {
+            /** @description Authored tests, run in declaration order. */
+            tests: components["schemas"]["PythonTest"][];
+            /** @enum {string} */
+            type: "python_code";
         };
         /** @description Response for the certification catalog. */
         CatalogResponse: {
@@ -1354,12 +1360,26 @@ export interface components {
             required_selections: number;
             /** @enum {string} */
             type: "multiple_response";
+        } | {
+            /** @description Name of the callable under test. Empty for script-style exercises. */
+            entrypoint?: string;
+            /** @description Runtime language. Only `python` is supported initially. */
+            language: string;
+            /**
+             * @description Packages the content explicitly declares from the application
+             *     allowlist. Empty for standard-library-only exercises.
+             */
+            packages?: string[];
+            /** @description Learner-facing starter code. */
+            starter_code: string;
+            /** @enum {string} */
+            type: "python_code";
         };
         /**
          * @description The tactile interaction family a question uses.
          * @enum {string}
          */
-        InteractionType: "classification" | "ordering" | "node_connection" | "reconstruction" | "evidence_selection" | "spot_the_fault" | "fill_slots" | "troubleshooting" | "scenario_choice_chain" | "configuration_builder" | "two_dimensional_placement" | "command_assembly" | "typed_fill_blank" | "multiple_choice" | "multiple_response";
+        InteractionType: "classification" | "ordering" | "node_connection" | "reconstruction" | "evidence_selection" | "spot_the_fault" | "fill_slots" | "troubleshooting" | "scenario_choice_chain" | "configuration_builder" | "two_dimensional_placement" | "command_assembly" | "typed_fill_blank" | "multiple_choice" | "multiple_response" | "python_code";
         /** @description Request to issue a mission for a quiz mode. */
         IssueMissionRequest: {
             /** @description Certification identifier. */
@@ -1949,6 +1969,48 @@ export interface components {
          * @enum {string}
          */
         PromptKind: "what" | "when" | "connects_to" | "not_this" | "exam_clue" | "mental_model" | "action" | "look_for";
+        /**
+         * @description Browser-executed Python result primitives.
+         *
+         *     The learner's source never reaches the API. The client runs the authored
+         *     tests locally and reports only how many passed; the server re-scores those
+         *     counts against the canonical test list.
+         */
+        PythonCodeAnswer: {
+            /** @description Number of authored tests the learner's program passed. */
+            passed: number;
+            /** @description Total tests executed. Must equal the question's authored test count. */
+            total: number;
+        };
+        /**
+         * @description One data-driven assertion in a browser-executed Python exercise.
+         *
+         *     Tests are trusted authored content, never learner input. They ship to the
+         *     browser so the learner's program can be executed and checked locally, which
+         *     means they are inspectable rather than secret. Expected values are passed as
+         *     structured JSON data: they are never interpolated into generated Python
+         *     source and never evaluated by the server.
+         */
+        PythonTest: {
+            /** @description Positional arguments as JSON values. */
+            args: unknown[];
+            /** @description Expected return value as a JSON value. */
+            expected: unknown;
+            /** @enum {string} */
+            type: "call";
+        } | {
+            /** @description Positional arguments as JSON values. */
+            args: unknown[];
+            /** @description Expected exception class name, for example `ValueError`. */
+            exception: string;
+            /** @enum {string} */
+            type: "raises";
+        } | {
+            /** @description Expected standard output, compared after trimming trailing newlines. */
+            expected: string;
+            /** @enum {string} */
+            type: "stdout";
+        };
         /** @description A question shown to the learner. Contains no answer key. */
         QuestionView: {
             /** @description Evidence mode. */

@@ -28,6 +28,7 @@ describe("golden scoring fixtures", () => {
         "multiple_response",
         "node_connection",
         "ordering",
+        "python_code",
         "reconstruction",
         "scenario_choice_chain",
         "spot_the_fault",

@@ -123,6 +123,27 @@ export function formatCanonicalAnswer(
       return [{ value: name(answer.choice_id) }];
     case "multiple_response":
       return answer.choice_ids.map((id) => ({ value: name(id) }));
+    case "python_code":
+      // Authored behavioral tests, rendered after scoring/review.
+      return answer.tests.map((test, index) => {
+        const label = `${index + 1}`;
+        if (test.type === "stdout") {
+          return { label, value: `prints ${JSON.stringify(test.expected)}` };
+        }
+        const args = test.args.map((arg) => JSON.stringify(arg)).join(", ");
+        if (test.type === "raises") {
+          return {
+            label,
+            value: `raises ${test.exception} for (${args})`,
+          };
+        }
+        const entrypoint =
+          interaction?.type === "python_code" ? interaction.entrypoint ?? "" : "";
+        return {
+          label,
+          value: `${entrypoint}(${args}) → ${JSON.stringify(test.expected)}`,
+        };
+      });
     default:
       return [];
   }

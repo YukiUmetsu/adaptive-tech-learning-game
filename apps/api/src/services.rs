@@ -2830,6 +2830,7 @@ pub fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError>
         typed_answers,
         choice_id,
         choice_ids,
+        python_results,
     } = payload;
 
     let shapes = usize::from(placements.is_some())
@@ -2845,7 +2846,8 @@ pub fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError>
         + usize::from(token_values.is_some())
         + usize::from(typed_answers.is_some())
         + usize::from(choice_id.is_some())
-        + usize::from(choice_ids.is_some());
+        + usize::from(choice_ids.is_some())
+        + usize::from(python_results.is_some());
 
     if shapes != 1 {
         return Err(ApiError::BadRequest(
@@ -2897,6 +2899,12 @@ pub fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError>
     }
     if let Some(choice_ids) = choice_ids {
         return Ok(SubmittedAnswer::MultipleResponse(choice_ids));
+    }
+    if let Some(python_results) = python_results {
+        return Ok(SubmittedAnswer::PythonCode {
+            passed: python_results.passed,
+            total: python_results.total,
+        });
     }
 
     Err(ApiError::BadRequest(
@@ -3714,6 +3722,7 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         });
         assert!(empty.is_err());
 
@@ -3732,8 +3741,58 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         });
         assert!(two_shapes.is_err());
+    }
+
+    #[test]
+    fn python_results_map_without_any_learner_source() {
+        // Learner Python is executed only in the browser sandbox. The API must
+        // never accept source, stdout, or tracebacks for execution or storage;
+        // the only Python answer primitive is the reported test count.
+        let payload = AnswerPayload {
+            placements: None,
+            ordered_ids: None,
+            edges: None,
+            reconstruction: None,
+            evidence_ids: None,
+            faulty_ids: None,
+            slot_values: None,
+            choice_path: None,
+            assignments: None,
+            positions: None,
+            token_values: None,
+            typed_answers: None,
+            choice_id: None,
+            choice_ids: None,
+            python_results: Some(crate::dto::PythonCodeAnswer {
+                passed: 2,
+                total: 3,
+            }),
+        };
+
+        let serialized = serde_json::to_value(&payload).expect("serializes");
+        let keys: Vec<&str> = serialized
+            .as_object()
+            .expect("object")
+            .keys()
+            .map(String::as_str)
+            .collect();
+        for forbidden in ["source", "code", "program", "stdout", "stderr", "traceback"] {
+            assert!(
+                !keys.contains(&forbidden),
+                "answer payload must not carry {forbidden}"
+            );
+        }
+
+        assert_eq!(
+            to_submitted(payload).expect("maps python results"),
+            SubmittedAnswer::PythonCode {
+                passed: 2,
+                total: 3
+            }
+        );
     }
 
     #[test]
@@ -3753,6 +3812,7 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         });
         assert!(bad.is_err());
 
@@ -3771,6 +3831,7 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         });
         assert_eq!(
             good.expect("valid edge"),
@@ -3801,6 +3862,7 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         })
         .expect("valid reconstruction");
 
@@ -3833,6 +3895,7 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         })
         .expect("valid evidence");
         assert_eq!(
@@ -3855,6 +3918,7 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         })
         .expect("valid fault selection");
         assert_eq!(
@@ -3879,6 +3943,7 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         })
         .expect("valid slots");
         assert_eq!(slots, SubmittedAnswer::FillSlots(values));
@@ -3901,6 +3966,7 @@ mod tests {
             )])),
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         })
         .expect("valid typed answers");
         assert_eq!(

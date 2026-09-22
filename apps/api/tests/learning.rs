@@ -73,6 +73,9 @@ fn correct_answer(question: &Question) -> Value {
         }
         CanonicalAnswer::MultipleChoice { choice_id } => json!({ "choice_id": choice_id }),
         CanonicalAnswer::MultipleResponse { choice_ids } => json!({ "choice_ids": choice_ids }),
+        CanonicalAnswer::PythonCode { tests } => json!({
+            "python_results": { "passed": tests.len(), "total": tests.len() }
+        }),
     }
 }
 

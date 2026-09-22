@@ -550,7 +550,8 @@ Examples of interactions may include:
 - configuration_builder;
 - two_dimensional_placement;
 - command_assembly;
-- typed_fill_blank.
+- typed_fill_blank;
+- python_code.
 
 ### Content validator
 

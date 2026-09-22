@@ -276,6 +276,22 @@ pub struct AnswerPayload {
     pub choice_id: Option<String>,
     /// Selected choice ids for multiple response.
     pub choice_ids: Option<Vec<String>>,
+    /// Browser-executed Python test counts for a `python_code` question.
+    #[serde(default)]
+    pub python_results: Option<PythonCodeAnswer>,
+}
+
+/// Browser-executed Python result primitives.
+///
+/// The learner's source never reaches the API. The client runs the authored
+/// tests locally and reports only how many passed; the server re-scores those
+/// counts against the canonical test list.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct PythonCodeAnswer {
+    /// Number of authored tests the learner's program passed.
+    pub passed: usize,
+    /// Total tests executed. Must equal the question's authored test count.
+    pub total: usize,
 }
 
 /// Reconstruction answer primitives.

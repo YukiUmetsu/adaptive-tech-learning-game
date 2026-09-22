@@ -87,6 +87,34 @@ describe("formatCanonicalAnswer", () => {
     ]);
   });
 
+  it("renders authored Python tests for review", () => {
+    const pythonInteraction = {
+      type: "python_code",
+      language: "python",
+      entrypoint: "square",
+      starter_code: "def square(x):\n    pass\n",
+    } as unknown as Interaction;
+
+    const lines = formatCanonicalAnswer(
+      {
+        type: "python_code",
+        tests: [
+          { type: "call", args: [2], expected: 4 },
+          { type: "raises", args: [0], exception: "ValueError" },
+          { type: "stdout", expected: "done" },
+        ],
+      },
+      {},
+      pythonInteraction,
+    );
+
+    expect(lines).toEqual([
+      { label: "1", value: "square(2) → 4" },
+      { label: "2", value: "raises ValueError for (0)" },
+      { label: "3", value: 'prints "done"' },
+    ]);
+  });
+
   it("orders a command assembly by the authored slot order, not map order", () => {
     const commandInteraction = {
       type: "command_assembly",

@@ -1,7 +1,49 @@
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import react from "@vitejs/plugin-react";
-import { loadEnv } from "vite";
+import { loadEnv, type Plugin } from "vite";
 import { defineConfig } from "vitest/config";
 import { VitePWA } from "vite-plugin-pwa";
+
+/**
+ * Keeps service-worker registration out of the Python sandbox document.
+ *
+ * The sandbox is its own HTML entry, but `vite-plugin-pwa` injects the SW
+ * registration and manifest into every entry by default. The sandbox must not
+ * register the app's service worker (especially when served from a dedicated
+ * origin), so its injected PWA tags are stripped.
+ */
+function excludePythonSandboxFromPwa(): Plugin {
+  const strip = (html: string): string =>
+    html
+      .replace(/<script id="vite-plugin-pwa:register-sw"[^>]*><\/script>/g, "")
+      .replace(/<link rel="manifest"[^>]*>/g, "");
+
+  let root = process.cwd();
+  let outDir = "dist";
+
+  return {
+    name: "exclude-python-sandbox-from-pwa",
+    configResolved(config) {
+      root = config.root;
+      outDir = config.build.outDir;
+    },
+    // Runs after the PWA plugin writes its tags, so this reliably strips them
+    // from the sandbox document only.
+    closeBundle() {
+      const file = resolve(root, outDir, "python-sandbox", "index.html");
+      if (!existsSync(file)) {
+        return;
+      }
+      const html = readFileSync(file, "utf8");
+      const cleaned = strip(html);
+      if (cleaned !== html) {
+        writeFileSync(file, cleaned);
+      }
+    },
+  };
+}
 
 export default defineConfig(({ mode }) => {
   // Read `.env.local` and the process environment. Process env wins, so CI and
@@ -24,6 +66,19 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: "autoUpdate",
         includeAssets: ["icon.svg"],
+        workbox: {
+          // The Python runtime is large and lazily loaded. Exclude it from the
+          // install-time precache so non-Python learners never download it, and
+          // keep the SPA navigation fallback away from the sandbox page.
+          globIgnores: [
+            "**/python-runtime/**",
+            "**/python-sandbox/**",
+            "**/PythonCodeInteraction-*.js",
+            "**/pythonWorker-*.js",
+            "**/pythonSandbox-*.js",
+          ],
+          navigateFallbackDenylist: [/^\/python-sandbox\//],
+        },
         manifest: {
           name: "Adaptive Learning",
           short_name: "AdaptiveLearn",
@@ -42,7 +97,18 @@ export default defineConfig(({ mode }) => {
           ],
         },
       }),
+      excludePythonSandboxFromPwa(),
     ],
+    build: {
+      rollupOptions: {
+        // The sandbox is a separate HTML entry so it never inherits the SPA
+        // shell, CSP, or service-worker navigation handling.
+        input: {
+          main: "index.html",
+          pythonSandbox: "python-sandbox/index.html",
+        },
+      },
+    },
     server: {
       port: 5173,
       proxy: apiProxy,

@@ -79,7 +79,8 @@ export type SubmittedAnswer =
   | { kind: "command_assembly"; values: Record<string, string> }
   | { kind: "typed_fill_blank"; values: Record<string, string> }
   | { kind: "multiple_choice"; choiceId: string }
-  | { kind: "multiple_response"; choiceIds: string[] };
+  | { kind: "multiple_response"; choiceIds: string[] }
+  | { kind: "python_code"; passed: number; total: number };
 
 /** Scores a raw answer payload against a question's canonical content. */
 export function scoreQuestion(
@@ -125,6 +126,7 @@ export function toSubmitted(payload: AnswerPayload): SubmittedAnswer {
     payload.typed_answers,
     payload.choice_id,
     payload.choice_ids,
+    payload.python_results,
   ].filter((value) => value != null).length;
 
   if (shapeCount !== 1) {
@@ -182,6 +184,13 @@ export function toSubmitted(payload: AnswerPayload): SubmittedAnswer {
   }
   if (payload.choice_ids != null) {
     return { kind: "multiple_response", choiceIds: payload.choice_ids };
+  }
+  if (payload.python_results != null) {
+    return {
+      kind: "python_code",
+      passed: payload.python_results.passed,
+      total: payload.python_results.total,
+    };
   }
 
   throw new ScoringError("malformed_answer");
@@ -341,6 +350,13 @@ function dispatch(
         interaction,
         canonicalOf(canonical, "multiple_response"),
         submitted.choiceIds,
+      );
+    case "python_code":
+      if (submitted.kind !== "python_code") interactionMismatch();
+      return scorePythonCode(
+        canonicalOf(canonical, "python_code"),
+        submitted.passed,
+        submitted.total,
       );
   }
 }
@@ -1058,4 +1074,31 @@ function scoreMultipleResponse(
   }
 
   return { correct, score: correct ? 1 : 0, errorCodes };
+}
+
+/**
+ * Scores a browser-executed Python attempt from its reported test counts.
+ *
+ * Mirrors the Rust scorer: execution happens client-side, so the server can
+ * validate the shape and total but cannot re-run the learner's program. The
+ * reported total must match the authored test count.
+ */
+function scorePythonCode(
+  canonical: Extract<CanonicalAnswer, { type: "python_code" }>,
+  passed: number,
+  total: number,
+): Outcome {
+  const expected = canonical.tests.length;
+  if (total !== expected) {
+    throw new ScoringError("python_test_count_mismatch");
+  }
+  if (passed < 0 || passed > total) {
+    throw new ScoringError("python_result_invalid");
+  }
+
+  const score = expected === 0 ? 0 : passed / expected;
+  const correct = expected > 0 && passed === expected;
+  const errorCodes = correct ? [] : ["python_tests_failed"];
+
+  return { correct, score, errorCodes };
 }
