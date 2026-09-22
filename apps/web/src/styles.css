@@ -3709,22 +3709,34 @@ button.primary:hover:not(:disabled) {
   font-size: 0.95rem;
 }
 
-/* Progressive text reveal: a hidden authored span is a small inline mask so the
-   sentence keeps its natural flow and wraps normally on mobile. The mask has a
-   fixed width so it never hints at the hidden phrase length. */
+/* Progressive text reveal: a hidden authored span is an inline mask so the
+   sentence keeps its natural flow and wraps normally on mobile. The hidden mask
+   and the revealed span share one box model and one measured width, so revealing
+   a span does not reflow the surrounding prose. */
 .progressive-text {
   line-height: 1.7;
+}
+
+/* Identical horizontal box on both states: the mask is measured to the same
+   width as the phrase it hides, so revealing it does not move the words around
+   it. (A phrase long enough to wrap on a narrow screen still reflows, because
+   the mask is a single box while the revealed text can wrap.) */
+.progressive-text-reveal,
+.progressive-text-revealed {
+  margin: 0 0.15rem;
+  /* Vertical padding grows the pill's touch area without exceeding the
+     paragraph's line box, so revealing a span never changes line height. */
+  padding: 0.35rem 0.45rem;
+  border: 1px dashed transparent;
+  border-radius: 999px;
 }
 
 .progressive-text-reveal {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 1.8rem;
-  margin: 0 0.15rem;
-  padding: 0.1rem 0.45rem;
-  border: 1px dashed var(--border-strong);
-  border-radius: 999px;
+  max-width: 100%;
+  border-color: var(--border-strong);
   background: rgba(56, 189, 248, 0.06);
   vertical-align: middle;
   cursor: pointer;
@@ -3744,9 +3756,12 @@ button.primary:hover:not(:disabled) {
   opacity: 0.6;
 }
 
+/* The component sets an exact pixel width once it has measured the phrase; the
+   `ch` value is only the pre-measurement fallback (and the jsdom test value). */
 .progressive-text-mask {
   display: block;
-  width: 3.5rem;
+  width: calc(var(--hidden-length, 7) * 1ch);
+  max-width: 100%;
   height: 0.7em;
   border-radius: 999px;
   background-image: repeating-linear-gradient(

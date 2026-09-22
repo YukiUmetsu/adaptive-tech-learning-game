@@ -69,6 +69,50 @@ describe("ProgressiveText", () => {
     ).toBeNull();
   });
 
+  it("sizes each hidden mask to the length of its hidden phrase", () => {
+    const { container } = render(<Harness />);
+
+    const buttons =
+      container.querySelectorAll<HTMLButtonElement>(".progressive-text-reveal");
+    // "stateful" (8) and "stateless" (9) reserve different widths.
+    expect(buttons[0]?.style.getPropertyValue("--hidden-length")).toBe("8");
+    expect(buttons[1]?.style.getPropertyValue("--hidden-length")).toBe("9");
+
+    // The width hint is only a character count; the phrase never enters the DOM.
+    expect(container.innerHTML).not.toContain("stateful");
+    expect(container.innerHTML).not.toContain("stateless");
+  });
+
+  it("reserves more space for a longer hidden phrase", () => {
+    const { container } = render(
+      <Harness reveal={optionalProgressiveTextReveal} />,
+    );
+
+    const button =
+      container.querySelector<HTMLButtonElement>(".progressive-text-reveal");
+    // "outbound internet access" (24 characters).
+    expect(button?.style.getPropertyValue("--hidden-length")).toBe("24");
+  });
+
+  it("uses the measured phrase width once measurement is available", () => {
+    const original = HTMLElement.prototype.getBoundingClientRect;
+    // jsdom does not lay out, so fake a 10px-per-character measurement.
+    HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
+      const width = (this.textContent?.length ?? 0) * 10;
+      return { width } as unknown as DOMRect;
+    };
+    try {
+      const { container } = render(<Harness />);
+      const masks =
+        container.querySelectorAll<HTMLElement>(".progressive-text-mask");
+      // "stateful" (80px) and "stateless" (90px) reserve their real widths.
+      expect(masks[0]?.style.width).toBe("80px");
+      expect(masks[1]?.style.width).toBe("90px");
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = original;
+    }
+  });
+
   it("gives each control a useful, non-leaking accessible label", () => {
     render(<Harness />);
 
