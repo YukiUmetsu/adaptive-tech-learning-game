@@ -5,13 +5,13 @@
     "name": "Python Fluency",
     "exam_code": "PYTHON-FLUENCY",
     "official_source_url": "https://docs.python.org/3/",
-    "last_reviewed": "2026-09-19"
+    "last_reviewed": "2026-09-22"
   },
   "version": {
     "id": "python-fluency-v1",
     "exam_code": "PYTHON-FLUENCY",
-    "effective_date": "2026-09-19",
-    "content_version": "python-fluency-content-2026-09-19-v1",
+    "effective_date": "2026-09-22",
+    "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
     "domains": [
       {
         "id": "domain-1",
@@ -70,18 +70,27 @@
             "id": "9.1",
             "name": "Use Python 3.12 generic syntax",
             "question_ids": [
-              "py312-generic-class-001",
-              "py312-generic-function-002",
-              "py312-type-alias-001",
-              "py312-override-001"
+              "py9-typeparams-typed-001",
+              "py9-typeparams-classify-002",
+              "py9-typeparams-fault-003",
+              "py9-typealias-typed-001",
+              "py9-typealias-slots-002",
+              "py9-typealias-scenario-003",
+              "py9-override-typed-001",
+              "py9-override-classify-002",
+              "py9-override-fault-003"
             ]
           },
           {
             "id": "9.2",
             "name": "Use Python 3.12 standard-library additions",
             "question_ids": [
-              "py312-batched-001",
-              "py312-path-walk-001"
+              "py9-batched-typed-001",
+              "py9-batched-order-002",
+              "py9-batched-slots-003",
+              "py9-pathwalk-typed-001",
+              "py9-pathwalk-scenario-002",
+              "py9-pathwalk-relations-003"
             ]
           }
         ]
@@ -104,102 +113,40 @@
     {
       "id": "ai.python.py312_type_params",
       "name": "3.12 type parameter syntax",
-      "description": "Python 3.12 introduced bracketed type-parameter syntax for generic classes and functions, avoiding a separate TypeVar declaration for many cases."
+      "description": "Python 3.12 adds bracketed type-parameter lists directly to generic class and function declarations; their type parameters live in declaration-specific annotation scope rather than becoming ordinary outer-scope variables."
     },
     {
       "id": "ai.python.py312_type_statement",
       "name": "3.12 type alias statement",
-      "description": "Python 3.12 added the type statement for explicit aliases, including parameterized aliases."
+      "description": "Python 3.12 adds the `type` statement for explicit aliases, including parameterized aliases; it creates `TypeAliasType` objects and lazily evaluates alias values."
     },
     {
       "id": "ai.python.py312_override",
       "name": "3.12 typing.override",
-      "description": "Python 3.12 added typing.override to tell type checkers that a method is intended to override a base-class method."
+      "description": "Python 3.12 adds `typing.override` so type checkers can verify intended overrides; it does not enforce override compatibility at runtime but attempts to set `__override__ = True`."
     },
     {
       "id": "ai.python.py312_batched",
       "name": "3.12 itertools.batched",
-      "description": "Python 3.12 added itertools.batched(iterable, n), which lazily groups input into tuples up to size n."
+      "description": "Python 3.12 adds `itertools.batched(iterable, n)`, which lazily yields consecutive tuples of up to n items, returns a shorter final tuple when necessary, and requires n >= 1."
     },
     {
       "id": "ai.python.py312_path_walk",
       "name": "3.12 Path.walk",
-      "description": "Python 3.12 added pathlib.Path.walk(), which yields directory path, directory names, and file names while walking a tree."
+      "description": "Python 3.12 adds `Path.walk()`, yielding `(dirpath, dirnames, filenames)`; default traversal is top-down, dirnames can be modified to prune, and directory symlinks are not followed by default."
     }
   ],
   "questions": [
     {
-      "id": "py312-generic-class-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py9-typeparams-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-9",
       "task_id": "9.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.62,
-      "prompt": "Fill the single type parameter in the Python 3.12 generic class header.",
-      "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "class Cache[{{answer}}]:\n    def __init__(self):\n        self._value: T | None = None\n\n    def set(self, value: T) -> None:\n        self._value = value"
-        },
-        "slots": [
-          {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "T"
-            ]
-          }
-        }
-      },
-      "concepts": [
-        {
-          "concept_id": "ai.python.py312_type_params",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Python 3.12 introduced bracketed type-parameter syntax for generic classes and functions, avoiding a separate TypeVar declaration for many cases. class Cache[T]: ... declares T in the class header and makes it available in the class's annotation scope. The new syntax requires Python 3.12+ unless a tool transpiles or otherwise handles it; it is not valid source syntax on older interpreters.",
-      "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
-      ],
-      "error_codes": [
-        {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
-        },
-        {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "What's new in Python 3.12 — type parameter syntax",
-          "url": "https://docs.python.org/3.12/whatsnew/3.12.html#pep-695-type-parameter-syntax"
-        }
-      ]
-    },
-    {
-      "id": "py312-generic-function-002",
-      "content_version": "python-fluency-content-2026-09-19-v1",
-      "certification_version": "python-fluency-v1",
-      "domain_id": "domain-9",
-      "task_id": "9.1",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.75,
-      "prompt": "Write the Python 3.12 type-parameter list for this generic function.",
+      "difficulty_prior": 0.44,
+      "prompt": "Declare the generic type parameter directly in this Python 3.12 function header.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
@@ -231,9 +178,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Python 3.12 introduced bracketed type-parameter syntax for generic classes and functions, avoiding a separate TypeVar declaration for many cases. class Cache[T]: ... declares T in the class header and makes it available in the class's annotation scope. The new syntax requires Python 3.12+ unless a tool transpiles or otherwise handles it; it is not valid source syntax on older interpreters.",
+      "explanation": "Python 3.12 allows `def first[T](...)`, declaring `T` directly on the generic function without a separate `TypeVar` assignment.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the Python 3.12 behavior shown by the surrounding code to reconstruct the smallest correct expression."
       ],
       "error_codes": [
         {
@@ -247,21 +194,169 @@
       ],
       "source_refs": [
         {
-          "title": "What's new in Python 3.12 — type parameter syntax",
-          "url": "https://docs.python.org/3.12/whatsnew/3.12.html#pep-695-type-parameter-syntax"
+          "title": "Type parameter lists — Python 3.12",
+          "url": "https://docs.python.org/3.12/reference/compound_stmts.html#type-params"
+        },
+        {
+          "title": "What's New In Python 3.12",
+          "url": "https://docs.python.org/3.12/whatsnew/3.12.html"
         }
       ]
     },
     {
-      "id": "py312-type-alias-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py9-typeparams-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-9",
+      "task_id": "9.1",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.57,
+      "prompt": "Classify the Python 3.12 type-parameter declarations.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "class",
+            "label": "`class Box[T]: ...`"
+          },
+          {
+            "id": "func",
+            "label": "`def first[T](items: list[T]) -> T: ...`"
+          },
+          {
+            "id": "legacy",
+            "label": "`T = TypeVar('T')` followed by older generic syntax"
+          }
+        ],
+        "categories": [
+          {
+            "id": "new",
+            "label": "Python 3.12 bracketed type-parameter syntax"
+          },
+          {
+            "id": "older",
+            "label": "Older explicit TypeVar style"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "class": "new",
+          "func": "new",
+          "legacy": "older"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py312_type_params",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Python 3.12 adds type-parameter lists directly to class and function headers. Explicit `TypeVar` declarations remain the compatibility style for older Python versions.",
+      "hints": [
+        "Look for square brackets attached directly to the declaration name."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Type parameter lists — Python 3.12",
+          "url": "https://docs.python.org/3.12/reference/compound_stmts.html#type-params"
+        },
+        {
+          "title": "What's New In Python 3.12",
+          "url": "https://docs.python.org/3.12/whatsnew/3.12.html"
+        }
+      ]
+    },
+    {
+      "id": "py9-typeparams-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-9",
+      "task_id": "9.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.68,
+      "prompt": "A module defines `class Box[T]: ...` and then tries to use `T` as a normal module-level name afterward. Flag the scope mistake.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "class",
+            "label": "`class Box[T]: ...`"
+          },
+          {
+            "id": "inside",
+            "label": "Use `T` inside Box's annotations"
+          },
+          {
+            "id": "outside",
+            "label": "Assume the declaration also created a normal module-level variable named `T`"
+          },
+          {
+            "id": "new",
+            "label": "Declare another type parameter on a separate generic declaration when needed"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "outside"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py312_type_params",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Type parameters declared through the new list have declaration-specific annotation scope. They are not ordinary outer-scope variables created for later module-level use.",
+      "hints": [
+        "The new syntax deliberately gives type parameters a clearer scope."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Type parameter lists — Python 3.12",
+          "url": "https://docs.python.org/3.12/reference/compound_stmts.html#type-params"
+        },
+        {
+          "title": "What's New In Python 3.12",
+          "url": "https://docs.python.org/3.12/whatsnew/3.12.html"
+        }
+      ]
+    },
+    {
+      "id": "py9-typealias-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-9",
       "task_id": "9.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.67,
-      "prompt": "Declare a generic pair alias using Python 3.12 syntax.",
+      "difficulty_prior": 0.46,
+      "prompt": "Declare a generic pair alias with Python 3.12's type statement.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
@@ -293,9 +388,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Python 3.12 added the type statement for explicit aliases, including parameterized aliases. type Pair[T] = tuple[T, T] declares a generic type alias without TypeAlias or TypeVar boilerplate. The new type statement creates a TypeAliasType and is different from ordinary runtime assignment.",
+      "explanation": "`type Pair[T] = tuple[T, T]` creates a parameterized type alias using Python 3.12 syntax.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the Python 3.12 behavior shown by the surrounding code to reconstruct the smallest correct expression."
       ],
       "error_codes": [
         {
@@ -309,21 +404,219 @@
       ],
       "source_refs": [
         {
-          "title": "What's new in Python 3.12 — type statement",
-          "url": "https://docs.python.org/3.12/whatsnew/3.12.html#pep-695-type-parameter-syntax"
+          "title": "The type statement — Python 3.12",
+          "url": "https://docs.python.org/3.12/reference/simple_stmts.html#the-type-statement"
+        },
+        {
+          "title": "What's New In Python 3.12",
+          "url": "https://docs.python.org/3.12/whatsnew/3.12.html"
         }
       ]
     },
     {
-      "id": "py312-override-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py9-typealias-slots-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-9",
+      "task_id": "9.1",
+      "assessment_mode": "recognition",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.58,
+      "prompt": "Fill two runtime facts about `type Pair[T] = tuple[T, T]`.",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "runtime",
+            "label": "Runtime object kind"
+          },
+          {
+            "id": "params",
+            "label": "Alias type parameters"
+          }
+        ],
+        "options": [
+          {
+            "id": "alias_type",
+            "label": "`TypeAliasType`"
+          },
+          {
+            "id": "t",
+            "label": "Contains T"
+          },
+          {
+            "id": "tuple_class",
+            "label": "Exactly the built-in tuple class"
+          },
+          {
+            "id": "none",
+            "label": "Always empty"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "runtime": "alias_type",
+          "params": "t"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py312_type_statement",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The `type` statement creates a `TypeAliasType` object, and a generic alias records its declared type parameters.",
+      "hints": [
+        "The alias is a named type-alias object, not ordinary assignment to the right-hand runtime object."
+      ],
+      "error_codes": [
+        {
+          "code": "slot_incorrect",
+          "description": "A slot was filled with the wrong value."
+        },
+        {
+          "code": "slot_unfilled",
+          "description": "A required slot was left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "The type statement — Python 3.12",
+          "url": "https://docs.python.org/3.12/reference/simple_stmts.html#the-type-statement"
+        },
+        {
+          "title": "typing — Support for type hints — Python 3.12",
+          "url": "https://docs.python.org/3.12/library/typing.html"
+        }
+      ]
+    },
+    {
+      "id": "py9-typealias-scenario-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-9",
+      "task_id": "9.1",
+      "assessment_mode": "application",
+      "interaction_type": "scenario_choice_chain",
+      "difficulty_prior": 0.7,
+      "prompt": "A Python 3.12 module wants a recursive or forward-referencing alias without resolving every name immediately.",
+      "interaction": {
+        "type": "scenario_choice_chain",
+        "start_step_id": "syntax",
+        "steps": [
+          {
+            "id": "syntax",
+            "stage": "action",
+            "prompt": "Which syntax explicitly declares the alias?",
+            "choices": [
+              {
+                "id": "type",
+                "label": "`type Node = list[Node] | int`"
+              },
+              {
+                "id": "assign",
+                "label": "`Node = list[Node] | int` as ordinary runtime assignment"
+              },
+              {
+                "id": "def",
+                "label": "`def Node = ...`"
+              },
+              {
+                "id": "class",
+                "label": "`class Node = ...`"
+              }
+            ],
+            "next_step_by_choice": {
+              "type": "lazy",
+              "assign": "lazy",
+              "def": "lazy",
+              "class": "lazy"
+            }
+          },
+          {
+            "id": "lazy",
+            "stage": "verification",
+            "prompt": "Why can names in the alias value refer to definitions resolved later?",
+            "choices": [
+              {
+                "id": "lazy",
+                "label": "The type alias value is lazily evaluated"
+              },
+              {
+                "id": "eager",
+                "label": "All names are replaced with strings automatically"
+              },
+              {
+                "id": "global",
+                "label": "The alias ignores normal name lookup"
+              },
+              {
+                "id": "compile",
+                "label": "Python executes the right-hand expression twice"
+              }
+            ],
+            "next_step_by_choice": {}
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "scenario_choice_chain",
+        "correct_choice_ids": {
+          "syntax": [
+            "type"
+          ],
+          "lazy": [
+            "lazy"
+          ]
+        },
+        "expected_path": [
+          "type",
+          "lazy"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py312_type_statement",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Python 3.12's `type` statement creates an explicit alias whose value is lazily evaluated, enabling forward and recursive references that need not resolve at declaration time.",
+      "hints": [
+        "Separate alias declaration syntax from when the alias value is actually resolved."
+      ],
+      "error_codes": [
+        {
+          "code": "scenario_choice_incorrect",
+          "description": "At least one scenario decision was incorrect."
+        },
+        {
+          "code": "scenario_choice_incomplete",
+          "description": "The scenario ended before all required decisions were made."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "What's New In Python 3.12",
+          "url": "https://docs.python.org/3.12/whatsnew/3.12.html"
+        },
+        {
+          "title": "typing — Support for type hints — Python 3.12",
+          "url": "https://docs.python.org/3.12/library/typing.html"
+        }
+      ]
+    },
+    {
+      "id": "py9-override-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-9",
       "task_id": "9.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.54,
-      "prompt": "Mark the method as intentionally overriding a base-class method.",
+      "difficulty_prior": 0.39,
+      "prompt": "Mark this subclass method as an intended override.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
@@ -355,9 +648,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Python 3.12 added typing.override to tell type checkers that a method is intended to override a base-class method. @override above a subclass method helps catch accidental renames or signature drift in static analysis. The decorator primarily supports type checking; it does not dynamically enforce subclass method compatibility by itself.",
+      "explanation": "`@override` communicates to static type checkers that `load` is intended to override a base-class definition.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the Python 3.12 behavior shown by the surrounding code to reconstruct the smallest correct expression."
       ],
       "error_codes": [
         {
@@ -371,21 +664,161 @@
       ],
       "source_refs": [
         {
-          "title": "What's new in Python 3.12 — typing",
-          "url": "https://docs.python.org/3.12/whatsnew/3.12.html#typing"
+          "title": "typing — Support for type hints — Python 3.12",
+          "url": "https://docs.python.org/3.12/library/typing.html"
+        },
+        {
+          "title": "What's New In Python 3.12",
+          "url": "https://docs.python.org/3.12/whatsnew/3.12.html"
         }
       ]
     },
     {
-      "id": "py312-batched-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py9-override-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-9",
+      "task_id": "9.1",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.54,
+      "prompt": "Classify what `@typing.override` does.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "checker",
+            "label": "Lets a type checker verify that an overridden base definition exists"
+          },
+          {
+            "id": "runtime",
+            "label": "Dynamically rejects an incompatible override when the class is created"
+          },
+          {
+            "id": "marker",
+            "label": "Attempts to set `__override__ = True` on the decorated object"
+          }
+        ],
+        "categories": [
+          {
+            "id": "does",
+            "label": "Provided behavior"
+          },
+          {
+            "id": "does_not",
+            "label": "Not provided as runtime enforcement"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "checker": "does",
+          "runtime": "does_not",
+          "marker": "does"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py312_override",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`@override` is principally a static-typing signal. It does not dynamically validate override compatibility, though it attempts to leave an `__override__` marker at runtime.",
+      "hints": [
+        "Separate the type-checker contract from the decorator's small runtime marker."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "typing — Support for type hints — Python 3.12",
+          "url": "https://docs.python.org/3.12/library/typing.html"
+        }
+      ]
+    },
+    {
+      "id": "py9-override-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-9",
+      "task_id": "9.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.65,
+      "prompt": "A developer renames the base method from `load` to `read` but leaves a subclass method decorated with `@override def load(...)`. Flag the assumption that hides the purpose of the decorator.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "decorator",
+            "label": "Keep `@override` on intended overrides"
+          },
+          {
+            "id": "checker",
+            "label": "Run a static type checker that understands `typing.override`"
+          },
+          {
+            "id": "assume",
+            "label": "Assume Python runtime will raise automatically even if no type checker is run"
+          },
+          {
+            "id": "fix",
+            "label": "Update the subclass method when the base API changes"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "assume"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py312_override",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`@override` helps a type checker detect that the intended base definition disappeared or changed. Python itself does not enforce that relationship at class creation time.",
+      "hints": [
+        "The protection depends on static analysis being part of the workflow."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "typing — Support for type hints — Python 3.12",
+          "url": "https://docs.python.org/3.12/library/typing.html"
+        }
+      ]
+    },
+    {
+      "id": "py9-batched-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-9",
       "task_id": "9.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.5,
-      "prompt": "Use the Python 3.12 batching helper for groups of up to 50.",
+      "difficulty_prior": 0.4,
+      "prompt": "Group records lazily into tuples of up to 50 items.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
@@ -417,9 +850,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Python 3.12 added itertools.batched(iterable, n), which lazily groups input into tuples up to size n. for batch in batched(records, 100): ... replaces many manual slicing/chunking loops. In Python 3.12 the final tuple may be shorter; strict= was added later in Python 3.13.",
+      "explanation": "`batched(records, 50)` lazily consumes records and yields tuples containing up to 50 items.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the Python 3.12 behavior shown by the surrounding code to reconstruct the smallest correct expression."
       ],
       "error_codes": [
         {
@@ -433,27 +866,160 @@
       ],
       "source_refs": [
         {
-          "title": "itertools.batched",
+          "title": "itertools.batched — Python 3.12",
           "url": "https://docs.python.org/3.12/library/itertools.html#itertools.batched"
         }
       ]
     },
     {
-      "id": "py312-path-walk-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py9-batched-order-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-9",
+      "task_id": "9.2",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.48,
+      "prompt": "Arrange the batches produced by `batched(range(10), 4)` in Python 3.12.",
+      "interaction": {
+        "type": "ordering",
+        "items": [
+          {
+            "id": "last",
+            "label": "(8, 9)"
+          },
+          {
+            "id": "first",
+            "label": "(0, 1, 2, 3)"
+          },
+          {
+            "id": "second",
+            "label": "(4, 5, 6, 7)"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "ordering",
+        "ordered_ids": [
+          "first",
+          "second",
+          "last"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py312_batched",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The helper preserves input order and emits full batches as soon as possible, followed by the shorter final batch when the input is exhausted.",
+      "hints": [
+        "Keep the input sequence order; only group it into consecutive chunks."
+      ],
+      "error_codes": [
+        {
+          "code": "ordering_invalid_sequence",
+          "description": "One or more steps are in the wrong position."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "itertools.batched — Python 3.12",
+          "url": "https://docs.python.org/3.12/library/itertools.html#itertools.batched"
+        }
+      ]
+    },
+    {
+      "id": "py9-batched-slots-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-9",
+      "task_id": "9.2",
+      "assessment_mode": "recognition",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.57,
+      "prompt": "Fill two Python 3.12 `batched()` edge behaviors.",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "last",
+            "label": "Incomplete final group"
+          },
+          {
+            "id": "zero",
+            "label": "`batched(items, 0)`"
+          }
+        ],
+        "options": [
+          {
+            "id": "short",
+            "label": "Returned as a shorter tuple"
+          },
+          {
+            "id": "value_error",
+            "label": "Raises ValueError"
+          },
+          {
+            "id": "discard",
+            "label": "Always discarded"
+          },
+          {
+            "id": "empty",
+            "label": "Returns one empty tuple"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "last": "short",
+          "zero": "value_error"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py312_batched",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Python 3.12 returns an incomplete final tuple normally, while `n` must be at least one or `ValueError` is raised.",
+      "hints": [
+        "The 3.13 `strict=` option is not part of this Python 3.12 question."
+      ],
+      "error_codes": [
+        {
+          "code": "slot_incorrect",
+          "description": "A slot was filled with the wrong value."
+        },
+        {
+          "code": "slot_unfilled",
+          "description": "A required slot was left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "itertools.batched — Python 3.12",
+          "url": "https://docs.python.org/3.12/library/itertools.html#itertools.batched"
+        }
+      ]
+    },
+    {
+      "id": "py9-pathwalk-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-9",
       "task_id": "9.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.61,
-      "prompt": "Walk the tree with pathlib's Python 3.12 API.",
+      "difficulty_prior": 0.42,
+      "prompt": "Walk this Path's directory tree with the Python 3.12 API.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "base = Path('src')\nfor root, dirs, files in {{answer}}:\n    inspect(root, files)"
+          "template": "base = Path('src')\nfor root, dirs, files in {{answer}}:\n    inspect(root, dirs, files)"
         },
         "slots": [
           {
@@ -479,9 +1045,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Python 3.12 added pathlib.Path.walk(), which yields directory path, directory names, and file names while walking a tree. for root, dirs, files in base.walk(): ... offers pathlib-oriented tree traversal. The yielded file names are names relative to root, so join them with root when a complete Path is needed.",
+      "explanation": "`base.walk()` yields a Path for the current directory plus lists of child directory names and file names.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the Python 3.12 behavior shown by the surrounding code to reconstruct the smallest correct expression."
       ],
       "error_codes": [
         {
@@ -495,7 +1061,229 @@
       ],
       "source_refs": [
         {
-          "title": "pathlib.Path.walk",
+          "title": "pathlib.Path.walk — Python 3.12",
+          "url": "https://docs.python.org/3.12/library/pathlib.html#pathlib.Path.walk"
+        }
+      ]
+    },
+    {
+      "id": "py9-pathwalk-scenario-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-9",
+      "task_id": "9.2",
+      "assessment_mode": "application",
+      "interaction_type": "scenario_choice_chain",
+      "difficulty_prior": 0.68,
+      "prompt": "A top-down Path.walk() should skip every `__pycache__` subtree and construct full paths for ordinary files.",
+      "interaction": {
+        "type": "scenario_choice_chain",
+        "start_step_id": "prune",
+        "steps": [
+          {
+            "id": "prune",
+            "stage": "action",
+            "prompt": "How should the traversal prevent descent into `__pycache__`?",
+            "choices": [
+              {
+                "id": "remove",
+                "label": "Remove `'__pycache__'` from the yielded `dirs` list in place"
+              },
+              {
+                "id": "delete",
+                "label": "Delete the directory from disk first"
+              },
+              {
+                "id": "ignore",
+                "label": "Ignore the name but leave it in `dirs`"
+              },
+              {
+                "id": "bottom",
+                "label": "Set `top_down=False` and remove it after traversal"
+              }
+            ],
+            "next_step_by_choice": {
+              "remove": "path",
+              "delete": "path",
+              "ignore": "path",
+              "bottom": "path"
+            }
+          },
+          {
+            "id": "path",
+            "stage": "action",
+            "prompt": "Each item in `files` is a name string. How do you obtain its full Path?",
+            "choices": [
+              {
+                "id": "join",
+                "label": "`root / filename`"
+              },
+              {
+                "id": "string",
+                "label": "`filename` already is the full Path"
+              },
+              {
+                "id": "cwd",
+                "label": "`Path.cwd() / filename` regardless of root"
+              },
+              {
+                "id": "dirs",
+                "label": "`dirs / filename`"
+              }
+            ],
+            "next_step_by_choice": {}
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "scenario_choice_chain",
+        "correct_choice_ids": {
+          "prune": [
+            "remove"
+          ],
+          "path": [
+            "join"
+          ]
+        },
+        "expected_path": [
+          "remove",
+          "join"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py312_path_walk",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "During default top-down walking, modifying `dirs` controls recursion. `root` is already a Path, while each file entry is a name that should be joined with `root`.",
+      "hints": [
+        "Use the mutable directory-name list for traversal control and the yielded root for path composition."
+      ],
+      "error_codes": [
+        {
+          "code": "scenario_choice_incorrect",
+          "description": "At least one scenario decision was incorrect."
+        },
+        {
+          "code": "scenario_choice_incomplete",
+          "description": "The scenario ended before all required decisions were made."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "pathlib.Path.walk — Python 3.12",
+          "url": "https://docs.python.org/3.12/library/pathlib.html#pathlib.Path.walk"
+        }
+      ]
+    },
+    {
+      "id": "py9-pathwalk-relations-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain9-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-9",
+      "task_id": "9.2",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "node_connection",
+      "difficulty_prior": 0.62,
+      "prompt": "Connect each Path.walk fact to its direct meaning. Create exactly 4 relationships.",
+      "interaction": {
+        "type": "node_connection",
+        "nodes": [
+          {
+            "id": "root",
+            "label": "`dirpath` / root",
+            "x": 0.08,
+            "y": 0.14
+          },
+          {
+            "id": "root_mean",
+            "label": "A Path for the current directory",
+            "x": 0.48,
+            "y": 0.14
+          },
+          {
+            "id": "dirs",
+            "label": "`dirnames`",
+            "x": 0.08,
+            "y": 0.39
+          },
+          {
+            "id": "dirs_mean",
+            "label": "List of child directory name strings",
+            "x": 0.48,
+            "y": 0.39
+          },
+          {
+            "id": "files",
+            "label": "`filenames`",
+            "x": 0.08,
+            "y": 0.64
+          },
+          {
+            "id": "files_mean",
+            "label": "List of non-directory file name strings",
+            "x": 0.48,
+            "y": 0.64
+          },
+          {
+            "id": "default",
+            "label": "Default symlink behavior",
+            "x": 0.62,
+            "y": 0.86
+          },
+          {
+            "id": "no_follow",
+            "label": "Do not follow directory symlinks",
+            "x": 0.93,
+            "y": 0.86
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "node_connection",
+        "edges": [
+          [
+            "root",
+            "root_mean"
+          ],
+          [
+            "dirs",
+            "dirs_mean"
+          ],
+          [
+            "files",
+            "files_mean"
+          ],
+          [
+            "default",
+            "no_follow"
+          ]
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py312_path_walk",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Path.walk yields a Path for the current directory and name-string lists for child directories/files. By default it does not follow directory symlinks.",
+      "hints": [
+        "Connect each yielded component or option only to the behavior documented for it."
+      ],
+      "error_codes": [
+        {
+          "code": "connection_missing_relationship",
+          "description": "A valid relationship is missing."
+        },
+        {
+          "code": "connection_invalid_relationship",
+          "description": "A submitted relationship is not valid."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "pathlib.Path.walk — Python 3.12",
           "url": "https://docs.python.org/3.12/library/pathlib.html#pathlib.Path.walk"
         }
       ]

@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-fluency-learning-2026-09-19-v2",
+  "content_version": "python-fluency-learning-2026-09-22-v4-domain1-code-results-reviewed",
   "certification_id": "ai-python-fluency",
   "certification_version": "python-fluency-v1",
-  "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python documentation and selected AnyIO/HTTPX docs reviewed 2026-09-19.",
+  "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python 3.14 language/built-in/sorting documentation revalidated 2026-09-22.",
   "domain": {
     "id": "domain-1",
     "name": "Iteration, Comprehensions & Unpacking",
@@ -16,8 +16,16 @@
   },
   "source_refs": [
     {
-      "title": "Python 3 documentation",
-      "url": "https://docs.python.org/3/"
+      "title": "Built-in Functions — Python 3.14",
+      "url": "https://docs.python.org/3.14/library/functions.html"
+    },
+    {
+      "title": "Expressions — Python 3.14",
+      "url": "https://docs.python.org/3.14/reference/expressions.html"
+    },
+    {
+      "title": "Sorting Techniques — Python 3.14",
+      "url": "https://docs.python.org/3.14/howto/sorting.html"
     }
   ],
   "coverage": {
@@ -41,9 +49,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 11,
-    "prompt_count": 12
+    "prompt_count": 44
   },
-  "authoring_notes": "Updated for the learning-v2 renderer. Code examples are authored as first-class syntax-highlighted code_file reveals with clickable annotations instead of prose strings. Tables are used for contrasts that benefit from progressive reveal.",
+  "authoring_notes": "Domain 1 quality pass: expanded each knowledge node into short, ADHD-friendly progressive explanations plus an annotated code example. Each code page now has one high-value click-to-reveal runtime result (console output or resulting value) so learners connect syntax with behavior. Progressive text hides one key phrase normally and no more than two. Glossary terms are scoped per node and only explain supporting vocabulary, not the page topic. Facts were revalidated against Python 3.14 documentation while preserving compatibility with the track's Python 3.10-3.14 scope.",
   "modules": [
     {
       "id": "domain-1-task-1-1",
@@ -67,6 +75,26 @@
           ],
           "prompts": [
             {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES ZIP() DO?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`zip()` returns a lazy iterator that pulls from each input iterable in parallel.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "parallel",
+                      "text": "in parallel",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
               "id": "code",
               "kind": "look_for",
               "label": "READ PARALLEL ITERATION",
@@ -88,7 +116,11 @@
                     },
                     "title": "Pair iterables by position",
                     "explanation": "zip yields one tuple from the same position of each iterable.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "console",
+                      "output": "Ada: 98\nLinus: 91\nGrace: 95"
+                    }
                   },
                   {
                     "id": "unpack",
@@ -107,12 +139,46 @@
             {
               "id": "limit",
               "kind": "not_this",
-              "label": "KNOW THE DEFAULT STOP RULE",
-              "placeholder": "What happens when lengths differ?",
+              "label": "KNOW THE LENGTH RULE",
+              "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "By default, zip stops at the shortest iterable. Use strict=True when unequal lengths should be an error."
+                "text": "Plain `zip()` stops at the shortest iterable; `strict=True` raises `ValueError` when lengths differ.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "shortest",
+                      "text": "shortest iterable",
+                      "required": true
+                    },
+                    {
+                      "id": "strict-error",
+                      "text": "`ValueError`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN SHOULD STRICT MODE BE USED?",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Use `strict=True` when unequal lengths indicate a bug; omit it when intentional truncation is acceptable.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "strict-choice",
+                      "text": "`strict=True`",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -121,7 +187,30 @@
             "x": 0.12,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Built-in Functions — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/functions.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "lazy",
+              "definition": "Work is delayed until values are requested instead of producing every result immediately."
+            },
+            {
+              "term": "iterator",
+              "definition": "An object that produces one item at a time when Python asks for the next value."
+            },
+            {
+              "term": "iterable",
+              "definition": "An object you can loop over, such as a list, tuple, string, range, or generator."
+            },
+            {
+              "term": "ValueError",
+              "definition": "An exception used when a value has an acceptable type but an invalid value for the operation."
+            }
+          ]
         },
         {
           "id": "domain-1-unzip_star",
@@ -130,6 +219,31 @@
             "ai.python.unzip_star"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES ZIP(*PAIRS) MEAN?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`*pairs` expands each pair as a positional argument to `zip()`, which can transpose rows into columns.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "star-expand",
+                      "text": "positional argument",
+                      "required": true
+                    },
+                    {
+                      "id": "transpose",
+                      "text": "transpose",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -163,9 +277,53 @@
                     },
                     "title": "Transpose the pairs",
                     "explanation": "zip groups all first elements together and all second elements together.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "names = ('Ada', 'Linus', 'Grace')\nscores = (98, 91, 95)"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "result",
+              "kind": "mental_model",
+              "label": "WHAT COMES BACK?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`zip(*pairs)` returns an iterator whose grouped outputs are tuples when consumed.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "result-tuples",
+                      "text": "tuples",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "empty",
+              "kind": "not_this",
+              "label": "EMPTY INPUT TRAP",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "If `pairs` is empty, `names, scores = zip(*pairs)` fails because there are no columns to unpack.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "empty-output",
+                      "text": "no columns",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -176,7 +334,34 @@
             "x": 0.35,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Built-in Functions — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/functions.html"
+            },
+            {
+              "title": "Expressions — Python 3.14",
+              "url": "https://docs.python.org/3.14/reference/expressions.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "positional argument",
+              "definition": "A function-call argument matched to a parameter by its position."
+            },
+            {
+              "term": "transpose",
+              "definition": "Swap rows and columns so values that shared a position are grouped together."
+            },
+            {
+              "term": "iterator",
+              "definition": "An object that produces one item at a time when Python asks for the next value."
+            },
+            {
+              "term": "tuples",
+              "definition": "An ordered, immutable collection of values, usually written with commas."
+            }
+          ]
         },
         {
           "id": "domain-1-enumerate_start",
@@ -185,6 +370,26 @@
             "ai.python.enumerate_start"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES ENUMERATE() PRODUCE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`enumerate()` yields an index together with each value from an iterable.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "index",
+                      "text": "index",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -218,9 +423,58 @@
                     },
                     "title": "Choose the first index",
                     "explanation": "The first generated index is 1 instead of the default 0.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "console",
+                      "output": "1 download\n2 transform\n3 upload"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "start-rule",
+              "kind": "not_this",
+              "label": "START DOES NOT SLICE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`start=1` changes the first counter value; it does not skip the first item.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "counter",
+                      "text": "counter value",
+                      "required": true
+                    },
+                    {
+                      "id": "no-skip",
+                      "text": "does not skip",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN SHOULD YOU USE IT?",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Use `enumerate()` instead of maintaining a manual counter beside a loop.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "manual-counter",
+                      "text": "manual counter",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -231,7 +485,26 @@
             "x": 0.58,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Built-in Functions — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/functions.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "index",
+              "definition": "A numeric position associated with an item."
+            },
+            {
+              "term": "counter",
+              "definition": "A number that changes as iteration proceeds, often increasing by one."
+            },
+            {
+              "term": "iterable",
+              "definition": "An object you can loop over, such as a list, tuple, string, range, or generator."
+            }
+          ]
         }
       ]
     },
@@ -259,6 +532,26 @@
             "ai.python.nested_comprehension"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "HOW DO MULTIPLE FOR CLAUSES WORK?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Multiple `for` clauses in a comprehension follow the same order as equivalent nested loops.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-order",
+                      "text": "same order",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -292,9 +585,58 @@
                     },
                     "title": "Inner loop",
                     "explanation": "For each row, the second clause iterates values.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "flat = [1, 2, 3, 4, 5, 6]"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "read-order",
+              "kind": "mental_model",
+              "label": "READ LEFT TO RIGHT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Read the outer loop first, then the inner loop, then each filter at the level where it appears.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "outer",
+                      "text": "outer loop",
+                      "required": true
+                    },
+                    {
+                      "id": "inner",
+                      "text": "inner loop",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "readability",
+              "kind": "not_this",
+              "label": "DO NOT COMPRESS EVERYTHING",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "If a nested comprehension becomes hard to scan, explicit loops are often clearer.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "explicit-loops",
+                      "text": "explicit loops",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -303,7 +645,26 @@
             "x": 0.12,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Expressions — Python 3.14",
+              "url": "https://docs.python.org/3.14/reference/expressions.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "outer loop",
+              "definition": "The loop that runs first and contains another loop."
+            },
+            {
+              "term": "inner loop",
+              "definition": "The loop that runs inside an outer loop."
+            },
+            {
+              "term": "filter",
+              "definition": "A condition that decides which candidate values are kept."
+            }
+          ]
         },
         {
           "id": "domain-1-dict_comprehension",
@@ -312,6 +673,26 @@
             "ai.python.dict_comprehension"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES A DICT COMPREHENSION BUILD?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A dictionary comprehension creates a key-value pair for each item that reaches its output expression.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "key-value",
+                      "text": "key-value pair",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -345,9 +726,53 @@
                     },
                     "title": "Optional filter",
                     "explanation": "Only words satisfying the condition produce entries.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "lengths = {'pear': 4, 'banana': 6, 'kiwi': 4}"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "duplicate-rule",
+              "kind": "not_this",
+              "label": "DUPLICATE KEY RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If the comprehension produces the same key more than once, the later value replaces the earlier value.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "later-wins",
+                      "text": "later value",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "key-rule",
+              "kind": "when",
+              "label": "KEYS MUST WORK AS DICTIONARY KEYS",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Dictionary keys must be hashable; a list cannot be used directly as a dictionary key.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "hashable",
+                      "text": "hashable",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -358,7 +783,30 @@
             "x": 0.35,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Expressions — Python 3.14",
+              "url": "https://docs.python.org/3.14/reference/expressions.html"
+            },
+            {
+              "title": "Python Glossary — Python 3.14",
+              "url": "https://docs.python.org/3.14/glossary.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "key-value pair",
+              "definition": "One dictionary entry: a key used for lookup and its associated value."
+            },
+            {
+              "term": "hashable",
+              "definition": "Able to produce a stable hash value, which is required for dictionary keys and set members."
+            },
+            {
+              "term": "filter",
+              "definition": "A condition that decides which candidate values are kept."
+            }
+          ]
         },
         {
           "id": "domain-1-next_generator_default",
@@ -367,6 +815,26 @@
             "ai.python.next_generator_default"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES NEXT(ITERATOR, DEFAULT) DO?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`next(iterator, default)` returns the next item, or the default when the iterator is exhausted.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "default",
+                      "text": "default",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -400,9 +868,58 @@
                     },
                     "title": "Default value",
                     "explanation": "If no match is yielded, next returns None instead of raising StopIteration.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "first_active = {'name': 'Grace', 'active': True}"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "first-match",
+              "kind": "when",
+              "label": "FIRST-MATCH IDIOM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Combine `next()` with a generator expression to stop at the first matching item without building a list.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "generator",
+                      "text": "generator expression",
+                      "required": true
+                    },
+                    {
+                      "id": "first",
+                      "text": "first matching item",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "no-default",
+              "kind": "not_this",
+              "label": "WITHOUT A DEFAULT",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Calling `next()` on an exhausted iterator without a default raises `StopIteration`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "stop",
+                      "text": "`StopIteration`",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -413,7 +930,34 @@
             "x": 0.58,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Built-in Functions — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/functions.html"
+            },
+            {
+              "title": "Expressions — Python 3.14",
+              "url": "https://docs.python.org/3.14/reference/expressions.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "iterator",
+              "definition": "An object that produces one item at a time when Python asks for the next value."
+            },
+            {
+              "term": "generator expression",
+              "definition": "A compact expression such as `(x for x in items)` that produces values lazily."
+            },
+            {
+              "term": "StopIteration",
+              "definition": "The exception an exhausted iterator raises when `next()` is called without a default."
+            },
+            {
+              "term": "lazy",
+              "definition": "Work is delayed until values are requested instead of producing every result immediately."
+            }
+          ]
         },
         {
           "id": "domain-1-assignment_expression",
@@ -422,6 +966,26 @@
             "ai.python.assignment_expression"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES := DO?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "An assignment expression stores a value inside an expression and also returns that same value.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "returns",
+                      "text": "returns that same value",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -455,9 +1019,53 @@
                     },
                     "title": "Reuse the bound value",
                     "explanation": "The body can use message without recomputing the expression.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "console",
+                      "output": "disk full"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN IS IT USEFUL?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use `:=` when one computed value must be tested and reused without recomputing it.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "reuse",
+                      "text": "without recomputing it",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "parentheses",
+              "kind": "not_this",
+              "label": "PARENTHESES MATTER IN SOME CONTEXTS",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Inside a comprehension `if` clause, wrap an assignment expression in parentheses.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "parens",
+                      "text": "parentheses",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -468,7 +1076,18 @@
             "x": 0.81,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Expressions — Python 3.14",
+              "url": "https://docs.python.org/3.14/reference/expressions.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "expression",
+              "definition": "Python code that evaluates to a value."
+            }
+          ]
         }
       ]
     },
@@ -497,6 +1116,26 @@
           ],
           "prompts": [
             {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES * DO IN A CALL?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "In a function call, `*values` expands an iterable into positional arguments.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "positional",
+                      "text": "positional arguments",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
               "id": "code",
               "kind": "look_for",
               "label": "EXPAND POSITIONAL ARGUMENTS",
@@ -518,9 +1157,53 @@
                     },
                     "title": "Positional unpacking",
                     "explanation": "* expands the tuple so distance receives 3 as x and 4 as y.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "result = 5.0"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "fit",
+              "kind": "not_this",
+              "label": "THE CALL STILL HAS TO FIT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The expanded item order and count must still match what the callable accepts positionally.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "fit",
+                      "text": "order and count",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "name",
+              "kind": "mental_model",
+              "label": "ARGS IS ONLY A CONVENTION",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "The variable does not need to be named `args`; `*point` and `*dimensions` use the same unpacking syntax.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "name",
+                      "text": "named `args`",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -529,7 +1212,26 @@
             "x": 0.12,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Expressions — Python 3.14",
+              "url": "https://docs.python.org/3.14/reference/expressions.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "iterable",
+              "definition": "An object you can loop over, such as a list, tuple, string, range, or generator."
+            },
+            {
+              "term": "positional arguments",
+              "definition": "A function-call argument matched to a parameter by its position."
+            },
+            {
+              "term": "callable",
+              "definition": "An object that can be called with parentheses, such as a function, method, or class."
+            }
+          ]
         },
         {
           "id": "domain-1-double_star_kwargs",
@@ -538,6 +1240,26 @@
             "ai.python.double_star_kwargs"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES ** DO IN A CALL?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "In a function call, `**mapping` expands mapping entries into keyword arguments.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "keyword",
+                      "text": "keyword arguments",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -560,9 +1282,53 @@
                     },
                     "title": "Keyword unpacking",
                     "explanation": "Mapping keys become keyword names and mapping values become argument values.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "config = ('db.internal', 5432, 2)"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "keys",
+              "kind": "not_this",
+              "label": "KEYS MUST BE STRINGS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Keys supplied through `**mapping` in a function call must be strings.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "strings",
+                      "text": "strings",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "duplicate",
+              "kind": "not_this",
+              "label": "DUPLICATE ARGUMENT TRAP",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "If the same parameter receives a value twice, the function call raises `TypeError`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "type-error",
+                      "text": "`TypeError`",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -573,7 +1339,26 @@
             "x": 0.35,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Expressions — Python 3.14",
+              "url": "https://docs.python.org/3.14/reference/expressions.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "mapping",
+              "definition": "An object that associates keys with values. A dictionary is the most common mapping."
+            },
+            {
+              "term": "keyword arguments",
+              "definition": "A function-call argument matched to a parameter by name."
+            },
+            {
+              "term": "TypeError",
+              "definition": "An exception commonly raised when an operation receives an object or argument combination of an inappropriate type or form."
+            }
+          ]
         },
         {
           "id": "domain-1-dict_unpack_precedence",
@@ -582,6 +1367,31 @@
             "ai.python.dict_unpack_precedence"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES ** DO INSIDE A DICTIONARY?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Inside a dictionary display, `**mapping` copies the mapping entries into the new dictionary.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "display",
+                      "text": "dictionary display",
+                      "required": true
+                    },
+                    {
+                      "id": "entries",
+                      "text": "mapping entries",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -615,9 +1425,85 @@
                     },
                     "title": "Last duplicate wins",
                     "explanation": "retries becomes 4 because override is last.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "config = {'timeout': 10, 'retries': 4}"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "precedence",
+              "kind": "not_this",
+              "label": "LATER VALUES WIN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "When a duplicate key appears in a dictionary display, the later value replaces the earlier value.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "later",
+                      "text": "later value",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "call-vs-dict",
+              "kind": "not_this",
+              "label": "DO NOT CONFUSE CALL UNPACKING WITH DICT UNPACKING",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "context",
+                    "label": "Context"
+                  },
+                  {
+                    "id": "duplicate",
+                    "label": "Duplicate name/key"
+                  },
+                  {
+                    "id": "result",
+                    "label": "Result"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "dict",
+                    "cells": {
+                      "context": "{**left, **right}",
+                      "duplicate": "Same dictionary key",
+                      "result": "Later value wins"
+                    }
+                  },
+                  {
+                    "id": "call",
+                    "cells": {
+                      "context": "func(**left, **right)",
+                      "duplicate": "Same function parameter",
+                      "result": "TypeError"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "context"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             }
           ],
@@ -628,7 +1514,30 @@
             "x": 0.58,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Expressions — Python 3.14",
+              "url": "https://docs.python.org/3.14/reference/expressions.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "mapping",
+              "definition": "An object that associates keys with values. A dictionary is the most common mapping."
+            },
+            {
+              "term": "dictionary display",
+              "definition": "Curly-brace syntax such as `{key: value}` or `{**mapping}` that creates a new dictionary."
+            },
+            {
+              "term": "duplicate key",
+              "definition": "The same dictionary key appearing more than once while a dictionary is being built."
+            },
+            {
+              "term": "TypeError",
+              "definition": "An exception commonly raised when an operation receives an object or argument combination of an inappropriate type or form."
+            }
+          ]
         },
         {
           "id": "domain-1-compound_sort_key",
@@ -637,6 +1546,31 @@
             "ai.python.compound_sort_key"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "HOW DOES A TUPLE SORT KEY WORK?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A tuple key is compared lexicographically: Python compares fields from left to right until one differs.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "lexicographic",
+                      "text": "lexicographically",
+                      "required": true
+                    },
+                    {
+                      "id": "direction",
+                      "text": "left to right",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -670,9 +1604,53 @@
                     },
                     "title": "Compound tuple key",
                     "explanation": "Rows sort by team first, then by descending score within each team.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "ordered = [{'team': 'blue', 'score': 10}, {'team': 'blue', 'score': 8}, {'team': 'red', 'score': 9}]"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "mixed-direction",
+              "kind": "not_this",
+              "label": "MIXING ASCENDING AND DESCENDING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For numeric fields, negating one field reverses only that field inside an otherwise ascending tuple key.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "one-field",
+                      "text": "only that field",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "stable",
+              "kind": "mental_model",
+              "label": "STABILITY IS USEFUL",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Python sorting is stable, so multi-pass sorts can handle mixed directions without destroying earlier tie ordering.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "stable",
+                      "text": "stable",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -683,7 +1661,34 @@
             "x": 0.81,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Built-in Functions — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/functions.html"
+            },
+            {
+              "title": "Sorting Techniques — Python 3.14",
+              "url": "https://docs.python.org/3.14/howto/sorting.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "lexicographically",
+              "definition": "Compare items left to right and stop at the first position that differs."
+            },
+            {
+              "term": "stable",
+              "definition": "A stable sort keeps the original relative order of items whose sort keys compare equal."
+            },
+            {
+              "term": "key function",
+              "definition": "The function passed with `key=` that computes the value Python uses for sorting each item."
+            },
+            {
+              "term": "tuple",
+              "definition": "An ordered, immutable collection of values, usually written with commas."
+            }
+          ]
         }
       ]
     }

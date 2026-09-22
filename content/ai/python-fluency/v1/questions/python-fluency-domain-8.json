@@ -5,13 +5,13 @@
     "name": "Python Fluency",
     "exam_code": "PYTHON-FLUENCY",
     "official_source_url": "https://docs.python.org/3/",
-    "last_reviewed": "2026-09-19"
+    "last_reviewed": "2026-09-22"
   },
   "version": {
     "id": "python-fluency-v1",
     "exam_code": "PYTHON-FLUENCY",
-    "effective_date": "2026-09-19",
-    "content_version": "python-fluency-content-2026-09-19-v1",
+    "effective_date": "2026-09-22",
+    "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
     "domains": [
       {
         "id": "domain-1",
@@ -64,24 +64,33 @@
             "id": "8.1",
             "name": "Use Python 3.11 enums and typing",
             "question_ids": [
-              "py311-strenum-001",
-              "py311-strenum-002",
-              "py311-self-001"
+              "py8-strenum-typed-001",
+              "py8-strenum-slots-002",
+              "py8-strenum-fault-003",
+              "py8-self-typed-001",
+              "py8-self-classify-002",
+              "py8-self-order-003"
             ]
           },
           {
             "id": "8.2",
             "name": "Use Python 3.11 async and exception features",
             "question_ids": [
-              "py311-except-star-001",
-              "py311-timeout-001"
+              "py8-exceptstar-typed-001",
+              "py8-exceptstar-slots-002",
+              "py8-exceptstar-relations-003",
+              "py8-timeout-typed-001",
+              "py8-timeout-order-002",
+              "py8-timeout-fault-003"
             ]
           },
           {
             "id": "8.3",
             "name": "Use Python 3.11 TOML support",
             "question_ids": [
-              "py311-tomllib-001"
+              "py8-tomllib-typed-001",
+              "py8-tomllib-classify-002",
+              "py8-tomllib-scenario-003"
             ]
           }
         ]
@@ -110,46 +119,46 @@
     {
       "id": "ai.python.py311_strenum",
       "name": "3.11 StrEnum",
-      "description": "Python 3.11 added enum.StrEnum, whose members are also strings and whose str() result is the underlying string value."
+      "description": "Python 3.11 adds `enum.StrEnum`; members are also strings, `auto()` uses the lower-cased member name by default, and exact-`str` APIs may still require `str(member)`."
     },
     {
       "id": "ai.python.py311_typing_self",
       "name": "3.11 typing.Self",
-      "description": "typing.Self expresses that a method returns an instance of its own class or subclass without introducing a separate TypeVar."
+      "description": "Python 3.11 adds `typing.Self` for methods and attributes whose type follows the current class, preserving subclass-specific return types without a separate bound TypeVar."
     },
     {
       "id": "ai.python.py311_except_star",
       "name": "3.11 ExceptionGroup and except*",
-      "description": "Python 3.11 added ExceptionGroup plus except* clauses so independent exceptions from concurrent work can be handled by type while preserving unhandled members."
+      "description": "Python 3.11 adds `ExceptionGroup` and `except*`; star-handlers receive matching subgroups, multiple handlers can run for one grouped failure, and unmatched exceptions continue to propagate."
     },
     {
       "id": "ai.python.py311_asyncio_timeout",
       "name": "3.11 asyncio.timeout",
-      "description": "Python 3.11 added asyncio.timeout(), an async context manager for limiting the duration of async work."
+      "description": "Python 3.11 adds `asyncio.timeout()`, an async deadline context that uses cancellation internally and exposes expiry as `TimeoutError` outside the context."
     },
     {
       "id": "ai.python.py311_tomllib",
       "name": "3.11 tomllib",
-      "description": "Python 3.11 added tomllib for parsing TOML from the standard library."
+      "description": "Python 3.11 adds `tomllib` for read-only TOML parsing: `load()` accepts a binary file object, `loads()` parses a string, and the module provides no TOML writer."
     }
   ],
   "questions": [
     {
-      "id": "py311-strenum-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py8-strenum-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-8",
       "task_id": "8.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.56,
-      "prompt": "Produce plain strings while iterating the StrEnum members.",
+      "difficulty_prior": 0.42,
+      "prompt": "Generate the default lower-case string value for this StrEnum member.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "from enum import StrEnum\n\nclass Status(StrEnum):\n    READY = 'ready'\n    RUNNING = 'running'\n    FAILED = 'failed'\n\n# Result: ['ready', 'running', 'failed']\nvalues = [{{answer}} for status in Status]"
+          "template": "from enum import StrEnum, auto\n\nclass Status(StrEnum):\n    READY = {{answer}}"
         },
         "slots": [
           {
@@ -164,7 +173,7 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "str(status)"
+              "auto()"
             ]
           }
         }
@@ -175,9 +184,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Python 3.11 added enum.StrEnum, whose members are also strings and whose str() result is the underlying string value. [str(status) for status in Status] produces plain string values when Status derives from StrEnum. Some standard-library code checks type(x) == str rather than isinstance(x, str); str(member) is the compatibility escape hatch documented for those cases.",
+      "explanation": "For `StrEnum`, `auto()` uses the lower-cased member name, so `READY = auto()` receives the value `'ready'`.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the Python 3.11 behavior described by the surrounding code to reconstruct the smallest correct expression."
       ],
       "error_codes": [
         {
@@ -191,45 +200,57 @@
       ],
       "source_refs": [
         {
-          "title": "enum.StrEnum",
+          "title": "enum.StrEnum — Python 3.11",
           "url": "https://docs.python.org/3.11/library/enum.html#enum.StrEnum"
         }
       ]
     },
     {
-      "id": "py311-strenum-002",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py8-strenum-slots-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-8",
       "task_id": "8.1",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.72,
-      "prompt": "Build a lookup from each plain string value to its StrEnum member.",
+      "assessment_mode": "recognition",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.52,
+      "prompt": "Fill the observable values for `class Status(StrEnum): READY = auto()`.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "# Result includes {'ready': Status.READY, ...}\nby_value = { {{answer}} }"
-        },
+        "type": "fill_slots",
         "slots": [
           {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
+            "id": "value",
+            "label": "`Status.READY.value`"
+          },
+          {
+            "id": "string",
+            "label": "`str(Status.READY)`"
+          }
+        ],
+        "options": [
+          {
+            "id": "ready",
+            "label": "'ready'"
+          },
+          {
+            "id": "name",
+            "label": "'READY'"
+          },
+          {
+            "id": "qualified",
+            "label": "'Status.READY'"
+          },
+          {
+            "id": "one",
+            "label": "1"
           }
         ]
       },
       "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "str(status): status for status in Status",
-              "status.value: status for status in Status"
-            ]
-          }
+        "type": "fill_slots",
+        "values": {
+          "value": "ready",
+          "string": "ready"
         }
       },
       "concepts": [
@@ -238,43 +259,107 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Python 3.11 added enum.StrEnum, whose members are also strings and whose str() result is the underlying string value. [str(status) for status in Status] produces plain string values when Status derives from StrEnum. Some standard-library code checks type(x) == str rather than isinstance(x, str); str(member) is the compatibility escape hatch documented for those cases.",
+      "explanation": "The default `StrEnum.auto()` value is the lower-cased member name, and `str(member)` returns that underlying string value.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "For StrEnum, `.value` and `str(member)` are intentionally string-friendly."
       ],
       "error_codes": [
         {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
+          "code": "slot_incorrect",
+          "description": "A slot was filled with the wrong value."
         },
         {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
+          "code": "slot_unfilled",
+          "description": "A required slot was left empty."
         }
       ],
       "source_refs": [
         {
-          "title": "enum.StrEnum",
+          "title": "enum.StrEnum — Python 3.11",
           "url": "https://docs.python.org/3.11/library/enum.html#enum.StrEnum"
         }
       ]
     },
     {
-      "id": "py311-self-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py8-strenum-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.66,
+      "prompt": "A legacy API rejects StrEnum members because it checks `type(value) == str`. Flag the assumption that causes the compatibility bug.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "subclass",
+            "label": "`isinstance(Status.READY, str)` is true"
+          },
+          {
+            "id": "exact",
+            "label": "Assume `type(Status.READY) == str` is also true"
+          },
+          {
+            "id": "convert",
+            "label": "Pass `str(Status.READY)` to an API requiring an exact str"
+          },
+          {
+            "id": "value",
+            "label": "`Status.READY.value` is a string"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "exact"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py311_strenum",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A StrEnum member is a subclass instance of `str`, not an object whose exact type is `str`. Convert with `str(member)` when an exact-type API requires it.",
+      "hints": [
+        "`isinstance(x, str)` and `type(x) == str` are not equivalent checks."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "enum.StrEnum — Python 3.11",
+          "url": "https://docs.python.org/3.11/library/enum.html#enum.StrEnum"
+        }
+      ]
+    },
+    {
+      "id": "py8-self-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-8",
       "task_id": "8.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.57,
-      "prompt": "Annotate this fluent method so subclasses keep their own return type.",
+      "difficulty_prior": 0.4,
+      "prompt": "Annotate this fluent method so the inferred return type follows subclasses.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "from typing import Self\n\nclass Builder:\n    def set_name(self, name: str) -> {{answer}}:\n        self.name = name\n        return self"
+          "template": "from typing import Self\n\nclass Builder:\n    def add(self, value: str) -> {{answer}}:\n        self.values.append(value)\n        return self"
         },
         "slots": [
           {
@@ -300,9 +385,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "typing.Self expresses that a method returns an instance of its own class or subclass without introducing a separate TypeVar. def set_name(self, name: str) -> Self: ... is useful for fluent methods that return self. Self refers to the current enclosing class, not an arbitrary unrelated type chosen by the caller.",
+      "explanation": "`Self` means the current class type, including the more specific subclass type when the method is inherited.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the Python 3.11 behavior described by the surrounding code to reconstruct the smallest correct expression."
       ],
       "error_codes": [
         {
@@ -316,27 +401,157 @@
       ],
       "source_refs": [
         {
-          "title": "What's new in Python 3.11 — typing.Self",
-          "url": "https://docs.python.org/3.11/whatsnew/3.11.html#typing"
+          "title": "typing.Self — Python 3.11",
+          "url": "https://docs.python.org/3.11/library/typing.html#typing.Self"
         }
       ]
     },
     {
-      "id": "py311-except-star-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py8-self-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.1",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.56,
+      "prompt": "Classify which annotations preserve the receiver's concrete subclass type for a method returning `self`.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "self",
+            "label": "`-> Self`"
+          },
+          {
+            "id": "base",
+            "label": "`-> Builder`"
+          },
+          {
+            "id": "none",
+            "label": "`-> None`"
+          }
+        ],
+        "categories": [
+          {
+            "id": "preserve",
+            "label": "Preserves the receiver subclass type"
+          },
+          {
+            "id": "fixed",
+            "label": "Does not express that relationship"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "self": "preserve",
+          "base": "fixed",
+          "none": "fixed"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py311_typing_self",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`Self` is specifically designed to express that the result has the same dynamic class family as the receiver. A fixed base-class annotation loses subclass precision.",
+      "hints": [
+        "Ask whether a subclass call should still type-check as returning that subclass."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "typing.Self — Python 3.11",
+          "url": "https://docs.python.org/3.11/library/typing.html#typing.Self"
+        }
+      ]
+    },
+    {
+      "id": "py8-self-order-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.1",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.5,
+      "prompt": "Arrange the type-checking relationship for a subclass inheriting a method declared `def clone(self) -> Self`.",
+      "interaction": {
+        "type": "ordering",
+        "items": [
+          {
+            "id": "result",
+            "label": "The call result is inferred as AdvancedBuilder"
+          },
+          {
+            "id": "inherit",
+            "label": "AdvancedBuilder inherits `clone()`"
+          },
+          {
+            "id": "call",
+            "label": "Call `advanced.clone()`"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "ordering",
+        "ordered_ids": [
+          "inherit",
+          "call",
+          "result"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py311_typing_self",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`Self` tracks the class of the receiver through inheritance, so a call on an `AdvancedBuilder` is inferred as returning `AdvancedBuilder`.",
+      "hints": [
+        "Follow the receiver type through the inherited method."
+      ],
+      "error_codes": [
+        {
+          "code": "ordering_invalid_sequence",
+          "description": "One or more steps are in the wrong position."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "typing.Self — Python 3.11",
+          "url": "https://docs.python.org/3.11/library/typing.html#typing.Self"
+        }
+      ]
+    },
+    {
+      "id": "py8-exceptstar-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-8",
       "task_id": "8.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.64,
-      "prompt": "Handle only ValueError members from an ExceptionGroup.",
+      "difficulty_prior": 0.48,
+      "prompt": "Handle only ValueError members from a Python 3.11 ExceptionGroup.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "try:\n    await run_group()\n{{answer}} as errors:\n    report_invalid(errors)"
+          "template": "try:\n    run_many()\n{{answer}} as errors:\n    report(errors)"
         },
         "slots": [
           {
@@ -362,9 +577,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Python 3.11 added ExceptionGroup plus except* clauses so independent exceptions from concurrent work can be handled by type while preserving unhandled members. except* ValueError as errors: ... handles matching ValueError members inside an exception group. except and except* cannot be mixed in the same try statement, and except* semantics differ from catching one ordinary exception object.",
+      "explanation": "`except* ValueError` selects the ValueError subgroup from a grouped failure while leaving unrelated exception members for other handlers or propagation.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the Python 3.11 behavior described by the surrounding code to reconstruct the smallest correct expression."
       ],
       "error_codes": [
         {
@@ -378,21 +593,215 @@
       ],
       "source_refs": [
         {
-          "title": "What's new in Python 3.11 — Exception Groups",
-          "url": "https://docs.python.org/3.11/whatsnew/3.11.html#pep-654-exception-groups-and-except"
+          "title": "The try statement and except* — Python 3.11",
+          "url": "https://docs.python.org/3.11/reference/compound_stmts.html#except-star"
+        },
+        {
+          "title": "ExceptionGroup — Python 3.11",
+          "url": "https://docs.python.org/3.11/library/exceptions.html#ExceptionGroup"
         }
       ]
     },
     {
-      "id": "py311-timeout-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py8-exceptstar-slots-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.2",
+      "assessment_mode": "recognition",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.59,
+      "prompt": "Fill how an ExceptionGroup containing one ValueError and one TypeError is processed by matching except* clauses.",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "value",
+            "label": "`except* ValueError`"
+          },
+          {
+            "id": "type",
+            "label": "`except* TypeError`"
+          }
+        ],
+        "options": [
+          {
+            "id": "value_group",
+            "label": "Receives the ValueError subgroup"
+          },
+          {
+            "id": "type_group",
+            "label": "Receives the TypeError subgroup"
+          },
+          {
+            "id": "whole",
+            "label": "Each clause receives the whole original group unchanged"
+          },
+          {
+            "id": "nothing",
+            "label": "Neither clause can match grouped exceptions"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "value": "value_group",
+          "type": "type_group"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py311_except_star",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Each `except*` clause receives the matching subgroup. More than one clause can therefore run for one original ExceptionGroup.",
+      "hints": [
+        "except* partitions the grouped failures by matching type."
+      ],
+      "error_codes": [
+        {
+          "code": "slot_incorrect",
+          "description": "A slot was filled with the wrong value."
+        },
+        {
+          "code": "slot_unfilled",
+          "description": "A required slot was left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "The try statement and except* — Python 3.11",
+          "url": "https://docs.python.org/3.11/reference/compound_stmts.html#except-star"
+        }
+      ]
+    },
+    {
+      "id": "py8-exceptstar-relations-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.2",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "node_connection",
+      "difficulty_prior": 0.67,
+      "prompt": "Connect each ExceptionGroup/except* behavior to its direct meaning. Create exactly 4 relationships.",
+      "interaction": {
+        "type": "node_connection",
+        "nodes": [
+          {
+            "id": "group",
+            "label": "`ExceptionGroup`",
+            "x": 0.08,
+            "y": 0.14
+          },
+          {
+            "id": "many",
+            "label": "Carries multiple exceptions together",
+            "x": 0.48,
+            "y": 0.14
+          },
+          {
+            "id": "value",
+            "label": "`except* ValueError`",
+            "x": 0.08,
+            "y": 0.39
+          },
+          {
+            "id": "sub",
+            "label": "Handles matching ValueError subgroup",
+            "x": 0.48,
+            "y": 0.39
+          },
+          {
+            "id": "multiple",
+            "label": "Several except* clauses",
+            "x": 0.08,
+            "y": 0.64
+          },
+          {
+            "id": "run",
+            "label": "Can each process a matching subgroup",
+            "x": 0.48,
+            "y": 0.64
+          },
+          {
+            "id": "left",
+            "label": "Unmatched exceptions",
+            "x": 0.62,
+            "y": 0.86
+          },
+          {
+            "id": "prop",
+            "label": "Remain available for propagation",
+            "x": 0.93,
+            "y": 0.86
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "node_connection",
+        "edges": [
+          [
+            "group",
+            "many"
+          ],
+          [
+            "value",
+            "sub"
+          ],
+          [
+            "multiple",
+            "run"
+          ],
+          [
+            "left",
+            "prop"
+          ]
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py311_except_star",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "ExceptionGroup preserves multiple failures; `except*` extracts matching subgroups, multiple star-handlers can run, and unmatched failures remain to propagate.",
+      "hints": [
+        "Connect the grouped-exception structure to the star-handler behavior."
+      ],
+      "error_codes": [
+        {
+          "code": "connection_missing_relationship",
+          "description": "A valid relationship is missing."
+        },
+        {
+          "code": "connection_invalid_relationship",
+          "description": "A submitted relationship is not valid."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "The try statement and except* — Python 3.11",
+          "url": "https://docs.python.org/3.11/reference/compound_stmts.html#except-star"
+        },
+        {
+          "title": "ExceptionGroup — Python 3.11",
+          "url": "https://docs.python.org/3.11/library/exceptions.html#ExceptionGroup"
+        }
+      ]
+    },
+    {
+      "id": "py8-timeout-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-8",
       "task_id": "8.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.59,
-      "prompt": "Use the Python 3.11 timeout context manager.",
+      "difficulty_prior": 0.44,
+      "prompt": "Limit the enclosed await to five seconds with the Python 3.11 timeout context.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
@@ -424,9 +833,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Python 3.11 added asyncio.timeout(), an async context manager for limiting the duration of async work. async with asyncio.timeout(5): await operation() scopes the deadline clearly around the awaited block. Timeout uses task cancellation internally; cancellation-aware cleanup still matters.",
+      "explanation": "`async with asyncio.timeout(5):` gives the enclosed asynchronous work a five-second deadline.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the Python 3.11 behavior described by the surrounding code to reconstruct the smallest correct expression."
       ],
       "error_codes": [
         {
@@ -440,21 +849,148 @@
       ],
       "source_refs": [
         {
-          "title": "What's new in Python 3.11 — asyncio",
-          "url": "https://docs.python.org/3.11/whatsnew/3.11.html#asyncio"
+          "title": "asyncio timeouts — Python 3.11",
+          "url": "https://docs.python.org/3.11/library/asyncio-task.html#timeouts"
         }
       ]
     },
     {
-      "id": "py311-tomllib-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py8-timeout-order-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.2",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.6,
+      "prompt": "Arrange the high-level flow when an `asyncio.timeout()` deadline expires.",
+      "interaction": {
+        "type": "ordering",
+        "items": [
+          {
+            "id": "outside",
+            "label": "`TimeoutError` is catchable outside the context"
+          },
+          {
+            "id": "deadline",
+            "label": "The timeout deadline expires"
+          },
+          {
+            "id": "cancel",
+            "label": "The current task is cancelled internally"
+          },
+          {
+            "id": "convert",
+            "label": "The context converts that cancellation into TimeoutError"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "ordering",
+        "ordered_ids": [
+          "deadline",
+          "cancel",
+          "convert",
+          "outside"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py311_asyncio_timeout",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The timeout scope uses task cancellation internally. As the context exits, it transforms its own cancellation into `TimeoutError`, which can then be handled outside.",
+      "hints": [
+        "The observable TimeoutError appears at the timeout context boundary."
+      ],
+      "error_codes": [
+        {
+          "code": "ordering_invalid_sequence",
+          "description": "One or more steps are in the wrong position."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "asyncio timeouts — Python 3.11",
+          "url": "https://docs.python.org/3.11/library/asyncio-task.html#timeouts"
+        }
+      ]
+    },
+    {
+      "id": "py8-timeout-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.2",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.7,
+      "prompt": "The code wants to catch the timeout created by `asyncio.timeout()`. Flag the handler placement that cannot catch the transformed TimeoutError.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "scope",
+            "label": "`async with asyncio.timeout(5):`"
+          },
+          {
+            "id": "inside",
+            "label": "Catch the context's resulting `TimeoutError` only inside that same async-with body"
+          },
+          {
+            "id": "outside",
+            "label": "Catch `TimeoutError` around the async-with statement"
+          },
+          {
+            "id": "await",
+            "label": "Await the operation inside the timeout scope"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "inside"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py311_asyncio_timeout",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The context manager converts its cancellation to `TimeoutError` on exit, so the resulting TimeoutError must be caught outside the `async with` context.",
+      "hints": [
+        "Ask where the cancellation-to-TimeoutError transformation occurs."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "asyncio timeouts — Python 3.11",
+          "url": "https://docs.python.org/3.11/library/asyncio-task.html#timeouts"
+        }
+      ]
+    },
+    {
+      "id": "py8-tomllib-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-8",
       "task_id": "8.3",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.55,
-      "prompt": "Parse the TOML file using the standard-library parser.",
+      "difficulty_prior": 0.4,
+      "prompt": "Parse the already-open binary TOML file with the Python 3.11 standard library.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
@@ -486,9 +1022,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Python 3.11 added tomllib for parsing TOML from the standard library. with open('pyproject.toml', 'rb') as f: data = tomllib.load(f) parses TOML from a binary file object. tomllib is read-only; it parses TOML but does not provide a TOML writer.",
+      "explanation": "`tomllib.load(file)` parses TOML from a binary file object and returns Python dictionaries and scalar/container values.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the Python 3.11 behavior described by the surrounding code to reconstruct the smallest correct expression."
       ],
       "error_codes": [
         {
@@ -502,8 +1038,195 @@
       ],
       "source_refs": [
         {
-          "title": "What's new in Python 3.11 — tomllib",
-          "url": "https://docs.python.org/3.11/whatsnew/3.11.html#tomllib"
+          "title": "tomllib — Parse TOML files — Python 3.11",
+          "url": "https://docs.python.org/3.11/library/tomllib.html"
+        }
+      ]
+    },
+    {
+      "id": "py8-tomllib-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.3",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.54,
+      "prompt": "Classify each tomllib usage.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "load",
+            "label": "`tomllib.load(binary_file)`"
+          },
+          {
+            "id": "loads",
+            "label": "`tomllib.loads(toml_text)`"
+          },
+          {
+            "id": "dumps",
+            "label": "`tomllib.dumps(data)`"
+          }
+        ],
+        "categories": [
+          {
+            "id": "file",
+            "label": "Supported: parse a binary file object"
+          },
+          {
+            "id": "string",
+            "label": "Supported: parse a TOML string"
+          },
+          {
+            "id": "missing",
+            "label": "Not provided by tomllib"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "load": "file",
+          "loads": "string",
+          "dumps": "missing"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py311_tomllib",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`tomllib` supplies `load()` for binary file objects and `loads()` for strings. It is intentionally a parser and has no `dumps()` writer.",
+      "hints": [
+        "The module name ends in `lib`, but its scope is parsing, not round-trip writing."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "tomllib — Parse TOML files — Python 3.11",
+          "url": "https://docs.python.org/3.11/library/tomllib.html"
+        }
+      ]
+    },
+    {
+      "id": "py8-tomllib-scenario-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain8-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.3",
+      "assessment_mode": "application",
+      "interaction_type": "scenario_choice_chain",
+      "difficulty_prior": 0.65,
+      "prompt": "A tool needs to read `pyproject.toml`, inspect `project.name`, and later emit modified TOML.",
+      "interaction": {
+        "type": "scenario_choice_chain",
+        "start_step_id": "read",
+        "steps": [
+          {
+            "id": "read",
+            "stage": "action",
+            "prompt": "Which standard-library read path is correct?",
+            "choices": [
+              {
+                "id": "binary",
+                "label": "Open in `rb` mode and call `tomllib.load(file)`"
+              },
+              {
+                "id": "textload",
+                "label": "Open in text mode and pass that file object to `tomllib.load()`"
+              },
+              {
+                "id": "json",
+                "label": "Use `json.load()`"
+              },
+              {
+                "id": "eval",
+                "label": "Use `eval()` on the TOML text"
+              }
+            ],
+            "next_step_by_choice": {
+              "binary": "write",
+              "textload": "write",
+              "json": "write",
+              "eval": "write"
+            }
+          },
+          {
+            "id": "write",
+            "stage": "action",
+            "prompt": "What should the developer know before trying to write the modified TOML back?",
+            "choices": [
+              {
+                "id": "external",
+                "label": "`tomllib` has no writer; use an appropriate TOML-writing library"
+              },
+              {
+                "id": "dumps",
+                "label": "Call `tomllib.dumps(data)`"
+              },
+              {
+                "id": "dump",
+                "label": "Call `tomllib.dump(data, file)`"
+              },
+              {
+                "id": "pickle",
+                "label": "Use `pickle.dump()` and keep the .toml extension"
+              }
+            ],
+            "next_step_by_choice": {}
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "scenario_choice_chain",
+        "correct_choice_ids": {
+          "read": [
+            "binary"
+          ],
+          "write": [
+            "external"
+          ]
+        },
+        "expected_path": [
+          "binary",
+          "external"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py311_tomllib",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`tomllib.load()` expects a binary file object. The module is read-only, so writing modified TOML requires another writer rather than a nonexistent `tomllib.dump(s)` API.",
+      "hints": [
+        "Separate the supported standard-library read path from the unsupported write path."
+      ],
+      "error_codes": [
+        {
+          "code": "scenario_choice_incorrect",
+          "description": "At least one scenario decision was incorrect."
+        },
+        {
+          "code": "scenario_choice_incomplete",
+          "description": "The scenario ended before all required decisions were made."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "tomllib — Parse TOML files — Python 3.11",
+          "url": "https://docs.python.org/3.11/library/tomllib.html"
         }
       ]
     }

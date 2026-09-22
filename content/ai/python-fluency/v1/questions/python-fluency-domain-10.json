@@ -5,13 +5,13 @@
     "name": "Python Fluency",
     "exam_code": "PYTHON-FLUENCY",
     "official_source_url": "https://docs.python.org/3/",
-    "last_reviewed": "2026-09-19"
+    "last_reviewed": "2026-09-22"
   },
   "version": {
     "id": "python-fluency-v1",
     "exam_code": "PYTHON-FLUENCY",
-    "effective_date": "2026-09-19",
-    "content_version": "python-fluency-content-2026-09-19-v1",
+    "effective_date": "2026-09-22",
+    "content_version": "python-fluency-content-2026-09-22-v2-domain10-reviewed",
     "domains": [
       {
         "id": "domain-1",
@@ -76,17 +76,24 @@
             "id": "10.1",
             "name": "Use Python 3.13 replacement and batching APIs",
             "question_ids": [
-              "py313-batched-strict-001",
-              "py313-batched-strict-002",
-              "py313-copy-replace-001"
+              "py10-batched-typed-001",
+              "py10-batched-order-002",
+              "py10-batched-fault-003",
+              "py10-replace-typed-001",
+              "py10-replace-classify-002",
+              "py10-replace-scenario-003"
             ]
           },
           {
             "id": "10.2",
             "name": "Use Python 3.13 queue and typing additions",
             "question_ids": [
-              "py313-queue-shutdown-001",
-              "py313-typeis-001"
+              "py10-queue-typed-001",
+              "py10-queue-slots-002",
+              "py10-queue-relations-003",
+              "py10-typeis-typed-001",
+              "py10-typeis-classify-002",
+              "py10-typeis-fault-003"
             ]
           }
         ]
@@ -103,41 +110,41 @@
     {
       "id": "ai.python.py313_batched_strict",
       "name": "3.13 batched(strict=True)",
-      "description": "Python 3.13 added strict= to itertools.batched; strict=True raises ValueError when the final batch is shorter than n."
+      "description": "Python 3.13 adds `strict=` to `itertools.batched`; with `strict=True`, lazy iteration raises `ValueError` when the final batch is shorter than n."
     },
     {
       "id": "ai.python.py313_copy_replace",
       "name": "3.13 copy.replace",
-      "description": "Python 3.13 added copy.replace(obj, **changes), a common replacement protocol supported by dataclasses, named tuples, datetime types, and custom __replace__ implementations."
+      "description": "Python 3.13 adds `copy.replace(obj, **changes)`, a field-replacement protocol for supported record-like objects and custom classes implementing `__replace__()`; it is not a general deep copy."
     },
     {
       "id": "ai.python.py313_queue_shutdown",
       "name": "3.13 Queue.shutdown",
-      "description": "Python 3.13 added Queue.shutdown() and the ShutDown exception for explicit producer-consumer queue termination."
+      "description": "Python 3.13 adds `Queue.shutdown()` and `ShutDown`: graceful shutdown rejects new puts while draining queued work, whereas immediate shutdown drains work and weakens the normal `join()` invariant."
     },
     {
       "id": "ai.python.py313_typeis",
       "name": "3.13 typing.TypeIs",
-      "description": "Python 3.13 added typing.TypeIs for user-defined type-narrowing predicates whose true and false branches can both narrow more intuitively than TypeGuard."
+      "description": "Python 3.13 adds `typing.TypeIs` for user-defined type predicates; compatible narrowed types can refine both True and False branches, unlike TypeGuard's positive-only narrowing."
     }
   ],
   "questions": [
     {
-      "id": "py313-batched-strict-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py10-batched-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain10-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-10",
       "task_id": "10.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.56,
-      "prompt": "Require every insertion batch to contain exactly 100 records.",
+      "difficulty_prior": 0.4,
+      "prompt": "Require each emitted batch to contain exactly 100 items.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "# batched() groups an iterable into fixed-size chunks.\nfrom itertools import batched\nfor batch in batched(records, 100, {{answer}}):\n    insert(batch)"
+          "template": "from itertools import batched\nfor batch in batched(records, 100, {{answer}}):\n    insert(batch)"
         },
         "slots": [
           {
@@ -163,9 +170,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Python 3.13 added strict= to itertools.batched; strict=True raises ValueError when the final batch is shorter than n. for batch in batched(records, 100, strict=True): ... enforces exact batch size. The validation happens as the iterator is consumed, because batched is lazy.",
+      "explanation": "`strict=True` makes `batched()` raise `ValueError` if the final tuple is shorter than 100.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the Python 3.13 behavior shown by the surrounding code to reconstruct the smallest correct expression."
       ],
       "error_codes": [
         {
@@ -179,45 +186,50 @@
       ],
       "source_refs": [
         {
-          "title": "What's new in Python 3.13 — itertools",
-          "url": "https://docs.python.org/3/whatsnew/3.13.html#itertools"
+          "title": "itertools.batched — Python 3.13",
+          "url": "https://docs.python.org/3.13/library/itertools.html#itertools.batched"
         }
       ]
     },
     {
-      "id": "py313-batched-strict-002",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py10-batched-order-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain10-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-10",
       "task_id": "10.1",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.73,
-      "prompt": "Write the batching expression that rejects an incomplete final chunk.",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.58,
+      "prompt": "For `batches = batched(range(5), 2, strict=True)`, arrange what happens as the iterator is consumed.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "# Every GPU batch must contain exactly batch_size samples.\nbatches = {{answer}}"
-        },
-        "slots": [
+        "type": "ordering",
+        "items": [
           {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
+            "id": "error",
+            "label": "ValueError is raised for the incomplete final batch"
+          },
+          {
+            "id": "first",
+            "label": "Yield (0, 1)"
+          },
+          {
+            "id": "second",
+            "label": "Yield (2, 3)"
+          },
+          {
+            "id": "last",
+            "label": "Read the remaining item 4 while attempting another batch"
           }
         ]
       },
       "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "batched(samples, batch_size, strict=True)"
-            ]
-          }
-        }
+        "type": "ordering",
+        "ordered_ids": [
+          "first",
+          "second",
+          "last",
+          "error"
+        ]
       },
       "concepts": [
         {
@@ -225,37 +237,97 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Python 3.13 added strict= to itertools.batched; strict=True raises ValueError when the final batch is shorter than n. for batch in batched(records, 100, strict=True): ... enforces exact batch size. The validation happens as the iterator is consumed, because batched is lazy.",
+      "explanation": "`batched()` is lazy. Full tuples are yielded first; only when iteration attempts the final incomplete tuple does strict mode raise `ValueError`.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "The mismatch check happens while the iterator is being consumed."
       ],
       "error_codes": [
         {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
-        },
-        {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
+          "code": "ordering_invalid_sequence",
+          "description": "One or more steps are in the wrong position."
         }
       ],
       "source_refs": [
         {
-          "title": "What's new in Python 3.13 — itertools",
-          "url": "https://docs.python.org/3/whatsnew/3.13.html#itertools"
+          "title": "itertools.batched — Python 3.13",
+          "url": "https://docs.python.org/3.13/library/itertools.html#itertools.batched"
         }
       ]
     },
     {
-      "id": "py313-copy-replace-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py10-batched-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain10-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-10",
+      "task_id": "10.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.66,
+      "prompt": "The code creates `groups = batched(source(), 4, strict=True)` and expects an incomplete source to fail immediately. Flag the false assumption.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "create",
+            "label": "Construct the batched iterator"
+          },
+          {
+            "id": "false",
+            "label": "Assume strict length validation has completed before the iterator is consumed"
+          },
+          {
+            "id": "consume",
+            "label": "Consume the iterator to force batching and strict validation"
+          },
+          {
+            "id": "error",
+            "label": "Handle ValueError if the final batch is incomplete"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "false"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py313_batched_strict",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Strict mode does not make `batched()` eager. The input is consumed lazily, so the incomplete final batch is detected only when iteration reaches it.",
+      "hints": [
+        "Iterator creation is not the same as consuming the iterator."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "itertools.batched — Python 3.13",
+          "url": "https://docs.python.org/3.13/library/itertools.html#itertools.batched"
+        }
+      ]
+    },
+    {
+      "id": "py10-replace-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain10-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-10",
       "task_id": "10.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.59,
-      "prompt": "Create a modified copy without mutating config.",
+      "difficulty_prior": 0.42,
+      "prompt": "Create a modified copy with retries changed to 5.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
@@ -287,9 +359,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Python 3.13 added copy.replace(obj, **changes), a common replacement protocol supported by dataclasses, named tuples, datetime types, and custom __replace__ implementations. new_config = copy.replace(config, retries=5) creates a modified copy without mutating the original. copy.replace is not a general deep copy; it constructs a replacement with selected fields changed.",
+      "explanation": "`copy.replace(config, retries=5)` requests a new same-type replacement with the selected field changed.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the Python 3.13 behavior shown by the surrounding code to reconstruct the smallest correct expression."
       ],
       "error_codes": [
         {
@@ -303,27 +375,219 @@
       ],
       "source_refs": [
         {
-          "title": "What's new in Python 3.13 — copy.replace",
-          "url": "https://docs.python.org/3/whatsnew/3.13.html#copy"
+          "title": "copy.replace — Python 3.13",
+          "url": "https://docs.python.org/3.13/library/copy.html#copy.replace"
         }
       ]
     },
     {
-      "id": "py313-queue-shutdown-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py10-replace-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain10-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-10",
+      "task_id": "10.1",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.58,
+      "prompt": "Classify which objects participate directly in Python 3.13's copy.replace protocol.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "dataclass",
+            "label": "A dataclass instance"
+          },
+          {
+            "id": "namedtuple",
+            "label": "An instance created by collections.namedtuple"
+          },
+          {
+            "id": "custom",
+            "label": "A custom class defining `__replace__()`"
+          },
+          {
+            "id": "list",
+            "label": "An ordinary list with no replacement protocol"
+          }
+        ],
+        "categories": [
+          {
+            "id": "supported",
+            "label": "Supported by copy.replace"
+          },
+          {
+            "id": "not_generic",
+            "label": "Not supported merely because it is copyable"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "dataclass": "supported",
+          "namedtuple": "supported",
+          "custom": "supported",
+          "list": "not_generic"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py313_copy_replace",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`copy.replace()` supports named tuples, dataclasses, and classes participating through `__replace__()`. It is deliberately more limited than `copy()` or `deepcopy()`.",
+      "hints": [
+        "Replacement support is a protocol, not a promise for every Python object."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "copy.replace — Python 3.13",
+          "url": "https://docs.python.org/3.13/library/copy.html#copy.replace"
+        },
+        {
+          "title": "What's New In Python 3.13",
+          "url": "https://docs.python.org/3.13/whatsnew/3.13.html"
+        }
+      ]
+    },
+    {
+      "id": "py10-replace-scenario-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain10-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-10",
+      "task_id": "10.1",
+      "assessment_mode": "application",
+      "interaction_type": "scenario_choice_chain",
+      "difficulty_prior": 0.69,
+      "prompt": "You need to evolve immutable record-like objects without mutating the originals.",
+      "interaction": {
+        "type": "scenario_choice_chain",
+        "start_step_id": "record",
+        "steps": [
+          {
+            "id": "record",
+            "stage": "action",
+            "prompt": "For a frozen dataclass, which operation directly expresses 'same record, one field changed'?",
+            "choices": [
+              {
+                "id": "replace",
+                "label": "`copy.replace(config, retries=5)`"
+              },
+              {
+                "id": "deepcopy",
+                "label": "`copy.deepcopy(config)` with no field change"
+              },
+              {
+                "id": "assign",
+                "label": "`config.retries = 5`"
+              },
+              {
+                "id": "list",
+                "label": "`list(config)`"
+              }
+            ],
+            "next_step_by_choice": {
+              "replace": "custom",
+              "deepcopy": "custom",
+              "assign": "custom",
+              "list": "custom"
+            }
+          },
+          {
+            "id": "custom",
+            "stage": "verification",
+            "prompt": "How can a custom immutable class opt into the same generic operation?",
+            "choices": [
+              {
+                "id": "dunder",
+                "label": "Implement `__replace__(self, **changes)`"
+              },
+              {
+                "id": "copy",
+                "label": "Implement only `__copy__()`"
+              },
+              {
+                "id": "iter",
+                "label": "Implement `__iter__()`"
+              },
+              {
+                "id": "format",
+                "label": "Implement `__format__()`"
+              }
+            ],
+            "next_step_by_choice": {}
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "scenario_choice_chain",
+        "correct_choice_ids": {
+          "record": [
+            "replace"
+          ],
+          "custom": [
+            "dunder"
+          ]
+        },
+        "expected_path": [
+          "replace",
+          "dunder"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py313_copy_replace",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`copy.replace()` is the common field-replacement operation. Custom classes participate by implementing `__replace__()` to construct a same-type replacement.",
+      "hints": [
+        "Use the replacement protocol rather than mutation or unrelated copy hooks."
+      ],
+      "error_codes": [
+        {
+          "code": "scenario_choice_incorrect",
+          "description": "At least one scenario decision was incorrect."
+        },
+        {
+          "code": "scenario_choice_incomplete",
+          "description": "The scenario ended before all required decisions were made."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "copy.replace — Python 3.13",
+          "url": "https://docs.python.org/3.13/library/copy.html#copy.replace"
+        }
+      ]
+    },
+    {
+      "id": "py10-queue-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain10-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-10",
       "task_id": "10.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.58,
-      "prompt": "Begin a graceful queue shutdown after producers finish.",
+      "difficulty_prior": 0.39,
+      "prompt": "Begin the normal graceful shutdown of the queue.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "# Existing queued work should still be processed.\n{{answer}}"
+          "template": "from queue import Queue\nq = Queue()\n{{answer}}"
         },
         "slots": [
           {
@@ -349,9 +613,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Python 3.13 added Queue.shutdown() and the ShutDown exception for explicit producer-consumer queue termination. q.shutdown() prevents future growth while allowing already queued work to wind down normally by default. shutdown(immediate=True) breaks the usual join invariant by draining work immediately, so it should be used deliberately.",
+      "explanation": "`q.shutdown()` uses the default `immediate=False`: new puts are rejected while already queued work can still be drained normally.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the Python 3.13 behavior shown by the surrounding code to reconstruct the smallest correct expression."
       ],
       "error_codes": [
         {
@@ -365,27 +629,218 @@
       ],
       "source_refs": [
         {
-          "title": "queue.Queue.shutdown",
+          "title": "queue.Queue.shutdown — Python 3.13",
           "url": "https://docs.python.org/3.13/library/queue.html#queue.Queue.shutdown"
         }
       ]
     },
     {
-      "id": "py313-typeis-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py10-queue-slots-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain10-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-10",
+      "task_id": "10.2",
+      "assessment_mode": "recognition",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.58,
+      "prompt": "Fill the important differences between graceful and immediate queue shutdown.",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "graceful",
+            "label": "`shutdown()`"
+          },
+          {
+            "id": "immediate",
+            "label": "`shutdown(immediate=True)`"
+          },
+          {
+            "id": "future_put",
+            "label": "Future `put()` after either shutdown mode"
+          }
+        ],
+        "options": [
+          {
+            "id": "drain",
+            "label": "Existing queued work may be retrieved and completed normally"
+          },
+          {
+            "id": "hard",
+            "label": "Queued work is drained immediately and join semantics are weakened"
+          },
+          {
+            "id": "shutdown_error",
+            "label": "Raises ShutDown"
+          },
+          {
+            "id": "accept",
+            "label": "Still accepts new work"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "graceful": "drain",
+          "immediate": "hard",
+          "future_put": "shutdown_error"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py313_queue_shutdown",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Graceful shutdown lets consumers finish queued work. Immediate shutdown drains queued items and can unblock `join()` without normal task completion. Future puts raise `ShutDown` in either mode.",
+      "hints": [
+        "Separate what happens to existing work from what happens to new work."
+      ],
+      "error_codes": [
+        {
+          "code": "slot_incorrect",
+          "description": "A slot was filled with the wrong value."
+        },
+        {
+          "code": "slot_unfilled",
+          "description": "A required slot was left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "queue.Queue.shutdown — Python 3.13",
+          "url": "https://docs.python.org/3.13/library/queue.html#queue.Queue.shutdown"
+        }
+      ]
+    },
+    {
+      "id": "py10-queue-relations-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain10-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-10",
+      "task_id": "10.2",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "node_connection",
+      "difficulty_prior": 0.64,
+      "prompt": "Connect each Queue.shutdown behavior to its direct consequence. Create exactly 4 relationships.",
+      "interaction": {
+        "type": "node_connection",
+        "nodes": [
+          {
+            "id": "normal",
+            "label": "`shutdown()`",
+            "x": 0.08,
+            "y": 0.14
+          },
+          {
+            "id": "normal_mean",
+            "label": "Existing items can still be drained",
+            "x": 0.48,
+            "y": 0.14
+          },
+          {
+            "id": "put",
+            "label": "Future `put()`",
+            "x": 0.08,
+            "y": 0.39
+          },
+          {
+            "id": "put_mean",
+            "label": "Raises ShutDown",
+            "x": 0.48,
+            "y": 0.39
+          },
+          {
+            "id": "empty",
+            "label": "Gracefully shut down queue becomes empty",
+            "x": 0.08,
+            "y": 0.64
+          },
+          {
+            "id": "get_mean",
+            "label": "Future `get()` raises ShutDown",
+            "x": 0.48,
+            "y": 0.64
+          },
+          {
+            "id": "hard",
+            "label": "`shutdown(immediate=True)`",
+            "x": 0.62,
+            "y": 0.86
+          },
+          {
+            "id": "hard_mean",
+            "label": "Can violate normal join invariant",
+            "x": 0.93,
+            "y": 0.86
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "node_connection",
+        "edges": [
+          [
+            "normal",
+            "normal_mean"
+          ],
+          [
+            "put",
+            "put_mean"
+          ],
+          [
+            "empty",
+            "get_mean"
+          ],
+          [
+            "hard",
+            "hard_mean"
+          ]
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py313_queue_shutdown",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The queue API distinguishes graceful draining from hard termination: puts are rejected after shutdown, gets fail once graceful shutdown is empty, and immediate mode weakens the normal `join()` invariant.",
+      "hints": [
+        "Connect each lifecycle state directly to the operation it changes."
+      ],
+      "error_codes": [
+        {
+          "code": "connection_missing_relationship",
+          "description": "A valid relationship is missing."
+        },
+        {
+          "code": "connection_invalid_relationship",
+          "description": "A submitted relationship is not valid."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "queue.Queue.shutdown — Python 3.13",
+          "url": "https://docs.python.org/3.13/library/queue.html#queue.Queue.shutdown"
+        }
+      ]
+    },
+    {
+      "id": "py10-typeis-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain10-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-10",
       "task_id": "10.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.67,
-      "prompt": "Annotate this predicate for Python 3.13 type narrowing.",
+      "difficulty_prior": 0.43,
+      "prompt": "Annotate this user-defined predicate so type checkers narrow `value` to str when it returns True.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "from typing import TypeIs\n\ndef is_str(value: object) -> {{answer}}:\n    return isinstance(value, str)"
+          "template": "from typing import TypeIs\n\ndef is_string(value: object) -> {{answer}}:\n    return isinstance(value, str)"
         },
         "slots": [
           {
@@ -411,9 +866,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Python 3.13 added typing.TypeIs for user-defined type-narrowing predicates whose true and false branches can both narrow more intuitively than TypeGuard. def is_str(value: object) -> TypeIs[str]: return isinstance(value, str) communicates narrowing to a type checker. TypeIs is a typing contract: the function's runtime boolean logic must actually satisfy the type relationship it claims.",
+      "explanation": "`TypeIs[str]` marks `is_string()` as a type predicate whose successful branch narrows the argument toward `str`.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the Python 3.13 behavior shown by the surrounding code to reconstruct the smallest correct expression."
       ],
       "error_codes": [
         {
@@ -427,8 +882,139 @@
       ],
       "source_refs": [
         {
-          "title": "What's new in Python 3.13 — typing.TypeIs",
-          "url": "https://docs.python.org/3/whatsnew/3.13.html#typing"
+          "title": "typing.TypeIs — Python 3.13",
+          "url": "https://docs.python.org/3.13/library/typing.html#typing.TypeIs"
+        }
+      ]
+    },
+    {
+      "id": "py10-typeis-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain10-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-10",
+      "task_id": "10.2",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.61,
+      "prompt": "For `def is_str(value: str | int) -> TypeIs[str]: ...`, classify the branch narrowing.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "true",
+            "label": "`if is_str(value):`"
+          },
+          {
+            "id": "false",
+            "label": "`else:`"
+          }
+        ],
+        "categories": [
+          {
+            "id": "str",
+            "label": "value narrows to str"
+          },
+          {
+            "id": "int",
+            "label": "value narrows to int"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "true": "str",
+          "false": "int"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py313_typeis",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`TypeIs` narrows both sides when possible: the True branch intersects with `str`, while the False branch excludes `str`, leaving `int` in this union.",
+      "hints": [
+        "Unlike TypeGuard, TypeIs can narrow the negative branch."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "typing.TypeIs — Python 3.13",
+          "url": "https://docs.python.org/3.13/library/typing.html#typing.TypeIs"
+        }
+      ]
+    },
+    {
+      "id": "py10-typeis-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain10-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-10",
+      "task_id": "10.2",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.71,
+      "prompt": "A type predicate accepts `list[object]` but claims `TypeIs[list[int]]`. Flag the incompatible TypeIs annotation.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "input",
+            "label": "`value: list[object]`"
+          },
+          {
+            "id": "bad",
+            "label": "`-> TypeIs[list[int]]`"
+          },
+          {
+            "id": "bool",
+            "label": "Return a bool at runtime"
+          },
+          {
+            "id": "alternative",
+            "label": "Use an appropriate TypeGuard when narrowing to an incompatible invariant generic is intentional"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "bad"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.py313_typeis",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`TypeIs` requires its narrowed type to be compatible with the input type. Because mutable `list` is invariant, `list[int]` is not a subtype of `list[object]`; TypeGuard exists for such cases.",
+      "hints": [
+        "TypeIs has a subtype-compatibility requirement that TypeGuard does not."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "typing.TypeIs — Python 3.13",
+          "url": "https://docs.python.org/3.13/library/typing.html#typing.TypeIs"
         }
       ]
     }

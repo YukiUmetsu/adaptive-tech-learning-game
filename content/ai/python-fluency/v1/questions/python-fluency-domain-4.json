@@ -5,13 +5,13 @@
     "name": "Python Fluency",
     "exam_code": "PYTHON-FLUENCY",
     "official_source_url": "https://docs.python.org/3/",
-    "last_reviewed": "2026-09-19"
+    "last_reviewed": "2026-09-22"
   },
   "version": {
     "id": "python-fluency-v1",
     "exam_code": "PYTHON-FLUENCY",
-    "effective_date": "2026-09-19",
-    "content_version": "python-fluency-content-2026-09-19-v1",
+    "effective_date": "2026-09-22",
+    "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
     "domains": [
       {
         "id": "domain-1",
@@ -40,45 +40,60 @@
             "id": "4.1",
             "name": "Run and combine coroutines",
             "question_ids": [
-              "async-run-001",
-              "gather-guided-001",
-              "gather-recall-002",
-              "gather-fluency-003",
-              "taskgroup-001",
-              "taskgroup-002"
+              "py4-run-typed-001",
+              "py4-run-classify-002",
+              "py4-run-fault-003",
+              "py4-gather-typed-001",
+              "py4-gather-order-002",
+              "py4-gather-scenario-003",
+              "py4-taskgroup-typed-001",
+              "py4-taskgroup-slots-002",
+              "py4-taskgroup-fault-003"
             ]
           },
           {
             "id": "4.2",
             "name": "Control concurrency and backpressure",
             "question_ids": [
-              "semaphore-001",
-              "semaphore-002",
-              "async-queue-put-001",
-              "async-queue-get-002",
-              "async-lock-001"
+              "py4-semaphore-typed-001",
+              "py4-semaphore-slots-002",
+              "py4-semaphore-classify-003",
+              "py4-queue-typed-001",
+              "py4-queue-order-002",
+              "py4-queue-fault-003",
+              "py4-lock-typed-001",
+              "py4-lock-classify-002",
+              "py4-lock-fault-003"
             ]
           },
           {
             "id": "4.3",
             "name": "Handle blocking work, cancellation, and async resources",
             "question_ids": [
-              "to-thread-001",
-              "to-thread-002",
-              "async-timeout-001",
-              "cancel-finally-001",
-              "async-for-001",
-              "table-async-001"
+              "py4-thread-typed-001",
+              "py4-thread-classify-002",
+              "py4-thread-fault-003",
+              "py4-timeout-typed-001",
+              "py4-timeout-order-002",
+              "py4-timeout-fault-003",
+              "py4-cancel-typed-001",
+              "py4-cancel-classify-002",
+              "py4-cancel-slots-003",
+              "py4-asyncfor-typed-001",
+              "py4-asyncfor-slots-002",
+              "py4-asyncfor-fault-003"
             ]
           },
           {
             "id": "4.4",
             "name": "Use popular async ecosystem patterns",
             "question_ids": [
-              "anyio-group-001",
-              "anyio-start-soon-002",
-              "httpx-async-client-001",
-              "httpx-await-002"
+              "py4-anyio-typed-001",
+              "py4-anyio-classify-002",
+              "py4-anyio-relations-003",
+              "py4-httpx-typed-001",
+              "py4-httpx-classify-002",
+              "py4-httpx-fault-003"
             ]
           }
         ]
@@ -131,81 +146,81 @@
     {
       "id": "ai.python.asyncio_run",
       "name": "asyncio.run entry point",
-      "description": "asyncio.run(coro) creates and manages an event loop for a top-level coroutine and closes it when the coroutine completes."
+      "description": "`asyncio.run()` owns an event loop for a top-level awaitable and must not be nested in another running asyncio event loop in the same thread."
     },
     {
       "id": "ai.python.asyncio_gather",
       "name": "asyncio.gather",
-      "description": "asyncio.gather(*aws) runs awaitables concurrently and returns successful results in the same order as the supplied awaitables."
+      "description": "`asyncio.gather()` runs awaitables concurrently and returns results in argument order; its default sibling-failure behavior is weaker than TaskGroup."
     },
     {
       "id": "ai.python.asyncio_taskgroup",
       "name": "asyncio.TaskGroup",
-      "description": "asyncio.TaskGroup is an async context manager for structured concurrency: created tasks are awaited when the context exits and failures are handled as a group."
+      "description": "`asyncio.TaskGroup` (Python 3.11+) provides structured concurrency: it owns child tasks, waits on scope exit, cancels remaining children after a child failure, and can raise grouped failures."
     },
     {
       "id": "ai.python.asyncio_semaphore",
       "name": "asyncio.Semaphore",
-      "description": "asyncio.Semaphore limits how many tasks may enter a protected section concurrently by maintaining an async counter."
+      "description": "`asyncio.Semaphore` limits the number of tasks simultaneously holding permits and works naturally with `async with` for acquire/release."
     },
     {
       "id": "ai.python.asyncio_queue",
       "name": "asyncio.Queue backpressure",
-      "description": "asyncio.Queue coordinates producers and consumers without blocking the event loop; a positive maxsize makes put() wait when the queue is full."
+      "description": "A bounded `asyncio.Queue` provides producer backpressure; `get()`, `task_done()`, and `join()` coordinate unfinished-work accounting."
     },
     {
       "id": "ai.python.asyncio_lock",
       "name": "asyncio.Lock",
-      "description": "asyncio.Lock serializes access to a shared async resource so only one task holds the critical section at a time."
+      "description": "`asyncio.Lock` provides task-level mutual exclusion around critical sections, useful for protecting shared state across coroutine suspension points."
     },
     {
       "id": "ai.python.asyncio_to_thread",
       "name": "asyncio.to_thread",
-      "description": "asyncio.to_thread(func, *args) runs a synchronous callable in a worker thread and returns an awaitable for its result."
+      "description": "`asyncio.to_thread()` runs a synchronous callable in a worker thread and is primarily useful for blocking I/O that must not stall the event loop."
     },
     {
       "id": "ai.python.asyncio_timeout",
       "name": "asyncio.timeout",
-      "description": "asyncio.timeout(delay) is an async context manager that limits the time spent awaiting operations inside its block."
+      "description": "`asyncio.timeout()` (Python 3.11+) creates a deadline scope, uses cancellation internally, and exposes expiry as `TimeoutError` outside the context."
     },
     {
       "id": "ai.python.asyncio_cancellation",
       "name": "Cancellation cleanup",
-      "description": "Cancelling an asyncio task injects CancelledError at an await point; cleanup should generally happen in finally and cancellation should normally propagate."
+      "description": "Asyncio cancellation is delivered with `CancelledError`; cleanup should be robust and explicitly caught cancellation should generally be propagated afterward."
     },
     {
       "id": "ai.python.async_for",
       "name": "async for",
-      "description": "async for consumes an asynchronous iterator by awaiting its __anext__ method between iterations."
+      "description": "`async for` consumes asynchronous iterators whose `__anext__()` method returns awaitables and whose end-of-iteration signal is `StopAsyncIteration`."
     },
     {
       "id": "ai.python.anyio_task_group",
       "name": "AnyIO task groups",
-      "description": "AnyIO provides structured-concurrency APIs that can run on supported async backends; create_task_group() scopes sibling tasks."
+      "description": "AnyIO task groups provide structured child-task lifetimes, start child work inside the group, and expose a cancellation scope for coordinated cancellation."
     },
     {
       "id": "ai.python.httpx_async_client",
       "name": "HTTPX AsyncClient",
-      "description": "HTTPX AsyncClient is an async HTTP client; requests are awaited and the client is typically reused inside an async context manager."
+      "description": "HTTPX `AsyncClient` provides awaited async requests and reusable connection pooling; client instances should be reused rather than recreated inside hot loops."
     }
   ],
   "questions": [
     {
-      "id": "async-run-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-run-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.46,
-      "prompt": "Run the top-level coroutine from a normal Python script.",
+      "difficulty_prior": 0.4,
+      "prompt": "Run `main()` from a normal synchronous program entry point.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "async def main():\n    await serve()\n\nif __name__ == '__main__':\n    {{answer}}"
+          "template": "import asyncio\n\nasync def main():\n    return 'done'\n\nresult = {{answer}}"
         },
         "slots": [
           {
@@ -231,9 +246,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "asyncio.run(coro) creates and manages an event loop for a top-level coroutine and closes it when the coroutine completes. A common script entry point is asyncio.run(main()). asyncio.run() cannot be called while another asyncio event loop is already running in the same thread.",
+      "explanation": "`asyncio.run(main())` manages the event loop for this top-level call and returns the coroutine's result.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required async behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -247,27 +262,163 @@
       ],
       "source_refs": [
         {
-          "title": "asyncio runners",
-          "url": "https://docs.python.org/3/library/asyncio-runner.html#asyncio.run"
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
         }
       ]
     },
     {
-      "id": "gather-guided-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-run-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.52,
+      "prompt": "Classify where each `asyncio.run()` use belongs.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "script",
+            "label": "At the synchronous entry point of a standalone script"
+          },
+          {
+            "id": "inside",
+            "label": "Inside a coroutine already running on asyncio"
+          },
+          {
+            "id": "library",
+            "label": "Inside reusable async library code called by an existing event loop"
+          }
+        ],
+        "categories": [
+          {
+            "id": "appropriate",
+            "label": "Appropriate top-level use"
+          },
+          {
+            "id": "wrong",
+            "label": "Do not start a nested event loop here"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "script": "appropriate",
+          "inside": "wrong",
+          "library": "wrong"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.asyncio_run",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`asyncio.run()` is intended as a top-level runner. It cannot be called when another asyncio event loop is already running in the same thread.",
+      "hints": [
+        "Ask who owns the event loop at that point."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+        }
+      ]
+    },
+    {
+      "id": "py4-run-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.67,
+      "prompt": "This code runs inside an async web handler. Flag the operation that incorrectly tries to create another asyncio runner.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "handler",
+            "label": "`async def handler():`"
+          },
+          {
+            "id": "nested",
+            "label": "`result = asyncio.run(load_data())`"
+          },
+          {
+            "id": "await",
+            "label": "`result = await load_data()`"
+          },
+          {
+            "id": "return",
+            "label": "`return result`"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "nested"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.asyncio_run",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Inside an already-running async function, await the coroutine instead of calling `asyncio.run()` again.",
+      "hints": [
+        "The handler already has an event loop supplied by its framework."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+        }
+      ]
+    },
+    {
+      "id": "py4-gather-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.53,
-      "prompt": "Run all fetches concurrently and preserve input order in the returned list.",
+      "difficulty_prior": 0.45,
+      "prompt": "Run both coroutines concurrently and keep results in the same order as the calls.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "async def load_users(ids):\n    calls = [fetch_user(user_id) for user_id in ids]\n    return {{answer}}"
+          "template": "first, second = {{answer}}"
         },
         "slots": [
           {
@@ -282,7 +433,8 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "await asyncio.gather(*calls)"
+              "await asyncio.gather(fetch('a'), fetch('b'))",
+              "await asyncio.gather(fetch(\"a\"), fetch(\"b\"))"
             ]
           }
         }
@@ -293,9 +445,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "asyncio.gather(*aws) runs awaitables concurrently and returns successful results in the same order as the supplied awaitables. await asyncio.gather(*(fetch_user(i) for i in ids)) is a compact ordered fan-out/fan-in pattern. gather does not provide TaskGroup's stronger sibling-cancellation guarantees when one nested task fails.",
+      "explanation": "`await asyncio.gather(...)` schedules the awaitables concurrently and returns result positions in argument order.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required async behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -309,45 +461,40 @@
       ],
       "source_refs": [
         {
-          "title": "asyncio.gather",
-          "url": "https://docs.python.org/3/library/asyncio-task.html#asyncio.gather"
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
         }
       ]
     },
     {
-      "id": "gather-recall-002",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-gather-order-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.1",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.68,
-      "prompt": "Write the fan-out/fan-in expression directly from ids.",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.5,
+      "prompt": "`fetch('slow')` finishes after `fetch('fast')`. Arrange the returned result list from `await asyncio.gather(fetch('slow'), fetch('fast'))`.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "async def load_users(ids):\n    # Fetch concurrently; returned results must follow ids order.\n    return {{answer}}"
-        },
-        "slots": [
+        "type": "ordering",
+        "items": [
           {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
+            "id": "fast",
+            "label": "'fast'"
+          },
+          {
+            "id": "slow",
+            "label": "'slow'"
           }
         ]
       },
       "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "await asyncio.gather(*(fetch_user(user_id) for user_id in ids))"
-            ]
-          }
-        }
+        "type": "ordering",
+        "ordered_ids": [
+          "slow",
+          "fast"
+        ]
       },
       "concepts": [
         {
@@ -355,61 +502,106 @@
           "weight": 1.0
         }
       ],
-      "explanation": "asyncio.gather(*aws) runs awaitables concurrently and returns successful results in the same order as the supplied awaitables. await asyncio.gather(*(fetch_user(i) for i in ids)) is a compact ordered fan-out/fan-in pattern. gather does not provide TaskGroup's stronger sibling-cancellation guarantees when one nested task fails.",
+      "explanation": "`gather()` preserves the order of supplied awaitables in its result sequence, not their completion order.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Ignore which operation finishes first."
       ],
       "error_codes": [
         {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
-        },
-        {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
+          "code": "ordering_invalid_sequence",
+          "description": "One or more steps are in the wrong position."
         }
       ],
       "source_refs": [
         {
-          "title": "asyncio.gather",
-          "url": "https://docs.python.org/3/library/asyncio-task.html#asyncio.gather"
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
         }
       ]
     },
     {
-      "id": "gather-fluency-003",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-gather-scenario-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.1",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.78,
-      "prompt": "Complete the concurrent HTTP fan-out; each URL should produce one result in URL order.",
+      "assessment_mode": "application",
+      "interaction_type": "scenario_choice_chain",
+      "difficulty_prior": 0.73,
+      "prompt": "You need concurrent fan-out and must choose between `gather()` and `TaskGroup` based on failure semantics.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "async def download_all(client, urls):\n    return {{answer}}"
-        },
-        "slots": [
+        "type": "scenario_choice_chain",
+        "start_step_id": "ordered",
+        "steps": [
           {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
+            "id": "ordered",
+            "stage": "action",
+            "prompt": "All operations are independent and you mainly want an ordered result list. Which primitive directly provides it?",
+            "choices": [
+              {
+                "id": "gather",
+                "label": "`asyncio.gather()`"
+              },
+              {
+                "id": "lock",
+                "label": "`asyncio.Lock()`"
+              },
+              {
+                "id": "queue",
+                "label": "`asyncio.Queue()`"
+              },
+              {
+                "id": "thread",
+                "label": "`asyncio.to_thread()`"
+              }
+            ],
+            "next_step_by_choice": {
+              "gather": "failure",
+              "lock": "failure",
+              "queue": "failure",
+              "thread": "failure"
+            }
+          },
+          {
+            "id": "failure",
+            "stage": "action",
+            "prompt": "Now sibling cancellation on one child failure is an important structural guarantee. Which primitive is the stronger fit?",
+            "choices": [
+              {
+                "id": "taskgroup",
+                "label": "`asyncio.TaskGroup`"
+              },
+              {
+                "id": "gather",
+                "label": "`asyncio.gather()` with default behavior"
+              },
+              {
+                "id": "sleep",
+                "label": "`asyncio.sleep()`"
+              },
+              {
+                "id": "run",
+                "label": "`asyncio.run()`"
+              }
+            ],
+            "next_step_by_choice": {}
           }
         ]
       },
       "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "await asyncio.gather(*(client.get(url) for url in urls))"
-            ]
-          }
-        }
+        "type": "scenario_choice_chain",
+        "correct_choice_ids": {
+          "ordered": [
+            "gather"
+          ],
+          "failure": [
+            "taskgroup"
+          ]
+        },
+        "expected_path": [
+          "gather",
+          "taskgroup"
+        ]
       },
       "concepts": [
         {
@@ -417,105 +609,43 @@
           "weight": 1.0
         }
       ],
-      "explanation": "asyncio.gather(*aws) runs awaitables concurrently and returns successful results in the same order as the supplied awaitables. await asyncio.gather(*(fetch_user(i) for i in ids)) is a compact ordered fan-out/fan-in pattern. gather does not provide TaskGroup's stronger sibling-cancellation guarantees when one nested task fails.",
+      "explanation": "`gather()` directly produces an ordered result list. `TaskGroup` provides stronger structured failure handling by cancelling remaining children when one fails.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Choose based on the failure semantics the parent needs."
       ],
       "error_codes": [
         {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
+          "code": "scenario_choice_incorrect",
+          "description": "At least one scenario decision was incorrect."
         },
         {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
+          "code": "scenario_choice_incomplete",
+          "description": "The scenario ended before all required decisions were made."
         }
       ],
       "source_refs": [
         {
-          "title": "asyncio.gather",
-          "url": "https://docs.python.org/3/library/asyncio-task.html#asyncio.gather"
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
         }
       ]
     },
     {
-      "id": "taskgroup-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-taskgroup-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.56,
-      "prompt": "Use structured concurrency for the child tasks.",
-      "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "async def process_all(items):\n    async with {{answer}} as tg:\n        for item in items:\n            tg.create_task(process(item))"
-        },
-        "slots": [
-          {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "asyncio.TaskGroup()"
-            ]
-          }
-        }
-      },
-      "concepts": [
-        {
-          "concept_id": "ai.python.asyncio_taskgroup",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "asyncio.TaskGroup is an async context manager for structured concurrency: created tasks are awaited when the context exits and failures are handled as a group. async with asyncio.TaskGroup() as tg: tg.create_task(work()) keeps related child tasks scoped to the block. Do not swallow CancelledError inside TaskGroup children without a deliberate reason; structured-concurrency machinery relies on cancellation.",
-      "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
-      ],
-      "error_codes": [
-        {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
-        },
-        {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "asyncio.TaskGroup",
-          "url": "https://docs.python.org/3/library/asyncio-task.html#task-groups"
-        }
-      ]
-    },
-    {
-      "id": "taskgroup-002",
-      "content_version": "python-fluency-content-2026-09-19-v1",
-      "certification_version": "python-fluency-v1",
-      "domain_id": "domain-4",
-      "task_id": "4.1",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.72,
+      "difficulty_prior": 0.49,
       "prompt": "Create the child task inside the existing TaskGroup.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "async with asyncio.TaskGroup() as tg:\n    for item in items:\n        {{answer}}"
+          "template": "async with asyncio.TaskGroup() as tg:\n    {{answer}}"
         },
         "slots": [
           {
@@ -530,7 +660,8 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "tg.create_task(process(item))"
+              "task = tg.create_task(worker())",
+              "tg.create_task(worker())"
             ]
           }
         }
@@ -541,9 +672,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "asyncio.TaskGroup is an async context manager for structured concurrency: created tasks are awaited when the context exits and failures are handled as a group. async with asyncio.TaskGroup() as tg: tg.create_task(work()) keeps related child tasks scoped to the block. Do not swallow CancelledError inside TaskGroup children without a deliberate reason; structured-concurrency machinery relies on cancellation.",
+      "explanation": "`tg.create_task(worker())` creates a child owned by the TaskGroup and the group waits for its children before exiting.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required async behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -557,27 +688,166 @@
       ],
       "source_refs": [
         {
-          "title": "asyncio.TaskGroup",
-          "url": "https://docs.python.org/3/library/asyncio-task.html#task-groups"
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
         }
       ]
     },
     {
-      "id": "semaphore-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-taskgroup-slots-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "recognition",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.58,
+      "prompt": "Fill the two TaskGroup failure behaviors.",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "siblings",
+            "label": "When one child raises a non-cancellation exception"
+          },
+          {
+            "id": "exit",
+            "label": "After child cleanup when failures remain"
+          }
+        ],
+        "options": [
+          {
+            "id": "cancel",
+            "label": "Remaining sibling tasks are cancelled"
+          },
+          {
+            "id": "continue",
+            "label": "Every sibling is always left running independently"
+          },
+          {
+            "id": "group",
+            "label": "Failures can be raised in an ExceptionGroup"
+          },
+          {
+            "id": "silent",
+            "label": "All failures are silently discarded"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "siblings": "cancel",
+          "exit": "group"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.asyncio_taskgroup",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "TaskGroup uses structured concurrency: a non-cancellation child failure cancels remaining children, and remaining failures can be combined into an exception group.",
+      "hints": [
+        "Think about what the task-group boundary guarantees before it exits."
+      ],
+      "error_codes": [
+        {
+          "code": "slot_incorrect",
+          "description": "A slot was filled with the wrong value."
+        },
+        {
+          "code": "slot_unfilled",
+          "description": "A required slot was left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+        }
+      ]
+    },
+    {
+      "id": "py4-taskgroup-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.72,
+      "prompt": "A TaskGroup child catches cancellation to clean up. Flag the behavior that breaks structured cancellation.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "catch",
+            "label": "`except asyncio.CancelledError:`"
+          },
+          {
+            "id": "cleanup",
+            "label": "`await resource.close()`"
+          },
+          {
+            "id": "swallow",
+            "label": "Return normally after cleanup without re-raising cancellation"
+          },
+          {
+            "id": "finally",
+            "label": "Use cleanup logic before task exit"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "swallow"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.asyncio_taskgroup",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "TaskGroup relies on cancellation internally. If a child catches `CancelledError` for cleanup, it should generally propagate cancellation afterward.",
+      "hints": [
+        "Cleanup is valid; swallowing the cancellation signal is the problem."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+        }
+      ]
+    },
+    {
+      "id": "py4-semaphore-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.57,
-      "prompt": "Limit this API call to the shared concurrency budget.",
+      "difficulty_prior": 0.44,
+      "prompt": "Limit at most 10 tasks to the protected request at one time.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "limit = asyncio.Semaphore(10)\n\nasync def fetch_limited(url):\n    {{answer}}\n        return await fetch(url)"
+          "template": "limit = asyncio.Semaphore(10)\n\nasync def fetch(url):\n    {{answer}}\n        return await request(url)"
         },
         "slots": [
           {
@@ -603,9 +873,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "asyncio.Semaphore limits how many tasks may enter a protected section concurrently by maintaining an async counter. async with semaphore: return await fetch(url) is the preferred acquire/release pattern. asyncio synchronization primitives are for tasks in an event loop; they are not thread-safe synchronization tools.",
+      "explanation": "`async with limit:` waits for a semaphore permit and releases it automatically when the block exits.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required async behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -619,44 +889,57 @@
       ],
       "source_refs": [
         {
-          "title": "asyncio Semaphore",
-          "url": "https://docs.python.org/3/library/asyncio-sync.html#asyncio.Semaphore"
+          "title": "Synchronization Primitives — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-sync.html"
         }
       ]
     },
     {
-      "id": "semaphore-002",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-semaphore-slots-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.2",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.72,
-      "prompt": "Construct the limiter for at most 20 in-flight requests.",
+      "assessment_mode": "recognition",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.5,
+      "prompt": "Fill the meaning of `asyncio.Semaphore(3)`.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "# At most 20 requests may execute the protected block at once.\nlimit = {{answer}}"
-        },
+        "type": "fill_slots",
         "slots": [
           {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
+            "id": "inside",
+            "label": "Maximum simultaneous holders"
+          },
+          {
+            "id": "fourth",
+            "label": "A fourth task arriving while all permits are held"
+          }
+        ],
+        "options": [
+          {
+            "id": "three",
+            "label": "3"
+          },
+          {
+            "id": "wait",
+            "label": "Waits until a permit is released"
+          },
+          {
+            "id": "four",
+            "label": "4"
+          },
+          {
+            "id": "error",
+            "label": "Always raises RuntimeError"
           }
         ]
       },
       "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "asyncio.Semaphore(20)"
-            ]
-          }
+        "type": "fill_slots",
+        "values": {
+          "inside": "three",
+          "fourth": "wait"
         }
       },
       "concepts": [
@@ -665,43 +948,123 @@
           "weight": 1.0
         }
       ],
-      "explanation": "asyncio.Semaphore limits how many tasks may enter a protected section concurrently by maintaining an async counter. async with semaphore: return await fetch(url) is the preferred acquire/release pattern. asyncio synchronization primitives are for tasks in an event loop; they are not thread-safe synchronization tools.",
+      "explanation": "A semaphore initialized to 3 allows up to three holders. Further acquirers suspend until capacity becomes available.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Treat the initial value as available permits."
       ],
       "error_codes": [
         {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
+          "code": "slot_incorrect",
+          "description": "A slot was filled with the wrong value."
         },
         {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
+          "code": "slot_unfilled",
+          "description": "A required slot was left empty."
         }
       ],
       "source_refs": [
         {
-          "title": "asyncio Semaphore",
-          "url": "https://docs.python.org/3/library/asyncio-sync.html#asyncio.Semaphore"
+          "title": "Synchronization Primitives — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-sync.html"
         }
       ]
     },
     {
-      "id": "async-queue-put-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-semaphore-classify-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.61,
+      "prompt": "Classify what each concurrency primitive is primarily controlling.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "sem",
+            "label": "`asyncio.Semaphore(20)`"
+          },
+          {
+            "id": "lock",
+            "label": "`asyncio.Lock()`"
+          },
+          {
+            "id": "queue",
+            "label": "`asyncio.Queue(maxsize=100)`"
+          }
+        ],
+        "categories": [
+          {
+            "id": "limited",
+            "label": "Allow a bounded number of simultaneous holders"
+          },
+          {
+            "id": "single",
+            "label": "Allow one holder in a critical section"
+          },
+          {
+            "id": "buffer",
+            "label": "Bound queued work and make producers wait when full"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "sem": "limited",
+          "lock": "single",
+          "queue": "buffer"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.asyncio_semaphore",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Semaphore controls a concurrency count. Lock provides one-at-a-time mutual exclusion. A bounded Queue applies backpressure to buffered work.",
+      "hints": [
+        "Distinguish capacity, exclusivity, and buffering."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Synchronization Primitives — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-sync.html"
+        },
+        {
+          "title": "Queues — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-queue.html"
+        }
+      ]
+    },
+    {
+      "id": "py4-queue-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.55,
-      "prompt": "Add an item while respecting queue backpressure.",
+      "difficulty_prior": 0.45,
+      "prompt": "Enqueue an item while respecting a bounded queue's backpressure.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "queue = asyncio.Queue(maxsize=100)\nasync def produce(item):\n    {{answer}}"
+          "template": "queue = asyncio.Queue(maxsize=100)\n\nasync def produce(item):\n    {{answer}}"
         },
         "slots": [
           {
@@ -727,9 +1090,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "asyncio.Queue coordinates producers and consumers without blocking the event loop; a positive maxsize makes put() wait when the queue is full. await queue.put(item), item = await queue.get(), and queue.task_done() form the common producer-consumer protocol. asyncio.Queue is not thread-safe; use queue.Queue when coordinating OS threads.",
+      "explanation": "`await queue.put(item)` suspends when a bounded queue is full instead of growing the buffer without limit.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required async behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -743,45 +1106,45 @@
       ],
       "source_refs": [
         {
-          "title": "asyncio Queue",
-          "url": "https://docs.python.org/3/library/asyncio-queue.html"
+          "title": "Queues — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-queue.html"
         }
       ]
     },
     {
-      "id": "async-queue-get-002",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-queue-order-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.2",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.65,
-      "prompt": "Wait for the next queued job without blocking the event loop.",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.55,
+      "prompt": "Arrange the normal accounting sequence for one successfully processed queue item.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "async def worker(queue):\n    while True:\n        job = {{answer}}\n        try:\n            await process(job)\n        finally:\n            queue.task_done()"
-        },
-        "slots": [
+        "type": "ordering",
+        "items": [
           {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
+            "id": "done",
+            "label": "`queue.task_done()`"
+          },
+          {
+            "id": "get",
+            "label": "`item = await queue.get()`"
+          },
+          {
+            "id": "process",
+            "label": "`await process(item)`"
           }
         ]
       },
       "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "await queue.get()"
-            ]
-          }
-        }
+        "type": "ordering",
+        "ordered_ids": [
+          "get",
+          "process",
+          "done"
+        ]
       },
       "concepts": [
         {
@@ -789,43 +1152,103 @@
           "weight": 1.0
         }
       ],
-      "explanation": "asyncio.Queue coordinates producers and consumers without blocking the event loop; a positive maxsize makes put() wait when the queue is full. await queue.put(item), item = await queue.get(), and queue.task_done() form the common producer-consumer protocol. asyncio.Queue is not thread-safe; use queue.Queue when coordinating OS threads.",
+      "explanation": "A consumer first gets work, processes it, then calls `task_done()` to decrement the unfinished-work count associated with queued items.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "`task_done()` acknowledges work that was previously retrieved."
       ],
       "error_codes": [
         {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
-        },
-        {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
+          "code": "ordering_invalid_sequence",
+          "description": "One or more steps are in the wrong position."
         }
       ],
       "source_refs": [
         {
-          "title": "asyncio Queue",
-          "url": "https://docs.python.org/3/library/asyncio-queue.html"
+          "title": "Queues — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-queue.html"
         }
       ]
     },
     {
-      "id": "async-lock-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-queue-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.7,
+      "prompt": "Workers call `queue.join()`, but it never completes. Flag the missing accounting step.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "put",
+            "label": "`await queue.put(item)`"
+          },
+          {
+            "id": "get",
+            "label": "`item = await queue.get()`"
+          },
+          {
+            "id": "process",
+            "label": "`await process(item)`"
+          },
+          {
+            "id": "missing_done",
+            "label": "No `queue.task_done()` after the retrieved item finishes"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "missing_done"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.asyncio_queue",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`queue.join()` waits for the unfinished-task count to reach zero. Every completed item obtained with `get()` needs a matching `task_done()`.",
+      "hints": [
+        "Look for the operation that decrements unfinished work."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Queues — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-queue.html"
+        }
+      ]
+    },
+    {
+      "id": "py4-lock-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.59,
-      "prompt": "Protect the shared-state update with the existing asyncio lock.",
+      "difficulty_prior": 0.43,
+      "prompt": "Protect the read-modify-write sequence with the existing asyncio lock.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "lock = asyncio.Lock()\n\nasync def increment(key):\n    {{answer}}\n        counts[key] += 1"
+          "template": "lock = asyncio.Lock()\n\nasync def update():\n    {{answer}}\n        current = state.value\n        await asyncio.sleep(0)\n        state.value = current + 1"
         },
         "slots": [
           {
@@ -851,9 +1274,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "asyncio.Lock serializes access to a shared async resource so only one task holds the critical section at a time. async with lock: state[key] += 1 automatically releases the lock even if the body raises. A lock protects a critical section; it does not make blocking synchronous work safe to run on the event loop.",
+      "explanation": "`async with lock:` serializes the protected section and releases the lock automatically on exit.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required async behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -867,27 +1290,167 @@
       ],
       "source_refs": [
         {
-          "title": "asyncio Lock",
-          "url": "https://docs.python.org/3/library/asyncio-sync.html#asyncio.Lock"
+          "title": "Synchronization Primitives — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-sync.html"
         }
       ]
     },
     {
-      "id": "to-thread-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-lock-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.57,
+      "prompt": "Classify whether each operation needs the same lock when tasks share the state shown.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "rmw",
+            "label": "Read balance, await, then write the derived balance"
+          },
+          {
+            "id": "local",
+            "label": "Modify a local variable not shared with another task"
+          },
+          {
+            "id": "same_state",
+            "label": "Another coroutine performs the same shared read-modify-write"
+          }
+        ],
+        "categories": [
+          {
+            "id": "protect",
+            "label": "Protect this shared critical section"
+          },
+          {
+            "id": "not_shared",
+            "label": "No shared-state lock needed for this reason"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "rmw": "protect",
+          "local": "not_shared",
+          "same_state": "protect"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.asyncio_lock",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A lock is useful when task interleaving can make a shared operation inconsistent. Purely local state does not need that shared-state lock.",
+      "hints": [
+        "Ask whether another task can observe or modify the same state."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Synchronization Primitives — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-sync.html"
+        }
+      ]
+    },
+    {
+      "id": "py4-lock-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.69,
+      "prompt": "The event loop is freezing. Flag the misconception about what an asyncio lock can solve.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "lock",
+            "label": "`async with lock:` around a shared-state update"
+          },
+          {
+            "id": "blocking",
+            "label": "Run a long blocking synchronous file read inside the lock and assume the lock makes it async-safe"
+          },
+          {
+            "id": "release",
+            "label": "Use the context manager so the lock releases on exit"
+          },
+          {
+            "id": "shared",
+            "label": "Protect a critical section that contains only non-blocking async operations"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "blocking"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.asyncio_lock",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A lock controls access; it does not move blocking synchronous work off the event-loop thread. Use an appropriate offloading mechanism for blocking I/O.",
+      "hints": [
+        "Concurrency control and blocking-work offload are separate concerns."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Synchronization Primitives — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-sync.html"
+        },
+        {
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+        }
+      ]
+    },
+    {
+      "id": "py4-thread-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.3",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.57,
-      "prompt": "Run the blocking file parser without blocking the event loop.",
+      "difficulty_prior": 0.48,
+      "prompt": "Run the blocking parser in a worker thread and await its result.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "def parse_large_file(path): ...\n\nasync def handle(path):\n    result = {{answer}}\n    return result"
+          "template": "async def handle(path):\n    result = {{answer}}\n    return result"
         },
         "slots": [
           {
@@ -913,9 +1476,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "asyncio.to_thread(func, *args) runs a synchronous callable in a worker thread and returns an awaitable for its result. result = await asyncio.to_thread(read_file, path) keeps blocking I/O from freezing the event loop. to_thread is primarily for blocking I/O under the normal GIL; CPU-bound pure Python generally needs a different parallelism strategy.",
+      "explanation": "`await asyncio.to_thread(parse_large_file, path)` moves the synchronous call to a worker thread while the coroutine waits asynchronously.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required async behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -929,44 +1492,54 @@
       ],
       "source_refs": [
         {
-          "title": "asyncio.to_thread",
-          "url": "https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread"
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
         }
       ]
     },
     {
-      "id": "to-thread-002",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-thread-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.3",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.72,
-      "prompt": "Bridge this synchronous SDK call from async code.",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.6,
+      "prompt": "Classify which work is the better default fit for `asyncio.to_thread()` under normal CPython behavior.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "# client.fetch_report() is blocking and cannot be changed.\nasync def load_report(client, report_id):\n    return {{answer}}"
-        },
-        "slots": [
+        "type": "classification",
+        "items": [
           {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
+            "id": "file",
+            "label": "Blocking synchronous file read"
+          },
+          {
+            "id": "legacy",
+            "label": "Blocking synchronous library call that waits on I/O"
+          },
+          {
+            "id": "cpu",
+            "label": "Long CPU-bound pure-Python number crunching"
+          }
+        ],
+        "categories": [
+          {
+            "id": "good",
+            "label": "Good `to_thread()` fit"
+          },
+          {
+            "id": "not_default",
+            "label": "Usually needs a different parallelism strategy"
           }
         ]
       },
       "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "await asyncio.to_thread(client.fetch_report, report_id)"
-            ]
-          }
+        "type": "classification",
+        "placements": {
+          "file": "good",
+          "legacy": "good",
+          "cpu": "not_default"
         }
       },
       "concepts": [
@@ -975,43 +1548,107 @@
           "weight": 1.0
         }
       ],
-      "explanation": "asyncio.to_thread(func, *args) runs a synchronous callable in a worker thread and returns an awaitable for its result. result = await asyncio.to_thread(read_file, path) keeps blocking I/O from freezing the event loop. to_thread is primarily for blocking I/O under the normal GIL; CPU-bound pure Python generally needs a different parallelism strategy.",
+      "explanation": "`to_thread()` is primarily intended to keep blocking I/O off the event loop. The GIL usually prevents pure-Python CPU-bound work from gaining thread parallelism.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Separate blocking I/O from CPU-bound Python execution."
       ],
       "error_codes": [
         {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
         },
         {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
         }
       ],
       "source_refs": [
         {
-          "title": "asyncio.to_thread",
-          "url": "https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread"
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
         }
       ]
     },
     {
-      "id": "async-timeout-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-thread-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.68,
+      "prompt": "The helper receives a synchronous function. Flag the form that accidentally calls it before `to_thread()` can offload it.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "correct",
+            "label": "`await asyncio.to_thread(read_file, path)`"
+          },
+          {
+            "id": "eager",
+            "label": "`await asyncio.to_thread(read_file(path))`"
+          },
+          {
+            "id": "args",
+            "label": "Pass `path` as an argument after the callable"
+          },
+          {
+            "id": "await",
+            "label": "Await the result from `to_thread()`"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "eager"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.asyncio_to_thread",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`to_thread()` expects the callable and its arguments separately. Calling `read_file(path)` first executes the blocking function on the current thread.",
+      "hints": [
+        "Do not execute the synchronous function before passing it to `to_thread()`."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+        }
+      ]
+    },
+    {
+      "id": "py4-timeout-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.3",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.59,
-      "prompt": "Apply one timeout to all awaits in the block.",
+      "difficulty_prior": 0.5,
+      "prompt": "Limit the enclosed await to two seconds using the asyncio timeout context.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "async def load():\n    {{answer}}\n        profile = await get_profile()\n        permissions = await get_permissions()\n    return profile, permissions"
+          "template": "async def load():\n    {{answer}}\n        return await fetch_remote_data()"
         },
         "slots": [
           {
@@ -1037,9 +1674,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "asyncio.timeout(delay) is an async context manager that limits the time spent awaiting operations inside its block. async with asyncio.timeout(2): result = await fetch() scopes a timeout around one or more awaits. Timeout handling uses cancellation internally, so code that swallows CancelledError can interfere with structured async behavior.",
+      "explanation": "`async with asyncio.timeout(2):` places the enclosed awaits under a two-second deadline.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required async behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -1053,27 +1690,149 @@
       ],
       "source_refs": [
         {
-          "title": "asyncio timeout",
-          "url": "https://docs.python.org/3/library/asyncio-task.html#timeouts"
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
         }
       ]
     },
     {
-      "id": "cancel-finally-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-timeout-order-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.62,
+      "prompt": "Arrange the high-level timeout flow when the deadline expires.",
+      "interaction": {
+        "type": "ordering",
+        "items": [
+          {
+            "id": "outside",
+            "label": "`TimeoutError` can be caught outside the context"
+          },
+          {
+            "id": "cancel",
+            "label": "The timeout scope cancels the current task internally"
+          },
+          {
+            "id": "deadline",
+            "label": "The configured deadline expires"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "ordering",
+        "ordered_ids": [
+          "deadline",
+          "cancel",
+          "outside"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.asyncio_timeout",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`asyncio.timeout()` uses cancellation internally when its deadline expires and transforms that into `TimeoutError` as the context exits.",
+      "hints": [
+        "The timeout context translates its internal cancellation at the boundary."
+      ],
+      "error_codes": [
+        {
+          "code": "ordering_invalid_sequence",
+          "description": "One or more steps are in the wrong position."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+        }
+      ]
+    },
+    {
+      "id": "py4-timeout-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.72,
+      "prompt": "The code expects to catch the timeout produced by `asyncio.timeout()`. Flag the misplaced handler.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "scope",
+            "label": "`async with asyncio.timeout(2):`"
+          },
+          {
+            "id": "inside_handler",
+            "label": "Try to catch the context's resulting `TimeoutError` only inside that same timeout block"
+          },
+          {
+            "id": "outside_handler",
+            "label": "Catch `TimeoutError` around/outside the `async with` statement"
+          },
+          {
+            "id": "await",
+            "label": "Await the operation inside the timeout scope"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "inside_handler"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.asyncio_timeout",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The timeout context transforms cancellation into `TimeoutError` when leaving the context, so handle that timeout outside the `async with` block.",
+      "hints": [
+        "Think about where the transformation to `TimeoutError` occurs."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+        }
+      ]
+    },
+    {
+      "id": "py4-cancel-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.3",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.67,
-      "prompt": "Ensure the lease is released even when the task is cancelled.",
+      "difficulty_prior": 0.53,
+      "prompt": "After cancellation cleanup, preserve the cancellation signal.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "async def use_lease():\n    lease = await acquire_lease()\n    try:\n        await work(lease)\n    {{answer}}\n        await release_lease(lease)"
+          "template": "async def worker():\n    try:\n        await resource.run()\n    except asyncio.CancelledError:\n        await resource.close()\n        {{answer}}"
         },
         "slots": [
           {
@@ -1088,7 +1847,7 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "finally:"
+              "raise"
             ]
           }
         }
@@ -1099,9 +1858,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Cancelling an asyncio task injects CancelledError at an await point; cleanup should generally happen in finally and cancellation should normally propagate. Use try/finally around resources that must be released when a task is cancelled. CancelledError directly subclasses BaseException, and swallowing it can break TaskGroup and timeout behavior.",
+      "explanation": "After performing cancellation-specific cleanup, a bare `raise` propagates the current `CancelledError` to the caller.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required async behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -1115,27 +1874,174 @@
       ],
       "source_refs": [
         {
-          "title": "Task cancellation",
-          "url": "https://docs.python.org/3/library/asyncio-task.html#task-cancellation"
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
         }
       ]
     },
     {
-      "id": "async-for-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-cancel-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.6,
+      "prompt": "Classify each cancellation-handling behavior.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "finally",
+            "label": "Put mandatory resource cleanup in `finally`"
+          },
+          {
+            "id": "reraised",
+            "label": "Catch `CancelledError`, clean up, then re-raise"
+          },
+          {
+            "id": "swallow",
+            "label": "Catch `CancelledError` and silently return without deliberate cancellation handling"
+          }
+        ],
+        "categories": [
+          {
+            "id": "healthy",
+            "label": "Preserves normal cancellation semantics"
+          },
+          {
+            "id": "danger",
+            "label": "Can interfere with structured concurrency"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "finally": "healthy",
+          "reraised": "healthy",
+          "swallow": "danger"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.asyncio_cancellation",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Robust coroutines clean up with `try/finally`. If `CancelledError` is explicitly caught, it should generally be propagated after cleanup.",
+      "hints": [
+        "Cancellation is control flow used by structured concurrency, not an ordinary error to hide."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+        }
+      ]
+    },
+    {
+      "id": "py4-cancel-slots-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "recognition",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.58,
+      "prompt": "Fill two important facts about `asyncio.CancelledError`.",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "base",
+            "label": "Direct base class"
+          },
+          {
+            "id": "except",
+            "label": "Caught by plain `except Exception:`"
+          }
+        ],
+        "options": [
+          {
+            "id": "baseexception",
+            "label": "BaseException"
+          },
+          {
+            "id": "exception",
+            "label": "Exception"
+          },
+          {
+            "id": "no",
+            "label": "No"
+          },
+          {
+            "id": "yes",
+            "label": "Yes"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "base": "baseexception",
+          "except": "no"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.asyncio_cancellation",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`CancelledError` directly subclasses `BaseException`, so a normal `except Exception:` handler does not catch it.",
+      "hints": [
+        "This inheritance is deliberate so routine exception handlers do not swallow cancellation."
+      ],
+      "error_codes": [
+        {
+          "code": "slot_incorrect",
+          "description": "A slot was filled with the wrong value."
+        },
+        {
+          "code": "slot_unfilled",
+          "description": "A required slot was left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Coroutines and Tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+        }
+      ]
+    },
+    {
+      "id": "py4-asyncfor-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.3",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.53,
-      "prompt": "Consume the asynchronous message stream.",
+      "difficulty_prior": 0.43,
+      "prompt": "Consume the asynchronous stream one item at a time.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "async def consume(stream):\n    {{answer}}\n        await handle(message)"
+          "template": "async def consume(stream):\n    {{answer}}\n        await handle(item)"
         },
         "slots": [
           {
@@ -1150,7 +2056,7 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "async for message in stream:"
+              "async for item in stream:"
             ]
           }
         }
@@ -1161,9 +2067,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "async for consumes an asynchronous iterator by awaiting its __anext__ method between iterations. async for message in websocket: ... is the usual syntax when the source produces values asynchronously. A normal for loop cannot drive an async iterator unless you manually bridge its asynchronous protocol.",
+      "explanation": "`async for` drives the asynchronous iteration protocol and awaits each next-item operation as needed.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required async behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -1177,44 +2083,260 @@
       ],
       "source_refs": [
         {
-          "title": "Asynchronous iterators",
-          "url": "https://docs.python.org/3/reference/expressions.html#asynchronous-generator-iterator-methods"
+          "title": "Asynchronous Iterators and async for — Python 3.14",
+          "url": "https://docs.python.org/3.14/reference/compound_stmts.html#the-async-for-statement"
         }
       ]
     },
     {
-      "id": "anyio-group-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-asyncfor-slots-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "recognition",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.56,
+      "prompt": "Fill the asynchronous iteration protocol pieces.",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "next",
+            "label": "Method producing each awaitable next item"
+          },
+          {
+            "id": "stop",
+            "label": "Signal that iteration is finished"
+          }
+        ],
+        "options": [
+          {
+            "id": "anext",
+            "label": "`__anext__()`"
+          },
+          {
+            "id": "next",
+            "label": "`__next__()` only"
+          },
+          {
+            "id": "astop",
+            "label": "`StopAsyncIteration`"
+          },
+          {
+            "id": "stop",
+            "label": "`StopIteration`"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "next": "anext",
+          "stop": "astop"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.async_for",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "An asynchronous iterator's `__anext__()` returns an awaitable. Raising `StopAsyncIteration` ends the `async for` loop.",
+      "hints": [
+        "Use the asynchronous forms of both next-item production and stop signaling."
+      ],
+      "error_codes": [
+        {
+          "code": "slot_incorrect",
+          "description": "A slot was filled with the wrong value."
+        },
+        {
+          "code": "slot_unfilled",
+          "description": "A required slot was left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Asynchronous Iterators and async for — Python 3.14",
+          "url": "https://docs.python.org/3.14/reference/compound_stmts.html#the-async-for-statement"
+        }
+      ]
+    },
+    {
+      "id": "py4-asyncfor-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.65,
+      "prompt": "The object is an ordinary list, not an asynchronous iterable. Flag the incompatible loop.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "list",
+            "label": "`items = [1, 2, 3]`"
+          },
+          {
+            "id": "async_loop",
+            "label": "`async for item in items:`"
+          },
+          {
+            "id": "sync_loop",
+            "label": "`for item in items:`"
+          },
+          {
+            "id": "handle",
+            "label": "`await handle(item)` inside an async function"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "async_loop"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.async_for",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`async for` requires an asynchronous iterable implementing the async iteration protocol. An ordinary list is consumed with normal `for`.",
+      "hints": [
+        "The body may still await; the question is how the iterable itself produces items."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Asynchronous Iterators and async for — Python 3.14",
+          "url": "https://docs.python.org/3.14/reference/compound_stmts.html#the-async-for-statement"
+        }
+      ]
+    },
+    {
+      "id": "py4-anyio-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.4",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.5,
+      "prompt": "Start `worker('a')` inside the existing AnyIO task group.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "async with anyio.create_task_group() as tg:\n    {{answer}}"
+        },
+        "slots": [
+          {
+            "id": "answer",
+            "label": "Missing code",
+            "placeholder": "type code"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "answer": {
+            "accepted_answers": [
+              "tg.start_soon(worker, \"a\")",
+              "tg.start_soon(worker, 'a')"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.anyio_task_group",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`tg.start_soon(worker, 'a')` starts the coroutine function as child work owned by the AnyIO task group.",
+      "hints": [
+        "Use the required async behavior to reconstruct the smallest correct Python expression."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more typed answers did not match an accepted answer."
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One or more required blanks were left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "AnyIO Task Groups — AnyIO 4",
+          "url": "https://anyio.readthedocs.io/en/stable/tasks.html"
+        }
+      ]
+    },
+    {
+      "id": "py4-anyio-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.4",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
       "difficulty_prior": 0.61,
-      "prompt": "Create an AnyIO task group.",
+      "prompt": "Classify each AnyIO task-group operation.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "import anyio\n\nasync def main(items):\n    async with {{answer}} as tg:\n        for item in items:\n            tg.start_soon(worker, item)"
-        },
-        "slots": [
+        "type": "classification",
+        "items": [
           {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
+            "id": "create",
+            "label": "`anyio.create_task_group()`"
+          },
+          {
+            "id": "start",
+            "label": "`tg.start_soon(worker, item)`"
+          },
+          {
+            "id": "scope",
+            "label": "`tg.cancel_scope.cancel()`"
+          }
+        ],
+        "categories": [
+          {
+            "id": "group",
+            "label": "Create the managed task-group scope"
+          },
+          {
+            "id": "child",
+            "label": "Start child work inside the group"
+          },
+          {
+            "id": "cancel",
+            "label": "Request cancellation of work in the group scope"
           }
         ]
       },
       "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "anyio.create_task_group()"
-            ]
-          }
+        "type": "classification",
+        "placements": {
+          "create": "group",
+          "start": "child",
+          "scope": "cancel"
         }
       },
       "concepts": [
@@ -1223,61 +2345,110 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AnyIO provides structured-concurrency APIs that can run on supported async backends; create_task_group() scopes sibling tasks. async with anyio.create_task_group() as tg: tg.start_soon(worker, item) is the common AnyIO task-group pattern. AnyIO task-group APIs differ from asyncio.TaskGroup method names, so mixing start_soon and create_task by memory is an easy mistake.",
+      "explanation": "AnyIO task groups provide a structured lifetime for children; `start_soon()` starts child work and the group's cancellation scope controls cancellation.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Separate creating the scope, starting work, and cancelling the scope."
       ],
       "error_codes": [
         {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
         },
         {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
         }
       ],
       "source_refs": [
         {
-          "title": "AnyIO task groups",
+          "title": "AnyIO Task Groups — AnyIO 4",
           "url": "https://anyio.readthedocs.io/en/stable/tasks.html"
         }
       ]
     },
     {
-      "id": "anyio-start-soon-002",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-anyio-relations-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.4",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.72,
-      "prompt": "Start the worker using AnyIO's task-group API.",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "node_connection",
+      "difficulty_prior": 0.62,
+      "prompt": "Connect each AnyIO task-group construct to its direct role. Create exactly 4 relationships.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "async with anyio.create_task_group() as tg:\n    for item in items:\n        {{answer}}"
-        },
-        "slots": [
+        "type": "node_connection",
+        "nodes": [
           {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
+            "id": "group",
+            "label": "`create_task_group()`",
+            "x": 0.08,
+            "y": 0.16
+          },
+          {
+            "id": "scope",
+            "label": "Creates a structured child-task lifetime",
+            "x": 0.48,
+            "y": 0.16
+          },
+          {
+            "id": "start",
+            "label": "`tg.start_soon(func, arg)`",
+            "x": 0.08,
+            "y": 0.4
+          },
+          {
+            "id": "child",
+            "label": "Starts child work owned by the group",
+            "x": 0.48,
+            "y": 0.4
+          },
+          {
+            "id": "cancel",
+            "label": "`tg.cancel_scope.cancel()`",
+            "x": 0.08,
+            "y": 0.65
+          },
+          {
+            "id": "request",
+            "label": "Requests cancellation in the group scope",
+            "x": 0.48,
+            "y": 0.65
+          },
+          {
+            "id": "exit",
+            "label": "Exit the task-group context",
+            "x": 0.62,
+            "y": 0.86
+          },
+          {
+            "id": "wait",
+            "label": "Do not leave child tasks unmanaged",
+            "x": 0.93,
+            "y": 0.86
           }
         ]
       },
       "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "tg.start_soon(worker, item)"
-            ]
-          }
-        }
+        "type": "node_connection",
+        "edges": [
+          [
+            "group",
+            "scope"
+          ],
+          [
+            "start",
+            "child"
+          ],
+          [
+            "cancel",
+            "request"
+          ],
+          [
+            "exit",
+            "wait"
+          ]
+        ]
       },
       "concepts": [
         {
@@ -1285,105 +2456,43 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AnyIO provides structured-concurrency APIs that can run on supported async backends; create_task_group() scopes sibling tasks. async with anyio.create_task_group() as tg: tg.start_soon(worker, item) is the common AnyIO task-group pattern. AnyIO task-group APIs differ from asyncio.TaskGroup method names, so mixing start_soon and create_task by memory is an easy mistake.",
+      "explanation": "The task-group context owns child lifetime, `start_soon()` creates child work in that scope, its cancel scope requests cancellation, and scope exit coordinates child completion.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Connect APIs to lifecycle responsibilities, not merely related words."
       ],
       "error_codes": [
         {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
+          "code": "connection_missing_relationship",
+          "description": "A valid relationship is missing."
         },
         {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
+          "code": "connection_invalid_relationship",
+          "description": "A submitted relationship is not valid."
         }
       ],
       "source_refs": [
         {
-          "title": "AnyIO task groups",
+          "title": "AnyIO Task Groups — AnyIO 4",
           "url": "https://anyio.readthedocs.io/en/stable/tasks.html"
         }
       ]
     },
     {
-      "id": "httpx-async-client-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-httpx-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
       "task_id": "4.4",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.57,
-      "prompt": "Create and scope the async HTTP client.",
+      "difficulty_prior": 0.45,
+      "prompt": "Make the request using the already-created asynchronous client.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "import httpx\n\nasync def fetch(url):\n    {{answer}}\n        response = await client.get(url)\n        return response.json()"
-        },
-        "slots": [
-          {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "async with httpx.AsyncClient() as client:"
-            ]
-          }
-        }
-      },
-      "concepts": [
-        {
-          "concept_id": "ai.python.httpx_async_client",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "HTTPX AsyncClient is an async HTTP client; requests are awaited and the client is typically reused inside an async context manager. async with httpx.AsyncClient() as client: response = await client.get(url) keeps connection pooling scoped and reusable. Creating a new AsyncClient inside every hot-loop iteration defeats connection pooling; reuse a client for related requests.",
-      "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
-      ],
-      "error_codes": [
-        {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
-        },
-        {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "HTTPX async support",
-          "url": "https://www.python-httpx.org/async/"
-        }
-      ]
-    },
-    {
-      "id": "httpx-await-002",
-      "content_version": "python-fluency-content-2026-09-19-v1",
-      "certification_version": "python-fluency-v1",
-      "domain_id": "domain-4",
-      "task_id": "4.4",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.69,
-      "prompt": "Complete the asynchronous request with the existing client.",
-      "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "async def fetch_json(client: httpx.AsyncClient, url: str):\n    response = {{answer}}\n    response.raise_for_status()\n    return response.json()"
+          "template": "async with httpx.AsyncClient() as client:\n    response = {{answer}}"
         },
         "slots": [
           {
@@ -1409,9 +2518,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "HTTPX AsyncClient is an async HTTP client; requests are awaited and the client is typically reused inside an async context manager. async with httpx.AsyncClient() as client: response = await client.get(url) keeps connection pooling scoped and reusable. Creating a new AsyncClient inside every hot-loop iteration defeats connection pooling; reuse a client for related requests.",
+      "explanation": "`AsyncClient.get()` is asynchronous, so the request is awaited while using the existing client instance.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required async behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -1425,94 +2534,144 @@
       ],
       "source_refs": [
         {
-          "title": "HTTPX async support",
+          "title": "HTTPX Async Support",
           "url": "https://www.python-httpx.org/async/"
         }
       ]
     },
     {
-      "id": "table-async-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py4-httpx-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-4",
-      "task_id": "4.3",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.67,
-      "prompt": "Complete the async bridge for the blocking operation.",
+      "task_id": "4.4",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.58,
+      "prompt": "Classify each HTTPX async-client pattern.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "table",
-          "columns": [
-            {
-              "id": "need",
-              "label": "Requirement"
-            },
-            {
-              "id": "code",
-              "label": "Python"
-            }
-          ],
-          "rows": [
-            {
-              "id": "row-1",
-              "cells": {
-                "need": {
-                  "type": "text",
-                  "template": "Call blocking read_report(report_id) without blocking the event loop"
-                },
-                "code": {
-                  "type": "code",
-                  "language": "python",
-                  "template": "{{answer}}"
-                }
-              }
-            }
-          ]
-        },
-        "slots": [
+        "type": "classification",
+        "items": [
           {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
+            "id": "reuse",
+            "label": "Create one scoped AsyncClient and reuse it across many requests"
+          },
+          {
+            "id": "hot",
+            "label": "Create a new AsyncClient inside every iteration of a hot loop"
+          },
+          {
+            "id": "await",
+            "label": "`await client.get(url)`"
+          }
+        ],
+        "categories": [
+          {
+            "id": "good",
+            "label": "Recommended async-client pattern"
+          },
+          {
+            "id": "pool_loss",
+            "label": "Undermines connection-pool reuse"
           }
         ]
       },
       "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "await asyncio.to_thread(read_report, report_id)"
-            ]
-          }
+        "type": "classification",
+        "placements": {
+          "reuse": "good",
+          "hot": "pool_loss",
+          "await": "good"
         }
       },
       "concepts": [
         {
-          "concept_id": "ai.python.asyncio_to_thread",
+          "concept_id": "ai.python.httpx_async_client",
           "weight": 1.0
         }
       ],
-      "explanation": "asyncio.to_thread(func, *args) runs a synchronous callable in a worker thread and returns an awaitable for its result. result = await asyncio.to_thread(read_file, path) keeps blocking I/O from freezing the event loop. to_thread is primarily for blocking I/O under the normal GIL; CPU-bound pure Python generally needs a different parallelism strategy.",
+      "explanation": "HTTPX recommends reusing a scoped or global AsyncClient to benefit from connection pooling, and async request methods must be awaited.",
       "hints": [
-        "Use the row description to reconstruct the exact Python expression."
+        "Focus on client lifetime and whether the request API is asynchronous."
       ],
       "error_codes": [
         {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
         },
         {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
         }
       ],
       "source_refs": [
         {
-          "title": "asyncio.to_thread",
-          "url": "https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread"
+          "title": "HTTPX Async Support",
+          "url": "https://www.python-httpx.org/async/"
+        }
+      ]
+    },
+    {
+      "id": "py4-httpx-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain4-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.4",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.7,
+      "prompt": "A high-throughput service is losing connection-pool benefits. Flag the client-lifetime mistake.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "outer",
+            "label": "Create one AsyncClient for a useful shared scope"
+          },
+          {
+            "id": "hot",
+            "label": "Use `async with httpx.AsyncClient()` separately inside every hot-loop iteration"
+          },
+          {
+            "id": "await",
+            "label": "`await client.get(url)`"
+          },
+          {
+            "id": "close",
+            "label": "Close the reused client when its owning scope ends"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "hot"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.httpx_async_client",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Repeated client construction in a hot loop prevents effective connection-pool reuse. Reuse the client across requests and close it at the end of its owning scope.",
+      "hints": [
+        "The request call is fine; inspect how often the client itself is constructed."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "HTTPX Async Support",
+          "url": "https://www.python-httpx.org/async/"
         }
       ]
     }

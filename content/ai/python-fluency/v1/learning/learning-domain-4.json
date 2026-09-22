@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-fluency-learning-2026-09-19-v2",
+  "content_version": "python-fluency-learning-2026-09-22-v3-domain4-code-results-reviewed",
   "certification_id": "ai-python-fluency",
   "certification_version": "python-fluency-v1",
-  "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python documentation and selected AnyIO/HTTPX docs reviewed 2026-09-19.",
+  "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; Domain 4 asyncio behavior revalidated against official Python 3.14 documentation, with AnyIO/HTTPX ecosystem references reviewed 2026-09-22.",
   "domain": {
     "id": "domain-4",
     "name": "Asyncio & Structured Concurrency",
@@ -16,8 +16,28 @@
   },
   "source_refs": [
     {
-      "title": "Python 3 documentation",
-      "url": "https://docs.python.org/3/"
+      "title": "Coroutines and Tasks — Python 3.14",
+      "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+    },
+    {
+      "title": "Synchronization Primitives — Python 3.14",
+      "url": "https://docs.python.org/3.14/library/asyncio-sync.html"
+    },
+    {
+      "title": "Queues — Python 3.14",
+      "url": "https://docs.python.org/3.14/library/asyncio-queue.html"
+    },
+    {
+      "title": "Asynchronous Iterators and async for — Python 3.14",
+      "url": "https://docs.python.org/3.14/reference/compound_stmts.html#the-async-for-statement"
+    },
+    {
+      "title": "AnyIO Task Groups — AnyIO 4",
+      "url": "https://anyio.readthedocs.io/en/stable/tasks.html"
+    },
+    {
+      "title": "HTTPX Async Support",
+      "url": "https://www.python-httpx.org/async/"
     }
   ],
   "coverage": {
@@ -43,9 +63,9 @@
     ],
     "module_count": 4,
     "knowledge_node_count": 12,
-    "prompt_count": 13
+    "prompt_count": 49
   },
-  "authoring_notes": "Updated for the learning-v2 renderer. Code examples are authored as first-class syntax-highlighted code_file reveals with clickable annotations instead of prose strings. Tables are used for contrasts that benefit from progressive reveal.",
+  "authoring_notes": "Domain 4 quality pass: every node now combines short ADHD-friendly progressive explanations with its existing structured code/table material. Each code example has one high-value click-to-reveal runtime/result panel. Progressive text hides one key phrase normally and at most two. Glossary terms are scoped per node and explain supporting vocabulary only. Asyncio facts were revalidated against Python 3.14 documentation; Python 3.11+ availability is called out for TaskGroup and asyncio.timeout so the track remains usable from Python 3.10 through 3.14. AnyIO and HTTPX ecosystem patterns were reviewed against their current official docs.",
   "modules": [
     {
       "id": "domain-4-task-4-1",
@@ -69,6 +89,31 @@
           ],
           "prompts": [
             {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES ASYNCIO.RUN() OWN?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`asyncio.run()` creates and manages an event loop while it runs the supplied coroutine to completion.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "loop",
+                      "text": "event loop",
+                      "required": true
+                    },
+                    {
+                      "id": "coroutine",
+                      "text": "coroutine",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
               "id": "code",
               "kind": "look_for",
               "label": "ENTER THE EVENT LOOP",
@@ -90,7 +135,11 @@
                     },
                     "title": "Run the top-level coroutine",
                     "explanation": "asyncio.run manages an event loop for this call and runs main to completion.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "result = 'done'"
+                    }
                   },
                   {
                     "id": "await",
@@ -105,6 +154,51 @@
                   }
                 ]
               }
+            },
+            {
+              "id": "entry",
+              "kind": "when",
+              "label": "USE IT AS THE TOP-LEVEL ENTRY POINT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`asyncio.run(main())` belongs at the top-level entry point of a typical standalone async program.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "entry",
+                      "text": "top-level entry point",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "nested",
+              "kind": "not_this",
+              "label": "DO NOT NEST IT IN A RUNNING LOOP",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "`asyncio.run()` cannot be called when another asyncio event loop is already running in the same thread.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "cannot",
+                      "text": "cannot be called",
+                      "required": true
+                    },
+                    {
+                      "id": "same-thread",
+                      "text": "same thread",
+                      "required": true
+                    }
+                  ]
+                }
+              }
             }
           ],
           "prerequisite_node_ids": [],
@@ -112,7 +206,26 @@
             "x": 0.12,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Coroutines and Tasks — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "event loop",
+              "definition": "The scheduler that runs asyncio tasks and resumes them when awaited operations are ready."
+            },
+            {
+              "term": "coroutine",
+              "definition": "An async function execution that can suspend at `await` and later resume."
+            },
+            {
+              "term": "top-level entry point",
+              "definition": "The outer synchronous place where an async program starts its event loop."
+            }
+          ]
         },
         {
           "id": "domain-4-asyncio_gather",
@@ -121,6 +234,31 @@
             "ai.python.asyncio_gather"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES GATHER() RETURN?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`asyncio.gather()` runs supplied awaitable objects concurrently and returns successful results in argument order.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "awaitable",
+                      "text": "awaitable",
+                      "required": true
+                    },
+                    {
+                      "id": "order",
+                      "text": "argument order",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -143,9 +281,63 @@
                     },
                     "title": "Collect awaitables",
                     "explanation": "gather waits for all supplied awaitables and returns results in argument order.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "results = ['a', 'b']\n# 'b' may finish first, but result order follows arguments"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "timing",
+              "kind": "mental_model",
+              "label": "COMPLETION ORDER DOES NOT REORDER RESULTS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A faster coroutine may finish first, but `gather()` still places its result according to the original argument order.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "faster",
+                      "text": "finish first",
+                      "required": true
+                    },
+                    {
+                      "id": "order",
+                      "text": "argument order",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "failure",
+              "kind": "not_this",
+              "label": "GATHER IS NOT TASKGROUP FAILURE HANDLING",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "With default settings, one propagated exception does not automatically cancel every other sibling task submitted to `gather()`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "not-cancel",
+                      "text": "does not automatically cancel",
+                      "required": true
+                    },
+                    {
+                      "id": "sibling",
+                      "text": "sibling task",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -156,7 +348,26 @@
             "x": 0.35,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Coroutines and Tasks — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "awaitable",
+              "definition": "An object that can be used with `await`, including coroutines and tasks."
+            },
+            {
+              "term": "argument order",
+              "definition": "The order values were supplied to a function call."
+            },
+            {
+              "term": "sibling task",
+              "definition": "Another task created in the same structured task group."
+            }
+          ]
         },
         {
           "id": "domain-4-asyncio_taskgroup",
@@ -165,6 +376,31 @@
             "ai.python.asyncio_taskgroup"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHY IS TASKGROUP STRUCTURED?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`asyncio.TaskGroup` (Python 3.11+) provides structured concurrency: child tasks belong to an explicit scope that waits for them before exit.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "structured",
+                      "text": "structured concurrency",
+                      "required": true
+                    },
+                    {
+                      "id": "scope",
+                      "text": "explicit scope",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -187,7 +423,11 @@
                     },
                     "title": "Structured task scope",
                     "explanation": "The async context defines the lifetime of child tasks.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "first.result() = 'a'\nsecond.result() = 'b'\n# both tasks are finished after the context exits"
+                    }
                   },
                   {
                     "id": "create",
@@ -254,6 +494,51 @@
                   }
                 }
               }
+            },
+            {
+              "id": "failure",
+              "kind": "mental_model",
+              "label": "ONE CHILD FAILURE AFFECTS ITS SIBLINGS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "When one child fails with a non-cancellation exception, TaskGroup cancels the remaining sibling task work.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "fails",
+                      "text": "fails",
+                      "required": true
+                    },
+                    {
+                      "id": "siblings",
+                      "text": "sibling task",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "grouped-errors",
+              "kind": "not_this",
+              "label": "MULTIPLE FAILURES CAN BE GROUPED",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "After cleanup, TaskGroup can raise an `ExceptionGroup` containing failures from its child tasks.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "group",
+                      "text": "`ExceptionGroup`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
             }
           ],
           "prerequisite_node_ids": [
@@ -263,7 +548,26 @@
             "x": 0.58,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Coroutines and Tasks — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "structured concurrency",
+              "definition": "A concurrency model where child tasks live inside an explicit parent scope that waits for and coordinates them."
+            },
+            {
+              "term": "sibling task",
+              "definition": "Another task created in the same structured task group."
+            },
+            {
+              "term": "ExceptionGroup",
+              "definition": "An exception container that can carry multiple exceptions raised by concurrent child tasks."
+            }
+          ]
         }
       ]
     },
@@ -291,6 +595,31 @@
           ],
           "prompts": [
             {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES A SEMAPHORE LIMIT?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A semaphore exposes a fixed number of permit slots for concurrent access to a critical section.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "permit",
+                      "text": "permit",
+                      "required": true
+                    },
+                    {
+                      "id": "critical",
+                      "text": "critical section",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
               "id": "code",
               "kind": "look_for",
               "label": "BOUND CONCURRENT ACCESS",
@@ -312,7 +641,11 @@
                     },
                     "title": "Three permits",
                     "explanation": "At most three tasks can hold the semaphore at once.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "maximum simultaneous holders = 3"
+                    }
                   },
                   {
                     "id": "with",
@@ -327,6 +660,56 @@
                   }
                 ]
               }
+            },
+            {
+              "id": "with",
+              "kind": "when",
+              "label": "USE ASYNC WITH FOR ACQUIRE/RELEASE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`async with semaphore:` waits for capacity and releases the permit when the block exits.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "waits",
+                      "text": "waits for capacity",
+                      "required": true
+                    },
+                    {
+                      "id": "permit",
+                      "text": "permit",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "thread",
+              "kind": "not_this",
+              "label": "IT IS FOR ASYNCIO TASKS, NOT THREADS",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "`asyncio.Semaphore` coordinates tasks on an event loop; it is not a thread-synchronization primitive.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "tasks",
+                      "text": "tasks",
+                      "required": true
+                    },
+                    {
+                      "id": "not-thread",
+                      "text": "not a thread-synchronization primitive",
+                      "required": true
+                    }
+                  ]
+                }
+              }
             }
           ],
           "prerequisite_node_ids": [],
@@ -334,7 +717,22 @@
             "x": 0.12,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Synchronization Primitives — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/asyncio-sync.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "permit",
+              "definition": "One unit of semaphore capacity that allows a task to enter a limited section."
+            },
+            {
+              "term": "critical section",
+              "definition": "A section of code where concurrent access must be limited or serialized."
+            }
+          ]
         },
         {
           "id": "domain-4-asyncio_queue",
@@ -343,6 +741,31 @@
             "ai.python.asyncio_queue"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "HOW DOES A BOUNDED QUEUE CREATE BACKPRESSURE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "With positive `maxsize`, `await queue.put(item)` waits when the queue is full, creating backpressure.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "waits",
+                      "text": "waits",
+                      "required": true
+                    },
+                    {
+                      "id": "backpressure",
+                      "text": "backpressure",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -398,9 +821,63 @@
                     },
                     "title": "Mark completion",
                     "explanation": "task_done lets queue.join track unfinished work.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "queue.join() can finish after every retrieved item receives task_done()"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "join",
+              "kind": "mental_model",
+              "label": "JOIN() TRACKS UNFINISHED WORK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`queue.join()` waits until every unfinished task has a matching `task_done()` call.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "unfinished",
+                      "text": "unfinished task",
+                      "required": true
+                    },
+                    {
+                      "id": "task-done",
+                      "text": "`task_done()`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "balance",
+              "kind": "not_this",
+              "label": "TASK_DONE() MUST MATCH GET() WORK",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Calling `task_done()` too many times raises `ValueError`, so completion accounting must match retrieved work.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "too-many",
+                      "text": "too many times",
+                      "required": true
+                    },
+                    {
+                      "id": "value-error",
+                      "text": "`ValueError`",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -411,7 +888,22 @@
             "x": 0.35,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Queues — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/asyncio-queue.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "backpressure",
+              "definition": "Making producers wait when downstream work cannot accept more items yet."
+            },
+            {
+              "term": "unfinished task",
+              "definition": "A queued item that has been retrieved but has not yet been matched by `task_done()`."
+            }
+          ]
         },
         {
           "id": "domain-4-asyncio_lock",
@@ -420,6 +912,31 @@
             "ai.python.asyncio_lock"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES ASYNCIO.LOCK PROVIDE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`asyncio.Lock` provides mutual exclusion so only one task executes the protected critical section at a time.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "mutual",
+                      "text": "mutual exclusion",
+                      "required": true
+                    },
+                    {
+                      "id": "critical",
+                      "text": "critical section",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -442,9 +959,63 @@
                     },
                     "title": "Mutual exclusion",
                     "explanation": "Only one coroutine at a time can execute the protected read-modify-write sequence.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "protected read -> await -> write executes for one task at a time"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "race",
+              "kind": "when",
+              "label": "USE IT AROUND SHARED READ-MODIFY-WRITE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A lock can prevent a race condition when several coroutines update shared state across suspension points.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "race",
+                      "text": "race condition",
+                      "required": true
+                    },
+                    {
+                      "id": "shared",
+                      "text": "shared state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "blocking",
+              "kind": "not_this",
+              "label": "A LOCK DOES NOT FIX BLOCKING WORK",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Protecting code with an asyncio lock does not make blocking synchronous work safe for the event loop.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "does-not",
+                      "text": "does not make",
+                      "required": true
+                    },
+                    {
+                      "id": "event-loop",
+                      "text": "event loop",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -455,7 +1026,26 @@
             "x": 0.58,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Synchronization Primitives — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/asyncio-sync.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "mutual exclusion",
+              "definition": "Allowing only one task at a time to enter a protected section."
+            },
+            {
+              "term": "critical section",
+              "definition": "A section of code where concurrent access must be limited or serialized."
+            },
+            {
+              "term": "race condition",
+              "definition": "A bug where a result depends on unpredictable interleaving of concurrent operations."
+            }
+          ]
         }
       ]
     },
@@ -484,6 +1074,31 @@
           ],
           "prompts": [
             {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHY USE TO_THREAD()?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`asyncio.to_thread()` runs a synchronous callable in another thread so blocking I/O does not stall the event loop.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "blocking",
+                      "text": "blocking I/O",
+                      "required": true
+                    },
+                    {
+                      "id": "loop",
+                      "text": "event loop",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
               "id": "code",
               "kind": "look_for",
               "label": "OFFLOAD BLOCKING I/O",
@@ -505,9 +1120,63 @@
                     },
                     "title": "Move blocking work off the event loop",
                     "explanation": "The function runs in a thread and the coroutine awaits its result.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "result = contents returned by Path(path).read_text()\n# blocking read runs off the event-loop thread"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "await",
+              "kind": "mental_model",
+              "label": "THE ASYNC CALLER STILL AWAITS THE RESULT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`to_thread()` returns an awaitable; awaiting it gives the synchronous function's return value or exception.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "awaitable",
+                      "text": "awaitable",
+                      "required": true
+                    },
+                    {
+                      "id": "return",
+                      "text": "return value",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "cpu",
+              "kind": "not_this",
+              "label": "IT IS PRIMARILY FOR BLOCKING I/O",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Under normal CPython GIL behavior, `to_thread()` usually does not make CPU-bound pure-Python code run in parallel.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "gil",
+                      "text": "GIL",
+                      "required": true
+                    },
+                    {
+                      "id": "cpu",
+                      "text": "CPU-bound pure-Python code",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -516,7 +1185,26 @@
             "x": 0.12,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Coroutines and Tasks — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "blocking I/O",
+              "definition": "An operation that occupies its thread while waiting for external input or output."
+            },
+            {
+              "term": "event loop",
+              "definition": "The scheduler that runs asyncio tasks and resumes them when awaited operations are ready."
+            },
+            {
+              "term": "GIL",
+              "definition": "The CPython Global Interpreter Lock, which normally prevents multiple threads from executing Python bytecode simultaneously."
+            }
+          ]
         },
         {
           "id": "domain-4-asyncio_timeout",
@@ -525,6 +1213,26 @@
             "ai.python.asyncio_timeout"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES ASYNCIO.TIMEOUT() DEFINE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`asyncio.timeout(seconds)` (Python 3.11+) creates an async context with a deadline for the enclosed awaited work.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "deadline",
+                      "text": "deadline",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -547,9 +1255,63 @@
                     },
                     "title": "Deadline scope",
                     "explanation": "The async context limits the time available to the enclosed awaits.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "exception",
+                      "output": "TimeoutError\n# raised outside the timeout context when the deadline expires"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "translation",
+              "kind": "mental_model",
+              "label": "TIMEOUT USES CANCELLATION INTERNALLY",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "When the deadline expires, the context uses cancellation internally and surfaces `TimeoutError` outside the context.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "cancellation",
+                      "text": "cancellation",
+                      "required": true
+                    },
+                    {
+                      "id": "timeout",
+                      "text": "`TimeoutError`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "catch",
+              "kind": "not_this",
+              "label": "CATCH TIMEOUTERROR OUTSIDE THE CONTEXT",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "The `TimeoutError` produced by `asyncio.timeout()` can be caught outside the `async with` block.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "outside",
+                      "text": "outside",
+                      "required": true
+                    },
+                    {
+                      "id": "error",
+                      "text": "`TimeoutError`",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -560,7 +1322,26 @@
             "x": 0.35,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Coroutines and Tasks — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "deadline",
+              "definition": "The time by which an async operation or scope must finish."
+            },
+            {
+              "term": "TimeoutError",
+              "definition": "The exception raised outside an `asyncio.timeout()` scope when its deadline expires."
+            },
+            {
+              "term": "cancellation",
+              "definition": "A request for an async task to stop, delivered through `CancelledError` at a cancellation point."
+            }
+          ]
         },
         {
           "id": "domain-4-asyncio_cancellation",
@@ -569,6 +1350,31 @@
             "ai.python.asyncio_cancellation"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "HOW IS TASK CANCELLATION DELIVERED?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Task cancellation raises `asyncio.CancelledError` inside the task at the next cancellation opportunity.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "cancelled",
+                      "text": "`asyncio.CancelledError`",
+                      "required": true
+                    },
+                    {
+                      "id": "opportunity",
+                      "text": "cancellation opportunity",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -602,9 +1408,63 @@
                     },
                     "title": "Propagate cancellation",
                     "explanation": "Re-raising preserves cancellation for callers and structured concurrency.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "exception",
+                      "output": "asyncio.CancelledError\n# cleanup runs, then cancellation continues to the caller"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "reraising",
+              "kind": "not_this",
+              "label": "CLEAN UP, THEN PROPAGATE CANCELLATION",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If you catch `CancelledError` for cleanup, it should generally be re-raised after cleanup finishes.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "cleanup",
+                      "text": "cleanup",
+                      "required": true
+                    },
+                    {
+                      "id": "reraised",
+                      "text": "re-raised",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "base",
+              "kind": "mental_model",
+              "label": "CANCELLEDERROR IS A BASEEXCEPTION",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "`CancelledError` directly subclasses `BaseException`, so a normal `except Exception:` does not catch it.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "base",
+                      "text": "`BaseException`",
+                      "required": true
+                    },
+                    {
+                      "id": "exception",
+                      "text": "`except Exception:`",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -615,7 +1475,26 @@
             "x": 0.58,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Coroutines and Tasks — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/asyncio-task.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "cancellation",
+              "definition": "A request for an async task to stop, delivered through `CancelledError` at a cancellation point."
+            },
+            {
+              "term": "BaseException",
+              "definition": "The base class above most ordinary exceptions; `CancelledError` subclasses it directly."
+            },
+            {
+              "term": "cleanup",
+              "definition": "Work that releases or restores resources before a coroutine finishes."
+            }
+          ]
         },
         {
           "id": "domain-4-async_for",
@@ -624,6 +1503,31 @@
             "ai.python.async_for"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES ASYNC FOR CONSUME?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`async for` consumes an asynchronous iterator whose next item may require awaiting asynchronous work.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "iterator",
+                      "text": "asynchronous iterator",
+                      "required": true
+                    },
+                    {
+                      "id": "awaiting",
+                      "text": "awaiting",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -646,9 +1550,58 @@
                     },
                     "title": "Async iteration",
                     "explanation": "Each next item can require awaiting an asynchronous producer.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "items are consumed one at a time as asynchronous iteration produces them"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "protocol",
+              "kind": "mental_model",
+              "label": "THE ITERATOR HAS AN ASYNC NEXT STEP",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Its `__anext__()` method returns an awaitable that produces the next value.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "anext",
+                      "text": "`__anext__()`",
+                      "required": true
+                    },
+                    {
+                      "id": "awaitable",
+                      "text": "awaitable",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "stop",
+              "kind": "not_this",
+              "label": "ASYNC ITERATION HAS ITS OWN STOP SIGNAL",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "An asynchronous iterator raises `AsyncStopIteration` to end the loop.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "stop",
+                      "text": "`AsyncStopIteration`",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -659,7 +1612,22 @@
             "x": 0.81,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Asynchronous Iterators and async for — Python 3.14",
+              "url": "https://docs.python.org/3.14/reference/compound_stmts.html#the-async-for-statement"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "asynchronous iterator",
+              "definition": "An object that produces items asynchronously through `__aiter__()` and `__anext__()`."
+            },
+            {
+              "term": "AsyncStopIteration",
+              "definition": "The signal an asynchronous iterator uses to indicate that iteration is finished."
+            }
+          ]
         }
       ]
     },
@@ -685,6 +1653,31 @@
             "ai.python.anyio_task_group"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES AN ANYIO TASK GROUP OWN?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "An AnyIO task group provides structured concurrency by keeping child tasks inside one managed lifetime.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "task-group",
+                      "text": "task group",
+                      "required": true
+                    },
+                    {
+                      "id": "structured",
+                      "text": "structured concurrency",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -718,9 +1711,63 @@
                     },
                     "title": "Start child work",
                     "explanation": "start_soon schedules the async callable inside the group.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "worker('a') and worker('b') are started inside the same task-group lifetime"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "start",
+              "kind": "when",
+              "label": "START CHILD WORK INSIDE THE GROUP",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`tg.start_soon(func, *args)` starts child work that is owned by the task group.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "start",
+                      "text": "`tg.start_soon(func, *args)`",
+                      "required": true
+                    },
+                    {
+                      "id": "owned",
+                      "text": "owned",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "cancel",
+              "kind": "mental_model",
+              "label": "THE GROUP HAS A CANCELLATION SCOPE",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "The task group's cancel scope can cancel the work running inside that structured scope.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "cancel-scope",
+                      "text": "cancel scope",
+                      "required": true
+                    },
+                    {
+                      "id": "cancel",
+                      "text": "cancel",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -729,7 +1776,26 @@
             "x": 0.12,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "AnyIO Task Groups — AnyIO 4",
+              "url": "https://anyio.readthedocs.io/en/stable/tasks.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "task group",
+              "definition": "A structured scope that owns child tasks and waits for them before exiting."
+            },
+            {
+              "term": "cancel scope",
+              "definition": "AnyIO's structured region for controlling cancellation and deadlines."
+            },
+            {
+              "term": "structured concurrency",
+              "definition": "A concurrency model where child tasks live inside an explicit parent scope that waits for and coordinates them."
+            }
+          ]
         },
         {
           "id": "domain-4-httpx_async_client",
@@ -738,6 +1804,31 @@
             "ai.python.httpx_async_client"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHY REUSE AN ASYNCCLIENT?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A reused `httpx.AsyncClient` can share its connection pool across multiple asynchronous requests.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pool",
+                      "text": "connection pool",
+                      "required": true
+                    },
+                    {
+                      "id": "requests",
+                      "text": "multiple asynchronous requests",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -760,7 +1851,11 @@
                     },
                     "title": "Reusable client",
                     "explanation": "Reuse the client to share connection pools and cleanly close resources.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "one AsyncClient instance is reused for every request in the loop\nclient resources close when the async context exits"
+                    }
                   },
                   {
                     "id": "get",
@@ -775,6 +1870,56 @@
                   }
                 ]
               }
+            },
+            {
+              "id": "close",
+              "kind": "when",
+              "label": "USE ASYNC WITH TO CLOSE THE CLIENT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`async with httpx.AsyncClient()` closes client resources automatically when the context exits.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "close",
+                      "text": "closes client resources",
+                      "required": true
+                    },
+                    {
+                      "id": "exit",
+                      "text": "context exits",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "hot-loop",
+              "kind": "not_this",
+              "label": "DO NOT CREATE A CLIENT IN A HOT LOOP",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Repeatedly creating clients in a hot loop prevents effective connection-pool reuse.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "hot",
+                      "text": "hot loop",
+                      "required": true
+                    },
+                    {
+                      "id": "reuse",
+                      "text": "connection-pool reuse",
+                      "required": true
+                    }
+                  ]
+                }
+              }
             }
           ],
           "prerequisite_node_ids": [
@@ -784,7 +1929,22 @@
             "x": 0.35,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "HTTPX Async Support",
+              "url": "https://www.python-httpx.org/async/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "connection pool",
+              "definition": "A reusable set of network connections that avoids reconnecting for every request."
+            },
+            {
+              "term": "hot loop",
+              "definition": "A frequently executed loop where repeatedly creating expensive resources can harm performance."
+            }
+          ]
         }
       ]
     }

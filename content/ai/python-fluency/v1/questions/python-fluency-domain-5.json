@@ -5,13 +5,13 @@
     "name": "Python Fluency",
     "exam_code": "PYTHON-FLUENCY",
     "official_source_url": "https://docs.python.org/3/",
-    "last_reviewed": "2026-09-19"
+    "last_reviewed": "2026-09-22"
   },
   "version": {
     "id": "python-fluency-v1",
     "exam_code": "PYTHON-FLUENCY",
-    "effective_date": "2026-09-19",
-    "content_version": "python-fluency-content-2026-09-19-v1",
+    "effective_date": "2026-09-22",
+    "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
     "domains": [
       {
         "id": "domain-1",
@@ -46,29 +46,39 @@
             "id": "5.1",
             "name": "Use executor pools",
             "question_ids": [
-              "threadpool-submit-001",
-              "threadpool-map-002",
-              "processpool-map-001",
-              "processpool-submit-002",
-              "as-completed-001",
-              "table-concurrency-001"
+              "py5-threadpool-typed-001",
+              "py5-threadpool-classify-002",
+              "py5-threadpool-fault-003",
+              "py5-processpool-typed-001",
+              "py5-processpool-slots-002",
+              "py5-processpool-scenario-003",
+              "py5-ascompleted-typed-001",
+              "py5-ascompleted-order-002",
+              "py5-ascompleted-fault-003"
             ]
           },
           {
             "id": "5.2",
             "name": "Coordinate threads and work queues",
             "question_ids": [
-              "thread-event-001",
-              "thread-lock-001",
-              "queue-thread-001"
+              "py5-event-typed-001",
+              "py5-event-classify-002",
+              "py5-event-slots-003",
+              "py5-lock-typed-001",
+              "py5-lock-classify-002",
+              "py5-lock-fault-003",
+              "py5-queue-typed-001",
+              "py5-queue-order-002",
+              "py5-queue-scenario-003"
             ]
           },
           {
             "id": "5.3",
             "name": "Choose process-based parallelism safely",
             "question_ids": [
-              "mp-context-001",
-              "mp-context-processpool-002"
+              "py5-mpcontext-typed-001",
+              "py5-mpcontext-classify-002",
+              "py5-mpcontext-relations-003"
             ]
           }
         ]
@@ -115,56 +125,56 @@
     {
       "id": "ai.python.threadpool_executor",
       "name": "ThreadPoolExecutor",
-      "description": "ThreadPoolExecutor runs callables concurrently in a pool of OS threads and is commonly useful for overlapping blocking I/O."
+      "description": "ThreadPoolExecutor runs callables in worker threads and is a natural fit for overlapping blocking I/O; CPU-bound behavior depends on whether CPython is GIL-enabled or free-threaded."
     },
     {
       "id": "ai.python.processpool_executor",
       "name": "ProcessPoolExecutor",
-      "description": "ProcessPoolExecutor runs work in separate processes, allowing CPU-bound Python code to use multiple cores."
+      "description": "ProcessPoolExecutor uses separate worker processes to side-step one process's GIL for suitable CPU-bound work, while requiring process-boundary values and callables to be serializable/importable."
     },
     {
       "id": "ai.python.futures_as_completed",
       "name": "concurrent.futures.as_completed",
-      "description": "as_completed(futures) yields Future objects as each finishes, which is useful when processing results in completion order instead of submission order."
+      "description": "`as_completed()` yields Future objects as they finish, allowing completion-order handling; `Future.result()` returns the value or re-raises the worker exception."
     },
     {
       "id": "ai.python.threading_event",
       "name": "threading.Event",
-      "description": "threading.Event is a thread-safe flag used to signal one or many waiting threads that a condition has occurred."
+      "description": "`threading.Event` is a thread-safe signal flag: `wait()` blocks until set, `set()` wakes waiters and leaves the flag true, and `clear()` resets it."
     },
     {
       "id": "ai.python.threading_lock",
       "name": "threading.Lock",
-      "description": "threading.Lock provides mutual exclusion between threads; a with lock: block acquires and releases it safely."
+      "description": "`threading.Lock` provides mutual exclusion around thread-shared critical sections and should protect application invariants instead of relying on the GIL."
     },
     {
       "id": "ai.python.queue_queue",
       "name": "queue.Queue for threads",
-      "description": "queue.Queue is a synchronized producer-consumer queue for threads and supports blocking put/get plus task_done/join tracking."
+      "description": "`queue.Queue` is a synchronized producer-consumer queue for threads; bounded queues provide backpressure and `task_done()`/`join()` track unfinished work."
     },
     {
       "id": "ai.python.multiprocessing_context",
       "name": "Explicit multiprocessing start context",
-      "description": "multiprocessing.get_context(name) lets code explicitly choose a process start method instead of depending on a platform/version default."
+      "description": "`multiprocessing.get_context()` explicitly selects process start semantics; defaults vary by platform/version, including Python 3.14's POSIX switch from fork to forkserver."
     }
   ],
   "questions": [
     {
-      "id": "threadpool-submit-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py5-threadpool-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-5",
       "task_id": "5.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.58,
-      "prompt": "Submit each blocking fetch to the existing thread pool.",
+      "difficulty_prior": 0.44,
+      "prompt": "Submit one blocking fetch to the existing thread pool and keep its Future.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "with ThreadPoolExecutor(max_workers=8) as pool:\n    futures = [{{answer}} for url in urls]"
+          "template": "from concurrent.futures import ThreadPoolExecutor\n\nwith ThreadPoolExecutor(max_workers=8) as pool:\n    future = {{answer}}"
         },
         "slots": [
           {
@@ -190,9 +200,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "ThreadPoolExecutor runs callables concurrently in a pool of OS threads and is commonly useful for overlapping blocking I/O. with ThreadPoolExecutor() as pool: futures = [pool.submit(fetch, url) for url in urls] submits independent calls. Threads do not normally provide multi-core speedups for CPU-bound pure Python because of the regular CPython GIL.",
+      "explanation": "`pool.submit(fetch, url)` schedules the callable on the thread pool and immediately returns a Future representing that work.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required concurrency behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -206,44 +216,54 @@
       ],
       "source_refs": [
         {
-          "title": "concurrent.futures — ThreadPoolExecutor",
-          "url": "https://docs.python.org/3/library/concurrent.futures.html#threadpoolexecutor"
+          "title": "concurrent.futures — Launching parallel tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/concurrent.futures.html"
         }
       ]
     },
     {
-      "id": "threadpool-map-002",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py5-threadpool-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-5",
       "task_id": "5.1",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.68,
-      "prompt": "Run the blocking function concurrently and collect results in input order.",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.59,
+      "prompt": "Assume a normal GIL-enabled CPython build. Classify the better default executor choice for each workload.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "with ThreadPoolExecutor(max_workers=8) as pool:\n    results = {{answer}}"
-        },
-        "slots": [
+        "type": "classification",
+        "items": [
           {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
+            "id": "network",
+            "label": "Many blocking HTTP requests"
+          },
+          {
+            "id": "disk",
+            "label": "Many blocking file reads"
+          },
+          {
+            "id": "cpu",
+            "label": "Pure-Python CPU-heavy computation that should use multiple cores"
+          }
+        ],
+        "categories": [
+          {
+            "id": "thread",
+            "label": "ThreadPoolExecutor is a natural default"
+          },
+          {
+            "id": "process",
+            "label": "Prefer process-based parallelism by default"
           }
         ]
       },
       "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "list(pool.map(fetch, urls))"
-            ]
-          }
+        "type": "classification",
+        "placements": {
+          "network": "thread",
+          "disk": "thread",
+          "cpu": "process"
         }
       },
       "concepts": [
@@ -252,43 +272,111 @@
           "weight": 1.0
         }
       ],
-      "explanation": "ThreadPoolExecutor runs callables concurrently in a pool of OS threads and is commonly useful for overlapping blocking I/O. with ThreadPoolExecutor() as pool: futures = [pool.submit(fetch, url) for url in urls] submits independent calls. Threads do not normally provide multi-core speedups for CPU-bound pure Python because of the regular CPython GIL.",
+      "explanation": "On normal GIL-enabled CPython, threads are especially effective for overlapping blocking I/O. Pure-Python CPU-bound work normally needs another strategy for multi-core parallelism.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "The question explicitly assumes the normal GIL-enabled build; free-threaded builds change the CPU-bound thread constraint."
       ],
       "error_codes": [
         {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
         },
         {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
         }
       ],
       "source_refs": [
         {
-          "title": "concurrent.futures — ThreadPoolExecutor",
-          "url": "https://docs.python.org/3/library/concurrent.futures.html#threadpoolexecutor"
+          "title": "concurrent.futures — Launching parallel tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/concurrent.futures.html"
+        },
+        {
+          "title": "Thread states and the global interpreter lock — Python 3.14",
+          "url": "https://docs.python.org/3.14/c-api/threads.html"
         }
       ]
     },
     {
-      "id": "processpool-map-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py5-threadpool-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.7,
+      "prompt": "A ThreadPoolExecutor has only one worker. Flag the pattern that can deadlock the pool.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "one",
+            "label": "`executor = ThreadPoolExecutor(max_workers=1)`"
+          },
+          {
+            "id": "nested",
+            "label": "The running worker submits another Future to the same executor and waits on `future.result()`"
+          },
+          {
+            "id": "outside",
+            "label": "The main thread waits for the worker Future after submitting it"
+          },
+          {
+            "id": "with",
+            "label": "The executor is managed with a `with` statement"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "nested"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.threadpool_executor",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A worker that waits on another Future from the same exhausted pool can deadlock because no worker is available to run the nested task.",
+      "hints": [
+        "Ask whether the Future being awaited can actually start with the remaining worker capacity."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "concurrent.futures — Launching parallel tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/concurrent.futures.html"
+        }
+      ]
+    },
+    {
+      "id": "py5-processpool-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-5",
       "task_id": "5.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.58,
-      "prompt": "Use the process pool to evaluate CPU-heavy records in parallel.",
+      "difficulty_prior": 0.48,
+      "prompt": "Run the CPU-bound function across all items with the process pool.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "with ProcessPoolExecutor() as pool:\n    scores = {{answer}}"
+          "template": "from concurrent.futures import ProcessPoolExecutor\n\nif __name__ == '__main__':\n    with ProcessPoolExecutor() as pool:\n        results = {{answer}}"
         },
         "slots": [
           {
@@ -303,7 +391,7 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "list(pool.map(score_record, records))"
+              "list(pool.map(cpu_work, items))"
             ]
           }
         }
@@ -314,9 +402,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "ProcessPoolExecutor runs work in separate processes, allowing CPU-bound Python code to use multiple cores. with ProcessPoolExecutor() as pool: results = list(pool.map(score, records)) is a high-level parallel map pattern. Submitted callables and arguments generally need to be picklable, and __main__ must be importable by worker processes.",
+      "explanation": "`pool.map(cpu_work, items)` distributes calls across worker processes and returns results corresponding to the input iterable.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required concurrency behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -330,83 +418,215 @@
       ],
       "source_refs": [
         {
-          "title": "concurrent.futures — ProcessPoolExecutor",
-          "url": "https://docs.python.org/3/library/concurrent.futures.html#processpoolexecutor"
+          "title": "concurrent.futures — Launching parallel tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/concurrent.futures.html"
         }
       ]
     },
     {
-      "id": "processpool-submit-002",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py5-processpool-slots-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-5",
       "task_id": "5.1",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.71,
-      "prompt": "Submit one CPU-bound task and keep the Future for later.",
-      "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "with ProcessPoolExecutor() as pool:\n    future = {{answer}}\n    # do other work...\n    result = future.result()"
-        },
-        "slots": [
-          {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "pool.submit(compute_features, batch)"
-            ]
-          }
-        }
-      },
-      "concepts": [
-        {
-          "concept_id": "ai.python.processpool_executor",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "ProcessPoolExecutor runs work in separate processes, allowing CPU-bound Python code to use multiple cores. with ProcessPoolExecutor() as pool: results = list(pool.map(score, records)) is a high-level parallel map pattern. Submitted callables and arguments generally need to be picklable, and __main__ must be importable by worker processes.",
-      "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
-      ],
-      "error_codes": [
-        {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
-        },
-        {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "concurrent.futures — ProcessPoolExecutor",
-          "url": "https://docs.python.org/3/library/concurrent.futures.html#processpoolexecutor"
-        }
-      ]
-    },
-    {
-      "id": "as-completed-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
-      "certification_version": "python-fluency-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.1",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
+      "assessment_mode": "recognition",
+      "interaction_type": "fill_slots",
       "difficulty_prior": 0.61,
-      "prompt": "Process completed futures as soon as each one finishes.",
+      "prompt": "Fill two ProcessPoolExecutor requirements.",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "transport",
+            "label": "Callable/arguments crossing the process boundary"
+          },
+          {
+            "id": "main",
+            "label": "Worker access to the program entry module"
+          }
+        ],
+        "options": [
+          {
+            "id": "pickle",
+            "label": "Generally must be picklable"
+          },
+          {
+            "id": "importable",
+            "label": "`__main__` must be importable by workers"
+          },
+          {
+            "id": "shared_memory",
+            "label": "Must always be the exact same memory object"
+          },
+          {
+            "id": "repl",
+            "label": "REPL lambdas are the safest portable choice"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "transport": "pickle",
+          "main": "importable"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.processpool_executor",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Process pools serialize work across process boundaries, so callables and values generally must be picklable, and worker subprocesses must be able to import `__main__` safely.",
+      "hints": [
+        "Think about what a fresh worker process must receive and import."
+      ],
+      "error_codes": [
+        {
+          "code": "slot_incorrect",
+          "description": "A slot was filled with the wrong value."
+        },
+        {
+          "code": "slot_unfilled",
+          "description": "A required slot was left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "concurrent.futures — Launching parallel tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/concurrent.futures.html"
+        },
+        {
+          "title": "multiprocessing — Process-based parallelism — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/multiprocessing.html"
+        }
+      ]
+    },
+    {
+      "id": "py5-processpool-scenario-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "application",
+      "interaction_type": "scenario_choice_chain",
+      "difficulty_prior": 0.74,
+      "prompt": "A normal GIL-enabled CPython service needs multi-core execution for expensive pure-Python calculations.",
+      "interaction": {
+        "type": "scenario_choice_chain",
+        "start_step_id": "executor",
+        "steps": [
+          {
+            "id": "executor",
+            "stage": "action",
+            "prompt": "Which executor is the stronger default fit for this CPU-bound work?",
+            "choices": [
+              {
+                "id": "process",
+                "label": "`ProcessPoolExecutor`"
+              },
+              {
+                "id": "thread",
+                "label": "`ThreadPoolExecutor`"
+              },
+              {
+                "id": "event",
+                "label": "`threading.Event`"
+              },
+              {
+                "id": "queue",
+                "label": "`queue.Queue`"
+              }
+            ],
+            "next_step_by_choice": {
+              "process": "portable",
+              "thread": "portable",
+              "event": "portable",
+              "queue": "portable"
+            }
+          },
+          {
+            "id": "portable",
+            "stage": "verification",
+            "prompt": "Which worker function is the safer portable submission target?",
+            "choices": [
+              {
+                "id": "top",
+                "label": "A module-level named function with picklable arguments"
+              },
+              {
+                "id": "lambda",
+                "label": "A lambda created in the interactive REPL"
+              },
+              {
+                "id": "nested",
+                "label": "A local nested function capturing non-picklable state"
+              },
+              {
+                "id": "open_file",
+                "label": "A closure capturing a live open file handle"
+              }
+            ],
+            "next_step_by_choice": {}
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "scenario_choice_chain",
+        "correct_choice_ids": {
+          "executor": [
+            "process"
+          ],
+          "portable": [
+            "top"
+          ]
+        },
+        "expected_path": [
+          "process",
+          "top"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.processpool_executor",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "ProcessPoolExecutor sidesteps one process's GIL for CPU-bound work. Portable submissions should use importable, picklable functions and arguments rather than REPL lambdas or problematic closures.",
+      "hints": [
+        "Choose both an execution model and a callable that can cross a process boundary."
+      ],
+      "error_codes": [
+        {
+          "code": "scenario_choice_incorrect",
+          "description": "At least one scenario decision was incorrect."
+        },
+        {
+          "code": "scenario_choice_incomplete",
+          "description": "The scenario ended before all required decisions were made."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "concurrent.futures — Launching parallel tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/concurrent.futures.html"
+        },
+        {
+          "title": "multiprocessing — Process-based parallelism — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/multiprocessing.html"
+        }
+      ]
+    },
+    {
+      "id": "py5-ascompleted-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.43,
+      "prompt": "Iterate Futures as each one finishes rather than in original submission order.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
@@ -438,9 +658,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "as_completed(futures) yields Future objects as each finishes, which is useful when processing results in completion order instead of submission order. for future in as_completed(futures): result = future.result() handles fast results without waiting for earlier slow submissions. Calling result() re-raises the worker exception; completion order does not imply submission order.",
+      "explanation": "`as_completed(futures)` yields Future objects as they finish, letting fast results be processed before earlier slow submissions.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required concurrency behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -454,27 +674,149 @@
       ],
       "source_refs": [
         {
-          "title": "concurrent.futures.as_completed",
-          "url": "https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.as_completed"
+          "title": "concurrent.futures — Launching parallel tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/concurrent.futures.html"
         }
       ]
     },
     {
-      "id": "thread-event-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py5-ascompleted-order-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.56,
+      "prompt": "Three submitted Futures finish in the order B, C, A. Arrange the order in which `as_completed()` makes them available.",
+      "interaction": {
+        "type": "ordering",
+        "items": [
+          {
+            "id": "a",
+            "label": "A"
+          },
+          {
+            "id": "c",
+            "label": "C"
+          },
+          {
+            "id": "b",
+            "label": "B"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "ordering",
+        "ordered_ids": [
+          "b",
+          "c",
+          "a"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.futures_as_completed",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`as_completed()` is completion-order iteration, so it exposes B, then C, then A for the stated finish order.",
+      "hints": [
+        "Ignore submission order; the finish order is given explicitly."
+      ],
+      "error_codes": [
+        {
+          "code": "ordering_invalid_sequence",
+          "description": "One or more steps are in the wrong position."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "concurrent.futures — Launching parallel tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/concurrent.futures.html"
+        }
+      ]
+    },
+    {
+      "id": "py5-ascompleted-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.68,
+      "prompt": "A completed Future contains a worker exception. Flag the assumption that hides what `result()` actually does.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "iterate",
+            "label": "`for future in as_completed(futures):`"
+          },
+          {
+            "id": "result",
+            "label": "`future.result()`"
+          },
+          {
+            "id": "false",
+            "label": "Assume `future.result()` returns the exception object as a normal value"
+          },
+          {
+            "id": "handle",
+            "label": "Wrap `future.result()` in error handling when worker failures are expected"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "false"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.futures_as_completed",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`Future.result()` re-raises the exception raised by the worker call. It does not return that exception as an ordinary result value.",
+      "hints": [
+        "Distinguish Future completion from successful completion."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "concurrent.futures — Launching parallel tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/concurrent.futures.html"
+        }
+      ]
+    },
+    {
+      "id": "py5-event-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-5",
       "task_id": "5.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.55,
-      "prompt": "Stop the worker loop when another thread signals the event.",
+      "difficulty_prior": 0.4,
+      "prompt": "Block this worker until another thread publishes the ready signal.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "stop_event = threading.Event()\n\ndef worker():\n    while {{answer}}:\n        poll_once()"
+          "template": "from threading import Event\nready = Event()\n\ndef worker():\n    {{answer}}\n    process()"
         },
         "slots": [
           {
@@ -489,7 +831,7 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "not stop_event.is_set()"
+              "ready.wait()"
             ]
           }
         }
@@ -500,9 +842,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "threading.Event is a thread-safe flag used to signal one or many waiting threads that a condition has occurred. worker loops often use while not stop_event.is_set(): ... and another thread calls stop_event.set(). Event is signaling, not mutual exclusion; use Lock when shared mutable state itself needs serialized access.",
+      "explanation": "`ready.wait()` blocks until the Event's internal flag becomes true.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required concurrency behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -516,27 +858,178 @@
       ],
       "source_refs": [
         {
-          "title": "threading.Event",
-          "url": "https://docs.python.org/3/library/threading.html#event-objects"
+          "title": "threading — Thread-based parallelism — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/threading.html"
         }
       ]
     },
     {
-      "id": "thread-lock-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py5-event-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.52,
+      "prompt": "Classify each threading.Event operation.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "wait",
+            "label": "`event.wait()`"
+          },
+          {
+            "id": "set",
+            "label": "`event.set()`"
+          },
+          {
+            "id": "clear",
+            "label": "`event.clear()`"
+          }
+        ],
+        "categories": [
+          {
+            "id": "wait_role",
+            "label": "Block until the flag is true"
+          },
+          {
+            "id": "set_role",
+            "label": "Set the flag and wake current waiters"
+          },
+          {
+            "id": "clear_role",
+            "label": "Reset the flag to false"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "wait": "wait_role",
+          "set": "set_role",
+          "clear": "clear_role"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.threading_event",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Event has an internal Boolean flag: `wait()` observes it, `set()` changes it to true and wakes waiters, and `clear()` resets it to false.",
+      "hints": [
+        "Track the Event's flag state."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "threading — Thread-based parallelism — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/threading.html"
+        }
+      ]
+    },
+    {
+      "id": "py5-event-slots-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "assessment_mode": "recognition",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.57,
+      "prompt": "Fill the Event behavior immediately after `event.set()`.",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "state",
+            "label": "`event.is_set()`"
+          },
+          {
+            "id": "later_wait",
+            "label": "A later `event.wait()` before any `clear()`"
+          }
+        ],
+        "options": [
+          {
+            "id": "true",
+            "label": "True"
+          },
+          {
+            "id": "false",
+            "label": "False"
+          },
+          {
+            "id": "immediate",
+            "label": "Returns immediately"
+          },
+          {
+            "id": "blocks",
+            "label": "Always blocks until another set()"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "state": "true",
+          "later_wait": "immediate"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.threading_event",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The Event stays set until `clear()` is called, so `is_set()` is true and subsequent `wait()` calls return immediately.",
+      "hints": [
+        "`set()` is stateful; it is not a one-shot pulse."
+      ],
+      "error_codes": [
+        {
+          "code": "slot_incorrect",
+          "description": "A slot was filled with the wrong value."
+        },
+        {
+          "code": "slot_unfilled",
+          "description": "A required slot was left empty."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "threading — Thread-based parallelism — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/threading.html"
+        }
+      ]
+    },
+    {
+      "id": "py5-lock-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-5",
       "task_id": "5.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.53,
-      "prompt": "Use the existing thread lock around the shared update.",
+      "difficulty_prior": 0.42,
+      "prompt": "Protect the shared counter update with the existing thread lock.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "lock = threading.Lock()\n\ndef increment():\n    {{answer}}\n        counters['jobs'] += 1"
+          "template": "from threading import Lock\nlock = Lock()\n\ndef increment():\n    {{answer}}\n        counters['jobs'] += 1"
         },
         "slots": [
           {
@@ -562,9 +1055,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "threading.Lock provides mutual exclusion between threads; a with lock: block acquires and releases it safely. Use with lock: around the smallest shared-state critical section that must be atomic across threads. A Lock does not make compound operations automatically atomic unless those operations actually run while the lock is held.",
+      "explanation": "`with lock:` acquires the Lock for the block and releases it when the block exits.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required concurrency behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -578,21 +1071,161 @@
       ],
       "source_refs": [
         {
-          "title": "threading.Lock",
-          "url": "https://docs.python.org/3/library/threading.html#lock-objects"
+          "title": "threading — Thread-based parallelism — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/threading.html"
         }
       ]
     },
     {
-      "id": "queue-thread-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py5-lock-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.58,
+      "prompt": "Classify whether each operation needs the shared Lock for thread-safety of this state.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "shared",
+            "label": "Read shared balance, compute a new value, then write it"
+          },
+          {
+            "id": "local",
+            "label": "Increment a local variable visible only to this thread"
+          },
+          {
+            "id": "compound",
+            "label": "Check a shared dictionary key and insert if absent as one logical operation"
+          }
+        ],
+        "categories": [
+          {
+            "id": "protect",
+            "label": "Protect the compound shared operation"
+          },
+          {
+            "id": "local_only",
+            "label": "No shared-state lock needed for this reason"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "shared": "protect",
+          "local": "local_only",
+          "compound": "protect"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.threading_lock",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Use explicit synchronization around compound shared-state operations whose correctness depends on interleaving. Purely local state does not need that shared lock.",
+      "hints": [
+        "The key question is whether another thread can access the same logical state while this operation is in progress."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "threading — Thread-based parallelism — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/threading.html"
+        }
+      ]
+    },
+    {
+      "id": "py5-lock-fault-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.69,
+      "prompt": "The program assumes the GIL alone makes a multi-step shared update safe. Flag the faulty assumption.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "lock",
+            "label": "Use `with lock:` around the shared critical section"
+          },
+          {
+            "id": "gil",
+            "label": "Assume a compound read-modify-write never needs synchronization because CPython has a GIL"
+          },
+          {
+            "id": "local",
+            "label": "Leave thread-local calculations outside the lock"
+          },
+          {
+            "id": "small",
+            "label": "Keep the lock-protected critical section focused on shared state"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "gil"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.threading_lock",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The GIL is not a substitute for application-level synchronization of compound shared-state invariants, and free-threaded builds make explicit locking even more important.",
+      "hints": [
+        "Protect the invariant you need, not an implementation assumption about interpreter scheduling."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "At least one faulty element was not identified."
+        },
+        {
+          "code": "false_positive_fault",
+          "description": "At least one correct element was incorrectly flagged."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "threading — Thread-based parallelism — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/threading.html"
+        },
+        {
+          "title": "Thread states and the global interpreter lock — Python 3.14",
+          "url": "https://docs.python.org/3.14/c-api/threads.html"
+        }
+      ]
+    },
+    {
+      "id": "py5-queue-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-5",
       "task_id": "5.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.61,
-      "prompt": "Take the next job from the synchronized thread queue.",
+      "difficulty_prior": 0.43,
+      "prompt": "Retrieve the next job from the synchronized thread queue.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
@@ -624,9 +1257,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "queue.Queue is a synchronized producer-consumer queue for threads and supports blocking put/get plus task_done/join tracking. worker threads usually call item = q.get(), then q.task_done() in a finally block after processing. queue.Queue is for thread coordination; asyncio.Queue is the corresponding event-loop-oriented primitive.",
+      "explanation": "`q.get()` safely removes the next queued item, blocking when necessary until work becomes available.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "Use the required concurrency behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -640,176 +1273,197 @@
       ],
       "source_refs": [
         {
-          "title": "queue — synchronized queue",
-          "url": "https://docs.python.org/3/library/queue.html"
+          "title": "queue — A synchronized queue class — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/queue.html"
         }
       ]
     },
     {
-      "id": "mp-context-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py5-queue-order-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-5",
-      "task_id": "5.3",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.63,
-      "prompt": "Explicitly request spawn semantics instead of relying on the platform default.",
+      "task_id": "5.2",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.52,
+      "prompt": "Arrange the normal lifecycle for one queue.Queue work item.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "import multiprocessing\nctx = {{answer}}"
-        },
-        "slots": [
+        "type": "ordering",
+        "items": [
           {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
+            "id": "done",
+            "label": "`q.task_done()`"
+          },
+          {
+            "id": "get",
+            "label": "`item = q.get()`"
+          },
+          {
+            "id": "process",
+            "label": "`process(item)`"
           }
         ]
       },
       "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "multiprocessing.get_context('spawn')"
-            ]
-          }
-        }
-      },
-      "concepts": [
-        {
-          "concept_id": "ai.python.multiprocessing_context",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "multiprocessing.get_context(name) lets code explicitly choose a process start method instead of depending on a platform/version default. ctx = multiprocessing.get_context('spawn') can be passed to APIs that accept an mp_context. Start-method defaults differ across platforms and changed again on POSIX in Python 3.14, so code requiring a specific method should request it explicitly.",
-      "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
-      ],
-      "error_codes": [
-        {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
-        },
-        {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "multiprocessing contexts",
-          "url": "https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods"
-        }
-      ]
-    },
-    {
-      "id": "mp-context-processpool-002",
-      "content_version": "python-fluency-content-2026-09-19-v1",
-      "certification_version": "python-fluency-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.3",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.77,
-      "prompt": "Pass an explicit spawn context to the process pool.",
-      "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "code",
-          "language": "python",
-          "template": "ctx = multiprocessing.get_context('spawn')\nwith ProcessPoolExecutor({{answer}}) as pool:\n    results = list(pool.map(work, items))"
-        },
-        "slots": [
-          {
-            "id": "answer",
-            "label": "Missing code",
-            "placeholder": "type code"
-          }
+        "type": "ordering",
+        "ordered_ids": [
+          "get",
+          "process",
+          "done"
         ]
       },
-      "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "mp_context=ctx"
-            ]
-          }
-        }
-      },
       "concepts": [
         {
-          "concept_id": "ai.python.multiprocessing_context",
+          "concept_id": "ai.python.queue_queue",
           "weight": 1.0
         }
       ],
-      "explanation": "multiprocessing.get_context(name) lets code explicitly choose a process start method instead of depending on a platform/version default. ctx = multiprocessing.get_context('spawn') can be passed to APIs that accept an mp_context. Start-method defaults differ across platforms and changed again on POSIX in Python 3.14, so code requiring a specific method should request it explicitly.",
+      "explanation": "A consumer gets the item, processes it, then calls `task_done()` so unfinished-work accounting can reach zero for `join()`.",
       "hints": [
-        "Use the surrounding code and comment to identify the Python idiom being requested."
+        "`task_done()` acknowledges processing after a prior `get()`."
       ],
       "error_codes": [
         {
-          "code": "typed_fill_blank_incorrect",
-          "description": "One or more typed answers did not match an accepted answer."
-        },
-        {
-          "code": "typed_fill_blank_incomplete",
-          "description": "One or more required blanks were left empty."
+          "code": "ordering_invalid_sequence",
+          "description": "One or more steps are in the wrong position."
         }
       ],
       "source_refs": [
         {
-          "title": "multiprocessing contexts",
-          "url": "https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods"
+          "title": "queue — A synchronized queue class — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/queue.html"
         }
       ]
     },
     {
-      "id": "table-concurrency-001",
-      "content_version": "python-fluency-content-2026-09-19-v1",
+      "id": "py5-queue-scenario-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
       "certification_version": "python-fluency-v1",
       "domain_id": "domain-5",
-      "task_id": "5.1",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.66,
-      "prompt": "Complete the iterator used for completion-order processing.",
+      "task_id": "5.2",
+      "assessment_mode": "application",
+      "interaction_type": "scenario_choice_chain",
+      "difficulty_prior": 0.7,
+      "prompt": "Producer threads can outpace slower consumers and memory growth must be bounded.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "table",
-          "columns": [
-            {
-              "id": "need",
-              "label": "Requirement"
-            },
-            {
-              "id": "code",
-              "label": "Python"
-            }
-          ],
-          "rows": [
-            {
-              "id": "row-1",
-              "cells": {
-                "need": {
-                  "type": "text",
-                  "template": "Handle futures as each finishes, not submission order"
-                },
-                "code": {
-                  "type": "code",
-                  "language": "python",
-                  "template": "for future in {{answer}}:"
-                }
+        "type": "scenario_choice_chain",
+        "start_step_id": "queue",
+        "steps": [
+          {
+            "id": "queue",
+            "stage": "action",
+            "prompt": "Which design directly applies backpressure to producers?",
+            "choices": [
+              {
+                "id": "bounded",
+                "label": "`Queue(maxsize=100)` with blocking `put()`"
+              },
+              {
+                "id": "list",
+                "label": "Append indefinitely to a shared list"
+              },
+              {
+                "id": "unbounded",
+                "label": "`Queue(maxsize=0)` and never limit production"
+              },
+              {
+                "id": "event",
+                "label": "Use only a threading.Event as the work buffer"
               }
+            ],
+            "next_step_by_choice": {
+              "bounded": "join",
+              "list": "join",
+              "unbounded": "join",
+              "event": "join"
             }
+          },
+          {
+            "id": "join",
+            "stage": "verification",
+            "prompt": "`q.join()` never returns even though every worker finished processing. What accounting step is most likely missing?",
+            "choices": [
+              {
+                "id": "done",
+                "label": "A `q.task_done()` for each retrieved item"
+              },
+              {
+                "id": "second_get",
+                "label": "A second `q.get()` for each item"
+              },
+              {
+                "id": "clear",
+                "label": "`q.clear()`"
+              },
+              {
+                "id": "unlock",
+                "label": "`q.release()`"
+              }
+            ],
+            "next_step_by_choice": {}
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "scenario_choice_chain",
+        "correct_choice_ids": {
+          "queue": [
+            "bounded"
+          ],
+          "join": [
+            "done"
           ]
         },
+        "expected_path": [
+          "bounded",
+          "done"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.queue_queue",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A positive `maxsize` lets `put()` block when the queue is full, creating backpressure. `join()` depends on a matching `task_done()` for each queued item that finishes processing.",
+      "hints": [
+        "Solve capacity control and completion accounting separately."
+      ],
+      "error_codes": [
+        {
+          "code": "scenario_choice_incorrect",
+          "description": "At least one scenario decision was incorrect."
+        },
+        {
+          "code": "scenario_choice_incomplete",
+          "description": "The scenario ended before all required decisions were made."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "queue — A synchronized queue class — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/queue.html"
+        }
+      ]
+    },
+    {
+      "id": "py5-mpcontext-typed-001",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.48,
+      "prompt": "Request spawn semantics explicitly instead of relying on the platform default.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "import multiprocessing as mp\nctx = {{answer}}"
+        },
         "slots": [
           {
             "id": "answer",
@@ -823,20 +1477,21 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "as_completed(futures)"
+              "mp.get_context(\"spawn\")",
+              "mp.get_context('spawn')"
             ]
           }
         }
       },
       "concepts": [
         {
-          "concept_id": "ai.python.futures_as_completed",
+          "concept_id": "ai.python.multiprocessing_context",
           "weight": 1.0
         }
       ],
-      "explanation": "as_completed(futures) yields Future objects as each finishes, which is useful when processing results in completion order instead of submission order. for future in as_completed(futures): result = future.result() handles fast results without waiting for earlier slow submissions. Calling result() re-raises the worker exception; completion order does not imply submission order.",
+      "explanation": "`mp.get_context('spawn')` returns multiprocessing primitives tied to the explicitly requested spawn start method.",
       "hints": [
-        "Use the row description to reconstruct the exact Python expression."
+        "Use the required concurrency behavior to reconstruct the smallest correct Python expression."
       ],
       "error_codes": [
         {
@@ -850,8 +1505,199 @@
       ],
       "source_refs": [
         {
-          "title": "concurrent.futures.as_completed",
-          "url": "https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.as_completed"
+          "title": "multiprocessing — Process-based parallelism — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/multiprocessing.html"
+        }
+      ]
+    },
+    {
+      "id": "py5-mpcontext-classify-002",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "assessment_mode": "recognition",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.66,
+      "prompt": "Classify these multiprocessing start-method facts for the Python 3.10-3.14 track.",
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "explicit",
+            "label": "`get_context('spawn')`"
+          },
+          {
+            "id": "posix314",
+            "label": "Python 3.14 POSIX default"
+          },
+          {
+            "id": "mac",
+            "label": "macOS default since Python 3.8"
+          }
+        ],
+        "categories": [
+          {
+            "id": "spawn_explicit",
+            "label": "Explicitly requests spawn"
+          },
+          {
+            "id": "forkserver_default",
+            "label": "forkserver is the default"
+          },
+          {
+            "id": "spawn_default",
+            "label": "spawn is the default"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "explicit": "spawn_explicit",
+          "posix314": "forkserver_default",
+          "mac": "spawn_default"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.multiprocessing_context",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Python 3.14 changed the POSIX default from fork to forkserver. macOS has used spawn by default since 3.8. Explicit `get_context()` avoids relying on those defaults.",
+      "hints": [
+        "Version and platform matter; this question states both."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one item was placed in the wrong category."
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one item was not placed in any category."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "multiprocessing — Process-based parallelism — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/multiprocessing.html"
+        }
+      ]
+    },
+    {
+      "id": "py5-mpcontext-relations-003",
+      "content_version": "python-fluency-content-2026-09-22-v2-domain5-reviewed",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "node_connection",
+      "difficulty_prior": 0.69,
+      "prompt": "Connect each multiprocessing context fact to its direct meaning. Create exactly 4 relationships.",
+      "interaction": {
+        "type": "node_connection",
+        "nodes": [
+          {
+            "id": "spawn_ctx",
+            "label": "`get_context('spawn')`",
+            "x": 0.08,
+            "y": 0.14
+          },
+          {
+            "id": "spawn_mean",
+            "label": "Use explicit spawn semantics",
+            "x": 0.48,
+            "y": 0.14
+          },
+          {
+            "id": "pool_ctx",
+            "label": "`ProcessPoolExecutor(mp_context=ctx)`",
+            "x": 0.08,
+            "y": 0.38
+          },
+          {
+            "id": "pool_mean",
+            "label": "Launch pool workers through that context",
+            "x": 0.48,
+            "y": 0.38
+          },
+          {
+            "id": "posix",
+            "label": "Python 3.14 POSIX default",
+            "x": 0.08,
+            "y": 0.64
+          },
+          {
+            "id": "forkserver",
+            "label": "forkserver",
+            "x": 0.48,
+            "y": 0.64
+          },
+          {
+            "id": "macwin",
+            "label": "macOS / Windows default",
+            "x": 0.62,
+            "y": 0.86
+          },
+          {
+            "id": "spawn",
+            "label": "spawn",
+            "x": 0.93,
+            "y": 0.86
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "node_connection",
+        "edges": [
+          [
+            "spawn_ctx",
+            "spawn_mean"
+          ],
+          [
+            "pool_ctx",
+            "pool_mean"
+          ],
+          [
+            "posix",
+            "forkserver"
+          ],
+          [
+            "macwin",
+            "spawn"
+          ]
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.multiprocessing_context",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Explicit contexts make process start semantics visible. ProcessPoolExecutor can consume that context, Python 3.14 POSIX defaults to forkserver, and Windows/macOS use spawn by default.",
+      "hints": [
+        "Connect APIs/platform facts only to their direct start-method behavior."
+      ],
+      "error_codes": [
+        {
+          "code": "connection_missing_relationship",
+          "description": "A valid relationship is missing."
+        },
+        {
+          "code": "connection_invalid_relationship",
+          "description": "A submitted relationship is not valid."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "multiprocessing — Process-based parallelism — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/multiprocessing.html"
+        },
+        {
+          "title": "concurrent.futures — Launching parallel tasks — Python 3.14",
+          "url": "https://docs.python.org/3.14/library/concurrent.futures.html"
         }
       ]
     }
