@@ -26,7 +26,9 @@
               "pypc-clamp-exec-002",
               "pypc-pair-strict-exec-003",
               "pypc-total-exec-004",
-              "pypc-summary-stdout-005"
+              "pypc-summary-stdout-005",
+              "pypc-numpy-mean-exec-006",
+              "pypc-pandas-sum-exec-007"
             ]
           }
         ]
@@ -48,6 +50,16 @@
       "id": "ai.python.star_args_call",
       "name": "Calling with *args",
       "description": "A single `*` in a call expands an iterable into positional arguments; the resulting arguments still must fit the callable's signature."
+    },
+    {
+      "id": "ai.python.numpy_aggregate",
+      "name": "Aggregating with NumPy",
+      "description": "`numpy.mean`, `numpy.sum`, and friends aggregate whole arrays; wrapping input with `np.array(...)` lets the same functions work on Python lists."
+    },
+    {
+      "id": "ai.python.pandas_series",
+      "name": "Aggregating a pandas Series",
+      "description": "`pandas.Series(values).sum()` aggregates a column of data; Series reductions return NumPy scalars that are usually converted with `int(...)` or `float(...)`."
     }
   ],
   "questions": [
@@ -356,6 +368,132 @@
         {
           "title": "Built-in Functions \u2014 print()",
           "url": "https://docs.python.org/3/library/functions.html#print"
+        }
+      ]
+    },
+    {
+      "id": "pypc-numpy-mean-exec-006",
+      "content_version": "python-fluency-content-2026-09-22-v1-python-code",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.4",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.44,
+      "difficulty_label": "medium",
+      "prompt": "Using NumPy, write `mean(values)` so it returns the arithmetic mean of a list of numbers.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "mean",
+        "starter_code": "import numpy as np\n\ndef mean(values):\n    # TODO: return the arithmetic mean of values\n    pass\n",
+        "packages": [
+          "numpy"
+        ]
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [[1, 2, 3]],
+            "expected": 2.0
+          },
+          {
+            "type": "call",
+            "args": [[4, 4]],
+            "expected": 4.0
+          },
+          {
+            "type": "call",
+            "args": [[-2, 2]],
+            "expected": 0.0
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.numpy_aggregate",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`numpy.mean` computes the arithmetic mean. Convert the list with `np.array(values)` first, then call `np.mean(...)` on it.",
+      "hints": [
+        "`np.array(values)` converts the list; `np.mean(...)` aggregates the array."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "At least one authored test did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "numpy.mean",
+          "url": "https://numpy.org/doc/stable/reference/generated/numpy.mean.html"
+        }
+      ]
+    },
+    {
+      "id": "pypc-pandas-sum-exec-007",
+      "content_version": "python-fluency-content-2026-09-22-v1-python-code",
+      "certification_version": "python-fluency-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.4",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.46,
+      "difficulty_label": "medium",
+      "prompt": "Using pandas, write `total(values)` so it returns the sum of a list of numbers as a Python int.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "total",
+        "starter_code": "import pandas as pd\n\ndef total(values):\n    # TODO: return the sum of values as an int\n    pass\n",
+        "packages": [
+          "pandas"
+        ]
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [[1, 2, 3]],
+            "expected": 6
+          },
+          {
+            "type": "call",
+            "args": [[5]],
+            "expected": 5
+          },
+          {
+            "type": "call",
+            "args": [[]],
+            "expected": 0
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "ai.python.pandas_series",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`pd.Series(values).sum()` aggregates the values and returns a NumPy scalar; wrap it in `int(...)` to return an ordinary Python integer.",
+      "hints": [
+        "Build a Series, call `.sum()`, and convert the result with `int(...)`."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "At least one authored test did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "pandas.Series.sum",
+          "url": "https://pandas.pydata.org/docs/reference/api/pandas.Series.sum.html"
         }
       ]
     }
