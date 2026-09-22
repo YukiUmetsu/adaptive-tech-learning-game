@@ -22,11 +22,12 @@ const noopRegistry: GlossaryRegistry = {
 };
 
 /**
- * Domain glossary available to learner-facing text in the subtree.
+ * Glossary terms available to learner-facing text in the subtree.
  *
- * Learning domains carry a glossary in content JSON; wrapping the learning
- * surface lets `InlineText` highlight and explain those terms without threading
- * the list through every component. Defaults to empty (no highlighting).
+ * A card provides the node's own page terms merged with the domain glossary;
+ * wrapping the learning surface lets `InlineText` highlight and explain those
+ * terms without threading the list through every component. Defaults to empty
+ * (no highlighting).
  */
 export const GlossaryContext = createContext<GlossaryContextValue>({
   terms: [],
@@ -35,4 +36,29 @@ export const GlossaryContext = createContext<GlossaryContextValue>({
 
 export function useGlossary(): GlossaryContextValue {
   return useContext(GlossaryContext);
+}
+
+/**
+ * Merges a domain glossary with a page/node glossary.
+ *
+ * The node terms are the page's own vocabulary and win over a domain term with
+ * the same (case-insensitive) text, so a page can refine or override a shared
+ * definition. A term defined only at the domain level stays available on every
+ * page.
+ */
+export function mergeGlossaryTerms(
+  domainTerms: readonly GlossaryTerm[],
+  pageTerms: readonly GlossaryTerm[],
+): GlossaryTerm[] {
+  const merged = new Map<string, GlossaryTerm>();
+  for (const term of pageTerms) {
+    merged.set(term.term.trim().toLowerCase(), term);
+  }
+  for (const term of domainTerms) {
+    const key = term.term.trim().toLowerCase();
+    if (!merged.has(key)) {
+      merged.set(key, term);
+    }
+  }
+  return [...merged.values()];
 }

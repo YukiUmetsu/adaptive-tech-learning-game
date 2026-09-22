@@ -1395,6 +1395,13 @@ export interface components {
         KnowledgeNode: {
             /** @description Certification concepts this node teaches. The bridge to quiz evidence. */
             concept_ids: string[];
+            /**
+             * @description Clickable terms with short explanations, scoped to this node's page.
+             *
+             *     Merged with the domain glossary when the card renders; a node term wins
+             *     over a domain term with the same text.
+             */
+            glossary?: components["schemas"]["GlossaryTerm"][];
             /** @description Stable node identifier. */
             id: string;
             /** @description Authored position on the map in `0..=1` space. */
@@ -1416,7 +1423,10 @@ export interface components {
             kind: components["schemas"]["PromptKind"];
             /** @description Learner-facing label, authored by the curriculum. */
             label: string;
-            /** @description Blank text shown before the reveal. */
+            /**
+             * @description Blank text shown before the reveal. Optional: an empty placeholder
+             *     renders a generic `?` blank, and interactive reveals ignore it.
+             */
             placeholder: string;
             /** @description Whether revealing this prompt counts toward unlocking the node. */
             required?: boolean;

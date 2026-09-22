@@ -7,6 +7,7 @@ import {
   type NodeState,
 } from "../state/learningProgress";
 import GlossaryProvider from "./GlossaryProvider";
+import { mergeGlossaryTerms } from "./glossaryContext";
 import InlineText from "./InlineText";import KnowledgePrompt from "./KnowledgePrompt";
 
 interface KnowledgeCardProps {
@@ -37,7 +38,10 @@ interface KnowledgeCardProps {
    * Omitted keeps the default, preserving existing map behavior.
    */
   unlockedActions?: ReactNode;
-  /** Domain glossary terms highlighted in the card's learner-facing text. */
+  /**
+   * Domain glossary terms merged with the node's own page glossary. Node terms
+   * win over a domain term with the same text.
+   */
   glossary?: readonly GlossaryTerm[];
 }
 
@@ -81,9 +85,15 @@ export default function KnowledgeCard({
     elementSets,
   );
   const unlocked = state === "unlocked" && !readOnly;
+  // The node's own terms are the page glossary; the domain glossary is the
+  // shared fallback. Node terms win on duplicate text.
+  const pageGlossary = useMemo(
+    () => mergeGlossaryTerms(glossary, node.glossary ?? []),
+    [glossary, node.glossary],
+  );
 
   return (
-    <GlossaryProvider terms={glossary} subject={node.title}>
+    <GlossaryProvider terms={pageGlossary} subject={node.title}>
       <section
         className={`knowledge-card-panel${unlocked ? " knowledge-card-panel--unlocked" : ""}`}
         aria-labelledby={`knowledge-card-title-${node.id}`}

@@ -143,8 +143,12 @@ export default function KnowledgePrompt({
                 </span>
               ))}
             </span>
-          ) : (
+          ) : prompt.placeholder.trim().length > 0 ? (
             <InlineText text={prompt.placeholder} terms={[]} />
+          ) : (
+            <span className="knowledge-prompt-blank-empty" aria-hidden="true">
+              ?
+            </span>
           )}
         </button>
       )}

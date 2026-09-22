@@ -137,6 +137,12 @@ pub struct KnowledgeNode {
     pub map_position: MapPosition,
     /// Progressive reveal prompts. All required prompts unlock the node.
     pub prompts: Vec<KnowledgePrompt>,
+    /// Clickable terms with short explanations, scoped to this node's page.
+    ///
+    /// Merged with the domain glossary when the card renders; a node term wins
+    /// over a domain term with the same text.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub glossary: Vec<GlossaryTerm>,
     /// Official references for this node.
     #[serde(default)]
     pub source_refs: Vec<SourceRef>,
@@ -160,7 +166,8 @@ pub struct KnowledgePrompt {
     pub kind: PromptKind,
     /// Learner-facing label, authored by the curriculum.
     pub label: String,
-    /// Blank text shown before the reveal.
+    /// Blank text shown before the reveal. Optional: an empty placeholder
+    /// renders a generic `?` blank, and interactive reveals ignore it.
     pub placeholder: String,
     /// Whether revealing this prompt counts toward unlocking the node.
     #[serde(default = "default_true")]
@@ -550,13 +557,21 @@ pub fn validate_learning_domain(domain: &LearningDomain) -> Result<(), Vec<Conte
 }
 
 /// Validates authored glossary terms: non-empty fields and unique terms.
+///
+/// The same rules apply to the domain-level glossary and each node-level
+/// glossary. A node term may intentionally repeat a domain term; that is an
+/// override, not a duplicate, so uniqueness is only enforced within one list.
 fn validate_glossary(domain: &LearningDomain, errors: &mut Vec<ContentError>) {
+    validate_glossary_terms(&domain.glossary, "glossary", errors);
+}
+
+fn validate_glossary_terms(terms: &[GlossaryTerm], scope: &str, errors: &mut Vec<ContentError>) {
     let mut seen: HashSet<String> = HashSet::new();
-    for term in &domain.glossary {
+    for term in terms {
         if term.term.trim().is_empty() || term.definition.trim().is_empty() {
             errors.push(ContentError::new(
                 "learning_glossary_field_missing",
-                "glossary terms need a non-empty term and definition",
+                format!("{scope} terms need a non-empty term and definition"),
             ));
             continue;
         }
@@ -564,7 +579,7 @@ fn validate_glossary(domain: &LearningDomain, errors: &mut Vec<ContentError>) {
         if !seen.insert(key) {
             errors.push(ContentError::new(
                 "learning_glossary_duplicate_term",
-                format!("glossary term `{}` is defined more than once", term.term),
+                format!("{scope} term `{}` is defined more than once", term.term),
             ));
         }
     }
@@ -691,6 +706,11 @@ fn validate_node(node: &KnowledgeNode, node_ids: &HashSet<&str>, errors: &mut Ve
         }
     }
     validate_source_refs(&node.source_refs, errors);
+    validate_glossary_terms(
+        &node.glossary,
+        &format!("knowledge node {}", node.id),
+        errors,
+    );
 
     if node.prompts.is_empty() {
         errors.push(ContentError::new(
@@ -717,15 +737,18 @@ fn validate_node(node: &KnowledgeNode, node_ids: &HashSet<&str>, errors: &mut Ve
                 format!("knowledge node {} has a prompt with an empty id", node.id),
             ));
         }
-        if prompt.label.trim().is_empty() || prompt.placeholder.trim().is_empty() {
+        if prompt.label.trim().is_empty() {
             errors.push(ContentError::new(
                 "learning_prompt_field_missing",
                 format!(
-                    "knowledge node {} prompt {} needs a label and placeholder",
+                    "knowledge node {} prompt {} needs a label",
                     node.id, prompt.id
                 ),
             ));
         }
+        // `placeholder` is optional. Interactive reveals render their content
+        // immediately, and an ordinary reveal with no authored placeholder
+        // shows a generic `?` blank instead.
         if prompt.required {
             required += 1;
         }

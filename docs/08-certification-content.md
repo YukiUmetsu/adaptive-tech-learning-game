@@ -168,7 +168,9 @@ Each `LearningDomain` contains ordered `LearningModule`s of `KnowledgeNode`s.
 A node carries `concept_ids` (the bridge to quiz evidence), authored
 `prerequisite_node_ids` and `map_position`, and progressive `prompts` whose
 `reveal` is one of `text`, `sequence`, `bullets`, `keywords`, `comparison`,
-`table`, or `code_file`.
+`table`, or `code_file`. A prompt's `placeholder` is optional: an ordinary
+reveal with an empty placeholder shows a generic `?` blank, and an interactive
+reveal simply omits the context line.
 
 `table` is a real table with typed column ids and one row per record; every row
 must fill every column. `code_file` is a read-only, syntax-highlighted file with
@@ -179,11 +181,15 @@ never editable or executed. See `crates/content/src/learning.rs` for the
 authoritative schema and validation.
 
 A `LearningDomain` may carry a `glossary`: a list of `{ "term", "definition" }`
-entries. The app highlights each term where it appears in learner-facing
+entries. A `KnowledgeNode` may also carry its own `glossary` for that page. When
+a card renders, the node glossary is merged with the domain glossary and a node
+term wins over a domain term with the same text, so a page can refine or
+override a shared definition while keeping domain-wide terms available
+everywhere. The app highlights each term where it appears in learner-facing
 learning text (case-insensitive, whole words, and never inside a `code` span)
 and reveals the definition when the learner activates it. Terms and definitions
-must be non-empty and unique. The glossary is explanation only: it never affects
-discovery progress, scoring, or rewards.
+must be non-empty and unique within one glossary. The glossary is explanation
+only: it never affects discovery progress, scoring, or rewards.
 
 A `table` may carry optional `progressive_reveal` to reveal discovery one row,
 one column, or one cell at a time. Its `initially_visible` lists combine: a cell

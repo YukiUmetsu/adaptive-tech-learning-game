@@ -81,3 +81,80 @@ fn empty_glossary_fields_are_rejected() {
             .any(|error| error.code == "learning_glossary_field_missing")
     );
 }
+
+#[test]
+fn node_glossary_parses_and_validates() {
+    let json = learning_domain_json("aws-soa-c03", "domain-1");
+    let mut value: Value = serde_json::from_str(&json).expect("valid json");
+    value["modules"][0]["nodes"][0]["glossary"] = serde_json::json!([
+        { "term": "stateful firewall", "definition": "Remembers connection state." }
+    ]);
+
+    let domain: LearningDomain = serde_json::from_value(value).expect("parses");
+    validate_learning_domain(&domain).expect("node glossary is valid");
+
+    let node = &domain.modules[0].nodes[0];
+    assert_eq!(node.glossary.len(), 1);
+    assert_eq!(node.glossary[0].term, "stateful firewall");
+}
+
+#[test]
+fn node_glossary_may_override_a_domain_term() {
+    let json = learning_domain_json("aws-soa-c03", "domain-1");
+    let mut value: Value = serde_json::from_str(&json).expect("valid json");
+    // Reuse the domain's own first term text on a node: that is an override,
+    // not a duplicate, so it must validate.
+    let term = value["glossary"][0].clone();
+    value["modules"][0]["nodes"][0]["glossary"] = Value::Array(vec![term]);
+
+    let domain: LearningDomain = serde_json::from_value(value).expect("parses");
+    validate_learning_domain(&domain).expect("node override is allowed");
+}
+
+#[test]
+fn duplicate_node_glossary_terms_are_rejected() {
+    let json = learning_domain_json("aws-soa-c03", "domain-1");
+    let mut value: Value = serde_json::from_str(&json).expect("valid json");
+    value["modules"][0]["nodes"][0]["glossary"] = serde_json::json!([
+        { "term": "warm standby", "definition": "Reduced environment." },
+        { "term": "Warm Standby", "definition": "Duplicate, different case." }
+    ]);
+
+    let domain: LearningDomain = serde_json::from_value(value).expect("parses");
+    let errors = validate_learning_domain(&domain).expect_err("duplicate node term must fail");
+
+    assert!(
+        errors
+            .iter()
+            .any(|error| error.code == "learning_glossary_duplicate_term")
+    );
+}
+
+#[test]
+fn empty_node_glossary_fields_are_rejected() {
+    let json = learning_domain_json("aws-soa-c03", "domain-1");
+    let mut value: Value = serde_json::from_str(&json).expect("valid json");
+    value["modules"][0]["nodes"][0]["glossary"] =
+        serde_json::json!([{ "term": "pilot light", "definition": "   " }]);
+
+    let domain: LearningDomain = serde_json::from_value(value).expect("parses");
+    let errors = validate_learning_domain(&domain).expect_err("empty node field must fail");
+
+    assert!(
+        errors
+            .iter()
+            .any(|error| error.code == "learning_glossary_field_missing")
+    );
+}
+
+#[test]
+fn nodes_without_a_glossary_stay_valid() {
+    let json = learning_domain_json("aws-soa-c03", "domain-1");
+    let domain: LearningDomain = serde_json::from_str(&json).expect("parses");
+
+    assert!(
+        domain.nodes().all(|node| node.glossary.is_empty()),
+        "the legacy shape omits node glossaries"
+    );
+    validate_learning_domain(&domain).expect("legacy domain is valid");
+}

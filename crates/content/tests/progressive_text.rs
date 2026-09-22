@@ -294,6 +294,37 @@ fn rejects_overlapping_occurrences_of_repeated_text() {
 }
 
 #[test]
+fn accepts_an_empty_placeholder() {
+    let mut value = learning_value();
+    // Progressive reveals render their sentence immediately, so the optional
+    // placeholder may be omitted entirely.
+    set_reveal(&mut value, security_groups_reveal());
+    value["modules"][0]["nodes"][0]["prompts"][0]["placeholder"] = Value::from("");
+    assert!(
+        validate_value(&value).is_ok(),
+        "{:?}",
+        validate_value(&value)
+    );
+
+    // A plain prose reveal may also omit it; the UI shows a generic `?` blank.
+    let mut value = learning_value();
+    set_reveal(
+        &mut value,
+        json!({ "type": "text", "text": "Records API activity." }),
+    );
+    value["modules"][0]["nodes"][0]["prompts"][0]["placeholder"] = Value::from("");
+    assert!(validate_value(&value).is_ok());
+}
+
+#[test]
+fn still_rejects_an_empty_label() {
+    let mut value = learning_value();
+    value["modules"][0]["nodes"][0]["prompts"][0]["label"] = Value::from("   ");
+
+    expect_error(&value, "learning_prompt_field_missing");
+}
+
+#[test]
 fn old_text_reveal_json_still_parses_and_serializes_unchanged() {
     let reveal = reveal_from(json!({ "type": "text", "text": "Records API activity." }));
     let LearningReveal::Text {

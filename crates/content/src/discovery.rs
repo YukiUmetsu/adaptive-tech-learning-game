@@ -305,6 +305,7 @@ mod tests {
             prerequisite_node_ids: Vec::new(),
             map_position: MapPosition { x: 0.0, y: 0.0 },
             prompts,
+            glossary: Vec::new(),
             source_refs: Vec::new(),
         }
     }

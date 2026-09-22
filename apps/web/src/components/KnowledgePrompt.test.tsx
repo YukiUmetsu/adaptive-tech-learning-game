@@ -122,6 +122,52 @@ describe("KnowledgePrompt", () => {
     );
   });
 
+  it("shows a generic ? blank when the placeholder is empty", () => {
+    const { container } = render(
+      <KnowledgePrompt
+        prompt={{
+          id: "what",
+          kind: "what",
+          label: "❓ WHAT?",
+          placeholder: "",
+          required: true,
+          reveal: { type: "text", text: "Records AWS API activity." },
+        }}
+        revealed={false}
+        onReveal={() => {}}
+      />,
+    );
+
+    const blank = container.querySelector(".knowledge-prompt-blank");
+    expect(blank).not.toBeNull();
+    expect(blank).toHaveTextContent("?");
+  });
+
+  it("renders a placeholdered progressive reveal without a stray blank marker", () => {
+    const { container } = render(
+      <KnowledgePrompt
+        prompt={{
+          id: "model",
+          kind: "mental_model",
+          label: "🧠 MENTAL MODEL",
+          placeholder: "",
+          required: true,
+          reveal: progressiveTextReveal,
+        }}
+        revealed={false}
+        revealedElementIds={[]}
+        onReveal={() => {}}
+        onRevealElement={() => {}}
+      />,
+    );
+
+    // Progressive text shows its sentence immediately; the optional
+    // placeholder is simply omitted rather than replaced with a `?`.
+    expect(container.querySelector(".progressive-text")).not.toBeNull();
+    expect(container.querySelector(".knowledge-prompt-blank")).toBeNull();
+    expect(container.querySelector(".knowledge-prompt-context")).toBeNull();
+  });
+
   it("renders a code_file immediately and keeps explanations hidden", () => {
     const { container } = render(
       <KnowledgePrompt

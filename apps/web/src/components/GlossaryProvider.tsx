@@ -8,12 +8,13 @@ import {
 } from "./glossaryContext";
 
 /**
- * Provides domain glossary terms to learner-facing text in the subtree.
+ * Provides glossary terms to learner-facing text in the subtree.
  *
- * The registry ensures the "tap for explanation" affordance is shown only once
- * per term per mounted page, even when a term appears many times. A term that
- * names the page's own subject (`subject`) is skipped: the card is already about
- * it, so it is not a "special sub-term" needing an explanation.
+ * The card passes the node's page glossary merged with the domain glossary. The
+ * registry ensures the "tap for explanation" affordance is shown only once per
+ * term per mounted page, even when a term appears many times. A term that names
+ * the page's own subject (`subject`) is skipped: the card is already about it,
+ * so it is not a "special sub-term" needing an explanation.
  */
 export default function GlossaryProvider({
   terms,
