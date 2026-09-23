@@ -55,7 +55,7 @@ pub async fn issue_mission(
         (status = 401, description = "Authentication required", body = ErrorResponse),
         (status = 403, description = "Mission belongs to another account", body = ErrorResponse),
         (status = 404, description = "Unknown mission", body = ErrorResponse),
-        (status = 409, description = "Mission completed or content version mismatch", body = ErrorResponse)
+        (status = 409, description = "Mission completed, content version mismatch, or stale mission content (`mission_content_stale`)", body = ErrorResponse)
     ),
     security(("bearerAuth" = []))
 )]

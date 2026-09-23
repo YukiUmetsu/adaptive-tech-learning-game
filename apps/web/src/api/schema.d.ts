@@ -3437,7 +3437,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Mission completed or content version mismatch */
+            /** @description Mission completed, content version mismatch, or stale mission content (`mission_content_stale`) */
             409: {
                 headers: {
                     [name: string]: unknown;

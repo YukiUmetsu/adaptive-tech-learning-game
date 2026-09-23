@@ -20,6 +20,8 @@ import {
 } from "../state/auxiliaryQueue";
 import {
   appendPendingEvent,
+  clearMission,
+  discardPendingEventsForMissions,
   getDeviceId,
   loadMission,
   loadPendingEvents,
@@ -28,6 +30,7 @@ import {
   saveMission,
   type AttemptRecord,
   type MissionProgress,
+  type PendingEvent,
 } from "../state/persistence";
 import { previewBits, reconcileBits } from "../state/wallet";
 import { useQuestionTimer } from "./useQuestionTimer";
@@ -35,9 +38,20 @@ import { useQuestionTimer } from "./useQuestionTimer";
 export type RunnerPhase =
   | "loading"
   | "missing"
+  | "stale"
   | "answering"
   | "feedback"
   | "summary";
+
+/**
+ * Server error code for a mission whose questions no longer exist because the
+ * certification content changed after the mission was issued.
+ */
+const MISSION_CONTENT_STALE = "mission_content_stale";
+
+/** Learner-facing explanation for a mission invalidated by a content update. */
+const STALE_MISSION_MESSAGE =
+  "This study mission was built from an older content version and can no longer be scored. Start a new mission to continue.";
 
 export interface SyncState {
   status: "idle" | "syncing" | "synced" | "pending" | "error";
@@ -256,6 +270,22 @@ export function useMissionRunner(missionId: string): MissionRunner {
       );
       reconcileAttempts(acceptedResults);
       markEventsSynced(acceptedResults.map((entry) => entry.event_id));
+
+      // A mission issued from content that has since changed can never be
+      // accepted. Drop its queued events and the persisted mission so the
+      // outbox does not retry forever and the learner can start fresh.
+      const staleMissions = staleMissionIds(result.data.results, pending);
+      if (staleMissions.size > 0) {
+        discardPendingEventsForMissions(staleMissions);
+        const stored = loadMission();
+        if (stored && staleMissions.has(stored.mission.id)) {
+          clearMission();
+          setPhase("stale");
+        }
+      }
+
+      // The rest of the batch is independent, so it is still reconciled even
+      // when the mission itself was stale.
       if (result.data.discovery?.accepted) {
         markDiscoverySent(discovery);
       }
@@ -265,8 +295,14 @@ export function useMissionRunner(missionId: string): MissionRunner {
       reconcileBits(result.data.bits_balance);
       const remaining = pendingEventCount();
       setSyncState({
-        status: remaining === 0 ? "synced" : "pending",
+        status:
+          staleMissions.size > 0
+            ? "error"
+            : remaining === 0
+              ? "synced"
+              : "pending",
         pending: remaining,
+        message: staleMissions.size > 0 ? STALE_MISSION_MESSAGE : undefined,
       });
     } catch (caught) {
       setSyncState({
@@ -447,6 +483,31 @@ export function useMissionRunner(missionId: string): MissionRunner {
     next,
     sync,
   };
+}
+
+/**
+ * Mission ids whose queued events the server permanently rejected because the
+ * mission was issued from content that has since changed.
+ *
+ * The sync result carries only the event id, so the mission id is recovered
+ * from the pending outbox the batch was built from.
+ */
+function staleMissionIds(
+  results: SyncEventResult[],
+  pending: PendingEvent[],
+): Set<string> {
+  const byEvent = new Map(pending.map((event) => [event.eventId, event]));
+  const stale = new Set<string>();
+  for (const result of results) {
+    if (result.accepted || result.error_code !== MISSION_CONTENT_STALE) {
+      continue;
+    }
+    const event = byEvent.get(result.event_id);
+    if (event) {
+      stale.add(event.missionInstanceId);
+    }
+  }
+  return stale;
 }
 
 /**

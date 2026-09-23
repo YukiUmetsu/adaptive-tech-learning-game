@@ -116,6 +116,33 @@ export function pendingEventCount(): number {
 }
 
 /**
+ * Removes every queued event that belongs to one of the given missions.
+ *
+ * Used when the server permanently rejects an event because the mission was
+ * issued from content that has since changed. Such events can never be
+ * accepted, so keeping them would retry forever.
+ */
+export function discardPendingEventsForMissions(
+  missionIds: Iterable<string>,
+): PendingEvent[] {
+  const discard = new Set(missionIds);
+  const remaining = loadPendingEvents().filter(
+    (event) => !discard.has(event.missionInstanceId),
+  );
+  writeJson(PENDING_KEY, remaining);
+  return remaining;
+}
+
+/** Clears the persisted active mission. */
+export function clearMission(): void {
+  try {
+    window.localStorage.removeItem(MISSION_KEY);
+  } catch {
+    // Storage unavailable; there is nothing to clear.
+  }
+}
+
+/**
  * Cached settled Bits balance, for instant display before the wallet loads.
  *
  * The server is authoritative; this is only a display cache that is reconciled

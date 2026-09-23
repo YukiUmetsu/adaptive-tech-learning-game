@@ -1071,10 +1071,20 @@ pub async fn start_daily_item(
     }
 
     // Resume an already-issued mission for this item instead of duplicating it.
+    // A mission issued from content that has since changed can reference
+    // questions that no longer exist; closing it here makes the code below issue
+    // a fresh mission from current content instead of resuming an unscoreable one.
     if let Some(existing) =
         db::missions::find_active_for_daily_item(&state.pool, user.id, mission_id, position).await?
     {
-        return Ok(mission_response(state, existing));
+        if mission_questions_resolve(state, &existing) {
+            return Ok(mission_response(state, existing));
+        }
+        tracing::warn!(
+            mission = %existing.id,
+            "replacing a daily-item mission whose content has changed"
+        );
+        db::missions::mark_completed(&state.pool, existing.id, user.id).await?;
     }
 
     let bundle = state
@@ -2633,6 +2643,24 @@ fn ensure_access(
     }
 }
 
+/// Stable error code reported when a mission references content that no longer
+/// exists because the certification content changed after it was issued.
+pub const MISSION_CONTENT_STALE: &str = "mission_content_stale";
+
+/// Whether every question a mission references still exists in current content.
+///
+/// Content updates rename or remove questions and bump the content version, so
+/// a mission issued from older content can outlive its own questions. Such a
+/// mission can never be scored and must be replaced rather than resumed.
+fn mission_questions_resolve(state: &AppState, mission: &MissionInstance) -> bool {
+    mission.question_ids.iter().all(|question_id| {
+        state
+            .content
+            .question(&mission.certification_version, question_id)
+            .is_some()
+    })
+}
+
 async fn apply_event(
     state: &AppState,
     user: Option<&AuthenticatedUser>,
@@ -2670,15 +2698,19 @@ async fn apply_event(
         return Err(SyncRejection::Rejected("bad_request".to_owned()));
     }
 
+    // A missing question means the mission was issued from older content. That
+    // is a recoverable per-event rejection, not a server failure: the client
+    // drops the stale mission and starts a new one.
     let question = state
         .content
         .question(&mission.certification_version, &event.question_id)
         .ok_or_else(|| {
-            SyncRejection::Fatal(anyhow::anyhow!(
-                "mission {} references unknown question {}",
-                mission.id,
-                event.question_id
-            ))
+            tracing::warn!(
+                mission = %mission.id,
+                question = %event.question_id,
+                "rejecting event for a mission whose content has changed"
+            );
+            SyncRejection::Rejected(MISSION_CONTENT_STALE.to_owned())
         })?;
 
     let submitted = to_submitted(event.answer)
@@ -2786,11 +2818,12 @@ fn resolve_question<'a>(
         .content
         .question(&mission.certification_version, question_id)
         .ok_or_else(|| {
-            ApiError::Internal(anyhow::anyhow!(
-                "mission {} references unknown question {}",
-                mission.id,
-                question_id
-            ))
+            tracing::warn!(
+                mission = %mission.id,
+                question = %question_id,
+                "mission references content that has changed"
+            );
+            ApiError::MissionStale
         })?;
 
     Ok(question)

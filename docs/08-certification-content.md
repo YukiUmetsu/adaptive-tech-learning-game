@@ -635,6 +635,20 @@ deprecated concepts
 
 Run a manual/automated diff when a vendor changes its official blueprint. Never silently remap historical mastery to a new exam version.
 
+A content revision also invalidates in-flight missions: question ids may be
+renamed or removed and the content version is bumped, so a persisted mission can
+reference questions that no longer exist. That is recoverable, never a server
+error:
+
+- an answer for a stale mission returns `409` with code `mission_content_stale`;
+- `/v1/sync` rejects only the stale event (its `error_code` is
+  `mission_content_stale`) and keeps the rest of the batch;
+- starting a Daily Mission item replaces a stale mission with one built from
+  current content instead of resuming the unscoreable one.
+
+The client drops the stale mission and its queued events, then starts a new
+mission. Historical mastery is never remapped onto the changed content.
+
 ## Trademark and licensing
 
 Before launch:
