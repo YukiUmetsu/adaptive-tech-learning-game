@@ -225,6 +225,9 @@ describe("buildCatalog", () => {
     );
     expect(entry?.examCode).toBe("SY0-701");
     expect(entry?.wip).toBe(false);
+    // The "Security" category label supplies no vendor, so the compact label
+    // keeps "CompTIA" instead of shortening to "Security+".
+    expect(entry?.shortName).toBe("CompTIA Security+");
 
     const sections = buildCatalog(CATALOG, [
       certification("comptia-security-plus", "CompTIA Security+"),

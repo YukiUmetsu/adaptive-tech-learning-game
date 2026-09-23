@@ -178,6 +178,35 @@ describe("LearningTracksNav", () => {
     expect(screen.queryByText("PY-DATA-STACK")).toBeNull();
   });
 
+  it("keeps the CompTIA vendor in the dropdown label", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        jsonResponse({
+          certifications: [
+            certification(
+              "comptia-security-plus",
+              "CompTIA Security+",
+              "SY0-701",
+            ),
+          ],
+        }),
+      ),
+    );
+
+    renderNav();
+    const trigger = await screen.findByRole("link", { name: /Learning Tracks/ });
+    hover(trigger.parentElement as Element);
+
+    const menu = await screen.findByLabelText("Learning tracks");
+    const item = within(menu).getByRole("link", {
+      name: /CompTIA Security\+/,
+    });
+    expect(item).toHaveAttribute("href", "/tracks/comptia-security-plus");
+    // The exam code tag rides on the same full-width row.
+    expect(within(item).getByText("SY0-701")).toBeInTheDocument();
+  });
+
   it("does not repeat the category vendor in AWS item names", async () => {
     renderNav();
     const trigger = await screen.findByRole("link", { name: /Learning Tracks/ });

@@ -130,14 +130,17 @@ a:hover {
   backdrop-filter: blur(10px);
 }
 
-.app-header nav {
+/* The primary nav only. The Learning Tracks dropdown panel is itself a <nav>,
+   so a bare `.app-header nav` would also turn it into a flex row and
+   shrink-wrap each track instead of filling the dropdown. */
+.app-header > nav {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.35rem;
 }
 
-.app-header nav a:not(.auth-sign-in):not(.account-avatar):not(.settings-link) {
+.app-header nav a:not(.auth-sign-in):not(.account-avatar):not(.settings-link):not(.nav-tracks-link) {
   padding: 0.35rem 0.7rem;
   border-radius: 999px;
   color: var(--text-muted);
@@ -145,12 +148,12 @@ a:hover {
   font-weight: 500;
 }
 
-.app-header nav a:not(.auth-sign-in):not(.account-avatar):not(.settings-link):hover {
+.app-header nav a:not(.auth-sign-in):not(.account-avatar):not(.settings-link):not(.nav-tracks-link):hover {
   color: var(--text);
   text-decoration: none;
 }
 
-.app-header nav a:not(.auth-sign-in):not(.account-avatar):not(.settings-link).active {
+.app-header nav a:not(.auth-sign-in):not(.account-avatar):not(.settings-link):not(.nav-tracks-link).active {
   color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border);
@@ -216,11 +219,13 @@ a:hover {
   list-style: none;
 }
 
-/* Higher specificity than the generic header link pills so dropdown rows read
-   as a menu list rather than a row of chips. */
+/* Dropdown rows read as a full-width menu list, with the exam code pinned to
+   the right edge. The generic header link rule excludes `.nav-tracks-link`, so
+   these menu styles are the only ones that apply. */
 .app-header nav .nav-tracks-panel .nav-tracks-link {
   display: flex;
-  align-items: baseline;
+  width: 100%;
+  align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.45rem 0.6rem;
@@ -244,12 +249,17 @@ a:hover {
 }
 
 .nav-tracks-name {
+  flex: 1 1 auto;
+  min-width: 0;
   line-height: 1.3;
 }
 
-/* Exam-code tag, shown only for certification tracks. */
+/* Exam-code tag, shown only for certification tracks. Pinned to the right edge
+   of the full-width row. */
 .nav-tracks-meta {
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  margin-left: auto;
+  text-align: right;
   color: var(--text-faint);
   font-size: 0.72rem;
   font-weight: 600;
@@ -2791,7 +2801,7 @@ button.primary:hover:not(:disabled) {
     padding: 0.75rem 1rem;
   }
 
-  .app-header nav {
+  .app-header > nav {
     width: 100%;
     justify-content: flex-end;
   }
