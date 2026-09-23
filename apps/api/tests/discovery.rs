@@ -57,6 +57,14 @@ fn full_discovery(version: &str, domain_id: &str) -> Value {
                         }
                     }
                 }
+                LearningReveal::Text {
+                    progressive_reveal: Some(progressive),
+                    ..
+                } => {
+                    for span in &progressive.spans {
+                        ids.push(format!("span:{}", span.id));
+                    }
+                }
                 _ => {}
             }
             if !ids.is_empty() {

@@ -140,7 +140,7 @@ fn answer_body(
 }
 
 #[tokio::test]
-async fn mission_contains_questions_without_answer_keys() {
+async fn mission_ships_local_scoring_metadata() {
     let Some(pool) = common::database_pool().await else {
         return;
     };
@@ -151,10 +151,13 @@ async fn mission_contains_questions_without_answer_keys() {
     let expected = registry.questions_for_task("soa-c03", "1.1");
     let questions = mission["questions"].as_array().expect("questions array");
     assert_eq!(questions.len(), expected.len());
+    // Ordinary study missions ship canonical scoring data so the browser can
+    // score an attempt locally; the server still re-scores on sync, so this is
+    // not an answer key that could settle rewards.
     for question in questions {
         assert!(
-            question.get("canonical_answer").is_none(),
-            "answer key must not be sent with a mission"
+            question.get("canonical_answer").is_some(),
+            "ordinary study missions ship local scoring metadata"
         );
     }
 
@@ -737,7 +740,7 @@ async fn issue_task(
 }
 
 #[tokio::test]
-async fn demo_mission_hides_answers_and_scores_every_new_interaction() {
+async fn demo_mission_ships_scoring_metadata_and_scores_every_new_interaction() {
     let Some(pool) = common::database_pool().await else {
         return;
     };
@@ -747,10 +750,12 @@ async fn demo_mission_hides_answers_and_scores_every_new_interaction() {
     let mission = issue_task(&app, device, "aws-soa-c03-demo", "soa-c03-demo", "D2.1").await;
     let mission_id = mission["id"].as_str().expect("mission id");
 
+    // Demo missions are ordinary study missions: they ship local scoring
+    // metadata, and the server re-scores the raw answer on sync.
     for question in mission["questions"].as_array().expect("questions array") {
         assert!(
-            question.get("canonical_answer").is_none(),
-            "answer key must not be sent with a demo mission"
+            question.get("canonical_answer").is_some(),
+            "demo missions ship local scoring metadata"
         );
     }
 
@@ -1111,7 +1116,7 @@ async fn typed_fill_blank_scores_through_the_api() {
 }
 
 #[tokio::test]
-async fn reconstruction_payloads_hide_placements_until_scoring() {
+async fn reconstruction_interaction_does_not_expose_canonical_placements() {
     let Some(pool) = common::database_pool().await else {
         return;
     };
@@ -1127,13 +1132,15 @@ async fn reconstruction_payloads_hide_placements_until_scoring() {
             continue;
         }
         seen_reconstruction = true;
+        // The interaction never exposes canonical placements; the scoring
+        // metadata travels separately and is re-scored server-side on sync.
         assert!(
             question["interaction"].get("placements").is_none(),
             "the interaction must not expose canonical placements"
         );
         assert!(
-            question.get("canonical_answer").is_none(),
-            "the answer key must not be sent with a mission"
+            question.get("canonical_answer").is_some(),
+            "ordinary study missions ship local scoring metadata"
         );
     }
     assert!(
@@ -1254,7 +1261,10 @@ async fn quick_quiz_selects_a_short_cross_domain_set() {
     let mut domains: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut ids: std::collections::HashSet<&str> = std::collections::HashSet::new();
     for question in questions {
-        assert!(question.get("canonical_answer").is_none());
+        assert!(
+            question.get("canonical_answer").is_some(),
+            "ordinary study missions ship canonical scoring data for local scoring"
+        );
         let id = question["id"].as_str().expect("id");
         ids.insert(id);
         let resolved = registry.question("soa-c03", id).expect("question");
