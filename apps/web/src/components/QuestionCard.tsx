@@ -8,6 +8,7 @@ import type {
   QuestionView,
   ReconstructionAnswerPayload,
 } from "../api/types";
+import { firstSourceNodeId } from "../lib/nodeConnection";
 import { shuffledOrder } from "../lib/shuffle";
 import { typedBlankStatuses } from "../lib/typedBlank";
 import type { PythonExecutionResult } from "../pythonExecution";
@@ -87,6 +88,14 @@ export default function QuestionCard({
   const typedStatuses =
     question.interaction.type === "typed_fill_blank"
       ? typedBlankStatuses(question.interaction.slots, slots, feedback)
+      : undefined;
+
+  // The narrow-screen connection builder can be seeded with a starting source
+  // from the question. Only one node id crosses into the interaction; the
+  // desktop graph ignores it, and no edge or target is exposed.
+  const connectionStartNodeId =
+    question.interaction.type === "node_connection"
+      ? firstSourceNodeId(canonicalAnswer)
       : undefined;
 
   const canSubmit = (() => {
@@ -236,6 +245,7 @@ export default function QuestionCard({
           value={edges}
           disabled={disabled}
           onChange={setEdges}
+          startNodeId={connectionStartNodeId}
         />
       ) : null}
 

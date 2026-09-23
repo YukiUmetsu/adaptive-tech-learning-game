@@ -1,58 +1,56 @@
-import {
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import type { GraphNode } from "../api/types";
-import { stripInlineCode } from "../lib/inlineCode";
-import InlineText from "./InlineText";
-import {
-  boundaryOffset as boundaryOffsetFor,
-  clampNodeCenter,
-  edgeGeometry as lineGeometry,
-  type NodeSize,
-} from "../lib/connection";
+import { useMediaQuery } from "../hooks/useMediaQuery";
+import DesktopNodeConnection from "./DesktopNodeConnection";
+import MobileNodeConnection from "./MobileNodeConnection";
 
 interface NodeConnectionInteractionProps {
   nodes: GraphNode[];
   value: string[][];
   disabled?: boolean;
   onChange: (next: string[][]) => void;
+  /**
+   * Optional mobile-only starting source supplied by the question. Desktop
+   * ignores it; the wide graph stays unchanged.
+   */
+  startNodeId?: string;
 }
 
-const SNAP_PX = 64;
+/**
+ * Width at or below which the connection puzzle uses the tap-based mobile
+ * builder instead of the positioned node graph.
+ */
+export const CONNECTION_MOBILE_MAX_WIDTH = 768;
+
+/** Media-query fallback used before the panel has been measured. */
+export const CONNECTION_MOBILE_QUERY = `(max-width: ${
+  CONNECTION_MOBILE_MAX_WIDTH - 1
+}px)`;
 
 /**
  * Connect nodes with directed relationships.
  *
- * Primary flow is tactile: pointer down stretches a preview line and a nearby
- * target snaps. The accessible flow is select source, then select target.
+ * The answer (`string[][]` of `[from, to]`) and all scoring/submission behavior
+ * are shared. Only the presentation is responsive: a wide panel keeps the
+ * positioned graph with connection lines, while a narrow panel uses a
+ * one-decision-at-a-time tap builder with no SVG lines.
+ *
+ * The layout follows the measured panel width rather than device identity,
+ * because the question panel can be narrow inside a wider window. It falls back
+ * to a media query before the first measurement (SSR, jsdom) and when the width
+ * is unavailable, so the desktop graph remains the safe default.
  */
 export default function NodeConnectionInteraction({
   nodes,
   value,
   disabled = false,
   onChange,
+  startNodeId,
 }: NodeConnectionInteractionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const nodeElements = useRef(new Map<string, HTMLButtonElement>());
-  const [size, setSize] = useState({ width: 0, height: 0 });
-  const [nodeSizes, setNodeSizes] = useState<Record<string, NodeSize>>({});
-  const [selected, setSelected] = useState<string | null>(null);
-  const [dragFrom, setDragFrom] = useState<string | null>(null);
-  const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
-  const [hover, setHover] = useState<string | null>(null);
-  const suppressClick = useRef(false);
-  const moved = useRef(false);
-  const dragStart = useRef<{ x: number; y: number } | null>(null);
-
-  const nodeById = useMemo(
-    () => new Map(nodes.map((node) => [node.id, node])),
-    [nodes],
-  );
+  const [containerWidth, setContainerWidth] = useState(0);
+  const narrowByMedia = useMediaQuery(CONNECTION_MOBILE_QUERY);
 
   useLayoutEffect(() => {
     const element = containerRef.current;
@@ -60,8 +58,7 @@ export default function NodeConnectionInteraction({
       return;
     }
 
-    const update = () =>
-      setSize({ width: element.clientWidth, height: element.clientHeight });
+    const update = () => setContainerWidth(element.clientWidth);
     update();
 
     if (typeof ResizeObserver === "undefined") {
@@ -74,331 +71,31 @@ export default function NodeConnectionInteraction({
     return () => observer.disconnect();
   }, []);
 
-  // Measure rendered node sizes so edges can stop at the node boundary instead
-  // of hiding the arrowhead underneath a wide pill.
-  useLayoutEffect(() => {
-    const measured: Record<string, NodeSize> = {};
-    nodeElements.current.forEach((element, id) => {
-      measured[id] = {
-        width: element.offsetWidth,
-        height: element.offsetHeight,
-      };
-    });
-
-    setNodeSizes((current) => {
-      const nextIds = Object.keys(measured);
-      const currentIds = Object.keys(current);
-      const unchanged =
-        nextIds.length === currentIds.length &&
-        nextIds.every(
-          (id) =>
-            current[id]?.width === measured[id].width &&
-            current[id]?.height === measured[id].height,
-        );
-      return unchanged ? current : measured;
-    });
-  }, [nodes, size.width, size.height]);
-
-  // Nodes are centered on their authored point and clamped so their measured
-  // pill stays inside the canvas. This is very visible on phones, where labels
-  // are wide relative to the canvas and edge nodes were being clipped.
-  const positionOf = (nodeId: string) => {
-    const node = nodeById.get(nodeId);
-    if (!node) {
-      return null;
-    }
-    const measured = nodeSizes[nodeId];
-    const halfWidth = (measured?.width ?? 0) / 2;
-    const halfHeight = (measured?.height ?? 0) / 2;
-    return {
-      x: clampNodeCenter(node.x * size.width, halfWidth, size.width),
-      y: clampNodeCenter(node.y * size.height, halfHeight, size.height),
-    };
-  };
-
-  // Before the canvas has been measured, percentages keep the first paint in the
-  // authored layout; once measured, the clamped pixel position is used so nodes
-  // and their edges share one coordinate space.
-  const nodeStyle = (node: GraphNode) => {
-    if (size.width <= 0 || size.height <= 0) {
-      return { left: `${node.x * 100}%`, top: `${node.y * 100}%` };
-    }
-    const position = positionOf(node.id) ?? {
-      x: node.x * size.width,
-      y: node.y * size.height,
-    };
-    return { left: `${position.x}px`, top: `${position.y}px` };
-  };
-
-  const boundaryOffset = (nodeId: string, ux: number, uy: number) =>
-    boundaryOffsetFor(nodeSizes[nodeId], ux, uy);
-
-  const hasEdge = (from: string, to: string) =>
-    value.some((edge) => edge[0] === from && edge[1] === to);
-
-  const toggleEdge = (from: string, to: string) => {
-    if (from === to) {
-      return;
-    }
-    if (hasEdge(from, to)) {
-      onChange(value.filter((edge) => !(edge[0] === from && edge[1] === to)));
-    } else {
-      onChange([...value, [from, to]]);
-    }
-  };
-
-  const relativePoint = (
-    event: ReactPointerEvent,
-  ): { x: number; y: number } | null => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) {
-      return null;
-    }
-    return {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-    };
-  };
-
-  const nearestNode = (point: { x: number; y: number }, exclude: string) => {
-    let best: string | null = null;
-    let bestDistance = SNAP_PX;
-    for (const node of nodes) {
-      if (node.id === exclude) {
-        continue;
-      }
-      const position = positionOf(node.id);
-      if (!position) {
-        continue;
-      }
-      const distance = Math.hypot(position.x - point.x, position.y - point.y);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        best = node.id;
-      }
-    }
-    return best;
-  };
-
-  const edgeGeometry = (from: string, to: string) => {
-    const start = positionOf(from);
-    const end = positionOf(to);
-    if (!start || !end) {
-      return null;
-    }
-    return lineGeometry(start, end, nodeSizes[from], nodeSizes[to]);
-  };
-
-  const previewGeometry = (from: string, point: { x: number; y: number }) => {
-    const start = positionOf(from);
-    if (!start) {
-      return null;
-    }
-    const dx = point.x - start.x;
-    const dy = point.y - start.y;
-    const distance = Math.hypot(dx, dy) || 1;
-    const ux = dx / distance;
-    const uy = dy / distance;
-    const offset = Math.min(boundaryOffset(from, ux, uy), distance / 2);
-    return {
-      x1: start.x + ux * offset,
-      y1: start.y + uy * offset,
-      x2: point.x,
-      y2: point.y,
-    };
-  };
+  // A measured width always wins; `0` means "not measured yet", so use the
+  // media query as a best-effort fallback rather than dropping to mobile.
+  const isMobile =
+    containerWidth > 0
+      ? containerWidth < CONNECTION_MOBILE_MAX_WIDTH
+      : narrowByMedia;
 
   return (
-    <div className="connection">
-      <p className="muted">
-        Select a source node, then a target node — or drag from one node to
-        another. Connections are directed (source → target).
-      </p>
-
-      <div className="graph" ref={containerRef}>
-        <svg
-          className="graph-edges"
-          width={size.width}
-          height={size.height}
-          aria-hidden="true"
-        >
-          <defs>
-            <marker
-              id="connection-arrow"
-              markerWidth="14"
-              markerHeight="14"
-              refX="11"
-              refY="7"
-              orient="auto"
-              markerUnits="userSpaceOnUse"
-            >
-              <path d="M0,0 L14,7 L0,14 z" className="arrow-head" />
-            </marker>
-          </defs>
-
-          {value.map(([from, to]) => {
-            const geometry = edgeGeometry(from, to);
-            if (!geometry) {
-              return null;
-            }
-            return (
-              <g key={`${from}->${to}`}>
-                <line
-                  {...geometry}
-                  className="edge-hit"
-                  onClick={() => {
-                    if (!disabled) {
-                      toggleEdge(from, to);
-                    }
-                  }}
-                />
-                <line
-                  {...geometry}
-                  className="edge-line"
-                  markerEnd="url(#connection-arrow)"
-                />
-              </g>
-            );
-          })}
-
-          {dragFrom && pointer
-            ? (() => {
-                const geometry = previewGeometry(dragFrom, pointer);
-                return geometry ? (
-                  <line
-                    {...geometry}
-                    className="edge-preview"
-                    markerEnd="url(#connection-arrow)"
-                  />
-                ) : null;
-              })()
-            : null}
-        </svg>
-
-        {nodes.map((node) => (
-          <button
-            key={node.id}
-            type="button"
-            ref={(element) => {
-              if (element) {
-                nodeElements.current.set(node.id, element);
-              } else {
-                nodeElements.current.delete(node.id);
-              }
-            }}
-            className={[
-              "graph-node",
-              selected === node.id ? "selected" : "",
-              hover === node.id ? "snap" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            style={nodeStyle(node)}
-            aria-pressed={selected === node.id}
-            disabled={disabled}
-            draggable={false}
-            onDragStart={(event) => event.preventDefault()}
-            onClick={() => {
-              if (suppressClick.current) {
-                suppressClick.current = false;
-                return;
-              }
-              if (selected === null) {
-                setSelected(node.id);
-              } else if (selected === node.id) {
-                setSelected(null);
-              } else {
-                toggleEdge(selected, node.id);
-                setSelected(null);
-              }
-            }}
-            onPointerDown={(event) => {
-              if (disabled) {
-                return;
-              }
-              if (typeof event.currentTarget.setPointerCapture === "function") {
-                event.currentTarget.setPointerCapture(event.pointerId);
-              }
-              suppressClick.current = false;
-              setDragFrom(node.id);
-              moved.current = false;
-              dragStart.current = { x: event.clientX, y: event.clientY };
-            }}
-            onPointerMove={(event) => {
-              if (!dragFrom) {
-                return;
-              }
-              if (
-                dragStart.current &&
-                Math.hypot(
-                  event.clientX - dragStart.current.x,
-                  event.clientY - dragStart.current.y,
-                ) > 6
-              ) {
-                moved.current = true;
-              }
-              const point = relativePoint(event);
-              if (point) {
-                setPointer(point);
-                setHover(nearestNode(point, dragFrom));
-              }
-            }}
-            onPointerUp={() => {
-              if (!dragFrom) {
-                return;
-              }
-              if (moved.current && hover && hover !== dragFrom) {
-                toggleEdge(dragFrom, hover);
-                suppressClick.current = true;
-              }
-              setDragFrom(null);
-              setPointer(null);
-              setHover(null);
-              dragStart.current = null;
-            }}
-            onPointerCancel={() => {
-              setDragFrom(null);
-              setPointer(null);
-              setHover(null);
-              dragStart.current = null;
-            }}
-          >
-            <InlineText text={node.label} />
-          </button>
-        ))}
-      </div>
-
-      <ul className="connection-list" aria-label="Connections">
-        {value.length === 0 ? (
-          <li className="muted">No connections yet.</li>
-        ) : (
-          value.map(([from, to]) => (
-            <li key={`${from}->${to}`}>
-              <span>
-                <span className="edge-chip">
-                  <InlineText text={nodeById.get(from)?.label ?? from} />
-                </span>
-                <span aria-hidden="true" className="edge-arrow">
-                  →
-                </span>
-                <span className="edge-chip">
-                  <InlineText text={nodeById.get(to)?.label ?? to} />
-                </span>
-              </span>
-              <button
-                type="button"
-                disabled={disabled}
-                aria-label={`Remove connection ${stripInlineCode(
-                  nodeById.get(from)?.label ?? from,
-                )} to ${stripInlineCode(nodeById.get(to)?.label ?? to)}`}
-                onClick={() => toggleEdge(from, to)}
-              >
-                Remove
-              </button>
-            </li>
-          ))
-        )}
-      </ul>
+    <div className="connection" ref={containerRef}>
+      {isMobile ? (
+        <MobileNodeConnection
+          nodes={nodes}
+          value={value}
+          disabled={disabled}
+          onChange={onChange}
+          startNodeId={startNodeId}
+        />
+      ) : (
+        <DesktopNodeConnection
+          nodes={nodes}
+          value={value}
+          disabled={disabled}
+          onChange={onChange}
+        />
+      )}
     </div>
   );
 }

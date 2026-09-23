@@ -1,9 +1,12 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { FeedbackResponse, QuestionView } from "../api/types";
+import { restoreMatchMedia, setNarrowViewport } from "../test/matchMedia";
 import QuestionCard from "./QuestionCard";
+
+afterEach(restoreMatchMedia);
 
 function base(overrides: Partial<QuestionView>): QuestionView {
   return {
@@ -178,6 +181,46 @@ describe("QuestionCard", () => {
         edges: [],
       },
     });
+  });
+
+  it("submits the same edge payload from the mobile connection builder", async () => {
+    setNarrowViewport(true);
+    const onSubmit = vi.fn();
+    const question = base({
+      interaction_type: "node_connection",
+      assessment_mode: "relationship_recall",
+      interaction: {
+        type: "node_connection",
+        nodes: [
+          { id: "alarm", label: "CloudWatch alarm", x: 0.1, y: 0.2 },
+          { id: "sns", label: "SNS topic", x: 0.6, y: 0.2 },
+        ],
+      },
+    });
+
+    render(
+      <QuestionCard
+        question={question}
+        canonicalAnswer={{
+          type: "node_connection",
+          edges: [["alarm", "sns"]],
+        }}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    // The mobile builder is active...
+    expect(document.querySelector(".graph")).toBeNull();
+    // ...the question seeds the starting source...
+    expect(screen.getByLabelText("Selected source")).toHaveTextContent(
+      "CloudWatch alarm",
+    );
+    // ...and the learner only picks the destination.
+    await userEvent.click(screen.getByRole("button", { name: "SNS topic" }));
+    await submit();
+
+    // Same canonical `{ edges: [[from, to]] }` shape as desktop.
+    expect(onSubmit).toHaveBeenCalledWith({ edges: [["alarm", "sns"]] });
   });
 
   it("shuffles ordering items so the authored order is not pre-filled", () => {
