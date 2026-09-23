@@ -11,6 +11,8 @@ export interface StartMissionOptions {
   domainId?: string;
   /** Required for `task_practice`. */
   taskId?: string;
+  /** Required for `section_quiz`: the learning module (section) to quiz. */
+  moduleId?: string;
   /** Anchor question for `recommended_practice`. Server-validated. */
   questionId?: string;
   /** Recommendation that produced this mission, when recommended. */
@@ -34,6 +36,7 @@ export async function startMission(
       mode: options.mode,
       domain_id: options.domainId ?? null,
       task_id: options.taskId ?? null,
+      module_id: options.moduleId ?? null,
       question_id: options.questionId ?? null,
       recommendation_id: options.recommendationId ?? null,
     },

@@ -25,6 +25,7 @@ struct MissionRow {
     issued_at: DateTime<Utc>,
     expires_at: DateTime<Utc>,
     completed_at: Option<DateTime<Utc>>,
+    module_id: Option<String>,
 }
 
 impl TryFrom<MissionRow> for MissionInstance {
@@ -49,6 +50,7 @@ impl TryFrom<MissionRow> for MissionInstance {
             issued_at: row.issued_at,
             expires_at: row.expires_at,
             completed_at: row.completed_at,
+            module_id: row.module_id,
         })
     }
 }
@@ -59,11 +61,11 @@ pub async fn insert(pool: &PgPool, mission: &MissionInstance) -> Result<MissionI
         "INSERT INTO mission_instances
             (id, user_id, device_id, certification_id, certification_version, content_version,
              mode, recommendation_id, daily_mission_id, daily_item_position, domain_id, task_id,
-             question_ids, status, issued_at, expires_at, completed_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+             question_ids, status, issued_at, expires_at, completed_at, module_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
          RETURNING id, user_id, device_id, certification_id, certification_version, content_version,
                    mode, recommendation_id, daily_mission_id, daily_item_position, domain_id, task_id,
-                   question_ids, status, issued_at, expires_at, completed_at",
+                   question_ids, status, issued_at, expires_at, completed_at, module_id",
     )
     .bind(mission.id)
     .bind(mission.user_id)
@@ -82,6 +84,7 @@ pub async fn insert(pool: &PgPool, mission: &MissionInstance) -> Result<MissionI
     .bind(mission.issued_at)
     .bind(mission.expires_at)
     .bind(mission.completed_at)
+    .bind(mission.module_id.as_deref())
     .fetch_one(pool)
     .await?;
 
@@ -93,7 +96,7 @@ pub async fn find_by_id(pool: &PgPool, id: Uuid) -> Result<Option<MissionInstanc
     let row = sqlx::query_as::<_, MissionRow>(
         "SELECT id, user_id, device_id, certification_id, certification_version, content_version,
                 mode, recommendation_id, daily_mission_id, daily_item_position, domain_id, task_id,
-                question_ids, status, issued_at, expires_at, completed_at
+                question_ids, status, issued_at, expires_at, completed_at, module_id
          FROM mission_instances
          WHERE id = $1",
     )
@@ -116,7 +119,7 @@ pub async fn find_active_for_daily_item(
     let row = sqlx::query_as::<_, MissionRow>(
         "SELECT id, user_id, device_id, certification_id, certification_version, content_version,
                 mode, recommendation_id, daily_mission_id, daily_item_position, domain_id, task_id,
-                question_ids, status, issued_at, expires_at, completed_at
+                question_ids, status, issued_at, expires_at, completed_at, module_id
          FROM mission_instances
          WHERE user_id = $1 AND daily_mission_id = $2 AND daily_item_position = $3
            AND status = 'issued'
@@ -144,7 +147,7 @@ pub async fn find_for_daily_item(
     let row = sqlx::query_as::<_, MissionRow>(
         "SELECT id, user_id, device_id, certification_id, certification_version, content_version,
                 mode, recommendation_id, daily_mission_id, daily_item_position, domain_id, task_id,
-                question_ids, status, issued_at, expires_at, completed_at
+                question_ids, status, issued_at, expires_at, completed_at, module_id
          FROM mission_instances
          WHERE user_id = $1 AND daily_mission_id = $2 AND daily_item_position = $3
          ORDER BY issued_at DESC
@@ -187,7 +190,7 @@ pub async fn mark_completed(
          WHERE id = $1 AND user_id = $2
          RETURNING id, user_id, device_id, certification_id, certification_version, content_version,
                    mode, recommendation_id, daily_mission_id, daily_item_position, domain_id, task_id,
-                   question_ids, status, issued_at, expires_at, completed_at",
+                   question_ids, status, issued_at, expires_at, completed_at, module_id",
     )
     .bind(id)
     .bind(user_id)
@@ -213,7 +216,7 @@ pub async fn mark_completed_anonymous_device(
          WHERE id = $1 AND user_id IS NULL AND device_id = $2
          RETURNING id, user_id, device_id, certification_id, certification_version, content_version,
                    mode, recommendation_id, daily_mission_id, daily_item_position, domain_id, task_id,
-                   question_ids, status, issued_at, expires_at, completed_at",
+                   question_ids, status, issued_at, expires_at, completed_at, module_id",
     )
     .bind(id)
     .bind(device_id)

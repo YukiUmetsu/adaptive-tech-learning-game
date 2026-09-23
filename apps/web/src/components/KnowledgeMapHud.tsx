@@ -15,6 +15,8 @@ interface KnowledgeMapHudProps {
   modules: LearningModule[];
   progress: ModuleProgressMap;
   activeModuleId: string;
+  /** Module ids whose section quiz has been completed. */
+  sectionQuizModuleIds?: ReadonlySet<string>;
   onSelectModule: (moduleId: string) => void;
 }
 
@@ -37,6 +39,7 @@ export default function KnowledgeMapHud({
   modules,
   progress,
   activeModuleId,
+  sectionQuizModuleIds,
   onSelectModule,
 }: KnowledgeMapHudProps) {
   const percent = totalCount === 0 ? 0 : Math.round((unlockedCount / totalCount) * 100);
@@ -97,6 +100,7 @@ export default function KnowledgeMapHud({
               entry && entry.total > 0 ? (entry.unlocked / entry.total) * 100 : 0;
             const badge = complete ? "✓" : available ? String(index + 1) : "🔒";
             const stateLabel = complete ? "Online" : available ? "Ready" : "Locked";
+            const quizzed = sectionQuizModuleIds?.has(module.id) ?? false;
 
             return (
               <li key={module.id}>
@@ -132,6 +136,11 @@ export default function KnowledgeMapHud({
                     />
                   </span>
                   <span className="knowledge-group-card-state">{stateLabel}</span>
+                  {quizzed ? (
+                    <span className="knowledge-group-card-quiz">
+                      <span aria-hidden="true">✓</span> Section quiz
+                    </span>
+                  ) : null}
                 </button>
               </li>
             );

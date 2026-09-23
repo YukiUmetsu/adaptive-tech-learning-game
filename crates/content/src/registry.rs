@@ -270,6 +270,75 @@ impl ContentRegistry {
         questions
     }
 
+    /// Returns every authored question for one learning module (section), in
+    /// authored task order and without duplicates.
+    ///
+    /// A module declares the exam tasks it teaches via `task_ids`; its question
+    /// pool is the union of those tasks' authored questions. When a module
+    /// declares no tasks (authorship gap), questions are matched by the
+    /// knowledge nodes' concepts instead, so a section quiz is still possible.
+    /// Returns empty when the module or its learning domain is unknown.
+    pub fn questions_for_module<'a>(
+        &'a self,
+        certification_version: &str,
+        domain_id: &str,
+        module_id: &str,
+    ) -> Vec<&'a Question> {
+        let Some(module) = self
+            .learning_modules(certification_version, domain_id)
+            .and_then(|modules| modules.iter().find(|module| module.id == module_id))
+        else {
+            return Vec::new();
+        };
+        let Some(bundle) = self.bundle_for_version(certification_version) else {
+            return Vec::new();
+        };
+
+        let mut questions = Vec::new();
+        let mut seen = HashSet::new();
+
+        for task_id in &module.task_ids {
+            let Some((_, task)) = self.find_task(certification_version, task_id) else {
+                continue;
+            };
+            for question_id in &task.question_ids {
+                if !seen.insert(question_id.as_str()) {
+                    continue;
+                }
+                if let Some(question) = bundle
+                    .questions
+                    .iter()
+                    .find(|question| &question.id == question_id)
+                {
+                    questions.push(question);
+                }
+            }
+        }
+
+        // Authorship fallback: a module with no declared tasks still maps to
+        // concepts through its nodes, so match questions on concept overlap.
+        if questions.is_empty() {
+            let concept_ids: HashSet<&str> = module
+                .nodes
+                .iter()
+                .flat_map(|node| node.concept_ids.iter().map(String::as_str))
+                .collect();
+            if !concept_ids.is_empty() {
+                for question in &bundle.questions {
+                    if question
+                        .concepts
+                        .iter()
+                        .any(|concept| concept_ids.contains(concept.concept_id.as_str()))
+                    {
+                        questions.push(question);
+                    }
+                }
+            }
+        }
+
+        questions
+    }
+
     /// All validated learning domains.
     pub fn learning_domains(&self) -> &[LearningDomain] {
         &self.learning_domains
@@ -870,5 +939,35 @@ mod tests {
         assert!(!bundles.is_empty(), "the valid source must survive");
         assert_eq!(errors.len(), 1);
         assert_eq!(errors[0].source.as_deref(), Some("content/bad/quiz.json"));
+    }
+
+    #[test]
+    fn questions_for_module_come_from_its_declared_tasks() {
+        let registry = ContentRegistry::embedded().expect("embedded content is valid");
+
+        let module = registry
+            .learning_modules("saa-c03", "domain-1")
+            .and_then(|modules| {
+                modules
+                    .iter()
+                    .find(|module| module.id == "domain-1-module-1")
+            })
+            .expect("known learning module");
+
+        let questions = registry.questions_for_module("saa-c03", "domain-1", &module.id);
+        assert!(!questions.is_empty(), "module must resolve some questions");
+        for question in &questions {
+            assert!(
+                module.task_ids.contains(&question.task_id),
+                "question {} is outside the module's tasks",
+                question.id
+            );
+        }
+
+        assert!(
+            registry
+                .questions_for_module("saa-c03", "domain-1", "missing-module")
+                .is_empty()
+        );
     }
 }

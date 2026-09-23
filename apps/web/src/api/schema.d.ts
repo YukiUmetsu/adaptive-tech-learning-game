@@ -1397,6 +1397,11 @@ export interface components {
             /** @description Quiz mode deciding how the server selects questions. */
             mode: components["schemas"]["QuizMode"];
             /**
+             * @description Learning module (section) to scope a section quiz to. Required for
+             *     `section_quiz`; ignored for other modes.
+             */
+            module_id?: string | null;
+            /**
              * @description Anchor question for `recommended_practice`. The server validates it
              *     belongs to the certification version; it never trusts it as the whole
              *     practice set.
@@ -1642,6 +1647,8 @@ export interface components {
             issued_at: string;
             /** @description Quiz mode. */
             mode: components["schemas"]["QuizMode"];
+            /** @description Learning module (section) covered, for a section quiz. */
+            module_id?: string | null;
             /**
              * @description Questions in presentation order.
              *
@@ -2046,10 +2053,11 @@ export interface components {
          * @description The quiz mode a mission was issued for.
          *
          *     `task_practice` is kept for the demo/task flow and internal debugging; the
-         *     three learner-facing modes are quick, domain, and full practice.
+         *     learner-facing modes are quick, domain, full practice, and the one-question
+         *     section quiz that concludes a learning module.
          * @enum {string}
          */
-        QuizMode: "quick_adaptive" | "domain_quiz" | "full_practice" | "task_practice" | "recommended_practice";
+        QuizMode: "quick_adaptive" | "domain_quiz" | "full_practice" | "task_practice" | "recommended_practice" | "section_quiz";
         /** @description A structured, explainable recommendation. */
         Recommendation: {
             /** @description Action to take. */

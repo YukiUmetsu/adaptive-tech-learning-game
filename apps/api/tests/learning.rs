@@ -1322,6 +1322,153 @@ async fn task_practice_requires_a_task() {
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
 
+async fn issue_section_quiz_as(
+    app: &Router,
+    subject: &str,
+    device: Uuid,
+    domain_id: Option<&str>,
+    module_id: Option<&str>,
+) -> (StatusCode, Value) {
+    common::send_as(
+        app.clone(),
+        subject,
+        "POST",
+        "/v1/missions/issue",
+        Some(json!({
+            "device_id": device,
+            "certification_id": "aws-soa-c03",
+            "certification_version": "soa-c03",
+            "mode": "section_quiz",
+            "domain_id": domain_id,
+            "module_id": module_id
+        })),
+    )
+    .await
+}
+
+#[tokio::test]
+async fn section_quiz_selects_one_module_question_and_settles_bonus_once() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool);
+    let registry = registry();
+    let subject = format!("section-user-{}", Uuid::new_v4());
+    let device = Uuid::new_v4();
+
+    // A section quiz must name both the domain and the learning module.
+    let (status, _) = issue_section_quiz_as(&app, &subject, device, Some("domain-1"), None).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+
+    let (status, _) = issue_section_quiz_as(
+        &app,
+        &subject,
+        device,
+        Some("domain-1"),
+        Some("no-such-module"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+
+    let (status, mission) = issue_section_quiz_as(
+        &app,
+        &subject,
+        device,
+        Some("domain-1"),
+        Some("d1-alarms-events"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "section quiz failed: {mission}");
+    assert_eq!(mission["mode"], "section_quiz");
+    assert_eq!(mission["domain_id"], "domain-1");
+    assert_eq!(mission["module_id"], "d1-alarms-events");
+
+    let questions = mission["questions"].as_array().expect("questions");
+    assert_eq!(questions.len(), 1, "a section quiz is exactly one question");
+    let question_id = questions[0]["id"].as_str().expect("question id");
+    let question = registry.question("soa-c03", question_id).expect("question");
+    assert_eq!(question.domain_id, "domain-1");
+    assert!(
+        ["1.1", "1.2"].contains(&question.task_id.as_str()),
+        "question must belong to the module's tasks, got {}",
+        question.task_id
+    );
+    assert!(
+        questions[0].get("canonical_answer").is_some(),
+        "ordinary missions ship local scoring data"
+    );
+
+    let mission_uuid: Uuid = mission["id"].as_str().unwrap().parse().unwrap();
+    let content_version = mission["content_version"].as_str().unwrap();
+    let batch = json!({
+        "device_id": device,
+        "events": [{
+            "event_id": Uuid::new_v4(),
+            "mission_instance_id": mission_uuid,
+            "question_id": question.id,
+            "content_version": content_version,
+            "attempt_number": 1,
+            "hint_count": 0,
+            "response_ms": 1500,
+            "occurred_at": "2026-09-22T10:00:00Z",
+            "answer": correct_answer(question)
+        }]
+    });
+    let (status, body) =
+        common::send_as(app.clone(), &subject, "POST", "/v1/sync", Some(batch)).await;
+    assert_eq!(status, StatusCode::OK, "sync failed: {body}");
+    let settled = body["results"][0]["bits_settled"].as_i64().expect("bits");
+    assert!(settled > 0, "a correct first attempt earns Bits");
+    assert_eq!(
+        body["bits_balance"],
+        settled + 20,
+        "completing the section quiz settles its one-time bonus"
+    );
+
+    // Retaking the section quiz earns per-answer Bits but never the bonus again.
+    let (status, retake) = issue_section_quiz_as(
+        &app,
+        &subject,
+        device,
+        Some("domain-1"),
+        Some("d1-alarms-events"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{retake}");
+    let retake_uuid: Uuid = retake["id"].as_str().unwrap().parse().unwrap();
+    let retake_question = registry
+        .question(
+            "soa-c03",
+            retake["questions"][0]["id"].as_str().expect("question id"),
+        )
+        .expect("question")
+        .clone();
+    let retake_version = retake["content_version"].as_str().unwrap();
+    let batch = json!({
+        "device_id": device,
+        "events": [{
+            "event_id": Uuid::new_v4(),
+            "mission_instance_id": retake_uuid,
+            "question_id": retake_question.id,
+            "content_version": retake_version,
+            "attempt_number": 1,
+            "hint_count": 0,
+            "response_ms": 1500,
+            "occurred_at": "2026-09-22T10:05:00Z",
+            "answer": correct_answer(&retake_question)
+        }]
+    });
+    let (status, body) =
+        common::send_as(app.clone(), &subject, "POST", "/v1/sync", Some(batch)).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let retake_bits = body["results"][0]["bits_settled"].as_i64().expect("bits");
+    assert_eq!(
+        body["bits_balance"],
+        settled + 20 + retake_bits,
+        "the section bonus must not settle twice"
+    );
+}
+
 #[tokio::test]
 async fn mixed_mission_events_use_question_scope_and_settle_once() {
     let Some(pool) = common::database_pool().await else {

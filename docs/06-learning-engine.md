@@ -431,14 +431,21 @@ User can:
 
 ## Learner quiz modes
 
-The learner sees three quiz modes. Tactile interaction types are implementation
+The learner sees four quiz modes. Tactile interaction types are implementation
 and scoring primitives underneath them, not learner-facing choices.
 
 | Mode | Questions | Purpose |
 |---|---:|---|
 | Quick Quiz | 3 | adaptive cross-domain practice |
 | Domain Quiz | ~20 | one exam domain, spread across tasks |
+| Section Quiz | 1 | the single retrieval check that concludes a learning module |
 | Full Practice | 65 | weighted full-certification coverage |
+
+A Section Quiz is scoped to one learning module (`module_id`) rather than a task,
+so a module that spans several exam tasks still quizzes its own topic. The server
+resolves the module's authored questions and adapts the single question the same
+way the other modes do. Completing it settles a one-time per-section Bits bonus
+(see [07-gamification.md](07-gamification.md)); exploration alone never does.
 
 V1 selection is an explainable heuristic (`apps/api/src/selection.rs`), not a
 trained student model. It reads the derived per-concept state (estimate,
@@ -450,10 +457,11 @@ tend toward easier suitable questions and strong concepts toward harder ones.
 
 Cold start falls back to accepted history when no derived state exists yet, then
 to the neutral prior, so the modes still work for a brand-new learner. Quick Quiz
-covers domains by official weight; Domain Quiz spreads across tasks; Full
-Practice allocates seats by domain weight using a deterministic largest-remainder
-method and redistributes any deficit when a domain is short. Question counts are
-server policy and are never client input.
+covers domains by official weight; Domain Quiz spreads across tasks; Section Quiz
+picks the best-ranked question from the module; Full Practice allocates seats by
+domain weight using a deterministic largest-remainder method and redistributes
+any deficit when a domain is short. Question counts are server policy and are
+never client input.
 
 ## Knowledge Signal (learner visualization)
 

@@ -117,6 +117,9 @@ pub struct IssueMissionRequest {
     pub domain_id: Option<String>,
     /// Task to scope a task practice to. Required for `task_practice`.
     pub task_id: Option<String>,
+    /// Learning module (section) to scope a section quiz to. Required for
+    /// `section_quiz`; ignored for other modes.
+    pub module_id: Option<String>,
     /// Anchor question for `recommended_practice`. The server validates it
     /// belongs to the certification version; it never trusts it as the whole
     /// practice set.
@@ -145,6 +148,8 @@ pub struct MissionResponse {
     pub domain_id: Option<String>,
     /// Task covered, for task practice.
     pub task_id: Option<String>,
+    /// Learning module (section) covered, for a section quiz.
+    pub module_id: Option<String>,
     /// Issue time.
     pub issued_at: DateTime<Utc>,
     /// Expiry time.

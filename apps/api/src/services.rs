@@ -17,8 +17,8 @@ use adaptive_learn_db as db;
 use adaptive_learn_domain::concept_state::SUCCESS_THRESHOLD;
 use adaptive_learn_domain::{
     ConceptWeight, DAILY_MISSION_BONUS_BITS, LearningEvent, MODEL_VERSION, MissionInstance,
-    MissionStatus, PredictionSample, QuizMode, evaluate, predict_question, retrievability,
-    reward_bits, summarize_streak,
+    MissionStatus, PredictionSample, QuizMode, SECTION_QUIZ_BONUS_BITS, evaluate, predict_question,
+    retrievability, reward_bits, summarize_streak,
 };
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use uuid::Uuid;
@@ -415,6 +415,7 @@ fn mission_practice_source(mode: QuizMode, has_recommendation: bool) -> &'static
         QuizMode::FullPractice => "full_practice",
         QuizMode::TaskPractice => "task_practice",
         QuizMode::RecommendedPractice => "recommended_practice",
+        QuizMode::SectionQuiz => "section_quiz",
     }
 }
 
@@ -1118,6 +1119,7 @@ pub async fn start_daily_item(
                 mode: QuizMode::DomainQuiz,
                 domain_id: Some(item.domain_id.clone()),
                 task_id: None,
+                module_id: None,
                 question_id: None,
                 recommendation_id: None,
             };
@@ -1149,6 +1151,7 @@ pub async fn start_daily_item(
         daily_item_position: Some(position),
         domain_id: Some(domain_id),
         task_id: None,
+        module_id: None,
         question_ids,
         status: MissionStatus::Issued,
         issued_at: now,
@@ -1794,7 +1797,7 @@ pub async fn issue_mission(
     let device_id = request.device_id.unwrap_or_else(Uuid::new_v4);
 
     let now = Utc::now();
-    let (domain_id, task_id, question_ids) =
+    let (domain_id, task_id, module_id, question_ids) =
         build_question_set(state, &request, owner, now).await?;
     if question_ids.is_empty() {
         return Err(ApiError::NotFound);
@@ -1814,6 +1817,7 @@ pub async fn issue_mission(
         daily_item_position: None,
         domain_id,
         task_id,
+        module_id,
         question_ids,
         status: MissionStatus::Issued,
         issued_at: now,
@@ -1887,6 +1891,7 @@ fn mission_response(state: &AppState, stored: MissionInstance) -> MissionRespons
         mode: stored.mode,
         domain_id: stored.domain_id,
         task_id: stored.task_id,
+        module_id: stored.module_id,
         issued_at: stored.issued_at,
         expires_at: stored.expires_at,
         questions,
@@ -1972,13 +1977,13 @@ pub async fn daily_item_review(
     mission_review(state, user, mission.id).await
 }
 
-/// Builds `(domain_id, task_id, question_ids)` for a mode.
+/// Builds `(domain_id, task_id, module_id, question_ids)` for a mode.
 async fn build_question_set(
     state: &AppState,
     request: &IssueMissionRequest,
     owner: Option<Uuid>,
     now: chrono::DateTime<Utc>,
-) -> Result<(Option<String>, Option<String>, Vec<String>), ApiError> {
+) -> Result<(Option<String>, Option<String>, Option<String>, Vec<String>), ApiError> {
     let version = &request.certification_version;
 
     match request.mode {
@@ -1999,6 +2004,7 @@ async fn build_question_set(
             Ok((
                 domain_id,
                 Some(task.id.clone()),
+                None,
                 questions
                     .iter()
                     .map(|question| question.id.clone())
@@ -2018,11 +2024,11 @@ async fn build_question_set(
                 return Err(ApiError::NotFound);
             }
             let ids = select_ids(state, request, owner, Some(&domain_id), now).await?;
-            Ok((Some(domain_id), None, ids))
+            Ok((Some(domain_id), None, None, ids))
         }
         QuizMode::QuickAdaptive | QuizMode::FullPractice => {
             let ids = select_ids(state, request, owner, None, now).await?;
-            Ok((None, None, ids))
+            Ok((None, None, None, ids))
         }
         QuizMode::RecommendedPractice => {
             let owner = owner.ok_or(ApiError::Unauthorized)?;
@@ -2039,8 +2045,33 @@ async fn build_question_set(
             Ok((
                 Some(anchor.domain_id.clone()),
                 Some(anchor.task_id.clone()),
+                None,
                 ids,
             ))
+        }
+        QuizMode::SectionQuiz => {
+            let owner = owner.ok_or(ApiError::Unauthorized)?;
+            let domain_id = request.domain_id.clone().ok_or_else(|| {
+                ApiError::BadRequest("section_quiz requires domain_id".to_owned())
+            })?;
+            let module_id = request.module_id.clone().ok_or_else(|| {
+                ApiError::BadRequest("section_quiz requires module_id".to_owned())
+            })?;
+            let ids = select_section_quiz(
+                state,
+                &request.certification_id,
+                version,
+                &domain_id,
+                &module_id,
+                owner,
+                now,
+            )
+            .await?;
+            let task_id = ids
+                .first()
+                .and_then(|id| state.content.question(version, id))
+                .map(|question| question.task_id.clone());
+            Ok((Some(domain_id), task_id, Some(module_id), ids))
         }
     }
 }
@@ -2092,6 +2123,76 @@ async fn select_recommended_practice(
         &candidates,
         &history,
         selection::RECOMMENDED_PRACTICE_LEN,
+    ))
+}
+
+/// Selects the single adaptive question for a section (module) quiz.
+///
+/// The module's question pool comes from canonical learning content, so the
+/// client never supplies it. Selection reuses the learner's cross-device
+/// history and derived concept state, exactly like the other adaptive modes.
+async fn select_section_quiz(
+    state: &AppState,
+    certification_id: &str,
+    version: &str,
+    domain_id: &str,
+    module_id: &str,
+    owner: Uuid,
+    now: chrono::DateTime<Utc>,
+) -> Result<Vec<String>, ApiError> {
+    let questions = state
+        .content
+        .questions_for_module(version, domain_id, module_id);
+    if questions.is_empty() {
+        return Err(ApiError::NotFound);
+    }
+
+    let candidates: Vec<Candidate> = questions.iter().map(|q| candidate_from(q)).collect();
+    let domains: Vec<(String, f64)> = state
+        .content
+        .bundle_for_version(version)
+        .map(|bundle| {
+            bundle
+                .version
+                .domains
+                .iter()
+                .map(|domain| (domain.id.clone(), domain.weight))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let history: Vec<HistoryEntry> =
+        db::learning_events::recent_for_user(&state.pool, owner, certification_id, HISTORY_LIMIT)
+            .await?
+            .into_iter()
+            .map(|entry| HistoryEntry {
+                question_id: entry.question_id,
+                score: entry.score,
+                assessment_mode: entry.assessment_mode,
+                occurred_at: entry.occurred_at,
+                concepts: entry.concepts,
+            })
+            .collect();
+
+    let states: Vec<ConceptEvidence> =
+        db::concept_state::list_for_user(&state.pool, owner, version)
+            .await?
+            .into_iter()
+            .map(|state| ConceptEvidence {
+                concept_id: state.concept_id,
+                assessment_mode: state.assessment_mode,
+                estimate: state.estimate,
+                evidence_mass: state.evidence_mass,
+                last_practiced_at: state.last_practiced_at,
+            })
+            .collect();
+
+    Ok(selection::section_quiz(
+        &candidates,
+        &domains,
+        &history,
+        &states,
+        now,
     ))
 }
 
@@ -2560,7 +2661,65 @@ async fn finalize_mission_completion(
         }
     }
 
+    // A completed section quiz settles its one-time section bonus. Settlement is
+    // idempotent per learner/section, and it requires accepted evidence, so the
+    // explicit `/complete` shortcut cannot mint Bits without answering.
+    if mission.mode == QuizMode::SectionQuiz {
+        settle_section_quiz_reward(state, &mission).await;
+    }
+
     Ok(Some(mission))
+}
+
+/// Settles the one-time section-quiz completion bonus, best-effort.
+///
+/// Completion is derived from accepted evidence: the mission must have an
+/// accepted attempt for every question. A bookkeeping failure is logged and
+/// never fails the authoritative mission completion.
+async fn settle_section_quiz_reward(state: &AppState, mission: &MissionInstance) {
+    let (Some(user_id), Some(domain_id), Some(module_id)) = (
+        mission.user_id,
+        mission.domain_id.as_deref(),
+        mission.module_id.as_deref(),
+    ) else {
+        return;
+    };
+    if mission.question_ids.is_empty() {
+        return;
+    }
+
+    match db::learning_events::covered_question_count(&state.pool, mission.id).await {
+        Ok(covered) if covered >= mission.question_ids.len() as i64 => {}
+        Ok(_) => return,
+        Err(error) => {
+            tracing::debug!(error = %error, "could not check section quiz coverage");
+            return;
+        }
+    }
+
+    let settle = async {
+        let mut tx = state.pool.begin().await?;
+        db::section_quiz::settle_bonus(
+            &mut tx,
+            db::section_quiz::SectionQuizSettlement {
+                user_id,
+                track_id: &mission.certification_id,
+                track_version: &mission.certification_version,
+                domain_id,
+                module_id,
+                mission_instance_id: mission.id,
+                amount: SECTION_QUIZ_BONUS_BITS,
+            },
+        )
+        .await?;
+        tx.commit().await?;
+        Ok::<_, db::DbError>(())
+    }
+    .await;
+
+    if let Err(error) = settle {
+        tracing::debug!(error = %error, "could not settle section quiz reward");
+    }
 }
 
 /// Completes every touched mission whose questions are all covered by accepted
@@ -3412,6 +3571,7 @@ mod tests {
             daily_item_position: None,
             domain_id: Some("domain-1".to_owned()),
             task_id: Some("1.1".to_owned()),
+            module_id: None,
             question_ids: vec!["monitoring-classification-001".to_owned()],
             status: MissionStatus::Issued,
             issued_at: now,

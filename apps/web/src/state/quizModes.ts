@@ -93,6 +93,13 @@ export function quizCompletionPresentation(
         title: "Recommended Practice Complete",
         heroVariant: "standard",
       };
+    case "section_quiz":
+      return {
+        key: "section_quiz",
+        icon: "🎯",
+        title: "Section Quiz Complete",
+        heroVariant: "standard",
+      };
     default:
       return {
         key: "task_practice",
@@ -116,6 +123,8 @@ export function quizModeLabel(mode: string | null | undefined): string {
       return "Task Practice";
     case "recommended_practice":
       return "Recommended Practice";
+    case "section_quiz":
+      return "Section Quiz";
     default:
       return "Quiz";
   }

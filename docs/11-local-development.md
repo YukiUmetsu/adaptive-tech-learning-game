@@ -137,7 +137,7 @@ Key API endpoints:
 ```text
 GET  /v1/certifications
 GET  /v1/certifications/{certification_id}/domains/{domain_id}/learning
-POST /v1/missions/issue          # mode: quick_adaptive | domain_quiz | full_practice | task_practice
+POST /v1/missions/issue          # mode: quick_adaptive | domain_quiz | section_quiz | full_practice | task_practice
 POST /v1/missions/{mission_id}/answers
 POST /v1/missions/{mission_id}/complete
 POST /v1/sync
@@ -150,9 +150,11 @@ learner-facing concept names, so the shared end-of-quiz completion summary can
 show friendly knowledge labels without ever rendering a raw concept id such as
 `aws.cloudformation.changesets`.
 
-Learners see three quiz modes (Quick Quiz, Domain Quiz, Full Practice) from the
-certification dashboard; the server selects questions per mode and settles Bits
-on sync. The web routes are `/certifications` (category catalog) and
+Learners see four quiz modes (Quick Quiz, Domain Quiz, Section Quiz, Full
+Practice) from the certification dashboard; the server selects questions per
+mode and settles Bits on sync. A Section Quiz is started from a completed
+learning module on the knowledge map and returns to that section afterwards. The
+web routes are `/certifications` (category catalog) and
 `/certifications/:certificationId` (dashboard). `task_practice` and the
 `/certifications/:certificationId/tasks/:taskId` route remain for the demo and
 internal debugging.
