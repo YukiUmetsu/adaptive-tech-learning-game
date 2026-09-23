@@ -1239,6 +1239,9 @@ fn validate_code_file(
 
     let mut seen_ids = HashSet::new();
     let mut seen_anchors = HashSet::new();
+    // Resolved `(line, start, end, annotation id)` ranges, checked for overlap
+    // after every anchor has been validated.
+    let mut ranges: Vec<(usize, usize, usize, &str)> = Vec::new();
     for annotation in annotations {
         if annotation.id.trim().is_empty() {
             errors.push(annotation_error(
@@ -1316,6 +1319,28 @@ fn validate_code_file(
                     "code annotation {} duplicates the anchor line {} occurrence {}",
                     annotation.id, anchor.line, anchor.occurrence
                 ),
+            ));
+        } else if let Some(start) = occurrence_offset(line, &anchor.text, anchor.occurrence) {
+            ranges.push((
+                anchor.line,
+                start,
+                start + anchor.text.len(),
+                annotation.id.as_str(),
+            ));
+        }
+    }
+
+    // Two annotations may never cover the same characters. The UI renders one
+    // control per resolved range, so an overlap would silently hide the nested
+    // annotation and ship a prompt that can never be completed.
+    ranges.sort_by_key(|(line, start, _, _)| (*line, *start));
+    for pair in ranges.windows(2) {
+        let (line, _, previous_end, previous_id) = pair[0];
+        let (next_line, next_start, _, next_id) = pair[1];
+        if line == next_line && next_start < previous_end {
+            errors.push(annotation_error(
+                "learning_code_annotation_overlap",
+                format!("code annotations {previous_id} and {next_id} overlap on line {line}"),
             ));
         }
     }

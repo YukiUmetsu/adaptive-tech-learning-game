@@ -743,6 +743,73 @@ fn rejects_duplicate_code_annotation_anchor() {
 }
 
 #[test]
+fn rejects_overlapping_code_annotations() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    set_first_prompt_reveal(
+        &mut value,
+        serde_json::json!({
+            "type": "code_file",
+            "filename": "unzip.py",
+            "language": "python",
+            "code": "names, scores = zip(*pairs)\n",
+            "annotations": [
+                {
+                    "id": "zip-call",
+                    "anchor": { "line": 1, "text": "zip(*pairs)" },
+                    "title": "Transpose the pairs",
+                    "explanation": "zip regroups values by position.",
+                    "required": true
+                },
+                {
+                    "id": "star",
+                    "anchor": { "line": 1, "text": "*pairs" },
+                    "title": "Expand rows into arguments",
+                    "explanation": "* expands each pair as an argument.",
+                    "required": true
+                }
+            ]
+        }),
+    );
+
+    expect_error(&value, "learning_code_annotation_overlap");
+}
+
+#[test]
+fn accepts_adjacent_code_annotations_without_overlap() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    set_first_prompt_reveal(
+        &mut value,
+        serde_json::json!({
+            "type": "code_file",
+            "filename": "unzip.py",
+            "language": "python",
+            "code": "names, scores = zip(*pairs)\n",
+            "annotations": [
+                {
+                    "id": "zip-call",
+                    "anchor": { "line": 1, "text": "zip" },
+                    "title": "Transpose the pairs",
+                    "explanation": "zip regroups values by position.",
+                    "required": true
+                },
+                {
+                    "id": "star",
+                    "anchor": { "line": 1, "text": "*pairs" },
+                    "title": "Expand rows into arguments",
+                    "explanation": "* expands each pair as an argument.",
+                    "required": true
+                }
+            ]
+        }),
+    );
+
+    assert!(
+        validate_value(&value).is_ok(),
+        "annotations that merely sit next to each other must validate"
+    );
+}
+
+#[test]
 fn rejects_malformed_learning_json_distinctly() {
     let errors = ContentRegistry::from_sources(&embedded_quiz_sources(), &["{\"not\":\"a map\"}"])
         .expect_err("malformed learning json must be rejected");

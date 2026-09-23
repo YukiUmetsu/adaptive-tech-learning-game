@@ -296,8 +296,9 @@ empty needed row ids, unknown or duplicate `initially_visible` entries, cell ids
 that do not resolve to a row and column, colliding reveal-unit ids, and a table
 whose initial visibility leaves nothing to reveal. For `code_file` reveals it
 rejects empty filename/language/code, duplicate annotation ids, duplicate
-anchors, missing titles/explanations, anchors on lines outside the code, target
-text that does not occur on its line, and out-of-range occurrences. For
+anchors, overlapping annotation ranges, missing titles/explanations, anchors on
+lines outside the code, target text that does not occur on its line, and
+out-of-range occurrences. For
 progressive `text` reveals it rejects empty span lists, duplicate or empty span
 ids, empty span text, span text that does not occur in the sentence, out-of-range
 occurrences, and overlapping spans.
