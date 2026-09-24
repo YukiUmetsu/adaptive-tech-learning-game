@@ -10,8 +10,8 @@
   "version": {
     "id": "saa-c03",
     "exam_code": "SAA-C03",
-    "effective_date": "2026-09-19",
-    "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+    "effective_date": "2026-09-23",
+    "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
     "domains": [
       {
         "id": "domain-1",
@@ -55,7 +55,8 @@
               "compute-services-typed-001",
               "compute-services-application-001",
               "domain-3-task-3-2-builder-v2",
-              "domain-3-task-3-2-fault-v2"
+              "domain-3-task-3-2-fault-v2",
+              "scaling-signal-builder-v3"
             ]
           },
           {
@@ -69,7 +70,8 @@
               "db-read-scaling-typed-001",
               "db-read-scaling-application-001",
               "domain-3-task-3-3-builder-v2",
-              "domain-3-task-3-3-evidence-v2"
+              "domain-3-task-3-3-evidence-v2",
+              "database-capacity-builder-v3"
             ]
           },
           {
@@ -84,7 +86,8 @@
               "hybrid-network-application-001",
               "domain-3-task-3-4-builder-v2",
               "domain-3-task-3-4-fault-v2",
-              "high-performance-global-app-scenario-v2"
+              "high-performance-global-app-scenario-v2",
+              "network-topology-evidence-v3"
             ]
           },
           {
@@ -98,7 +101,9 @@
               "data-transfer-typed-001",
               "data-transfer-application-001",
               "domain-3-task-3-5-builder-v2",
-              "domain-3-task-3-5-evidence-v2"
+              "domain-3-task-3-5-evidence-v2",
+              "data-lake-service-map-v3",
+              "parquet-performance-application-v3"
             ]
           }
         ]
@@ -186,31 +191,51 @@
       "id": "aws.saa.data_transfer",
       "name": "DataSync, Storage Gateway, and Snow Family",
       "description": "DataSync moves data online between storage systems, Storage Gateway supports ongoing hybrid access patterns, and Snow Family devices move or process data where network transfer is impractical."
+    },
+    {
+      "id": "aws.saa.scaling_signals",
+      "name": "Scaling metrics and capacity signals",
+      "description": "Use CPU, ALB RequestCountPerTarget, queue backlog per worker, and Lambda concurrency/throttles as workload-correlated scaling signals."
+    },
+    {
+      "id": "aws.saa.database_capacity",
+      "name": "Database access patterns and capacity",
+      "description": "Choose DynamoDB on-demand/provisioned and Aurora Serverless capacity from traffic predictability and access patterns."
+    },
+    {
+      "id": "aws.saa.network_topology",
+      "name": "Network topology, routing, and IP capacity",
+      "description": "Plan CIDR capacity, avoid overlapping routed address space, inspect routes, and use scalable hub topologies."
+    },
+    {
+      "id": "aws.saa.data_lake_performance",
+      "name": "Data lake governance, formats, and visualization",
+      "description": "Use Lake Formation for lake permissions, Parquet for efficient analytical scans, Athena for SQL on S3, and Amazon Quick Sight for BI dashboards."
     }
   ],
   "questions": [
     {
       "id": "storage-models-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Amazon S3 provides object storage, Amazon EBS provides block storage for compute, and Amazon EFS or Amazon FSx provide managed file systems.",
+      "prompt": "Several Linux EC2 instances need to mount the same elastic NFS file system. Which service fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 14
+            "width_chars": 30
           }
         ]
       },
@@ -231,9 +256,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Amazon EFS is the retrieval target here. Amazon S3 provides object storage, Amazon EBS provides block storage for compute, and Amazon EFS or Amazon FSx provide managed file systems. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "EFS provides a managed shared NFS file system for Linux workloads.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "Shared Linux NFS is the clue"
       ],
       "error_codes": [
         {
@@ -247,21 +272,21 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "storage-models-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.1",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Amazon S3 provides object storage, Amazon EBS provides block storage for compute, and Amazon EFS or Amazon FSx provide managed file systems. Which choice is the most direct fit?",
+      "prompt": "A scientific workload needs a high-performance parallel file system across many compute nodes and integration with S3 datasets. Which service fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -272,27 +297,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
+            "id": "a",
+            "label": "Amazon FSx for Lustre"
+          },
+          {
+            "id": "b",
             "label": "Amazon EFS"
           },
           {
-            "id": "opt-2",
-            "label": "gp3"
+            "id": "c",
+            "label": "Amazon EBS"
           },
           {
-            "id": "opt-3",
-            "label": "AWS DataSync"
-          },
-          {
-            "id": "opt-4",
-            "label": "compute optimized"
+            "id": "d",
+            "label": "Amazon S3 only"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-1"
+          "solution": "a"
         }
       },
       "concepts": [
@@ -301,9 +326,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Amazon EFS is the direct fit because Amazon S3 provides object storage, Amazon EBS provides block storage for compute, and Amazon EFS or Amazon FSx provide managed file systems. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "FSx for Lustre is designed for high-performance parallel file workloads.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Parallel HPC-style file access is the clue"
       ],
       "error_codes": [
         {
@@ -317,33 +342,33 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "ebs-performance-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: EBS SSD volumes such as gp3 and io2 are optimized for transactional IOPS, while st1 and sc1 HDD volumes target large sequential throughput workloads.",
+      "prompt": "An EC2 database needs general-purpose SSD storage with IOPS and throughput configurable independently from volume size. Which EBS type fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 12
+            "width_chars": 30
           }
         ]
       },
@@ -364,9 +389,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "gp3 is the retrieval target here. EBS SSD volumes such as gp3 and io2 are optimized for transactional IOPS, while st1 and sc1 HDD volumes target large sequential throughput workloads. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "gp3 is general-purpose SSD with independently configurable performance within its limits.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "General-purpose SSD plus independent tuning points to gp3"
       ],
       "error_codes": [
         {
@@ -380,21 +405,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Amazon EBS volume types",
+          "url": "https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html"
         }
       ]
     },
     {
       "id": "ebs-performance-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.1",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: EBS SSD volumes such as gp3 and io2 are optimized for transactional IOPS, while st1 and sc1 HDD volumes target large sequential throughput workloads. Which choice is the most direct fit?",
+      "prompt": "A log-processing workload performs large, frequently accessed sequential reads and writes and values throughput over random-I/O latency. Which EBS type fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -405,27 +434,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "Amazon EFS"
+            "id": "a",
+            "label": "st1 Throughput Optimized HDD"
           },
           {
-            "id": "opt-2",
-            "label": "AWS DataSync"
+            "id": "b",
+            "label": "sc1 Cold HDD"
           },
           {
-            "id": "opt-3",
-            "label": "compute optimized"
+            "id": "c",
+            "label": "gp3 SSD"
           },
           {
-            "id": "opt-4",
-            "label": "gp3"
+            "id": "d",
+            "label": "io2 SSD"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-4"
+          "solution": "a"
         }
       },
       "concepts": [
@@ -434,9 +463,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "gp3 is the direct fit because EBS SSD volumes such as gp3 and io2 are optimized for transactional IOPS, while st1 and sc1 HDD volumes target large sequential throughput workloads. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "st1 targets frequently accessed throughput-heavy sequential workloads; sc1 is colder/cheaper.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Frequent sequential throughput points to st1"
       ],
       "error_codes": [
         {
@@ -450,33 +479,37 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Amazon EBS volume types",
+          "url": "https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html"
         }
       ]
     },
     {
       "id": "hybrid-storage-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: AWS DataSync accelerates online data movement, Storage Gateway exposes hybrid storage interfaces, and Snow Family devices support large offline or edge data-transfer scenarios.",
+      "prompt": "A company repeatedly copies large file datasets from on-premises storage to S3 over the network using a managed transfer service. Which service fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 16
+            "width_chars": 30
           }
         ]
       },
@@ -497,9 +530,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS DataSync is the retrieval target here. AWS DataSync accelerates online data movement, Storage Gateway exposes hybrid storage interfaces, and Snow Family devices support large offline or edge data-transfer scenarios. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "DataSync is designed for managed online transfer between supported storage systems and AWS.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The transfer is online"
       ],
       "error_codes": [
         {
@@ -513,21 +546,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is AWS DataSync?",
+          "url": "https://docs.aws.amazon.com/datasync/latest/userguide/what-is-datasync.html"
         }
       ]
     },
     {
       "id": "hybrid-storage-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.1",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: AWS DataSync accelerates online data movement, Storage Gateway exposes hybrid storage interfaces, and Snow Family devices support large offline or edge data-transfer scenarios. Which choice is the most direct fit?",
+      "prompt": "An on-premises application needs an ongoing hybrid storage interface backed by AWS storage, not just a one-time copy. Which service fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -538,27 +575,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "gp3"
+            "id": "a",
+            "label": "AWS Storage Gateway"
           },
           {
-            "id": "opt-2",
-            "label": "compute optimized"
-          },
-          {
-            "id": "opt-3",
+            "id": "b",
             "label": "AWS DataSync"
           },
           {
-            "id": "opt-4",
-            "label": "Amazon EFS"
+            "id": "c",
+            "label": "AWS Snow Family"
+          },
+          {
+            "id": "d",
+            "label": "Athena"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-3"
+          "solution": "a"
         }
       },
       "concepts": [
@@ -567,9 +604,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS DataSync is the direct fit because AWS DataSync accelerates online data movement, Storage Gateway exposes hybrid storage interfaces, and Snow Family devices support large offline or edge data-transfer scenarios. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Storage Gateway provides ongoing hybrid storage interfaces; DataSync is for data movement.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Ongoing access is different from copy"
       ],
       "error_codes": [
         {
@@ -583,33 +620,33 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "ec2-families-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: EC2 instance families balance compute, memory, storage, networking, and accelerator resources for different workload profiles.",
+      "prompt": "A simulation is CPU-bound and needs relatively little memory or local storage. Which EC2 resource profile fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 21
+            "width_chars": 30
           }
         ]
       },
@@ -630,9 +667,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "compute optimized is the retrieval target here. EC2 instance families balance compute, memory, storage, networking, and accelerator resources for different workload profiles. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Compute-optimized EC2 families target CPU-intensive workloads.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "CPU is the bottleneck"
       ],
       "error_codes": [
         {
@@ -646,21 +683,21 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "ec2-families-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.2",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: EC2 instance families balance compute, memory, storage, networking, and accelerator resources for different workload profiles. Which choice is the most direct fit?",
+      "prompt": "An in-memory analytics engine is limited by RAM capacity rather than CPU. Which EC2 profile fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -671,27 +708,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "Amazon EFS"
+            "id": "a",
+            "label": "Memory optimized"
           },
           {
-            "id": "opt-2",
-            "label": "compute optimized"
+            "id": "b",
+            "label": "Compute optimized"
           },
           {
-            "id": "opt-3",
-            "label": "concurrency"
+            "id": "c",
+            "label": "Storage optimized"
           },
           {
-            "id": "opt-4",
-            "label": "AWS Batch"
+            "id": "d",
+            "label": "Accelerated computing"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-2"
+          "solution": "a"
         }
       },
       "concepts": [
@@ -700,9 +737,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "compute optimized is the direct fit because EC2 instance families balance compute, memory, storage, networking, and accelerator resources for different workload profiles. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Memory-optimized instances fit large in-memory datasets.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "RAM is the dominant resource"
       ],
       "error_codes": [
         {
@@ -716,33 +753,33 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "lambda-performance-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Lambda allocates CPU and other resources in proportion to configured memory, and concurrency controls how many function executions can run at the same time.",
+      "prompt": "A Lambda function is CPU-bound and each invocation is too slow. Which Lambda configuration should be tested higher because CPU increases with it?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 15
+            "width_chars": 30
           }
         ]
       },
@@ -751,8 +788,9 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "concurrency",
-              "Lambda concurrency"
+              "memory",
+              "Lambda memory",
+              "memory setting"
             ]
           }
         }
@@ -763,9 +801,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "concurrency is the retrieval target here. Lambda allocates CPU and other resources in proportion to configured memory, and concurrency controls how many function executions can run at the same time. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Lambda CPU allocation increases in proportion to configured memory.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "CPU is indirectly controlled through memory"
       ],
       "error_codes": [
         {
@@ -779,21 +817,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Configure Lambda function memory",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/configuration-memory.html"
         }
       ]
     },
     {
       "id": "lambda-performance-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.2",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Lambda allocates CPU and other resources in proportion to configured memory, and concurrency controls how many function executions can run at the same time. Which choice is the most direct fit?",
+      "prompt": "A Lambda function is fast individually, but traffic bursts cause throttled invocations because too many need to run at once. Which dimension should be investigated first?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -804,27 +846,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "concurrency"
+            "id": "a",
+            "label": "Lambda concurrency"
           },
           {
-            "id": "opt-2",
-            "label": "compute optimized"
+            "id": "b",
+            "label": "Function timeout only"
           },
           {
-            "id": "opt-3",
-            "label": "AWS Batch"
+            "id": "c",
+            "label": "EBS IOPS"
           },
           {
-            "id": "opt-4",
-            "label": "Amazon EFS"
+            "id": "d",
+            "label": "Route 53 TTL"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-1"
+          "solution": "a"
         }
       },
       "concepts": [
@@ -833,9 +875,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "concurrency is the direct fit because Lambda allocates CPU and other resources in proportion to configured memory, and concurrency controls how many function executions can run at the same time. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Throttling during simultaneous demand points to concurrency/capacity.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The issue appears when invocations overlap"
       ],
       "error_codes": [
         {
@@ -849,33 +891,37 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Configure Lambda function memory",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/configuration-memory.html"
         }
       ]
     },
     {
       "id": "compute-services-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: AWS Batch manages batch job scheduling, ECS and EKS orchestrate containers, Fargate runs containers without managing servers, and Lambda runs event-driven functions.",
+      "prompt": "Thousands of independent rendering jobs can wait in a queue and should be scheduled automatically onto compute capacity. Which AWS service fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 13
+            "width_chars": 30
           }
         ]
       },
@@ -896,9 +942,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS Batch is the retrieval target here. AWS Batch manages batch job scheduling, ECS and EKS orchestrate containers, Fargate runs containers without managing servers, and Lambda runs event-driven functions. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "AWS Batch schedules and runs queued batch computing jobs.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "Managed batch-job scheduling is the clue"
       ],
       "error_codes": [
         {
@@ -912,21 +958,21 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "compute-services-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.2",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: AWS Batch manages batch job scheduling, ECS and EKS orchestrate containers, Fargate runs containers without managing servers, and Lambda runs event-driven functions. Which choice is the most direct fit?",
+      "prompt": "A platform requires Kubernetes APIs and ecosystem compatibility. Which managed AWS orchestration service fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -937,27 +983,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "compute optimized"
+            "id": "a",
+            "label": "Amazon EKS"
           },
           {
-            "id": "opt-2",
-            "label": "concurrency"
+            "id": "b",
+            "label": "Amazon ECS"
           },
           {
-            "id": "opt-3",
-            "label": "Amazon EFS"
-          },
-          {
-            "id": "opt-4",
+            "id": "c",
             "label": "AWS Batch"
+          },
+          {
+            "id": "d",
+            "label": "Lambda"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-4"
+          "solution": "a"
         }
       },
       "concepts": [
@@ -966,9 +1012,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS Batch is the direct fit because AWS Batch manages batch job scheduling, ECS and EKS orchestrate containers, Fargate runs containers without managing servers, and Lambda runs event-driven functions. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "EKS is the managed Kubernetes service.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The requirement says Kubernetes"
       ],
       "error_codes": [
         {
@@ -982,33 +1028,33 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "database-selection-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.3",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: AWS provides purpose-built databases such as RDS and Aurora for relational workloads, DynamoDB for key-value and document access, Neptune for graph relationships, and Redshift for analytics warehousing.",
+      "prompt": "A social application must efficiently traverse relationships between users, groups, and connections. Which database fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 18
+            "width_chars": 30
           }
         ]
       },
@@ -1029,9 +1075,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Amazon Neptune is the retrieval target here. AWS provides purpose-built databases such as RDS and Aurora for relational workloads, DynamoDB for key-value and document access, Neptune for graph relationships, and Redshift for analytics warehousing. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Neptune is purpose-built for graph relationships and traversal.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "Graph relationships are the clue"
       ],
       "error_codes": [
         {
@@ -1045,21 +1091,21 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "database-selection-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.3",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: AWS provides purpose-built databases such as RDS and Aurora for relational workloads, DynamoDB for key-value and document access, Neptune for graph relationships, and Redshift for analytics warehousing. Which choice is the most direct fit?",
+      "prompt": "An application uses MongoDB drivers and needs a managed MongoDB-compatible document database. Which service fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1070,27 +1116,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "read replica"
+            "id": "a",
+            "label": "Amazon DocumentDB"
           },
           {
-            "id": "opt-2",
-            "label": "Amazon EFS"
-          },
-          {
-            "id": "opt-3",
+            "id": "b",
             "label": "Amazon Neptune"
           },
           {
-            "id": "opt-4",
-            "label": "DAX"
+            "id": "c",
+            "label": "Amazon Redshift"
+          },
+          {
+            "id": "d",
+            "label": "Amazon Aurora"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-3"
+          "solution": "a"
         }
       },
       "concepts": [
@@ -1099,9 +1145,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Amazon Neptune is the direct fit because AWS provides purpose-built databases such as RDS and Aurora for relational workloads, DynamoDB for key-value and document access, Neptune for graph relationships, and Redshift for analytics warehousing. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "DocumentDB is AWS's managed MongoDB-compatible document database.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "MongoDB compatibility is explicit"
       ],
       "error_codes": [
         {
@@ -1115,33 +1161,37 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Amazon DocumentDB compatibility with MongoDB",
+          "url": "https://docs.aws.amazon.com/documentdb/latest/devguide/compatibility.html"
         }
       ]
     },
     {
       "id": "cache-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.3",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Amazon ElastiCache provides general in-memory caching, while DynamoDB Accelerator is a DynamoDB-compatible cache designed for microsecond read access to DynamoDB data.",
+      "prompt": "A DynamoDB app repeatedly reads hot keys and wants a DynamoDB-compatible in-memory cache. Which service fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 12
+            "width_chars": 30
           }
         ]
       },
@@ -1162,9 +1212,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "DAX is the retrieval target here. Amazon ElastiCache provides general in-memory caching, while DynamoDB Accelerator is a DynamoDB-compatible cache designed for microsecond read access to DynamoDB data. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "DAX is purpose-built to accelerate DynamoDB reads.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The cache is specifically for DynamoDB"
       ],
       "error_codes": [
         {
@@ -1178,21 +1228,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "DynamoDB Accelerator (DAX)",
+          "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DAX.html"
         }
       ]
     },
     {
       "id": "cache-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.3",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Amazon ElastiCache provides general in-memory caching, while DynamoDB Accelerator is a DynamoDB-compatible cache designed for microsecond read access to DynamoDB data. Which choice is the most direct fit?",
+      "prompt": "An application needs a general-purpose in-memory cache for SQL results, sessions, counters, and API responses. Which service fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1203,27 +1257,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "Amazon EFS"
+            "id": "a",
+            "label": "Amazon ElastiCache"
           },
           {
-            "id": "opt-2",
+            "id": "b",
             "label": "DAX"
           },
           {
-            "id": "opt-3",
-            "label": "Amazon Neptune"
+            "id": "c",
+            "label": "Neptune"
           },
           {
-            "id": "opt-4",
-            "label": "read replica"
+            "id": "d",
+            "label": "S3"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-2"
+          "solution": "a"
         }
       },
       "concepts": [
@@ -1232,9 +1286,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "DAX is the direct fit because Amazon ElastiCache provides general in-memory caching, while DynamoDB Accelerator is a DynamoDB-compatible cache designed for microsecond read access to DynamoDB data. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "ElastiCache is general-purpose; DAX is specialized for DynamoDB.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Multiple cache use cases point to ElastiCache"
       ],
       "error_codes": [
         {
@@ -1248,33 +1302,33 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "db-read-scaling-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.3",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Read replicas and Aurora reader instances scale read traffic, while RDS Proxy primarily improves connection management and reuse.",
+      "prompt": "An RDS database is healthy for writes but overloaded by read-only reporting queries. What should be added to scale reads?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 16
+            "width_chars": 30
           }
         ]
       },
@@ -1285,7 +1339,7 @@
             "accepted_answers": [
               "read replica",
               "read replicas",
-              "Aurora reader"
+              "RDS read replica"
             ]
           }
         }
@@ -1296,9 +1350,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "read replica is the retrieval target here. Read replicas and Aurora reader instances scale read traffic, while RDS Proxy primarily improves connection management and reuse. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Read replicas offload read traffic from the source database.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The bottleneck is read traffic"
       ],
       "error_codes": [
         {
@@ -1312,21 +1366,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Working with DB instance read replicas",
+          "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html"
         }
       ]
     },
     {
       "id": "db-read-scaling-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.3",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Read replicas and Aurora reader instances scale read traffic, while RDS Proxy primarily improves connection management and reuse. Which choice is the most direct fit?",
+      "prompt": "A bursty Lambda application opens thousands of short-lived RDS connections and risks connection exhaustion. Which service fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1337,27 +1395,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "read replica"
+            "id": "a",
+            "label": "Amazon RDS Proxy"
           },
           {
-            "id": "opt-2",
-            "label": "Amazon Neptune"
+            "id": "b",
+            "label": "Read replica"
           },
           {
-            "id": "opt-3",
+            "id": "c",
             "label": "DAX"
           },
           {
-            "id": "opt-4",
-            "label": "Amazon EFS"
+            "id": "d",
+            "label": "Redshift"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-1"
+          "solution": "a"
         }
       },
       "concepts": [
@@ -1366,9 +1424,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "read replica is the direct fit because Read replicas and Aurora reader instances scale read traffic, while RDS Proxy primarily improves connection management and reuse. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "RDS Proxy pools and reuses database connections.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The bottleneck is connection management"
       ],
       "error_codes": [
         {
@@ -1382,33 +1440,37 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Amazon RDS Proxy concepts",
+          "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy.howitworks.html"
         }
       ]
     },
     {
       "id": "edge-networking-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.4",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: CloudFront is a content delivery network that caches and delivers HTTP content from edge locations, while Global Accelerator uses the AWS global network to improve availability and performance for TCP and UDP applications.",
+      "prompt": "A TCP/UDP application needs fixed global entry IPs that are anycast from AWS edge locations and route over the AWS global network. Which service fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 14
+            "width_chars": 30
           }
         ]
       },
@@ -1417,8 +1479,8 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "CloudFront",
-              "Amazon CloudFront"
+              "AWS Global Accelerator",
+              "Global Accelerator"
             ]
           }
         }
@@ -1429,9 +1491,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "CloudFront is the retrieval target here. CloudFront is a content delivery network that caches and delivers HTTP content from edge locations, while Global Accelerator uses the AWS global network to improve availability and performance for TCP and UDP applications. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Global Accelerator provides static anycast IPs and AWS-global-network routing.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "No content caching is required"
       ],
       "error_codes": [
         {
@@ -1445,21 +1507,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "How AWS Global Accelerator works",
+          "url": "https://docs.aws.amazon.com/global-accelerator/latest/dg/introduction-how-it-works.html"
         }
       ]
     },
     {
       "id": "edge-networking-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.4",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: CloudFront is a content delivery network that caches and delivers HTTP content from edge locations, while Global Accelerator uses the AWS global network to improve availability and performance for TCP and UDP applications. Which choice is the most direct fit?",
+      "prompt": "A website serves cacheable HTTP assets globally and needs lower viewer latency and less origin load. Which service fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1470,27 +1536,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "Network Load Balancer"
+            "id": "a",
+            "label": "Amazon CloudFront"
           },
           {
-            "id": "opt-2",
-            "label": "AWS Direct Connect"
+            "id": "b",
+            "label": "Global Accelerator"
           },
           {
-            "id": "opt-3",
-            "label": "Amazon EFS"
+            "id": "c",
+            "label": "Transit Gateway"
           },
           {
-            "id": "opt-4",
-            "label": "CloudFront"
+            "id": "d",
+            "label": "Direct Connect"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-4"
+          "solution": "a"
         }
       },
       "concepts": [
@@ -1499,9 +1565,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "CloudFront is the direct fit because CloudFront is a content delivery network that caches and delivers HTTP content from edge locations, while Global Accelerator uses the AWS global network to improve availability and performance for TCP and UDP applications. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "CloudFront is the CDN/cache choice for HTTP content.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The requirement is edge caching"
       ],
       "error_codes": [
         {
@@ -1515,33 +1581,33 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "load-balancers-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.4",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: ALB provides Layer 7 HTTP routing, NLB provides high-performance Layer 4 TCP and UDP load balancing, and GWLB integrates fleets of network virtual appliances.",
+      "prompt": "An HTTP application needs host-based and path-based routing. Which load balancer fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 25
+            "width_chars": 30
           }
         ]
       },
@@ -1550,8 +1616,8 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "Network Load Balancer",
-              "NLB"
+              "Application Load Balancer",
+              "ALB"
             ]
           }
         }
@@ -1562,9 +1628,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Network Load Balancer is the retrieval target here. ALB provides Layer 7 HTTP routing, NLB provides high-performance Layer 4 TCP and UDP load balancing, and GWLB integrates fleets of network virtual appliances. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "ALB provides Layer 7 HTTP/HTTPS routing including host/path rules.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "Host/path routing is Layer 7"
       ],
       "error_codes": [
         {
@@ -1578,21 +1644,21 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "load-balancers-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.4",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: ALB provides Layer 7 HTTP routing, NLB provides high-performance Layer 4 TCP and UDP load balancing, and GWLB integrates fleets of network virtual appliances. Which choice is the most direct fit?",
+      "prompt": "A TCP service needs Layer 4 load balancing and static IPs for client allow lists. Which load balancer fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1603,19 +1669,19 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "AWS Direct Connect"
-          },
-          {
-            "id": "opt-2",
-            "label": "Amazon EFS"
-          },
-          {
-            "id": "opt-3",
+            "id": "a",
             "label": "Network Load Balancer"
           },
           {
-            "id": "opt-4",
+            "id": "b",
+            "label": "Application Load Balancer"
+          },
+          {
+            "id": "c",
+            "label": "Gateway Load Balancer"
+          },
+          {
+            "id": "d",
             "label": "CloudFront"
           }
         ]
@@ -1623,7 +1689,7 @@
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-3"
+          "solution": "a"
         }
       },
       "concepts": [
@@ -1632,9 +1698,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Network Load Balancer is the direct fit because ALB provides Layer 7 HTTP routing, NLB provides high-performance Layer 4 TCP and UDP load balancing, and GWLB integrates fleets of network virtual appliances. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "NLB provides high-performance Layer 4 balancing and static IP behavior.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Layer 4 plus static IP is the clue"
       ],
       "error_codes": [
         {
@@ -1648,33 +1714,33 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "hybrid-network-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.4",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Direct Connect provides dedicated connectivity, Site-to-Site VPN provides encrypted IPsec connectivity, Transit Gateway acts as a network transit hub, and PrivateLink exposes services privately through endpoints.",
+      "prompt": "A data center needs dedicated private connectivity to AWS with more predictable network performance than an internet VPN. Which service fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 22
+            "width_chars": 30
           }
         ]
       },
@@ -1695,9 +1761,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS Direct Connect is the retrieval target here. Direct Connect provides dedicated connectivity, Site-to-Site VPN provides encrypted IPsec connectivity, Transit Gateway acts as a network transit hub, and PrivateLink exposes services privately through endpoints. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Direct Connect provides dedicated connectivity from customer networks to AWS.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "Dedicated hybrid connectivity is the clue"
       ],
       "error_codes": [
         {
@@ -1711,21 +1777,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is AWS Direct Connect?",
+          "url": "https://docs.aws.amazon.com/directconnect/latest/UserGuide/Welcome.html"
         }
       ]
     },
     {
       "id": "hybrid-network-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.4",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Direct Connect provides dedicated connectivity, Site-to-Site VPN provides encrypted IPsec connectivity, Transit Gateway acts as a network transit hub, and PrivateLink exposes services privately through endpoints. Which choice is the most direct fit?",
+      "prompt": "Dozens of VPCs and multiple VPNs need a central routing hub instead of a growing mesh. Which service fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1736,27 +1806,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "Amazon EFS"
+            "id": "a",
+            "label": "AWS Transit Gateway"
           },
           {
-            "id": "opt-2",
-            "label": "AWS Direct Connect"
+            "id": "b",
+            "label": "AWS PrivateLink"
           },
           {
-            "id": "opt-3",
+            "id": "c",
             "label": "CloudFront"
           },
           {
-            "id": "opt-4",
-            "label": "Network Load Balancer"
+            "id": "d",
+            "label": "NLB"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-2"
+          "solution": "a"
         }
       },
       "concepts": [
@@ -1765,9 +1835,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS Direct Connect is the direct fit because Direct Connect provides dedicated connectivity, Site-to-Site VPN provides encrypted IPsec connectivity, Transit Gateway acts as a network transit hub, and PrivateLink exposes services privately through endpoints. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Transit Gateway is a central transit hub for VPC and hybrid attachments.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Many networks through one hub is the clue"
       ],
       "error_codes": [
         {
@@ -1781,33 +1851,37 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is AWS Transit Gateway?",
+          "url": "https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html"
         }
       ]
     },
     {
       "id": "streaming-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.5",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Kinesis Data Streams provides real-time streaming with application-controlled consumers, Data Firehose delivers streaming data to destinations with minimal management, and Amazon MSK provides managed Apache Kafka.",
+      "prompt": "A company must keep using Apache Kafka clients and ecosystem tooling while AWS manages the Kafka cluster. Which service fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 24
+            "width_chars": 30
           }
         ]
       },
@@ -1816,8 +1890,8 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "Kinesis Data Streams",
-              "Amazon Kinesis Data Streams"
+              "Amazon MSK",
+              "MSK"
             ]
           }
         }
@@ -1828,9 +1902,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Kinesis Data Streams is the retrieval target here. Kinesis Data Streams provides real-time streaming with application-controlled consumers, Data Firehose delivers streaming data to destinations with minimal management, and Amazon MSK provides managed Apache Kafka. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Amazon MSK is AWS managed Apache Kafka.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "Kafka compatibility is explicit"
       ],
       "error_codes": [
         {
@@ -1844,21 +1918,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is Amazon MSK?",
+          "url": "https://docs.aws.amazon.com/msk/latest/developerguide/what-is-msk.html"
         }
       ]
     },
     {
       "id": "streaming-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.5",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Kinesis Data Streams provides real-time streaming with application-controlled consumers, Data Firehose delivers streaming data to destinations with minimal management, and Amazon MSK provides managed Apache Kafka. Which choice is the most direct fit?",
+      "prompt": "Streaming records should be delivered continuously to S3 with minimal custom consumer management. Which service fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1869,27 +1947,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
+            "id": "a",
+            "label": "Amazon Data Firehose"
+          },
+          {
+            "id": "b",
             "label": "Kinesis Data Streams"
           },
           {
-            "id": "opt-2",
-            "label": "Amazon Athena"
+            "id": "c",
+            "label": "Amazon MSK"
           },
           {
-            "id": "opt-3",
-            "label": "Snow Family"
-          },
-          {
-            "id": "opt-4",
-            "label": "Amazon EFS"
+            "id": "d",
+            "label": "SQS"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-1"
+          "solution": "a"
         }
       },
       "concepts": [
@@ -1898,9 +1976,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Kinesis Data Streams is the direct fit because Kinesis Data Streams provides real-time streaming with application-controlled consumers, Data Firehose delivers streaming data to destinations with minimal management, and Amazon MSK provides managed Apache Kafka. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Data Firehose provides managed delivery of streaming data to destinations such as S3.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Managed delivery is the clue"
       ],
       "error_codes": [
         {
@@ -1914,33 +1992,37 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is Amazon Data Firehose?",
+          "url": "https://docs.aws.amazon.com/firehose/latest/dev/what-is-this-service.html"
         }
       ]
     },
     {
       "id": "analytics-etl-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.5",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: AWS Glue provides managed data integration and ETL, EMR runs big-data frameworks, Athena runs serverless SQL on data in S3, and Redshift provides a managed data warehouse.",
+      "prompt": "Analysts need ad hoc SQL directly over files in S3 without provisioning a database server or cluster. Which service fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 17
+            "width_chars": 30
           }
         ]
       },
@@ -1961,9 +2043,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Amazon Athena is the retrieval target here. AWS Glue provides managed data integration and ETL, EMR runs big-data frameworks, Athena runs serverless SQL on data in S3, and Redshift provides a managed data warehouse. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Athena provides serverless SQL analysis over data in S3.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "Serverless SQL on S3 is the clue"
       ],
       "error_codes": [
         {
@@ -1977,21 +2059,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Use columnar storage formats with Athena",
+          "url": "https://docs.aws.amazon.com/athena/latest/ug/columnar-storage.html"
         }
       ]
     },
     {
       "id": "analytics-etl-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.5",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: AWS Glue provides managed data integration and ETL, EMR runs big-data frameworks, Athena runs serverless SQL on data in S3, and Redshift provides a managed data warehouse. Which choice is the most direct fit?",
+      "prompt": "A team needs a managed crawler/catalog plus ETL transformations across data sources. Which service fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -2002,27 +2088,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "Kinesis Data Streams"
+            "id": "a",
+            "label": "AWS Glue"
           },
           {
-            "id": "opt-2",
-            "label": "Snow Family"
+            "id": "b",
+            "label": "Athena"
           },
           {
-            "id": "opt-3",
-            "label": "Amazon EFS"
+            "id": "c",
+            "label": "Redshift"
           },
           {
-            "id": "opt-4",
-            "label": "Amazon Athena"
+            "id": "d",
+            "label": "Amazon Quick Sight"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-4"
+          "solution": "a"
         }
       },
       "concepts": [
@@ -2031,9 +2117,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Amazon Athena is the direct fit because AWS Glue provides managed data integration and ETL, EMR runs big-data frameworks, Athena runs serverless SQL on data in S3, and Redshift provides a managed data warehouse. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Glue provides managed data integration/ETL and the Glue Data Catalog.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Crawler, catalog, and ETL point to Glue"
       ],
       "error_codes": [
         {
@@ -2047,33 +2133,37 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is AWS Glue?",
+          "url": "https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html"
         }
       ]
     },
     {
       "id": "data-transfer-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.5",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: DataSync moves data online between storage systems, Storage Gateway supports ongoing hybrid access patterns, and Snow Family devices move or process data where network transfer is impractical.",
+      "prompt": "A company must move hundreds of terabytes from on-premises storage to S3 over available network links using a managed online-transfer service. Which service fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 15
+            "width_chars": 30
           }
         ]
       },
@@ -2082,9 +2172,8 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "Snow Family",
-              "AWS Snow Family",
-              "Snowball"
+              "AWS DataSync",
+              "DataSync"
             ]
           }
         }
@@ -2095,9 +2184,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Snow Family is the retrieval target here. DataSync moves data online between storage systems, Storage Gateway supports ongoing hybrid access patterns, and Snow Family devices move or process data where network transfer is impractical. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "DataSync is designed for managed online data movement.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The transfer is online"
       ],
       "error_codes": [
         {
@@ -2111,21 +2200,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is AWS DataSync?",
+          "url": "https://docs.aws.amazon.com/datasync/latest/userguide/what-is-datasync.html"
         }
       ]
     },
     {
       "id": "data-transfer-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.5",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: DataSync moves data online between storage systems, Storage Gateway supports ongoing hybrid access patterns, and Snow Family devices move or process data where network transfer is impractical. Which choice is the most direct fit?",
+      "prompt": "For exam recognition, an existing AWS customer explicitly needs an AWS physical appliance for bulk offline transfer where normal network transfer is impractical. Which legacy/in-scope family matches?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -2136,27 +2229,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "Amazon Athena"
+            "id": "a",
+            "label": "AWS Snow Family"
           },
           {
-            "id": "opt-2",
-            "label": "Amazon EFS"
+            "id": "b",
+            "label": "AWS DataSync"
           },
           {
-            "id": "opt-3",
-            "label": "Snow Family"
+            "id": "c",
+            "label": "Storage Gateway"
           },
           {
-            "id": "opt-4",
-            "label": "Kinesis Data Streams"
+            "id": "d",
+            "label": "Athena"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-3"
+          "solution": "a"
         }
       },
       "concepts": [
@@ -2165,9 +2258,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Snow Family is the direct fit because DataSync moves data online between storage systems, Storage Gateway supports ongoing hybrid access patterns, and Snow Family devices move or process data where network transfer is impractical. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Snow Family is the traditional exam clue for appliance-based offline transfer, but devices are no longer available to new customers.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "This separates exam recognition from current availability"
       ],
       "error_codes": [
         {
@@ -2181,14 +2274,18 @@
       ],
       "source_refs": [
         {
-          "title": "Design High-Performing Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "AWS Snowball Edge availability change",
+          "url": "https://docs.aws.amazon.com/snowball/latest/developer-guide/snowball-edge-availability-change.html"
         }
       ]
     },
     {
       "id": "domain-3-task-3-1-builder-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.1",
@@ -2253,7 +2350,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. Amazon EFS fits this behavior: Amazon S3 provides object storage, Amazon EBS provides block storage for compute, and Amazon EFS or Amazon FSx provide managed file systems.. gp3 fits this behavior: EBS SSD volumes such as gp3 and io2 are optimized for transactional IOPS, while st1 and sc1 HDD volumes target large sequential throughput workloads.. AWS DataSync fits this behavior: AWS DataSync accelerates online data movement, Storage Gateway exposes hybrid storage interfaces, and Snow Family devices support large offline or edge data-transfer scenarios..",
+      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. Amazon EFS fits this behavior: Amazon S3 provides object storage, Amazon EBS provides block storage for compute, and Amazon EFS or Amazon FSx provide managed file systems. gp3 fits this behavior: EBS SSD volumes such as gp3 and io2 are optimized for transactional IOPS, while st1 and sc1 HDD volumes target large sequential throughput workloads. AWS DataSync fits this behavior: AWS DataSync accelerates online data movement, Storage Gateway exposes hybrid storage interfaces, and Snow Family devices support large offline or edge data-transfer scenarios.",
       "hints": [
         "Match each piece to the requirement it primarily solves; do not select a service merely because it could also appear in the architecture."
       ],
@@ -2276,7 +2373,7 @@
     },
     {
       "id": "domain-3-task-3-1-evidence-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.1",
@@ -2301,15 +2398,15 @@
           },
           {
             "id": "irr-1",
-            "label": "The only concern mentioned is compute optimized, with no requirement connected to determine high-performing and/or scalable storage solutions."
+            "label": "This mentions compute optimized, with no requirement connected to determine high-performing and/or scalable storage solutions."
           },
           {
             "id": "irr-2",
-            "label": "The only concern mentioned is concurrency, with no requirement connected to determine high-performing and/or scalable storage solutions."
+            "label": "This mentions concurrency, with no requirement connected to determine high-performing and/or scalable storage solutions."
           },
           {
             "id": "irr-3",
-            "label": "The only concern mentioned is AWS Batch, with no requirement connected to determine high-performing and/or scalable storage solutions."
+            "label": "This mentions AWS Batch, with no requirement connected to determine high-performing and/or scalable storage solutions."
           }
         ]
       },
@@ -2358,7 +2455,7 @@
     },
     {
       "id": "domain-3-task-3-2-builder-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.2",
@@ -2423,7 +2520,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. compute optimized fits this behavior: EC2 instance families balance compute, memory, storage, networking, and accelerator resources for different workload profiles.. concurrency fits this behavior: Lambda allocates CPU and other resources in proportion to configured memory, and concurrency controls how many function executions can run at the same time.. AWS Batch fits this behavior: AWS Batch manages batch job scheduling, ECS and EKS orchestrate containers, Fargate runs containers without managing servers, and Lambda runs event-driven functions..",
+      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. compute optimized fits this behavior: EC2 instance families balance compute, memory, storage, networking, and accelerator resources for different workload profiles. concurrency fits this behavior: Lambda allocates CPU and other resources in proportion to configured memory, and concurrency controls how many function executions can run at the same time. AWS Batch fits this behavior: AWS Batch manages batch job scheduling, ECS and EKS orchestrate containers, Fargate runs containers without managing servers, and Lambda runs event-driven functions.",
       "hints": [
         "Match each piece to the requirement it primarily solves; do not select a service merely because it could also appear in the architecture."
       ],
@@ -2446,7 +2543,7 @@
     },
     {
       "id": "domain-3-task-3-2-fault-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.2",
@@ -2495,7 +2592,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "The faulty statement swaps neighboring mechanisms. compute optimized fits this behavior: EC2 instance families balance compute, memory, storage, networking, and accelerator resources for different workload profiles. By contrast, concurrency primarily addresses: Lambda allocates CPU and other resources in proportion to configured memory, and concurrency controls how many function executions can run at the same time..",
+      "explanation": "The faulty statement swaps neighboring mechanisms. compute optimized fits this behavior: EC2 instance families balance compute, memory, storage, networking, and accelerator resources for different workload profiles. By contrast, concurrency primarily addresses: Lambda allocates CPU and other resources in proportion to configured memory, and concurrency controls how many function executions can run at the same time.",
       "hints": [
         "Check each service's primary purpose, not whether it can technically coexist with the other components."
       ],
@@ -2518,7 +2615,7 @@
     },
     {
       "id": "domain-3-task-3-3-builder-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.3",
@@ -2583,7 +2680,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. Amazon Neptune fits this behavior: AWS provides purpose-built databases such as RDS and Aurora for relational workloads, DynamoDB for key-value and document access, Neptune for graph relationships, and Redshift for analytics warehousing.. DAX fits this behavior: Amazon ElastiCache provides general in-memory caching, while DynamoDB Accelerator is a DynamoDB-compatible cache designed for microsecond read access to DynamoDB data.. read replica fits this behavior: Read replicas and Aurora reader instances scale read traffic, while RDS Proxy primarily improves connection management and reuse..",
+      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. Amazon Neptune fits this behavior: AWS provides purpose-built databases such as RDS and Aurora for relational workloads, DynamoDB for key-value and document access, Neptune for graph relationships, and Redshift for analytics warehousing. DAX fits this behavior: Amazon ElastiCache provides general in-memory caching, while DynamoDB Accelerator is a DynamoDB-compatible cache designed for microsecond read access to DynamoDB data. read replica fits this behavior: Read replicas and Aurora reader instances scale read traffic, while RDS Proxy primarily improves connection management and reuse.",
       "hints": [
         "Match each piece to the requirement it primarily solves; do not select a service merely because it could also appear in the architecture."
       ],
@@ -2606,7 +2703,7 @@
     },
     {
       "id": "domain-3-task-3-3-evidence-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.3",
@@ -2631,15 +2728,15 @@
           },
           {
             "id": "irr-1",
-            "label": "The only concern mentioned is Amazon EFS, with no requirement connected to determine high-performing database solutions."
+            "label": "This mentions Amazon EFS, with no requirement connected to determine high-performing database solutions."
           },
           {
             "id": "irr-2",
-            "label": "The only concern mentioned is gp3, with no requirement connected to determine high-performing database solutions."
+            "label": "This mentions gp3, with no requirement connected to determine high-performing database solutions."
           },
           {
             "id": "irr-3",
-            "label": "The only concern mentioned is AWS DataSync, with no requirement connected to determine high-performing database solutions."
+            "label": "This mentions AWS DataSync, with no requirement connected to determine high-performing database solutions."
           }
         ]
       },
@@ -2688,7 +2785,7 @@
     },
     {
       "id": "domain-3-task-3-4-builder-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.4",
@@ -2753,7 +2850,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. CloudFront fits this behavior: CloudFront is a content delivery network that caches and delivers HTTP content from edge locations, while Global Accelerator uses the AWS global network to improve availability and performance for TCP and UDP applications.. Network Load Balancer fits this behavior: ALB provides Layer 7 HTTP routing, NLB provides high-performance Layer 4 TCP and UDP load balancing, and GWLB integrates fleets of network virtual appliances.. AWS Direct Connect fits this behavior: Direct Connect provides dedicated connectivity, Site-to-Site VPN provides encrypted IPsec connectivity, Transit Gateway acts as a network transit hub, and PrivateLink exposes services privately through endpoints..",
+      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. CloudFront fits this behavior: CloudFront is a content delivery network that caches and delivers HTTP content from edge locations, while Global Accelerator uses the AWS global network to improve availability and performance for TCP and UDP applications. Network Load Balancer fits this behavior: ALB provides Layer 7 HTTP routing, NLB provides high-performance Layer 4 TCP and UDP load balancing, and GWLB integrates fleets of network virtual appliances. AWS Direct Connect fits this behavior: Direct Connect provides dedicated connectivity, Site-to-Site VPN provides encrypted IPsec connectivity, Transit Gateway acts as a network transit hub, and PrivateLink exposes services privately through endpoints.",
       "hints": [
         "Match each piece to the requirement it primarily solves; do not select a service merely because it could also appear in the architecture."
       ],
@@ -2776,7 +2873,7 @@
     },
     {
       "id": "domain-3-task-3-4-fault-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.4",
@@ -2825,7 +2922,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "The faulty statement swaps neighboring mechanisms. CloudFront fits this behavior: CloudFront is a content delivery network that caches and delivers HTTP content from edge locations, while Global Accelerator uses the AWS global network to improve availability and performance for TCP and UDP applications. By contrast, Network Load Balancer primarily addresses: ALB provides Layer 7 HTTP routing, NLB provides high-performance Layer 4 TCP and UDP load balancing, and GWLB integrates fleets of network virtual appliances..",
+      "explanation": "The faulty statement swaps neighboring mechanisms. CloudFront fits this behavior: CloudFront is a content delivery network that caches and delivers HTTP content from edge locations, while Global Accelerator uses the AWS global network to improve availability and performance for TCP and UDP applications. By contrast, Network Load Balancer primarily addresses: ALB provides Layer 7 HTTP routing, NLB provides high-performance Layer 4 TCP and UDP load balancing, and GWLB integrates fleets of network virtual appliances.",
       "hints": [
         "Check each service's primary purpose, not whether it can technically coexist with the other components."
       ],
@@ -2848,7 +2945,7 @@
     },
     {
       "id": "domain-3-task-3-5-builder-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.5",
@@ -2913,7 +3010,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. Kinesis Data Streams fits this behavior: Kinesis Data Streams provides real-time streaming with application-controlled consumers, Data Firehose delivers streaming data to destinations with minimal management, and Amazon MSK provides managed Apache Kafka.. Amazon Athena fits this behavior: AWS Glue provides managed data integration and ETL, EMR runs big-data frameworks, Athena runs serverless SQL on data in S3, and Redshift provides a managed data warehouse.. Snow Family fits this behavior: DataSync moves data online between storage systems, Storage Gateway supports ongoing hybrid access patterns, and Snow Family devices move or process data where network transfer is impractical..",
+      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. Kinesis Data Streams fits this behavior: Kinesis Data Streams provides real-time streaming with application-controlled consumers, Data Firehose delivers streaming data to destinations with minimal management, and Amazon MSK provides managed Apache Kafka. Amazon Athena fits this behavior: AWS Glue provides managed data integration and ETL, EMR runs big-data frameworks, Athena runs serverless SQL on data in S3, and Redshift provides a managed data warehouse. Snow Family fits this behavior: DataSync moves data online between storage systems, Storage Gateway supports ongoing hybrid access patterns, and Snow Family devices move or process data where network transfer is impractical.",
       "hints": [
         "Match each piece to the requirement it primarily solves; do not select a service merely because it could also appear in the architecture."
       ],
@@ -2936,7 +3033,7 @@
     },
     {
       "id": "domain-3-task-3-5-evidence-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.5",
@@ -2961,15 +3058,15 @@
           },
           {
             "id": "irr-1",
-            "label": "The only concern mentioned is Amazon EFS, with no requirement connected to determine high-performing data ingestion and transformation solutions."
+            "label": "The requirement is ACM certificate renewal, which does not determine the ingestion/transformation architecture."
           },
           {
             "id": "irr-2",
-            "label": "The only concern mentioned is gp3, with no requirement connected to determine high-performing data ingestion and transformation solutions."
+            "label": "The requirement is IAM root-user MFA, which does not determine the ingestion/transformation architecture."
           },
           {
             "id": "irr-3",
-            "label": "The only concern mentioned is AWS DataSync, with no requirement connected to determine high-performing data ingestion and transformation solutions."
+            "label": "The requirement is S3 Object Lock retention, which does not determine the ingestion/transformation service choice."
           }
         ]
       },
@@ -2995,7 +3092,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "The relevant observations are the ones that map directly to the stated task's architecture behaviors. Strong architecture reasoning separates a hard requirement from a fact that is merely true about some other AWS service but does not change this decision.",
+      "explanation": "Relevant evidence changes the streaming, analytics, ETL, or transfer design. The distractors are unrelated security/retention facts.",
       "hints": [
         "Select evidence that changes the architecture choice; ignore unrelated facts."
       ],
@@ -3018,7 +3115,7 @@
     },
     {
       "id": "high-performance-global-app-scenario-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-3",
       "task_id": "3.4",
@@ -3214,6 +3311,377 @@
         {
           "title": "Design High-Performing Architectures — SAA-C03 exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "scaling-signal-builder-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-3",
+      "task_id": "3.2",
+      "assessment_mode": "application",
+      "interaction_type": "configuration_builder",
+      "difficulty_prior": 0.76,
+      "prompt": "Match each workload to the scaling signal that most directly reflects capacity pressure.",
+      "interaction": {
+        "type": "configuration_builder",
+        "slots": [
+          {
+            "id": "cpu",
+            "label": "CPU-bound EC2 fleet"
+          },
+          {
+            "id": "web",
+            "label": "ALB web tier driven by requests"
+          },
+          {
+            "id": "queue",
+            "label": "SQS worker fleet"
+          }
+        ],
+        "pieces": [
+          {
+            "id": "a",
+            "label": "Average CPU utilization"
+          },
+          {
+            "id": "b",
+            "label": "ALB RequestCountPerTarget"
+          },
+          {
+            "id": "c",
+            "label": "Queue backlog per instance"
+          },
+          {
+            "id": "x",
+            "label": "Route 53 hosted-zone count"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "configuration_builder",
+        "assignments": {
+          "cpu": "a",
+          "web": "b",
+          "queue": "c"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.scaling_signals",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Scaling metrics should track demand relative to available capacity.",
+      "hints": [
+        "Choose a metric that changes meaningfully as capacity changes."
+      ],
+      "error_codes": [],
+      "source_refs": [
+        {
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Target tracking scaling policies",
+          "url": "https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-scaling-target-tracking.html"
+        },
+        {
+          "title": "Scaling based on Amazon SQS",
+          "url": "https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-using-sqs-queue.html"
+        }
+      ]
+    },
+    {
+      "id": "database-capacity-builder-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-3",
+      "task_id": "3.3",
+      "assessment_mode": "application",
+      "interaction_type": "configuration_builder",
+      "difficulty_prior": 0.8,
+      "prompt": "Match each workload to the capacity model that best fits.",
+      "interaction": {
+        "type": "configuration_builder",
+        "slots": [
+          {
+            "id": "var",
+            "label": "DynamoDB traffic is highly variable"
+          },
+          {
+            "id": "known",
+            "label": "DynamoDB throughput is predictable and explicitly managed"
+          },
+          {
+            "id": "aurora",
+            "label": "Relational compute demand varies significantly"
+          }
+        ],
+        "pieces": [
+          {
+            "id": "a",
+            "label": "DynamoDB on-demand"
+          },
+          {
+            "id": "b",
+            "label": "DynamoDB provisioned RCU/WCU"
+          },
+          {
+            "id": "c",
+            "label": "Aurora Serverless v2 ACU range"
+          },
+          {
+            "id": "x",
+            "label": "Neptune graph traversal"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "configuration_builder",
+        "assignments": {
+          "var": "a",
+          "known": "b",
+          "aurora": "c"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.database_capacity",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "On-demand fits variable DynamoDB demand, provisioned uses RCU/WCU, and Aurora Serverless v2 scales relational compute in ACUs.",
+      "hints": [
+        "Separate request-capacity mode from relational compute scaling."
+      ],
+      "error_codes": [],
+      "source_refs": [
+        {
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "DynamoDB on-demand capacity mode",
+          "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/on-demand-capacity-mode.html"
+        },
+        {
+          "title": "How Aurora Serverless v2 works",
+          "url": "https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.how-it-works.html"
+        }
+      ]
+    },
+    {
+      "id": "network-topology-evidence-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-3",
+      "task_id": "3.4",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.82,
+      "prompt": "Select observations that directly indicate network topology or address-capacity risk.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          {
+            "id": "a",
+            "label": "Application subnets are close to exhausting available IP addresses."
+          },
+          {
+            "id": "b",
+            "label": "Planned connected networks use overlapping CIDR ranges."
+          },
+          {
+            "id": "c",
+            "label": "Dozens of VPCs are connected with an expanding pairwise mesh."
+          },
+          {
+            "id": "x",
+            "label": "The app uses an ACM certificate."
+          },
+          {
+            "id": "y",
+            "label": "An S3 bucket uses Object Lock."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.network_topology",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "IP exhaustion, overlapping CIDRs, and an exploding connection mesh are topology/scalability concerns.",
+      "hints": [
+        "Select facts that change addressing, routing, or how networks connect."
+      ],
+      "error_codes": [],
+      "source_refs": [
+        {
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is AWS Transit Gateway?",
+          "url": "https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html"
+        }
+      ]
+    },
+    {
+      "id": "data-lake-service-map-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-3",
+      "task_id": "3.5",
+      "assessment_mode": "application",
+      "interaction_type": "configuration_builder",
+      "difficulty_prior": 0.78,
+      "prompt": "Match each data-lake requirement to the AWS service whose primary role fits it.",
+      "interaction": {
+        "type": "configuration_builder",
+        "slots": [
+          {
+            "id": "govern",
+            "label": "Centralized data-lake permissions"
+          },
+          {
+            "id": "query",
+            "label": "Serverless SQL over S3"
+          },
+          {
+            "id": "visual",
+            "label": "BI dashboards and visualizations"
+          }
+        ],
+        "pieces": [
+          {
+            "id": "a",
+            "label": "AWS Lake Formation"
+          },
+          {
+            "id": "b",
+            "label": "Amazon Athena"
+          },
+          {
+            "id": "c",
+            "label": "Amazon Quick Sight"
+          },
+          {
+            "id": "x",
+            "label": "Amazon EBS"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "configuration_builder",
+        "assignments": {
+          "govern": "a",
+          "query": "b",
+          "visual": "c"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.data_lake_performance",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Lake Formation centralizes lake permissions, Athena queries S3 with SQL, and Quick Sight provides BI dashboards.",
+      "hints": [
+        "Separate governance, query, and presentation."
+      ],
+      "error_codes": [],
+      "source_refs": [
+        {
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Managing Lake Formation permissions",
+          "url": "https://docs.aws.amazon.com/lake-formation/latest/dg/managing-permissions.html"
+        },
+        {
+          "title": "Use columnar storage formats with Athena",
+          "url": "https://docs.aws.amazon.com/athena/latest/ug/columnar-storage.html"
+        },
+        {
+          "title": "Amazon Quick Sight business intelligence",
+          "url": "https://docs.aws.amazon.com/quick/latest/userguide/quick-bi.html"
+        }
+      ]
+    },
+    {
+      "id": "parquet-performance-application-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain3-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-3",
+      "task_id": "3.5",
+      "assessment_mode": "application",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.72,
+      "prompt": "Athena queries select only a few columns from huge CSV files in S3. Which change most directly improves scan efficiency?",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "solution",
+            "label": "Best change"
+          }
+        ],
+        "options": [
+          {
+            "id": "a",
+            "label": "Convert the dataset to Parquet"
+          },
+          {
+            "id": "b",
+            "label": "Move CSV files to EBS"
+          },
+          {
+            "id": "c",
+            "label": "Put an NLB in front of Athena"
+          },
+          {
+            "id": "d",
+            "label": "Increase Route 53 TTL"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "solution": "a"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.data_lake_performance",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Parquet is compressed and columnar, so Athena can read relevant columns/blocks and reduce scan I/O.",
+      "hints": [
+        "The query reads only a subset of columns."
+      ],
+      "error_codes": [],
+      "source_refs": [
+        {
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Use columnar storage formats with Athena",
+          "url": "https://docs.aws.amazon.com/athena/latest/ug/columnar-storage.html"
         }
       ]
     }

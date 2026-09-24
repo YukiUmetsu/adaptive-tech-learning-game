@@ -1,6 +1,6 @@
 {
   "schema_version": "2.0.0",
-  "content_version": "saa-c03-learning-2026-09-19-v2-interactive",
+  "content_version": "saa-c03-learning-2026-09-23-v3-domain2-audit-fix",
   "certification_id": "aws-saa-c03",
   "certification_version": "saa-c03",
   "exam_guide_revision": "SAA-C03 / reviewed 2026-09-19",
@@ -44,10 +44,10 @@
       "2.2.07"
     ],
     "module_count": 2,
-    "knowledge_node_count": 16,
-    "prompt_count": 48
+    "knowledge_node_count": 20,
+    "prompt_count": 63
   },
-  "authoring_notes": "Interactive v2 refresh. Uses progressive tables for service/trade-off comparisons and annotated code files where reading a real policy/configuration improves understanding.",
+  "authoring_notes": "Domain 2 audit refresh: deeper scaling/state, caching, storage selection, SQS delivery semantics, current RDS Multi-AZ behavior, RPO/RTO, service quotas, X-Ray, node-level glossary, and direct AWS source refs.",
   "modules": [
     {
       "id": "domain-2-module-1",
@@ -71,7 +71,7 @@
       "nodes": [
         {
           "id": "domain-2-stateless-scaling",
-          "title": "Stateless services and horizontal scaling",
+          "title": "Stateful vs stateless; horizontal vs vertical scaling",
           "concept_ids": [
             "aws.saa.stateless_scaling"
           ],
@@ -85,17 +85,17 @@
               "id": "stateless-scaling-what",
               "kind": "what",
               "label": "WHAT?",
-              "placeholder": "What should this concept make you think of?",
+              "placeholder": "How do state placement and scaling direction affect architecture?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Stateless application tiers keep session state outside individual compute instances so capacity can scale out and replace instances safely."
+                "text": "A stateless application tier keeps user/session state outside individual compute instances, so any healthy instance can handle the next request. Horizontal scaling adds more instances (scale out), while vertical scaling makes one instance larger (scale up)."
               }
             },
             {
               "id": "stateless-scaling-task-table",
               "kind": "connects_to",
-              "label": "TASK MAP",
+              "label": "COMPARE",
               "placeholder": "Reveal each row and compare neighboring architecture choices.",
               "required": true,
               "reveal": {
@@ -103,80 +103,53 @@
                 "columns": [
                   {
                     "id": "choice",
-                    "label": "Choice / concept"
+                    "label": "Choice"
                   },
                   {
-                    "id": "best_for",
-                    "label": "What distinguishes it"
+                    "id": "meaning",
+                    "label": "Meaning"
+                  },
+                  {
+                    "id": "effect",
+                    "label": "Architecture effect"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "r1",
+                    "id": "stateless",
                     "cells": {
-                      "choice": "horizontal scaling",
-                      "best_for": "Stateless application tiers keep session state outside individual compute instances so capacity can scale out and replace instances safely."
+                      "choice": "Stateless",
+                      "meaning": "State externalized from one server",
+                      "effect": "Easier replacement and scale-out"
                     }
                   },
                   {
-                    "id": "r2",
+                    "id": "stateful",
                     "cells": {
-                      "choice": "Auto Scaling group",
-                      "best_for": "Elastic Load Balancing distributes requests across healthy targets, and EC2 Auto Scaling adjusts the number of instances to match demand."
+                      "choice": "Stateful",
+                      "meaning": "One server keeps request/session state",
+                      "effect": "Scale/failover needs state-aware design"
                     }
                   },
                   {
-                    "id": "r3",
+                    "id": "horizontal",
                     "cells": {
-                      "choice": "Amazon SQS",
-                      "best_for": "Amazon SQS stores messages durably so producers and consumers can operate at different rates without a direct synchronous dependency."
+                      "choice": "Horizontal scaling",
+                      "meaning": "Add instances",
+                      "effect": "Scale out"
                     }
                   },
                   {
-                    "id": "r4",
+                    "id": "vertical",
                     "cells": {
-                      "choice": "Amazon SNS",
-                      "best_for": "Amazon SNS publishes one message to multiple subscribers or downstream endpoints through a topic."
-                    }
-                  },
-                  {
-                    "id": "r5",
-                    "cells": {
-                      "choice": "Amazon EventBridge",
-                      "best_for": "Amazon EventBridge routes events from AWS services, custom applications, and partners to targets by matching event patterns."
-                    }
-                  },
-                  {
-                    "id": "r6",
-                    "cells": {
-                      "choice": "AWS Step Functions",
-                      "best_for": "AWS Step Functions coordinates multi-step workflows with explicit states, branching, retries, timeouts, and service integrations."
-                    }
-                  },
-                  {
-                    "id": "r7",
-                    "cells": {
-                      "choice": "AWS Lambda",
-                      "best_for": "AWS Lambda runs event-driven code without managing servers and scales concurrent execution in response to incoming work within service limits."
-                    }
-                  },
-                  {
-                    "id": "r8",
-                    "cells": {
-                      "choice": "AWS Fargate",
-                      "best_for": "Amazon ECS and Amazon EKS orchestrate containers, while AWS Fargate supplies serverless container compute for supported ECS and EKS workloads."
-                    }
-                  },
-                  {
-                    "id": "r9",
-                    "cells": {
-                      "choice": "Amazon API Gateway",
-                      "best_for": "Amazon API Gateway provides managed endpoints for REST, HTTP, and WebSocket APIs and integrates with backends such as Lambda or private services."
+                      "choice": "Vertical scaling",
+                      "meaning": "Use a larger instance",
+                      "effect": "Scale up"
                     }
                   }
                 ],
                 "progressive_reveal": {
-                  "mode": "row",
+                  "mode": "cell",
                   "initially_visible": {
                     "column_ids": [
                       "choice"
@@ -196,8 +169,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "horizontal scaling",
-                  "Stateless services and horizontal scaling"
+                  "scale out -> horizontal",
+                  "scale up -> vertical",
+                  "externalized session state -> stateless"
                 ]
               }
             }
@@ -206,6 +180,28 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "What is Amazon EC2 Auto Scaling?",
+              "url": "https://docs.aws.amazon.com/autoscaling/ec2/userguide/what-is-amazon-ec2-auto-scaling.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "stateless",
+              "definition": "A design where one server does not need to remember request or session state locally, so another healthy server can handle the next request."
+            },
+            {
+              "term": "stateful",
+              "definition": "A design where a server keeps state that later requests depend on, such as local session data."
+            },
+            {
+              "term": "horizontal scaling",
+              "definition": "Adding more instances or workers. This is also called scaling out."
+            },
+            {
+              "term": "vertical scaling",
+              "definition": "Making one instance larger. This is also called scaling up."
             }
           ]
         },
@@ -238,13 +234,14 @@
               "id": "alb-asg-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When should ELB and Auto Scaling appear together?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Elastic Load Balancing distributes requests across healthy targets, and EC2 Auto Scaling adjusts the number of instances to match demand.",
-                  "Key retrieval phrase: Auto Scaling group."
+                  "Traffic must be spread across multiple healthy targets.",
+                  "Compute capacity should grow and shrink with demand.",
+                  "Unhealthy instances should be replaced while traffic stays on healthy targets."
                 ]
               }
             },
@@ -267,6 +264,10 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "What is Amazon EC2 Auto Scaling?",
+              "url": "https://docs.aws.amazon.com/autoscaling/ec2/userguide/what-is-amazon-ec2-auto-scaling.html"
             }
           ]
         },
@@ -292,21 +293,158 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Amazon SQS stores messages durably so producers and consumers can operate at different rates without a direct synchronous dependency."
+                "text": "Amazon SQS durably buffers messages so producers and consumers do not need to run at the same rate or be available at the same time. Standard queues use an at-least-once delivery model, so consumers should tolerate duplicates."
               }
             },
             {
               "id": "sqs-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Which architecture signal strongly points to SQS?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Amazon SQS stores messages durably so producers and consumers can operate at different rates without a direct synchronous dependency.",
-                  "Key retrieval phrase: Amazon SQS."
+                  "Producer traffic can spike faster than workers can process it.",
+                  "Work must wait durably while consumers are slow or unavailable.",
+                  "A worker should retry failed work without making the producer stay synchronous."
                 ]
+              }
+            },
+            {
+              "id": "sqs-delivery-controls",
+              "kind": "mental_model",
+              "label": "DELIVERY CONTROLS",
+              "placeholder": "How do visibility timeout, DLQ, and idempotency fit together?",
+              "required": false,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "control",
+                    "label": "Control"
+                  },
+                  {
+                    "id": "job",
+                    "label": "What it does"
+                  },
+                  {
+                    "id": "clue",
+                    "label": "Exam clue"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "visibility",
+                    "cells": {
+                      "control": "Visibility timeout",
+                      "job": "Hides received work temporarily",
+                      "clue": "Too short -> possible duplicate processing"
+                    }
+                  },
+                  {
+                    "id": "delete",
+                    "cells": {
+                      "control": "Delete after success",
+                      "job": "Removes completed work",
+                      "clue": "Not deleted -> may become visible again"
+                    }
+                  },
+                  {
+                    "id": "dlq",
+                    "cells": {
+                      "control": "DLQ",
+                      "job": "Isolates repeatedly failing messages",
+                      "clue": "Poison message / repeated failure"
+                    }
+                  },
+                  {
+                    "id": "idempotent",
+                    "cells": {
+                      "control": "Idempotent consumer",
+                      "job": "Makes duplicate processing safe",
+                      "clue": "Standard queue / at-least-once"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "control"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "messaging-service-map",
+              "kind": "connects_to",
+              "label": "SQS VS SNS VS EVENTBRIDGE VS STEP FUNCTIONS",
+              "placeholder": "Choose the service from the architecture signal.",
+              "required": false,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "service",
+                    "label": "Service"
+                  },
+                  {
+                    "id": "role",
+                    "label": "Primary role"
+                  },
+                  {
+                    "id": "clue",
+                    "label": "Strong clue"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "sqs",
+                    "cells": {
+                      "service": "SQS",
+                      "role": "Durable work buffer",
+                      "clue": "Consumer pulls; absorb bursts"
+                    }
+                  },
+                  {
+                    "id": "sns",
+                    "cells": {
+                      "service": "SNS",
+                      "role": "Pub/sub fan-out",
+                      "clue": "One publication -> many subscribers"
+                    }
+                  },
+                  {
+                    "id": "eventbridge",
+                    "cells": {
+                      "service": "EventBridge",
+                      "role": "Event routing",
+                      "clue": "Match event fields/patterns"
+                    }
+                  },
+                  {
+                    "id": "step",
+                    "cells": {
+                      "service": "Step Functions",
+                      "role": "Workflow orchestration",
+                      "clue": "Explicit steps, branches, retries"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "service"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
               }
             },
             {
@@ -328,6 +466,32 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Amazon SQS visibility timeout",
+              "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
+            },
+            {
+              "title": "Using dead-letter queues in Amazon SQS",
+              "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "visibility timeout",
+              "definition": "The period after a consumer receives an SQS message when the message is temporarily hidden from other consumers."
+            },
+            {
+              "term": "DLQ",
+              "definition": "Dead-letter queue. A queue that receives messages that repeatedly fail processing."
+            },
+            {
+              "term": "idempotent",
+              "definition": "Safe to perform more than once without causing an incorrect extra effect."
+            },
+            {
+              "term": "at-least-once delivery",
+              "definition": "A delivery model where a message can be delivered more than once, so consumers must tolerate possible duplicates."
             }
           ]
         },
@@ -360,13 +524,14 @@
               "id": "sns-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When is SNS fan-out the strong clue?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Amazon SNS publishes one message to multiple subscribers or downstream endpoints through a topic.",
-                  "Key retrieval phrase: Amazon SNS."
+                  "One event must reach multiple independent subscribers.",
+                  "The publisher should not call every downstream consumer directly.",
+                  "For durable independent processing, SNS can fan out to separate SQS queues."
                 ]
               }
             },
@@ -389,6 +554,16 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "fan-out",
+              "definition": "Sending one published event or message to multiple independent subscribers."
+            },
+            {
+              "term": "pub/sub",
+              "definition": "Publish/subscribe. Producers publish to a topic without calling each subscriber directly."
             }
           ]
         },
@@ -474,6 +649,16 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "event pattern",
+              "definition": "A rule definition that matches selected fields in an EventBridge event."
+            },
+            {
+              "term": "event bus",
+              "definition": "An EventBridge resource that receives events and lets rules route matching events to targets."
             }
           ]
         },
@@ -571,6 +756,16 @@
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
+          ],
+          "glossary": [
+            {
+              "term": "state machine",
+              "definition": "A workflow definition made of states and transitions."
+            },
+            {
+              "term": "orchestration",
+              "definition": "Explicitly coordinating steps, branches, retries, timeouts, and service calls as one workflow."
+            }
           ]
         },
         {
@@ -602,13 +797,14 @@
               "id": "lambda-serverless-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When is Lambda a strong compute choice?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: AWS Lambda runs event-driven code without managing servers and scales concurrent execution in response to incoming work within service limits.",
-                  "Key retrieval phrase: AWS Lambda."
+                  "Short-lived event-driven code should run without managing servers.",
+                  "The workload can scale through concurrent function invocations.",
+                  "Check concurrency/service quotas when a large burst must be handled reliably."
                 ]
               }
             },
@@ -631,6 +827,16 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "concurrency",
+              "definition": "The number of Lambda invocations running at the same time."
+            },
+            {
+              "term": "serverless",
+              "definition": "An operating model where AWS manages the underlying servers for the service."
             }
           ]
         },
@@ -663,13 +869,14 @@
               "id": "containers-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "How do ECS, EKS, and Fargate differ?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Amazon ECS and Amazon EKS orchestrate containers, while AWS Fargate supplies serverless container compute for supported ECS and EKS workloads.",
-                  "Key retrieval phrase: AWS Fargate."
+                  "ECS: AWS-native container orchestration.",
+                  "EKS: Kubernetes is explicitly required.",
+                  "Fargate: run supported ECS/EKS containers without managing worker servers."
                 ]
               }
             },
@@ -692,6 +899,16 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "orchestrate",
+              "definition": "Manage where containers run and how they are deployed, scaled, restarted, and connected."
+            },
+            {
+              "term": "Fargate",
+              "definition": "AWS serverless compute for supported ECS and EKS container workloads."
             }
           ]
         },
@@ -724,13 +941,14 @@
               "id": "api-gateway-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Which requirement points to API Gateway?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Amazon API Gateway provides managed endpoints for REST, HTTP, and WebSocket APIs and integrates with backends such as Lambda or private services.",
-                  "Key retrieval phrase: Amazon API Gateway."
+                  "A managed REST, HTTP, or WebSocket API front door is required.",
+                  "API-level auth, throttling, routing, or managed backend integration matters.",
+                  "Compare with ALB when the main need is load balancing rather than API management."
                 ]
               }
             },
@@ -753,6 +971,289 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "WebSocket",
+              "definition": "A long-lived two-way connection that lets a client and server exchange messages."
+            },
+            {
+              "term": "throttling",
+              "definition": "Limiting request rate to protect capacity or enforce a service limit."
+            }
+          ]
+        },
+        {
+          "id": "domain-2-caching-edge",
+          "title": "Caching and edge acceleration",
+          "concept_ids": [
+            "aws.saa.caching_edge"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-stateless-scaling"
+          ],
+          "map_position": {
+            "x": 0.36,
+            "y": 0.72
+          },
+          "prompts": [
+            {
+              "id": "caching-edge-what",
+              "kind": "what",
+              "label": "WHAT?",
+              "placeholder": "Where can caching remove repeated work?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Caching keeps frequently reused data closer to the caller. CloudFront caches content at edge locations, ElastiCache provides general in-memory application caching, and DAX is a DynamoDB-focused cache."
+              }
+            },
+            {
+              "id": "caching-edge-compare",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "Choose the cache from what is being accelerated.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "choice",
+                    "label": "Choice"
+                  },
+                  {
+                    "id": "best",
+                    "label": "Best fit"
+                  },
+                  {
+                    "id": "clue",
+                    "label": "Strong clue"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "cf",
+                    "cells": {
+                      "choice": "CloudFront",
+                      "best": "Content near viewers",
+                      "clue": "Edge cache; reduce origin load"
+                    }
+                  },
+                  {
+                    "id": "ec",
+                    "cells": {
+                      "choice": "ElastiCache",
+                      "best": "General app/session/query cache",
+                      "clue": "Reduce DB/app read load"
+                    }
+                  },
+                  {
+                    "id": "dax",
+                    "cells": {
+                      "choice": "DAX",
+                      "best": "DynamoDB read cache",
+                      "clue": "DynamoDB-specific acceleration"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "choice"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "caching-edge-clue",
+              "kind": "exam_clue",
+              "label": "EXAM CLUE",
+              "placeholder": "What wording should trigger a cache comparison?",
+              "required": true,
+              "reveal": {
+                "type": "keywords",
+                "items": [
+                  "global edge cache -> CloudFront",
+                  "general in-memory cache -> ElastiCache",
+                  "DynamoDB cache -> DAX",
+                  "TTL"
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Manage how long content stays in the CloudFront cache",
+              "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html"
+            },
+            {
+              "title": "What is Amazon ElastiCache?",
+              "url": "https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/WhatIs.html"
+            },
+            {
+              "title": "DynamoDB Accelerator (DAX)",
+              "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DAX.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "cache",
+              "definition": "A faster temporary copy of data kept closer to where it is needed."
+            },
+            {
+              "term": "cache hit",
+              "definition": "A request answered from the cache without fetching the original source."
+            },
+            {
+              "term": "cache miss",
+              "definition": "A request whose data is not currently in the cache."
+            },
+            {
+              "term": "TTL",
+              "definition": "Time to live. How long cached data remains valid before it expires or is refreshed."
+            }
+          ]
+        },
+        {
+          "id": "domain-2-storage-selection",
+          "title": "Object, block, and file storage selection",
+          "concept_ids": [
+            "aws.saa.storage_selection"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-caching-edge"
+          ],
+          "map_position": {
+            "x": 0.6,
+            "y": 0.72
+          },
+          "prompts": [
+            {
+              "id": "storage-selection-what",
+              "kind": "what",
+              "label": "WHAT?",
+              "placeholder": "What is the object vs block vs file mental model?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Amazon S3 is object storage, Amazon EBS provides block storage for compute such as EC2, and Amazon EFS provides a managed shared file system that multiple Linux clients can mount."
+              }
+            },
+            {
+              "id": "storage-selection-table",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "Choose storage from the access pattern.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "service",
+                    "label": "Service"
+                  },
+                  {
+                    "id": "model",
+                    "label": "Model"
+                  },
+                  {
+                    "id": "clue",
+                    "label": "Strong clue"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "s3",
+                    "cells": {
+                      "service": "S3",
+                      "model": "Object",
+                      "clue": "Bucket/key objects"
+                    }
+                  },
+                  {
+                    "id": "ebs",
+                    "cells": {
+                      "service": "EBS",
+                      "model": "Block",
+                      "clue": "EC2 virtual disk / block device"
+                    }
+                  },
+                  {
+                    "id": "efs",
+                    "cells": {
+                      "service": "EFS",
+                      "model": "File",
+                      "clue": "Shared Linux file system"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "service"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "storage-selection-clue",
+              "kind": "exam_clue",
+              "label": "EXAM CLUE",
+              "placeholder": "Which wording identifies the storage model?",
+              "required": true,
+              "reveal": {
+                "type": "keywords",
+                "items": [
+                  "object -> S3",
+                  "block device -> EBS",
+                  "shared file system -> EFS"
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "What is Amazon S3?",
+              "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html"
+            },
+            {
+              "title": "What is Amazon EBS?",
+              "url": "https://docs.aws.amazon.com/ebs/latest/userguide/what-is-ebs.html"
+            },
+            {
+              "title": "What is Amazon EFS?",
+              "url": "https://docs.aws.amazon.com/efs/latest/ug/whatisefs.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "object storage",
+              "definition": "Storage that keeps data as objects addressed by keys rather than as a mounted disk."
+            },
+            {
+              "term": "block storage",
+              "definition": "Storage presented as raw blocks to a host, similar to a virtual disk."
+            },
+            {
+              "term": "file storage",
+              "definition": "Storage presented with file-system semantics such as files and directories."
             }
           ]
         }
@@ -780,7 +1281,7 @@
       "nodes": [
         {
           "id": "domain-2-multi-az-read-replica",
-          "title": "RDS Multi-AZ vs read replicas",
+          "title": "RDS Multi-AZ DB instance/cluster vs read replicas",
           "concept_ids": [
             "aws.saa.multi_az_read_replica"
           ],
@@ -798,7 +1299,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "RDS Multi-AZ deployments primarily improve availability with failover, while read replicas primarily scale read traffic and can support some disaster-recovery patterns."
+                "text": "An RDS Multi-AZ DB instance deployment uses a standby for high availability and automatic failover; that standby does not serve reads. An RDS Multi-AZ DB cluster has a writer and two readable standby instances across three AZs. Separate read replicas primarily scale reads and use asynchronous replication."
               }
             },
             {
@@ -815,35 +1316,44 @@
                     "label": "Choice"
                   },
                   {
-                    "id": "property",
-                    "label": "Primary property"
+                    "id": "purpose",
+                    "label": "Primary purpose"
+                  },
+                  {
+                    "id": "reads",
+                    "label": "Read traffic"
                   },
                   {
                     "id": "behavior",
-                    "label": "Behavior / trade-off"
-                  },
-                  {
-                    "id": "use",
-                    "label": "Typical fit"
+                    "label": "Replication / behavior"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "r1",
+                    "id": "instance",
                     "cells": {
-                      "choice": "RDS Multi-AZ",
-                      "property": "Availability/failover",
-                      "behavior": "Synchronous standby path",
-                      "use": "Not the primary read-scaling feature"
+                      "choice": "Multi-AZ DB instance",
+                      "purpose": "HA/failover",
+                      "reads": "Standby: no",
+                      "behavior": "Synchronous standby"
                     }
                   },
                   {
-                    "id": "r2",
+                    "id": "cluster",
+                    "cells": {
+                      "choice": "Multi-AZ DB cluster",
+                      "purpose": "HA + read capacity",
+                      "reads": "Two readable standbys",
+                      "behavior": "Three-AZ cluster"
+                    }
+                  },
+                  {
+                    "id": "replica",
                     "cells": {
                       "choice": "Read replica",
-                      "property": "Read scaling / some DR",
-                      "behavior": "Asynchronous replication",
-                      "use": "Can serve reads"
+                      "purpose": "Read scaling / some DR",
+                      "reads": "Yes",
+                      "behavior": "Asynchronous; lag can occur"
                     }
                   }
                 ],
@@ -868,8 +1378,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "Multi-AZ",
-                  "RDS Multi-AZ vs read replicas"
+                  "DB instance standby -> HA, not read scaling",
+                  "Multi-AZ DB cluster -> readable standbys",
+                  "read-heavy scaling -> read replica"
                 ]
               }
             }
@@ -878,6 +1389,36 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Multi-AZ deployments for Amazon RDS",
+              "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZ.html"
+            },
+            {
+              "title": "Multi-AZ DB cluster deployments for Amazon RDS",
+              "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html"
+            },
+            {
+              "title": "Working with DB instance read replicas",
+              "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "failover",
+              "definition": "Switching service to a healthy standby or alternate resource when the primary becomes unavailable."
+            },
+            {
+              "term": "read replica",
+              "definition": "A database replica that can serve read traffic and is commonly used to scale reads."
+            },
+            {
+              "term": "synchronous",
+              "definition": "Replication where a write waits for required replica-side work before completion."
+            },
+            {
+              "term": "asynchronous",
+              "definition": "Replication where the source can complete a write before the replica has fully applied the change."
             }
           ]
         },
@@ -910,13 +1451,13 @@
               "id": "failure-domains-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When do multiple AZs or multiple Regions matter?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Availability Zones are isolated locations within a Region, and using multiple AZs reduces exposure to a single-AZ failure.",
-                  "Key retrieval phrase: Availability Zone."
+                  "Multiple AZs reduce exposure to a single-AZ failure.",
+                  "Multiple Regions are used when the requirement includes Region-level DR or geographic separation."
                 ]
               }
             },
@@ -939,6 +1480,16 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "failure domain",
+              "definition": "A part of a system that can fail independently."
+            },
+            {
+              "term": "Availability Zone",
+              "definition": "An isolated location within an AWS Region."
             }
           ]
         },
@@ -971,13 +1522,14 @@
               "id": "route53-failover-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When is health-aware DNS failover useful?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Amazon Route 53 routing policies can direct users among endpoints, and health-aware policies can stop returning unhealthy targets when configured appropriately.",
-                  "Key retrieval phrase: Route 53 failover."
+                  "A primary and secondary endpoint need DNS-based failover.",
+                  "DNS answers should consider endpoint health according to the configured policy.",
+                  "Do not assume unhealthy always means Route 53 returns no record; behavior depends on configuration."
                 ]
               }
             },
@@ -1000,6 +1552,24 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Failover routing in Amazon Route 53",
+              "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy-failover.html"
+            },
+            {
+              "title": "How Route 53 chooses records when health checking is configured",
+              "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/health-checks-how-route-53-chooses-records.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "health check",
+              "definition": "A Route 53 check used to evaluate endpoint or related health for routing decisions."
+            },
+            {
+              "term": "failover routing",
+              "definition": "A Route 53 routing policy using primary and secondary records."
             }
           ]
         },
@@ -1025,7 +1595,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Backup and restore, pilot light, warm standby, and multi-site active-active trade cost and complexity for progressively faster recovery."
+                "text": "RPO is the maximum acceptable data-loss window, while RTO is the maximum acceptable outage/recovery time. Backup and restore, pilot light, warm standby, and multi-site active-active trade increasing steady-state cost and complexity for faster recovery."
               }
             },
             {
@@ -1039,56 +1609,56 @@
                 "columns": [
                   {
                     "id": "choice",
-                    "label": "Choice"
+                    "label": "Strategy"
                   },
                   {
-                    "id": "property",
-                    "label": "Primary property"
+                    "id": "running",
+                    "label": "Before disaster"
                   },
                   {
-                    "id": "behavior",
-                    "label": "Behavior / trade-off"
+                    "id": "speed",
+                    "label": "Relative recovery"
                   },
                   {
-                    "id": "use",
-                    "label": "Typical fit"
+                    "id": "cost",
+                    "label": "Relative steady-state cost"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "r1",
+                    "id": "backup",
                     "cells": {
                       "choice": "Backup & restore",
-                      "property": "Lowest steady-state cost",
-                      "behavior": "Slowest recovery",
-                      "use": "Backups only until recovery"
+                      "running": "Backups; infra restored/provisioned later",
+                      "speed": "Slowest",
+                      "cost": "Lowest"
                     }
                   },
                   {
-                    "id": "r2",
+                    "id": "pilot",
                     "cells": {
                       "choice": "Pilot light",
-                      "property": "Low",
-                      "behavior": "Faster",
-                      "use": "Core services running"
+                      "running": "Critical core/data ready",
+                      "speed": "Faster",
+                      "cost": "Low"
                     }
                   },
                   {
-                    "id": "r3",
+                    "id": "warm",
                     "cells": {
                       "choice": "Warm standby",
-                      "property": "Medium",
-                      "behavior": "Faster still",
-                      "use": "Scaled-down environment running"
+                      "running": "Scaled-down functional environment",
+                      "speed": "Faster still",
+                      "cost": "Medium"
                     }
                   },
                   {
-                    "id": "r4",
+                    "id": "active",
                     "cells": {
                       "choice": "Multi-site active-active",
-                      "property": "Highest",
-                      "behavior": "Fastest",
-                      "use": "Full production in multiple sites"
+                      "running": "Production serves from multiple sites",
+                      "speed": "Fastest",
+                      "cost": "Highest"
                     }
                   }
                 ],
@@ -1105,6 +1675,52 @@
               }
             },
             {
+              "id": "dr-rpo-rto",
+              "kind": "mental_model",
+              "label": "RPO VS RTO",
+              "placeholder": "Which objective is about lost data and which is about downtime?",
+              "required": false,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "objective",
+                    "label": "Objective"
+                  },
+                  {
+                    "id": "question",
+                    "label": "Business question"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "rpo",
+                    "cells": {
+                      "objective": "RPO",
+                      "question": "How much recent data can we lose?"
+                    }
+                  },
+                  {
+                    "id": "rto",
+                    "cells": {
+                      "objective": "RTO",
+                      "question": "How long can recovery take?"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "objective"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
               "id": "dr-strategies-clue",
               "kind": "exam_clue",
               "label": "EXAM CLUE",
@@ -1113,8 +1729,10 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "warm standby",
-                  "Disaster recovery strategies and RPO/RTO"
+                  "data-loss window -> RPO",
+                  "recovery-time window -> RTO",
+                  "scaled-down running environment -> warm standby",
+                  "core components ready -> pilot light"
                 ]
               }
             }
@@ -1123,6 +1741,28 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Disaster recovery options in the AWS Well-Architected Framework",
+              "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/rel_planning_for_recovery_disaster_recovery.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "RPO",
+              "definition": "Recovery point objective. The maximum recent data loss the business can tolerate, measured in time."
+            },
+            {
+              "term": "RTO",
+              "definition": "Recovery time objective. The maximum time the workload can remain unavailable before recovery."
+            },
+            {
+              "term": "pilot light",
+              "definition": "A DR design that keeps critical core components ready while much of the compute is started or scaled during recovery."
+            },
+            {
+              "term": "warm standby",
+              "definition": "A DR design that keeps a smaller but functional copy of the workload running in the recovery location."
             }
           ]
         },
@@ -1155,13 +1795,14 @@
               "id": "replication-backups-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When do you need replication versus a backup?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Replication improves availability or locality by maintaining additional copies, while backups preserve recoverable historical points.",
-                  "Key retrieval phrase: replication."
+                  "Replication maintains another current copy for availability, locality, or DR.",
+                  "Backups preserve historical recovery points for deletion, corruption, ransomware, or operator mistakes.",
+                  "A bad change can also be replicated, so replication is not automatically a historical backup."
                 ]
               }
             },
@@ -1185,11 +1826,21 @@
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
+          ],
+          "glossary": [
+            {
+              "term": "replication",
+              "definition": "Maintaining another copy of data by sending changes from a source to another location."
+            },
+            {
+              "term": "recovery point",
+              "definition": "A stored state that can be used to restore data or a resource to an earlier point."
+            }
           ]
         },
         {
           "id": "domain-2-rds-proxy-quotas",
-          "title": "RDS Proxy and connection resilience",
+          "title": "RDS Proxy and database connection resilience",
           "concept_ids": [
             "aws.saa.rds_proxy_quotas"
           ],
@@ -1209,20 +1860,21 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Amazon RDS Proxy pools and shares database connections so large numbers of application connections do not overwhelm an RDS or Aurora database."
+                "text": "Amazon RDS Proxy pools and reuses connections to supported RDS/Aurora databases. It is useful when bursty applications create many short-lived connections that would otherwise consume excessive database connection capacity."
               }
             },
             {
               "id": "rds-proxy-quotas-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "What scenario should make RDS Proxy stand out?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Amazon RDS Proxy pools and shares database connections so large numbers of application connections do not overwhelm an RDS or Aurora database.",
-                  "Key retrieval phrase: RDS Proxy."
+                  "Lambda or other bursty workloads create many short-lived DB connections.",
+                  "The database is spending excessive resources managing client connections.",
+                  "The design needs connection pooling/reuse and improved connection resilience."
                 ]
               }
             },
@@ -1235,8 +1887,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "RDS Proxy",
-                  "RDS Proxy and connection resilience"
+                  "many short-lived DB connections",
+                  "connection pooling",
+                  "RDS Proxy"
                 ]
               }
             }
@@ -1245,6 +1898,20 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Amazon RDS Proxy concepts and terminology",
+              "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy.howitworks.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "connection pool",
+              "definition": "A reusable group of database connections shared by application requests."
+            },
+            {
+              "term": "database connection exhaustion",
+              "definition": "A condition where an application creates more database connections than the database can safely support."
             }
           ]
         },
@@ -1277,13 +1944,14 @@
               "id": "immutable-infra-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When is replacement better than in-place repair?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Immutable infrastructure replaces unhealthy or outdated instances from versioned images or templates instead of manually repairing servers in place.",
-                  "Key retrieval phrase: immutable infrastructure."
+                  "Instances should be recreated from a known image/template rather than manually patched into different states.",
+                  "A failed or outdated node can be terminated and replaced automatically.",
+                  "Versioned images/templates make fleet consistency and rollback easier."
                 ]
               }
             },
@@ -1306,6 +1974,178 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "immutable infrastructure",
+              "definition": "An operating model where unhealthy or outdated servers are replaced from known images or templates instead of repaired manually in place."
+            }
+          ]
+        },
+        {
+          "id": "domain-2-service-quotas",
+          "title": "Service quotas, throttling, and failover capacity",
+          "concept_ids": [
+            "aws.saa.service_quotas"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-failure-domains"
+          ],
+          "map_position": {
+            "x": 0.84,
+            "y": 0.44
+          },
+          "prompts": [
+            {
+              "id": "service-quotas-what",
+              "kind": "what",
+              "label": "WHAT?",
+              "placeholder": "Why can an otherwise-correct failover design still fail?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "AWS services have resource and request-rate quotas. A secondary Region or account must have enough quota headroom for the expected failover load or scaling/API requests can be blocked or throttled."
+              }
+            },
+            {
+              "id": "service-quotas-use",
+              "kind": "when",
+              "label": "WHEN?",
+              "placeholder": "What should be checked before relying on failover?",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Check quotas in every Region/account that can receive production failover traffic.",
+                  "Request increases before an incident when the secondary environment cannot support expected scale.",
+                  "Monitor quota use and request-rate throttling as part of resilience planning."
+                ]
+              }
+            },
+            {
+              "id": "service-quotas-clue",
+              "kind": "exam_clue",
+              "label": "EXAM CLUE",
+              "placeholder": "Which wording points to quota planning?",
+              "required": true,
+              "reveal": {
+                "type": "keywords",
+                "items": [
+                  "secondary Region cannot scale",
+                  "LimitExceeded / throttling",
+                  "quota increase before failover"
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Manage service quotas across accounts and Regions",
+              "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/rel_manage_service_limits_limits_considered.html"
+            },
+            {
+              "title": "Ensure sufficient quota headroom for failover",
+              "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/rel_manage_service_limits_suff_buffer_limits.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "service quota",
+              "definition": "A limit on resources or request rates for an AWS service in an account or Region."
+            },
+            {
+              "term": "quota headroom",
+              "definition": "Unused quota capacity reserved for growth, bursts, or failover."
+            },
+            {
+              "term": "throttling",
+              "definition": "Rejecting or slowing requests because a request-rate or capacity limit was reached."
+            }
+          ]
+        },
+        {
+          "id": "domain-2-xray-visibility",
+          "title": "AWS X-Ray workload visibility",
+          "concept_ids": [
+            "aws.saa.xray_visibility"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-service-quotas"
+          ],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.72
+          },
+          "prompts": [
+            {
+              "id": "xray-visibility-what",
+              "kind": "what",
+              "label": "WHAT?",
+              "placeholder": "What does tracing show that one service metric cannot?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "AWS X-Ray traces requests through participating components of a distributed application. Traces and the service map help identify where latency, errors, and dependency failures occur."
+              }
+            },
+            {
+              "id": "xray-visibility-use",
+              "kind": "when",
+              "label": "WHEN?",
+              "placeholder": "Which troubleshooting requirement points to X-Ray?",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "One request crosses several microservices and the slow/failing dependency must be identified.",
+                  "The problem cannot be isolated from one host or aggregate metric.",
+                  "The architecture needs request-level traces and service-to-service visibility."
+                ]
+              }
+            },
+            {
+              "id": "xray-visibility-clue",
+              "kind": "exam_clue",
+              "label": "EXAM CLUE",
+              "placeholder": "What wording should trigger distributed tracing?",
+              "required": true,
+              "reveal": {
+                "type": "keywords",
+                "items": [
+                  "trace one request across services",
+                  "service map",
+                  "distributed latency / dependency bottleneck"
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "AWS X-Ray concepts",
+              "url": "https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "trace",
+              "definition": "A record that follows one request through participating components of a distributed application."
+            },
+            {
+              "term": "segment",
+              "definition": "X-Ray trace data describing work performed by one participating service or component."
+            },
+            {
+              "term": "service map",
+              "definition": "A visual view of traced application components and their connections."
             }
           ]
         }

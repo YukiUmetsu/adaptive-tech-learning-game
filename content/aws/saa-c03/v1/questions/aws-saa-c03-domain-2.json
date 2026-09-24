@@ -10,8 +10,8 @@
   "version": {
     "id": "saa-c03",
     "exam_code": "SAA-C03",
-    "effective_date": "2026-09-19",
-    "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+    "effective_date": "2026-09-23",
+    "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
     "domains": [
       {
         "id": "domain-1",
@@ -48,7 +48,10 @@
               "api-gateway-application-001",
               "domain-2-task-2-1-builder-v2",
               "domain-2-task-2-1-evidence-v2",
-              "resilient-order-processing-scenario-v2"
+              "resilient-order-processing-scenario-v2",
+              "scaling-direction-builder-v3",
+              "caching-layer-builder-v3",
+              "storage-model-builder-v3"
             ]
           },
           {
@@ -70,7 +73,10 @@
               "immutable-infra-typed-001",
               "immutable-infra-application-001",
               "domain-2-task-2-2-builder-v2",
-              "domain-2-task-2-2-fault-v2"
+              "domain-2-task-2-2-fault-v2",
+              "failover-quota-evidence-v3",
+              "xray-trace-application-v3",
+              "multi-az-cluster-readable-standby-v3"
             ]
           }
         ]
@@ -92,8 +98,8 @@
   "concepts": [
     {
       "id": "aws.saa.stateless_scaling",
-      "name": "Stateless services and horizontal scaling",
-      "description": "Stateless application tiers keep session state outside individual compute instances so capacity can scale out and replace instances safely."
+      "name": "Stateful vs stateless; horizontal vs vertical scaling",
+      "description": "Stateless tiers externalize request/session state. Horizontal scaling adds instances; vertical scaling makes one instance larger."
     },
     {
       "id": "aws.saa.alb_asg",
@@ -103,7 +109,7 @@
     {
       "id": "aws.saa.sqs",
       "name": "Amazon SQS decoupling",
-      "description": "Amazon SQS stores messages durably so producers and consumers can operate at different rates without a direct synchronous dependency."
+      "description": "SQS buffers work durably. Standard queues use at-least-once delivery, so visibility timeout, DLQ, and idempotent-consumer behavior matter."
     },
     {
       "id": "aws.saa.sns",
@@ -137,8 +143,8 @@
     },
     {
       "id": "aws.saa.multi_az_read_replica",
-      "name": "RDS Multi-AZ vs read replicas",
-      "description": "RDS Multi-AZ deployments primarily improve availability with failover, while read replicas primarily scale read traffic and can support some disaster-recovery patterns."
+      "name": "RDS Multi-AZ DB instance/cluster vs read replicas",
+      "description": "Multi-AZ DB instance deployments provide HA with a non-readable standby; Multi-AZ DB clusters add readable standbys; read replicas primarily scale reads."
     },
     {
       "id": "aws.saa.failure_domains",
@@ -153,7 +159,7 @@
     {
       "id": "aws.saa.dr_strategies",
       "name": "Disaster recovery strategies and RPO/RTO",
-      "description": "Backup and restore, pilot light, warm standby, and multi-site active-active trade cost and complexity for progressively faster recovery."
+      "description": "RPO measures tolerated data loss and RTO measures tolerated downtime. DR strategies trade steady-state cost for recovery characteristics."
     },
     {
       "id": "aws.saa.replication_backups",
@@ -162,19 +168,39 @@
     },
     {
       "id": "aws.saa.rds_proxy_quotas",
-      "name": "RDS Proxy and connection resilience",
-      "description": "Amazon RDS Proxy pools and shares database connections so large numbers of application connections do not overwhelm an RDS or Aurora database."
+      "name": "RDS Proxy and database connection resilience",
+      "description": "RDS Proxy pools and reuses database connections so bursty applications do not exhaust database connection capacity."
     },
     {
       "id": "aws.saa.immutable_infra",
       "name": "Immutable infrastructure and automated replacement",
       "description": "Immutable infrastructure replaces unhealthy or outdated instances from versioned images or templates instead of manually repairing servers in place."
+    },
+    {
+      "id": "aws.saa.caching_edge",
+      "name": "Caching and edge acceleration",
+      "description": "CloudFront caches content near viewers, ElastiCache provides general in-memory caching, and DAX accelerates DynamoDB reads."
+    },
+    {
+      "id": "aws.saa.storage_selection",
+      "name": "Object, block, and file storage selection",
+      "description": "S3 is object storage, EBS is block storage, and EFS provides managed shared file storage."
+    },
+    {
+      "id": "aws.saa.service_quotas",
+      "name": "Service quotas, throttling, and failover capacity",
+      "description": "Resilient designs need enough service-quota and request-rate headroom in every Region/account that can receive failover load."
+    },
+    {
+      "id": "aws.saa.xray_visibility",
+      "name": "AWS X-Ray workload visibility",
+      "description": "X-Ray traces requests through distributed components and helps identify dependencies, latency, and errors."
     }
   ],
   "questions": [
     {
       "id": "stateless-scaling-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
@@ -215,7 +241,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "horizontal scaling is the retrieval target here. Stateless application tiers keep session state outside individual compute instances so capacity can scale out and replace instances safely. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Horizontal scaling is the retrieval target here. Stateless application tiers keep session state outside individual compute instances so capacity can scale out and replace instances safely. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
       "hints": [
         "Think about the requirement the concept solves rather than recalling the full node title."
       ],
@@ -238,7 +264,7 @@
     },
     {
       "id": "stateless-scaling-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
@@ -285,7 +311,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "horizontal scaling is the direct fit because Stateless application tiers keep session state outside individual compute instances so capacity can scale out and replace instances safely. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Horizontal scaling is the direct fit because Stateless application tiers keep session state outside individual compute instances so capacity can scale out and replace instances safely. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
       "hints": [
         "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
       ],
@@ -308,7 +334,7 @@
     },
     {
       "id": "alb-asg-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
@@ -372,7 +398,7 @@
     },
     {
       "id": "alb-asg-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
@@ -442,26 +468,26 @@
     },
     {
       "id": "sqs-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Amazon SQS stores messages durably so producers and consumers can operate at different rates without a direct synchronous dependency.",
+      "prompt": "A worker receives an SQS message. While the worker is processing it, the message should temporarily be hidden from other consumers. What SQS setting controls this period?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 14
+            "width_chars": 30
           }
         ]
       },
@@ -470,8 +496,8 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "Amazon SQS",
-              "SQS"
+              "visibility timeout",
+              "SQS visibility timeout"
             ]
           }
         }
@@ -482,9 +508,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Amazon SQS is the retrieval target here. Amazon SQS stores messages durably so producers and consumers can operate at different rates without a direct synchronous dependency. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "The visibility timeout temporarily hides a received message. If the message is not deleted before the timeout expires, it can become visible again.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "It controls how long a received message stays invisible."
       ],
       "error_codes": [
         {
@@ -498,53 +524,131 @@
       ],
       "source_refs": [
         {
-          "title": "Design Resilient Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Amazon SQS visibility timeout",
+          "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
         }
       ]
     },
     {
       "id": "sqs-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
       "assessment_mode": "application",
-      "interaction_type": "fill_slots",
+      "interaction_type": "scenario_choice_chain",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Amazon SQS stores messages durably so producers and consumers can operate at different rates without a direct synchronous dependency. Which choice is the most direct fit?",
+      "prompt": "An image-processing system uses SQS. Processing normally takes 90 seconds, but messages become visible again after 30 seconds and duplicate work appears. Choose the best sequence of fixes.",
       "interaction": {
-        "type": "fill_slots",
-        "slots": [
+        "type": "scenario_choice_chain",
+        "start_step_id": "timeout",
+        "steps": [
           {
-            "id": "solution",
-            "label": "Best architectural choice"
-          }
-        ],
-        "options": [
-          {
-            "id": "opt-1",
-            "label": "Auto Scaling group"
+            "id": "timeout",
+            "prompt": "What should be fixed first?",
+            "stage": "diagnosis",
+            "choices": [
+              {
+                "id": "visibility",
+                "label": "Increase or extend the visibility timeout"
+              },
+              {
+                "id": "retention",
+                "label": "Reduce message retention"
+              },
+              {
+                "id": "sns",
+                "label": "Replace the queue with SNS only"
+              },
+              {
+                "id": "route53",
+                "label": "Add Route 53 failover"
+              }
+            ],
+            "next_step_by_choice": {
+              "visibility": "duplicate",
+              "retention": "duplicate",
+              "sns": "duplicate",
+              "route53": "duplicate"
+            }
           },
           {
-            "id": "opt-2",
-            "label": "Amazon SNS"
+            "id": "duplicate",
+            "prompt": "What still matters because Standard SQS uses at-least-once delivery?",
+            "stage": "action",
+            "choices": [
+              {
+                "id": "idempotent",
+                "label": "Make the consumer idempotent"
+              },
+              {
+                "id": "sticky",
+                "label": "Use sticky sessions"
+              },
+              {
+                "id": "vertical",
+                "label": "Only scale vertically"
+              },
+              {
+                "id": "dns",
+                "label": "Cache the queue in DNS"
+              }
+            ],
+            "next_step_by_choice": {
+              "idempotent": "poison",
+              "sticky": "poison",
+              "vertical": "poison",
+              "dns": "poison"
+            }
           },
           {
-            "id": "opt-3",
-            "label": "Amazon SQS"
-          },
-          {
-            "id": "opt-4",
-            "label": "horizontal scaling"
+            "id": "poison",
+            "prompt": "Where should repeatedly failing messages be isolated?",
+            "stage": "remediation",
+            "choices": [
+              {
+                "id": "dlq",
+                "label": "A dead-letter queue"
+              },
+              {
+                "id": "cloudfront",
+                "label": "CloudFront"
+              },
+              {
+                "id": "rr",
+                "label": "An RDS read replica"
+              },
+              {
+                "id": "igw",
+                "label": "An internet gateway"
+              }
+            ],
+            "next_step_by_choice": {}
           }
         ]
       },
       "canonical_answer": {
-        "type": "fill_slots",
-        "values": {
-          "solution": "opt-3"
-        }
+        "type": "scenario_choice_chain",
+        "correct_choice_ids": {
+          "timeout": [
+            "visibility"
+          ],
+          "duplicate": [
+            "idempotent"
+          ],
+          "poison": [
+            "dlq"
+          ]
+        },
+        "expected_path": [
+          "visibility",
+          "idempotent",
+          "dlq"
+        ]
       },
       "concepts": [
         {
@@ -552,9 +656,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Amazon SQS is the direct fit because Amazon SQS stores messages durably so producers and consumers can operate at different rates without a direct synchronous dependency. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "The visibility timeout should cover normal processing or be extended while work is in progress. Standard queues can still deliver a message more than once, so consumers should be idempotent. Repeatedly failing messages belong in a DLQ.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Separate message visibility, duplicate safety, and poison-message handling."
       ],
       "error_codes": [
         {
@@ -568,14 +672,22 @@
       ],
       "source_refs": [
         {
-          "title": "Design Resilient Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Amazon SQS visibility timeout",
+          "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
+        },
+        {
+          "title": "Using dead-letter queues in Amazon SQS",
+          "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html"
         }
       ]
     },
     {
       "id": "sns-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
@@ -638,14 +750,14 @@
     },
     {
       "id": "sns-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Amazon SNS publishes one message to multiple subscribers or downstream endpoints through a topic. Which choice is the most direct fit?",
+      "prompt": "One order-completed event must independently reach billing, analytics, and notification processing. Which pattern is the strongest fit?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -656,27 +768,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "Amazon SQS"
+            "id": "sns",
+            "label": "SNS fan-out, optionally to separate SQS queues"
           },
           {
-            "id": "opt-2",
-            "label": "Amazon SNS"
+            "id": "sqs",
+            "label": "One shared SQS queue consumed competitively"
           },
           {
-            "id": "opt-3",
-            "label": "horizontal scaling"
+            "id": "rds",
+            "label": "RDS Multi-AZ"
           },
           {
-            "id": "opt-4",
-            "label": "Auto Scaling group"
+            "id": "scale",
+            "label": "EC2 vertical scaling"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-2"
+          "solution": "sns"
         }
       },
       "concepts": [
@@ -685,9 +797,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Amazon SNS is the direct fit because Amazon SNS publishes one message to multiple subscribers or downstream endpoints through a topic. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "SNS fan-out publishes one message to multiple subscribers. Separate SQS queues are useful when each subscriber needs its own durable buffer.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The requirement is one publication delivered independently to multiple consumers."
       ],
       "error_codes": [
         {
@@ -701,14 +813,14 @@
       ],
       "source_refs": [
         {
-          "title": "Design Resilient Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "eventbridge-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
@@ -771,14 +883,14 @@
     },
     {
       "id": "eventbridge-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Amazon EventBridge routes events from AWS services, custom applications, and partners to targets by matching event patterns. Which choice is the most direct fit?",
+      "prompt": "A central event bus receives events from AWS services and custom applications. Only events whose source/detail fields match defined patterns should be routed to targets. Which service fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -789,27 +901,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
+            "id": "eventbridge",
             "label": "Amazon EventBridge"
           },
           {
-            "id": "opt-2",
-            "label": "horizontal scaling"
-          },
-          {
-            "id": "opt-3",
-            "label": "Auto Scaling group"
-          },
-          {
-            "id": "opt-4",
+            "id": "sqs",
             "label": "Amazon SQS"
+          },
+          {
+            "id": "asg",
+            "label": "EC2 Auto Scaling"
+          },
+          {
+            "id": "ebs",
+            "label": "Amazon EBS"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-1"
+          "solution": "eventbridge"
         }
       },
       "concepts": [
@@ -818,9 +930,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Amazon EventBridge is the direct fit because Amazon EventBridge routes events from AWS services, custom applications, and partners to targets by matching event patterns. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "EventBridge rules match fields in events and route matching events to targets. SQS is primarily a durable queue.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Look for event-field matching and routing."
       ],
       "error_codes": [
         {
@@ -834,14 +946,14 @@
       ],
       "source_refs": [
         {
-          "title": "Design Resilient Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "step-functions-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
@@ -904,14 +1016,14 @@
     },
     {
       "id": "step-functions-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: AWS Step Functions coordinates multi-step workflows with explicit states, branching, retries, timeouts, and service integrations. Which choice is the most direct fit?",
+      "prompt": "An order workflow must run Charge -> Reserve inventory -> Ship, branch on business outcomes, and apply explicit retries and timeouts. Which service fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -922,27 +1034,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "horizontal scaling"
-          },
-          {
-            "id": "opt-2",
-            "label": "Auto Scaling group"
-          },
-          {
-            "id": "opt-3",
-            "label": "Amazon SQS"
-          },
-          {
-            "id": "opt-4",
+            "id": "step",
             "label": "AWS Step Functions"
+          },
+          {
+            "id": "sns",
+            "label": "Amazon SNS"
+          },
+          {
+            "id": "sqs",
+            "label": "Amazon SQS only"
+          },
+          {
+            "id": "r53",
+            "label": "Route 53"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-4"
+          "solution": "step"
         }
       },
       "concepts": [
@@ -951,9 +1063,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS Step Functions is the direct fit because AWS Step Functions coordinates multi-step workflows with explicit states, branching, retries, timeouts, and service integrations. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Step Functions explicitly orchestrates multi-step workflows using states, transitions, branching, retries, and timeouts.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The requirement is workflow orchestration, not only message delivery."
       ],
       "error_codes": [
         {
@@ -967,14 +1079,14 @@
       ],
       "source_refs": [
         {
-          "title": "Design Resilient Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "lambda-serverless-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
@@ -1037,7 +1149,7 @@
     },
     {
       "id": "lambda-serverless-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
@@ -1107,26 +1219,26 @@
     },
     {
       "id": "containers-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Amazon ECS and Amazon EKS orchestrate containers, while AWS Fargate supplies serverless container compute for supported ECS and EKS workloads.",
+      "prompt": "A team wants to run containers on Amazon ECS without provisioning or managing the EC2 worker fleet. Which compute option should it use?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 15
+            "width_chars": 30
           }
         ]
       },
@@ -1147,9 +1259,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS Fargate is the retrieval target here. Amazon ECS and Amazon EKS orchestrate containers, while AWS Fargate supplies serverless container compute for supported ECS and EKS workloads. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Fargate provides serverless compute for supported ECS and EKS workloads.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The clue is containers without managing worker servers."
       ],
       "error_codes": [
         {
@@ -1163,21 +1275,21 @@
       ],
       "source_refs": [
         {
-          "title": "Design Resilient Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "containers-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Amazon ECS and Amazon EKS orchestrate containers, while AWS Fargate supplies serverless container compute for supported ECS and EKS workloads. Which choice is the most direct fit?",
+      "prompt": "A platform team requires Kubernetes APIs and ecosystem compatibility but does not want to manage the Kubernetes control plane. Which service is the direct fit?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1188,27 +1300,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
+            "id": "eks",
+            "label": "Amazon EKS"
+          },
+          {
+            "id": "ecs",
+            "label": "Amazon ECS"
+          },
+          {
+            "id": "sqs",
             "label": "Amazon SQS"
           },
           {
-            "id": "opt-2",
-            "label": "AWS Fargate"
-          },
-          {
-            "id": "opt-3",
-            "label": "horizontal scaling"
-          },
-          {
-            "id": "opt-4",
-            "label": "Auto Scaling group"
+            "id": "apigw",
+            "label": "Amazon API Gateway"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-2"
+          "solution": "eks"
         }
       },
       "concepts": [
@@ -1217,9 +1329,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS Fargate is the direct fit because Amazon ECS and Amazon EKS orchestrate containers, while AWS Fargate supplies serverless container compute for supported ECS and EKS workloads. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Amazon EKS is AWS's managed Kubernetes service. ECS is an AWS-native container orchestrator but is not Kubernetes.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The requirement explicitly says Kubernetes."
       ],
       "error_codes": [
         {
@@ -1233,14 +1345,14 @@
       ],
       "source_refs": [
         {
-          "title": "Design Resilient Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "api-gateway-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
@@ -1303,7 +1415,7 @@
     },
     {
       "id": "api-gateway-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
@@ -1373,26 +1485,26 @@
     },
     {
       "id": "multi-az-read-replica-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: RDS Multi-AZ deployments primarily improve availability with failover, while read replicas primarily scale read traffic and can support some disaster-recovery patterns.",
+      "prompt": "An RDS DB instance needs automatic failover to a standby in another AZ. The standby does not need to serve reads. Which RDS deployment pattern is the direct fit?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 12
+            "width_chars": 30
           }
         ]
       },
@@ -1401,8 +1513,10 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "Multi-AZ",
-              "RDS Multi-AZ"
+              "RDS Multi-AZ DB instance",
+              "Multi-AZ DB instance",
+              "RDS Multi-AZ",
+              "Multi-AZ"
             ]
           }
         }
@@ -1413,9 +1527,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Multi-AZ is the retrieval target here. RDS Multi-AZ deployments primarily improve availability with failover, while read replicas primarily scale read traffic and can support some disaster-recovery patterns. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "A Multi-AZ DB instance deployment is primarily an HA/failover pattern. Its standby does not serve application reads.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The requirement is HA/failover without read scaling."
       ],
       "error_codes": [
         {
@@ -1429,52 +1543,66 @@
       ],
       "source_refs": [
         {
-          "title": "Design Resilient Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Multi-AZ deployments for Amazon RDS",
+          "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZ.html"
         }
       ]
     },
     {
       "id": "multi-az-read-replica-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
       "assessment_mode": "application",
-      "interaction_type": "fill_slots",
+      "interaction_type": "configuration_builder",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: RDS Multi-AZ deployments primarily improve availability with failover, while read replicas primarily scale read traffic and can support some disaster-recovery patterns. Which choice is the most direct fit?",
+      "prompt": "Match each RDS requirement to the deployment type that directly fits it.",
       "interaction": {
-        "type": "fill_slots",
+        "type": "configuration_builder",
         "slots": [
           {
-            "id": "solution",
-            "label": "Best architectural choice"
+            "id": "instance",
+            "label": "HA/failover for a DB instance; standby does not serve reads"
+          },
+          {
+            "id": "cluster",
+            "label": "HA across three AZs with readable standby instances"
+          },
+          {
+            "id": "read",
+            "label": "Scale read-heavy traffic with asynchronous replication"
           }
         ],
-        "options": [
+        "pieces": [
           {
-            "id": "opt-1",
-            "label": "Availability Zone"
+            "id": "a",
+            "label": "Multi-AZ DB instance"
           },
           {
-            "id": "opt-2",
-            "label": "Route 53 failover"
+            "id": "b",
+            "label": "Multi-AZ DB cluster"
           },
           {
-            "id": "opt-3",
-            "label": "warm standby"
+            "id": "c",
+            "label": "Read replica"
           },
           {
-            "id": "opt-4",
-            "label": "Multi-AZ"
+            "id": "d",
+            "label": "RDS Proxy"
           }
         ]
       },
       "canonical_answer": {
-        "type": "fill_slots",
-        "values": {
-          "solution": "opt-4"
+        "type": "configuration_builder",
+        "assignments": {
+          "instance": "a",
+          "cluster": "b",
+          "read": "c"
         }
       },
       "concepts": [
@@ -1483,9 +1611,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Multi-AZ is the direct fit because RDS Multi-AZ deployments primarily improve availability with failover, while read replicas primarily scale read traffic and can support some disaster-recovery patterns. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Multi-AZ DB instance deployments use a non-readable standby for HA. Multi-AZ DB clusters add readable standbys. Read replicas primarily scale reads.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Separate HA deployment type from independent read scaling."
       ],
       "error_codes": [
         {
@@ -1499,14 +1627,26 @@
       ],
       "source_refs": [
         {
-          "title": "Design Resilient Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Multi-AZ deployments for Amazon RDS",
+          "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZ.html"
+        },
+        {
+          "title": "Multi-AZ DB cluster deployments for Amazon RDS",
+          "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html"
+        },
+        {
+          "title": "Working with DB instance read replicas",
+          "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html"
         }
       ]
     },
     {
       "id": "failure-domains-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
@@ -1569,7 +1709,7 @@
     },
     {
       "id": "failure-domains-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
@@ -1639,7 +1779,7 @@
     },
     {
       "id": "route53-failover-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
@@ -1703,7 +1843,7 @@
     },
     {
       "id": "route53-failover-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
@@ -1773,26 +1913,26 @@
     },
     {
       "id": "dr-strategies-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Backup and restore, pilot light, warm standby, and multi-site active-active trade cost and complexity for progressively faster recovery.",
+      "prompt": "A company keeps a scaled-down but fully functional copy of production running in a recovery Region and scales it up during a disaster. Which DR strategy is this?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 16
+            "width_chars": 30
           }
         ]
       },
@@ -1813,9 +1953,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "warm standby is the retrieval target here. Backup and restore, pilot light, warm standby, and multi-site active-active trade cost and complexity for progressively faster recovery. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Warm standby keeps a smaller functional environment running. Pilot light keeps only critical core components ready.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The recovery environment is already functional, just smaller."
       ],
       "error_codes": [
         {
@@ -1829,52 +1969,75 @@
       ],
       "source_refs": [
         {
-          "title": "Design Resilient Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Disaster recovery options in the AWS Well-Architected Framework",
+          "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/rel_planning_for_recovery_disaster_recovery.html"
         }
       ]
     },
     {
       "id": "dr-strategies-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
       "assessment_mode": "application",
-      "interaction_type": "fill_slots",
+      "interaction_type": "configuration_builder",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Backup and restore, pilot light, warm standby, and multi-site active-active trade cost and complexity for progressively faster recovery. Which choice is the most direct fit?",
+      "prompt": "Match each recovery requirement to the correct term or DR strategy.",
       "interaction": {
-        "type": "fill_slots",
+        "type": "configuration_builder",
         "slots": [
           {
-            "id": "solution",
-            "label": "Best architectural choice"
+            "id": "rpo",
+            "label": "Maximum tolerable recent data-loss window"
+          },
+          {
+            "id": "rto",
+            "label": "Maximum tolerable outage/recovery duration"
+          },
+          {
+            "id": "pilot",
+            "label": "Critical core remains ready; much compute starts during recovery"
+          },
+          {
+            "id": "warm",
+            "label": "Smaller but functional recovery environment is already running"
           }
         ],
-        "options": [
+        "pieces": [
           {
-            "id": "opt-1",
-            "label": "warm standby"
+            "id": "a",
+            "label": "RPO"
           },
           {
-            "id": "opt-2",
-            "label": "Multi-AZ"
+            "id": "b",
+            "label": "RTO"
           },
           {
-            "id": "opt-3",
-            "label": "Availability Zone"
+            "id": "c",
+            "label": "Pilot light"
           },
           {
-            "id": "opt-4",
-            "label": "Route 53 failover"
+            "id": "d",
+            "label": "Warm standby"
+          },
+          {
+            "id": "x",
+            "label": "Read replica"
           }
         ]
       },
       "canonical_answer": {
-        "type": "fill_slots",
-        "values": {
-          "solution": "opt-1"
+        "type": "configuration_builder",
+        "assignments": {
+          "rpo": "a",
+          "rto": "b",
+          "pilot": "c",
+          "warm": "d"
         }
       },
       "concepts": [
@@ -1883,9 +2046,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "warm standby is the direct fit because Backup and restore, pilot light, warm standby, and multi-site active-active trade cost and complexity for progressively faster recovery. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "RPO measures tolerated data loss; RTO measures tolerated recovery time. Pilot light keeps the critical core ready, while warm standby keeps a scaled-down functional environment running.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "RPO is about lost data; RTO is about downtime."
       ],
       "error_codes": [
         {
@@ -1899,33 +2062,37 @@
       ],
       "source_refs": [
         {
-          "title": "Design Resilient Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Disaster recovery options in the AWS Well-Architected Framework",
+          "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/rel_planning_for_recovery_disaster_recovery.html"
         }
       ]
     },
     {
       "id": "replication-backups-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Replication improves availability or locality by maintaining additional copies, while backups preserve recoverable historical points.",
+      "prompt": "A workload must continuously maintain a second current copy of data in another location for availability. Which general data-protection mechanism is this?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 15
+            "width_chars": 30
           }
         ]
       },
@@ -1946,9 +2113,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "replication is the retrieval target here. Replication improves availability or locality by maintaining additional copies, while backups preserve recoverable historical points. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Replication maintains another current copy. A backup preserves historical recovery points.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The clue is a second current copy, not an earlier restore point."
       ],
       "error_codes": [
         {
@@ -1962,21 +2129,21 @@
       ],
       "source_refs": [
         {
-          "title": "Design Resilient Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "replication-backups-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Replication improves availability or locality by maintaining additional copies, while backups preserve recoverable historical points. Which choice is the most direct fit?",
+      "prompt": "An operator deletes important data, and the deletion is also copied to the replica. Which protection is specifically needed to restore the earlier state?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1987,27 +2154,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "Multi-AZ"
+            "id": "backup",
+            "label": "A backup or recovery point"
           },
           {
-            "id": "opt-2",
-            "label": "Availability Zone"
+            "id": "replica",
+            "label": "Only another current replica"
           },
           {
-            "id": "opt-3",
-            "label": "Route 53 failover"
+            "id": "alb",
+            "label": "An ALB target group"
           },
           {
-            "id": "opt-4",
-            "label": "replication"
+            "id": "ec2",
+            "label": "A larger EC2 instance"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-4"
+          "solution": "backup"
         }
       },
       "concepts": [
@@ -2016,9 +2183,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "replication is the direct fit because Replication improves availability or locality by maintaining additional copies, while backups preserve recoverable historical points. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Replication can copy a bad change. Historical backups/recovery points are needed to restore an earlier known-good state.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Ask whether the second copy is current or historical."
       ],
       "error_codes": [
         {
@@ -2032,14 +2199,14 @@
       ],
       "source_refs": [
         {
-          "title": "Design Resilient Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "rds-proxy-quotas-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
@@ -2102,7 +2269,7 @@
     },
     {
       "id": "rds-proxy-quotas-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
@@ -2172,7 +2339,7 @@
     },
     {
       "id": "immutable-infra-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
@@ -2212,7 +2379,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "immutable infrastructure is the retrieval target here. Immutable infrastructure replaces unhealthy or outdated instances from versioned images or templates instead of manually repairing servers in place. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Immutable infrastructure is the retrieval target here. Immutable infrastructure replaces unhealthy or outdated instances from versioned images or templates instead of manually repairing servers in place. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
       "hints": [
         "Think about the requirement the concept solves rather than recalling the full node title."
       ],
@@ -2235,7 +2402,7 @@
     },
     {
       "id": "immutable-infra-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
@@ -2282,7 +2449,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "immutable infrastructure is the direct fit because Immutable infrastructure replaces unhealthy or outdated instances from versioned images or templates instead of manually repairing servers in place. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Immutable infrastructure is the direct fit because Immutable infrastructure replaces unhealthy or outdated instances from versioned images or templates instead of manually repairing servers in place. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
       "hints": [
         "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
       ],
@@ -2305,7 +2472,7 @@
     },
     {
       "id": "domain-2-task-2-1-builder-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
@@ -2370,7 +2537,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. horizontal scaling fits this behavior: Stateless application tiers keep session state outside individual compute instances so capacity can scale out and replace instances safely.. Auto Scaling group fits this behavior: Elastic Load Balancing distributes requests across healthy targets, and EC2 Auto Scaling adjusts the number of instances to match demand.. Amazon SQS fits this behavior: Amazon SQS stores messages durably so producers and consumers can operate at different rates without a direct synchronous dependency..",
+      "explanation": "A stateless tier makes scale-out and replacement easier. An Auto Scaling group adjusts fleet capacity, and SQS buffers work when producer and consumer rates differ.",
       "hints": [
         "Match each piece to the requirement it primarily solves; do not select a service merely because it could also appear in the architecture."
       ],
@@ -2393,7 +2560,7 @@
     },
     {
       "id": "domain-2-task-2-1-evidence-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
@@ -2418,15 +2585,15 @@
           },
           {
             "id": "irr-1",
-            "label": "The only concern mentioned is Amazon SNS, with no requirement connected to design scalable and loosely coupled architectures."
+            "label": "SNS fan-out would matter if one publication needed multiple subscribers, but that requirement is not stated."
           },
           {
             "id": "irr-2",
-            "label": "The only concern mentioned is Amazon EventBridge, with no requirement connected to design scalable and loosely coupled architectures."
+            "label": "EventBridge would matter for event-pattern routing, but no event-routing requirement is stated."
           },
           {
             "id": "irr-3",
-            "label": "The only concern mentioned is AWS Step Functions, with no requirement connected to design scalable and loosely coupled architectures."
+            "label": "Step Functions would matter for workflow orchestration, but no multi-step workflow requirement is stated."
           }
         ]
       },
@@ -2475,7 +2642,7 @@
     },
     {
       "id": "domain-2-task-2-2-builder-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
@@ -2540,7 +2707,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. Multi-AZ fits this behavior: RDS Multi-AZ deployments primarily improve availability with failover, while read replicas primarily scale read traffic and can support some disaster-recovery patterns.. Availability Zone fits this behavior: Availability Zones are isolated locations within a Region, and using multiple AZs reduces exposure to a single-AZ failure.. Route 53 failover fits this behavior: Amazon Route 53 routing policies can direct users among endpoints, and health-aware policies can stop returning unhealthy targets when configured appropriately..",
+      "explanation": "RDS Multi-AZ is an HA/failover choice, multiple AZs reduce single-AZ exposure, and Route 53 can provide health-aware DNS failover.",
       "hints": [
         "Match each piece to the requirement it primarily solves; do not select a service merely because it could also appear in the architecture."
       ],
@@ -2563,7 +2730,7 @@
     },
     {
       "id": "domain-2-task-2-2-fault-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.2",
@@ -2612,7 +2779,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "The faulty statement swaps neighboring mechanisms. Multi-AZ fits this behavior: RDS Multi-AZ deployments primarily improve availability with failover, while read replicas primarily scale read traffic and can support some disaster-recovery patterns. By contrast, Availability Zone primarily addresses: Availability Zones are isolated locations within a Region, and using multiple AZs reduces exposure to a single-AZ failure..",
+      "explanation": "The faulty statement treats an Availability Zone itself as the RDS failover mechanism. The RDS deployment configuration provides database failover; the AZs provide failure-domain separation.",
       "hints": [
         "Check each service's primary purpose, not whether it can technically coexist with the other components."
       ],
@@ -2635,7 +2802,7 @@
     },
     {
       "id": "resilient-order-processing-scenario-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-2",
       "task_id": "2.1",
@@ -2801,7 +2968,7 @@
           "weight": 0.25
         }
       ],
-      "explanation": "This scenario intentionally mixes plausible neighboring AWS services. The strongest path follows the explicit constraints in order, uses each service for its primary architectural role, and verifies the original requirement rather than merely checking that a resource exists or a deployment command succeeded.",
+      "explanation": "SQS buffers work when producer and consumer rates differ. SNS fan-out sends one event to independent consumers, Step Functions coordinates explicit workflow steps, and resilience testing should verify backlog recovery and duplicate/error handling.",
       "hints": [
         "At each step, use only the evidence already established and prefer the mechanism whose primary purpose matches the constraint."
       ],
@@ -2829,8 +2996,490 @@
       ],
       "source_refs": [
         {
-          "title": "Design Resilient Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Amazon SQS visibility timeout",
+          "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
+        },
+        {
+          "title": "Using dead-letter queues in Amazon SQS",
+          "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html"
+        }
+      ]
+    },
+    {
+      "id": "scaling-direction-builder-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "assessment_mode": "application",
+      "interaction_type": "configuration_builder",
+      "difficulty_prior": 0.66,
+      "prompt": "Match each scaling or state requirement to the correct concept.",
+      "interaction": {
+        "type": "configuration_builder",
+        "slots": [
+          {
+            "id": "out",
+            "label": "Add more application instances"
+          },
+          {
+            "id": "up",
+            "label": "Move one workload to a larger instance type"
+          },
+          {
+            "id": "state",
+            "label": "Any healthy instance should handle the next request"
+          }
+        ],
+        "pieces": [
+          {
+            "id": "a",
+            "label": "Horizontal scaling"
+          },
+          {
+            "id": "b",
+            "label": "Vertical scaling"
+          },
+          {
+            "id": "c",
+            "label": "Stateless application tier"
+          },
+          {
+            "id": "x",
+            "label": "Warm standby"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "configuration_builder",
+        "assignments": {
+          "out": "a",
+          "up": "b",
+          "state": "c"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.stateless_scaling",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Horizontal scaling adds instances; vertical scaling enlarges one instance. Externalized state lets any healthy instance handle the next request.",
+      "hints": [
+        "Out = more instances; up = larger instance."
+      ],
+      "error_codes": [
+        {
+          "code": "scaling_direction_mismatch",
+          "description": "A scaling/state concept was matched incorrectly."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is Amazon EC2 Auto Scaling?",
+          "url": "https://docs.aws.amazon.com/autoscaling/ec2/userguide/what-is-amazon-ec2-auto-scaling.html"
+        }
+      ]
+    },
+    {
+      "id": "caching-layer-builder-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "assessment_mode": "application",
+      "interaction_type": "configuration_builder",
+      "difficulty_prior": 0.74,
+      "prompt": "Match each caching requirement to the most direct AWS caching option.",
+      "interaction": {
+        "type": "configuration_builder",
+        "slots": [
+          {
+            "id": "edge",
+            "label": "Cache content close to global viewers and reduce origin load"
+          },
+          {
+            "id": "general",
+            "label": "General in-memory application/session/query cache"
+          },
+          {
+            "id": "ddb",
+            "label": "DynamoDB-focused in-memory read acceleration"
+          }
+        ],
+        "pieces": [
+          {
+            "id": "a",
+            "label": "Amazon CloudFront"
+          },
+          {
+            "id": "b",
+            "label": "Amazon ElastiCache"
+          },
+          {
+            "id": "c",
+            "label": "DynamoDB Accelerator (DAX)"
+          },
+          {
+            "id": "x",
+            "label": "Amazon EBS"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "configuration_builder",
+        "assignments": {
+          "edge": "a",
+          "general": "b",
+          "ddb": "c"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.caching_edge",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "CloudFront caches near viewers, ElastiCache is a general in-memory cache, and DAX is purpose-built for DynamoDB reads.",
+      "hints": [
+        "Identify what is being cached and where the cache should live."
+      ],
+      "error_codes": [
+        {
+          "code": "cache_layer_mismatch",
+          "description": "A caching requirement was matched incorrectly."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Manage how long content stays in the CloudFront cache",
+          "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html"
+        },
+        {
+          "title": "What is Amazon ElastiCache?",
+          "url": "https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/WhatIs.html"
+        },
+        {
+          "title": "DynamoDB Accelerator (DAX)",
+          "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DAX.html"
+        }
+      ]
+    },
+    {
+      "id": "storage-model-builder-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "assessment_mode": "application",
+      "interaction_type": "configuration_builder",
+      "difficulty_prior": 0.7,
+      "prompt": "Match each workload requirement to the storage service that best fits.",
+      "interaction": {
+        "type": "configuration_builder",
+        "slots": [
+          {
+            "id": "object",
+            "label": "Durable object storage addressed by bucket/key"
+          },
+          {
+            "id": "block",
+            "label": "Persistent block device for an EC2 instance"
+          },
+          {
+            "id": "file",
+            "label": "Shared Linux file system mounted by multiple instances"
+          }
+        ],
+        "pieces": [
+          {
+            "id": "a",
+            "label": "Amazon S3"
+          },
+          {
+            "id": "b",
+            "label": "Amazon EBS"
+          },
+          {
+            "id": "c",
+            "label": "Amazon EFS"
+          },
+          {
+            "id": "x",
+            "label": "Amazon SNS"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "configuration_builder",
+        "assignments": {
+          "object": "a",
+          "block": "b",
+          "file": "c"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.storage_selection",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "S3 provides object storage, EBS block storage, and EFS shared managed file storage.",
+      "hints": [
+        "Translate the requirement into object, block, or file first."
+      ],
+      "error_codes": [
+        {
+          "code": "storage_model_mismatch",
+          "description": "A storage model was matched incorrectly."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is Amazon S3?",
+          "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html"
+        },
+        {
+          "title": "What is Amazon EBS?",
+          "url": "https://docs.aws.amazon.com/ebs/latest/userguide/what-is-ebs.html"
+        },
+        {
+          "title": "What is Amazon EFS?",
+          "url": "https://docs.aws.amazon.com/efs/latest/ug/whatisefs.html"
+        }
+      ]
+    },
+    {
+      "id": "failover-quota-evidence-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-2",
+      "task_id": "2.2",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.82,
+      "prompt": "A workload must fail over to a secondary Region. Select the observations that directly indicate a service-quota resilience risk.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          {
+            "id": "a",
+            "label": "The secondary Region's quota supports only half the required failover capacity."
+          },
+          {
+            "id": "b",
+            "label": "Load testing shows request throttling near the secondary Region's current request-rate quota."
+          },
+          {
+            "id": "c",
+            "label": "The team has never requested quota increases in the failover Region."
+          },
+          {
+            "id": "x",
+            "label": "The application uses a Route 53 hosted zone."
+          },
+          {
+            "id": "y",
+            "label": "The database uses encryption at rest."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.service_quotas",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Failover capacity is not usable if the destination Region/account cannot provision or accept the required load.",
+      "hints": [
+        "Ask whether the failover location can actually support production scale."
+      ],
+      "error_codes": [
+        {
+          "code": "quota_risk_missed",
+          "description": "A failover-capacity or throttling risk was missed."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Manage service quotas across accounts and Regions",
+          "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/rel_manage_service_limits_limits_considered.html"
+        },
+        {
+          "title": "Ensure sufficient quota headroom for failover",
+          "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/rel_manage_service_limits_suff_buffer_limits.html"
+        }
+      ]
+    },
+    {
+      "id": "xray-trace-application-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-2",
+      "task_id": "2.2",
+      "assessment_mode": "application",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.64,
+      "prompt": "A user request crosses API, order, payment, and inventory services. The team needs to see the request path and identify which dependency causes latency. Which AWS service is the direct fit?",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "solution",
+            "label": "Best service"
+          }
+        ],
+        "options": [
+          {
+            "id": "a",
+            "label": "AWS X-Ray"
+          },
+          {
+            "id": "b",
+            "label": "Amazon Route 53"
+          },
+          {
+            "id": "c",
+            "label": "AWS Backup"
+          },
+          {
+            "id": "d",
+            "label": "Amazon S3"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "solution": "a"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.xray_visibility",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "X-Ray traces requests through participating distributed components and exposes service relationships, latency, and errors.",
+      "hints": [
+        "The requirement is request-level distributed tracing."
+      ],
+      "error_codes": [
+        {
+          "code": "xray_visibility_confusion",
+          "description": "Distributed tracing was confused with an unrelated service."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "AWS X-Ray concepts",
+          "url": "https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html"
+        }
+      ]
+    },
+    {
+      "id": "multi-az-cluster-readable-standby-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain2-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-2",
+      "task_id": "2.2",
+      "assessment_mode": "application",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.78,
+      "prompt": "A relational workload needs high availability across three AZs and wants the standby instances to serve read traffic. Which RDS deployment type best fits?",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "solution",
+            "label": "Best deployment"
+          }
+        ],
+        "options": [
+          {
+            "id": "a",
+            "label": "RDS Multi-AZ DB cluster"
+          },
+          {
+            "id": "b",
+            "label": "RDS Multi-AZ DB instance"
+          },
+          {
+            "id": "c",
+            "label": "RDS Proxy only"
+          },
+          {
+            "id": "d",
+            "label": "AWS Backup"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "solution": "a"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.multi_az_read_replica",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A Multi-AZ DB cluster has a writer and two readable standby instances in three AZs. A traditional Multi-AZ DB instance standby does not serve reads.",
+      "hints": [
+        "The clue is readable standbys across three AZs."
+      ],
+      "error_codes": [
+        {
+          "code": "multiaz_cluster_confusion",
+          "description": "The RDS Multi-AZ deployment types were confused."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Multi-AZ deployments for Amazon RDS",
+          "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZ.html"
+        },
+        {
+          "title": "Multi-AZ DB cluster deployments for Amazon RDS",
+          "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts.html"
         }
       ]
     }

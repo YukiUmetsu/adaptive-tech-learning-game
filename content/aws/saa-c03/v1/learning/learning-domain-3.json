@@ -1,6 +1,6 @@
 {
   "schema_version": "2.0.0",
-  "content_version": "saa-c03-learning-2026-09-19-v2-interactive",
+  "content_version": "saa-c03-learning-2026-09-23-v3-domain3-audit-fix",
   "certification_id": "aws-saa-c03",
   "certification_version": "saa-c03",
   "exam_guide_revision": "SAA-C03 / reviewed 2026-09-19",
@@ -46,10 +46,10 @@
       "3.5.03"
     ],
     "module_count": 5,
-    "knowledge_node_count": 15,
-    "prompt_count": 45
+    "knowledge_node_count": 19,
+    "prompt_count": 58
   },
-  "authoring_notes": "Interactive v2 refresh. Uses progressive tables for service/trade-off comparisons and annotated code files where reading a real policy/configuration improves understanding.",
+  "authoring_notes": "Domain 3 audit refresh: current Snow Family lifecycle, deeper performance/scaling/database/network/data-lake coverage, glossary, direct sources, and non-repetitive WHEN sections.",
   "modules": [
     {
       "id": "domain-3-module-1",
@@ -102,44 +102,53 @@
                     "label": "Choice"
                   },
                   {
-                    "id": "property",
-                    "label": "Primary property"
+                    "id": "model",
+                    "label": "Model"
                   },
                   {
-                    "id": "behavior",
-                    "label": "Behavior / trade-off"
-                  },
-                  {
-                    "id": "use",
-                    "label": "Typical fit"
+                    "id": "fit",
+                    "label": "Strong fit"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "r1",
+                    "id": "s3",
                     "cells": {
                       "choice": "S3",
-                      "property": "Object",
-                      "behavior": "HTTP/object API",
-                      "use": "Data lake, static objects, backups"
+                      "model": "Object",
+                      "fit": "Data lakes, objects, backups"
                     }
                   },
                   {
-                    "id": "r2",
+                    "id": "ebs",
                     "cells": {
                       "choice": "EBS",
-                      "property": "Block",
-                      "behavior": "Attached volume",
-                      "use": "Single-instance block workloads"
+                      "model": "Block",
+                      "fit": "EC2 disks and database volumes"
                     }
                   },
                   {
-                    "id": "r3",
+                    "id": "efs",
                     "cells": {
-                      "choice": "EFS / FSx",
-                      "property": "File",
-                      "behavior": "File-system semantics",
-                      "use": "Shared file workloads"
+                      "choice": "EFS",
+                      "model": "NFS file system",
+                      "fit": "Shared Linux file access"
+                    }
+                  },
+                  {
+                    "id": "fsxw",
+                    "cells": {
+                      "choice": "FSx for Windows",
+                      "model": "SMB file system",
+                      "fit": "Windows file workloads"
+                    }
+                  },
+                  {
+                    "id": "lustre",
+                    "cells": {
+                      "choice": "FSx for Lustre",
+                      "model": "Parallel file system",
+                      "fit": "HPC/ML and parallel processing"
                     }
                   }
                 ],
@@ -164,8 +173,11 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "Amazon EFS",
-                  "Object, block, and file storage"
+                  "shared Linux NFS -> EFS",
+                  "Windows/SMB -> FSx for Windows",
+                  "parallel HPC file system -> FSx for Lustre",
+                  "block device -> EBS",
+                  "object API -> S3"
                 ]
               }
             }
@@ -174,6 +186,16 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "NFS",
+              "definition": "Network File System, a common shared-file protocol used by Linux and Unix systems."
+            },
+            {
+              "term": "SMB",
+              "definition": "Server Message Block, a file-sharing protocol commonly used by Windows workloads."
             }
           ]
         },
@@ -199,20 +221,22 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "EBS SSD volumes such as gp3 and io2 are optimized for transactional IOPS, while st1 and sc1 HDD volumes target large sequential throughput workloads."
+                "text": "EBS SSD volumes target transactional I/O where IOPS and latency matter. gp3 is general-purpose SSD; io2 targets demanding workloads that need high, predictable provisioned IOPS. HDD volumes target large sequential I/O: st1 is for frequently accessed throughput-heavy data, while sc1 is lower-cost storage for infrequently accessed sequential data."
               }
             },
             {
               "id": "ebs-performance-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Which workload signal points to each EBS type?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: EBS SSD volumes such as gp3 and io2 are optimized for transactional IOPS, while st1 and sc1 HDD volumes target large sequential throughput workloads.",
-                  "Key retrieval phrase: gp3."
+                  "gp3: general-purpose transactional SSD.",
+                  "io2: high, predictable provisioned IOPS for demanding workloads.",
+                  "st1: frequently accessed large sequential throughput.",
+                  "sc1: infrequently accessed sequential HDD data."
                 ]
               }
             },
@@ -225,8 +249,10 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "gp3",
-                  "EBS SSD and HDD performance"
+                  "general-purpose SSD -> gp3",
+                  "high provisioned IOPS -> io2",
+                  "frequent sequential throughput -> st1",
+                  "cold sequential HDD -> sc1"
                 ]
               }
             }
@@ -235,12 +261,30 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Amazon EBS volume types",
+              "url": "https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "IOPS",
+              "definition": "Input/output operations per second; how many storage operations a volume can perform each second."
+            },
+            {
+              "term": "throughput",
+              "definition": "How much data a storage volume transfers per second."
+            },
+            {
+              "term": "sequential I/O",
+              "definition": "Large reads or writes processed in order, where throughput is usually more important than small-I/O latency."
             }
           ]
         },
         {
           "id": "domain-3-hybrid-storage",
-          "title": "Hybrid storage and transfer",
+          "title": "Hybrid storage and data transfer",
           "concept_ids": [
             "aws.saa.hybrid_storage"
           ],
@@ -260,20 +304,22 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "AWS DataSync accelerates online data movement, Storage Gateway exposes hybrid storage interfaces, and Snow Family devices support large offline or edge data-transfer scenarios."
+                "text": "AWS DataSync handles managed online transfer between supported storage systems. Storage Gateway provides ongoing hybrid storage interfaces. Snow Family remains useful for SAA exam recognition as the traditional AWS physical/offline transfer family, but Snow Family devices are no longer available to new customers."
               }
             },
             {
               "id": "hybrid-storage-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Choose the service from how data must move or be accessed.",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: AWS DataSync accelerates online data movement, Storage Gateway exposes hybrid storage interfaces, and Snow Family devices support large offline or edge data-transfer scenarios.",
-                  "Key retrieval phrase: AWS DataSync."
+                  "Managed online copy over network connectivity -> DataSync.",
+                  "Ongoing hybrid storage interface -> Storage Gateway.",
+                  "Exam-recognition of traditional AWS offline appliance transfer -> Snow Family.",
+                  "For a new real-world design, check current alternatives because new customers cannot order Snow Family devices."
                 ]
               }
             },
@@ -286,8 +332,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "AWS DataSync",
-                  "Hybrid storage and transfer"
+                  "online managed copy -> DataSync",
+                  "ongoing hybrid storage -> Storage Gateway",
+                  "legacy/exam offline appliance -> Snow Family"
                 ]
               }
             }
@@ -296,6 +343,24 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "AWS Snowball Edge availability change",
+              "url": "https://docs.aws.amazon.com/snowball/latest/developer-guide/snowball-edge-availability-change.html"
+            },
+            {
+              "title": "What is AWS DataSync?",
+              "url": "https://docs.aws.amazon.com/datasync/latest/userguide/what-is-datasync.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "online transfer",
+              "definition": "Moving data over network connectivity instead of shipping a physical device."
+            },
+            {
+              "term": "hybrid storage",
+              "definition": "A design where on-premises systems and AWS storage are used together as one access pattern."
             }
           ]
         }
@@ -350,42 +415,56 @@
                 "type": "table",
                 "columns": [
                   {
-                    "id": "choice",
-                    "label": "Choice / concept"
+                    "id": "profile",
+                    "label": "Resource profile"
                   },
                   {
-                    "id": "best_for",
-                    "label": "What distinguishes it"
+                    "id": "fit",
+                    "label": "Strong fit"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "r1",
+                    "id": "general",
                     "cells": {
-                      "choice": "compute optimized",
-                      "best_for": "EC2 instance families balance compute, memory, storage, networking, and accelerator resources for different workload profiles."
+                      "profile": "General purpose",
+                      "fit": "Balanced CPU and memory"
                     }
                   },
                   {
-                    "id": "r2",
+                    "id": "compute",
                     "cells": {
-                      "choice": "concurrency",
-                      "best_for": "Lambda allocates CPU and other resources in proportion to configured memory, and concurrency controls how many function executions can run at the same time."
+                      "profile": "Compute optimized",
+                      "fit": "CPU-intensive processing"
                     }
                   },
                   {
-                    "id": "r3",
+                    "id": "memory",
                     "cells": {
-                      "choice": "AWS Batch",
-                      "best_for": "AWS Batch manages batch job scheduling, ECS and EKS orchestrate containers, Fargate runs containers without managing servers, and Lambda runs event-driven functions."
+                      "profile": "Memory optimized",
+                      "fit": "Large in-memory datasets"
+                    }
+                  },
+                  {
+                    "id": "storage",
+                    "cells": {
+                      "profile": "Storage optimized",
+                      "fit": "High local storage I/O"
+                    }
+                  },
+                  {
+                    "id": "accelerated",
+                    "cells": {
+                      "profile": "Accelerated computing",
+                      "fit": "GPU/accelerator workloads"
                     }
                   }
                 ],
                 "progressive_reveal": {
-                  "mode": "row",
+                  "mode": "cell",
                   "initially_visible": {
                     "column_ids": [
-                      "choice"
+                      "profile"
                     ],
                     "row_ids": [],
                     "cell_ids": []
@@ -402,8 +481,10 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "compute optimized",
-                  "EC2 instance families and workload fit"
+                  "CPU-heavy -> compute optimized",
+                  "large in-memory data -> memory optimized",
+                  "local storage I/O -> storage optimized",
+                  "GPU -> accelerated computing"
                 ]
               }
             }
@@ -412,6 +493,16 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "instance family",
+              "definition": "A group of EC2 instance types designed around a resource profile such as compute, memory, or storage."
+            },
+            {
+              "term": "vCPU",
+              "definition": "A virtual CPU unit exposed to an EC2 instance."
             }
           ]
         },
@@ -437,20 +528,21 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Lambda allocates CPU and other resources in proportion to configured memory, and concurrency controls how many function executions can run at the same time."
+                "text": "Lambda memory is also a performance control because AWS allocates CPU power in proportion to configured memory. Concurrency is the number of invocations running at the same time. Separate per-invocation speed from simultaneous invocation capacity."
               }
             },
             {
               "id": "lambda-performance-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Which Lambda symptom points to memory versus concurrency?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Lambda allocates CPU and other resources in proportion to configured memory, and concurrency controls how many function executions can run at the same time.",
-                  "Key retrieval phrase: concurrency."
+                  "CPU-bound invocation is slow -> test a higher memory setting.",
+                  "Traffic burst causes throttles -> inspect concurrency.",
+                  "Increasing concurrency does not make one invocation execute faster."
                 ]
               }
             },
@@ -463,8 +555,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "concurrency",
-                  "Lambda memory, concurrency, and scaling"
+                  "CPU-bound -> memory",
+                  "simultaneous executions -> concurrency",
+                  "throttles -> concurrency/capacity"
                 ]
               }
             }
@@ -473,6 +566,20 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Configure Lambda function memory",
+              "url": "https://docs.aws.amazon.com/lambda/latest/dg/configuration-memory.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "concurrency",
+              "definition": "The number of Lambda invocations running at the same time."
+            },
+            {
+              "term": "throttle",
+              "definition": "A rejected request because a concurrency or service limit has been reached."
             }
           ]
         },
@@ -505,13 +612,16 @@
               "id": "compute-services-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Choose compute from the execution model.",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: AWS Batch manages batch job scheduling, ECS and EKS orchestrate containers, Fargate runs containers without managing servers, and Lambda runs event-driven functions.",
-                  "Key retrieval phrase: AWS Batch."
+                  "Queued parallel batch jobs -> AWS Batch.",
+                  "Kubernetes requirement -> EKS.",
+                  "AWS-native container orchestration -> ECS.",
+                  "Containers without worker-server management -> Fargate.",
+                  "Short-lived event-driven functions -> Lambda."
                 ]
               }
             },
@@ -534,6 +644,151 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "batch job",
+              "definition": "Non-interactive work that can be queued and processed later, often in parallel."
+            },
+            {
+              "term": "orchestration",
+              "definition": "Managing where containers or jobs run and coordinating their lifecycle."
+            }
+          ]
+        },
+        {
+          "id": "domain-3-scaling-signals",
+          "title": "Scaling metrics and capacity signals",
+          "concept_ids": [
+            "aws.saa.scaling_signals"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-compute-services"
+          ],
+          "map_position": {
+            "x": 0.84,
+            "y": 0.16
+          },
+          "prompts": [
+            {
+              "id": "scaling-signals-what",
+              "kind": "what",
+              "label": "WHAT?",
+              "placeholder": "What makes a useful scaling metric?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A scaling metric should track demand in a way that changes meaningfully with capacity. Typical signals include average CPU for CPU-bound fleets, ALB RequestCountPerTarget for request-driven web tiers, queue backlog per worker for asynchronous workers, and Lambda concurrency/throttles for simultaneous serverless demand."
+              }
+            },
+            {
+              "id": "scaling-signals-table",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "Match workload to scaling signal.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "workload",
+                    "label": "Workload"
+                  },
+                  {
+                    "id": "signal",
+                    "label": "Useful signal"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "cpu",
+                    "cells": {
+                      "workload": "CPU-bound EC2",
+                      "signal": "Average CPU"
+                    }
+                  },
+                  {
+                    "id": "alb",
+                    "cells": {
+                      "workload": "ALB web tier",
+                      "signal": "RequestCountPerTarget"
+                    }
+                  },
+                  {
+                    "id": "queue",
+                    "cells": {
+                      "workload": "SQS workers",
+                      "signal": "Backlog per instance"
+                    }
+                  },
+                  {
+                    "id": "lambda",
+                    "cells": {
+                      "workload": "Lambda",
+                      "signal": "Concurrency / throttles"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "workload"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "scaling-signals-clue",
+              "kind": "exam_clue",
+              "label": "EXAM CLUE",
+              "placeholder": "What wording should trigger scaling-metric reasoning?",
+              "required": true,
+              "reveal": {
+                "type": "keywords",
+                "items": [
+                  "target tracking",
+                  "RequestCountPerTarget",
+                  "backlog per instance",
+                  "Lambda throttles"
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Target tracking scaling policies",
+              "url": "https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-scaling-target-tracking.html"
+            },
+            {
+              "title": "Scaling based on Amazon SQS",
+              "url": "https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-using-sqs-queue.html"
+            },
+            {
+              "title": "Configure Lambda function memory",
+              "url": "https://docs.aws.amazon.com/lambda/latest/dg/configuration-memory.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "target tracking",
+              "definition": "An Auto Scaling policy that adjusts capacity to keep a selected metric near a target value."
+            },
+            {
+              "term": "backlog per instance",
+              "definition": "Queue backlog divided by running workers; often a better scaling signal than total queue depth alone."
+            },
+            {
+              "term": "RequestCountPerTarget",
+              "definition": "An ALB metric measuring average requests sent to each target."
             }
           ]
         }
@@ -575,7 +830,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "AWS provides purpose-built databases such as RDS and Aurora for relational workloads, DynamoDB for key-value and document access, Neptune for graph relationships, and Redshift for analytics warehousing."
+                "text": "Choose databases from the data model and access pattern. RDS/Aurora fit relational OLTP, DynamoDB fits key-value/document access at scale, DocumentDB provides MongoDB-compatible document behavior, Neptune fits graph relationships, Redshift is an analytical warehouse, and Aurora Serverless v2 provides elastic relational compute within an ACU range."
               }
             },
             {
@@ -588,42 +843,73 @@
                 "type": "table",
                 "columns": [
                   {
-                    "id": "choice",
-                    "label": "Choice / concept"
+                    "id": "service",
+                    "label": "Service"
                   },
                   {
-                    "id": "best_for",
-                    "label": "What distinguishes it"
+                    "id": "model",
+                    "label": "Model"
+                  },
+                  {
+                    "id": "clue",
+                    "label": "Strong clue"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "r1",
+                    "id": "rds",
                     "cells": {
-                      "choice": "Amazon Neptune",
-                      "best_for": "AWS provides purpose-built databases such as RDS and Aurora for relational workloads, DynamoDB for key-value and document access, Neptune for graph relationships, and Redshift for analytics warehousing."
+                      "service": "RDS/Aurora",
+                      "model": "Relational",
+                      "clue": "SQL/transactions"
                     }
                   },
                   {
-                    "id": "r2",
+                    "id": "aurora-s",
                     "cells": {
-                      "choice": "DAX",
-                      "best_for": "Amazon ElastiCache provides general in-memory caching, while DynamoDB Accelerator is a DynamoDB-compatible cache designed for microsecond read access to DynamoDB data."
+                      "service": "Aurora Serverless v2",
+                      "model": "Relational elastic",
+                      "clue": "Variable relational compute"
                     }
                   },
                   {
-                    "id": "r3",
+                    "id": "ddb",
                     "cells": {
-                      "choice": "read replica",
-                      "best_for": "Read replicas and Aurora reader instances scale read traffic, while RDS Proxy primarily improves connection management and reuse."
+                      "service": "DynamoDB",
+                      "model": "Key-value/document",
+                      "clue": "Key-based scale"
+                    }
+                  },
+                  {
+                    "id": "docdb",
+                    "cells": {
+                      "service": "DocumentDB",
+                      "model": "Document",
+                      "clue": "MongoDB compatibility"
+                    }
+                  },
+                  {
+                    "id": "neptune",
+                    "cells": {
+                      "service": "Neptune",
+                      "model": "Graph",
+                      "clue": "Relationship traversal"
+                    }
+                  },
+                  {
+                    "id": "redshift",
+                    "cells": {
+                      "service": "Redshift",
+                      "model": "OLAP warehouse",
+                      "clue": "Analytical reporting"
                     }
                   }
                 ],
                 "progressive_reveal": {
-                  "mode": "row",
+                  "mode": "cell",
                   "initially_visible": {
                     "column_ids": [
-                      "choice"
+                      "service"
                     ],
                     "row_ids": [],
                     "cell_ids": []
@@ -640,8 +926,10 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "Amazon Neptune",
-                  "Relational, key-value, graph, document, and warehouse databases"
+                  "graph -> Neptune",
+                  "MongoDB compatibility -> DocumentDB",
+                  "variable relational compute -> Aurora Serverless v2",
+                  "warehouse -> Redshift"
                 ]
               }
             }
@@ -650,6 +938,28 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Amazon DocumentDB compatibility with MongoDB",
+              "url": "https://docs.aws.amazon.com/documentdb/latest/devguide/compatibility.html"
+            },
+            {
+              "title": "How Aurora Serverless v2 works",
+              "url": "https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.how-it-works.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "OLTP",
+              "definition": "Online transaction processing: frequent application transactions such as orders or account updates."
+            },
+            {
+              "term": "OLAP",
+              "definition": "Online analytical processing: large analytical queries for reporting and insights."
+            },
+            {
+              "term": "graph database",
+              "definition": "A database optimized for entities and relationships between them."
             }
           ]
         },
@@ -682,13 +992,13 @@
               "id": "cache-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When do DAX and ElastiCache differ?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Amazon ElastiCache provides general in-memory caching, while DynamoDB Accelerator is a DynamoDB-compatible cache designed for microsecond read access to DynamoDB data.",
-                  "Key retrieval phrase: DAX."
+                  "DynamoDB-specific compatible cache -> DAX.",
+                  "General in-memory cache for SQL results, sessions, APIs, or multiple systems -> ElastiCache."
                 ]
               }
             },
@@ -701,8 +1011,8 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "DAX",
-                  "ElastiCache and DAX"
+                  "DynamoDB cache -> DAX",
+                  "general in-memory cache -> ElastiCache"
                 ]
               }
             }
@@ -711,6 +1021,20 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "DynamoDB Accelerator (DAX)",
+              "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DAX.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "cache hit",
+              "definition": "A request answered from the cache instead of the original data source."
+            },
+            {
+              "term": "cache miss",
+              "definition": "A request whose data is absent from the cache and must be fetched from the source."
             }
           ]
         },
@@ -743,13 +1067,15 @@
               "id": "db-read-scaling-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Choose read scaling versus connection management.",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Read replicas and Aurora reader instances scale read traffic, while RDS Proxy primarily improves connection management and reuse.",
-                  "Key retrieval phrase: read replica."
+                  "Read-heavy RDS -> read replica.",
+                  "Aurora read scaling -> Aurora reader instances/reader endpoint.",
+                  "Too many short-lived DB connections -> RDS Proxy.",
+                  "Asynchronous replicas can have replica lag."
                 ]
               }
             },
@@ -762,8 +1088,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "read replica",
-                  "Read replicas, Aurora readers, and RDS Proxy"
+                  "read scaling -> read replica",
+                  "connection pooling -> RDS Proxy",
+                  "asynchronous replica -> replica lag"
                 ]
               }
             }
@@ -772,6 +1099,152 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Working with DB instance read replicas",
+              "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html"
+            },
+            {
+              "title": "Amazon RDS Proxy concepts",
+              "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy.howitworks.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "replica lag",
+              "definition": "The delay before a change on a source database appears on an asynchronous replica."
+            },
+            {
+              "term": "connection pool",
+              "definition": "A reusable set of database connections shared by application requests."
+            }
+          ]
+        },
+        {
+          "id": "domain-3-database-capacity",
+          "title": "Database access patterns and capacity",
+          "concept_ids": [
+            "aws.saa.database_capacity"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-db-read-scaling"
+          ],
+          "map_position": {
+            "x": 0.84,
+            "y": 0.16
+          },
+          "prompts": [
+            {
+              "id": "database-capacity-what",
+              "kind": "what",
+              "label": "WHAT?",
+              "placeholder": "How do access patterns drive capacity choices?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "DynamoDB on-demand capacity fits variable request traffic without explicit RCU/WCU provisioning. Provisioned mode fits predictable throughput managed with RCU/WCU values. Aurora Serverless v2 uses an ACU range for elastic relational capacity. Poor DynamoDB partition-key distribution can still create a hot partition."
+              }
+            },
+            {
+              "id": "database-capacity-table",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "Choose the capacity model from traffic predictability.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "choice",
+                    "label": "Choice"
+                  },
+                  {
+                    "id": "fit",
+                    "label": "Strong fit"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "on",
+                    "cells": {
+                      "choice": "DynamoDB on-demand",
+                      "fit": "Variable/unpredictable requests"
+                    }
+                  },
+                  {
+                    "id": "prov",
+                    "cells": {
+                      "choice": "DynamoDB provisioned",
+                      "fit": "Predictable RCU/WCU throughput"
+                    }
+                  },
+                  {
+                    "id": "aurora",
+                    "cells": {
+                      "choice": "Aurora Serverless v2",
+                      "fit": "Variable relational compute using ACUs"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "choice"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "database-capacity-clue",
+              "kind": "exam_clue",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrases should trigger capacity reasoning?",
+              "required": true,
+              "reveal": {
+                "type": "keywords",
+                "items": [
+                  "unpredictable DynamoDB -> on-demand",
+                  "RCU/WCU -> provisioned",
+                  "ACU -> Aurora Serverless v2",
+                  "hot partition -> partition-key issue"
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "DynamoDB on-demand capacity mode",
+              "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/on-demand-capacity-mode.html"
+            },
+            {
+              "title": "How Aurora Serverless v2 works",
+              "url": "https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.how-it-works.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "RCU",
+              "definition": "Read capacity unit used by DynamoDB provisioned capacity."
+            },
+            {
+              "term": "WCU",
+              "definition": "Write capacity unit used by DynamoDB provisioned capacity."
+            },
+            {
+              "term": "ACU",
+              "definition": "Aurora capacity unit used by Aurora Serverless v2."
+            },
+            {
+              "term": "hot partition",
+              "definition": "A DynamoDB partition receiving disproportionate traffic and becoming a bottleneck."
             }
           ]
         }
@@ -826,42 +1299,41 @@
                 "type": "table",
                 "columns": [
                   {
-                    "id": "choice",
-                    "label": "Choice / concept"
+                    "id": "service",
+                    "label": "Service"
                   },
                   {
-                    "id": "best_for",
-                    "label": "What distinguishes it"
+                    "id": "behavior",
+                    "label": "Behavior"
+                  },
+                  {
+                    "id": "clue",
+                    "label": "Strong clue"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "r1",
+                    "id": "cf",
                     "cells": {
-                      "choice": "CloudFront",
-                      "best_for": "CloudFront is a content delivery network that caches and delivers HTTP content from edge locations, while Global Accelerator uses the AWS global network to improve availability and performance for TCP and UDP applications."
+                      "service": "CloudFront",
+                      "behavior": "CDN/cache for HTTP content",
+                      "clue": "Cache near viewers / reduce origin load"
                     }
                   },
                   {
-                    "id": "r2",
+                    "id": "ga",
                     "cells": {
-                      "choice": "Network Load Balancer",
-                      "best_for": "ALB provides Layer 7 HTTP routing, NLB provides high-performance Layer 4 TCP and UDP load balancing, and GWLB integrates fleets of network virtual appliances."
-                    }
-                  },
-                  {
-                    "id": "r3",
-                    "cells": {
-                      "choice": "AWS Direct Connect",
-                      "best_for": "Direct Connect provides dedicated connectivity, Site-to-Site VPN provides encrypted IPsec connectivity, Transit Gateway acts as a network transit hub, and PrivateLink exposes services privately through endpoints."
+                      "service": "Global Accelerator",
+                      "behavior": "Static anycast entry IPs + AWS global network",
+                      "clue": "TCP/UDP performance without content caching"
                     }
                   }
                 ],
                 "progressive_reveal": {
-                  "mode": "row",
+                  "mode": "cell",
                   "initially_visible": {
                     "column_ids": [
-                      "choice"
+                      "service"
                     ],
                     "row_ids": [],
                     "cell_ids": []
@@ -878,8 +1350,8 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "CloudFront",
-                  "CloudFront vs Global Accelerator"
+                  "HTTP edge cache -> CloudFront",
+                  "static anycast IP + TCP/UDP -> Global Accelerator"
                 ]
               }
             }
@@ -888,6 +1360,20 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "How AWS Global Accelerator works",
+              "url": "https://docs.aws.amazon.com/global-accelerator/latest/dg/introduction-how-it-works.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "CDN",
+              "definition": "Content delivery network; a distributed edge network used to serve content close to users."
+            },
+            {
+              "term": "anycast",
+              "definition": "A routing method where the same IP address is advertised from multiple locations."
             }
           ]
         },
@@ -1003,6 +1489,20 @@
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
+          ],
+          "glossary": [
+            {
+              "term": "Layer 4",
+              "definition": "Transport-layer routing based on protocols and ports such as TCP or UDP."
+            },
+            {
+              "term": "Layer 7",
+              "definition": "Application-layer routing based on HTTP information such as host, path, or headers."
+            },
+            {
+              "term": "GENEVE",
+              "definition": "The encapsulation protocol used by Gateway Load Balancer for network-appliance integration."
+            }
           ]
         },
         {
@@ -1034,13 +1534,15 @@
               "id": "hybrid-network-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Which network requirement points to each service?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Direct Connect provides dedicated connectivity, Site-to-Site VPN provides encrypted IPsec connectivity, Transit Gateway acts as a network transit hub, and PrivateLink exposes services privately through endpoints.",
-                  "Key retrieval phrase: AWS Direct Connect."
+                  "Dedicated hybrid connectivity -> Direct Connect.",
+                  "Encrypted IPsec tunnel -> Site-to-Site VPN.",
+                  "Many networks need a central hub -> Transit Gateway.",
+                  "Private service exposure through interface endpoints -> PrivateLink."
                 ]
               }
             },
@@ -1053,8 +1555,10 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "AWS Direct Connect",
-                  "Direct Connect, VPN, Transit Gateway, and PrivateLink"
+                  "dedicated link -> Direct Connect",
+                  "IPsec -> VPN",
+                  "hub-and-spoke -> Transit Gateway",
+                  "private service endpoint -> PrivateLink"
                 ]
               }
             }
@@ -1063,6 +1567,151 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "What is AWS Direct Connect?",
+              "url": "https://docs.aws.amazon.com/directconnect/latest/UserGuide/Welcome.html"
+            },
+            {
+              "title": "What is AWS Transit Gateway?",
+              "url": "https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "IPsec",
+              "definition": "A protocol suite used to encrypt network traffic, including Site-to-Site VPN tunnels."
+            },
+            {
+              "term": "transit hub",
+              "definition": "A central routing design where many networks connect through a shared hub."
+            }
+          ]
+        },
+        {
+          "id": "domain-3-network-topology",
+          "title": "Network topology, routing, and IP capacity",
+          "concept_ids": [
+            "aws.saa.network_topology"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-hybrid-network"
+          ],
+          "map_position": {
+            "x": 0.84,
+            "y": 0.16
+          },
+          "prompts": [
+            {
+              "id": "network-topology-what",
+              "kind": "what",
+              "label": "WHAT?",
+              "placeholder": "What makes a VPC topology scale cleanly?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Performance and scalability depend on subnet placement, route paths, IP address capacity, and how networks connect. CIDR ranges need growth headroom, routed networks should avoid overlapping CIDRs, and many VPCs often scale better through a transit hub than through a large mesh."
+              }
+            },
+            {
+              "id": "network-topology-table",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "Match symptom to the design concern.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "symptom",
+                    "label": "Symptom"
+                  },
+                  {
+                    "id": "concern",
+                    "label": "Concern"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "ips",
+                    "cells": {
+                      "symptom": "Subnet runs out of IPs",
+                      "concern": "CIDR capacity"
+                    }
+                  },
+                  {
+                    "id": "overlap",
+                    "cells": {
+                      "symptom": "Connected networks overlap",
+                      "concern": "Ambiguous routing"
+                    }
+                  },
+                  {
+                    "id": "mesh",
+                    "cells": {
+                      "symptom": "Many pairwise VPC connections",
+                      "concern": "Topology complexity / Transit Gateway"
+                    }
+                  },
+                  {
+                    "id": "path",
+                    "cells": {
+                      "symptom": "Unexpected next hop",
+                      "concern": "Route table"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "symptom"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "network-topology-clue",
+              "kind": "exam_clue",
+              "label": "EXAM CLUE",
+              "placeholder": "Which phrases should trigger topology reasoning?",
+              "required": true,
+              "reveal": {
+                "type": "keywords",
+                "items": [
+                  "IP exhaustion -> CIDR sizing",
+                  "overlap -> routing problem",
+                  "many VPCs -> Transit Gateway",
+                  "unexpected path -> route table"
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "What is AWS Transit Gateway?",
+              "url": "https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "CIDR",
+              "definition": "Notation describing an IP address range, such as 10.0.0.0/16."
+            },
+            {
+              "term": "route table",
+              "definition": "Rules that determine where traffic is sent based on its destination."
+            },
+            {
+              "term": "overlapping CIDRs",
+              "definition": "Two connected networks using intersecting IP ranges, making normal routing ambiguous."
             }
           ]
         }
@@ -1183,8 +1832,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "Kinesis Data Streams",
-                  "Kinesis, Data Firehose, and MSK"
+                  "custom consumers/replay -> Kinesis Data Streams",
+                  "managed delivery -> Amazon Data Firehose",
+                  "Kafka compatibility -> Amazon MSK"
                 ]
               }
             }
@@ -1193,6 +1843,24 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "What is Amazon MSK?",
+              "url": "https://docs.aws.amazon.com/msk/latest/developerguide/what-is-msk.html"
+            },
+            {
+              "title": "What is Amazon Data Firehose?",
+              "url": "https://docs.aws.amazon.com/firehose/latest/dev/what-is-this-service.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "shard",
+              "definition": "A Kinesis Data Streams capacity and record-grouping unit."
+            },
+            {
+              "term": "consumer",
+              "definition": "An application or service that reads and processes stream records."
             }
           ]
         },
@@ -1225,13 +1893,15 @@
               "id": "analytics-etl-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Choose the analytics service from the job.",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: AWS Glue provides managed data integration and ETL, EMR runs big-data frameworks, Athena runs serverless SQL on data in S3, and Redshift provides a managed data warehouse.",
-                  "Key retrieval phrase: Amazon Athena."
+                  "Catalog data and run managed ETL -> Glue.",
+                  "Spark/Hadoop big-data frameworks -> EMR.",
+                  "Serverless SQL over S3 -> Athena.",
+                  "Managed analytical warehouse -> Redshift."
                 ]
               }
             },
@@ -1244,8 +1914,10 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "Amazon Athena",
-                  "Glue, EMR, Athena, and Redshift"
+                  "ETL/crawler/catalog -> Glue",
+                  "Spark/Hadoop -> EMR",
+                  "SQL on S3 -> Athena",
+                  "warehouse -> Redshift"
                 ]
               }
             }
@@ -1254,12 +1926,34 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "What is AWS Glue?",
+              "url": "https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html"
+            },
+            {
+              "title": "Use columnar storage formats with Athena",
+              "url": "https://docs.aws.amazon.com/athena/latest/ug/columnar-storage.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "ETL",
+              "definition": "Extract, transform, and load: moving and reshaping data for another system."
+            },
+            {
+              "term": "data warehouse",
+              "definition": "A system optimized for large analytical queries and reporting."
+            },
+            {
+              "term": "data catalog",
+              "definition": "Metadata describing dataset location and schema for discovery/query."
             }
           ]
         },
         {
           "id": "domain-3-data-transfer",
-          "title": "DataSync, Storage Gateway, and Snow Family",
+          "title": "DataSync, Storage Gateway, and offline transfer",
           "concept_ids": [
             "aws.saa.data_transfer"
           ],
@@ -1279,20 +1973,22 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "DataSync moves data online between storage systems, Storage Gateway supports ongoing hybrid access patterns, and Snow Family devices move or process data where network transfer is impractical."
+                "text": "DataSync moves data online between supported storage systems. Storage Gateway supports ongoing hybrid storage access. Snow Family remains an SAA exam-recognition topic for traditional appliance-based offline transfer, but Snow Family devices are no longer available to new customers."
               }
             },
             {
               "id": "data-transfer-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Choose the movement pattern before the service.",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: DataSync moves data online between storage systems, Storage Gateway supports ongoing hybrid access patterns, and Snow Family devices move or process data where network transfer is impractical.",
-                  "Key retrieval phrase: Snow Family."
+                  "Managed online transfer -> DataSync.",
+                  "Ongoing hybrid storage interface -> Storage Gateway.",
+                  "Legacy/exam physical AWS appliance -> Snow Family.",
+                  "For a new real-world design, check current alternatives because new customers cannot order Snow Family devices."
                 ]
               }
             },
@@ -1305,8 +2001,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "Snow Family",
-                  "DataSync, Storage Gateway, and Snow Family"
+                  "online transfer -> DataSync",
+                  "ongoing hybrid access -> Storage Gateway",
+                  "legacy/exam offline appliance -> Snow Family"
                 ]
               }
             }
@@ -1315,6 +2012,234 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "AWS Snowball Edge availability change",
+              "url": "https://docs.aws.amazon.com/snowball/latest/developer-guide/snowball-edge-availability-change.html"
+            },
+            {
+              "title": "What is AWS DataSync?",
+              "url": "https://docs.aws.amazon.com/datasync/latest/userguide/what-is-datasync.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "offline transfer",
+              "definition": "Moving data using physical transfer infrastructure instead of ordinary network transfer."
+            }
+          ]
+        },
+        {
+          "id": "domain-3-data-lake-performance",
+          "title": "Data lake governance, formats, and visualization",
+          "concept_ids": [
+            "aws.saa.data_lake_performance"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-data-transfer"
+          ],
+          "map_position": {
+            "x": 0.84,
+            "y": 0.16
+          },
+          "prompts": [
+            {
+              "id": "data-lake-performance-what",
+              "kind": "what",
+              "label": "WHAT?",
+              "placeholder": "How do governance, format, and visualization fit a data lake?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A common AWS data lake stores objects in S3, catalogs metadata with the Glue Data Catalog, can use Lake Formation for centralized data-lake permissions, queries data with Athena, and presents BI dashboards with Amazon Quick Sight."
+              }
+            },
+            {
+              "id": "data-lake-format-table",
+              "kind": "mental_model",
+              "label": "FORMAT PERFORMANCE",
+              "placeholder": "Why is Parquet often better than CSV for analytics?",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "format",
+                    "label": "Format"
+                  },
+                  {
+                    "id": "layout",
+                    "label": "Layout"
+                  },
+                  {
+                    "id": "effect",
+                    "label": "Effect"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "csv",
+                    "cells": {
+                      "format": "CSV/JSON",
+                      "layout": "Row/text oriented",
+                      "effect": "Easy interchange but analytical scans may read more bytes"
+                    }
+                  },
+                  {
+                    "id": "parquet",
+                    "cells": {
+                      "format": "Parquet",
+                      "layout": "Compressed columnar",
+                      "effect": "Read selected columns/blocks; reduce I/O"
+                    }
+                  },
+                  {
+                    "id": "iceberg",
+                    "cells": {
+                      "format": "Iceberg",
+                      "layout": "Table format over data files",
+                      "effect": "Schema evolution and transactional table features"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "format"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "data-lake-service-map",
+              "kind": "connects_to",
+              "label": "SERVICE MAP",
+              "placeholder": "Map each data-lake job to a service.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "job",
+                    "label": "Job"
+                  },
+                  {
+                    "id": "service",
+                    "label": "Service"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "store",
+                    "cells": {
+                      "job": "Store lake objects",
+                      "service": "S3"
+                    }
+                  },
+                  {
+                    "id": "catalog",
+                    "cells": {
+                      "job": "Catalog schema/metadata",
+                      "service": "Glue Data Catalog"
+                    }
+                  },
+                  {
+                    "id": "govern",
+                    "cells": {
+                      "job": "Centralized lake permissions",
+                      "service": "Lake Formation"
+                    }
+                  },
+                  {
+                    "id": "query",
+                    "cells": {
+                      "job": "Serverless SQL over S3",
+                      "service": "Athena"
+                    }
+                  },
+                  {
+                    "id": "visual",
+                    "cells": {
+                      "job": "BI dashboards",
+                      "service": "Amazon Quick Sight"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "job"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "data-lake-performance-clue",
+              "kind": "exam_clue",
+              "label": "EXAM CLUE",
+              "placeholder": "Which phrases should trigger these choices?",
+              "required": true,
+              "reveal": {
+                "type": "keywords",
+                "items": [
+                  "centralized lake permissions -> Lake Formation",
+                  "CSV to Parquet -> reduce analytical scan I/O",
+                  "SQL on S3 -> Athena",
+                  "BI dashboard -> Amazon Quick Sight"
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Managing Lake Formation permissions",
+              "url": "https://docs.aws.amazon.com/lake-formation/latest/dg/managing-permissions.html"
+            },
+            {
+              "title": "Use columnar storage formats with Athena",
+              "url": "https://docs.aws.amazon.com/athena/latest/ug/columnar-storage.html"
+            },
+            {
+              "title": "Amazon Quick Sight business intelligence",
+              "url": "https://docs.aws.amazon.com/quick/latest/userguide/quick-bi.html"
+            },
+            {
+              "title": "What is AWS Glue?",
+              "url": "https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "data lake",
+              "definition": "A centralized repository for large amounts of raw and processed data."
+            },
+            {
+              "term": "columnar",
+              "definition": "A storage layout that groups values by column for efficient analytical scans."
+            },
+            {
+              "term": "Parquet",
+              "definition": "A compressed columnar format commonly used for analytics on data lakes."
+            },
+            {
+              "term": "partitioning",
+              "definition": "Organizing data so queries can scan only relevant subsets."
+            },
+            {
+              "term": "dashboard",
+              "definition": "A visual presentation of metrics and analysis for users."
             }
           ]
         }

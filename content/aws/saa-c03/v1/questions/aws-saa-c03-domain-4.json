@@ -10,8 +10,8 @@
   "version": {
     "id": "saa-c03",
     "exam_code": "SAA-C03",
-    "effective_date": "2026-09-19",
-    "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+    "effective_date": "2026-09-23",
+    "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
     "domains": [
       {
         "id": "domain-1",
@@ -47,7 +47,8 @@
               "storage-transfer-cost-typed-001",
               "storage-transfer-cost-application-001",
               "domain-4-task-4-1-builder-v2",
-              "domain-4-task-4-1-evidence-v2"
+              "domain-4-task-4-1-evidence-v2",
+              "s3-requester-pays-application-v3"
             ]
           },
           {
@@ -61,7 +62,8 @@
               "serverless-cost-typed-001",
               "serverless-cost-application-001",
               "domain-4-task-4-2-builder-v2",
-              "domain-4-task-4-2-fault-v2"
+              "domain-4-task-4-2-fault-v2",
+              "ec2-hibernation-cost-v3"
             ]
           },
           {
@@ -75,7 +77,8 @@
               "db-retention-typed-001",
               "db-retention-application-001",
               "domain-4-task-4-3-builder-v2",
-              "domain-4-task-4-3-evidence-v2"
+              "domain-4-task-4-3-evidence-v2",
+              "database-cost-driver-builder-v3"
             ]
           },
           {
@@ -92,7 +95,8 @@
               "cost-tools-application-001",
               "domain-4-task-4-4-builder-v2",
               "domain-4-task-4-4-fault-v2",
-              "cost-optimization-scenario-v2"
+              "cost-optimization-scenario-v2",
+              "network-throttling-application-v3"
             ]
           }
         ]
@@ -112,13 +116,13 @@
     },
     {
       "id": "aws.saa.storage_transfer_cost",
-      "name": "Cost-aware storage migration and transfer",
-      "description": "Online services such as DataSync, physical Snow Family devices, and hybrid Storage Gateway patterns have different transfer, time, and operational cost profiles."
+      "name": "Cost-aware storage migration and managed transfer",
+      "description": "DataSync handles managed online storage transfer, Transfer Family handles managed file-transfer protocols, Storage Gateway supports ongoing hybrid access, and Snow Family is now mainly an exam-recognition/current-customer topic because new customers cannot order Snow devices."
     },
     {
       "id": "aws.saa.ec2_purchasing",
       "name": "On-Demand, Savings Plans, Reserved Instances, and Spot",
-      "description": "On-Demand offers flexibility, Savings Plans and Reserved Instances reward committed usage, and Spot uses spare EC2 capacity at steep discounts with interruption risk."
+      "description": "On-Demand provides no-commitment flexibility; Savings Plans and RIs reduce eligible committed-usage pricing with different flexibility; Spot provides interruptible spare capacity for fault-tolerant workloads."
     },
     {
       "id": "aws.saa.rightsizing",
@@ -132,8 +136,8 @@
     },
     {
       "id": "aws.saa.db_cost_models",
-      "name": "RDS, Aurora Serverless, and DynamoDB cost models",
-      "description": "Managed relational databases charge for database capacity and storage, Aurora Serverless can adjust relational capacity, and DynamoDB offers on-demand or provisioned capacity for key-value workloads."
+      "name": "RDS, Aurora Serverless v2, and DynamoDB cost models",
+      "description": "Right-size provisioned relational databases, use Aurora Serverless v2 for variable relational ACU demand, and choose DynamoDB on-demand or provisioned capacity from request predictability."
     },
     {
       "id": "aws.saa.db_caching_cost",
@@ -162,33 +166,53 @@
     },
     {
       "id": "aws.saa.cost_tools",
-      "name": "Cost Explorer, Budgets, CUR, and cost allocation tags",
-      "description": "Cost Explorer analyzes spend and usage trends, AWS Budgets tracks thresholds and forecasts, Cost and Usage Report provides detailed billing data, and cost allocation tags attribute spend to resources."
+      "name": "Cost Explorer, Budgets, Data Exports/CUR, and allocation tags",
+      "description": "Cost Explorer analyzes trends, Budgets monitors thresholds/forecasts, CUR 2.0 via Data Exports provides detailed billing data, and cost allocation tags attribute spend."
+    },
+    {
+      "id": "aws.saa.storage_access_sizing",
+      "name": "Storage access, sizing, backup, and archival economics",
+      "description": "Optimize storage by matching access pattern, right-sizing provisioned storage, using Requester Pays where appropriate, and aligning backup/archive retention with actual recovery and compliance needs."
+    },
+    {
+      "id": "aws.saa.compute_elasticity_cost",
+      "name": "Availability, hibernation, and elastic compute cost",
+      "description": "Match availability to workload class, stop or scale in idle non-production capacity where acceptable, and use EC2 hibernation when preserving RAM state is valuable."
+    },
+    {
+      "id": "aws.saa.db_capacity_migration",
+      "name": "Database connections, read scaling, and migration cost",
+      "description": "Use RDS Proxy for connection pooling, read replicas for read scaling, AWS DMS for data migration, and DMS Schema Conversion when moving between different engines."
+    },
+    {
+      "id": "aws.saa.network_cost_controls",
+      "name": "Network throttling and bandwidth cost controls",
+      "description": "Use rate/burst throttling to control request pressure and size hybrid bandwidth from measured requirements instead of overprovisioning."
     }
   ],
   "questions": [
     {
       "id": "s3-classes-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: S3 storage classes trade storage price, retrieval price, minimum duration, availability design, and retrieval latency for different access patterns.",
+      "prompt": "A company cannot predict whether individual S3 objects will be accessed frequently or rarely over time. Which S3 storage class is designed to automatically move objects among access tiers based on changing access patterns?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 26
+            "width_chars": 33
           }
         ]
       },
@@ -198,7 +222,8 @@
           "answer": {
             "accepted_answers": [
               "S3 Intelligent-Tiering",
-              "Intelligent-Tiering"
+              "Intelligent-Tiering",
+              "Amazon S3 Intelligent-Tiering"
             ]
           }
         }
@@ -209,9 +234,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "S3 Intelligent-Tiering is the retrieval target here. S3 storage classes trade storage price, retrieval price, minimum duration, availability design, and retrieval latency for different access patterns. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "S3 Intelligent-Tiering is designed for unknown or changing access patterns and automatically moves eligible objects among access tiers.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The key clue is unknown or changing access frequency."
       ],
       "error_codes": [
         {
@@ -225,21 +250,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "How S3 Intelligent-Tiering works",
+          "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/intelligent-tiering-overview.html"
         }
       ]
     },
     {
       "id": "s3-classes-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.1",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: S3 storage classes trade storage price, retrieval price, minimum duration, availability design, and retrieval latency for different access patterns. Which choice is the most direct fit?",
+      "prompt": "Compliance data is read frequently for 30 days, rarely after 90 days, and must be kept for seven years. The access pattern is known in advance. Which mechanism is the most direct cost control?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -250,27 +279,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "S3 Intelligent-Tiering"
+            "id": "lifecycle",
+            "label": "An S3 lifecycle rule that transitions older objects to cheaper archive tiers"
           },
           {
-            "id": "opt-2",
-            "label": "gp3"
+            "id": "intelligent",
+            "label": "Keep every object permanently in S3 Standard"
           },
           {
-            "id": "opt-3",
-            "label": "Snow Family"
+            "id": "spot",
+            "label": "Move the objects to Spot Instances"
           },
           {
-            "id": "opt-4",
-            "label": "Spot Instances"
+            "id": "nat",
+            "label": "Route reads through a NAT gateway"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-1"
+          "solution": "lifecycle"
         }
       },
       "concepts": [
@@ -279,9 +308,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "S3 Intelligent-Tiering is the direct fit because S3 storage classes trade storage price, retrieval price, minimum duration, availability design, and retrieval latency for different access patterns. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "A known age-based access pattern is a strong fit for an S3 lifecycle rule that transitions older objects to lower-cost storage classes while respecting retention needs.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The access pattern is predictable by object age."
       ],
       "error_codes": [
         {
@@ -295,33 +324,37 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "How S3 Intelligent-Tiering works",
+          "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/intelligent-tiering-overview.html"
         }
       ]
     },
     {
       "id": "ebs-cost-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: gp3 decouples baseline storage size from provisioned IOPS and throughput, while io2 targets demanding IOPS and st1 or sc1 target lower-cost sequential throughput workloads.",
+      "prompt": "An EC2 workload needs general-purpose SSD storage and wants to configure additional IOPS and throughput independently from volume size. Which EBS type fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 12
+            "width_chars": 18
           }
         ]
       },
@@ -342,9 +375,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "gp3 is the retrieval target here. gp3 decouples baseline storage size from provisioned IOPS and throughput, while io2 targets demanding IOPS and st1 or sc1 target lower-cost sequential throughput workloads. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Gp3 is the general-purpose SSD type with independently configurable performance within its supported limits.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "General-purpose SSD plus independent performance tuning points to gp3."
       ],
       "error_codes": [
         {
@@ -358,21 +391,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Amazon EBS volume types",
+          "url": "https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html"
         }
       ]
     },
     {
       "id": "ebs-cost-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.1",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: gp3 decouples baseline storage size from provisioned IOPS and throughput, while io2 targets demanding IOPS and st1 or sc1 target lower-cost sequential throughput workloads. Which choice is the most direct fit?",
+      "prompt": "A large sequential log-processing workload accesses its EBS data frequently and cares more about throughput than random-I/O latency. Which lower-cost EBS type fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -383,27 +420,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "S3 Intelligent-Tiering"
+            "id": "st1",
+            "label": "st1 Throughput Optimized HDD"
           },
           {
-            "id": "opt-2",
-            "label": "Snow Family"
+            "id": "sc1",
+            "label": "sc1 Cold HDD"
           },
           {
-            "id": "opt-3",
-            "label": "Spot Instances"
+            "id": "io2",
+            "label": "io2 Provisioned IOPS SSD"
           },
           {
-            "id": "opt-4",
-            "label": "gp3"
+            "id": "gp3",
+            "label": "gp3 General Purpose SSD"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-4"
+          "solution": "st1"
         }
       },
       "concepts": [
@@ -412,9 +449,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "gp3 is the direct fit because gp3 decouples baseline storage size from provisioned IOPS and throughput, while io2 targets demanding IOPS and st1 or sc1 target lower-cost sequential throughput workloads. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "St1 is intended for frequently accessed throughput-intensive sequential workloads; sc1 is for colder, infrequently accessed sequential data.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The data is sequential and frequently accessed."
       ],
       "error_codes": [
         {
@@ -428,33 +465,37 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Amazon EBS volume types",
+          "url": "https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html"
         }
       ]
     },
     {
       "id": "storage-transfer-cost-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.1",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Online services such as DataSync, physical Snow Family devices, and hybrid Storage Gateway patterns have different transfer, time, and operational cost profiles.",
+      "prompt": "A company must repeatedly copy large datasets from on-premises NFS storage to S3 over available network connectivity with a managed transfer service. Which service fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 15
+            "width_chars": 18
           }
         ]
       },
@@ -463,9 +504,8 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "Snow Family",
-              "AWS Snow Family",
-              "Snowball"
+              "AWS DataSync",
+              "DataSync"
             ]
           }
         }
@@ -476,9 +516,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Snow Family is the retrieval target here. Online services such as DataSync, physical Snow Family devices, and hybrid Storage Gateway patterns have different transfer, time, and operational cost profiles. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "AWS DataSync is designed for managed online data transfer between supported on-premises and AWS storage systems.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The data is moving online over the network."
       ],
       "error_codes": [
         {
@@ -492,21 +532,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is AWS DataSync?",
+          "url": "https://docs.aws.amazon.com/datasync/latest/userguide/what-is-datasync.html"
         }
       ]
     },
     {
       "id": "storage-transfer-cost-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.1",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Online services such as DataSync, physical Snow Family devices, and hybrid Storage Gateway patterns have different transfer, time, and operational cost profiles. Which choice is the most direct fit?",
+      "prompt": "A partner requires a managed SFTP endpoint that writes uploaded files directly into Amazon S3. Which service is the most direct fit?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -517,27 +561,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "gp3"
+            "id": "transfer",
+            "label": "AWS Transfer Family"
           },
           {
-            "id": "opt-2",
-            "label": "Spot Instances"
+            "id": "datasync",
+            "label": "AWS DataSync"
           },
           {
-            "id": "opt-3",
-            "label": "Snow Family"
+            "id": "snow",
+            "label": "AWS Snow Family"
           },
           {
-            "id": "opt-4",
-            "label": "S3 Intelligent-Tiering"
+            "id": "gateway",
+            "label": "AWS Storage Gateway"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-3"
+          "solution": "transfer"
         }
       },
       "concepts": [
@@ -546,9 +590,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Snow Family is the direct fit because Online services such as DataSync, physical Snow Family devices, and hybrid Storage Gateway patterns have different transfer, time, and operational cost profiles. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "AWS Transfer Family provides managed file-transfer endpoints such as SFTP backed by AWS storage services.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The explicit protocol requirement is SFTP."
       ],
       "error_codes": [
         {
@@ -562,31 +606,35 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is AWS Transfer Family?",
+          "url": "https://docs.aws.amazon.com/transfer/latest/userguide/what-is-aws-transfer-family.html"
         }
       ]
     },
     {
       "id": "ec2-purchasing-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: On-Demand offers flexibility, Savings Plans and Reserved Instances reward committed usage, and Spot uses spare EC2 capacity at steep discounts with interruption risk.",
+      "prompt": "A fault-tolerant batch workload can checkpoint progress and safely lose individual EC2 instances. Which EC2 purchasing option is designed to use interruptible spare capacity?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
             "width_chars": 18
           }
@@ -610,9 +658,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Spot Instances is the retrieval target here. On-Demand offers flexibility, Savings Plans and Reserved Instances reward committed usage, and Spot uses spare EC2 capacity at steep discounts with interruption risk. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Spot Instances use spare EC2 capacity at discounted rates and can be interrupted, so they fit flexible fault-tolerant workloads.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The workload explicitly tolerates interruption."
       ],
       "error_codes": [
         {
@@ -626,21 +674,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Spot Instances",
+          "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-spot-instances.html"
         }
       ]
     },
     {
       "id": "ec2-purchasing-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.2",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: On-Demand offers flexibility, Savings Plans and Reserved Instances reward committed usage, and Spot uses spare EC2 capacity at steep discounts with interruption risk. Which choice is the most direct fit?",
+      "prompt": "A company has stable eligible compute spend for the next year but expects to move workloads among EC2 instance families, Regions, Fargate, and Lambda. Which commitment model provides the broadest flexibility?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -651,27 +703,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "S3 Intelligent-Tiering"
+            "id": "compute-sp",
+            "label": "Compute Savings Plan"
           },
           {
-            "id": "opt-2",
-            "label": "Spot Instances"
+            "id": "ec2-sp",
+            "label": "EC2 Instance Savings Plan"
           },
           {
-            "id": "opt-3",
-            "label": "AWS Compute Optimizer"
+            "id": "ri",
+            "label": "Standard EC2 Reserved Instance"
           },
           {
-            "id": "opt-4",
-            "label": "AWS Lambda"
+            "id": "spot",
+            "label": "Spot only"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-2"
+          "solution": "compute-sp"
         }
       },
       "concepts": [
@@ -680,9 +732,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Spot Instances is the direct fit because On-Demand offers flexibility, Savings Plans and Reserved Instances reward committed usage, and Spot uses spare EC2 capacity at steep discounts with interruption risk. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Compute Savings Plans apply broadly across eligible EC2, Fargate, and Lambda usage and provide more flexibility than instance-family- or configuration-specific commitments.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The workload may change service, family, and Region."
       ],
       "error_codes": [
         {
@@ -696,31 +748,35 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Compute Savings Plans and Reserved Instances",
+          "url": "https://docs.aws.amazon.com/savingsplans/latest/userguide/sp-ris.html"
         }
       ]
     },
     {
       "id": "rightsizing-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Right-sizing matches resource capacity to measured demand, Auto Scaling adjusts capacity over time, and AWS Compute Optimizer provides recommendations based on utilization data.",
+      "prompt": "An organization wants utilization-based recommendations for underutilized EC2 instances and other supported resources. Which AWS service provides rightsizing recommendations?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
             "width_chars": 25
           }
@@ -743,9 +799,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS Compute Optimizer is the retrieval target here. Right-sizing matches resource capacity to measured demand, Auto Scaling adjusts capacity over time, and AWS Compute Optimizer provides recommendations based on utilization data. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "AWS Compute Optimizer analyzes utilization and resource configuration to generate optimization and rightsizing recommendations.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The requirement asks for utilization-based recommendations."
       ],
       "error_codes": [
         {
@@ -759,21 +815,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is AWS Compute Optimizer?",
+          "url": "https://docs.aws.amazon.com/compute-optimizer/latest/ug/what-is-compute-optimizer.html"
         }
       ]
     },
     {
       "id": "rightsizing-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.2",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Right-sizing matches resource capacity to measured demand, Auto Scaling adjusts capacity over time, and AWS Compute Optimizer provides recommendations based on utilization data. Which choice is the most direct fit?",
+      "prompt": "A web fleet must handle a large daytime peak but is mostly idle overnight. What is the most direct way to reduce idle compute cost while retaining peak capacity when needed?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -784,27 +844,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "AWS Compute Optimizer"
+            "id": "autoscale",
+            "label": "Use Auto Scaling to scale out and scale in with demand"
           },
           {
-            "id": "opt-2",
-            "label": "Spot Instances"
+            "id": "static",
+            "label": "Run peak EC2 capacity 24/7"
           },
           {
-            "id": "opt-3",
-            "label": "AWS Lambda"
+            "id": "io2",
+            "label": "Move every volume to io2"
           },
           {
-            "id": "opt-4",
-            "label": "S3 Intelligent-Tiering"
+            "id": "nat",
+            "label": "Add another NAT gateway"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-1"
+          "solution": "autoscale"
         }
       },
       "concepts": [
@@ -813,9 +873,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS Compute Optimizer is the direct fit because Right-sizing matches resource capacity to measured demand, Auto Scaling adjusts capacity over time, and AWS Compute Optimizer provides recommendations based on utilization data. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Auto Scaling reduces idle capacity by adjusting the number of running instances as demand changes.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The cost problem is time-varying fleet size."
       ],
       "error_codes": [
         {
@@ -829,33 +889,33 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "serverless-cost-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Lambda charges for requests and execution resources, Fargate charges for provisioned task resources, and EC2 charges for instance capacity with purchasing-model options.",
+      "prompt": "A function runs for a few seconds only when S3 objects arrive and is idle most of the day. Which compute service avoids keeping an EC2 server running continuously?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 14
+            "width_chars": 18
           }
         ]
       },
@@ -876,9 +936,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS Lambda is the retrieval target here. Lambda charges for requests and execution resources, Fargate charges for provisioned task resources, and EC2 charges for instance capacity with purchasing-model options. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Lambda is event-driven and charges according to function usage rather than requiring a continuously running server fleet.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The workload is short-lived, event-driven, and mostly idle."
       ],
       "error_codes": [
         {
@@ -892,21 +952,21 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "serverless-cost-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.2",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Lambda charges for requests and execution resources, Fargate charges for provisioned task resources, and EC2 charges for instance capacity with purchasing-model options. Which choice is the most direct fit?",
+      "prompt": "A containerized service must run continuously at high, predictable utilization and the team can manage EC2 capacity. Which option should be evaluated for cost rather than assuming serverless is always cheaper?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -917,27 +977,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "Spot Instances"
+            "id": "ec2",
+            "label": "A right-sized EC2-backed container fleet with an appropriate commitment model"
           },
           {
-            "id": "opt-2",
-            "label": "AWS Compute Optimizer"
+            "id": "lambda",
+            "label": "Convert the continuously running container directly to Lambda regardless of architecture"
           },
           {
-            "id": "opt-3",
-            "label": "S3 Intelligent-Tiering"
+            "id": "glacier",
+            "label": "Move the container image to Glacier Deep Archive while running"
           },
           {
-            "id": "opt-4",
-            "label": "AWS Lambda"
+            "id": "budget",
+            "label": "Use AWS Budgets as the compute runtime"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-4"
+          "solution": "ec2"
         }
       },
       "concepts": [
@@ -946,9 +1006,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS Lambda is the direct fit because Lambda charges for requests and execution resources, Fargate charges for provisioned task resources, and EC2 charges for instance capacity with purchasing-model options. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Serverless is not automatically the least expensive for every steady high-utilization workload. Right-sized EC2 with an appropriate purchasing commitment can be cost-effective.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The workload is continuously busy and predictable."
       ],
       "error_codes": [
         {
@@ -962,33 +1022,37 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Compute Savings Plans and Reserved Instances",
+          "url": "https://docs.aws.amazon.com/savingsplans/latest/userguide/sp-ris.html"
         }
       ]
     },
     {
       "id": "db-cost-models-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.3",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Managed relational databases charge for database capacity and storage, Aurora Serverless can adjust relational capacity, and DynamoDB offers on-demand or provisioned capacity for key-value workloads.",
+      "prompt": "A relational application has unpredictable bursts and long low-usage periods. It needs Aurora capacity to adjust automatically within configured limits. Which option fits?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 21
+            "width_chars": 31
           }
         ]
       },
@@ -997,8 +1061,9 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "Aurora Serverless",
-              "Amazon Aurora Serverless"
+              "Aurora Serverless v2",
+              "Amazon Aurora Serverless v2",
+              "Aurora Serverless"
             ]
           }
         }
@@ -1009,9 +1074,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Aurora Serverless is the retrieval target here. Managed relational databases charge for database capacity and storage, Aurora Serverless can adjust relational capacity, and DynamoDB offers on-demand or provisioned capacity for key-value workloads. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Aurora Serverless v2 scales relational database capacity in ACUs within a configured range.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The requirement is variable relational compute capacity."
       ],
       "error_codes": [
         {
@@ -1025,21 +1090,25 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "How Aurora Serverless v2 works",
+          "url": "https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.how-it-works.html"
         }
       ]
     },
     {
       "id": "db-cost-models-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.3",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Managed relational databases charge for database capacity and storage, Aurora Serverless can adjust relational capacity, and DynamoDB offers on-demand or provisioned capacity for key-value workloads. Which choice is the most direct fit?",
+      "prompt": "A new DynamoDB workload has highly unpredictable request traffic and the team does not want to estimate or provision RCU/WCU capacity. Which capacity mode best fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1050,27 +1119,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "retention period"
+            "id": "ondemand",
+            "label": "DynamoDB on-demand capacity"
           },
           {
-            "id": "opt-2",
-            "label": "S3 Intelligent-Tiering"
+            "id": "provisioned",
+            "label": "DynamoDB provisioned capacity with fixed RCU/WCU only"
           },
           {
-            "id": "opt-3",
-            "label": "Aurora Serverless"
+            "id": "aurora",
+            "label": "Aurora Serverless v2"
           },
           {
-            "id": "opt-4",
-            "label": "ElastiCache"
+            "id": "rds",
+            "label": "A fixed RDS instance"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-3"
+          "solution": "ondemand"
         }
       },
       "concepts": [
@@ -1079,9 +1148,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Aurora Serverless is the direct fit because Managed relational databases charge for database capacity and storage, Aurora Serverless can adjust relational capacity, and DynamoDB offers on-demand or provisioned capacity for key-value workloads. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "DynamoDB on-demand capacity avoids explicit read/write capacity provisioning and is designed for variable request traffic.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The team does not want to provision throughput units."
       ],
       "error_codes": [
         {
@@ -1095,33 +1164,37 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "DynamoDB on-demand capacity mode",
+          "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/on-demand-capacity-mode.html"
         }
       ]
     },
     {
       "id": "db-caching-cost-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.3",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: A cache can absorb repeated reads and reduce database CPU, I/O, and capacity requirements when the workload has cacheable access patterns.",
+      "prompt": "An application repeatedly reads the same database records and those reads consume significant database CPU. Which general architectural mechanism can reduce repeated database work when freshness requirements allow it?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 15
+            "width_chars": 18
           }
         ]
       },
@@ -1130,8 +1203,9 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "ElastiCache",
-              "Amazon ElastiCache"
+              "cache",
+              "caching",
+              "database cache"
             ]
           }
         }
@@ -1142,9 +1216,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "ElastiCache is the retrieval target here. A cache can absorb repeated reads and reduce database CPU, I/O, and capacity requirements when the workload has cacheable access patterns. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "A cache can serve repeated reads without sending every request to the database, reducing database CPU/I/O requirements when the access pattern is cacheable.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The workload repeatedly reads the same data."
       ],
       "error_codes": [
         {
@@ -1158,21 +1232,21 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "db-caching-cost-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.3",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: A cache can absorb repeated reads and reduce database CPU, I/O, and capacity requirements when the workload has cacheable access patterns. Which choice is the most direct fit?",
+      "prompt": "A read-heavy application repeatedly requests the same session and query data. The team wants a managed general-purpose in-memory cache. Which service fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1183,27 +1257,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "S3 Intelligent-Tiering"
+            "id": "elasticache",
+            "label": "Amazon ElastiCache"
           },
           {
-            "id": "opt-2",
-            "label": "ElastiCache"
+            "id": "rdsproxy",
+            "label": "Amazon RDS Proxy"
           },
           {
-            "id": "opt-3",
-            "label": "Aurora Serverless"
+            "id": "dms",
+            "label": "AWS DMS"
           },
           {
-            "id": "opt-4",
-            "label": "retention period"
+            "id": "backup",
+            "label": "AWS Backup"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-2"
+          "solution": "elasticache"
         }
       },
       "concepts": [
@@ -1212,9 +1286,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "ElastiCache is the direct fit because A cache can absorb repeated reads and reduce database CPU, I/O, and capacity requirements when the workload has cacheable access patterns. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "ElastiCache is a general-purpose managed in-memory cache that can absorb repeated reads and reduce database work.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The requirement is general-purpose in-memory caching."
       ],
       "error_codes": [
         {
@@ -1228,31 +1302,31 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "db-retention-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.3",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Backup frequency and retention determine recovery coverage and storage consumption, so retention should match business and compliance requirements.",
+      "prompt": "A compliance policy requires database backups to be retained for 35 days and no longer. What configuration concept should match that requirement?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
             "width_chars": 20
           }
@@ -1276,9 +1350,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "retention period is the retrieval target here. Backup frequency and retention determine recovery coverage and storage consumption, so retention should match business and compliance requirements. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "The backup retention period controls how long recovery points are kept and should match the actual business/compliance requirement.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The clue is exactly how long backups must be kept."
       ],
       "error_codes": [
         {
@@ -1292,21 +1366,21 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "db-retention-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.3",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Backup frequency and retention determine recovery coverage and storage consumption, so retention should match business and compliance requirements. Which choice is the most direct fit?",
+      "prompt": "A database keeps daily manual snapshots forever even though the business requires only 30 days of recovery history. Which change most directly reduces unnecessary storage cost?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1317,27 +1391,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "retention period"
+            "id": "expire",
+            "label": "Delete or expire snapshots beyond the required retention period"
           },
           {
-            "id": "opt-2",
-            "label": "Aurora Serverless"
+            "id": "keep",
+            "label": "Keep every snapshot indefinitely"
           },
           {
-            "id": "opt-3",
-            "label": "ElastiCache"
+            "id": "proxy",
+            "label": "Add RDS Proxy"
           },
           {
-            "id": "opt-4",
-            "label": "S3 Intelligent-Tiering"
+            "id": "spot",
+            "label": "Move the database to Spot Instances"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-1"
+          "solution": "expire"
         }
       },
       "concepts": [
@@ -1346,9 +1420,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "retention period is the direct fit because Backup frequency and retention determine recovery coverage and storage consumption, so retention should match business and compliance requirements. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Removing recovery points older than the required retention window reduces storage cost without weakening the stated 30-day recovery requirement.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The current retention exceeds the actual requirement."
       ],
       "error_codes": [
         {
@@ -1362,33 +1436,33 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "nat-endpoints-cost-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.4",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: NAT gateways incur hourly and data-processing charges, while VPC endpoints can keep supported service traffic private and may reduce NAT data processing for that traffic.",
+      "prompt": "Private EC2 instances send a large volume of same-Region traffic to Amazon S3 through a NAT gateway. Which VPC feature can remove the NAT processing path for this S3 traffic with no additional endpoint charge?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 16
+            "width_chars": 24
           }
         ]
       },
@@ -1397,8 +1471,9 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "VPC endpoint",
-              "VPC endpoints"
+              "S3 gateway endpoint",
+              "gateway endpoint",
+              "VPC gateway endpoint"
             ]
           }
         }
@@ -1409,9 +1484,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "VPC endpoint is the retrieval target here. NAT gateways incur hourly and data-processing charges, while VPC endpoints can keep supported service traffic private and may reduce NAT data processing for that traffic. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "An S3 gateway endpoint routes S3 traffic privately without a NAT gateway and has no additional endpoint charge.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "S3 plus no endpoint hourly/data-processing charge points to a gateway endpoint."
       ],
       "error_codes": [
         {
@@ -1425,21 +1500,29 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Gateway endpoints",
+          "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html"
+        },
+        {
+          "title": "Pricing for NAT gateways",
+          "url": "https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-pricing.html"
         }
       ]
     },
     {
       "id": "nat-endpoints-cost-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.4",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: NAT gateways incur hourly and data-processing charges, while VPC endpoints can keep supported service traffic private and may reduce NAT data processing for that traffic. Which choice is the most direct fit?",
+      "prompt": "Workloads in two Availability Zones share one NAT gateway in AZ-A. AZ-B sends a large amount of outbound traffic through that NAT gateway and cross-AZ charges are significant. Which redesign should be evaluated?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1450,27 +1533,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "CloudFront"
+            "id": "peraz",
+            "label": "Use same-AZ NAT routing, potentially with a NAT gateway in each AZ"
           },
           {
-            "id": "opt-2",
-            "label": "VPC peering"
+            "id": "cross",
+            "label": "Force all AZ-B traffic through the AZ-A NAT gateway"
           },
           {
-            "id": "opt-3",
-            "label": "AWS Cost Explorer"
+            "id": "cf",
+            "label": "Use CloudFront as the NAT device"
           },
           {
-            "id": "opt-4",
-            "label": "VPC endpoint"
+            "id": "s3",
+            "label": "Move the VPC to an S3 bucket"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-4"
+          "solution": "peraz"
         }
       },
       "concepts": [
@@ -1479,9 +1562,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "VPC endpoint is the direct fit because NAT gateways incur hourly and data-processing charges, while VPC endpoints can keep supported service traffic private and may reduce NAT data processing for that traffic. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "AWS recommends keeping resources and their NAT gateway in the same AZ when cross-AZ traffic is significant, or using a NAT gateway per AZ, while weighing the added hourly NAT cost.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The problem is the cross-AZ path to NAT."
       ],
       "error_codes": [
         {
@@ -1495,33 +1578,41 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Pricing for NAT gateways",
+          "url": "https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-pricing.html"
+        },
+        {
+          "title": "NAT gateway basics",
+          "url": "https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-basics.html"
         }
       ]
     },
     {
       "id": "data-transfer-edge-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.4",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Architecture choices that keep traffic local or serve cacheable content from edge locations can reduce origin load and some data-transfer paths.",
+      "prompt": "Users around the world repeatedly download the same cacheable images from one origin. Which AWS service can cache the objects near users and reduce repeated origin requests?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 14
+            "width_chars": 21
           }
         ]
       },
@@ -1530,8 +1621,8 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "CloudFront",
-              "Amazon CloudFront"
+              "Amazon CloudFront",
+              "CloudFront"
             ]
           }
         }
@@ -1542,9 +1633,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "CloudFront is the retrieval target here. Architecture choices that keep traffic local or serve cacheable content from edge locations can reduce origin load and some data-transfer paths. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "CloudFront caches eligible content at edge locations, reducing repeated requests to the origin when cache hits occur.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The content is cacheable and requested repeatedly by global users."
       ],
       "error_codes": [
         {
@@ -1558,21 +1649,21 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "data-transfer-edge-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.4",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Architecture choices that keep traffic local or serve cacheable content from edge locations can reduce origin load and some data-transfer paths. Which choice is the most direct fit?",
+      "prompt": "A CloudFront distribution has a very low cache-hit ratio because the application uses many unnecessary cache-key variations. Which optimization should be considered first?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1583,27 +1674,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "VPC peering"
+            "id": "key",
+            "label": "Reduce unnecessary cache-key variation so more requests can reuse cached objects"
           },
           {
-            "id": "opt-2",
-            "label": "AWS Cost Explorer"
+            "id": "nat",
+            "label": "Add a NAT gateway to each edge location"
           },
           {
-            "id": "opt-3",
-            "label": "CloudFront"
+            "id": "ri",
+            "label": "Buy EC2 Reserved Instances for CloudFront"
           },
           {
-            "id": "opt-4",
-            "label": "VPC endpoint"
+            "id": "rds",
+            "label": "Add an RDS read replica to the CDN"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-3"
+          "solution": "key"
         }
       },
       "concepts": [
@@ -1612,9 +1703,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "CloudFront is the direct fit because Architecture choices that keep traffic local or serve cacheable content from edge locations can reduce origin load and some data-transfer paths. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Improving cache reuse can reduce origin requests and origin data transfer. A CDN is most cost-effective when the cache key reflects only request attributes that truly change content.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The symptom is low cache reuse."
       ],
       "error_codes": [
         {
@@ -1628,33 +1719,33 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "network-topology-cost-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.4",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: VPC peering, Transit Gateway, Site-to-Site VPN, and Direct Connect have different topology, bandwidth, operational, and data-processing cost characteristics.",
+      "prompt": "Three VPCs need direct private connectivity with simple pairwise traffic and no transitive-routing requirement. Which connectivity option avoids adding a central transit hub?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 15
+            "width_chars": 18
           }
         ]
       },
@@ -1675,9 +1766,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "VPC peering is the retrieval target here. VPC peering, Transit Gateway, Site-to-Site VPN, and Direct Connect have different topology, bandwidth, operational, and data-processing cost characteristics. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "VPC peering is a direct point-to-point VPC connection and can be economical for a small topology that does not need transitive routing.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The topology is small and direct."
       ],
       "error_codes": [
         {
@@ -1691,21 +1782,21 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "network-topology-cost-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.4",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: VPC peering, Transit Gateway, Site-to-Site VPN, and Direct Connect have different topology, bandwidth, operational, and data-processing cost characteristics. Which choice is the most direct fit?",
+      "prompt": "An organization has dozens of VPCs and several hybrid attachments. The peering mesh is becoming operationally complex and the design needs centralized transitive routing. Which service should be evaluated despite its attachment/data-processing charges?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1716,27 +1807,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
-            "label": "AWS Cost Explorer"
+            "id": "tgw",
+            "label": "AWS Transit Gateway"
           },
           {
-            "id": "opt-2",
-            "label": "VPC peering"
+            "id": "peering",
+            "label": "Add many more pairwise VPC peering connections"
           },
           {
-            "id": "opt-3",
-            "label": "VPC endpoint"
+            "id": "cf",
+            "label": "Amazon CloudFront"
           },
           {
-            "id": "opt-4",
-            "label": "CloudFront"
+            "id": "budget",
+            "label": "AWS Budgets"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-2"
+          "solution": "tgw"
         }
       },
       "concepts": [
@@ -1745,9 +1836,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "VPC peering is the direct fit because VPC peering, Transit Gateway, Site-to-Site VPN, and Direct Connect have different topology, bandwidth, operational, and data-processing cost characteristics. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Transit Gateway provides a central transit hub and transitive routing for large VPC/hybrid topologies, trading additional service charges for simpler scalable connectivity.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The requirements are central routing and a large topology."
       ],
       "error_codes": [
         {
@@ -1761,33 +1852,33 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "cost-tools-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.4",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Cost Explorer analyzes spend and usage trends, AWS Budgets tracks thresholds and forecasts, Cost and Usage Report provides detailed billing data, and cost allocation tags attribute spend to resources.",
+      "prompt": "A finance engineer needs the most detailed AWS cost-and-usage dataset for custom SQL analysis and downstream reporting. Which billing dataset should the engineer export?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 21
+            "width_chars": 29
           }
         ]
       },
@@ -1796,8 +1887,9 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "AWS Cost Explorer",
-              "Cost Explorer"
+              "CUR 2.0",
+              "Cost and Usage Report 2.0",
+              "AWS CUR 2.0"
             ]
           }
         }
@@ -1808,9 +1900,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS Cost Explorer is the retrieval target here. Cost Explorer analyzes spend and usage trends, AWS Budgets tracks thresholds and forecasts, Cost and Usage Report provides detailed billing data, and cost allocation tags attribute spend to resources. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "CUR 2.0 provides detailed AWS cost and usage data and is available through AWS Data Exports.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The requirement is a detailed billing dataset, not an interactive chart."
       ],
       "error_codes": [
         {
@@ -1824,21 +1916,29 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Cost and Usage Report (CUR) 2.0",
+          "url": "https://docs.aws.amazon.com/cur/latest/userguide/table-dictionary-cur2.html"
+        },
+        {
+          "title": "Creating Cost and Usage Reports with AWS Data Exports",
+          "url": "https://docs.aws.amazon.com/cur/latest/userguide/creating-cur.html"
         }
       ]
     },
     {
       "id": "cost-tools-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.4",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Cost Explorer analyzes spend and usage trends, AWS Budgets tracks thresholds and forecasts, Cost and Usage Report provides detailed billing data, and cost allocation tags attribute spend to resources. Which choice is the most direct fit?",
+      "prompt": "A team wants an alert when forecasted monthly spend is expected to exceed a defined threshold. Which AWS cost-management service directly fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1849,27 +1949,27 @@
         ],
         "options": [
           {
-            "id": "opt-1",
+            "id": "budgets",
+            "label": "AWS Budgets"
+          },
+          {
+            "id": "explorer",
             "label": "AWS Cost Explorer"
           },
           {
-            "id": "opt-2",
-            "label": "VPC endpoint"
+            "id": "cur",
+            "label": "CUR 2.0"
           },
           {
-            "id": "opt-3",
-            "label": "CloudFront"
-          },
-          {
-            "id": "opt-4",
-            "label": "VPC peering"
+            "id": "optimizer",
+            "label": "AWS Compute Optimizer"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-1"
+          "solution": "budgets"
         }
       },
       "concepts": [
@@ -1878,9 +1978,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS Cost Explorer is the direct fit because Cost Explorer analyzes spend and usage trends, AWS Budgets tracks thresholds and forecasts, Cost and Usage Report provides detailed billing data, and cost allocation tags attribute spend to resources. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "AWS Budgets is designed to track budget thresholds and can alert on actual or forecasted cost/usage against the budget.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The requirement is threshold-based budget alerting."
       ],
       "error_codes": [
         {
@@ -1894,14 +1994,14 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
         }
       ]
     },
     {
       "id": "domain-4-task-4-1-builder-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.1",
@@ -1966,7 +2066,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. S3 Intelligent-Tiering fits this behavior: S3 storage classes trade storage price, retrieval price, minimum duration, availability design, and retrieval latency for different access patterns.. gp3 fits this behavior: gp3 decouples baseline storage size from provisioned IOPS and throughput, while io2 targets demanding IOPS and st1 or sc1 target lower-cost sequential throughput workloads.. Snow Family fits this behavior: Online services such as DataSync, physical Snow Family devices, and hybrid Storage Gateway patterns have different transfer, time, and operational cost profiles..",
+      "explanation": "Storage cost decisions should follow access pattern and required performance. Intelligent-Tiering fits unknown/changing S3 access, gp3 fits general-purpose SSD storage, and managed transfer choices depend on whether movement is online, protocol-based, hybrid, or legacy/offline.",
       "hints": [
         "Match each piece to the requirement it primarily solves; do not select a service merely because it could also appear in the architecture."
       ],
@@ -1989,7 +2089,7 @@
     },
     {
       "id": "domain-4-task-4-1-evidence-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.1",
@@ -2014,15 +2114,15 @@
           },
           {
             "id": "irr-1",
-            "label": "The only concern mentioned is Spot Instances, with no requirement connected to design cost-optimized storage solutions."
+            "label": "The requirement is an interruptible EC2 batch workload, which does not determine the storage architecture."
           },
           {
             "id": "irr-2",
-            "label": "The only concern mentioned is AWS Compute Optimizer, with no requirement connected to design cost-optimized storage solutions."
+            "label": "The requirement is EC2 rightsizing, which does not determine the storage service or lifecycle choice."
           },
           {
             "id": "irr-3",
-            "label": "The only concern mentioned is AWS Lambda, with no requirement connected to design cost-optimized storage solutions."
+            "label": "The requirement is event-driven compute, which does not determine the storage tier or transfer mechanism."
           }
         ]
       },
@@ -2071,7 +2171,7 @@
     },
     {
       "id": "domain-4-task-4-2-builder-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.2",
@@ -2136,7 +2236,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. Spot Instances fits this behavior: On-Demand offers flexibility, Savings Plans and Reserved Instances reward committed usage, and Spot uses spare EC2 capacity at steep discounts with interruption risk.. AWS Compute Optimizer fits this behavior: Right-sizing matches resource capacity to measured demand, Auto Scaling adjusts capacity over time, and AWS Compute Optimizer provides recommendations based on utilization data.. AWS Lambda fits this behavior: Lambda charges for requests and execution resources, Fargate charges for provisioned task resources, and EC2 charges for instance capacity with purchasing-model options..",
+      "explanation": "Compute cost optimization separates purchasing model, resource sizing, and execution model. Spot addresses interruptible capacity, Compute Optimizer provides rightsizing recommendations, and Lambda can avoid continuously running servers for suitable event-driven workloads.",
       "hints": [
         "Match each piece to the requirement it primarily solves; do not select a service merely because it could also appear in the architecture."
       ],
@@ -2159,7 +2259,7 @@
     },
     {
       "id": "domain-4-task-4-2-fault-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.2",
@@ -2208,7 +2308,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "The faulty statement swaps neighboring mechanisms. Spot Instances fits this behavior: On-Demand offers flexibility, Savings Plans and Reserved Instances reward committed usage, and Spot uses spare EC2 capacity at steep discounts with interruption risk. By contrast, AWS Compute Optimizer primarily addresses: Right-sizing matches resource capacity to measured demand, Auto Scaling adjusts capacity over time, and AWS Compute Optimizer provides recommendations based on utilization data..",
+      "explanation": "The faulty statement uses Compute Optimizer as a purchasing model. Compute Optimizer generates utilization-based optimization recommendations; Spot is an interruptible EC2 purchasing option.",
       "hints": [
         "Check each service's primary purpose, not whether it can technically coexist with the other components."
       ],
@@ -2231,7 +2331,7 @@
     },
     {
       "id": "domain-4-task-4-3-builder-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.3",
@@ -2296,7 +2396,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. Aurora Serverless fits this behavior: Managed relational databases charge for database capacity and storage, Aurora Serverless can adjust relational capacity, and DynamoDB offers on-demand or provisioned capacity for key-value workloads.. ElastiCache fits this behavior: A cache can absorb repeated reads and reduce database CPU, I/O, and capacity requirements when the workload has cacheable access patterns.. retention period fits this behavior: Backup frequency and retention determine recovery coverage and storage consumption, so retention should match business and compliance requirements..",
+      "explanation": "Database cost optimization separates capacity model, repeated-read reduction, and backup retention. Aurora Serverless v2 addresses variable relational capacity, a cache can reduce repeated database reads, and retention settings control backup storage duration.",
       "hints": [
         "Match each piece to the requirement it primarily solves; do not select a service merely because it could also appear in the architecture."
       ],
@@ -2319,7 +2419,7 @@
     },
     {
       "id": "domain-4-task-4-3-evidence-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.3",
@@ -2344,15 +2444,15 @@
           },
           {
             "id": "irr-1",
-            "label": "The only concern mentioned is S3 Intelligent-Tiering, with no requirement connected to design cost-optimized database solutions."
+            "label": "The requirement concerns S3 object access tiers, not database capacity or retention."
           },
           {
             "id": "irr-2",
-            "label": "The only concern mentioned is gp3, with no requirement connected to design cost-optimized database solutions."
+            "label": "The requirement concerns EBS block storage, not database capacity planning."
           },
           {
             "id": "irr-3",
-            "label": "The only concern mentioned is Snow Family, with no requirement connected to design cost-optimized database solutions."
+            "label": "The requirement concerns physical/offline data transfer, not database cost optimization."
           }
         ]
       },
@@ -2401,7 +2501,7 @@
     },
     {
       "id": "domain-4-task-4-4-builder-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.4",
@@ -2466,7 +2566,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. VPC endpoint fits this behavior: NAT gateways incur hourly and data-processing charges, while VPC endpoints can keep supported service traffic private and may reduce NAT data processing for that traffic.. CloudFront fits this behavior: Architecture choices that keep traffic local or serve cacheable content from edge locations can reduce origin load and some data-transfer paths.. VPC peering fits this behavior: VPC peering, Transit Gateway, Site-to-Site VPN, and Direct Connect have different topology, bandwidth, operational, and data-processing cost characteristics..",
+      "explanation": "Network cost optimization follows the actual traffic path. Gateway endpoints can avoid NAT processing for S3/DynamoDB, CloudFront can reduce repeated origin requests for cacheable content, and topology choices such as peering or Transit Gateway trade service cost for connectivity scale and operational simplicity.",
       "hints": [
         "Match each piece to the requirement it primarily solves; do not select a service merely because it could also appear in the architecture."
       ],
@@ -2489,7 +2589,7 @@
     },
     {
       "id": "domain-4-task-4-4-fault-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.4",
@@ -2538,7 +2638,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "The faulty statement swaps neighboring mechanisms. VPC endpoint fits this behavior: NAT gateways incur hourly and data-processing charges, while VPC endpoints can keep supported service traffic private and may reduce NAT data processing for that traffic. By contrast, CloudFront primarily addresses: Architecture choices that keep traffic local or serve cacheable content from edge locations can reduce origin load and some data-transfer paths..",
+      "explanation": "The faulty statement substitutes CloudFront for a VPC service-access/NAT-processing problem. CloudFront is a CDN; a suitable VPC endpoint changes the private VPC-to-service traffic path.",
       "hints": [
         "Check each service's primary purpose, not whether it can technically coexist with the other components."
       ],
@@ -2561,7 +2661,7 @@
     },
     {
       "id": "cost-optimization-scenario-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-4",
       "task_id": "4.4",
@@ -2727,7 +2827,7 @@
           "weight": 0.25
         }
       ],
-      "explanation": "This scenario intentionally mixes plausible neighboring AWS services. The strongest path follows the explicit constraints in order, uses each service for its primary architectural role, and verifies the original requirement rather than merely checking that a resource exists or a deployment command succeeded.",
+      "explanation": "First attribute spend to the actual traffic path. For large same-Region S3 traffic through NAT, an S3 gateway endpoint can remove NAT processing and has no additional endpoint charge. For repeated cacheable downloads, CloudFront can reduce origin requests. Verify savings with detailed cost/usage data and application SLOs after the change.",
       "hints": [
         "At each step, use only the evidence already established and prefer the mechanism whose primary purpose matches the constraint."
       ],
@@ -2755,8 +2855,322 @@
       ],
       "source_refs": [
         {
-          "title": "Design Cost-Optimized Architectures — SAA-C03 exam guide",
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Pricing for NAT gateways",
+          "url": "https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-pricing.html"
+        },
+        {
+          "title": "Gateway endpoints",
+          "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html"
+        },
+        {
+          "title": "Cost and Usage Report (CUR) 2.0",
+          "url": "https://docs.aws.amazon.com/cur/latest/userguide/table-dictionary-cur2.html"
+        },
+        {
+          "title": "Analyzing costs and usage with AWS Cost Explorer",
+          "url": "https://docs.aws.amazon.com/cost-management/latest/userguide/ce-what-is.html"
+        }
+      ]
+    },
+    {
+      "id": "s3-requester-pays-application-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "application",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.72,
+      "prompt": "A research organization publishes a large S3 dataset to many external consumers. The bucket owner wants eligible request and download charges to be paid by the requesting consumer. Which S3 feature fits?",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "solution",
+            "label": "Best feature"
+          }
+        ],
+        "options": [
+          {
+            "id": "requester",
+            "label": "S3 Requester Pays"
+          },
+          {
+            "id": "lifecycle",
+            "label": "S3 lifecycle expiration"
+          },
+          {
+            "id": "spot",
+            "label": "EC2 Spot Instances"
+          },
+          {
+            "id": "budget",
+            "label": "AWS Budgets"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "solution": "requester"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.storage_access_sizing",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "S3 Requester Pays shifts eligible request and data-download charges to the requester instead of the bucket owner.",
+      "hints": [
+        "The requirement is about who pays for S3 access."
+      ],
+      "error_codes": [
+        {
+          "code": "requester_pays_missed",
+          "description": "The S3 cost-allocation access feature was missed."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Configuring Requester Pays on an S3 bucket",
+          "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/RequesterPaysExamples.html"
+        }
+      ]
+    },
+    {
+      "id": "ec2-hibernation-cost-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "application",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.73,
+      "prompt": "A non-production EC2 application takes a long time to rebuild a large in-memory working set. It is unused overnight, and the team wants to stop paying instance-usage charges while preserving RAM state for the next morning. Which feature should it evaluate?",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "solution",
+            "label": "Best feature"
+          }
+        ],
+        "options": [
+          {
+            "id": "hibernate",
+            "label": "EC2 hibernation"
+          },
+          {
+            "id": "reboot",
+            "label": "EC2 reboot"
+          },
+          {
+            "id": "spot",
+            "label": "Convert the stateful workload blindly to Spot"
+          },
+          {
+            "id": "nat",
+            "label": "Add a NAT gateway"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "solution": "hibernate"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.compute_elasticity_cost",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "EC2 hibernation saves RAM state to the EBS root volume and the instance enters a stopped state. Instance usage is not charged while stopped, although EBS and other persisting resources can still incur charges.",
+      "hints": [
+        "The requirement is to stop compute billing while preserving memory state."
+      ],
+      "error_codes": [
+        {
+          "code": "hibernate_cost_missed",
+          "description": "EC2 hibernation was not selected for resumable stopped state."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Hibernate your Amazon EC2 instance",
+          "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Hibernate.html"
+        }
+      ]
+    },
+    {
+      "id": "database-cost-driver-builder-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "application",
+      "interaction_type": "configuration_builder",
+      "difficulty_prior": 0.82,
+      "prompt": "Match each database cost driver to the mechanism that directly addresses it.",
+      "interaction": {
+        "type": "configuration_builder",
+        "slots": [
+          {
+            "id": "connections",
+            "label": "Bursty clients create too many short-lived DB connections"
+          },
+          {
+            "id": "reads",
+            "label": "Read-only traffic drives primary DB capacity"
+          },
+          {
+            "id": "hetero",
+            "label": "Migration changes database engine and requires schema conversion"
+          }
+        ],
+        "pieces": [
+          {
+            "id": "proxy",
+            "label": "Amazon RDS Proxy"
+          },
+          {
+            "id": "replica",
+            "label": "Read replica"
+          },
+          {
+            "id": "dms",
+            "label": "AWS DMS + DMS Schema Conversion"
+          },
+          {
+            "id": "x",
+            "label": "S3 Intelligent-Tiering"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "configuration_builder",
+        "assignments": {
+          "connections": "proxy",
+          "reads": "replica",
+          "hetero": "dms"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.db_capacity_migration",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "RDS Proxy reduces connection overhead, read replicas offload read traffic, and heterogeneous database migrations can use AWS DMS plus DMS Schema Conversion.",
+      "hints": [
+        "Identify whether the cost driver is connections, read capacity, or migration work."
+      ],
+      "error_codes": [
+        {
+          "code": "db_cost_driver_mismatch",
+          "description": "A database cost driver was matched incorrectly."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "RDS Proxy concepts and terminology",
+          "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy.howitworks.html"
+        },
+        {
+          "title": "Working with DB instance read replicas",
+          "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html"
+        },
+        {
+          "title": "Using DMS Schema Conversion",
+          "url": "https://docs.aws.amazon.com/dms/latest/userguide/schema-conversion.html"
+        }
+      ]
+    },
+    {
+      "id": "network-throttling-application-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-domain4-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-4",
+      "task_id": "4.4",
+      "assessment_mode": "application",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.69,
+      "prompt": "A public REST API experiences short request bursts that cause expensive downstream scaling. The business wants to enforce a controlled steady request rate and burst target at the API layer. Which mechanism fits?",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "solution",
+            "label": "Best control"
+          }
+        ],
+        "options": [
+          {
+            "id": "throttle",
+            "label": "API Gateway rate and burst throttling"
+          },
+          {
+            "id": "dx",
+            "label": "Increase Direct Connect bandwidth"
+          },
+          {
+            "id": "nat",
+            "label": "Add more NAT gateways"
+          },
+          {
+            "id": "ri",
+            "label": "Buy an EC2 Reserved Instance"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "solution": "throttle"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.network_cost_controls",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "API Gateway supports rate and burst throttling targets, which can limit excessive request pressure before it reaches downstream systems.",
+      "hints": [
+        "The control belongs at the API request-rate layer."
+      ],
+      "error_codes": [
+        {
+          "code": "api_throttle_missed",
+          "description": "API rate/burst throttling was not selected."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Throttle requests to REST APIs in API Gateway",
+          "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-throttling.html"
         }
       ]
     }
