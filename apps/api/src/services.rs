@@ -17,8 +17,8 @@ use adaptive_learn_db as db;
 use adaptive_learn_domain::concept_state::SUCCESS_THRESHOLD;
 use adaptive_learn_domain::{
     ConceptWeight, DAILY_MISSION_BONUS_BITS, LearningEvent, MODEL_VERSION, MissionInstance,
-    MissionStatus, PredictionSample, QuizMode, evaluate, predict_question, retrievability,
-    reward_bits, summarize_streak,
+    MissionStatus, PredictionSample, QuizMode, SECTION_QUIZ_BONUS_BITS, evaluate, predict_question,
+    retrievability, reward_bits, summarize_streak,
 };
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use uuid::Uuid;
@@ -36,10 +36,10 @@ use crate::dto::{
     PracticeTestListResponse, PracticeTestResponse, PracticeTestResultResponse,
     PracticeTestSubmissionRequest, PracticeTestSummaryDto, QuestionView,
     RecommendationEventRequest, RecommendationEventResponse, RecommendationResponse,
-    ReviewedAttempt, ReviewedQuestion, StreakDto, StudySessionRequest, StudySessionResponse,
-    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, SyncSectionResult, TaskDto,
-    TrackMapResponse, TrackProgressResponse, UpdateSettingsRequest, UserSettingsDto,
-    WalletResponse,
+    ReviewedAttempt, ReviewedQuestion, StreakDto, StudyQuestionView, StudySessionRequest,
+    StudySessionResponse, SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse,
+    SyncSectionResult, TaskDto, TrackMapResponse, TrackProgressResponse, UpdateSettingsRequest,
+    UserSettingsDto, WalletResponse,
 };
 use crate::error::ApiError;
 use crate::planner::{
@@ -415,6 +415,7 @@ fn mission_practice_source(mode: QuizMode, has_recommendation: bool) -> &'static
         QuizMode::FullPractice => "full_practice",
         QuizMode::TaskPractice => "task_practice",
         QuizMode::RecommendedPractice => "recommended_practice",
+        QuizMode::SectionQuiz => "section_quiz",
     }
 }
 
@@ -1071,10 +1072,20 @@ pub async fn start_daily_item(
     }
 
     // Resume an already-issued mission for this item instead of duplicating it.
+    // A mission issued from content that has since changed can reference
+    // questions that no longer exist; closing it here makes the code below issue
+    // a fresh mission from current content instead of resuming an unscoreable one.
     if let Some(existing) =
         db::missions::find_active_for_daily_item(&state.pool, user.id, mission_id, position).await?
     {
-        return Ok(mission_response(state, existing));
+        if mission_questions_resolve(state, &existing) {
+            return Ok(mission_response(state, existing));
+        }
+        tracing::warn!(
+            mission = %existing.id,
+            "replacing a daily-item mission whose content has changed"
+        );
+        db::missions::mark_completed(&state.pool, existing.id, user.id).await?;
     }
 
     let bundle = state
@@ -1108,6 +1119,7 @@ pub async fn start_daily_item(
                 mode: QuizMode::DomainQuiz,
                 domain_id: Some(item.domain_id.clone()),
                 task_id: None,
+                module_id: None,
                 question_id: None,
                 recommendation_id: None,
             };
@@ -1139,6 +1151,7 @@ pub async fn start_daily_item(
         daily_item_position: Some(position),
         domain_id: Some(domain_id),
         task_id: None,
+        module_id: None,
         question_ids,
         status: MissionStatus::Issued,
         issued_at: now,
@@ -1784,7 +1797,7 @@ pub async fn issue_mission(
     let device_id = request.device_id.unwrap_or_else(Uuid::new_v4);
 
     let now = Utc::now();
-    let (domain_id, task_id, question_ids) =
+    let (domain_id, task_id, module_id, question_ids) =
         build_question_set(state, &request, owner, now).await?;
     if question_ids.is_empty() {
         return Err(ApiError::NotFound);
@@ -1804,6 +1817,7 @@ pub async fn issue_mission(
         daily_item_position: None,
         domain_id,
         task_id,
+        module_id,
         question_ids,
         status: MissionStatus::Issued,
         issued_at: now,
@@ -1857,14 +1871,14 @@ pub async fn issue_mission(
 
 /// Maps a stored mission into its learner-facing response.
 fn mission_response(state: &AppState, stored: MissionInstance) -> MissionResponse {
-    let questions: Vec<QuestionView> = stored
+    let questions: Vec<StudyQuestionView> = stored
         .question_ids
         .iter()
         .filter_map(|id| {
             state
                 .content
                 .question(&stored.certification_version, id)
-                .map(question_view)
+                .map(study_question_view)
         })
         .collect();
 
@@ -1877,6 +1891,7 @@ fn mission_response(state: &AppState, stored: MissionInstance) -> MissionRespons
         mode: stored.mode,
         domain_id: stored.domain_id,
         task_id: stored.task_id,
+        module_id: stored.module_id,
         issued_at: stored.issued_at,
         expires_at: stored.expires_at,
         questions,
@@ -1962,13 +1977,13 @@ pub async fn daily_item_review(
     mission_review(state, user, mission.id).await
 }
 
-/// Builds `(domain_id, task_id, question_ids)` for a mode.
+/// Builds `(domain_id, task_id, module_id, question_ids)` for a mode.
 async fn build_question_set(
     state: &AppState,
     request: &IssueMissionRequest,
     owner: Option<Uuid>,
     now: chrono::DateTime<Utc>,
-) -> Result<(Option<String>, Option<String>, Vec<String>), ApiError> {
+) -> Result<(Option<String>, Option<String>, Option<String>, Vec<String>), ApiError> {
     let version = &request.certification_version;
 
     match request.mode {
@@ -1989,6 +2004,7 @@ async fn build_question_set(
             Ok((
                 domain_id,
                 Some(task.id.clone()),
+                None,
                 questions
                     .iter()
                     .map(|question| question.id.clone())
@@ -2008,11 +2024,11 @@ async fn build_question_set(
                 return Err(ApiError::NotFound);
             }
             let ids = select_ids(state, request, owner, Some(&domain_id), now).await?;
-            Ok((Some(domain_id), None, ids))
+            Ok((Some(domain_id), None, None, ids))
         }
         QuizMode::QuickAdaptive | QuizMode::FullPractice => {
             let ids = select_ids(state, request, owner, None, now).await?;
-            Ok((None, None, ids))
+            Ok((None, None, None, ids))
         }
         QuizMode::RecommendedPractice => {
             let owner = owner.ok_or(ApiError::Unauthorized)?;
@@ -2029,8 +2045,33 @@ async fn build_question_set(
             Ok((
                 Some(anchor.domain_id.clone()),
                 Some(anchor.task_id.clone()),
+                None,
                 ids,
             ))
+        }
+        QuizMode::SectionQuiz => {
+            let owner = owner.ok_or(ApiError::Unauthorized)?;
+            let domain_id = request.domain_id.clone().ok_or_else(|| {
+                ApiError::BadRequest("section_quiz requires domain_id".to_owned())
+            })?;
+            let module_id = request.module_id.clone().ok_or_else(|| {
+                ApiError::BadRequest("section_quiz requires module_id".to_owned())
+            })?;
+            let ids = select_section_quiz(
+                state,
+                &request.certification_id,
+                version,
+                &domain_id,
+                &module_id,
+                owner,
+                now,
+            )
+            .await?;
+            let task_id = ids
+                .first()
+                .and_then(|id| state.content.question(version, id))
+                .map(|question| question.task_id.clone());
+            Ok((Some(domain_id), task_id, Some(module_id), ids))
         }
     }
 }
@@ -2082,6 +2123,76 @@ async fn select_recommended_practice(
         &candidates,
         &history,
         selection::RECOMMENDED_PRACTICE_LEN,
+    ))
+}
+
+/// Selects the single adaptive question for a section (module) quiz.
+///
+/// The module's question pool comes from canonical learning content, so the
+/// client never supplies it. Selection reuses the learner's cross-device
+/// history and derived concept state, exactly like the other adaptive modes.
+async fn select_section_quiz(
+    state: &AppState,
+    certification_id: &str,
+    version: &str,
+    domain_id: &str,
+    module_id: &str,
+    owner: Uuid,
+    now: chrono::DateTime<Utc>,
+) -> Result<Vec<String>, ApiError> {
+    let questions = state
+        .content
+        .questions_for_module(version, domain_id, module_id);
+    if questions.is_empty() {
+        return Err(ApiError::NotFound);
+    }
+
+    let candidates: Vec<Candidate> = questions.iter().map(|q| candidate_from(q)).collect();
+    let domains: Vec<(String, f64)> = state
+        .content
+        .bundle_for_version(version)
+        .map(|bundle| {
+            bundle
+                .version
+                .domains
+                .iter()
+                .map(|domain| (domain.id.clone(), domain.weight))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let history: Vec<HistoryEntry> =
+        db::learning_events::recent_for_user(&state.pool, owner, certification_id, HISTORY_LIMIT)
+            .await?
+            .into_iter()
+            .map(|entry| HistoryEntry {
+                question_id: entry.question_id,
+                score: entry.score,
+                assessment_mode: entry.assessment_mode,
+                occurred_at: entry.occurred_at,
+                concepts: entry.concepts,
+            })
+            .collect();
+
+    let states: Vec<ConceptEvidence> =
+        db::concept_state::list_for_user(&state.pool, owner, version)
+            .await?
+            .into_iter()
+            .map(|state| ConceptEvidence {
+                concept_id: state.concept_id,
+                assessment_mode: state.assessment_mode,
+                estimate: state.estimate,
+                evidence_mass: state.evidence_mass,
+                last_practiced_at: state.last_practiced_at,
+            })
+            .collect();
+
+    Ok(selection::section_quiz(
+        &candidates,
+        &domains,
+        &history,
+        &states,
+        now,
     ))
 }
 
@@ -2275,6 +2386,9 @@ pub async fn sync(
                     event_id,
                     accepted: true,
                     error_code: None,
+                    correct: applied.correct,
+                    score: applied.score,
+                    error_codes: applied.error_codes,
                     bits_settled: applied.bits_settled,
                 });
             }
@@ -2282,6 +2396,15 @@ pub async fn sync(
             Err(SyncRejection::Rejected(code)) => results.push(reject(event_id, code)),
         }
     }
+
+    // Completion is derived from server-known evidence, never from a client
+    // claim: a mission completes once every one of its questions has an accepted
+    // attempt. This lets a normal study session finish with two requests
+    // (issue + sync) instead of a separate completion call. It is checked for
+    // every mission referenced by the batch, so a retry after events were
+    // accepted but not yet finalized still completes it. Bookkeeping failure is
+    // logged and never fails the accepted events above.
+    complete_satisfied_missions(state, user, device_id, &missions).await;
 
     let bits_balance = match user {
         Some(user) => db::wallets::balance(&state.pool, user.id).await?,
@@ -2414,6 +2537,9 @@ fn reject(event_id: Uuid, code: impl Into<String>) -> SyncEventResult {
         event_id,
         accepted: false,
         error_code: Some(code.into()),
+        correct: false,
+        score: 0.0,
+        error_codes: Vec::new(),
         bits_settled: 0,
     }
 }
@@ -2444,6 +2570,12 @@ struct AppliedEvent {
     bits_settled: i64,
     /// Whether the event was newly accepted (not a duplicate retry).
     newly_accepted: bool,
+    /// Server-authoritative correctness verdict from canonical scoring.
+    correct: bool,
+    /// Server-authoritative partial score in `[0, 1]`.
+    score: f64,
+    /// Server-authoritative structured error codes.
+    error_codes: Vec<String>,
 }
 
 /// Marks a mission completed for its owner.
@@ -2456,19 +2588,42 @@ pub async fn complete_mission(
     let mission = load_mission(state, mission_id).await?;
     ensure_access(&mission, user, device_id)?;
 
+    let mission = finalize_mission_completion(state, &mission)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+
+    Ok(CompleteMissionResponse {
+        id: mission.id,
+        status: mission.status,
+        completed_at: mission.completed_at,
+    })
+}
+
+/// Marks a mission completed and performs every completion side effect.
+///
+/// Used by the explicit `/complete` endpoint and by `/v1/sync` when
+/// server-known completion criteria are met. Returns `None` when the mission row
+/// no longer matches its owner/device. The daily-mission side effects are
+/// idempotent, so a repeated call cannot double-settle a bonus.
+async fn finalize_mission_completion(
+    state: &AppState,
+    mission: &MissionInstance,
+) -> Result<Option<MissionInstance>, ApiError> {
     let updated = match mission.user_id {
-        Some(owner) => db::missions::mark_completed(&state.pool, mission_id, owner).await?,
+        Some(owner) => db::missions::mark_completed(&state.pool, mission.id, owner).await?,
         None => {
             db::missions::mark_completed_anonymous_device(
                 &state.pool,
-                mission_id,
+                mission.id,
                 mission.device_id,
             )
             .await?
         }
     };
 
-    let mission = updated.ok_or(ApiError::NotFound)?;
+    let Some(mission) = updated else {
+        return Ok(None);
+    };
 
     // Best-effort lifecycle telemetry: a mission started from a recommendation
     // was completed. Telemetry never affects mission completion.
@@ -2506,11 +2661,115 @@ pub async fn complete_mission(
         }
     }
 
-    Ok(CompleteMissionResponse {
-        id: mission.id,
-        status: mission.status,
-        completed_at: mission.completed_at,
-    })
+    // A completed section quiz settles its one-time section bonus. Settlement is
+    // idempotent per learner/section, and it requires accepted evidence, so the
+    // explicit `/complete` shortcut cannot mint Bits without answering.
+    if mission.mode == QuizMode::SectionQuiz {
+        settle_section_quiz_reward(state, &mission).await;
+    }
+
+    Ok(Some(mission))
+}
+
+/// Settles the one-time section-quiz completion bonus, best-effort.
+///
+/// Completion is derived from accepted evidence: the mission must have an
+/// accepted attempt for every question. A bookkeeping failure is logged and
+/// never fails the authoritative mission completion.
+async fn settle_section_quiz_reward(state: &AppState, mission: &MissionInstance) {
+    let (Some(user_id), Some(domain_id), Some(module_id)) = (
+        mission.user_id,
+        mission.domain_id.as_deref(),
+        mission.module_id.as_deref(),
+    ) else {
+        return;
+    };
+    if mission.question_ids.is_empty() {
+        return;
+    }
+
+    match db::learning_events::covered_question_count(&state.pool, mission.id).await {
+        Ok(covered) if covered >= mission.question_ids.len() as i64 => {}
+        Ok(_) => return,
+        Err(error) => {
+            tracing::debug!(error = %error, "could not check section quiz coverage");
+            return;
+        }
+    }
+
+    let settle = async {
+        let mut tx = state.pool.begin().await?;
+        db::section_quiz::settle_bonus(
+            &mut tx,
+            db::section_quiz::SectionQuizSettlement {
+                user_id,
+                track_id: &mission.certification_id,
+                track_version: &mission.certification_version,
+                domain_id,
+                module_id,
+                mission_instance_id: mission.id,
+                amount: SECTION_QUIZ_BONUS_BITS,
+            },
+        )
+        .await?;
+        tx.commit().await?;
+        Ok::<_, db::DbError>(())
+    }
+    .await;
+
+    if let Err(error) = settle {
+        tracing::debug!(error = %error, "could not settle section quiz reward");
+    }
+}
+
+/// Completes every touched mission whose questions are all covered by accepted
+/// server-side evidence.
+///
+/// This is the server-known completion criterion for the local-scoring flow:
+/// the client finishes the mission and syncs its raw answers, and the server
+/// decides completion from what it has actually accepted. Any bookkeeping
+/// failure is logged; the accepted learning events, concept state, and Bits from
+/// this batch are already committed and must not be rolled back.
+async fn complete_satisfied_missions(
+    state: &AppState,
+    user: Option<&AuthenticatedUser>,
+    device_id: Option<Uuid>,
+    missions: &HashMap<Uuid, MissionInstance>,
+) {
+    for mission in missions.values() {
+        let mission_id = mission.id;
+        if mission.status == MissionStatus::Completed || mission.question_ids.is_empty() {
+            continue;
+        }
+
+        // Ownership must still hold for the batch's caller.
+        let authorized = match mission.user_id {
+            Some(owner) => user.is_some_and(|user| user.id == owner),
+            None => {
+                is_demo_certification(&mission.certification_id)
+                    && device_id == Some(mission.device_id)
+            }
+        };
+        if !authorized {
+            continue;
+        }
+
+        let covered =
+            match db::learning_events::covered_question_count(&state.pool, mission_id).await {
+                Ok(covered) => covered,
+                Err(error) => {
+                    tracing::debug!(error = %error, "could not check mission coverage");
+                    continue;
+                }
+            };
+        if covered < mission.question_ids.len() as i64 {
+            continue;
+        }
+
+        if let Err(error) = finalize_mission_completion(state, mission).await {
+            tracing::debug!(error = %error, "could not finalize completed mission");
+        }
+    }
 }
 
 /// Authorizes access to a mission.
@@ -2541,6 +2800,24 @@ fn ensure_access(
             }
         }
     }
+}
+
+/// Stable error code reported when a mission references content that no longer
+/// exists because the certification content changed after it was issued.
+pub const MISSION_CONTENT_STALE: &str = "mission_content_stale";
+
+/// Whether every question a mission references still exists in current content.
+///
+/// Content updates rename or remove questions and bump the content version, so
+/// a mission issued from older content can outlive its own questions. Such a
+/// mission can never be scored and must be replaced rather than resumed.
+fn mission_questions_resolve(state: &AppState, mission: &MissionInstance) -> bool {
+    mission.question_ids.iter().all(|question_id| {
+        state
+            .content
+            .question(&mission.certification_version, question_id)
+            .is_some()
+    })
 }
 
 async fn apply_event(
@@ -2580,15 +2857,19 @@ async fn apply_event(
         return Err(SyncRejection::Rejected("bad_request".to_owned()));
     }
 
+    // A missing question means the mission was issued from older content. That
+    // is a recoverable per-event rejection, not a server failure: the client
+    // drops the stale mission and starts a new one.
     let question = state
         .content
         .question(&mission.certification_version, &event.question_id)
         .ok_or_else(|| {
-            SyncRejection::Fatal(anyhow::anyhow!(
-                "mission {} references unknown question {}",
-                mission.id,
-                event.question_id
-            ))
+            tracing::warn!(
+                mission = %mission.id,
+                question = %event.question_id,
+                "rejecting event for a mission whose content has changed"
+            );
+            SyncRejection::Rejected(MISSION_CONTENT_STALE.to_owned())
         })?;
 
     let submitted = to_submitted(event.answer)
@@ -2598,6 +2879,11 @@ async fn apply_event(
     let event_id = event.event_id;
     let question_id = event.question_id.clone();
     let occurred_at = event.occurred_at;
+    // The authoritative result is mirrored back to the client so it can
+    // reconcile its optimistic local score. Rejected events never reach here.
+    let scored_correct = scored.correct;
+    let scored_score = scored.score;
+    let scored_error_codes = scored.error_codes.clone();
 
     // Domain and task come from the actual question, not the mission: mixed
     // missions have no single task, and analytics must stay per-question.
@@ -2649,7 +2935,7 @@ async fn apply_event(
 
     let bits_settled = match attempt {
         Some(attempt_number) if owned_by_user => {
-            reward_bits(attempt_number, scored.score, question.difficulty_prior)
+            reward_bits(attempt_number, scored_score, question.difficulty_prior)
         }
         _ => 0,
     };
@@ -2657,6 +2943,9 @@ async fn apply_event(
     Ok(AppliedEvent {
         bits_settled,
         newly_accepted: attempt.is_some(),
+        correct: scored_correct,
+        score: scored_score,
+        error_codes: scored_error_codes,
     })
 }
 
@@ -2688,11 +2977,12 @@ fn resolve_question<'a>(
         .content
         .question(&mission.certification_version, question_id)
         .ok_or_else(|| {
-            ApiError::Internal(anyhow::anyhow!(
-                "mission {} references unknown question {}",
-                mission.id,
-                question_id
-            ))
+            tracing::warn!(
+                mission = %mission.id,
+                question = %question_id,
+                "mission references content that has changed"
+            );
+            ApiError::MissionStale
         })?;
 
     Ok(question)
@@ -2712,7 +3002,11 @@ fn validate_attempt_metadata(attempt_number: i32, hint_count: i32) -> Result<(),
     Ok(())
 }
 
-fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError> {
+/// Maps an answer payload into the normalized primitives the scorer consumes.
+///
+/// Public so the cross-language golden scoring tests exercise the exact same
+/// transport-to-scorer conversion the request path uses.
+pub fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError> {
     let AnswerPayload {
         placements,
         ordered_ids,
@@ -2728,6 +3022,7 @@ fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError> {
         typed_answers,
         choice_id,
         choice_ids,
+        python_results,
     } = payload;
 
     let shapes = usize::from(placements.is_some())
@@ -2743,7 +3038,8 @@ fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError> {
         + usize::from(token_values.is_some())
         + usize::from(typed_answers.is_some())
         + usize::from(choice_id.is_some())
-        + usize::from(choice_ids.is_some());
+        + usize::from(choice_ids.is_some())
+        + usize::from(python_results.is_some());
 
     if shapes != 1 {
         return Err(ApiError::BadRequest(
@@ -2796,6 +3092,12 @@ fn to_submitted(payload: AnswerPayload) -> Result<SubmittedAnswer, ApiError> {
     if let Some(choice_ids) = choice_ids {
         return Ok(SubmittedAnswer::MultipleResponse(choice_ids));
     }
+    if let Some(python_results) = python_results {
+        return Ok(SubmittedAnswer::PythonCode {
+            passed: python_results.passed,
+            total: python_results.total,
+        });
+    }
 
     Err(ApiError::BadRequest(
         "answer must contain exactly one answer shape".to_owned(),
@@ -2839,6 +3141,32 @@ fn question_view(question: &adaptive_learn_content::Question) -> QuestionView {
         concepts: concept_weights(question),
         hints: question.hints.clone(),
         interaction: question.interaction.clone(),
+    }
+}
+
+/// Builds the locally scoreable view used by ordinary study missions.
+///
+/// This is the deliberate boundary between the hidden-answer [`QuestionView`]
+/// (practice tests, catalogs, pre-submit content) and study missions, which
+/// carry their canonical answer so the browser can score immediately. The
+/// server remains authoritative and re-scores every raw answer during sync.
+fn study_question_view(question: &adaptive_learn_content::Question) -> StudyQuestionView {
+    StudyQuestionView {
+        id: question.id.clone(),
+        domain_id: question.domain_id.clone(),
+        task_id: question.task_id.clone(),
+        prompt: question.prompt.clone(),
+        instruction: question.instruction.clone(),
+        interaction_type: question.interaction_type,
+        assessment_mode: question.assessment_mode,
+        difficulty_prior: question.difficulty_prior,
+        concepts: concept_weights(question),
+        hints: question.hints.clone(),
+        interaction: question.interaction.clone(),
+        canonical_answer: question.canonical_answer.clone(),
+        explanation: question.explanation.clone(),
+        choice_feedback: question.choice_feedback.clone(),
+        error_codes: question.error_codes.clone(),
     }
 }
 
@@ -3243,6 +3571,7 @@ mod tests {
             daily_item_position: None,
             domain_id: Some("domain-1".to_owned()),
             task_id: Some("1.1".to_owned()),
+            module_id: None,
             question_ids: vec!["monitoring-classification-001".to_owned()],
             status: MissionStatus::Issued,
             issued_at: now,
@@ -3586,6 +3915,7 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         });
         assert!(empty.is_err());
 
@@ -3604,8 +3934,58 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         });
         assert!(two_shapes.is_err());
+    }
+
+    #[test]
+    fn python_results_map_without_any_learner_source() {
+        // Learner Python is executed only in the browser sandbox. The API must
+        // never accept source, stdout, or tracebacks for execution or storage;
+        // the only Python answer primitive is the reported test count.
+        let payload = AnswerPayload {
+            placements: None,
+            ordered_ids: None,
+            edges: None,
+            reconstruction: None,
+            evidence_ids: None,
+            faulty_ids: None,
+            slot_values: None,
+            choice_path: None,
+            assignments: None,
+            positions: None,
+            token_values: None,
+            typed_answers: None,
+            choice_id: None,
+            choice_ids: None,
+            python_results: Some(crate::dto::PythonCodeAnswer {
+                passed: 2,
+                total: 3,
+            }),
+        };
+
+        let serialized = serde_json::to_value(&payload).expect("serializes");
+        let keys: Vec<&str> = serialized
+            .as_object()
+            .expect("object")
+            .keys()
+            .map(String::as_str)
+            .collect();
+        for forbidden in ["source", "code", "program", "stdout", "stderr", "traceback"] {
+            assert!(
+                !keys.contains(&forbidden),
+                "answer payload must not carry {forbidden}"
+            );
+        }
+
+        assert_eq!(
+            to_submitted(payload).expect("maps python results"),
+            SubmittedAnswer::PythonCode {
+                passed: 2,
+                total: 3
+            }
+        );
     }
 
     #[test]
@@ -3625,6 +4005,7 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         });
         assert!(bad.is_err());
 
@@ -3643,6 +4024,7 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         });
         assert_eq!(
             good.expect("valid edge"),
@@ -3673,6 +4055,7 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         })
         .expect("valid reconstruction");
 
@@ -3705,6 +4088,7 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         })
         .expect("valid evidence");
         assert_eq!(
@@ -3727,6 +4111,7 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         })
         .expect("valid fault selection");
         assert_eq!(
@@ -3751,6 +4136,7 @@ mod tests {
             typed_answers: None,
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         })
         .expect("valid slots");
         assert_eq!(slots, SubmittedAnswer::FillSlots(values));
@@ -3773,6 +4159,7 @@ mod tests {
             )])),
             choice_id: None,
             choice_ids: None,
+            python_results: None,
         })
         .expect("valid typed answers");
         assert_eq!(

@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "soa-c03-learning-2026-09-21-v9-fact-reviewed",
+  "content_version": "soa-c03-learning-2026-09-22-v11-domain5-node-glossary",
   "certification_id": "aws-soa-c03",
   "certification_version": "soa-c03",
   "exam_guide_revision": "1.1",
@@ -38,7 +38,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS VPC CIDR AND SUBNETS?",
+              "label": "WHAT ARE VPC CIDR BLOCKS AND SUBNETS?",
               "placeholder": "A VPC is an isolated virtual network with one or more IP address ranges. A…",
               "required": true,
               "reveal": {
@@ -85,7 +85,12 @@
             "x": 0.12,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "How VPC peering connections work",
+              "url": "https://docs.aws.amazon.com/vpc/latest/peering/vpc-peering-basics.html"
+            }
+          ]
         },
         {
           "id": "d5-route-tables",
@@ -97,7 +102,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS ROUTE TABLES?",
+              "label": "WHAT ARE ROUTE TABLES?",
               "placeholder": "A route table maps destination CIDR/prefixes to network targets. Routing uses the most specific matching…",
               "required": true,
               "reveal": {
@@ -255,7 +260,21 @@
             "x": 0.36,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "CIDR",
+              "definition": "Classless Inter-Domain Routing notation for an IP address range, such as 10.0.0.0/16. A smaller prefix length means a larger address range."
+            },
+            {
+              "term": "prefix",
+              "definition": "An IP address range used for routing. For example, 10.0.1.0/24 is a more specific prefix than 10.0.0.0/16."
+            },
+            {
+              "term": "NAT",
+              "definition": "Network Address Translation. It changes network address information so one address family or private address can communicate through another path."
+            }
+          ]
         },
         {
           "id": "d5-sg-nacl",
@@ -268,7 +287,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS SECURITY GROUPS VS NETWORK ACLS?",
+              "label": "HOW DO SECURITY GROUPS AND NETWORK ACLS DIFFER?",
               "placeholder": "Security groups are stateful allow-only controls applied to network interfaces/resources. Network ACLs are stateless subnet…",
               "required": true,
               "reveal": {
@@ -429,7 +448,13 @@
             "x": 0.6,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "ENI",
+              "definition": "Elastic Network Interface. It is a virtual network interface in a VPC with private IP addresses and security-group associations."
+            }
+          ]
         },
         {
           "id": "d5-internet-egress",
@@ -443,12 +468,12 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS INTERNET GATEWAY, NAT GATEWAY, AND EGRESS-ONLY IGW?",
+              "label": "HOW DO INTERNET GATEWAYS, NAT GATEWAYS, AND EGRESS-ONLY INTERNET GATEWAYS DIFFER?",
               "placeholder": "An internet gateway provides a VPC path to the internet for appropriately addressed/routed resources. A…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "An internet gateway provides a VPC path to the internet for appropriately addressed/routed resources. A NAT gateway provides initiated outbound IPv4 connectivity for private resources. An egress-only internet gateway provides outbound-only IPv6 internet connectivity."
+                "text": "An internet gateway gives appropriately addressed and routed VPC resources a path to the internet. A NAT gateway commonly provides outbound internet access for private IPv4 workloads. A NAT gateway can also perform NAT64 so IPv6-only workloads can reach IPv4 destinations when used with DNS64. An egress-only internet gateway provides outbound-only native IPv6 internet connectivity."
               }
             },
             {
@@ -470,14 +495,14 @@
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "A private IPv4 EC2 instance downloads OS patches through a NAT gateway. A public web server with a public IPv4 address can use a route to an internet gateway. A private IPv6 workload that needs outbound-only internet uses an egress-only internet gateway."
+                "text": "A private IPv4 EC2 instance downloads OS patches through a NAT gateway. An IPv6-only workload that must call an IPv4-only service can use DNS64 plus NAT64 through a NAT gateway. A private IPv6 workload that only needs native IPv6 internet egress uses an egress-only internet gateway."
               }
             },
             {
               "id": "compare",
               "kind": "not_this",
               "label": "DON'T CONFUSE THESE",
-              "placeholder": "Compare: Internet gateway • NAT gateway • Egress-only IGW",
+              "placeholder": "Compare the main VPC internet-egress choices.",
               "required": true,
               "reveal": {
                 "type": "table",
@@ -487,61 +512,59 @@
                     "label": "Option"
                   },
                   {
-                    "id": "what",
-                    "label": "What it means / does"
+                    "id": "main_job",
+                    "label": "Main job"
                   },
                   {
-                    "id": "use",
-                    "label": "When to use / key distinction"
+                    "id": "clue",
+                    "label": "Typical clue"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "option-1",
+                    "id": "igw",
                     "cells": {
                       "option": "Internet gateway",
-                      "what": "Public internet path",
-                      "use": "Public IPv4/IPv6 resources when routing/addressing/security permit"
+                      "main_job": "VPC path to the public internet",
+                      "clue": "Public addressing + route + security permit direct internet connectivity"
                     }
                   },
                   {
-                    "id": "option-2",
+                    "id": "nat4",
                     "cells": {
                       "option": "NAT gateway",
-                      "what": "Outbound IPv4 translation for private subnets",
-                      "use": "Private IPv4 resources need internet/AWS public endpoints"
+                      "main_job": "Outbound path for private IPv4 workloads",
+                      "clue": "Private IPv4 subnet needs internet/public-service egress"
                     }
                   },
                   {
-                    "id": "option-3",
+                    "id": "nat64",
                     "cells": {
-                      "option": "Egress-only IGW",
-                      "what": "Outbound-only IPv6",
-                      "use": "Private IPv6 workloads"
+                      "option": "DNS64 + NAT64 through a NAT gateway",
+                      "main_job": "Translate IPv6 workload traffic to IPv4 destinations",
+                      "clue": "IPv6-only workload must reach an IPv4-only service"
+                    }
+                  },
+                  {
+                    "id": "eigw",
+                    "cells": {
+                      "option": "Egress-only internet gateway",
+                      "main_job": "Outbound-only native IPv6 internet path",
+                      "clue": "IPv6 internet egress without unsolicited inbound connections"
                     }
                   }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "option"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
+                ]
               }
             },
             {
               "id": "exam-clue",
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
-              "placeholder": "Private subnet IPv4 patch downloads -> NAT gateway; outbound-only IPv6 -> egress-only IGW.",
+              "placeholder": "Private IPv4 internet egress -> NAT gateway. IPv6-only workload to an IPv4-only destination -> DNS64 + NAT64. Outbound-only native IPv6 internet -> egress-only internet gateway.",
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "Private subnet IPv4 patch downloads -> NAT gateway; outbound-only IPv6 -> egress-only IGW."
+                "text": "Private IPv4 internet egress -> NAT gateway. IPv6-only workload to an IPv4-only destination -> DNS64 + NAT64. Outbound-only native IPv6 internet -> egress-only internet gateway."
               }
             }
           ],
@@ -552,7 +575,16 @@
             "x": 0.84,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "NAT gateway basics",
+              "url": "https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-basics.html"
+            },
+            {
+              "title": "DNS64 and NAT64",
+              "url": "https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-nat64-dns64.html"
+            }
+          ]
         },
         {
           "id": "d5-ipam",
@@ -644,12 +676,12 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS VPC ENDPOINTS AND AWS PRIVATELINK?",
+              "label": "WHAT ARE VPC ENDPOINTS AND AWS PRIVATELINK?",
               "placeholder": "A VPC endpoint lets supported traffic reach AWS or endpoint services privately without using an…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "A VPC endpoint lets supported traffic reach AWS or endpoint services privately without using an internet gateway or NAT path. Gateway endpoints and interface endpoints work differently."
+                "text": "A VPC endpoint provides private connectivity from a VPC to a supported service, endpoint service, or resource without requiring a public internet path. Gateway endpoints for S3 and DynamoDB use route tables and do not use AWS PrivateLink. Interface endpoints use private endpoint network interfaces and are powered by AWS PrivateLink."
               }
             },
             {
@@ -684,46 +716,36 @@
                 "type": "table",
                 "columns": [
                   {
-                    "id": "option",
-                    "label": "Option"
+                    "id": "type",
+                    "label": "Endpoint"
                   },
                   {
-                    "id": "what",
-                    "label": "What it means / does"
+                    "id": "mechanism",
+                    "label": "How it works"
                   },
                   {
-                    "id": "use",
-                    "label": "When to use / key distinction"
+                    "id": "remember",
+                    "label": "Remember"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "option-1",
+                    "id": "gateway",
                     "cells": {
-                      "option": "Gateway endpoint",
-                      "what": "Route-table target",
-                      "use": "S3 and DynamoDB supported traffic"
+                      "type": "Gateway endpoint",
+                      "mechanism": "Route-table target for supported S3 and DynamoDB traffic",
+                      "remember": "No additional endpoint charge; does not use AWS PrivateLink"
                     }
                   },
                   {
-                    "id": "option-2",
+                    "id": "interface",
                     "cells": {
-                      "option": "Interface endpoint",
-                      "what": "Private ENIs + security groups; PrivateLink",
-                      "use": "Many AWS/services and endpoint services"
+                      "type": "Interface endpoint",
+                      "mechanism": "Private endpoint network interfaces in selected subnets",
+                      "remember": "Uses AWS PrivateLink; security groups control traffic to the endpoint ENIs"
                     }
                   }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "option"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
+                ]
               }
             },
             {
@@ -803,7 +825,22 @@
             "x": 0.12,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "AWS PrivateLink concepts",
+              "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/concepts.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "NAT",
+              "definition": "Network Address Translation. It changes network address information so one address family or private address can communicate through another path."
+            },
+            {
+              "term": "ENIs",
+              "definition": "Elastic Network Interface. It is a virtual network interface in a VPC with private IP addresses and security-group associations."
+            }
+          ]
         },
         {
           "id": "d5-peering-tgw",
@@ -816,7 +853,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS VPC PEERING VS TRANSIT GATEWAY?",
+              "label": "HOW DO VPC PEERING AND TRANSIT GATEWAY DIFFER?",
               "placeholder": "VPC peering is a direct point-to-point VPC connection and is not transitive. Transit Gateway is…",
               "required": true,
               "reveal": {
@@ -917,7 +954,16 @@
             "x": 0.36,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "How VPC peering connections work",
+              "url": "https://docs.aws.amazon.com/vpc/latest/peering/vpc-peering-basics.html"
+            },
+            {
+              "title": "What is AWS Transit Gateway for Amazon VPC?",
+              "url": "https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html"
+            }
+          ]
         },
         {
           "id": "d5-protection",
@@ -934,7 +980,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS WAF, SHIELD, NETWORK FIREWALL, AND DNS FIREWALL?",
+              "label": "HOW DO WAF, SHIELD, NETWORK FIREWALL, AND DNS FIREWALL DIFFER?",
               "placeholder": "AWS network-protection services operate at different layers: WAF filters HTTP(S), Shield provides DDoS protections, Network…",
               "required": true,
               "reveal": {
@@ -1051,7 +1097,17 @@
             "x": 0.6,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "DDoS",
+              "definition": "Distributed denial of service. An attack that attempts to overwhelm a service or network with traffic from many sources."
+            },
+            {
+              "term": "web ACL",
+              "definition": "The AWS WAF rule collection that decides which matching web requests to allow, block, count, or otherwise handle."
+            }
+          ]
         },
         {
           "id": "d5-network-cost",
@@ -1112,7 +1168,13 @@
             "x": 0.84,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "NAT",
+              "definition": "Network Address Translation. It changes network address information so one address family or private address can communicate through another path."
+            }
+          ]
         }
       ]
     },
@@ -1142,7 +1204,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS ROUTE 53 HOSTED ZONES AND RECORDS?",
+              "label": "WHAT ARE ROUTE 53 HOSTED ZONES AND RECORDS?",
               "placeholder": "A Route 53 hosted zone stores DNS records for a domain. Public hosted zones answer…",
               "required": true,
               "reveal": {
@@ -1241,7 +1303,17 @@
             "x": 0.12,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "zone-apex",
+              "definition": "The root name of a DNS zone, such as example.com inside the example.com hosted zone."
+            },
+            {
+              "term": "alias records",
+              "definition": "A Route 53 record that points a DNS name to supported AWS resources, such as an Application Load Balancer or CloudFront distribution. Unlike a CNAME, an alias record can also be used for the root domain, such as example.com."
+            }
+          ]
         },
         {
           "id": "d5-resolver",
@@ -1253,7 +1325,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS ROUTE 53 RESOLVER ENDPOINTS?",
+              "label": "WHAT ARE ROUTE 53 RESOLVER ENDPOINTS?",
               "placeholder": "Route 53 Resolver handles DNS resolution for VPCs. Inbound endpoints let on-premises networks query VPC/Route…",
               "required": true,
               "reveal": {
@@ -1349,53 +1421,43 @@
             {
               "id": "resolver-direction-table",
               "kind": "mental_model",
-              "label": "HYBRID DNS DIRECTION",
-              "placeholder": "Compare: Inbound Resolver endpoint • Outbound Resolver endpoint",
+              "label": "PUBLIC DNS LOGS VS RESOLVER QUERY LOGS",
+              "placeholder": "Compare Route 53 public DNS query logging with Resolver query logging.",
               "required": false,
               "reveal": {
                 "type": "table",
                 "columns": [
                   {
-                    "id": "endpoint",
-                    "label": "Endpoint"
+                    "id": "log",
+                    "label": "Log type"
                   },
                   {
-                    "id": "direction",
-                    "label": "Direction"
+                    "id": "captures",
+                    "label": "What it captures"
                   },
                   {
-                    "id": "fit",
+                    "id": "use",
                     "label": "Use it when"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "in",
+                    "id": "public",
                     "cells": {
-                      "endpoint": "Inbound Resolver endpoint",
-                      "direction": "On-prem/external → AWS Resolver",
-                      "fit": "External networks must resolve private AWS/VPC names."
+                      "log": "Public DNS query logging",
+                      "captures": "Queries that DNS resolvers send to Route 53 authoritative DNS for a public hosted zone",
+                      "use": "You need evidence about public DNS queries answered by Route 53"
                     }
                   },
                   {
-                    "id": "out",
+                    "id": "resolver",
                     "cells": {
-                      "endpoint": "Outbound Resolver endpoint",
-                      "direction": "VPC → external/on-prem DNS",
-                      "fit": "VPC workloads must resolve corporate/on-prem domains."
+                      "log": "Resolver query logging",
+                      "captures": "Queries handled by Route 53 Resolver for selected VPCs, inbound endpoints, outbound endpoints, and DNS Firewall paths",
+                      "use": "You need evidence about VPC or hybrid DNS resolution"
                     }
                   }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "endpoint"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
+                ]
               }
             },
             {
@@ -1483,7 +1545,13 @@
             "x": 0.36,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "hosted zone",
+              "definition": "A Route 53 container for DNS records for a domain or subdomain."
+            }
+          ]
         },
         {
           "id": "d5-routing-policies",
@@ -1496,12 +1564,12 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS ROUTE 53 ROUTING POLICIES AND QUERY LOGGING?",
+              "label": "WHAT ARE ROUTE 53 ROUTING POLICIES AND QUERY LOGS?",
               "placeholder": "Route 53 routing policies decide how DNS answers are selected. Query logging records DNS-query information…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Route 53 routing policies decide how DNS answers are selected. Query logging records DNS-query information for investigation."
+                "text": "Route 53 routing policies decide which DNS records Route 53 returns. Public DNS query logging records queries sent to Route 53 authoritative DNS for public hosted zones. Resolver query logging records DNS activity handled by Route 53 Resolver for selected VPC and hybrid paths."
               }
             },
             {
@@ -1512,7 +1580,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Choose simple, weighted, latency, failover, geolocation, geoproximity, or multivalue behavior based on the routing requirement and health needs."
+                "text": "Choose the routing policy from the requirement: simple, weighted, latency, failover, geolocation, geoproximity, IP-based, or multivalue answer routing."
               }
             },
             {
@@ -1523,18 +1591,18 @@
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "A weighted policy can send 90% of DNS responses to the current version and 10% to a new endpoint. A failover policy instead uses primary/secondary health. Latency routing selects among configured AWS Regions using AWS latency data about users and AWS data centers."
+                "text": "Weighted records with weights 90 and 10 make Route 53 choose the first record for about 90% of applicable DNS responses and the second for about 10%. This is a DNS-response ratio, not an exact per-request traffic guarantee because clients and recursive resolvers can cache answers. Failover routing instead uses primary/secondary health, while IP-based routing uses client source CIDR mappings that you define."
               }
             },
             {
               "id": "exam-clue",
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
-              "placeholder": "Percentage traffic split -> weighted; active/passive -> failover; lowest network latency -> latency routing.",
+              "placeholder": "Relative traffic split -> weighted. Active/passive -> failover. Lowest AWS Region latency -> latency routing. Route known client CIDR ranges using your own mapping -> IP-based routing.",
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "Percentage traffic split -> weighted; active/passive -> failover; lowest network latency -> latency routing."
+                "text": "Relative traffic split -> weighted. Active/passive -> failover. Lowest AWS Region latency -> latency routing. Route known client CIDR ranges using your own mapping -> IP-based routing."
               }
             }
           ],
@@ -1545,7 +1613,26 @@
             "x": 0.6,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Choosing a Route 53 routing policy",
+              "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html"
+            },
+            {
+              "title": "Route 53 public DNS query logging",
+              "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/query-logs.html"
+            },
+            {
+              "title": "Route 53 Resolver query logging",
+              "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-query-logs.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "CIDR",
+              "definition": "Classless Inter-Domain Routing notation for an IP address range, such as 10.0.0.0/16. A smaller prefix length means a larger address range."
+            }
+          ]
         },
         {
           "id": "d5-cloudfront",
@@ -1608,7 +1695,21 @@
             "x": 0.84,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "CDN",
+              "definition": "Content delivery network. It serves content from distributed edge locations so users can receive cacheable content closer to them."
+            },
+            {
+              "term": "edge location",
+              "definition": "A distributed AWS site close to users where services such as CloudFront can receive and serve requests."
+            },
+            {
+              "term": "origin",
+              "definition": "The backend source CloudFront contacts when it needs content that is not being served from cache."
+            }
+          ]
         },
         {
           "id": "d5-global-accelerator",
@@ -1718,7 +1819,7 @@
               "id": "static-ip-choices",
               "kind": "mental_model",
               "label": "STATIC IP CHOICES",
-              "placeholder": "Elastic IP = one static public IPv4 address for a regional resource • Global Accelerator = global anycast IP entry points across healthy endpoints.",
+              "placeholder": "Compare Elastic IP addresses with Global Accelerator static IP addresses.",
               "required": false,
               "reveal": {
                 "type": "table",
@@ -1774,7 +1875,17 @@
             "x": 0.12,
             "y": 0.34
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "CDN",
+              "definition": "Content delivery network. It serves content from distributed edge locations so users can receive cacheable content closer to them."
+            },
+            {
+              "term": "anycast",
+              "definition": "A networking method where the same IP address is announced from multiple locations and traffic is routed toward an appropriate nearby entry point."
+            }
+          ]
         }
       ]
     },
@@ -1805,7 +1916,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS VPC PATH TROUBLESHOOTING?",
+              "label": "HOW DO YOU TROUBLESHOOT A VPC NETWORK PATH?",
               "placeholder": "Network troubleshooting should trace the path layer by layer: DNS, routing, security groups, NACLs, endpoint/load-balancer…",
               "required": true,
               "reveal": {
@@ -1870,7 +1981,13 @@
             "x": 0.12,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "return path",
+              "definition": "The network route used by response traffic to get back to the original sender."
+            }
+          ]
         },
         {
           "id": "d5-flowlogs",
@@ -1887,12 +2004,12 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS VPC FLOW LOGS?",
+              "label": "WHAT ARE VPC FLOW LOGS?",
               "placeholder": "VPC Flow Logs record network-flow metadata such as source/destination addresses, ports, protocol, bytes/packets, and accept/reject…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "VPC Flow Logs record network-flow metadata such as source/destination addresses, ports, protocol, bytes/packets, and accept/reject decisions for supported network interfaces/resources. They do not capture application payloads."
+                "text": "VPC Flow Logs record IP-flow metadata such as addresses, ports, protocol, counters, and ACCEPT/REJECT actions for supported VPC resources. They do not capture application payloads. Some records can be skipped and some derived metadata fields are best-effort, so interpret them together with other troubleshooting evidence."
               }
             },
             {
@@ -1992,7 +2109,7 @@
               "id": "network-log-sources",
               "kind": "mental_model",
               "label": "NETWORK TROUBLESHOOTING LOG SOURCES",
-              "placeholder": "Flow Logs = network flows • ELB access logs = load-balancer requests • WAF logs = rule decisions • CloudFront logs = edge requests • container logs = app/runtime evidence.",
+              "placeholder": "Compare the main log sources used for network troubleshooting.",
               "required": false,
               "reveal": {
                 "type": "table",
@@ -2072,7 +2189,22 @@
             "x": 0.36,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "VPC Flow Log records",
+              "url": "https://docs.aws.amazon.com/vpc/latest/userguide/flow-log-records.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "ENI",
+              "definition": "Elastic Network Interface. It is a virtual network interface in a VPC with private IP addresses and security-group associations."
+            },
+            {
+              "term": "web ACL",
+              "definition": "The AWS WAF rule collection that decides which matching web requests to allow, block, count, or otherwise handle."
+            }
+          ]
         },
         {
           "id": "d5-reachability",
@@ -2086,12 +2218,12 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS REACHABILITY ANALYZER AND SERVICE LOGS?",
+              "label": "HOW DO REACHABILITY ANALYZER AND SERVICE LOGS HELP TROUBLESHOOTING?",
               "placeholder": "VPC Reachability Analyzer evaluates configured network paths to explain whether a source can reach a…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "VPC Reachability Analyzer evaluates configured network paths to explain whether a source can reach a destination. Service logs show observed requests and rule decisions."
+                "text": "VPC Reachability Analyzer builds a model of the configured network path between a source and destination and evaluates whether that configuration permits reachability. It does not send packets or inspect the live data plane. Flow and service logs provide evidence about traffic or requests that actually occurred."
               }
             },
             {
@@ -2187,7 +2319,18 @@
             "x": 0.6,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "How Reachability Analyzer works",
+              "url": "https://docs.aws.amazon.com/vpc/latest/reachability/how-reachability-analyzer-works.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "ENI",
+              "definition": "Elastic Network Interface. It is a virtual network interface in a VPC with private IP addresses and security-group associations."
+            }
+          ]
         },
         {
           "id": "d5-hybrid",
@@ -2202,7 +2345,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS DIRECT CONNECT, SITE-TO-SITE VPN, AND CLIENT VPN?",
+              "label": "HOW DO DIRECT CONNECT, SITE-TO-SITE VPN, AND CLIENT VPN DIFFER?",
               "placeholder": "Direct Connect provides dedicated connectivity between customer networks and AWS. Site-to-Site VPN creates IPsec network-to-network…",
               "required": true,
               "reveal": {
@@ -2311,7 +2454,13 @@
             "x": 0.84,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "IPsec",
+              "definition": "A set of protocols used to encrypt and authenticate IP traffic. AWS Site-to-Site VPN uses IPsec tunnels."
+            }
+          ]
         },
         {
           "id": "d5-private-trouble",
@@ -2323,7 +2472,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS PRIVATE CONNECTIVITY TROUBLESHOOTING?",
+              "label": "HOW DO YOU TROUBLESHOOT PRIVATE CONNECTIVITY?",
               "placeholder": "Private connectivity failures commonly come from routes, DNS, security groups/NACLs, endpoint policies, overlapping CIDRs, or…",
               "required": true,
               "reveal": {
@@ -2372,7 +2521,21 @@
             "x": 0.12,
             "y": 0.34
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "CIDRs",
+              "definition": "Classless Inter-Domain Routing notation for an IP address range, such as 10.0.0.0/16. A smaller prefix length means a larger address range."
+            },
+            {
+              "term": "ENI",
+              "definition": "Elastic Network Interface. It is a virtual network interface in a VPC with private IP addresses and security-group associations."
+            },
+            {
+              "term": "BGP",
+              "definition": "Border Gateway Protocol. A routing protocol commonly used to exchange network routes for hybrid connectivity such as Direct Connect and dynamic Site-to-Site VPN."
+            }
+          ]
         },
         {
           "id": "d5-cloudfront-trouble",
@@ -2384,7 +2547,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS CLOUDFRONT CACHING TROUBLESHOOTING?",
+              "label": "HOW DO YOU TROUBLESHOOT CLOUDFRONT CACHING?",
               "placeholder": "CloudFront caching issues usually come from TTL/cache-control behavior, cache-key variation, behavior matching, origin configuration, or…",
               "required": true,
               "reveal": {
@@ -2450,7 +2613,25 @@
             "x": 0.36,
             "y": 0.34
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "TTL",
+              "definition": "Time to live. It tells DNS resolvers or caches how long a result can be reused before it should be refreshed."
+            },
+            {
+              "term": "cache key",
+              "definition": "The request values CloudFront uses to decide whether two requests can share the same cached object."
+            },
+            {
+              "term": "origin",
+              "definition": "The backend source CloudFront contacts when it needs content that is not being served from cache."
+            },
+            {
+              "term": "invalidation",
+              "definition": "A CloudFront request that removes selected cached objects before their normal expiration time."
+            }
+          ]
         }
       ]
     },
@@ -2480,12 +2661,12 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS CLOUDWATCH NETWORK MONITORING SERVICES?",
+              "label": "WHAT ARE THE CLOUDWATCH NETWORK MONITORING SERVICES?",
               "placeholder": "CloudWatch network monitoring services observe different parts of network health: Network Flow Monitor focuses on…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "CloudWatch network monitoring services answer different network-health questions. Network Flow Monitor uses agents on supported compute resources to observe workload TCP flows. Internet Monitor measures internet performance affecting application users. Network Synthetic Monitor is fully managed and agentless; it probes hybrid paths from selected VPC subnets to on-premises destination IP addresses."
+                "text": "CloudWatch Network Monitoring includes Network Flow Monitor, Internet Monitor, and Network Synthetic Monitor. Network Flow Monitor uses agents on supported EC2 and EKS compute to collect TCP flow performance statistics. Internet Monitor measures how internet performance and availability affect application users. Network Synthetic Monitor uses AWS-managed probes from selected VPC subnets to on-premises destinations, with no workload agent installation required."
               }
             },
             {
@@ -2496,7 +2677,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Choose based on whether the problem is workload flow performance, internet user experience, or a path you want to test proactively."
+                "text": "Choose the service from the question: actual workload TCP-flow performance, end-user internet impact, or proactive hybrid-path latency and packet-loss testing."
               }
             },
             {
@@ -2514,68 +2695,58 @@
               "id": "compare",
               "kind": "not_this",
               "label": "DON'T CONFUSE THESE",
-              "placeholder": "Compare: Network Flow Monitor • Internet Monitor • Synthetic monitoring",
+              "placeholder": "Compare Network Flow Monitor, Internet Monitor, Network Synthetic Monitor, and CloudWatch Synthetics.",
               "required": true,
               "reveal": {
                 "type": "table",
                 "columns": [
                   {
-                    "id": "option",
-                    "label": "Option"
+                    "id": "tool",
+                    "label": "Tool"
                   },
                   {
-                    "id": "what",
-                    "label": "What it means / does"
+                    "id": "observes",
+                    "label": "What it observes"
                   },
                   {
-                    "id": "use",
-                    "label": "When to use / key distinction"
+                    "id": "clue",
+                    "label": "Typical clue"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "option-1",
+                    "id": "flow",
                     "cells": {
-                      "option": "Network Flow Monitor",
-                      "what": "Supported workload flow performance/health",
-                      "use": "Network-flow performance visibility"
+                      "tool": "Network Flow Monitor",
+                      "observes": "Actual TCP flow performance from supported EC2/EKS workloads",
+                      "clue": "Retransmissions, RTT, flow contributors, AWS-network attribution"
                     }
                   },
                   {
-                    "id": "option-2",
+                    "id": "internet",
                     "cells": {
-                      "option": "Internet Monitor",
-                      "what": "Internet availability/performance affecting users",
-                      "use": "External internet path/user impact"
+                      "tool": "Internet Monitor",
+                      "observes": "Internet availability/performance affecting application users",
+                      "clue": "Users in a geography or ISP path see degradation"
                     }
                   },
                   {
-                    "id": "option-3",
+                    "id": "network-synthetic",
                     "cells": {
-                      "option": "Network Synthetic Monitor",
-                      "what": "Agentless hybrid-path probes from VPC subnets to on-premises IPs",
-                      "use": "Measure hybrid latency and packet loss"
+                      "tool": "Network Synthetic Monitor",
+                      "observes": "AWS-managed probes from VPC subnets to on-premises destinations",
+                      "clue": "Hybrid latency and packet loss without installing workload agents"
                     }
                   },
                   {
-                    "id": "option-4",
+                    "id": "synthetics",
                     "cells": {
-                      "option": "CloudWatch Synthetics canary",
-                      "what": "Scheduled script that exercises an endpoint or API",
-                      "use": "Application endpoint/customer-journey checks, not hybrid network probes"
+                      "tool": "CloudWatch Synthetics canary",
+                      "observes": "Scheduled scripted endpoint or API checks",
+                      "clue": "Test application behavior or a customer journey rather than a hybrid network probe"
                     }
                   }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "option"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
+                ]
               }
             },
             {
@@ -2588,66 +2759,6 @@
                 "type": "text",
                 "text": "Users in specific geographies see internet degradation -> Internet Monitor."
               }
-            },
-            {
-              "id": "network-monitor-table",
-              "kind": "mental_model",
-              "label": "NETWORK MONITORING CHOICES",
-              "placeholder": "Compare: Network Flow Monitor • Internet Monitor • Synthetic monitoring",
-              "required": false,
-              "reveal": {
-                "type": "table",
-                "columns": [
-                  {
-                    "id": "tool",
-                    "label": "Tool"
-                  },
-                  {
-                    "id": "focus",
-                    "label": "Primary focus"
-                  },
-                  {
-                    "id": "clue",
-                    "label": "Scenario clue"
-                  }
-                ],
-                "rows": [
-                  {
-                    "id": "flow",
-                    "cells": {
-                      "tool": "Network Flow Monitor",
-                      "focus": "Supported workload network-flow performance.",
-                      "clue": "Workload flow latency/loss/performance."
-                    }
-                  },
-                  {
-                    "id": "internet",
-                    "cells": {
-                      "tool": "Internet Monitor",
-                      "focus": "Internet availability/performance affecting end users.",
-                      "clue": "Users in certain geographies see internet degradation."
-                    }
-                  },
-                  {
-                    "id": "synthetic",
-                    "cells": {
-                      "tool": "Synthetic monitoring",
-                      "focus": "Active tests/probes of paths or endpoints.",
-                      "clue": "Proactively verify that a path stays reachable."
-                    }
-                  }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "tool"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
-              }
             }
           ],
           "prerequisite_node_ids": [],
@@ -2655,7 +2766,30 @@
             "x": 0.12,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "CloudWatch Network Monitoring",
+              "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Network-Monitoring-Sections.html"
+            },
+            {
+              "title": "Using Network Flow Monitor",
+              "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-NetworkFlowMonitor.html"
+            },
+            {
+              "title": "Using Network Synthetic Monitor",
+              "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/what-is-network-monitor.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "packet loss",
+              "definition": "Network packets that fail to reach their destination. Higher packet loss can cause retries, lower throughput, and application delays."
+            },
+            {
+              "term": "probe",
+              "definition": "A synthetic test sent across a network path to measure properties such as latency and packet loss."
+            }
+          ]
         }
       ]
     }
@@ -2696,7 +2830,7 @@
     ],
     "module_count": 5,
     "knowledge_node_count": 21,
-    "prompt_count": 108
+    "prompt_count": 107
   },
-  "authoring_notes": "V9 fact-reviewed: current official-document factual audit applied after the coverage, concrete-example, and ADHD/readability passes. Known factual errors, ambiguous service behavior, outdated service limits, and incomplete configuration examples were corrected."
+  "authoring_notes": "Domain 5 editorial/glossary review: corrected grammar, removed one duplicate network-monitoring prompt, repurposed a duplicate Resolver table to teach public versus Resolver query logging, added beginner-friendly networking glossary terms, updated NAT64/DNS64 behavior, VPC endpoint distinctions, current Route 53 routing and query-logging behavior, Reachability Analyzer/Flow Logs caveats, and current CloudWatch network-monitoring services, then recalculated coverage counts.\n\nGlossary migration: Domain 5 glossary terms are now scoped per knowledge node/page. Each page includes only supporting terminology actually used on that page, while the page's main subject is not added merely because it is the node topic. The former domain-wide glossary was removed."
 }

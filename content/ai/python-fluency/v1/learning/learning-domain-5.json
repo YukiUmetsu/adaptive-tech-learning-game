@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-fluency-learning-2026-09-19-v2",
+  "content_version": "python-fluency-learning-2026-09-22-v3-domain5-code-results-reviewed",
   "certification_id": "ai-python-fluency",
   "certification_version": "python-fluency-v1",
-  "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python documentation and selected AnyIO/HTTPX docs reviewed 2026-09-19.",
+  "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; Domain 5 thread/process/futures behavior revalidated against official Python 3.14 documentation on 2026-09-22, with explicit version/build nuance for free-threaded CPython and the Python 3.14 POSIX multiprocessing default change.",
   "domain": {
     "id": "domain-5",
     "name": "Threads, Processes & Parallel Work",
@@ -16,8 +16,24 @@
   },
   "source_refs": [
     {
-      "title": "Python 3 documentation",
-      "url": "https://docs.python.org/3/"
+      "title": "concurrent.futures — Launching parallel tasks — Python 3.14",
+      "url": "https://docs.python.org/3.14/library/concurrent.futures.html"
+    },
+    {
+      "title": "threading — Thread-based parallelism — Python 3.14",
+      "url": "https://docs.python.org/3.14/library/threading.html"
+    },
+    {
+      "title": "queue — A synchronized queue class — Python 3.14",
+      "url": "https://docs.python.org/3.14/library/queue.html"
+    },
+    {
+      "title": "multiprocessing — Process-based parallelism — Python 3.14",
+      "url": "https://docs.python.org/3.14/library/multiprocessing.html"
+    },
+    {
+      "title": "Thread states and the global interpreter lock — Python 3.14",
+      "url": "https://docs.python.org/3.14/c-api/threads.html"
     }
   ],
   "coverage": {
@@ -37,9 +53,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 7,
-    "prompt_count": 7
+    "prompt_count": 28
   },
-  "authoring_notes": "Updated for the learning-v2 renderer. Code examples are authored as first-class syntax-highlighted code_file reveals with clickable annotations instead of prose strings. Tables are used for contrasts that benefit from progressive reveal.",
+  "authoring_notes": "Domain 5 quality pass: every node now combines short ADHD-friendly progressive explanations with its existing code example. Each code example has one click-to-reveal runtime/result panel. Progressive text hides one key phrase normally and at most two. Glossary terms are scoped per node and explain supporting vocabulary only. The content avoids the outdated blanket claim that threads can never execute CPU-bound Python in parallel: normal GIL-enabled CPython and free-threaded builds are distinguished. Python 3.14's POSIX default multiprocessing change from fork to forkserver is also explicit.",
   "modules": [
     {
       "id": "domain-5-task-5-1",
@@ -62,6 +78,31 @@
             "ai.python.threadpool_executor"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHEN IS A THREAD POOL A GOOD DEFAULT?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "On normal GIL-enabled CPython, thread pools are especially useful for overlapping blocking I/O.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "gil",
+                      "text": "GIL",
+                      "required": true
+                    },
+                    {
+                      "id": "io",
+                      "text": "blocking I/O",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -95,9 +136,63 @@
                     },
                     "title": "Apply one callable across inputs",
                     "explanation": "map schedules one call per URL and yields results in input order.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "len(pages) = 2\npages[0] corresponds to urls[0]\npages[1] corresponds to urls[1]"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "map-order",
+              "kind": "mental_model",
+              "label": "EXECUTOR.MAP PRESERVES INPUT ORDER",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`executor.map()` may run calls concurrently, but its returned values follow the input iterable's order.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "concurrent",
+                      "text": "concurrently",
+                      "required": true
+                    },
+                    {
+                      "id": "order",
+                      "text": "input iterable's order",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "free-threaded",
+              "kind": "not_this",
+              "label": "THE GIL RULE HAS A MODERN EXCEPTION",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A free-threaded build can run Python threads in parallel, so CPU-bound thread behavior depends on the interpreter build.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "free",
+                      "text": "free-threaded build",
+                      "required": true
+                    },
+                    {
+                      "id": "depends",
+                      "text": "depends on the interpreter build",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -106,7 +201,30 @@
             "x": 0.12,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "concurrent.futures — Launching parallel tasks — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/concurrent.futures.html"
+            },
+            {
+              "title": "Thread states and the global interpreter lock — Python 3.14",
+              "url": "https://docs.python.org/3.14/c-api/threads.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "blocking I/O",
+              "definition": "Input/output that occupies its current thread while waiting for an external operation such as disk or network access."
+            },
+            {
+              "term": "GIL",
+              "definition": "The Global Interpreter Lock used by normal GIL-enabled CPython builds to serialize Python bytecode execution across threads."
+            },
+            {
+              "term": "free-threaded build",
+              "definition": "A CPython build that can run without the GIL, allowing Python threads to execute in parallel on multiple cores."
+            }
+          ]
         },
         {
           "id": "domain-5-processpool_executor",
@@ -115,6 +233,31 @@
             "ai.python.processpool_executor"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHY USE A PROCESS POOL?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`ProcessPoolExecutor` runs work in a separate worker process, which sidesteps one process's GIL for suitable CPU-bound Python work.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "worker",
+                      "text": "worker process",
+                      "required": true
+                    },
+                    {
+                      "id": "cpu",
+                      "text": "CPU-bound Python work",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -148,9 +291,58 @@
                     },
                     "title": "Process worker pool",
                     "explanation": "Separate processes are appropriate for suitable CPU-bound Python work that can cross process boundaries.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "results = [333332833333500000, 2666664666667000000]"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "pickle",
+              "kind": "not_this",
+              "label": "PROCESS-BOUNDARY VALUES MUST TRAVEL",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Submitted callables, arguments, and returned values generally need to be picklable.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "picklable",
+                      "text": "picklable",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "main",
+              "kind": "not_this",
+              "label": "WORKERS MUST IMPORT THE PROGRAM SAFELY",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "The `__main__` module must be importable by worker subprocesses, so REPL functions and lambdas should not be expected to work.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "main",
+                      "text": "`__main__`",
+                      "required": true
+                    },
+                    {
+                      "id": "repl",
+                      "text": "REPL functions and lambdas",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -161,7 +353,30 @@
             "x": 0.35,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "concurrent.futures — Launching parallel tasks — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/concurrent.futures.html"
+            },
+            {
+              "title": "multiprocessing — Process-based parallelism — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/multiprocessing.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "worker process",
+              "definition": "A separate operating-system process used by a pool to execute submitted work."
+            },
+            {
+              "term": "picklable",
+              "definition": "Able to be serialized with Python's pickle protocol so data or callables can cross a process boundary."
+            },
+            {
+              "term": "__main__",
+              "definition": "The module namespace used by the program entry point. Process workers may need to import it safely."
+            }
+          ]
         },
         {
           "id": "domain-5-futures_as_completed",
@@ -170,6 +385,31 @@
             "ai.python.futures_as_completed"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES AS_COMPLETED() YIELD?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`as_completed()` yields each `Future` in completion order instead of submission order.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "future",
+                      "text": "`Future`",
+                      "required": true
+                    },
+                    {
+                      "id": "completion",
+                      "text": "completion order",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -203,9 +443,63 @@
                     },
                     "title": "Iterate by completion time",
                     "explanation": "Futures are yielded as they finish, not in original submission order.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "futures are handled as each one finishes\nfuture.result() returns that call's value or raises its exception"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "result",
+              "kind": "when",
+              "label": "READ THE RESULT FROM EACH COMPLETED FUTURE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`future.result()` returns the worker value, or re-raises the worker exception for that completed call.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "result",
+                      "text": "`future.result()`",
+                      "required": true
+                    },
+                    {
+                      "id": "exception",
+                      "text": "re-raises the worker exception",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "contrast",
+              "kind": "mental_model",
+              "label": "MAP AND AS_COMPLETED SERVE DIFFERENT ORDERING NEEDS",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "`executor.map()` favors input ordering; `as_completed()` favors handling whichever submitted task finishes next.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "map",
+                      "text": "input ordering",
+                      "required": true
+                    },
+                    {
+                      "id": "as-completed",
+                      "text": "finishes next",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -216,7 +510,26 @@
             "x": 0.58,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "concurrent.futures — Launching parallel tasks — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/concurrent.futures.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "Future",
+              "definition": "An object representing work that may still be running and will later contain either a result or an exception."
+            },
+            {
+              "term": "completion order",
+              "definition": "The order tasks actually finish."
+            },
+            {
+              "term": "submission order",
+              "definition": "The order tasks were originally sent to an executor."
+            }
+          ]
         }
       ]
     },
@@ -243,6 +556,31 @@
             "ai.python.threading_event"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES A THREADING EVENT STORE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`threading.Event` manages an internal flag that starts false and can be set or cleared.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "flag",
+                      "text": "internal flag",
+                      "required": true
+                    },
+                    {
+                      "id": "false",
+                      "text": "starts false",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -276,9 +614,63 @@
                     },
                     "title": "Publish the signal",
                     "explanation": "set wakes waiting threads and leaves the Event in the set state.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "ready.is_set() = True\nwaiting worker threads can continue"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "set",
+              "kind": "mental_model",
+              "label": "SET() WAKES WAITING THREADS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`set()` changes the flag to true and wakes every current waiter.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "true",
+                      "text": "true",
+                      "required": true
+                    },
+                    {
+                      "id": "waiter",
+                      "text": "waiter",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "future-waits",
+              "kind": "not_this",
+              "label": "THE SIGNAL STAYS SET UNTIL CLEARED",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "After the signal is set, later `wait()` calls return immediately until another thread calls `clear()`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "signal",
+                      "text": "signal",
+                      "required": true
+                    },
+                    {
+                      "id": "immediately",
+                      "text": "return immediately",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -287,7 +679,26 @@
             "x": 0.12,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "threading — Thread-based parallelism — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/threading.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "internal flag",
+              "definition": "The Boolean state stored inside a threading Event."
+            },
+            {
+              "term": "waiter",
+              "definition": "A thread currently blocked waiting for a synchronization condition."
+            },
+            {
+              "term": "signal",
+              "definition": "A notification that tells waiting threads that a condition has occurred."
+            }
+          ]
         },
         {
           "id": "domain-5-threading_lock",
@@ -296,6 +707,31 @@
             "ai.python.threading_lock"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES A THREAD LOCK PROVIDE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`threading.Lock` provides mutual exclusion so one thread at a time holds the protected critical section.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "mutual",
+                      "text": "mutual exclusion",
+                      "required": true
+                    },
+                    {
+                      "id": "critical",
+                      "text": "critical section",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -318,9 +754,63 @@
                     },
                     "title": "Critical section",
                     "explanation": "Only one thread at a time can hold this lock and update counter.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "only one thread executes `counter += 1` while holding this lock"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "with",
+              "kind": "when",
+              "label": "PREFER THE CONTEXT MANAGER",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`with lock:` acquires the lock on entry and releases it when the block exits.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "acquire",
+                      "text": "acquires the lock",
+                      "required": true
+                    },
+                    {
+                      "id": "release",
+                      "text": "releases it",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "race",
+              "kind": "not_this",
+              "label": "THE GIL IS NOT A REPLACEMENT FOR YOUR LOCK",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Use explicit synchronization when a shared compound operation can have a race condition, especially across interpreter builds.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "race",
+                      "text": "race condition",
+                      "required": true
+                    },
+                    {
+                      "id": "explicit",
+                      "text": "explicit synchronization",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -331,7 +821,26 @@
             "x": 0.35,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "threading — Thread-based parallelism — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/threading.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "mutual exclusion",
+              "definition": "Allowing only one thread at a time to hold a lock-protected section."
+            },
+            {
+              "term": "critical section",
+              "definition": "Code that accesses shared state and must not be interleaved unsafely with competing threads."
+            },
+            {
+              "term": "race condition",
+              "definition": "A bug where the result depends on unpredictable timing or interleaving between concurrent operations."
+            }
+          ]
         },
         {
           "id": "domain-5-queue_queue",
@@ -340,6 +849,31 @@
             "ai.python.queue_queue"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHY USE QUEUE.QUEUE BETWEEN THREADS?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`queue.Queue` safely coordinates a producer and consumer while providing synchronized blocking `put()` and `get()` operations.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "producer",
+                      "text": "producer",
+                      "required": true
+                    },
+                    {
+                      "id": "consumer",
+                      "text": "consumer",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -395,9 +929,63 @@
                     },
                     "title": "Mark work finished",
                     "explanation": "task_done pairs with get so join can track unfinished tasks.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "item = 'job-1'\na matching task_done() lets join() account for the completed item"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "bounded",
+              "kind": "when",
+              "label": "A BOUNDED QUEUE CAN APPLY BACKPRESSURE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "With a positive `maxsize`, `put()` can block when full, creating backpressure instead of unbounded queue growth.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "backpressure",
+                      "text": "backpressure",
+                      "required": true
+                    },
+                    {
+                      "id": "block",
+                      "text": "block when full",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "join",
+              "kind": "mental_model",
+              "label": "JOIN() TRACKS UNFINISHED WORK",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "`join()` waits until every unfinished task has been matched by `task_done()`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "unfinished",
+                      "text": "unfinished task",
+                      "required": true
+                    },
+                    {
+                      "id": "done",
+                      "text": "`task_done()`",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -408,7 +996,30 @@
             "x": 0.58,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "queue — A synchronized queue class — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/queue.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "producer",
+              "definition": "Code that creates work items and places them into a queue."
+            },
+            {
+              "term": "consumer",
+              "definition": "Code that removes queued items and processes them."
+            },
+            {
+              "term": "backpressure",
+              "definition": "Making producers wait when a bounded queue cannot accept more work yet."
+            },
+            {
+              "term": "unfinished task",
+              "definition": "A queued item counted as pending completion until a matching `task_done()` call occurs."
+            }
+          ]
         }
       ]
     },
@@ -434,6 +1045,31 @@
           ],
           "prompts": [
             {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHY REQUEST A MULTIPROCESSING CONTEXT?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`multiprocessing.get_context(name)` makes the required start method explicit instead of depending on a platform/version default.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "method",
+                      "text": "start method",
+                      "required": true
+                    },
+                    {
+                      "id": "explicit",
+                      "text": "explicit",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
               "id": "code",
               "kind": "look_for",
               "label": "CHOOSE A START CONTEXT EXPLICITLY",
@@ -455,7 +1091,11 @@
                     },
                     "title": "Select a start-method context",
                     "explanation": "The context provides multiprocessing primitives using the requested start method where supported.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "ctx.get_start_method() = 'spawn'"
+                    }
                   },
                   {
                     "id": "proc",
@@ -470,6 +1110,56 @@
                   }
                 ]
               }
+            },
+            {
+              "id": "defaults",
+              "kind": "not_this",
+              "label": "DEFAULTS DIFFER BY PLATFORM AND VERSION",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Python 3.14 changed the POSIX default from fork to forkserver; macOS and Windows use spawn by default.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "forkserver",
+                      "text": "forkserver",
+                      "required": true
+                    },
+                    {
+                      "id": "spawn",
+                      "text": "spawn",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "context",
+              "kind": "when",
+              "label": "PASS THE SAME CONTEXT INTO PROCESS APIS",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A `ProcessPoolExecutor` can receive `mp_context=ctx`, keeping its worker start behavior aligned with the chosen context.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "mp-context",
+                      "text": "`mp_context=ctx`",
+                      "required": true
+                    },
+                    {
+                      "id": "chosen",
+                      "text": "chosen context",
+                      "required": true
+                    }
+                  ]
+                }
+              }
             }
           ],
           "prerequisite_node_ids": [],
@@ -477,7 +1167,34 @@
             "x": 0.12,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "multiprocessing — Process-based parallelism — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/multiprocessing.html"
+            },
+            {
+              "title": "concurrent.futures — Launching parallel tasks — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/concurrent.futures.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "start method",
+              "definition": "The multiprocessing strategy used to create a child process, such as spawn, fork, or forkserver."
+            },
+            {
+              "term": "spawn",
+              "definition": "A start method that launches a fresh Python interpreter and imports the program state needed by the child."
+            },
+            {
+              "term": "forkserver",
+              "definition": "A POSIX start method where a dedicated server process forks new workers on request."
+            },
+            {
+              "term": "fork",
+              "definition": "A POSIX start method that creates a child by forking the current process."
+            }
+          ]
         }
       ]
     }

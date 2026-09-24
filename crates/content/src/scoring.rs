@@ -44,6 +44,17 @@ pub enum SubmittedAnswer {
     MultipleChoice(String),
     /// Selected choice ids for a multiple-response question.
     MultipleResponse(Vec<String>),
+    /// Count of authored Python tests that passed in the browser runtime.
+    ///
+    /// Execution happens client-side, so the server can validate the shape and
+    /// the reported total but cannot independently re-run the learner program.
+    /// See `docs/14-security-privacy.md` for the trust model.
+    PythonCode {
+        /// Tests that passed.
+        passed: usize,
+        /// Tests that were run; must equal the authored test count.
+        total: usize,
+    },
 }
 
 /// The outcome of scoring one attempt.
@@ -110,6 +121,17 @@ pub enum ScoringError {
     /// A multiple-response answer repeats a choice id.
     #[error("duplicate choice id {0}")]
     DuplicateChoice(String),
+    /// A Python result reports a test total that does not match the content.
+    #[error("python result reported {reported} tests but content has {expected}")]
+    PythonTestCountMismatch {
+        /// Number of authored tests.
+        expected: usize,
+        /// Number of tests the client claims to have run.
+        reported: usize,
+    },
+    /// A Python result is internally inconsistent.
+    #[error("python result is not internally consistent")]
+    PythonResultInvalid,
 }
 
 impl ScoringError {
@@ -132,6 +154,8 @@ impl ScoringError {
             Self::UnknownToken(_) => "unknown_token",
             Self::UnknownChoice(_) => "unknown_choice",
             Self::DuplicateChoice(_) => "duplicate_choice",
+            Self::PythonTestCountMismatch { .. } => "python_test_count_mismatch",
+            Self::PythonResultInvalid => "python_result_invalid",
         }
     }
 }
@@ -213,8 +237,57 @@ pub fn score(question: &Question, answer: &SubmittedAnswer) -> Result<ScoredAnsw
             Interaction::MultipleResponse { choices, .. },
             SubmittedAnswer::MultipleResponse(choice_ids),
         ) => score_multiple_response(question, choices, choice_ids),
+        (Interaction::PythonCode { .. }, SubmittedAnswer::PythonCode { passed, total }) => {
+            score_python_code(question, *passed, *total)
+        }
         _ => Err(ScoringError::InteractionMismatch),
     }
+}
+
+/// Scores a browser-executed Python attempt from its reported test counts.
+///
+/// The server cannot re-run the learner's program, so it validates that the
+/// reported total matches the authored tests and derives partial credit from
+/// the pass count. This mirrors the local-only trust already accepted for
+/// offline study; see `docs/14-security-privacy.md`.
+fn score_python_code(
+    question: &Question,
+    passed: usize,
+    total: usize,
+) -> Result<ScoredAnswer, ScoringError> {
+    let CanonicalAnswer::PythonCode { tests } = &question.canonical_answer else {
+        return Err(ScoringError::InteractionMismatch);
+    };
+
+    let expected = tests.len();
+    if total != expected {
+        return Err(ScoringError::PythonTestCountMismatch {
+            expected,
+            reported: total,
+        });
+    }
+    if passed > total {
+        return Err(ScoringError::PythonResultInvalid);
+    }
+
+    let score = if expected == 0 {
+        0.0
+    } else {
+        passed as f64 / expected as f64
+    };
+    let correct = expected > 0 && passed == expected;
+    let error_codes = if correct {
+        Vec::new()
+    } else {
+        vec!["python_tests_failed".to_owned()]
+    };
+
+    Ok(ScoredAnswer {
+        correct,
+        score,
+        error_codes,
+        canonical: question.canonical_answer.clone(),
+    })
 }
 
 fn score_classification(

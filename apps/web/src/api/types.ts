@@ -13,6 +13,8 @@ export type QuizMode = components["schemas"]["QuizMode"];
 export type WalletResponse = components["schemas"]["WalletResponse"];
 export type MeResponse = components["schemas"]["MeResponse"];
 export type QuestionView = components["schemas"]["QuestionView"];
+export type StudyQuestionView = components["schemas"]["StudyQuestionView"];
+export type ErrorCodeDef = components["schemas"]["ErrorCodeDef"];
 export type Interaction = components["schemas"]["Interaction"];
 export type Choice = components["schemas"]["Choice"];
 export type GraphNode = components["schemas"]["Node"];
@@ -39,6 +41,7 @@ export type ReconstructionAnswerPayload =
 export type FeedbackResponse = components["schemas"]["FeedbackResponse"];
 export type CanonicalAnswer = components["schemas"]["CanonicalAnswer"];
 export type SyncEventRequest = components["schemas"]["SyncEventRequest"];
+export type SyncEventResult = components["schemas"]["SyncEventResult"];
 export type SyncResponse = components["schemas"]["SyncResponse"];
 export type SyncSectionResult = components["schemas"]["SyncSectionResult"];
 export type DiscoveryUpdateRequest =
@@ -77,6 +80,9 @@ export type TableProgressiveReveal =
 export type TableRevealMode = components["schemas"]["TableRevealMode"];
 export type TableInitialVisibility =
   components["schemas"]["TableInitialVisibility"];
+export type TextProgressiveReveal =
+  components["schemas"]["TextProgressiveReveal"];
+export type TextRevealSpan = components["schemas"]["TextRevealSpan"];
 export type CodeAnnotation = components["schemas"]["CodeAnnotation"];
 export type CodeAnnotationAnchor = components["schemas"]["CodeAnnotationAnchor"];
 export type MapPosition = components["schemas"]["MapPosition"];

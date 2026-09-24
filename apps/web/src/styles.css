@@ -130,14 +130,17 @@ a:hover {
   backdrop-filter: blur(10px);
 }
 
-.app-header nav {
+/* The primary nav only. The Learning Tracks dropdown panel is itself a <nav>,
+   so a bare `.app-header nav` would also turn it into a flex row and
+   shrink-wrap each track instead of filling the dropdown. */
+.app-header > nav {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.35rem;
 }
 
-.app-header nav a:not(.auth-sign-in):not(.account-avatar):not(.settings-link) {
+.app-header nav a:not(.auth-sign-in):not(.account-avatar):not(.settings-link):not(.nav-tracks-link) {
   padding: 0.35rem 0.7rem;
   border-radius: 999px;
   color: var(--text-muted);
@@ -145,12 +148,12 @@ a:hover {
   font-weight: 500;
 }
 
-.app-header nav a:not(.auth-sign-in):not(.account-avatar):not(.settings-link):hover {
+.app-header nav a:not(.auth-sign-in):not(.account-avatar):not(.settings-link):not(.nav-tracks-link):hover {
   color: var(--text);
   text-decoration: none;
 }
 
-.app-header nav a:not(.auth-sign-in):not(.account-avatar):not(.settings-link).active {
+.app-header nav a:not(.auth-sign-in):not(.account-avatar):not(.settings-link):not(.nav-tracks-link).active {
   color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border);
@@ -216,11 +219,13 @@ a:hover {
   list-style: none;
 }
 
-/* Higher specificity than the generic header link pills so dropdown rows read
-   as a menu list rather than a row of chips. */
+/* Dropdown rows read as a full-width menu list, with the exam code pinned to
+   the right edge. The generic header link rule excludes `.nav-tracks-link`, so
+   these menu styles are the only ones that apply. */
 .app-header nav .nav-tracks-panel .nav-tracks-link {
   display: flex;
-  align-items: baseline;
+  width: 100%;
+  align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.45rem 0.6rem;
@@ -244,12 +249,17 @@ a:hover {
 }
 
 .nav-tracks-name {
+  flex: 1 1 auto;
+  min-width: 0;
   line-height: 1.3;
 }
 
-/* Exam-code tag, shown only for certification tracks. */
+/* Exam-code tag, shown only for certification tracks. Pinned to the right edge
+   of the full-width row. */
 .nav-tracks-meta {
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  margin-left: auto;
+  text-align: right;
   color: var(--text-faint);
   font-size: 0.72rem;
   font-weight: 600;
@@ -679,6 +689,164 @@ button.primary:hover:not(:disabled) {
 .edge-arrow {
   margin: 0 0.45rem;
   color: var(--accent);
+}
+
+/* Mobile connection builder (narrow panels) */
+.connection-hint {
+  margin: 0 0 0.5rem;
+}
+
+/* The visible confirmation below covers sighted learners; this region only
+   announces transitions to assistive technology. */
+.connection-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.connection-step {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.connection-step-label {
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.connection-choices {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.connection-choice {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-align: left;
+  padding: 0.7rem 0.85rem;
+  font-weight: 600;
+}
+
+.connection-choice[aria-pressed="true"] {
+  border-color: #f472b6;
+  box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.28);
+}
+
+/* Already connected from the current source: keep it visible but not
+   tappable, so duplicate edges cannot be added. */
+.connection-choice.connected {
+  border-color: var(--success);
+  background: rgba(52, 211, 153, 0.12);
+  opacity: 1;
+}
+
+.connection-choice-state {
+  color: var(--success);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.connection-source {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.7rem 0.6rem 0.85rem;
+  border: 1px solid #f472b6;
+  border-radius: var(--radius-sm);
+  background: rgba(244, 114, 182, 0.12);
+  box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.18);
+}
+
+.connection-source-label {
+  font-weight: 700;
+}
+
+.connection-add-another {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0.6rem;
+}
+
+.connection-confirmation {
+  margin-top: 0.9rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--success);
+  border-radius: var(--radius-sm);
+  background: rgba(52, 211, 153, 0.12);
+  display: grid;
+  gap: 0.35rem;
+}
+
+.connection-confirmation-title {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.connection-edge {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.connection-review {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.connection-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.4rem;
+}
+
+.connection-remove-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@keyframes connection-added {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .connection-confirmation {
+    animation: connection-added 0.18s ease-out;
+  }
 }
 
 /* Selection (evidence selection, spot the fault) */
@@ -2791,7 +2959,7 @@ button.primary:hover:not(:disabled) {
     padding: 0.75rem 1rem;
   }
 
-  .app-header nav {
+  .app-header > nav {
     width: 100%;
     justify-content: flex-end;
   }
@@ -2870,7 +3038,8 @@ button.primary:hover:not(:disabled) {
   flex-wrap: wrap;
 }
 
-.knowledge-page-quiz {
+.knowledge-page-quiz,
+.knowledge-page-section-quiz {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -3176,6 +3345,18 @@ button.primary:hover:not(:disabled) {
 }
 
 .knowledge-group-card--complete .knowledge-group-card-state {
+  color: var(--success);
+}
+
+.knowledge-group-card-quiz {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--success);
 }
 
@@ -3634,6 +3815,12 @@ button.primary:hover:not(:disabled) {
   color: var(--text);
 }
 
+/* Generic marker for a prompt whose author omitted the placeholder. */
+.knowledge-prompt-blank-empty {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
 /* Column-shaped blank: the authored `|` segments become aligned cells. */
 .knowledge-prompt-blank--columns {
   padding: 0;
@@ -3701,6 +3888,92 @@ button.primary:hover:not(:disabled) {
   border-radius: 999px;
   background: var(--surface);
   font-size: 0.95rem;
+}
+
+/* Progressive text reveal: a hidden authored span is an inline mask so the
+   sentence keeps its natural flow and wraps normally on mobile. The hidden mask
+   and the revealed span share one box model and one measured width, so revealing
+   a span does not reflow the surrounding prose. */
+.progressive-text {
+  line-height: 1.7;
+}
+
+/* Identical horizontal box on both states: the mask is measured to the same
+   width as the phrase it hides, so revealing it does not move the words around
+   it. (A phrase long enough to wrap on a narrow screen still reflows, because
+   the mask is a single box while the revealed text can wrap.) */
+.progressive-text-reveal,
+.progressive-text-revealed {
+  margin: 0 0.15rem;
+  /* Vertical padding grows the pill's touch area without exceeding the
+     paragraph's line box, so revealing a span never changes line height. */
+  padding: 0.35rem 0.45rem;
+  border: 1px dashed transparent;
+  border-radius: 999px;
+}
+
+.progressive-text-reveal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  border-color: var(--border-strong);
+  background: rgba(56, 189, 248, 0.06);
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.progressive-text-reveal:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.progressive-text-reveal:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.progressive-text-reveal:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* The component sets an exact pixel width once it has measured the phrase; the
+   `ch` value is only the pre-measurement fallback (and the jsdom test value). */
+.progressive-text-mask {
+  display: block;
+  width: calc(var(--hidden-length, 7) * 1ch);
+  max-width: 100%;
+  height: 0.7em;
+  border-radius: 999px;
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(148, 163, 184, 0.35) 0,
+    rgba(148, 163, 184, 0.35) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.progressive-text-complete {
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.progressive-text-complete:hover {
+  border-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressive-text-reveal,
+  .progressive-text-complete {
+    transition: none;
+  }
 }
 
 .comparison-grid {
@@ -4192,6 +4465,12 @@ button.primary:hover:not(:disabled) {
 .module-complete-nodes,
 .module-complete-path {
   margin: 0.2rem 0 0;
+}
+
+.module-complete-quiz-done {
+  margin: 0.35rem 0 0;
+  font-weight: 700;
+  color: var(--success);
 }
 
 .module-complete-actions {
@@ -8121,4 +8400,493 @@ button.primary:hover:not(:disabled) {
 .hub-exam-title {
   margin: 0;
   font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------
+   Mobile learning pass
+   Four phone-specific fixes that leave the desktop layout untouched:
+   1. learning tables reflow into one labelled card per row;
+   2. the duplicate domain title/description above the HUD is dropped;
+   3. the discovery HUD compresses so learning material sits closer to the fold;
+   4. connection nodes are clamped inside the canvas so edge labels are not cut.
+   --------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .knowledge-page {
+    gap: 0.85rem;
+  }
+
+  /* The HUD already names the domain; drop the duplicate page title,
+     description, and certification eyebrow on phones. The back link stays. */
+  .knowledge-page-header {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .knowledge-page-header > div {
+    display: none;
+  }
+
+  /* Compact discovery HUD: smaller heading and meter, and a single scrollable
+     row of group chips instead of tall stacked cards. */
+  .knowledge-hud {
+    padding: 0.75rem 0.85rem 0.85rem;
+  }
+
+  .knowledge-hud-top {
+    align-items: center;
+    gap: 0.25rem 0.6rem;
+  }
+
+  .knowledge-hud-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+  }
+
+  .knowledge-hud-heading h2 {
+    font-size: 1.05rem;
+    line-height: 1.2;
+  }
+
+  .knowledge-hud-power-value {
+    font-size: 1.35rem;
+  }
+
+  /* The node count is already announced by the meter's aria-label. */
+  .knowledge-hud-power-caption {
+    display: none;
+  }
+
+  .knowledge-hud-meter {
+    height: 0.6rem;
+    margin-top: 0.5rem;
+  }
+
+  .knowledge-hud-groups {
+    margin-top: 0.65rem;
+  }
+
+  .knowledge-group-grid {
+    display: flex;
+    grid-template-columns: none;
+    gap: 0.45rem;
+    overflow-x: auto;
+    padding: 0.1rem 0.1rem 0.35rem;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .knowledge-group-grid > li {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  .knowledge-group-card {
+    width: 9.5rem;
+    height: auto;
+    min-height: 0;
+    gap: 0.25rem;
+    padding: 0.5rem 0.6rem;
+  }
+
+  .knowledge-group-card-title {
+    -webkit-line-clamp: 1;
+    font-size: 0.8rem;
+  }
+
+  .knowledge-group-card-bar {
+    height: 0.35rem;
+  }
+
+  .knowledge-group-card-state {
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+  }
+
+  /* Pull the knowledge-card prompts up so material is reachable sooner. */
+  .knowledge-card-panel {
+    padding: 0.9rem;
+  }
+
+  .knowledge-card-charge {
+    margin-top: 0.5rem;
+  }
+
+  .knowledge-card-prompts {
+    margin-top: 0.75rem;
+    gap: 0.7rem;
+  }
+
+  /* The module (section) header and its node count also sit above the material;
+     keep them but tighten the vertical footprint. */
+  .knowledge-module {
+    padding: 0.75rem 0.85rem 1rem;
+  }
+
+  .knowledge-module-header {
+    margin-bottom: 0.4rem;
+  }
+
+  .knowledge-module-header h3 {
+    font-size: 1rem;
+  }
+
+  .knowledge-module-header p {
+    font-size: 0.8rem;
+  }
+
+  /* Connection canvas: a little more height and smaller pills so clamped
+     positions have room to breathe. */
+  .connection .graph {
+    height: 340px;
+  }
+
+  .graph-node {
+    max-width: 40%;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.72rem;
+  }
+
+  /* --- Learning tables become labelled cards ---------------------------- */
+  .learning-table-wrap {
+    overflow-x: visible;
+  }
+
+  .learning-table {
+    display: block;
+    width: 100%;
+    border-collapse: separate;
+  }
+
+  .learning-table thead {
+    display: none;
+  }
+
+  /* Column mode reveals from its headers, so keep them as a compact toolbar
+     instead of hiding them with the rest of the header row. */
+  .learning-table--mode-column thead {
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .learning-table--mode-column thead tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .learning-table--mode-column thead th {
+    display: block;
+    width: auto;
+    padding: 0;
+    border: none;
+    background: none;
+  }
+
+  .learning-table--mode-column thead th:not(.learning-table-th--reveal) {
+    display: none;
+  }
+
+  .learning-table tbody {
+    display: block;
+  }
+
+  .learning-table tbody tr {
+    display: block;
+    margin: 0 0 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-muted);
+    overflow: hidden;
+  }
+
+  .learning-table tbody tr:nth-child(even) {
+    background: var(--surface-muted);
+  }
+
+  /* Label and value are two wrapping columns. The label may wrap instead of
+     being clipped, and the value keeps the remaining width, left-aligned, so
+     long sentences stay readable rather than being squeezed to the right. */
+  .learning-table th,
+  .learning-table td {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, 40%) minmax(0, 1fr);
+    align-items: start;
+    gap: 0.3rem 0.75rem;
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    border: none;
+    border-top: 1px solid var(--border);
+    background: none;
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+
+  .learning-table tbody tr > :first-child {
+    border-top: none;
+  }
+
+  /* The first cell is the row identity and becomes the card title. */
+  .learning-table th[scope="row"],
+  .learning-table td:first-child {
+    display: block;
+    background: rgba(56, 189, 248, 0.08);
+    color: var(--text);
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .learning-table td::before {
+    content: none;
+  }
+
+  .learning-table td:not(:first-child)::before,
+  .learning-table th:not([scope="row"])::before {
+    content: attr(data-label);
+    min-width: 0;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    line-height: 1.35;
+    text-transform: uppercase;
+  }
+
+  /* The value occupies the second column and wraps at its full width. */
+  .learning-table-value {
+    min-width: 0;
+    text-align: left;
+  }
+
+  /* Reveal affordances keep working inside a card row. */
+  .learning-table-reveal {
+    width: auto;
+  }
+
+  .learning-table-hidden {
+    width: auto;
+    min-width: 2.5rem;
+  }
+}
+
+/* On very narrow phones the two-column card cell still feels tight, so stack
+   the column label above its value. The value then uses the full card width and
+   long sentences read top-to-bottom with no squeeze. */
+@media (max-width: 420px) {
+  .learning-table th,
+  .learning-table td {
+    display: block;
+  }
+
+  .learning-table td:not(:first-child)::before,
+  .learning-table th:not([scope="row"])::before {
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+
+  .learning-table-value,
+  .learning-table-hidden {
+    display: block;
+    width: 100%;
+  }
+
+  .learning-table-reveal {
+    width: 100%;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Python code exercises (browser-executed, sandboxed)
+   --------------------------------------------------------------------------- */
+
+.python-code {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.python-code-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.python-code-runtime {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.python-editor {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--surface);
+  padding: 0.5rem 0.25rem;
+  overflow: hidden;
+}
+
+.python-editor .cm-editor {
+  max-height: 22rem;
+  background: transparent;
+}
+
+.python-editor .cm-scroller {
+  overflow: auto;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  /* Keep long lines inside the layout on narrow screens. */
+  max-width: 100%;
+}
+
+.python-editor .cm-content {
+  padding: 0 0.25rem;
+}
+
+.python-code-output {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.python-code-status {
+  margin: 0;
+  font-weight: 600;
+}
+
+.python-code-status--pass {
+  color: var(--success);
+}
+
+.python-code-status--fail {
+  color: var(--danger);
+}
+
+.python-test-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.python-test {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  gap: 0.35rem 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 8px);
+  min-width: 0;
+}
+
+.python-test--pass {
+  border-left: 3px solid var(--success);
+}
+
+.python-test--fail {
+  border-left: 3px solid var(--danger);
+}
+
+.python-test-mark {
+  font-weight: 700;
+}
+
+.python-test-name {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow-wrap: anywhere;
+}
+
+.python-test-detail {
+  grid-column: 2;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.python-error {
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm, 8px);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.python-error-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.python-error-detail {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.python-error-detail code {
+  white-space: pre-wrap;
+}
+
+.python-error-source,
+.python-stream pre,
+.python-error-technical pre {
+  margin: 0;
+  padding: 0.5rem;
+  background: var(--bg);
+  border-radius: var(--radius-sm, 8px);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.85rem;
+}
+
+.python-error-hint {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.python-error-technical summary,
+.python-stream summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.python-code-truncated {
+  margin: 0;
+  color: var(--warning, var(--text-muted));
+  font-size: 0.85rem;
+}
+
+.python-stream {
+  min-width: 0;
+}
+
+.python-stream pre {
+  margin-top: 0.35rem;
+}
+
+.python-code-unsupported {
+  margin: 0;
+  color: var(--warning, var(--text-muted));
+}
+
+@media (max-width: 640px) {
+  .python-editor .cm-scroller {
+    font-size: 0.9rem;
+  }
+
+  .python-code-toolbar button {
+    width: 100%;
+  }
+}
+
+.python-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }

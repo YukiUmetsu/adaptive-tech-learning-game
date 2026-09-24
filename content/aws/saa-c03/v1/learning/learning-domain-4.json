@@ -1,6 +1,6 @@
 {
   "schema_version": "2.0.0",
-  "content_version": "saa-c03-learning-2026-09-19-v2-interactive",
+  "content_version": "saa-c03-learning-2026-09-23-v3-domain4-audit-fix",
   "certification_id": "aws-saa-c03",
   "certification_version": "saa-c03",
   "exam_guide_revision": "SAA-C03 / reviewed 2026-09-19",
@@ -43,10 +43,10 @@
       "4.4.04"
     ],
     "module_count": 4,
-    "knowledge_node_count": 13,
-    "prompt_count": 39
+    "knowledge_node_count": 17,
+    "prompt_count": 51
   },
-  "authoring_notes": "Interactive v2 refresh. Uses progressive tables for service/trade-off comparisons and annotated code files where reading a real policy/configuration improves understanding.",
+  "authoring_notes": "Domain 4 audit refresh: current Snow Family status, broader storage/compute/database/network cost optimization coverage, CUR 2.0/Data Exports, glossary, direct AWS refs, and scenario-based assessment improvements.",
   "modules": [
     {
       "id": "domain-4-module-1",
@@ -78,11 +78,11 @@
               "id": "s3-classes-what",
               "kind": "what",
               "label": "WHAT?",
-              "placeholder": "What should this concept make you think of?",
+              "placeholder": "How do access pattern and retrieval tolerance affect S3 cost?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "S3 storage classes trade storage price, retrieval price, minimum duration, availability design, and retrieval latency for different access patterns."
+                "text": "S3 storage classes trade storage price, retrieval price, minimum storage duration, availability characteristics, and retrieval latency. S3 Intelligent-Tiering is useful when object access patterns are unknown or change over time; lifecycle rules are useful when the age-based transition pattern is known."
               }
             },
             {
@@ -132,8 +132,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "S3 Intelligent-Tiering",
-                  "S3 storage classes and lifecycle"
+                  "unknown/changing access -> S3 Intelligent-Tiering",
+                  "known age-based transition -> lifecycle rule",
+                  "long retention + rare retrieval -> archive tier"
                 ]
               }
             }
@@ -142,6 +143,24 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "How S3 Intelligent-Tiering works",
+              "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/intelligent-tiering-overview.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "retrieval charge",
+              "definition": "A fee that can apply when data is read back from some lower-cost storage tiers."
+            },
+            {
+              "term": "minimum storage duration",
+              "definition": "A minimum billable storage period that can make short-lived data expensive in some archival or infrequent-access classes."
+            },
+            {
+              "term": "lifecycle rule",
+              "definition": "An S3 rule that automatically transitions or expires objects based on age or other configured conditions."
             }
           ]
         },
@@ -174,13 +193,15 @@
               "id": "ebs-cost-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Which performance requirement justifies paying for each EBS option?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: gp3 decouples baseline storage size from provisioned IOPS and throughput, while io2 targets demanding IOPS and st1 or sc1 target lower-cost sequential throughput workloads.",
-                  "Key retrieval phrase: gp3."
+                  "gp3: general-purpose SSD where IOPS and throughput can be tuned without choosing io2.",
+                  "io2: demanding workloads where high, predictable provisioned IOPS justify the higher cost.",
+                  "st1: frequently accessed large sequential throughput.",
+                  "sc1: lowest-cost HDD for infrequently accessed sequential data."
                 ]
               }
             },
@@ -193,8 +214,10 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "gp3",
-                  "Cost-aware EBS selection"
+                  "general-purpose SSD -> gp3",
+                  "high predictable IOPS -> io2",
+                  "frequent sequential throughput -> st1",
+                  "cold sequential data -> sc1"
                 ]
               }
             }
@@ -203,12 +226,30 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Amazon EBS volume types",
+              "url": "https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "IOPS",
+              "definition": "Input/output operations per second. A storage performance measure for the number of I/O operations completed each second."
+            },
+            {
+              "term": "throughput",
+              "definition": "The amount of data transferred per second, commonly important for large sequential workloads."
+            },
+            {
+              "term": "provisioned IOPS",
+              "definition": "An explicitly configured IOPS level for storage that needs predictable high I/O performance."
             }
           ]
         },
         {
           "id": "domain-4-storage-transfer-cost",
-          "title": "Cost-aware storage migration and transfer",
+          "title": "Cost-aware storage migration and managed transfer",
           "concept_ids": [
             "aws.saa.storage_transfer_cost"
           ],
@@ -228,20 +269,22 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Online services such as DataSync, physical Snow Family devices, and hybrid Storage Gateway patterns have different transfer, time, and operational cost profiles."
+                "text": "Data-transfer cost depends on how data moves and whether access is one-time or ongoing. DataSync is a managed online transfer and data-movement service. AWS Transfer Family provides managed file transfer endpoints such as SFTP. Storage Gateway supports ongoing hybrid storage access. Snow Family remains useful for SAA exam recognition as the traditional AWS physical/offline transfer family, but Snow Family devices are no longer available to new customers."
               }
             },
             {
               "id": "storage-transfer-cost-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Choose the service from the transfer pattern and current availability.",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Online services such as DataSync, physical Snow Family devices, and hybrid Storage Gateway patterns have different transfer, time, and operational cost profiles.",
-                  "Key retrieval phrase: Snow Family."
+                  "Managed online copy between supported storage systems -> AWS DataSync.",
+                  "Managed SFTP/FTPS/FTP/AS2 file-transfer endpoint -> AWS Transfer Family.",
+                  "Ongoing hybrid storage interface -> AWS Storage Gateway.",
+                  "Exam-recognition of the traditional AWS physical appliance -> Snow Family; for a new real-world design, use current AWS alternatives because new customers cannot order Snow Family devices."
                 ]
               }
             },
@@ -254,8 +297,10 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "Snow Family",
-                  "Cost-aware storage migration and transfer"
+                  "online storage copy -> DataSync",
+                  "managed SFTP -> Transfer Family",
+                  "hybrid storage interface -> Storage Gateway",
+                  "legacy/offline appliance exam clue -> Snow Family"
                 ]
               }
             }
@@ -264,6 +309,159 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "AWS Snowball Edge availability change",
+              "url": "https://docs.aws.amazon.com/snowball/latest/developer-guide/snowball-edge-availability-change.html"
+            },
+            {
+              "title": "What is AWS DataSync?",
+              "url": "https://docs.aws.amazon.com/datasync/latest/userguide/what-is-datasync.html"
+            },
+            {
+              "title": "What is AWS Transfer Family?",
+              "url": "https://docs.aws.amazon.com/transfer/latest/userguide/what-is-aws-transfer-family.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "online transfer",
+              "definition": "Moving data over network connectivity instead of shipping a physical transfer device."
+            },
+            {
+              "term": "managed file transfer",
+              "definition": "A managed endpoint for protocols such as SFTP, FTPS, FTP, or AS2 that transfers files to or from AWS storage."
+            }
+          ]
+        },
+        {
+          "id": "domain-4-storage-access-sizing",
+          "title": "Storage access, sizing, backup, and archival economics",
+          "concept_ids": [
+            "aws.saa.storage_access_sizing"
+          ],
+          "prerequisite_node_ids": [
+            "domain-4-storage-transfer-cost"
+          ],
+          "map_position": {
+            "x": 0.84,
+            "y": 0.16
+          },
+          "prompts": [
+            {
+              "id": "storage-access-sizing-what",
+              "kind": "what",
+              "label": "WHAT?",
+              "placeholder": "Which storage requirements change who pays and how much capacity is kept?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Cost optimization starts with the storage access pattern and required durability/recovery behavior. S3 Requester Pays can shift eligible request and download costs to requesters. S3 and EFS avoid fixed block volume sizing, while EBS capacity is explicitly provisioned. Backup and archive retention should keep only the recovery history the business or compliance requirement actually needs."
+              }
+            },
+            {
+              "id": "storage-access-sizing-table",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "Map each cost problem to the storage design response.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "requirement",
+                    "label": "Requirement"
+                  },
+                  {
+                    "id": "choice",
+                    "label": "Cost-aware response"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "public-data",
+                    "cells": {
+                      "requirement": "Large shared S3 dataset; consumers should pay download/request charges",
+                      "choice": "S3 Requester Pays"
+                    }
+                  },
+                  {
+                    "id": "block",
+                    "cells": {
+                      "requirement": "EC2 block volume is consistently overprovisioned",
+                      "choice": "Right-size EBS capacity/performance"
+                    }
+                  },
+                  {
+                    "id": "shared-file",
+                    "cells": {
+                      "requirement": "Shared file capacity changes significantly over time",
+                      "choice": "Evaluate elastic file storage such as EFS"
+                    }
+                  },
+                  {
+                    "id": "retention",
+                    "cells": {
+                      "requirement": "Backups are kept far longer than business recovery needs",
+                      "choice": "Align backup retention/archive tier with RPO/compliance need"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "requirement"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "storage-access-sizing-clue",
+              "kind": "exam_clue",
+              "label": "EXAM CLUE",
+              "placeholder": "What wording should trigger storage-cost reasoning?",
+              "required": true,
+              "reveal": {
+                "type": "keywords",
+                "items": [
+                  "requester should pay -> S3 Requester Pays",
+                  "overprovisioned EBS -> right-size",
+                  "unknown file capacity -> elastic file storage",
+                  "excess backup history -> retention policy"
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Configuring Requester Pays on an S3 bucket",
+              "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/RequesterPaysExamples.html"
+            },
+            {
+              "title": "Amazon EBS volume types",
+              "url": "https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "Requester Pays",
+              "definition": "An S3 setting where the requester pays eligible request and data-download charges instead of the bucket owner."
+            },
+            {
+              "term": "storage access pattern",
+              "definition": "How frequently and in what way data is read or written, which strongly affects the cheapest suitable storage choice."
+            },
+            {
+              "term": "archive",
+              "definition": "Long-term storage optimized for low storage cost when retrieval can be slower or less frequent."
             }
           ]
         }
@@ -305,7 +503,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "On-Demand offers flexibility, Savings Plans and Reserved Instances reward committed usage, and Spot uses spare EC2 capacity at steep discounts with interruption risk."
+                "text": "On-Demand provides maximum pricing flexibility with no long-term commitment. Compute Savings Plans commit to a consistent amount of compute spend and can apply across EC2, Fargate, and Lambda; EC2 Instance Savings Plans are more specific to an instance family in a Region. Reserved Instances remain an EC2 pricing option tied more closely to instance configuration. Spot uses spare EC2 capacity at a deep discount, but a Spot interruption can reclaim the instance. Pricing commitments and capacity reservation are related exam concepts but should not be treated as the same requirement."
               }
             },
             {
@@ -322,44 +520,53 @@
                     "label": "Choice"
                   },
                   {
-                    "id": "property",
-                    "label": "Primary property"
+                    "id": "commitment",
+                    "label": "Commitment / flexibility"
                   },
                   {
-                    "id": "behavior",
-                    "label": "Behavior / trade-off"
-                  },
-                  {
-                    "id": "use",
-                    "label": "Typical fit"
+                    "id": "fit",
+                    "label": "Strong fit"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "r1",
+                    "id": "od",
                     "cells": {
                       "choice": "On-Demand",
-                      "property": "No commitment",
-                      "behavior": "Unpredictable / short-lived",
-                      "use": "Highest flexibility"
+                      "commitment": "No long-term commitment",
+                      "fit": "Short-lived, new, or unpredictable baseline usage"
                     }
                   },
                   {
-                    "id": "r2",
+                    "id": "compute-sp",
                     "cells": {
-                      "choice": "Savings Plans / RI",
-                      "property": "Commitment",
-                      "behavior": "Steady predictable usage",
-                      "use": "Commitment discount"
+                      "choice": "Compute Savings Plan",
+                      "commitment": "Hourly spend commitment; broad compute flexibility",
+                      "fit": "Stable eligible compute spend while services/Regions/families may change"
                     }
                   },
                   {
-                    "id": "r3",
+                    "id": "ec2-sp",
+                    "cells": {
+                      "choice": "EC2 Instance Savings Plan",
+                      "commitment": "Instance-family + Region commitment",
+                      "fit": "Stable EC2 family usage where a stronger commitment is acceptable"
+                    }
+                  },
+                  {
+                    "id": "ri",
+                    "cells": {
+                      "choice": "Reserved Instance",
+                      "commitment": "EC2 reservation/pricing attributes",
+                      "fit": "Existing RI-specific exam or capacity/pricing requirements"
+                    }
+                  },
+                  {
+                    "id": "spot",
                     "cells": {
                       "choice": "Spot",
-                      "property": "Interruptible spare capacity",
-                      "behavior": "Fault-tolerant flexible work",
-                      "use": "Largest discount, interruption risk"
+                      "commitment": "Interruptible spare capacity",
+                      "fit": "Fault-tolerant flexible workloads"
                     }
                   }
                 ],
@@ -384,8 +591,10 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "Spot Instances",
-                  "On-Demand, Savings Plans, Reserved Instances, and Spot"
+                  "interruptible -> Spot",
+                  "broad EC2/Fargate/Lambda commitment -> Compute Savings Plan",
+                  "EC2 family + Region commitment -> EC2 Instance Savings Plan",
+                  "no commitment -> On-Demand"
                 ]
               }
             }
@@ -394,6 +603,28 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Compute Savings Plans and Reserved Instances",
+              "url": "https://docs.aws.amazon.com/savingsplans/latest/userguide/sp-ris.html"
+            },
+            {
+              "title": "Spot Instances",
+              "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-spot-instances.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "commitment",
+              "definition": "An agreement to a defined level or configuration of usage for a term in exchange for discounted pricing."
+            },
+            {
+              "term": "Spot interruption",
+              "definition": "An event where AWS reclaims Spot capacity, so the workload must tolerate instance loss or interruption."
+            },
+            {
+              "term": "capacity reservation",
+              "definition": "Reserved EC2 capacity in an Availability Zone. A pricing discount and a capacity reservation are separate concepts."
             }
           ]
         },
@@ -419,20 +650,22 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Right-sizing matches resource capacity to measured demand, Auto Scaling adjusts capacity over time, and AWS Compute Optimizer provides recommendations based on utilization data."
+                "text": "Right-sizing matches resource capacity to measured demand, while Auto Scaling adjusts capacity over time. AWS Compute Optimizer uses historical utilization data over a lookback period to produce optimization recommendations for supported resources."
               }
             },
             {
               "id": "rightsizing-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When is right-sizing different from Auto Scaling?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Right-sizing matches resource capacity to measured demand, Auto Scaling adjusts capacity over time, and AWS Compute Optimizer provides recommendations based on utilization data.",
-                  "Key retrieval phrase: AWS Compute Optimizer."
+                  "A resource is consistently oversized for its measured workload -> right-size it.",
+                  "Demand changes over time -> use elastic scaling to add and remove capacity.",
+                  "You need utilization-based recommendation candidates -> evaluate AWS Compute Optimizer.",
+                  "Measure performance risk as well as savings before applying a smaller recommendation."
                 ]
               }
             },
@@ -445,8 +678,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "AWS Compute Optimizer",
-                  "Right-sizing, Auto Scaling, and Compute Optimizer"
+                  "consistently underutilized -> right-size",
+                  "demand changes over time -> Auto Scaling",
+                  "recommendation based on utilization -> Compute Optimizer"
                 ]
               }
             }
@@ -455,6 +689,20 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "What is AWS Compute Optimizer?",
+              "url": "https://docs.aws.amazon.com/compute-optimizer/latest/ug/what-is-compute-optimizer.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "right-sizing",
+              "definition": "Matching resource size to measured workload demand instead of keeping unnecessary CPU, memory, or storage capacity."
+            },
+            {
+              "term": "lookback period",
+              "definition": "The historical utilization window analyzed when producing a recommendation."
             }
           ]
         },
@@ -480,20 +728,22 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Lambda charges for requests and execution resources, Fargate charges for provisioned task resources, and EC2 charges for instance capacity with purchasing-model options."
+                "text": "Lambda and Fargate follow a pay per use model based on requests, duration, or provisioned task resources, while EC2 charges for running instance capacity. Serverless designs can reduce idle capacity for bursty or intermittent workloads, but steady high-utilization workloads still need a real cost comparison."
               }
             },
             {
               "id": "serverless-cost-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Which execution pattern makes each compute model cost-effective?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Lambda charges for requests and execution resources, Fargate charges for provisioned task resources, and EC2 charges for instance capacity with purchasing-model options.",
-                  "Key retrieval phrase: AWS Lambda."
+                  "Short-lived event-driven work with idle periods -> Lambda can avoid continuously running server capacity.",
+                  "Container workload without worker-server management -> Fargate trades server management for per-task resource pricing.",
+                  "Steady high utilization with infrastructure control needs -> EC2 may be economical, especially with suitable commitments.",
+                  "Do not choose serverless only because it sounds cheaper; compare utilization, duration, concurrency, and operational requirements."
                 ]
               }
             },
@@ -517,6 +767,143 @@
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
+          ],
+          "glossary": [
+            {
+              "term": "pay per use",
+              "definition": "A pricing model where cost follows actual requests, duration, or provisioned task resources instead of a continuously running server fleet."
+            },
+            {
+              "term": "idle capacity",
+              "definition": "Provisioned compute that is running but not doing useful work."
+            }
+          ]
+        },
+        {
+          "id": "domain-4-compute-elasticity-cost",
+          "title": "Availability, hibernation, and elastic compute cost",
+          "concept_ids": [
+            "aws.saa.compute_elasticity_cost"
+          ],
+          "prerequisite_node_ids": [
+            "domain-4-serverless-cost"
+          ],
+          "map_position": {
+            "x": 0.84,
+            "y": 0.16
+          },
+          "prompts": [
+            {
+              "id": "compute-elasticity-cost-what",
+              "kind": "what",
+              "label": "WHAT?",
+              "placeholder": "How can availability requirements change the cheapest compute design?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Cost-effective compute matches availability to workload class. Production workloads may justify continuous multi-AZ capacity, while development or test workloads can often stop or scale in when unused. EC2 hibernation preserves RAM state on EBS and does not incur instance usage charges while the instance is in the stopped state, although EBS storage and other attached resources can still cost money."
+              }
+            },
+            {
+              "id": "compute-elasticity-cost-table",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "Choose the cost control from workload behavior.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "case",
+                    "label": "Workload behavior"
+                  },
+                  {
+                    "id": "response",
+                    "label": "Cost-aware response"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "nonprod",
+                    "cells": {
+                      "case": "Dev/test is unused nights and weekends",
+                      "response": "Stop or schedule capacity off when acceptable"
+                    }
+                  },
+                  {
+                    "id": "state",
+                    "cells": {
+                      "case": "EC2 application takes a long time to rebuild in-memory state",
+                      "response": "Evaluate hibernation if prerequisites fit"
+                    }
+                  },
+                  {
+                    "id": "elastic",
+                    "cells": {
+                      "case": "Traffic varies predictably or by demand",
+                      "response": "Auto Scale rather than keep peak capacity always running"
+                    }
+                  },
+                  {
+                    "id": "prod",
+                    "cells": {
+                      "case": "Production requires high availability",
+                      "response": "Do not remove required redundancy merely to reduce cost"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "case"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "compute-elasticity-cost-clue",
+              "kind": "exam_clue",
+              "label": "EXAM CLUE",
+              "placeholder": "What phrases should trigger these decisions?",
+              "required": true,
+              "reveal": {
+                "type": "keywords",
+                "items": [
+                  "non-production idle window -> stop/schedule",
+                  "resume RAM state -> hibernate",
+                  "variable demand -> Auto Scaling",
+                  "required HA -> preserve redundancy"
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Hibernate your Amazon EC2 instance",
+              "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Hibernate.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "hibernate",
+              "definition": "Suspend an EC2 instance to EBS while preserving RAM state so it can resume later."
+            },
+            {
+              "term": "non-production",
+              "definition": "Development, test, staging, or other workloads that often do not need full production-level continuous capacity."
+            },
+            {
+              "term": "scale in",
+              "definition": "Reduce running capacity when demand falls."
+            }
           ]
         }
       ]
@@ -539,7 +926,7 @@
       "nodes": [
         {
           "id": "domain-4-db-cost-models",
-          "title": "RDS, Aurora Serverless, and DynamoDB cost models",
+          "title": "RDS, Aurora Serverless v2, and DynamoDB cost models",
           "concept_ids": [
             "aws.saa.db_cost_models"
           ],
@@ -557,52 +944,67 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Managed relational databases charge for database capacity and storage, Aurora Serverless can adjust relational capacity, and DynamoDB offers on-demand or provisioned capacity for key-value workloads."
+                "text": "Database cost should follow access pattern and capacity predictability. RDS uses provisioned database instances and storage. Aurora Serverless v2 can scale ACUs within a configured range. DynamoDB on-demand capacity avoids explicit RCU/WCU provisioning for variable traffic, while provisioned capacity can fit predictable throughput."
               }
             },
             {
               "id": "db-cost-models-task-table",
               "kind": "connects_to",
-              "label": "TASK MAP",
-              "placeholder": "Reveal each row and compare neighboring architecture choices.",
+              "label": "COMPARE",
+              "placeholder": "Choose the database capacity model from traffic predictability.",
               "required": true,
               "reveal": {
                 "type": "table",
                 "columns": [
                   {
                     "id": "choice",
-                    "label": "Choice / concept"
+                    "label": "Choice"
                   },
                   {
-                    "id": "best_for",
-                    "label": "What distinguishes it"
+                    "id": "fit",
+                    "label": "Cost fit"
+                  },
+                  {
+                    "id": "watch",
+                    "label": "Watch"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "r1",
+                    "id": "rds",
                     "cells": {
-                      "choice": "Aurora Serverless",
-                      "best_for": "Managed relational databases charge for database capacity and storage, Aurora Serverless can adjust relational capacity, and DynamoDB offers on-demand or provisioned capacity for key-value workloads."
+                      "choice": "Provisioned RDS/Aurora instance",
+                      "fit": "Steady relational workload",
+                      "watch": "Right-size instance and storage"
                     }
                   },
                   {
-                    "id": "r2",
+                    "id": "serverless",
                     "cells": {
-                      "choice": "ElastiCache",
-                      "best_for": "A cache can absorb repeated reads and reduce database CPU, I/O, and capacity requirements when the workload has cacheable access patterns."
+                      "choice": "Aurora Serverless v2",
+                      "fit": "Variable relational compute demand",
+                      "watch": "Configure appropriate min/max ACU range"
                     }
                   },
                   {
-                    "id": "r3",
+                    "id": "ddb-on",
                     "cells": {
-                      "choice": "retention period",
-                      "best_for": "Backup frequency and retention determine recovery coverage and storage consumption, so retention should match business and compliance requirements."
+                      "choice": "DynamoDB on-demand",
+                      "fit": "Variable/unpredictable request traffic",
+                      "watch": "Pay-per-request economics and access pattern"
+                    }
+                  },
+                  {
+                    "id": "ddb-prov",
+                    "cells": {
+                      "choice": "DynamoDB provisioned",
+                      "fit": "Predictable throughput",
+                      "watch": "RCU/WCU utilization and scaling"
                     }
                   }
                 ],
                 "progressive_reveal": {
-                  "mode": "row",
+                  "mode": "cell",
                   "initially_visible": {
                     "column_ids": [
                       "choice"
@@ -622,8 +1024,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "Aurora Serverless",
-                  "RDS, Aurora Serverless, and DynamoDB cost models"
+                  "variable relational capacity -> Aurora Serverless v2",
+                  "unpredictable DynamoDB traffic -> on-demand",
+                  "predictable DynamoDB throughput -> provisioned"
                 ]
               }
             }
@@ -632,6 +1035,28 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "How Aurora Serverless v2 works",
+              "url": "https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.how-it-works.html"
+            },
+            {
+              "title": "DynamoDB on-demand capacity mode",
+              "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/on-demand-capacity-mode.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "ACU",
+              "definition": "Aurora capacity unit. A unit of Aurora Serverless v2 compute and memory capacity."
+            },
+            {
+              "term": "on-demand capacity",
+              "definition": "A DynamoDB capacity mode where AWS handles request throughput without you provisioning RCU/WCU values."
+            },
+            {
+              "term": "provisioned capacity",
+              "definition": "A DynamoDB capacity mode where read and write capacity are configured explicitly."
             }
           ]
         },
@@ -657,20 +1082,22 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "A cache can absorb repeated reads and reduce database CPU, I/O, and capacity requirements when the workload has cacheable access patterns."
+                "text": "A cache can absorb repeated reads and reduce database CPU, I/O, and capacity requirements when the workload has cacheable access patterns. A cache hit avoids a database read; a cache miss still reaches the database."
               }
             },
             {
               "id": "db-caching-cost-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When does adding a cache actually reduce database cost?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: A cache can absorb repeated reads and reduce database CPU, I/O, and capacity requirements when the workload has cacheable access patterns.",
-                  "Key retrieval phrase: ElastiCache."
+                  "Many requests repeatedly read the same cacheable data.",
+                  "Database CPU/I/O is driven by repeated reads that a cache can absorb.",
+                  "The application can tolerate the required cache freshness/invalidation behavior.",
+                  "Do not add a cache solely for cost if the workload has poor cache reuse."
                 ]
               }
             },
@@ -693,6 +1120,16 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "cache hit",
+              "definition": "A request served from the cache instead of the database."
+            },
+            {
+              "term": "cache miss",
+              "definition": "A request that must go to the database because the needed item is not in the cache."
             }
           ]
         },
@@ -725,13 +1162,14 @@
               "id": "db-retention-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "How should backup retention be optimized without weakening recovery requirements?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Backup frequency and retention determine recovery coverage and storage consumption, so retention should match business and compliance requirements.",
-                  "Key retrieval phrase: retention period."
+                  "Keep enough recovery points to satisfy business RPO/RTO and compliance.",
+                  "Expire obsolete snapshots/backups instead of keeping every recovery point indefinitely.",
+                  "Use longer retention only when the recovery or compliance requirement actually needs it."
                 ]
               }
             },
@@ -754,6 +1192,151 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "retention period",
+              "definition": "How long a backup or recovery point is kept before it is eligible for deletion."
+            },
+            {
+              "term": "snapshot",
+              "definition": "A point-in-time copy or backup state used for recovery."
+            }
+          ]
+        },
+        {
+          "id": "domain-4-db-capacity-migration",
+          "title": "Database connections, read scaling, and migration cost",
+          "concept_ids": [
+            "aws.saa.db_capacity_migration"
+          ],
+          "prerequisite_node_ids": [
+            "domain-4-db-retention"
+          ],
+          "map_position": {
+            "x": 0.84,
+            "y": 0.16
+          },
+          "prompts": [
+            {
+              "id": "db-capacity-migration-what",
+              "kind": "what",
+              "label": "WHAT?",
+              "placeholder": "Which database mechanisms reduce unnecessary capacity or migration effort?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "RDS Proxy maintains a connection pool and reuses database connections so bursty applications do not require the database to absorb the full client-connection count. Read replicas can move read traffic away from the writer when read demand is the bottleneck. A homogeneous migration keeps the same database engine, while a heterogeneous migration changes engines and may need schema/code conversion. AWS DMS moves database data, and DMS Schema Conversion helps with heterogeneous migrations."
+              }
+            },
+            {
+              "id": "db-capacity-migration-table",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "Choose the mechanism from the actual database cost driver.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "problem",
+                    "label": "Problem"
+                  },
+                  {
+                    "id": "choice",
+                    "label": "Mechanism"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "connections",
+                    "cells": {
+                      "problem": "Thousands of short-lived connections create DB overhead",
+                      "choice": "RDS Proxy"
+                    }
+                  },
+                  {
+                    "id": "reads",
+                    "cells": {
+                      "problem": "Read-only traffic is driving primary DB capacity",
+                      "choice": "Read replica / Aurora reader"
+                    }
+                  },
+                  {
+                    "id": "same-engine",
+                    "cells": {
+                      "problem": "Move data to an equivalent database engine",
+                      "choice": "AWS DMS data migration"
+                    }
+                  },
+                  {
+                    "id": "different-engine",
+                    "cells": {
+                      "problem": "Move between different engines and convert schema",
+                      "choice": "AWS DMS + DMS Schema Conversion"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "problem"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "db-capacity-migration-clue",
+              "kind": "exam_clue",
+              "label": "EXAM CLUE",
+              "placeholder": "What wording should trigger these choices?",
+              "required": true,
+              "reveal": {
+                "type": "keywords",
+                "items": [
+                  "connection exhaustion -> RDS Proxy",
+                  "read-heavy -> read replica",
+                  "same engine migration -> DMS data migration",
+                  "different engine/schema -> DMS Schema Conversion"
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "RDS Proxy concepts and terminology",
+              "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy.howitworks.html"
+            },
+            {
+              "title": "Working with DB instance read replicas",
+              "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ReadRepl.html"
+            },
+            {
+              "title": "Using DMS Schema Conversion",
+              "url": "https://docs.aws.amazon.com/dms/latest/userguide/schema-conversion.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "homogeneous migration",
+              "definition": "A database migration where source and target use the same engine type."
+            },
+            {
+              "term": "heterogeneous migration",
+              "definition": "A database migration where the source and target use different engine types and schema conversion may be required."
+            },
+            {
+              "term": "connection pool",
+              "definition": "A reusable set of database connections shared by application requests to reduce connection overhead."
             }
           ]
         }
@@ -796,7 +1379,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "NAT gateways incur hourly and data-processing charges, while VPC endpoints can keep supported service traffic private and may reduce NAT data processing for that traffic."
+                "text": "NAT gateways have an hourly charge plus a per-GB data processing charge. Sending traffic across AZs to a NAT gateway can add cross-AZ data-transfer cost. S3 and DynamoDB gateway endpoints have no additional endpoint charge and can avoid NAT processing for supported traffic. Interface endpoints have their own hourly and data-processing charges, so they should be compared against the NAT path rather than assumed cheaper."
               }
             },
             {
@@ -813,44 +1396,37 @@
                     "label": "Choice"
                   },
                   {
-                    "id": "property",
-                    "label": "Primary property"
+                    "id": "cost",
+                    "label": "Cost behavior"
                   },
                   {
-                    "id": "behavior",
-                    "label": "Behavior / trade-off"
-                  },
-                  {
-                    "id": "use",
-                    "label": "Typical fit"
+                    "id": "fit",
+                    "label": "Strong fit"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "r1",
+                    "id": "nat",
                     "cells": {
                       "choice": "NAT Gateway",
-                      "property": "General outbound internet/AWS access",
-                      "behavior": "Hourly + processing",
-                      "use": "Broad compatibility"
+                      "cost": "Hourly + per-GB processing; cross-AZ path can add transfer cost",
+                      "fit": "General outbound IPv4/NAT requirement"
                     }
                   },
                   {
-                    "id": "r2",
+                    "id": "gateway",
                     "cells": {
-                      "choice": "Gateway endpoint",
-                      "property": "S3/DynamoDB private access",
-                      "behavior": "No NAT path for supported traffic",
-                      "use": "No hourly endpoint charge"
+                      "choice": "S3/DynamoDB gateway endpoint",
+                      "cost": "No additional endpoint charge",
+                      "fit": "VPC traffic to S3/DynamoDB without NAT"
                     }
                   },
                   {
-                    "id": "r3",
+                    "id": "interface",
                     "cells": {
                       "choice": "Interface endpoint",
-                      "property": "PrivateLink-supported services",
-                      "behavior": "Hourly + data processing",
-                      "use": "Private ENIs in VPC"
+                      "cost": "Hourly endpoint + data processing",
+                      "fit": "PrivateLink-supported service where private ENI connectivity is needed"
                     }
                   }
                 ],
@@ -875,8 +1451,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "VPC endpoint",
-                  "NAT gateway and VPC endpoint cost trade-offs"
+                  "large S3/DynamoDB NAT traffic -> gateway endpoint",
+                  "cross-AZ NAT traffic -> same-AZ NAT path / evaluate per-AZ NAT",
+                  "interface endpoint -> compare endpoint cost with NAT cost"
                 ]
               }
             }
@@ -885,6 +1462,32 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Pricing for NAT gateways",
+              "url": "https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-pricing.html"
+            },
+            {
+              "title": "NAT gateway basics",
+              "url": "https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-basics.html"
+            },
+            {
+              "title": "Gateway endpoints",
+              "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "data processing charge",
+              "definition": "A per-data-volume charge applied by some networking services in addition to hourly charges."
+            },
+            {
+              "term": "gateway endpoint",
+              "definition": "A no-additional-charge VPC endpoint type for S3 and DynamoDB that uses route tables."
+            },
+            {
+              "term": "interface endpoint",
+              "definition": "A VPC endpoint that creates private network interfaces and has PrivateLink-related hourly and data-processing pricing."
             }
           ]
         },
@@ -917,13 +1520,14 @@
               "id": "data-transfer-edge-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When can an edge cache reduce cost as well as latency?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Architecture choices that keep traffic local or serve cacheable content from edge locations can reduce origin load and some data-transfer paths.",
-                  "Key retrieval phrase: CloudFront."
+                  "Many users repeatedly request the same cacheable content.",
+                  "CloudFront can serve cache hits without repeatedly fetching the object from the origin.",
+                  "Measure cache hit ratio and origin/data-transfer costs before assuming the CDN saves money."
                 ]
               }
             },
@@ -946,6 +1550,16 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "origin",
+              "definition": "The backend source from which a CDN retrieves content when the content is not already cached at the edge."
+            },
+            {
+              "term": "cache hit",
+              "definition": "A request served from an edge cache without contacting the origin."
             }
           ]
         },
@@ -971,20 +1585,22 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "VPC peering, Transit Gateway, Site-to-Site VPN, and Direct Connect have different topology, bandwidth, operational, and data-processing cost characteristics."
+                "text": "VPC peering, Transit Gateway, Site-to-Site VPN, and Direct Connect have different topology, bandwidth, operational, and data-processing cost characteristics. Cross-AZ traffic can also add data-transfer cost, so the actual traffic path matters."
               }
             },
             {
               "id": "network-topology-cost-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Choose topology from scale, bandwidth, and the traffic path.",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: VPC peering, Transit Gateway, Site-to-Site VPN, and Direct Connect have different topology, bandwidth, operational, and data-processing cost characteristics.",
-                  "Key retrieval phrase: VPC peering."
+                  "A small number of VPCs need direct connectivity -> VPC peering can avoid a transit hub but does not provide transitive routing.",
+                  "Many VPCs/hybrid networks need centralized routing -> Transit Gateway simplifies topology but adds attachment/data-processing cost.",
+                  "Encrypted connectivity over the internet is acceptable -> Site-to-Site VPN.",
+                  "High-volume dedicated hybrid connectivity is required -> evaluate Direct Connect against VPN/internet transfer economics."
                 ]
               }
             },
@@ -997,8 +1613,10 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "VPC peering",
-                  "Peering, Transit Gateway, VPN, and Direct Connect cost"
+                  "few VPCs / direct pair -> peering",
+                  "many networks / central hub -> Transit Gateway",
+                  "encrypted internet tunnel -> VPN",
+                  "dedicated high-volume hybrid link -> Direct Connect"
                 ]
               }
             }
@@ -1008,11 +1626,21 @@
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
+          ],
+          "glossary": [
+            {
+              "term": "cross-AZ",
+              "definition": "Traffic that crosses Availability Zone boundaries and can create additional data-transfer cost depending on the services and path."
+            },
+            {
+              "term": "transit hub",
+              "definition": "A central routing architecture that replaces many point-to-point network connections with a shared hub."
+            }
           ]
         },
         {
           "id": "domain-4-cost-tools",
-          "title": "Cost Explorer, Budgets, CUR, and cost allocation tags",
+          "title": "Cost Explorer, Budgets, Data Exports/CUR, and allocation tags",
           "concept_ids": [
             "aws.saa.cost_tools"
           ],
@@ -1032,20 +1660,22 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Cost Explorer analyzes spend and usage trends, AWS Budgets tracks thresholds and forecasts, Cost and Usage Report provides detailed billing data, and cost allocation tags attribute spend to resources."
+                "text": "Cost Explorer is for interactive cost/usage analysis and trends. AWS Budgets tracks budget thresholds and forecasts. CUR/CUR 2.0 provides detailed billing and usage data; AWS Data Exports is the recommended way to create CUR 2.0 exports. Cost Explorer can also show amortized cost views for commitment-aware analysis. Activated cost allocation tags help attribute spend to teams, products, or environments."
               }
             },
             {
               "id": "cost-tools-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Choose the cost tool from the analysis need.",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Cost Explorer analyzes spend and usage trends, AWS Budgets tracks thresholds and forecasts, Cost and Usage Report provides detailed billing data, and cost allocation tags attribute spend to resources.",
-                  "Key retrieval phrase: AWS Cost Explorer."
+                  "Explore and group historical spend interactively -> Cost Explorer.",
+                  "Alert on actual or forecasted threshold -> AWS Budgets.",
+                  "Need detailed line-item billing data for custom analysis -> CUR 2.0 / Data Exports.",
+                  "Need project/team/environment attribution -> activate and use cost allocation tags."
                 ]
               }
             },
@@ -1058,8 +1688,10 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "AWS Cost Explorer",
-                  "Cost Explorer, Budgets, CUR, and cost allocation tags"
+                  "interactive trend -> Cost Explorer",
+                  "threshold / forecast alert -> Budgets",
+                  "detailed billing dataset -> CUR 2.0 / Data Exports",
+                  "attribute spend -> cost allocation tags"
                 ]
               }
             }
@@ -1068,6 +1700,151 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Analyzing costs and usage with AWS Cost Explorer",
+              "url": "https://docs.aws.amazon.com/cost-management/latest/userguide/ce-what-is.html"
+            },
+            {
+              "title": "Cost and Usage Report (CUR) 2.0",
+              "url": "https://docs.aws.amazon.com/cur/latest/userguide/table-dictionary-cur2.html"
+            },
+            {
+              "title": "Creating Cost and Usage Reports with AWS Data Exports",
+              "url": "https://docs.aws.amazon.com/cur/latest/userguide/creating-cur.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "cost allocation tag",
+              "definition": "A tag activated for billing analysis so AWS costs can be grouped by project, team, environment, or another resource label."
+            },
+            {
+              "term": "amortized cost",
+              "definition": "A view that spreads upfront and recurring commitment charges across the period they cover."
+            },
+            {
+              "term": "CUR",
+              "definition": "Cost and Usage Report. Detailed AWS billing and usage data available in legacy CUR and newer CUR 2.0/Data Exports forms."
+            }
+          ]
+        },
+        {
+          "id": "domain-4-network-cost-controls",
+          "title": "Network throttling and bandwidth cost controls",
+          "concept_ids": [
+            "aws.saa.network_cost_controls"
+          ],
+          "prerequisite_node_ids": [
+            "domain-4-cost-tools"
+          ],
+          "map_position": {
+            "x": 0.84,
+            "y": 0.16
+          },
+          "prompts": [
+            {
+              "id": "network-cost-controls-what",
+              "kind": "what",
+              "label": "WHAT?",
+              "placeholder": "How can request rate and bandwidth choices affect network-related cost?",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Cost optimization can limit unnecessary consumption before it reaches expensive downstream resources. API Gateway throttling controls steady request rate and a burst limit. Hybrid links should also be sized from required throughput instead of automatically purchasing the highest bandwidth option."
+              }
+            },
+            {
+              "id": "network-cost-controls-table",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "Match the cost problem to the control.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "problem",
+                    "label": "Cost/performance problem"
+                  },
+                  {
+                    "id": "control",
+                    "label": "Control"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "api",
+                    "cells": {
+                      "problem": "Unexpected client bursts overload downstream APIs",
+                      "control": "API Gateway rate/burst throttling"
+                    }
+                  },
+                  {
+                    "id": "vpn",
+                    "cells": {
+                      "problem": "VPN bandwidth is insufficient",
+                      "control": "Evaluate multiple VPN paths/Transit Gateway ECMP or a dedicated link"
+                    }
+                  },
+                  {
+                    "id": "dx",
+                    "cells": {
+                      "problem": "Dedicated hybrid bandwidth is substantially overprovisioned",
+                      "control": "Right-size Direct Connect bandwidth to measured need"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "problem"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "network-cost-controls-clue",
+              "kind": "exam_clue",
+              "label": "EXAM CLUE",
+              "placeholder": "What wording should trigger these controls?",
+              "required": true,
+              "reveal": {
+                "type": "keywords",
+                "items": [
+                  "request burst -> throttle rate/burst",
+                  "hybrid throughput requirement -> size bandwidth",
+                  "do not overprovision network capacity without measured need"
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
+              "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Throttle requests to REST APIs in API Gateway",
+              "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-throttling.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "throttling",
+              "definition": "Limiting request rate or burst capacity to protect downstream resources and control resource consumption."
+            },
+            {
+              "term": "burst limit",
+              "definition": "The short-term request burst target allowed before throttling begins."
+            },
+            {
+              "term": "bandwidth",
+              "definition": "The amount of network data that can be transferred per unit of time."
             }
           ]
         }

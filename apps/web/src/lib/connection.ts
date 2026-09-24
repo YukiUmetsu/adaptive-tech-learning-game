@@ -34,6 +34,29 @@ export function boundaryOffset(
   return denominator > 0 ? 1 / denominator : FALLBACK_RADIUS_PX;
 }
 
+/**
+ * Keeps a node's centre inside `0..extent` so a centred pill is never clipped
+ * by the canvas edge.
+ *
+ * Authored positions run `0..=1`, so a node centered exactly on an edge would
+ * otherwise have half of its label cut off. `half` is the node's half-size
+ * along the axis. When the node is wider than the canvas it is centered, since
+ * no position can fully contain it.
+ */
+export function clampNodeCenter(
+  value: number,
+  half: number,
+  extent: number,
+): number {
+  if (extent <= 0) {
+    return value;
+  }
+  const center = extent / 2;
+  const min = Math.min(half, center);
+  const max = Math.max(extent - half, center);
+  return Math.min(max, Math.max(min, value));
+}
+
 /** Line between two node boundaries, so arrowheads are not hidden under a pill. */
 export function edgeGeometry(
   start: Point,

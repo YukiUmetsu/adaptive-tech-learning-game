@@ -13,6 +13,7 @@ pub mod learning_events;
 pub mod missions;
 pub mod predictions;
 pub mod recommendations;
+pub mod section_quiz;
 pub mod sessions;
 pub mod study_days;
 pub mod sync_batches;

@@ -96,14 +96,16 @@ Phase 1 ships real, multi-certification content:
   five domains, each with authored tasks and questions.
 - AWS Certified Solutions Architect - Associate (`aws-saa-c03`) and AWS
   Certified Generative AI Developer - Professional (`aws-aip-c01`).
+- CompTIA Security+ (`comptia-security-plus`, `SY0-701`): all five domains.
 - HashiCorp Certified: Terraform Associate (`hashicorp-terraform-associate-004`).
 - AI tracks: Python fluency, Python data stack (NumPy/pandas/Matplotlib/Seaborn),
   and PyTorch core.
 
 Each certification also has learning knowledge maps for pre-quiz discovery;
-AWS SOA-C03 and the AI tracks are fully covered, Terraform covers all eight
-domains. The web catalog and dashboard read certification metadata from
-`apps/web/src/state/catalogMeta.ts` plus the API catalog.
+AWS SOA-C03, CompTIA Security+, and the AI tracks are fully covered, and
+Terraform covers all eight domains. The web catalog and dashboard read
+certification metadata from `apps/web/src/state/catalogMeta.ts` plus the API
+catalog.
 
 Content is authored as versioned JSON organized as
 `content/<category>/<certification>/<version>/<file>.json`. The content crate
@@ -135,7 +137,7 @@ Key API endpoints:
 ```text
 GET  /v1/certifications
 GET  /v1/certifications/{certification_id}/domains/{domain_id}/learning
-POST /v1/missions/issue          # mode: quick_adaptive | domain_quiz | full_practice | task_practice
+POST /v1/missions/issue          # mode: quick_adaptive | domain_quiz | section_quiz | full_practice | task_practice
 POST /v1/missions/{mission_id}/answers
 POST /v1/missions/{mission_id}/complete
 POST /v1/sync
@@ -148,9 +150,11 @@ learner-facing concept names, so the shared end-of-quiz completion summary can
 show friendly knowledge labels without ever rendering a raw concept id such as
 `aws.cloudformation.changesets`.
 
-Learners see three quiz modes (Quick Quiz, Domain Quiz, Full Practice) from the
-certification dashboard; the server selects questions per mode and settles Bits
-on sync. The web routes are `/certifications` (category catalog) and
+Learners see four quiz modes (Quick Quiz, Domain Quiz, Section Quiz, Full
+Practice) from the certification dashboard; the server selects questions per
+mode and settles Bits on sync. A Section Quiz is started from a completed
+learning module on the knowledge map and returns to that section afterwards. The
+web routes are `/certifications` (category catalog) and
 `/certifications/:certificationId` (dashboard). `task_practice` and the
 `/certifications/:certificationId/tasks/:taskId` route remain for the demo and
 internal debugging.

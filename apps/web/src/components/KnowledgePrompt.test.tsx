@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { progressiveTextReveal } from "../test/progressiveTextFixture";
 import KnowledgePrompt from "./KnowledgePrompt";
 
 const comparisonReveal = {
@@ -87,6 +88,84 @@ describe("KnowledgePrompt", () => {
 
     expect(container.querySelector(".knowledge-prompt-blank--columns")).toBeNull();
     expect(container.querySelectorAll(".knowledge-prompt-blank-cell")).toHaveLength(0);
+  });
+
+  it("renders a progressive text reveal immediately with the sentence visible", () => {
+    const { container } = render(
+      <KnowledgePrompt
+        prompt={{
+          id: "model",
+          kind: "mental_model",
+          label: "🧠 MENTAL MODEL",
+          placeholder: "Reveal the hidden terms.",
+          required: true,
+          reveal: progressiveTextReveal,
+        }}
+        revealed={false}
+        revealedElementIds={[]}
+        onReveal={() => {}}
+        onRevealElement={() => {}}
+      />,
+    );
+
+    // No whole-prompt blank: the sentence is live from the start.
+    expect(container.querySelector(".knowledge-prompt-blank")).toBeNull();
+    const paragraph = container.querySelector(".progressive-text");
+    expect(paragraph).not.toBeNull();
+    expect(paragraph).toHaveTextContent("Security groups are");
+    expect(paragraph).toHaveTextContent("while network ACLs are");
+    // The hidden phrases are absent until revealed.
+    expect(screen.queryByText("stateful")).toBeNull();
+    expect(screen.queryByText("stateless")).toBeNull();
+    expect(container.querySelectorAll(".progressive-text-reveal")).toHaveLength(
+      2,
+    );
+  });
+
+  it("shows a generic ? blank when the placeholder is empty", () => {
+    const { container } = render(
+      <KnowledgePrompt
+        prompt={{
+          id: "what",
+          kind: "what",
+          label: "❓ WHAT?",
+          placeholder: "",
+          required: true,
+          reveal: { type: "text", text: "Records AWS API activity." },
+        }}
+        revealed={false}
+        onReveal={() => {}}
+      />,
+    );
+
+    const blank = container.querySelector(".knowledge-prompt-blank");
+    expect(blank).not.toBeNull();
+    expect(blank).toHaveTextContent("?");
+  });
+
+  it("renders a placeholdered progressive reveal without a stray blank marker", () => {
+    const { container } = render(
+      <KnowledgePrompt
+        prompt={{
+          id: "model",
+          kind: "mental_model",
+          label: "🧠 MENTAL MODEL",
+          placeholder: "",
+          required: true,
+          reveal: progressiveTextReveal,
+        }}
+        revealed={false}
+        revealedElementIds={[]}
+        onReveal={() => {}}
+        onRevealElement={() => {}}
+      />,
+    );
+
+    // Progressive text shows its sentence immediately; the optional
+    // placeholder is simply omitted rather than replaced with a `?`.
+    expect(container.querySelector(".progressive-text")).not.toBeNull();
+    expect(container.querySelector(".knowledge-prompt-blank")).toBeNull();
+    expect(container.querySelector(".knowledge-prompt-context")).toBeNull();
   });
 
   it("renders a code_file immediately and keeps explanations hidden", () => {

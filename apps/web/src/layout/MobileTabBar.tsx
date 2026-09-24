@@ -1,8 +1,10 @@
 import { NavLink } from "react-router-dom";
 
 import { useAuth } from "../auth/context";
+import { useDailyMissionHref } from "../hooks/useDailyMissionHref";
 
 interface Tab {
+  id: string;
   to: string;
   label: string;
   icon: string;
@@ -20,18 +22,24 @@ interface Tab {
 export default function MobileTabBar() {
   const { status } = useAuth();
   const accountLabel = status === "authenticated" ? "Account" : "Sign in";
+  const dailyMissionHref = useDailyMissionHref();
 
   const tabs: Tab[] = [
-    { to: "/", label: "Home", icon: "🏠", end: true },
-    { to: "/tracks", label: "Tracks", icon: "🗺️" },
-    { to: "/demo", label: "Demo", icon: "✨" },
-    { to: "/account", label: accountLabel, icon: "👤" },
+    { id: "home", to: "/", label: "Home", icon: "🏠", end: true },
+    { id: "tracks", to: "/tracks", label: "Tracks", icon: "🗺️" },
+    // Signed-in learners get today's mission instead of the public demo; the
+    // label stays short to match the other tab-bar destinations. The id keeps
+    // the key unique when the fallback href equals the Tracks tab.
+    status === "authenticated"
+      ? { id: "daily", to: dailyMissionHref, label: "Daily", icon: "✨" }
+      : { id: "demo", to: "/demo", label: "Demo", icon: "✨" },
+    { id: "account", to: "/account", label: accountLabel, icon: "👤" },
   ];
 
   return (
     <nav className="mobile-tabbar" aria-label="Primary">
       {tabs.map((tab) => (
-        <NavLink key={tab.to} to={tab.to} end={tab.end} className="mobile-tab">
+        <NavLink key={tab.id} to={tab.to} end={tab.end} className="mobile-tab">
           <span className="mobile-tab-icon" aria-hidden="true">
             {tab.icon}
           </span>

@@ -135,8 +135,11 @@ export const CATALOG: CatalogCategory[] = [
       {
         id: "comptia-security-plus",
         name: "CompTIA Security+",
+        // The "Security" category label supplies no vendor, so the compact
+        // navbar label keeps "CompTIA" rather than dropping it like AWS does.
+        shortName: "CompTIA Security+",
         examCode: "SY0-701",
-        wip: true,
+        wip: false,
       },
     ],
   },

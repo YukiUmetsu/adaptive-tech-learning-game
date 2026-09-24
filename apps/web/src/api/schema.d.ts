@@ -571,6 +571,7 @@ export interface components {
             positions?: {
                 [key: string]: components["schemas"]["PlacementPoint"];
             } | null;
+            python_results?: null | components["schemas"]["PythonCodeAnswer"];
             reconstruction?: null | components["schemas"]["ReconstructionAnswerPayload"];
             /** @description Slot id to option id values for fill slots. */
             slot_values?: {
@@ -775,6 +776,11 @@ export interface components {
             choice_ids: string[];
             /** @enum {string} */
             type: "multiple_response";
+        } | {
+            /** @description Authored tests, run in declaration order. */
+            tests: components["schemas"]["PythonTest"][];
+            /** @enum {string} */
+            type: "python_code";
         };
         /** @description Response for the certification catalog. */
         CatalogResponse: {
@@ -1094,6 +1100,13 @@ export interface components {
             /** @description Safe, human-readable message. */
             message: string;
         };
+        /** @description A structured error the scorer may emit for a question. */
+        ErrorCodeDef: {
+            /** @description Stable code, for example `classification_misplaced`. */
+            code: string;
+            /** @description Learner-safe description. */
+            description: string;
+        };
         /** @description Envelope returned for every API error. */
         ErrorResponse: {
             /** @description Error payload. */
@@ -1347,12 +1360,26 @@ export interface components {
             required_selections: number;
             /** @enum {string} */
             type: "multiple_response";
+        } | {
+            /** @description Name of the callable under test. Empty for script-style exercises. */
+            entrypoint?: string;
+            /** @description Runtime language. Only `python` is supported initially. */
+            language: string;
+            /**
+             * @description Packages the content explicitly declares from the application
+             *     allowlist. Empty for standard-library-only exercises.
+             */
+            packages?: string[];
+            /** @description Learner-facing starter code. */
+            starter_code: string;
+            /** @enum {string} */
+            type: "python_code";
         };
         /**
          * @description The tactile interaction family a question uses.
          * @enum {string}
          */
-        InteractionType: "classification" | "ordering" | "node_connection" | "reconstruction" | "evidence_selection" | "spot_the_fault" | "fill_slots" | "troubleshooting" | "scenario_choice_chain" | "configuration_builder" | "two_dimensional_placement" | "command_assembly" | "typed_fill_blank" | "multiple_choice" | "multiple_response";
+        InteractionType: "classification" | "ordering" | "node_connection" | "reconstruction" | "evidence_selection" | "spot_the_fault" | "fill_slots" | "troubleshooting" | "scenario_choice_chain" | "configuration_builder" | "two_dimensional_placement" | "command_assembly" | "typed_fill_blank" | "multiple_choice" | "multiple_response" | "python_code";
         /** @description Request to issue a mission for a quiz mode. */
         IssueMissionRequest: {
             /** @description Certification identifier. */
@@ -1369,6 +1396,11 @@ export interface components {
             domain_id?: string | null;
             /** @description Quiz mode deciding how the server selects questions. */
             mode: components["schemas"]["QuizMode"];
+            /**
+             * @description Learning module (section) to scope a section quiz to. Required for
+             *     `section_quiz`; ignored for other modes.
+             */
+            module_id?: string | null;
             /**
              * @description Anchor question for `recommended_practice`. The server validates it
              *     belongs to the certification version; it never trusts it as the whole
@@ -1388,6 +1420,13 @@ export interface components {
         KnowledgeNode: {
             /** @description Certification concepts this node teaches. The bridge to quiz evidence. */
             concept_ids: string[];
+            /**
+             * @description Clickable terms with short explanations, scoped to this node's page.
+             *
+             *     Merged with the domain glossary when the card renders; a node term wins
+             *     over a domain term with the same text.
+             */
+            glossary?: components["schemas"]["GlossaryTerm"][];
             /** @description Stable node identifier. */
             id: string;
             /** @description Authored position on the map in `0..=1` space. */
@@ -1409,7 +1448,10 @@ export interface components {
             kind: components["schemas"]["PromptKind"];
             /** @description Learner-facing label, authored by the curriculum. */
             label: string;
-            /** @description Blank text shown before the reveal. */
+            /**
+             * @description Blank text shown before the reveal. Optional: an empty placeholder
+             *     renders a generic `?` blank, and interactive reveals ignore it.
+             */
             placeholder: string;
             /** @description Whether revealing this prompt counts toward unlocking the node. */
             required?: boolean;
@@ -1491,6 +1533,7 @@ export interface components {
          *     curriculum distinguishes prose, sequences, comparisons, and keyword clues.
          */
         LearningReveal: {
+            progressive_reveal?: null | components["schemas"]["TextProgressiveReveal"];
             /** @description Revealed text. Keep it to one or two sentences. */
             text: string;
             /** @enum {string} */
@@ -1604,8 +1647,18 @@ export interface components {
             issued_at: string;
             /** @description Quiz mode. */
             mode: components["schemas"]["QuizMode"];
-            /** @description Questions in presentation order. */
-            questions: components["schemas"]["QuestionView"][];
+            /** @description Learning module (section) covered, for a section quiz. */
+            module_id?: string | null;
+            /**
+             * @description Questions in presentation order.
+             *
+             *     Ordinary study missions intentionally ship their canonical scoring data
+             *     so they can be scored locally with zero per-question requests. The server
+             *     still re-scores every raw answer during `/v1/sync`; the client score is
+             *     never authoritative. Practice tests keep the answer-key-free
+             *     [`QuestionView`].
+             */
+            questions: components["schemas"]["StudyQuestionView"][];
             /** @description Task covered, for task practice. */
             task_id?: string | null;
         };
@@ -1923,6 +1976,48 @@ export interface components {
          * @enum {string}
          */
         PromptKind: "what" | "when" | "connects_to" | "not_this" | "exam_clue" | "mental_model" | "action" | "look_for";
+        /**
+         * @description Browser-executed Python result primitives.
+         *
+         *     The learner's source never reaches the API. The client runs the authored
+         *     tests locally and reports only how many passed; the server re-scores those
+         *     counts against the canonical test list.
+         */
+        PythonCodeAnswer: {
+            /** @description Number of authored tests the learner's program passed. */
+            passed: number;
+            /** @description Total tests executed. Must equal the question's authored test count. */
+            total: number;
+        };
+        /**
+         * @description One data-driven assertion in a browser-executed Python exercise.
+         *
+         *     Tests are trusted authored content, never learner input. They ship to the
+         *     browser so the learner's program can be executed and checked locally, which
+         *     means they are inspectable rather than secret. Expected values are passed as
+         *     structured JSON data: they are never interpolated into generated Python
+         *     source and never evaluated by the server.
+         */
+        PythonTest: {
+            /** @description Positional arguments as JSON values. */
+            args: unknown[];
+            /** @description Expected return value as a JSON value. */
+            expected: unknown;
+            /** @enum {string} */
+            type: "call";
+        } | {
+            /** @description Positional arguments as JSON values. */
+            args: unknown[];
+            /** @description Expected exception class name, for example `ValueError`. */
+            exception: string;
+            /** @enum {string} */
+            type: "raises";
+        } | {
+            /** @description Expected standard output, compared after trimming trailing newlines. */
+            expected: string;
+            /** @enum {string} */
+            type: "stdout";
+        };
         /** @description A question shown to the learner. Contains no answer key. */
         QuestionView: {
             /** @description Evidence mode. */
@@ -1958,10 +2053,11 @@ export interface components {
          * @description The quiz mode a mission was issued for.
          *
          *     `task_practice` is kept for the demo/task flow and internal debugging; the
-         *     three learner-facing modes are quick, domain, and full practice.
+         *     learner-facing modes are quick, domain, full practice, and the one-question
+         *     section quiz that concludes a learning module.
          * @enum {string}
          */
-        QuizMode: "quick_adaptive" | "domain_quiz" | "full_practice" | "task_practice" | "recommended_practice";
+        QuizMode: "quick_adaptive" | "domain_quiz" | "full_practice" | "task_practice" | "recommended_practice" | "section_quiz";
         /** @description A structured, explainable recommendation. */
         Recommendation: {
             /** @description Action to take. */
@@ -2249,6 +2345,59 @@ export interface components {
              */
             longest: number;
         };
+        /**
+         * @description A question for an ordinary study mission that supports local scoring.
+         *
+         *     This is the only mission-facing DTO that carries canonical answers. It keeps
+         *     every learner-facing field of [`QuestionView`] and adds the deterministic
+         *     scoring metadata needed to score an attempt in the browser.
+         *
+         *     The extra fields are explicitly *not* authoritative: `/v1/sync` always
+         *     re-scores the raw submitted answer against the server-known content before
+         *     accepting evidence, settling Bits, or updating concept state. Practice tests
+         *     and any pre-submit response keep using [`QuestionView`], which never exposes
+         *     an answer key.
+         */
+        StudyQuestionView: {
+            /** @description Evidence mode. */
+            assessment_mode: components["schemas"]["AssessmentMode"];
+            /** @description Canonical answer, used for local scoring and immediate feedback. */
+            canonical_answer: components["schemas"]["CanonicalAnswer"];
+            /** @description Per-choice feedback keyed by choice id. */
+            choice_feedback: {
+                [key: string]: string;
+            };
+            /** @description Concept mappings. */
+            concepts: components["schemas"]["ConceptWeight"][];
+            /**
+             * Format: double
+             * @description Prior difficulty.
+             */
+            difficulty_prior: number;
+            /** @description Owning domain. */
+            domain_id: string;
+            /** @description Authored structured error-code definitions for this question. */
+            error_codes: components["schemas"]["ErrorCodeDef"][];
+            /** @description Short explanation shown after scoring. */
+            explanation: string;
+            /** @description Optional hints. */
+            hints: string[];
+            /** @description Question identifier. */
+            id: string;
+            /**
+             * @description Optional authored instruction shown with the prompt, for example
+             *     `Choose TWO.`. Never reveals the answer.
+             */
+            instruction?: string | null;
+            /** @description Interaction definition. */
+            interaction: components["schemas"]["Interaction"];
+            /** @description Interaction family. */
+            interaction_type: components["schemas"]["InteractionType"];
+            /** @description Learner-facing prompt. */
+            prompt: string;
+            /** @description Owning task. */
+            task_id: string;
+        };
         /** @description A planned study session. */
         StudySession: {
             /** @description Ordered activities. */
@@ -2336,7 +2485,13 @@ export interface components {
              */
             response_ms: number;
         };
-        /** @description Result for one synced event. */
+        /**
+         * @description Result for one synced event.
+         *
+         *     The server re-scores every raw answer from canonical content, so this is the
+         *     authoritative outcome. The client compares it with its optimistic local score
+         *     and reconciles any difference (the server always wins).
+         */
         SyncEventResult: {
             /** @description Whether the event is now accepted server-side. */
             accepted: boolean;
@@ -2345,13 +2500,22 @@ export interface components {
              * @description Bits settled for this event (0 when rejected or already settled).
              */
             bits_settled: number;
+            /** @description Authoritative correctness verdict. `false` for rejected events. */
+            correct: boolean;
             /** @description Error code when not accepted. */
             error_code?: string | null;
+            /** @description Authoritative structured error codes. Empty for rejected events. */
+            error_codes: string[];
             /**
              * Format: uuid
              * @description Event identifier.
              */
             event_id: string;
+            /**
+             * Format: double
+             * @description Authoritative partial score in `[0, 1]`. `0` for rejected events.
+             */
+            score: number;
         };
         /**
          * @description Request to sync a batch of evaluated attempts.
@@ -2452,6 +2616,34 @@ export interface components {
             name: string;
             /** @description Number of authored questions available. */
             question_count: number;
+        };
+        /**
+         * @description Progressive reveal configuration for a `text` reveal.
+         *
+         *     The sentence is always rendered in full. Discovery is limited to the
+         *     authored `spans` inside it: each span is replaced by an inline reveal
+         *     control until the learner activates it.
+         */
+        TextProgressiveReveal: {
+            /** @description Hidden words or phrases inside the reveal text, in any order. */
+            spans: components["schemas"]["TextRevealSpan"][];
+        };
+        /**
+         * @description One hidden word or phrase inside a progressive `text` reveal.
+         *
+         *     Span text may contain multiple words. It is located inside the parent
+         *     sentence by exact text plus an optional occurrence, so repeated wording is
+         *     disambiguated the same way code annotation anchors are.
+         */
+        TextRevealSpan: {
+            /** @description Stable span identifier, also the persisted progress key. */
+            id: string;
+            /** @description 1-based occurrence of `text` in the sentence. Defaults to the first. */
+            occurrence?: number;
+            /** @description Whether revealing this span is needed to complete the prompt. */
+            required?: boolean;
+            /** @description Exact authored text to hide. May contain multiple words. */
+            text: string;
         };
         /**
          * @description All learner-facing learning content for one learning track.
@@ -3253,7 +3445,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Mission completed or content version mismatch */
+            /** @description Mission completed, content version mismatch, or stale mission content (`mission_content_stale`) */
             409: {
                 headers: {
                     [name: string]: unknown;

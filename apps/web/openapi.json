@@ -879,7 +879,7 @@
             }
           },
           "409": {
-            "description": "Mission completed or content version mismatch",
+            "description": "Mission completed, content version mismatch, or stale mission content (`mission_content_stale`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1749,6 +1749,17 @@
               "type": "string"
             }
           },
+          "python_results": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PythonCodeAnswer",
+                "description": "Browser-executed Python test counts for a `python_code` question."
+              }
+            ]
+          },
           "reconstruction": {
             "oneOf": [
               {
@@ -2369,6 +2380,29 @@
                 "type": "string",
                 "enum": [
                   "multiple_response"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Data-driven tests the browser executes against the learner's program.\n\nThese are the canonical behavioral specification. They are inspectable\nbecause execution happens client-side, so they must not encode secrets.",
+            "required": [
+              "tests",
+              "type"
+            ],
+            "properties": {
+              "tests": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PythonTest"
+                },
+                "description": "Authored tests, run in declaration order."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "python_code"
                 ]
               }
             }
@@ -3069,6 +3103,24 @@
           "message": {
             "type": "string",
             "description": "Safe, human-readable message."
+          }
+        }
+      },
+      "ErrorCodeDef": {
+        "type": "object",
+        "description": "A structured error the scorer may emit for a question.",
+        "required": [
+          "code",
+          "description"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Stable code, for example `classification_misplaced`."
+          },
+          "description": {
+            "type": "string",
+            "description": "Learner-safe description."
           }
         }
       },
@@ -3785,6 +3837,42 @@
                 ]
               }
             }
+          },
+          {
+            "type": "object",
+            "description": "Write Python that is executed and checked locally in the browser.\n\nLearner source is never sent to the API for execution. The browser runs\nit in an isolated runtime and submits only the count of authored tests\nthat passed; the server re-scores that primitive against the canonical\ntest list. See `docs/14-security-privacy.md`.",
+            "required": [
+              "language",
+              "starter_code",
+              "type"
+            ],
+            "properties": {
+              "entrypoint": {
+                "type": "string",
+                "description": "Name of the callable under test. Empty for script-style exercises."
+              },
+              "language": {
+                "type": "string",
+                "description": "Runtime language. Only `python` is supported initially."
+              },
+              "packages": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Packages the content explicitly declares from the application\nallowlist. Empty for standard-library-only exercises."
+              },
+              "starter_code": {
+                "type": "string",
+                "description": "Learner-facing starter code."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "python_code"
+                ]
+              }
+            }
           }
         ],
         "description": "Interaction definition shown to the learner. Contains no answer key."
@@ -3807,7 +3895,8 @@
           "command_assembly",
           "typed_fill_blank",
           "multiple_choice",
-          "multiple_response"
+          "multiple_response",
+          "python_code"
         ]
       },
       "IssueMissionRequest": {
@@ -3845,6 +3934,13 @@
           "mode": {
             "$ref": "#/components/schemas/QuizMode",
             "description": "Quiz mode deciding how the server selects questions."
+          },
+          "module_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Learning module (section) to scope a section quiz to. Required for\n`section_quiz`; ignored for other modes."
           },
           "question_id": {
             "type": [
@@ -3887,6 +3983,13 @@
               "type": "string"
             },
             "description": "Certification concepts this node teaches. The bridge to quiz evidence."
+          },
+          "glossary": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GlossaryTerm"
+            },
+            "description": "Clickable terms with short explanations, scoped to this node's page.\n\nMerged with the domain glossary when the card renders; a node term wins\nover a domain term with the same text."
           },
           "id": {
             "type": "string",
@@ -3948,7 +4051,7 @@
           },
           "placeholder": {
             "type": "string",
-            "description": "Blank text shown before the reveal."
+            "description": "Blank text shown before the reveal. Optional: an empty placeholder\nrenders a generic `?` blank, and interactive reveals ignore it."
           },
           "required": {
             "type": "boolean",
@@ -4139,6 +4242,17 @@
               "type"
             ],
             "properties": {
+              "progressive_reveal": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/TextProgressiveReveal",
+                    "description": "Optional progressive reveal configuration. When present, the\nsentence is always rendered and only the authored spans inside it\nare hidden until the learner reveals each one. When omitted the\nwhole text is revealed as a unit exactly as before."
+                  }
+                ]
+              },
               "text": {
                 "type": "string",
                 "description": "Revealed text. Keep it to one or two sentences."
@@ -4443,12 +4557,19 @@
             "$ref": "#/components/schemas/QuizMode",
             "description": "Quiz mode."
           },
+          "module_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Learning module (section) covered, for a section quiz."
+          },
           "questions": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/QuestionView"
+              "$ref": "#/components/schemas/StudyQuestionView"
             },
-            "description": "Questions in presentation order."
+            "description": "Questions in presentation order.\n\nOrdinary study missions intentionally ship their canonical scoring data\nso they can be scored locally with zero per-question requests. The server\nstill re-scores every raw answer during `/v1/sync`; the client score is\nnever authoritative. Practice tests keep the answer-key-free\n[`QuestionView`]."
           },
           "task_id": {
             "type": [
@@ -5161,6 +5282,102 @@
           "look_for"
         ]
       },
+      "PythonCodeAnswer": {
+        "type": "object",
+        "description": "Browser-executed Python result primitives.\n\nThe learner's source never reaches the API. The client runs the authored\ntests locally and reports only how many passed; the server re-scores those\ncounts against the canonical test list.",
+        "required": [
+          "passed",
+          "total"
+        ],
+        "properties": {
+          "passed": {
+            "type": "integer",
+            "description": "Number of authored tests the learner's program passed.",
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total tests executed. Must equal the question's authored test count.",
+            "minimum": 0
+          }
+        }
+      },
+      "PythonTest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Call the entrypoint with positional arguments and compare the returned\nvalue for equality.",
+            "required": [
+              "args",
+              "expected",
+              "type"
+            ],
+            "properties": {
+              "args": {
+                "type": "array",
+                "items": {},
+                "description": "Positional arguments as JSON values."
+              },
+              "expected": {
+                "description": "Expected return value as a JSON value."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "call"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Call the entrypoint and require it to raise a named exception.",
+            "required": [
+              "args",
+              "exception",
+              "type"
+            ],
+            "properties": {
+              "args": {
+                "type": "array",
+                "items": {},
+                "description": "Positional arguments as JSON values."
+              },
+              "exception": {
+                "type": "string",
+                "description": "Expected exception class name, for example `ValueError`."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "raises"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Compare the program's captured standard output.",
+            "required": [
+              "expected",
+              "type"
+            ],
+            "properties": {
+              "expected": {
+                "type": "string",
+                "description": "Expected standard output, compared after trimming trailing newlines."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "stdout"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "One data-driven assertion in a browser-executed Python exercise.\n\nTests are trusted authored content, never learner input. They ship to the\nbrowser so the learner's program can be executed and checked locally, which\nmeans they are inspectable rather than secret. Expected values are passed as\nstructured JSON data: they are never interpolated into generated Python\nsource and never evaluated by the server."
+      },
       "QuestionView": {
         "type": "object",
         "description": "A question shown to the learner. Contains no answer key.",
@@ -5235,13 +5452,14 @@
       },
       "QuizMode": {
         "type": "string",
-        "description": "The quiz mode a mission was issued for.\n\n`task_practice` is kept for the demo/task flow and internal debugging; the\nthree learner-facing modes are quick, domain, and full practice.",
+        "description": "The quiz mode a mission was issued for.\n\n`task_practice` is kept for the demo/task flow and internal debugging; the\nlearner-facing modes are quick, domain, full practice, and the one-question\nsection quiz that concludes a learning module.",
         "enum": [
           "quick_adaptive",
           "domain_quiz",
           "full_practice",
           "task_practice",
-          "recommended_practice"
+          "recommended_practice",
+          "section_quiz"
         ]
       },
       "Recommendation": {
@@ -5875,6 +6093,107 @@
           }
         }
       },
+      "StudyQuestionView": {
+        "type": "object",
+        "description": "A question for an ordinary study mission that supports local scoring.\n\nThis is the only mission-facing DTO that carries canonical answers. It keeps\nevery learner-facing field of [`QuestionView`] and adds the deterministic\nscoring metadata needed to score an attempt in the browser.\n\nThe extra fields are explicitly *not* authoritative: `/v1/sync` always\nre-scores the raw submitted answer against the server-known content before\naccepting evidence, settling Bits, or updating concept state. Practice tests\nand any pre-submit response keep using [`QuestionView`], which never exposes\nan answer key.",
+        "required": [
+          "id",
+          "domain_id",
+          "task_id",
+          "prompt",
+          "interaction_type",
+          "assessment_mode",
+          "difficulty_prior",
+          "concepts",
+          "hints",
+          "interaction",
+          "canonical_answer",
+          "explanation",
+          "choice_feedback",
+          "error_codes"
+        ],
+        "properties": {
+          "assessment_mode": {
+            "$ref": "#/components/schemas/AssessmentMode",
+            "description": "Evidence mode."
+          },
+          "canonical_answer": {
+            "$ref": "#/components/schemas/CanonicalAnswer",
+            "description": "Canonical answer, used for local scoring and immediate feedback."
+          },
+          "choice_feedback": {
+            "type": "object",
+            "description": "Per-choice feedback keyed by choice id.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "concepts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConceptWeight"
+            },
+            "description": "Concept mappings."
+          },
+          "difficulty_prior": {
+            "type": "number",
+            "format": "double",
+            "description": "Prior difficulty."
+          },
+          "domain_id": {
+            "type": "string",
+            "description": "Owning domain."
+          },
+          "error_codes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErrorCodeDef"
+            },
+            "description": "Authored structured error-code definitions for this question."
+          },
+          "explanation": {
+            "type": "string",
+            "description": "Short explanation shown after scoring."
+          },
+          "hints": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional hints."
+          },
+          "id": {
+            "type": "string",
+            "description": "Question identifier."
+          },
+          "instruction": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional authored instruction shown with the prompt, for example\n`Choose TWO.`. Never reveals the answer."
+          },
+          "interaction": {
+            "$ref": "#/components/schemas/Interaction",
+            "description": "Interaction definition."
+          },
+          "interaction_type": {
+            "$ref": "#/components/schemas/InteractionType",
+            "description": "Interaction family."
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Learner-facing prompt."
+          },
+          "task_id": {
+            "type": "string",
+            "description": "Owning task."
+          }
+        }
+      },
       "StudySession": {
         "type": "object",
         "description": "A planned study session.",
@@ -6021,10 +6340,13 @@
       },
       "SyncEventResult": {
         "type": "object",
-        "description": "Result for one synced event.",
+        "description": "Result for one synced event.\n\nThe server re-scores every raw answer from canonical content, so this is the\nauthoritative outcome. The client compares it with its optimistic local score\nand reconciles any difference (the server always wins).",
         "required": [
           "event_id",
           "accepted",
+          "correct",
+          "score",
+          "error_codes",
           "bits_settled"
         ],
         "properties": {
@@ -6037,6 +6359,10 @@
             "format": "int64",
             "description": "Bits settled for this event (0 when rejected or already settled)."
           },
+          "correct": {
+            "type": "boolean",
+            "description": "Authoritative correctness verdict. `false` for rejected events."
+          },
           "error_code": {
             "type": [
               "string",
@@ -6044,10 +6370,22 @@
             ],
             "description": "Error code when not accepted."
           },
+          "error_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Authoritative structured error codes. Empty for rejected events."
+          },
           "event_id": {
             "type": "string",
             "format": "uuid",
             "description": "Event identifier."
+          },
+          "score": {
+            "type": "number",
+            "format": "double",
+            "description": "Authoritative partial score in `[0, 1]`. `0` for rejected events."
           }
         }
       },
@@ -6212,6 +6550,49 @@
             "type": "integer",
             "description": "Number of authored questions available.",
             "minimum": 0
+          }
+        }
+      },
+      "TextProgressiveReveal": {
+        "type": "object",
+        "description": "Progressive reveal configuration for a `text` reveal.\n\nThe sentence is always rendered in full. Discovery is limited to the\nauthored `spans` inside it: each span is replaced by an inline reveal\ncontrol until the learner activates it.",
+        "required": [
+          "spans"
+        ],
+        "properties": {
+          "spans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TextRevealSpan"
+            },
+            "description": "Hidden words or phrases inside the reveal text, in any order."
+          }
+        }
+      },
+      "TextRevealSpan": {
+        "type": "object",
+        "description": "One hidden word or phrase inside a progressive `text` reveal.\n\nSpan text may contain multiple words. It is located inside the parent\nsentence by exact text plus an optional occurrence, so repeated wording is\ndisambiguated the same way code annotation anchors are.",
+        "required": [
+          "id",
+          "text"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable span identifier, also the persisted progress key."
+          },
+          "occurrence": {
+            "type": "integer",
+            "description": "1-based occurrence of `text` in the sentence. Defaults to the first.",
+            "minimum": 0
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether revealing this span is needed to complete the prompt."
+          },
+          "text": {
+            "type": "string",
+            "description": "Exact authored text to hide. May contain multiple words."
           }
         }
       },

@@ -204,6 +204,7 @@ async fn telemetry_failure_does_not_affect_mission_persistence() {
         daily_item_position: None,
         domain_id: Some("d1".to_owned()),
         task_id: None,
+        module_id: None,
         question_ids: vec!["q1".to_owned()],
         status: MissionStatus::Issued,
         issued_at: now,

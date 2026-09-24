@@ -10,8 +10,8 @@
   "version": {
     "id": "saa-c03",
     "exam_code": "SAA-C03",
-    "effective_date": "2026-09-19",
-    "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+    "effective_date": "2026-09-23",
+    "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
     "domains": [
       {
         "id": "domain-1",
@@ -37,7 +37,8 @@
               "permissions-boundary-typed-001",
               "permissions-boundary-application-001",
               "domain-1-task-1-1-builder-v2",
-              "domain-1-task-1-1-evidence-v2"
+              "domain-1-task-1-1-evidence-v2",
+              "root-user-hygiene-fault-v3"
             ]
           },
           {
@@ -58,7 +59,9 @@
               "security-services-application-001",
               "domain-1-task-1-2-builder-v2",
               "domain-1-task-1-2-fault-v2",
-              "secure-three-tier-scenario-v2"
+              "secure-three-tier-scenario-v2",
+              "identity-services-builder-v3",
+              "secure-hybrid-connectivity-chain-v3"
             ]
           },
           {
@@ -76,7 +79,9 @@
               "data-classification-typed-001",
               "data-classification-application-001",
               "domain-1-task-1-3-builder-v2",
-              "domain-1-task-1-3-evidence-v2"
+              "domain-1-task-1-3-evidence-v2",
+              "kms-policy-rotation-evidence-v3",
+              "acm-managed-renewal-application-v3"
             ]
           }
         ]
@@ -105,7 +110,7 @@
     {
       "id": "aws.saa.shared_responsibility",
       "name": "Shared responsibility and root-user hygiene",
-      "description": "AWS secures the cloud infrastructure, while customers secure their data, identities, configurations, and workloads in the cloud."
+      "description": "AWS secures the cloud infrastructure; customers secure what they configure and run in AWS. Root credentials should be protected with MFA and reserved for root-only tasks."
     },
     {
       "id": "aws.saa.iam_policy_evaluation",
@@ -119,8 +124,8 @@
     },
     {
       "id": "aws.saa.identity_center",
-      "name": "IAM Identity Center and federation",
-      "description": "AWS IAM Identity Center centralizes workforce access to multiple AWS accounts and applications by using federated identities and permission sets."
+      "name": "IAM Identity Center, federation, and Amazon Cognito",
+      "description": "IAM Identity Center centralizes workforce access. Cognito user pools handle app sign-in, and identity pools can provide temporary AWS credentials to app users."
     },
     {
       "id": "aws.saa.organizations_scp",
@@ -150,7 +155,7 @@
     {
       "id": "aws.saa.vpc_endpoints",
       "name": "VPC endpoints and AWS PrivateLink",
-      "description": "VPC endpoints provide private access to supported services without requiring traffic to traverse an internet gateway or NAT gateway."
+      "description": "Gateway endpoints are route-table based for S3/DynamoDB and do not use PrivateLink; interface endpoints use private ENIs and PrivateLink."
     },
     {
       "id": "aws.saa.secrets_manager",
@@ -170,12 +175,12 @@
     {
       "id": "aws.saa.kms",
       "name": "KMS encryption and key policies",
-      "description": "AWS KMS creates and controls encryption keys that AWS services can use to protect data at rest."
+      "description": "AWS KMS manages encryption keys; key policies control key access and eligible customer managed keys support rotation."
     },
     {
       "id": "aws.saa.acm_tls",
       "name": "ACM and encryption in transit",
-      "description": "AWS Certificate Manager provisions and manages TLS certificates for supported integrated AWS services."
+      "description": "ACM manages TLS certificates for integrated AWS services and provides managed renewal for eligible certificates."
     },
     {
       "id": "aws.saa.s3_protection",
@@ -190,13 +195,13 @@
     {
       "id": "aws.saa.data_classification",
       "name": "Data classification and governance",
-      "description": "Data classification identifies sensitive or regulated information so that access, encryption, retention, and monitoring controls can match the data's requirements."
+      "description": "Data classification drives protection requirements; Amazon Macie is the service clue for sensitive-data discovery in S3."
     }
   ],
   "questions": [
     {
       "id": "shared-responsibility-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -237,7 +242,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "shared responsibility model is the retrieval target here. AWS secures the cloud infrastructure, while customers secure their data, identities, configurations, and workloads in the cloud. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Shared responsibility model is the retrieval target here. AWS secures the cloud infrastructure, while customers secure their data, identities, configurations, and workloads in the cloud. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
       "hints": [
         "Think about the requirement the concept solves rather than recalling the full node title."
       ],
@@ -260,7 +265,7 @@
     },
     {
       "id": "shared-responsibility-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -307,7 +312,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "shared responsibility model is the direct fit because AWS secures the cloud infrastructure, while customers secure their data, identities, configurations, and workloads in the cloud. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Shared responsibility model is the direct fit because AWS secures the cloud infrastructure, while customers secure their data, identities, configurations, and workloads in the cloud. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
       "hints": [
         "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
       ],
@@ -330,7 +335,7 @@
     },
     {
       "id": "iam-policy-evaluation-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -371,7 +376,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "explicit deny is the retrieval target here. IAM authorization evaluates applicable identity and resource policies, and an explicit Deny overrides an Allow. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Explicit deny is the retrieval target here. IAM authorization evaluates applicable identity and resource policies, and an explicit Deny overrides an Allow. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
       "hints": [
         "Think about the requirement the concept solves rather than recalling the full node title."
       ],
@@ -394,7 +399,7 @@
     },
     {
       "id": "iam-policy-evaluation-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -441,7 +446,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "explicit deny is the direct fit because IAM authorization evaluates applicable identity and resource policies, and an explicit Deny overrides an Allow. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Explicit deny is the direct fit because IAM authorization evaluates applicable identity and resource policies, and an explicit Deny overrides an Allow. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
       "hints": [
         "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
       ],
@@ -464,7 +469,7 @@
     },
     {
       "id": "sts-roles-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -528,7 +533,7 @@
     },
     {
       "id": "sts-roles-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -598,7 +603,7 @@
     },
     {
       "id": "identity-center-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -662,7 +667,7 @@
     },
     {
       "id": "identity-center-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -732,7 +737,7 @@
     },
     {
       "id": "organizations-scp-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -796,7 +801,7 @@
     },
     {
       "id": "organizations-scp-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -866,7 +871,7 @@
     },
     {
       "id": "resource-policies-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -906,7 +911,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "resource-based policy is the retrieval target here. Resource-based policies attach to supported AWS resources and can name principals that are allowed or denied access. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Resource-based policy is the retrieval target here. Resource-based policies attach to supported AWS resources and can name principals that are allowed or denied access. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
       "hints": [
         "Think about the requirement the concept solves rather than recalling the full node title."
       ],
@@ -929,7 +934,7 @@
     },
     {
       "id": "resource-policies-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -976,7 +981,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "resource-based policy is the direct fit because Resource-based policies attach to supported AWS resources and can name principals that are allowed or denied access. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Resource-based policy is the direct fit because resource-based policies attach to supported AWS resources and can name principals that are allowed or denied access. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
       "hints": [
         "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
       ],
@@ -999,7 +1004,7 @@
     },
     {
       "id": "permissions-boundary-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -1039,7 +1044,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "permissions boundary is the retrieval target here. A permissions boundary sets the maximum permissions that an IAM user or role can receive from identity-based policies. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Permissions boundary is the retrieval target here. A permissions boundary sets the maximum permissions that an IAM user or role can receive from identity-based policies. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
       "hints": [
         "Think about the requirement the concept solves rather than recalling the full node title."
       ],
@@ -1062,7 +1067,7 @@
     },
     {
       "id": "permissions-boundary-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -1109,7 +1114,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "permissions boundary is the direct fit because A permissions boundary sets the maximum permissions that an IAM user or role can receive from identity-based policies. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Permissions boundary is the direct fit because A permissions boundary sets the maximum permissions that an IAM user or role can receive from identity-based policies. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
       "hints": [
         "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
       ],
@@ -1132,7 +1137,7 @@
     },
     {
       "id": "vpc-segmentation-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.2",
@@ -1172,7 +1177,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "internet gateway is the retrieval target here. A subnet is public when its route table provides a path to an internet gateway; private application and database tiers normally avoid direct inbound internet paths. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Internet gateway is the retrieval target here. A subnet is public when its route table provides a path to an internet gateway; private application and database tiers normally avoid direct inbound internet paths. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
       "hints": [
         "Think about the requirement the concept solves rather than recalling the full node title."
       ],
@@ -1195,7 +1200,7 @@
     },
     {
       "id": "vpc-segmentation-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.2",
@@ -1242,7 +1247,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "internet gateway is the direct fit because A subnet is public when its route table provides a path to an internet gateway; private application and database tiers normally avoid direct inbound internet paths. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Internet gateway is the direct fit because A subnet is public when its route table provides a path to an internet gateway; private application and database tiers normally avoid direct inbound internet paths. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
       "hints": [
         "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
       ],
@@ -1265,40 +1270,40 @@
     },
     {
       "id": "sg-nacl-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.2",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Security groups are stateful controls attached to resources such as ENIs, while network ACLs are stateless controls applied at the subnet boundary.",
+      "prompt": "One statement about VPC traffic controls is incorrect. Identify the faulty statement.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "text",
-          "template": "Key architecture term: {{answer}}"
-        },
-        "slots": [
+        "type": "spot_the_fault",
+        "elements": [
           {
-            "id": "answer",
-            "label": "Architecture term",
-            "placeholder": "type the term",
-            "width_chars": 18
+            "id": "good-1",
+            "label": "Security groups are stateful, so response traffic for an allowed connection is automatically allowed."
+          },
+          {
+            "id": "good-2",
+            "label": "Network ACLs are stateless, so rules must allow the required traffic in both directions."
+          },
+          {
+            "id": "good-3",
+            "label": "Security groups support allow rules, while network ACLs can use both allow and deny rules."
+          },
+          {
+            "id": "fault",
+            "label": "A network ACL automatically allows return traffic for any connection that its inbound rules allowed."
           }
         ]
       },
       "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "security group",
-              "security groups",
-              "SG"
-            ]
-          }
-        }
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "fault"
+        ]
       },
       "concepts": [
         {
@@ -1306,9 +1311,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "security group is the retrieval target here. Security groups are stateful controls attached to resources such as ENIs, while network ACLs are stateless controls applied at the subnet boundary. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "The faulty statement treats a network ACL as stateful. Network ACLs are stateless; security groups are stateful.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "Ask which control remembers connection state."
       ],
       "error_codes": [
         {
@@ -1329,14 +1334,14 @@
     },
     {
       "id": "sg-nacl-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.2",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Security groups are stateful controls attached to resources such as ENIs, while network ACLs are stateless controls applied at the subnet boundary. Which choice is the most direct fit?",
+      "prompt": "An EC2 application needs a resource-level control that permits inbound HTTPS and automatically allows the response traffic. Which control best fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1348,19 +1353,19 @@
         "options": [
           {
             "id": "opt-1",
-            "label": "security group"
+            "label": "Security group"
           },
           {
             "id": "opt-2",
-            "label": "internet gateway"
+            "label": "Network ACL"
           },
           {
             "id": "opt-3",
-            "label": "VPC endpoint"
+            "label": "AWS WAF web ACL"
           },
           {
             "id": "opt-4",
-            "label": "Secrets Manager"
+            "label": "Route table"
           }
         ]
       },
@@ -1376,9 +1381,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "security group is the direct fit because Security groups are stateful controls attached to resources such as ENIs, while network ACLs are stateless controls applied at the subnet boundary. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Security groups are stateful and attach to resources such as ENIs. Network ACLs are stateless subnet-level controls.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Look for resource-level and stateful."
       ],
       "error_codes": [
         {
@@ -1399,26 +1404,26 @@
     },
     {
       "id": "vpc-endpoints-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: VPC endpoints provide private access to supported services without requiring traffic to traverse an internet gateway or NAT gateway.",
+      "prompt": "Private EC2 instances in one VPC need Amazon S3 access without using a NAT gateway or internet gateway. There is no on-premises requirement. Which VPC endpoint type is the simplest fit?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 16
+            "width_chars": 28
           }
         ]
       },
@@ -1427,9 +1432,9 @@
         "answers": {
           "answer": {
             "accepted_answers": [
-              "VPC endpoint",
-              "VPC endpoints",
-              "PrivateLink endpoint"
+              "S3 gateway endpoint",
+              "gateway endpoint",
+              "VPC gateway endpoint"
             ]
           }
         }
@@ -1440,9 +1445,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "VPC endpoint is the retrieval target here. VPC endpoints provide private access to supported services without requiring traffic to traverse an internet gateway or NAT gateway. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "An S3 gateway endpoint provides a route-table path to S3 and does not use AWS PrivateLink.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "S3 and DynamoDB have a route-table-based endpoint type."
       ],
       "error_codes": [
         {
@@ -1458,19 +1463,23 @@
         {
           "title": "Design Secure Architectures — SAA-C03 exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Gateway endpoints",
+          "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html"
         }
       ]
     },
     {
       "id": "vpc-endpoints-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.2",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: VPC endpoints provide private access to supported services without requiring traffic to traverse an internet gateway or NAT gateway. Which choice is the most direct fit?",
+      "prompt": "On-premises applications connected through Direct Connect must reach Amazon S3 privately through private IP addresses. Which option best fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1482,26 +1491,26 @@
         "options": [
           {
             "id": "opt-1",
-            "label": "internet gateway"
+            "label": "Amazon S3 interface endpoint"
           },
           {
             "id": "opt-2",
-            "label": "security group"
+            "label": "Amazon S3 gateway endpoint"
           },
           {
             "id": "opt-3",
-            "label": "Secrets Manager"
+            "label": "NAT gateway"
           },
           {
             "id": "opt-4",
-            "label": "VPC endpoint"
+            "label": "Internet gateway"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-4"
+          "solution": "opt-1"
         }
       },
       "concepts": [
@@ -1510,9 +1519,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "VPC endpoint is the direct fit because VPC endpoints provide private access to supported services without requiring traffic to traverse an internet gateway or NAT gateway. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "An S3 interface endpoint uses private ENIs and AWS PrivateLink and can support private on-premises access through supported hybrid connectivity.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The requirement includes on-premises access through private IPs."
       ],
       "error_codes": [
         {
@@ -1528,12 +1537,20 @@
         {
           "title": "Design Secure Architectures — SAA-C03 exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Gateway endpoints",
+          "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html"
+        },
+        {
+          "title": "AWS PrivateLink for Amazon S3",
+          "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/privatelink-interface-endpoints.html"
         }
       ]
     },
     {
       "id": "secrets-manager-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.2",
@@ -1596,7 +1613,7 @@
     },
     {
       "id": "secrets-manager-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.2",
@@ -1666,39 +1683,46 @@
     },
     {
       "id": "waf-shield-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.2",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: AWS WAF filters HTTP and HTTPS requests with web ACL rules, while AWS Shield provides managed protection against distributed denial-of-service attacks.",
+      "prompt": "Select the observations that specifically point to AWS WAF rather than AWS Shield.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "text",
-          "template": "Key architecture term: {{answer}}"
-        },
-        "slots": [
+        "type": "evidence_selection",
+        "evidence": [
           {
-            "id": "answer",
-            "label": "Architecture term",
-            "placeholder": "type the term",
-            "width_chars": 12
+            "id": "rel-1",
+            "label": "Block SQL injection patterns."
+          },
+          {
+            "id": "rel-2",
+            "label": "Inspect HTTP headers and URI paths."
+          },
+          {
+            "id": "rel-3",
+            "label": "Use rate-based web-request rules."
+          },
+          {
+            "id": "irr-1",
+            "label": "The main requirement is managed DDoS protection."
+          },
+          {
+            "id": "irr-2",
+            "label": "The threat is a large network-layer flood."
           }
         ]
       },
       "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "AWS WAF",
-              "WAF"
-            ]
-          }
-        }
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "rel-1",
+          "rel-2",
+          "rel-3"
+        ]
       },
       "concepts": [
         {
@@ -1706,9 +1730,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS WAF is the retrieval target here. AWS WAF filters HTTP and HTTPS requests with web ACL rules, while AWS Shield provides managed protection against distributed denial-of-service attacks. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "AWS WAF evaluates HTTP/HTTPS requests with web ACL rules. AWS Shield is the stronger clue when the primary requirement is DDoS protection.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "Separate HTTP request inspection from DDoS protection."
       ],
       "error_codes": [
         {
@@ -1724,19 +1748,27 @@
         {
           "title": "Design Secure Architectures — SAA-C03 exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What are AWS WAF and AWS Shield?",
+          "url": "https://docs.aws.amazon.com/waf/latest/developerguide/what-is-aws-waf.html"
+        },
+        {
+          "title": "How AWS Shield and Shield Advanced work",
+          "url": "https://docs.aws.amazon.com/waf/latest/developerguide/ddos-overview.html"
         }
       ]
     },
     {
       "id": "waf-shield-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.2",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: AWS WAF filters HTTP and HTTPS requests with web ACL rules, while AWS Shield provides managed protection against distributed denial-of-service attacks. Which choice is the most direct fit?",
+      "prompt": "A high-profile internet application needs expanded managed DDoS protection and dedicated response capabilities beyond the baseline protection included for AWS customers. Which service is the strongest fit?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1748,7 +1780,7 @@
         "options": [
           {
             "id": "opt-1",
-            "label": "VPC endpoint"
+            "label": "AWS Shield Advanced"
           },
           {
             "id": "opt-2",
@@ -1756,18 +1788,18 @@
           },
           {
             "id": "opt-3",
-            "label": "internet gateway"
+            "label": "Amazon GuardDuty"
           },
           {
             "id": "opt-4",
-            "label": "security group"
+            "label": "Amazon Inspector"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-2"
+          "solution": "opt-1"
         }
       },
       "concepts": [
@@ -1776,9 +1808,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "AWS WAF is the direct fit because AWS WAF filters HTTP and HTTPS requests with web ACL rules, while AWS Shield provides managed protection against distributed denial-of-service attacks. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Shield Advanced adds expanded DDoS protection and response capabilities. WAF complements it by filtering web requests.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "The key phrase is expanded managed DDoS protection."
       ],
       "error_codes": [
         {
@@ -1794,43 +1826,68 @@
         {
           "title": "Design Secure Architectures — SAA-C03 exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "How AWS Shield and Shield Advanced work",
+          "url": "https://docs.aws.amazon.com/waf/latest/developerguide/ddos-overview.html"
+        },
+        {
+          "title": "What are AWS WAF and AWS Shield?",
+          "url": "https://docs.aws.amazon.com/waf/latest/developerguide/what-is-aws-waf.html"
         }
       ]
     },
     {
       "id": "security-services-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.2",
-      "assessment_mode": "recall",
-      "interaction_type": "typed_fill_blank",
+      "assessment_mode": "application",
+      "interaction_type": "configuration_builder",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: GuardDuty detects suspicious activity, Inspector identifies software and network exposure vulnerabilities, Macie discovers sensitive data in S3, and Security Hub aggregates security findings.",
+      "prompt": "Match each security requirement to the service whose primary job fits it.",
       "interaction": {
-        "type": "typed_fill_blank",
-        "content": {
-          "type": "text",
-          "template": "Key architecture term: {{answer}}"
-        },
+        "type": "configuration_builder",
         "slots": [
           {
-            "id": "answer",
-            "label": "Architecture term",
-            "placeholder": "type the term",
-            "width_chars": 13
+            "id": "threat",
+            "label": "Detect suspicious or malicious AWS activity"
+          },
+          {
+            "id": "vuln",
+            "label": "Find CVEs/unintended exposure in supported workloads"
+          },
+          {
+            "id": "data",
+            "label": "Discover sensitive data in Amazon S3"
+          }
+        ],
+        "pieces": [
+          {
+            "id": "gd",
+            "label": "Amazon GuardDuty"
+          },
+          {
+            "id": "ins",
+            "label": "Amazon Inspector"
+          },
+          {
+            "id": "macie",
+            "label": "Amazon Macie"
+          },
+          {
+            "id": "d",
+            "label": "AWS Certificate Manager"
           }
         ]
       },
       "canonical_answer": {
-        "type": "typed_fill_blank",
-        "answers": {
-          "answer": {
-            "accepted_answers": [
-              "GuardDuty",
-              "Amazon GuardDuty"
-            ]
-          }
+        "type": "configuration_builder",
+        "assignments": {
+          "threat": "gd",
+          "vuln": "ins",
+          "data": "macie"
         }
       },
       "concepts": [
@@ -1839,9 +1896,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "GuardDuty is the retrieval target here. GuardDuty detects suspicious activity, Inspector identifies software and network exposure vulnerabilities, Macie discovers sensitive data in S3, and Security Hub aggregates security findings. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "GuardDuty is threat detection, Inspector focuses on vulnerabilities/exposure, and Macie discovers sensitive data in S3.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "Match the evidence being analyzed, not just the word security."
       ],
       "error_codes": [
         {
@@ -1857,19 +1914,27 @@
         {
           "title": "Design Secure Architectures — SAA-C03 exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is Amazon GuardDuty?",
+          "url": "https://docs.aws.amazon.com/guardduty/latest/ug/what-is-guardduty.html"
+        },
+        {
+          "title": "What is Amazon Macie?",
+          "url": "https://docs.aws.amazon.com/macie/latest/user/what-is-macie.html"
         }
       ]
     },
     {
       "id": "security-services-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.2",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: GuardDuty detects suspicious activity, Inspector identifies software and network exposure vulnerabilities, Macie discovers sensitive data in S3, and Security Hub aggregates security findings. Which choice is the most direct fit?",
+      "prompt": "A security team needs continuous scanning for known software vulnerabilities in supported EC2 workloads, ECR container images, and Lambda functions. Which service best fits?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -1881,19 +1946,19 @@
         "options": [
           {
             "id": "opt-1",
-            "label": "GuardDuty"
+            "label": "Amazon Inspector"
           },
           {
             "id": "opt-2",
-            "label": "internet gateway"
+            "label": "Amazon GuardDuty"
           },
           {
             "id": "opt-3",
-            "label": "security group"
+            "label": "Amazon Macie"
           },
           {
             "id": "opt-4",
-            "label": "VPC endpoint"
+            "label": "AWS WAF"
           }
         ]
       },
@@ -1909,9 +1974,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "GuardDuty is the direct fit because GuardDuty detects suspicious activity, Inspector identifies software and network exposure vulnerabilities, Macie discovers sensitive data in S3, and Security Hub aggregates security findings. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Amazon Inspector is the vulnerability-management service. GuardDuty detects threats, Macie discovers sensitive data in S3, and WAF filters web requests.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Look for CVEs and vulnerability scanning."
       ],
       "error_codes": [
         {
@@ -1932,7 +1997,7 @@
     },
     {
       "id": "kms-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.3",
@@ -1996,7 +2061,7 @@
     },
     {
       "id": "kms-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.3",
@@ -2066,7 +2131,7 @@
     },
     {
       "id": "acm-tls-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.3",
@@ -2130,7 +2195,7 @@
     },
     {
       "id": "acm-tls-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.3",
@@ -2200,26 +2265,26 @@
     },
     {
       "id": "s3-protection-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.3",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Amazon S3 combines IAM and bucket policies with features such as versioning, lifecycle rules, replication, and Object Lock to control access and protect object data.",
+      "prompt": "A financial-services company must prevent an S3 object version from being deleted or overwritten for seven years. Which S3 feature is designed for this?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 18
+            "width_chars": 28
           }
         ]
       },
@@ -2229,7 +2294,8 @@
           "answer": {
             "accepted_answers": [
               "S3 Object Lock",
-              "Object Lock"
+              "Object Lock",
+              "Amazon S3 Object Lock"
             ]
           }
         }
@@ -2240,9 +2306,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "S3 Object Lock is the retrieval target here. Amazon S3 combines IAM and bucket policies with features such as versioning, lifecycle rules, replication, and Object Lock to control access and protect object data. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "S3 Object Lock provides retention/immutability protection for object versions. Versioning and lifecycle rules solve different problems.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The requirement says the object version must not be deleted or overwritten."
       ],
       "error_codes": [
         {
@@ -2258,19 +2324,23 @@
         {
           "title": "Design Secure Architectures — SAA-C03 exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Using S3 Object Lock",
+          "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html"
         }
       ]
     },
     {
       "id": "s3-protection-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.3",
       "assessment_mode": "application",
       "interaction_type": "fill_slots",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Amazon S3 combines IAM and bucket policies with features such as versioning, lifecycle rules, replication, and Object Lock to control access and protect object data. Which choice is the most direct fit?",
+      "prompt": "Compliance records in S3 must remain immutable during a defined retention period even if an administrator tries to delete them. Which feature is the most direct fit?",
       "interaction": {
         "type": "fill_slots",
         "slots": [
@@ -2282,26 +2352,26 @@
         "options": [
           {
             "id": "opt-1",
-            "label": "backup"
-          },
-          {
-            "id": "opt-2",
             "label": "S3 Object Lock"
           },
           {
+            "id": "opt-2",
+            "label": "S3 lifecycle expiration"
+          },
+          {
             "id": "opt-3",
-            "label": "AWS KMS"
+            "label": "S3 Transfer Acceleration"
           },
           {
             "id": "opt-4",
-            "label": "AWS Certificate Manager"
+            "label": "S3 Inventory"
           }
         ]
       },
       "canonical_answer": {
         "type": "fill_slots",
         "values": {
-          "solution": "opt-2"
+          "solution": "opt-1"
         }
       },
       "concepts": [
@@ -2310,9 +2380,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "S3 Object Lock is the direct fit because Amazon S3 combines IAM and bucket policies with features such as versioning, lifecycle rules, replication, and Object Lock to control access and protect object data. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "S3 Object Lock is designed for retention and immutability of object versions.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Look for retention and immutability."
       ],
       "error_codes": [
         {
@@ -2328,12 +2398,16 @@
         {
           "title": "Design Secure Architectures — SAA-C03 exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Using S3 Object Lock",
+          "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html"
         }
       ]
     },
     {
       "id": "backup-replication-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.3",
@@ -2373,7 +2447,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "backup is the retrieval target here. Backups create recoverable copies, while replication maintains additional copies in another location for availability, locality, or disaster-recovery objectives. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Backup is the retrieval target here. Backups create recoverable copies, while replication maintains additional copies in another location for availability, locality, or disaster-recovery objectives. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
       "hints": [
         "Think about the requirement the concept solves rather than recalling the full node title."
       ],
@@ -2396,7 +2470,7 @@
     },
     {
       "id": "backup-replication-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.3",
@@ -2443,7 +2517,7 @@
           "weight": 1.0
         }
       ],
-      "explanation": "backup is the direct fit because Backups create recoverable copies, while replication maintains additional copies in another location for availability, locality, or disaster-recovery objectives. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Backup is the direct fit because backups create recoverable copies, while replication maintains additional copies in another location for availability, locality, or disaster-recovery objectives. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
       "hints": [
         "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
       ],
@@ -2466,26 +2540,26 @@
     },
     {
       "id": "data-classification-typed-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.3",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.58,
-      "prompt": "Complete the architecture note from memory. Context: Data classification identifies sensitive or regulated information so that access, encryption, retention, and monitoring controls can match the data's requirements.",
+      "prompt": "A company needs to automatically discover PII, credentials, and other sensitive data stored across Amazon S3 buckets. Which AWS service should it use?",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "text",
-          "template": "Key architecture term: {{answer}}"
+          "template": "Answer: {{answer}}"
         },
         "slots": [
           {
             "id": "answer",
-            "label": "Architecture term",
+            "label": "Answer",
             "placeholder": "type the term",
-            "width_chars": 16
+            "width_chars": 28
           }
         ]
       },
@@ -2506,9 +2580,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Amazon Macie is the retrieval target here. Data classification identifies sensitive or regulated information so that access, encryption, retention, and monitoring controls can match the data's requirements. This question deliberately removes answer choices so you must retrieve the service or design mechanism instead of merely recognizing it.",
+      "explanation": "Amazon Macie discovers and reports sensitive data in Amazon S3.",
       "hints": [
-        "Think about the requirement the concept solves rather than recalling the full node title."
+        "The data is in S3 and the requirement is sensitive-data discovery."
       ],
       "error_codes": [
         {
@@ -2524,51 +2598,54 @@
         {
           "title": "Design Secure Architectures — SAA-C03 exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is Amazon Macie?",
+          "url": "https://docs.aws.amazon.com/macie/latest/user/what-is-macie.html"
         }
       ]
     },
     {
       "id": "data-classification-application-001",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.3",
       "assessment_mode": "application",
-      "interaction_type": "fill_slots",
+      "interaction_type": "evidence_selection",
       "difficulty_prior": 0.66,
-      "prompt": "An architect encounters this requirement: Data classification identifies sensitive or regulated information so that access, encryption, retention, and monitoring controls can match the data's requirements. Which choice is the most direct fit?",
+      "prompt": "Select the observations that specifically support choosing Amazon Macie.",
       "interaction": {
-        "type": "fill_slots",
-        "slots": [
+        "type": "evidence_selection",
+        "evidence": [
           {
-            "id": "solution",
-            "label": "Best architectural choice"
-          }
-        ],
-        "options": [
-          {
-            "id": "opt-1",
-            "label": "AWS KMS"
+            "id": "rel-1",
+            "label": "Sensitive-data discovery is required across S3 buckets."
           },
           {
-            "id": "opt-2",
-            "label": "AWS Certificate Manager"
+            "id": "rel-2",
+            "label": "The team must locate PII and credentials in S3 objects."
           },
           {
-            "id": "opt-3",
-            "label": "S3 Object Lock"
+            "id": "irr-1",
+            "label": "The team needs TLS certificates for an ALB."
           },
           {
-            "id": "opt-4",
-            "label": "Amazon Macie"
+            "id": "irr-2",
+            "label": "The team needs CVE scanning for EC2 packages."
+          },
+          {
+            "id": "irr-3",
+            "label": "The team must block SQL injection at an HTTP endpoint."
           }
         ]
       },
       "canonical_answer": {
-        "type": "fill_slots",
-        "values": {
-          "solution": "opt-4"
-        }
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "rel-1",
+          "rel-2"
+        ]
       },
       "concepts": [
         {
@@ -2576,9 +2653,9 @@
           "weight": 1.0
         }
       ],
-      "explanation": "Amazon Macie is the direct fit because Data classification identifies sensitive or regulated information so that access, encryption, retention, and monitoring controls can match the data's requirements. The distractors are neighboring AWS mechanisms, but their primary behavior addresses a different constraint. SAA-C03 questions often include services that can coexist in one system; choose the one that directly satisfies the stated requirement.",
+      "explanation": "Macie is the strong fit for sensitive-data discovery in S3. ACM handles certificates, Inspector handles CVEs, and WAF handles SQL-injection filtering.",
       "hints": [
-        "Identify the dominant requirement first, then eliminate mechanisms whose primary job is different."
+        "Look for S3 plus sensitive-data discovery."
       ],
       "error_codes": [
         {
@@ -2594,12 +2671,16 @@
         {
           "title": "Design Secure Architectures — SAA-C03 exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "What is Amazon Macie?",
+          "url": "https://docs.aws.amazon.com/macie/latest/user/what-is-macie.html"
         }
       ]
     },
     {
       "id": "domain-1-task-1-1-builder-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -2664,7 +2745,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. shared responsibility model fits this behavior: AWS secures the cloud infrastructure, while customers secure their data, identities, configurations, and workloads in the cloud.. explicit deny fits this behavior: IAM authorization evaluates applicable identity and resource policies, and an explicit Deny overrides an Allow.. AWS STS fits this behavior: IAM roles provide temporary credentials and are commonly assumed through AWS STS instead of using long-term access keys..",
+      "explanation": "Shared responsibility separates AWS responsibilities from customer responsibilities. Explicit deny is an IAM authorization rule. AWS STS provides temporary credentials commonly used with assumed roles.",
       "hints": [
         "Match each piece to the requirement it primarily solves; do not select a service merely because it could also appear in the architecture."
       ],
@@ -2687,7 +2768,7 @@
     },
     {
       "id": "domain-1-task-1-1-evidence-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -2712,15 +2793,15 @@
           },
           {
             "id": "irr-1",
-            "label": "The only concern mentioned is IAM Identity Center, with no requirement connected to design secure access to aws resources."
+            "label": "IAM Identity Center is mentioned, but no workforce SSO or centralized multi-account access requirement is present."
           },
           {
             "id": "irr-2",
-            "label": "The only concern mentioned is SCP, with no requirement connected to design secure access to aws resources."
+            "label": "An SCP is mentioned, but no organization-wide permission-guardrail requirement is present."
           },
           {
             "id": "irr-3",
-            "label": "The only concern mentioned is resource-based policy, with no requirement connected to design secure access to aws resources."
+            "label": "A resource-based policy is mentioned, but no resource policy or cross-account resource-access requirement is present."
           }
         ]
       },
@@ -2769,7 +2850,7 @@
     },
     {
       "id": "domain-1-task-1-2-builder-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.2",
@@ -2834,7 +2915,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. internet gateway fits this behavior: A subnet is public when its route table provides a path to an internet gateway; private application and database tiers normally avoid direct inbound internet paths.. security group fits this behavior: Security groups are stateful controls attached to resources such as ENIs, while network ACLs are stateless controls applied at the subnet boundary.. VPC endpoint fits this behavior: VPC endpoints provide private access to supported services without requiring traffic to traverse an internet gateway or NAT gateway..",
+      "explanation": "An internet gateway plus routing creates an internet path, security groups provide stateful resource-level filtering, and a VPC endpoint provides private service connectivity.",
       "hints": [
         "Match each piece to the requirement it primarily solves; do not select a service merely because it could also appear in the architecture."
       ],
@@ -2857,7 +2938,7 @@
     },
     {
       "id": "domain-1-task-1-2-fault-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.2",
@@ -2906,7 +2987,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "The faulty statement swaps neighboring mechanisms. internet gateway fits this behavior: A subnet is public when its route table provides a path to an internet gateway; private application and database tiers normally avoid direct inbound internet paths. By contrast, security group primarily addresses: Security groups are stateful controls attached to resources such as ENIs, while network ACLs are stateless controls applied at the subnet boundary..",
+      "explanation": "The faulty statement uses a security group to solve a routing requirement. Route tables and the internet-gateway path determine internet routing; security groups filter traffic to resources.",
       "hints": [
         "Check each service's primary purpose, not whether it can technically coexist with the other components."
       ],
@@ -2929,7 +3010,7 @@
     },
     {
       "id": "domain-1-task-1-3-builder-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.3",
@@ -2994,7 +3075,7 @@
           "weight": 0.333334
         }
       ],
-      "explanation": "This builder tests whether you can distinguish adjacent SAA-C03 mechanisms in one architecture instead of answering isolated recognition questions. AWS KMS fits this behavior: AWS KMS creates and controls encryption keys that AWS services can use to protect data at rest.. AWS Certificate Manager fits this behavior: AWS Certificate Manager provisions and manages TLS certificates for supported integrated AWS services.. S3 Object Lock fits this behavior: Amazon S3 combines IAM and bucket policies with features such as versioning, lifecycle rules, replication, and Object Lock to control access and protect object data..",
+      "explanation": "KMS manages encryption keys, ACM manages TLS certificates for integrated AWS services, and S3 Object Lock provides retention/immutability controls for object versions.",
       "hints": [
         "Match each piece to the requirement it primarily solves; do not select a service merely because it could also appear in the architecture."
       ],
@@ -3017,7 +3098,7 @@
     },
     {
       "id": "domain-1-task-1-3-evidence-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.3",
@@ -3042,15 +3123,15 @@
           },
           {
             "id": "irr-1",
-            "label": "The only concern mentioned is shared responsibility model, with no requirement connected to determine appropriate data security controls."
+            "label": "The shared responsibility model is important background but does not identify the required data-protection mechanism here."
           },
           {
             "id": "irr-2",
-            "label": "The only concern mentioned is explicit deny, with no requirement connected to determine appropriate data security controls."
+            "label": "Explicit deny is an authorization behavior, not the encryption, certificate, or retention control required here."
           },
           {
             "id": "irr-3",
-            "label": "The only concern mentioned is AWS STS, with no requirement connected to determine appropriate data security controls."
+            "label": "AWS STS provides temporary credentials, not the encryption, TLS-certificate, or object-retention control required here."
           }
         ]
       },
@@ -3099,7 +3180,7 @@
     },
     {
       "id": "secure-three-tier-scenario-v2",
-      "content_version": "saa-c03-content-2026-09-19-v2-interactive",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
       "certification_version": "saa-c03",
       "domain_id": "domain-1",
       "task_id": "1.2",
@@ -3176,7 +3257,7 @@
             "choices": [
               {
                 "id": "endpoint",
-                "label": "Use the appropriate VPC endpoint for S3"
+                "label": "Use an Amazon S3 gateway endpoint"
               },
               {
                 "id": "new-igw",
@@ -3295,6 +3376,441 @@
         {
           "title": "Design Secure Architectures — SAA-C03 exam guide",
           "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Gateway endpoints",
+          "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html"
+        },
+        {
+          "title": "What are AWS WAF and AWS Shield?",
+          "url": "https://docs.aws.amazon.com/waf/latest/developerguide/what-is-aws-waf.html"
+        }
+      ]
+    },
+    {
+      "id": "root-user-hygiene-fault-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-1",
+      "task_id": "1.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.72,
+      "prompt": "A team is reviewing AWS account root-user practices. Identify the unsafe practice.",
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "good-1",
+            "label": "Enable MFA for the AWS account root user."
+          },
+          {
+            "id": "good-2",
+            "label": "Use root credentials only for tasks that require root access."
+          },
+          {
+            "id": "good-3",
+            "label": "Use roles or federated access with least privilege for routine administration."
+          },
+          {
+            "id": "fault",
+            "label": "Create long-term root access keys and share them with automation jobs."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "fault"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.shared_responsibility",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "AWS recommends protecting root credentials, using root only when required, and avoiding root access keys for normal programmatic access.",
+      "hints": [
+        "Root credentials should not become routine automation credentials."
+      ],
+      "error_codes": [
+        {
+          "code": "root_hygiene_fault_missed",
+          "description": "The unsafe root-user practice was not identified."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Design Secure Architectures — SAA-C03 exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Root user best practices",
+          "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/root-user-best-practices.html"
+        }
+      ]
+    },
+    {
+      "id": "identity-services-builder-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-1",
+      "task_id": "1.2",
+      "assessment_mode": "application",
+      "interaction_type": "configuration_builder",
+      "difficulty_prior": 0.78,
+      "prompt": "Match each identity requirement to the service whose primary purpose fits it.",
+      "interaction": {
+        "type": "configuration_builder",
+        "slots": [
+          {
+            "id": "workforce",
+            "label": "Employees need SSO to multiple AWS accounts."
+          },
+          {
+            "id": "app-login",
+            "label": "Customers need sign-up/sign-in for a web app."
+          },
+          {
+            "id": "aws-creds",
+            "label": "Signed-in app users need temporary AWS credentials for scoped access."
+          }
+        ],
+        "pieces": [
+          {
+            "id": "center",
+            "label": "IAM Identity Center"
+          },
+          {
+            "id": "user-pool",
+            "label": "Cognito user pool"
+          },
+          {
+            "id": "identity-pool",
+            "label": "Cognito identity pool"
+          },
+          {
+            "id": "d",
+            "label": "IAM access key"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "configuration_builder",
+        "assignments": {
+          "workforce": "center",
+          "app-login": "user-pool",
+          "aws-creds": "identity-pool"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.identity_center",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Identity Center is for workforce access; Cognito user pools handle app sign-in; Cognito identity pools can provide temporary AWS credentials to app users.",
+      "hints": [
+        "First decide whether the user is workforce or an application customer."
+      ],
+      "error_codes": [
+        {
+          "code": "identity_service_mismatch",
+          "description": "An identity requirement was mapped to the wrong service."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Design Secure Architectures — SAA-C03 exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Amazon Cognito documentation",
+          "url": "https://docs.aws.amazon.com/cognito/"
+        }
+      ]
+    },
+    {
+      "id": "secure-hybrid-connectivity-chain-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-1",
+      "task_id": "1.2",
+      "assessment_mode": "application",
+      "interaction_type": "scenario_choice_chain",
+      "difficulty_prior": 0.86,
+      "prompt": "A company is designing secure hybrid connectivity between its data center and AWS. Choose the strongest option as the requirements evolve.",
+      "interaction": {
+        "type": "scenario_choice_chain",
+        "start_step_id": "encrypted-now",
+        "steps": [
+          {
+            "id": "encrypted-now",
+            "prompt": "The company needs encrypted connectivity quickly and can use the internet for transport. What should it use?",
+            "stage": "diagnosis",
+            "choices": [
+              {
+                "id": "vpn",
+                "label": "AWS Site-to-Site VPN"
+              },
+              {
+                "id": "dx",
+                "label": "Direct Connect only"
+              },
+              {
+                "id": "igw",
+                "label": "Internet gateway only"
+              },
+              {
+                "id": "ep",
+                "label": "VPC gateway endpoint"
+              }
+            ],
+            "next_step_by_choice": {
+              "vpn": "dedicated",
+              "dx": "dedicated",
+              "igw": "dedicated",
+              "ep": "dedicated"
+            }
+          },
+          {
+            "id": "dedicated",
+            "prompt": "The company later requires a dedicated private connection with more consistent network performance. What should it add?",
+            "stage": "action",
+            "choices": [
+              {
+                "id": "dx",
+                "label": "AWS Direct Connect"
+              },
+              {
+                "id": "waf",
+                "label": "AWS WAF"
+              },
+              {
+                "id": "nat",
+                "label": "NAT gateway"
+              },
+              {
+                "id": "cf",
+                "label": "CloudFront"
+              }
+            ],
+            "next_step_by_choice": {
+              "dx": "encrypt-dx",
+              "waf": "encrypt-dx",
+              "nat": "encrypt-dx",
+              "cf": "encrypt-dx"
+            }
+          },
+          {
+            "id": "encrypt-dx",
+            "prompt": "Traffic on the Direct Connect path must also be IPsec encrypted. Which design fits?",
+            "stage": "remediation",
+            "choices": [
+              {
+                "id": "vpn-over-dx",
+                "label": "Run Site-to-Site VPN over Direct Connect"
+              },
+              {
+                "id": "dx-alone",
+                "label": "Assume Direct Connect encrypts traffic by default"
+              },
+              {
+                "id": "sg",
+                "label": "Use only a security group"
+              },
+              {
+                "id": "nacl",
+                "label": "Use only a network ACL"
+              }
+            ],
+            "next_step_by_choice": {}
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "scenario_choice_chain",
+        "correct_choice_ids": {
+          "encrypted-now": [
+            "vpn"
+          ],
+          "dedicated": [
+            "dx"
+          ],
+          "encrypt-dx": [
+            "vpn-over-dx"
+          ]
+        },
+        "expected_path": [
+          "vpn",
+          "dx",
+          "vpn-over-dx"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.vpc_segmentation",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Site-to-Site VPN provides IPsec encryption. Direct Connect is dedicated connectivity but does not encrypt traffic by default. VPN over Direct Connect combines both properties.",
+      "hints": [
+        "Separate the transport requirement from the encryption requirement."
+      ],
+      "error_codes": [
+        {
+          "code": "hybrid_choice_error",
+          "description": "The selected hybrid design did not match the requirement."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Design Secure Architectures — SAA-C03 exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Encryption in AWS Direct Connect",
+          "url": "https://docs.aws.amazon.com/directconnect/latest/UserGuide/encryption-in-transit.html"
+        }
+      ]
+    },
+    {
+      "id": "kms-policy-rotation-evidence-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-1",
+      "task_id": "1.3",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.8,
+      "prompt": "Select the observations that directly point to KMS key-policy or rotation concerns.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          {
+            "id": "rel-1",
+            "label": "The application has S3 permission but gets KMS AccessDenied while decrypting an object."
+          },
+          {
+            "id": "rel-2",
+            "label": "Compliance requires cryptographic key material to rotate on a schedule."
+          },
+          {
+            "id": "irr-1",
+            "label": "The application needs a TLS certificate on an ALB."
+          },
+          {
+            "id": "irr-2",
+            "label": "The application must block SQL injection."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "rel-1",
+          "rel-2"
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.kms",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "KMS authorization can require permission to use the KMS key in addition to permission for the encrypted resource. Rotation requirements also point directly to KMS key-management settings.",
+      "hints": [
+        "Look for key authorization and cryptographic key material."
+      ],
+      "error_codes": [
+        {
+          "code": "kms_evidence_missing",
+          "description": "A KMS-specific clue was missed."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Design Secure Architectures — SAA-C03 exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Key policies in AWS KMS",
+          "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html"
+        },
+        {
+          "title": "Rotate AWS KMS keys",
+          "url": "https://docs.aws.amazon.com/kms/latest/developerguide/rotate-keys.html"
+        }
+      ]
+    },
+    {
+      "id": "acm-managed-renewal-application-v3",
+      "content_version": "saa-c03-content-2026-09-23-v3-audit-fix",
+      "certification_version": "saa-c03",
+      "domain_id": "domain-1",
+      "task_id": "1.3",
+      "assessment_mode": "application",
+      "interaction_type": "fill_slots",
+      "difficulty_prior": 0.66,
+      "prompt": "An ALB uses an eligible Amazon-issued ACM certificate. The team wants to minimize manual certificate replacement before expiration. Which capability should it rely on?",
+      "interaction": {
+        "type": "fill_slots",
+        "slots": [
+          {
+            "id": "solution",
+            "label": "Best choice"
+          }
+        ],
+        "options": [
+          {
+            "id": "renewal",
+            "label": "ACM managed renewal"
+          },
+          {
+            "id": "kms",
+            "label": "KMS automatic key rotation"
+          },
+          {
+            "id": "lock",
+            "label": "S3 Object Lock"
+          },
+          {
+            "id": "sts",
+            "label": "AWS STS session renewal"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "fill_slots",
+        "values": {
+          "solution": "renewal"
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "aws.saa.acm_tls",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "ACM provides managed renewal for eligible Amazon-issued certificates. Imported certificates are not renewed automatically by ACM.",
+      "hints": [
+        "The requirement is TLS certificate lifecycle, not encryption-key rotation."
+      ],
+      "error_codes": [
+        {
+          "code": "acm_renewal_confusion",
+          "description": "Certificate renewal was confused with another lifecycle mechanism."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Design Secure Architectures — SAA-C03 exam guide",
+          "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+        },
+        {
+          "title": "Managed certificate renewal in ACM",
+          "url": "https://docs.aws.amazon.com/acm/latest/userguide/managed-renewal.html"
         }
       ]
     }

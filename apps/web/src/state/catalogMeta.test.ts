@@ -218,6 +218,29 @@ describe("buildCatalog", () => {
     expect(hashicorp?.kind).toBe("certification");
   });
 
+  it("offers the CompTIA Security+ certification under Security when content exists", () => {
+    const entries = CATALOG.flatMap((section) => section.certifications);
+    const entry = entries.find(
+      (candidate) => candidate.id === "comptia-security-plus",
+    );
+    expect(entry?.examCode).toBe("SY0-701");
+    expect(entry?.wip).toBe(false);
+    // The "Security" category label supplies no vendor, so the compact label
+    // keeps "CompTIA" instead of shortening to "Security+".
+    expect(entry?.shortName).toBe("CompTIA Security+");
+
+    const sections = buildCatalog(CATALOG, [
+      certification("comptia-security-plus", "CompTIA Security+"),
+    ]);
+    const cards = sections.flatMap((section) => section.cards);
+    expect(
+      cards.find((card) => card.id === "comptia-security-plus")?.available,
+    ).toBe(true);
+
+    const security = sections.find((section) => section.id === "security");
+    expect(security?.kind).toBe("certification");
+  });
+
   it("offers the AWS Generative AI Developer certification and drops Linux", () => {
     const entries = CATALOG.flatMap((section) => section.certifications);
     const entry = entries.find((candidate) => candidate.id === "aws-aip-c01");

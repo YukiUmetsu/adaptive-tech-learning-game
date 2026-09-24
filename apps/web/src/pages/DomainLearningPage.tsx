@@ -19,6 +19,7 @@ import {
   type DomainLearningProgress,
 } from "../state/learningProgress";
 import { startMission } from "../state/mission";
+import { loadSectionQuizModules } from "../state/sectionQuiz";
 import { loadServerDiscovery } from "../state/syncAuxiliary";
 import {
   playModuleComplete,
@@ -60,6 +61,9 @@ export default function DomainLearningPage() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [moduleCelebration, setModuleCelebration] = useState<string | null>(null);
   const [justUnlockedNodeId, setJustUnlockedNodeId] = useState<string | null>(null);
+  const [sectionQuizModules, setSectionQuizModules] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const [startingQuiz, setStartingQuiz] = useState(false);
   const [quizError, setQuizError] = useState<string | null>(null);
   const loadedKeyRef = useRef<string | null>(null);
@@ -77,6 +81,9 @@ export default function DomainLearningPage() {
     }
     loadedKeyRef.current = key;
     setProgress(loadDomainProgress(data.certification_version, data.domain.id));
+    setSectionQuizModules(
+      loadSectionQuizModules(data.certification_version, data.domain.id),
+    );
     setActiveModuleId(null);
     setSelectedNodeId(null);
     setModuleCelebration(null);
@@ -174,6 +181,10 @@ export default function DomainLearningPage() {
         ) ??
         data.modules[0]
       : null;
+
+  const activeModuleProgress = activeModule
+    ? derived?.moduleProgress[activeModule.id] ?? null
+    : null;
 
   const selectNode = useCallback(
     (nodeId: string) => {
@@ -313,6 +324,35 @@ export default function DomainLearningPage() {
     }
   }, [data, navigate]);
 
+  // Starts the one-question quiz that concludes a section (module). The server
+  // chooses the question from the section's authored tasks; the client only
+  // names the module.
+  const startSectionQuiz = useCallback(
+    async (moduleId: string) => {
+      if (!data) {
+        return;
+      }
+      setStartingQuiz(true);
+      setQuizError(null);
+      recordStudyActivity("question");
+      try {
+        const mission = await startMission({
+          certificationId: data.certification_id,
+          certificationVersion: data.certification_version,
+          mode: "section_quiz",
+          domainId: data.domain.id,
+          moduleId,
+        });
+        navigate(`/missions/${mission.id}`);
+      } catch (caught) {
+        setQuizError(caught instanceof Error ? caught.message : "Network error");
+      } finally {
+        setStartingQuiz(false);
+      }
+    },
+    [data, navigate],
+  );
+
   if (state.status === "loading") {
     return <p role="status">Loading knowledge map…</p>;
   }
@@ -372,6 +412,7 @@ export default function DomainLearningPage() {
         modules={data.modules}
         progress={derived.moduleProgress}
         activeModuleId={activeModule.id}
+        sectionQuizModuleIds={sectionQuizModules}
         onSelectModule={selectModule}
       />
 
@@ -414,6 +455,8 @@ export default function DomainLearningPage() {
           domainComplete={derived.domainComplete}
           reducedMotion={reducedMotion}
           startingQuiz={startingQuiz}
+          sectionQuizAvailable={(moduleForCelebration.task_ids ?? []).length > 0}
+          sectionQuizComplete={sectionQuizModules.has(moduleForCelebration.id)}
           onContinue={() => {
             if (nextModule) {
               setActiveModuleId(nextModule.id);
@@ -421,7 +464,49 @@ export default function DomainLearningPage() {
             setModuleCelebration(null);
           }}
           onStartQuiz={() => void startDomainQuiz()}
+          onStartSectionQuiz={() =>
+            void startSectionQuiz(moduleForCelebration.id)
+          }
         />
+      ) : null}
+
+      {/* A durable entry point for the active section's quiz, so a learner who
+          closed the celebration (or returned from the quiz) can still finish
+          the section's final step. Hidden while the celebration is showing to
+          avoid duplicate actions. */}
+      {!moduleCelebration &&
+      activeModuleProgress &&
+      activeModuleProgress.complete &&
+      (activeModule.task_ids ?? []).length > 0 ? (
+        <section
+          className="knowledge-page-section-quiz"
+          aria-label="Section quiz"
+        >
+          <div>
+            <h2>
+              {sectionQuizModules.has(activeModule.id)
+                ? "Section quiz complete"
+                : "Finish this section"}
+            </h2>
+            <p className="muted">
+              {sectionQuizModules.has(activeModule.id)
+                ? "You retrieved this section's key idea. Retake it any time to keep it fresh."
+                : "One retrieval question on this section's topic, then Bits."}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="primary"
+            disabled={startingQuiz}
+            onClick={() => void startSectionQuiz(activeModule.id)}
+          >
+            {startingQuiz
+              ? "Starting…"
+              : sectionQuizModules.has(activeModule.id)
+                ? "🎯 Retake Section Quiz"
+                : "🎯 Take Section Quiz"}
+          </button>
+        </section>
       ) : null}
 
       {derived.domainComplete ? (

@@ -3,13 +3,20 @@
  *
  * Parsing mirrors the authored `{{slot_id}}` syntax, and normalized comparison
  * mirrors the server's deterministic grading so review feedback does not
- * disagree with the score. Scoring itself remains server-authoritative.
+ * disagree with the score. Scoring itself remains server-authoritative; the
+ * shared normalization also backs the local optimistic scorer.
  */
 
 import type {
   FeedbackResponse,
   TypedBlankSlot,
 } from "../api/types";
+import {
+  normalizeTypedAnswer,
+  typedAnswerMatches,
+} from "../scoring/normalize";
+
+export { normalizeTypedAnswer, typedAnswerMatches };
 
 export type TypedTextSegment =
   | { kind: "text"; text: string }
@@ -44,36 +51,6 @@ export function parseTypedText(text: string): TypedTextSegment[] {
   }
 
   return segments;
-}
-
-/**
- * Normalizes a typed answer for deterministic comparison.
- *
- * Collapses whitespace (trimming as a side effect), strips harmless trailing
- * punctuation, and lowercases. This is intentionally not fuzzy: `SQS` and
- * `SNS`, or `ALB` and `NLB`, stay distinct.
- */
-export function normalizeTypedAnswer(raw: string): string {
-  return raw
-    .trim()
-    .split(/\s+/)
-    .filter((part) => part.length > 0)
-    .join(" ")
-    .replace(/[.,;:!?]+$/, "")
-    .trim()
-    .toLowerCase();
-}
-
-/** Whether a typed answer matches any explicitly authored alias. */
-export function typedAnswerMatches(
-  raw: string,
-  accepted: readonly string[],
-): boolean {
-  const normalized = normalizeTypedAnswer(raw);
-  if (normalized.length === 0) {
-    return false;
-  }
-  return accepted.some((answer) => normalizeTypedAnswer(answer) === normalized);
 }
 
 /**

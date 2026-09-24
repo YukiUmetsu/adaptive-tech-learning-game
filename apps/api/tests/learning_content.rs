@@ -168,3 +168,45 @@ async fn catalog_marks_domains_with_learning_available() {
         );
     }
 }
+
+#[tokio::test]
+async fn catalog_exposes_the_comptia_security_plus_track() {
+    let app = common::app_without_database();
+
+    let (status, body) = common::send(app, "GET", "/v1/certifications", None).await;
+    assert_eq!(status, StatusCode::OK, "catalog failed: {body}");
+
+    let certification = body["certifications"]
+        .as_array()
+        .expect("certifications")
+        .iter()
+        .find(|entry| entry["id"] == "comptia-security-plus")
+        .expect("CompTIA Security+ is in the catalog");
+
+    assert_eq!(certification["exam_code"], "SY0-701");
+
+    let version = &certification["versions"][0];
+    assert_eq!(version["id"], "sy0-701");
+
+    let domains = version["domains"].as_array().expect("domains");
+    assert_eq!(domains.len(), 5);
+    for domain in domains {
+        assert_eq!(
+            domain["learning_available"],
+            Value::Bool(true),
+            "domain {} should offer learning",
+            domain["id"]
+        );
+        let question_count: i64 = domain["tasks"]
+            .as_array()
+            .expect("tasks")
+            .iter()
+            .map(|task| task["question_count"].as_i64().unwrap_or_default())
+            .sum();
+        assert!(
+            question_count > 0,
+            "domain {} should expose authored questions",
+            domain["id"]
+        );
+    }
+}

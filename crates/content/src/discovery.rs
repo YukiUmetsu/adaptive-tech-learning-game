@@ -253,6 +253,25 @@ pub fn is_prompt_complete(
                     .iter()
                     .all(|unit| elements.is_some_and(|set| set.contains(unit.as_str())))
         }
+        LearningReveal::Text {
+            progressive_reveal: Some(progressive),
+            ..
+        } => {
+            let required: Vec<&str> = progressive
+                .spans
+                .iter()
+                .filter(|span| span.required)
+                .map(|span| span.id.as_str())
+                .collect();
+            if required.is_empty() {
+                return revealed_prompt_ids.contains(prompt.id.as_str());
+            }
+            let elements = revealed_element_ids.get(prompt.id.as_str());
+            required.iter().all(|id| {
+                let element = format!("span:{id}");
+                elements.is_some_and(|set| set.contains(element.as_str()))
+            })
+        }
         _ => revealed_prompt_ids.contains(prompt.id.as_str()),
     }
 }
@@ -286,6 +305,7 @@ mod tests {
             prerequisite_node_ids: Vec::new(),
             map_position: MapPosition { x: 0.0, y: 0.0 },
             prompts,
+            glossary: Vec::new(),
             source_refs: Vec::new(),
         }
     }
@@ -372,6 +392,7 @@ mod tests {
                     "p1",
                     LearningReveal::Text {
                         text: "x".to_owned(),
+                        progressive_reveal: None,
                     },
                 )],
             )],
@@ -399,12 +420,14 @@ mod tests {
                         "p1",
                         LearningReveal::Text {
                             text: "x".to_owned(),
+                            progressive_reveal: None,
                         },
                     ),
                     prompt(
                         "p2",
                         LearningReveal::Text {
                             text: "y".to_owned(),
+                            progressive_reveal: None,
                         },
                     ),
                 ],
@@ -519,6 +542,7 @@ mod tests {
                         "p1",
                         LearningReveal::Text {
                             text: "x".to_owned(),
+                            progressive_reveal: None,
                         },
                     )],
                 ),
@@ -528,6 +552,7 @@ mod tests {
                         "p2",
                         LearningReveal::Text {
                             text: "y".to_owned(),
+                            progressive_reveal: None,
                         },
                     )],
                 ),
@@ -601,12 +626,14 @@ mod tests {
                         "p1",
                         LearningReveal::Text {
                             text: "x".to_owned(),
+                            progressive_reveal: None,
                         },
                     ),
                     prompt(
                         "p2",
                         LearningReveal::Text {
                             text: "y".to_owned(),
+                            progressive_reveal: None,
                         },
                     ),
                 ],

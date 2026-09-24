@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import type { MissionResponse, QuizMode } from "../api/types";
@@ -10,6 +10,7 @@ import { startMission } from "../state/mission";
 import type { AttemptRecord } from "../state/persistence";
 import { quizCompletionPresentation } from "../state/quizModes";
 import { playMissionComplete } from "../state/sound";
+import { markSectionQuizComplete } from "../state/sectionQuiz";
 import { completionMessage, computeSummary } from "../state/summary";
 import { useBitsBalance } from "../state/wallet";
 import BitsRewardSummary from "./BitsRewardSummary";
@@ -144,6 +145,29 @@ export default function QuizCompletionSummary({
   const [error, setError] = useState<string | null>(null);
 
   const celebrated = useMissionCelebration(mission.id);
+
+  // Finishing a section quiz records the section as complete so the knowledge
+  // map shows the section's final step as done. The Bits bonus is settled
+  // server-side during sync and is idempotent; this store is learner-facing
+  // state only.
+  useEffect(() => {
+    if (
+      mission.mode === "section_quiz" &&
+      mission.domain_id &&
+      mission.module_id
+    ) {
+      markSectionQuizComplete(
+        mission.certification_version,
+        mission.domain_id,
+        mission.module_id,
+      );
+    }
+  }, [
+    mission.mode,
+    mission.certification_version,
+    mission.domain_id,
+    mission.module_id,
+  ]);
 
   const lookups = useMemo(() => {
     const conceptNames = new Map<string, string>();
@@ -284,6 +308,23 @@ export default function QuizCompletionSummary({
         onClick: () => void startAnother("again", "full_practice"),
       },
     ];
+  } else if (mission.mode === "section_quiz") {
+    actions = [
+      {
+        key: "section",
+        label: "Continue Section →",
+        variant: "primary",
+        to: mission.domain_id
+          ? `/tracks/${mission.certification_id}/domains/${mission.domain_id}/learn`
+          : dashboardPath,
+      },
+      {
+        key: "dashboard",
+        label: "Return to Study Dashboard",
+        variant: "secondary",
+        to: dashboardPath,
+      },
+    ];
   } else {
     actions = [
       {
@@ -325,6 +366,12 @@ export default function QuizCompletionSummary({
       <BitsRewardSummary earned={summary.bitsEarned} total={bits} animate={celebrated} />
 
       <PerformanceSummary summary={summary} />
+
+      {mission.mode === "section_quiz" && summary.pendingEvents === 0 ? (
+        <p className="completion-momentum">
+          Section completion bonus added to your Bits.
+        </p>
+      ) : null}
 
       {mission.mode === "domain_quiz" && taskRows.length > 0 ? (
         <DomainBreakdown heading="Domain coverage" rows={taskRows} showCheck />

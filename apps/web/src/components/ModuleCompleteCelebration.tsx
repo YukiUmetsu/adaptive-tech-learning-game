@@ -6,16 +6,22 @@ interface ModuleCompleteCelebrationProps {
   domainComplete: boolean;
   reducedMotion: boolean;
   startingQuiz: boolean;
+  /** Whether the section has authored quiz questions to draw from. */
+  sectionQuizAvailable: boolean;
+  /** Whether this section's quiz has already been completed. */
+  sectionQuizComplete: boolean;
   onContinue: () => void;
   onStartQuiz: () => void;
+  onStartSectionQuiz: () => void;
 }
 
 /**
  * Celebration shown when every node in a module is unlocked.
  *
- * It deliberately says "Module Complete" and "Path Unlocked", never
- * "Mastered": exploration is not retrieval evidence. Navigation is never
- * blocked.
+ * A section ends with a short, section-scoped retrieval quiz. The quiz is the
+ * primary action, but navigation is never blocked: the learner can keep
+ * exploring. This deliberately says "Module Complete" and "Path Unlocked",
+ * never "Mastered", because exploration is not retrieval evidence.
  */
 export default function ModuleCompleteCelebration({
   moduleTitle,
@@ -25,8 +31,11 @@ export default function ModuleCompleteCelebration({
   domainComplete,
   reducedMotion,
   startingQuiz,
+  sectionQuizAvailable,
+  sectionQuizComplete,
   onContinue,
   onStartQuiz,
+  onStartSectionQuiz,
 }: ModuleCompleteCelebrationProps) {
   return (
     <section
@@ -58,17 +67,36 @@ export default function ModuleCompleteCelebration({
         </p>
       ) : null}
 
+      {sectionQuizComplete ? (
+        <p className="module-complete-quiz-done">
+          <span aria-hidden="true">✓</span> Section quiz complete
+        </p>
+      ) : (
+        <p className="module-complete-path">
+          Finish this section with a one-question retrieval check.
+        </p>
+      )}
+
       <div className="module-complete-actions">
-        <button type="button" onClick={onContinue}>
-          Continue Exploring
-        </button>
-        {domainComplete ? (
+        {sectionQuizAvailable ? (
           <button
             type="button"
             className="primary"
             disabled={startingQuiz}
-            onClick={onStartQuiz}
+            onClick={onStartSectionQuiz}
           >
+            {startingQuiz
+              ? "Starting…"
+              : sectionQuizComplete
+                ? "🎯 Retake Section Quiz"
+                : "🎯 Take Section Quiz"}
+          </button>
+        ) : null}
+        <button type="button" onClick={onContinue}>
+          Continue Exploring
+        </button>
+        {domainComplete ? (
+          <button type="button" disabled={startingQuiz} onClick={onStartQuiz}>
             {startingQuiz ? "Starting…" : "🎯 Start Domain Quiz"}
           </button>
         ) : null}

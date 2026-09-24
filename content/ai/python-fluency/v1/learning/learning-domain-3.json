@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-fluency-learning-2026-09-19-v2",
+  "content_version": "python-fluency-learning-2026-09-22-v3-domain3-code-results-reviewed",
   "certification_id": "ai-python-fluency",
   "certification_version": "python-fluency-v1",
-  "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python documentation and selected AnyIO/HTTPX docs reviewed 2026-09-19.",
+  "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; Domain 3 functools, dataclasses, enum, and contextlib behavior revalidated against official Python 3.14 documentation on 2026-09-22.",
   "domain": {
     "id": "domain-3",
     "name": "Functions, Objects & Practical Syntax",
@@ -16,8 +16,20 @@
   },
   "source_refs": [
     {
-      "title": "Python 3 documentation",
-      "url": "https://docs.python.org/3/"
+      "title": "functools — Higher-order functions — Python 3.14",
+      "url": "https://docs.python.org/3.14/library/functools.html"
+    },
+    {
+      "title": "dataclasses — Data Classes — Python 3.14",
+      "url": "https://docs.python.org/3.14/library/dataclasses.html"
+    },
+    {
+      "title": "enum — Support for enumerations — Python 3.14",
+      "url": "https://docs.python.org/3.14/library/enum.html"
+    },
+    {
+      "title": "contextlib — Utilities for with-statement contexts — Python 3.14",
+      "url": "https://docs.python.org/3.14/library/contextlib.html"
     }
   ],
   "coverage": {
@@ -39,9 +51,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 9,
-    "prompt_count": 10
+    "prompt_count": 36
   },
-  "authoring_notes": "Updated for the learning-v2 renderer. Code examples are authored as first-class syntax-highlighted code_file reveals with clickable annotations instead of prose strings. Tables are used for contrasts that benefit from progressive reveal.",
+  "authoring_notes": "Domain 3 quality pass: every knowledge node now combines short ADHD-friendly progressive explanations with the existing annotated code example. Each code example has one high-value click-to-reveal runtime result so learners connect syntax with behavior. Progressive text hides one key phrase normally and at most two. Glossary terms are scoped per node and explain only supporting vocabulary. Facts were revalidated against official Python 3.14 documentation while preserving the track's Python 3.10-3.14 scope.",
   "modules": [
     {
       "id": "domain-3-task-3-1",
@@ -65,6 +77,31 @@
           ],
           "prompts": [
             {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES WRAPS() PRESERVE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`functools.wraps()` copies useful metadata from the original function onto the wrapper function.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "metadata",
+                      "text": "metadata",
+                      "required": true
+                    },
+                    {
+                      "id": "wrapper",
+                      "text": "wrapper function",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
               "id": "code",
               "kind": "look_for",
               "label": "PRESERVE WRAPPED FUNCTION METADATA",
@@ -86,9 +123,63 @@
                     },
                     "title": "Preserve metadata",
                     "explanation": "wraps copies important metadata and sets __wrapped__ to the original function.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "decorated.__name__ -> original function name\ndecorated.__wrapped__ -> original function"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "wrapped",
+              "kind": "mental_model",
+              "label": "THE ORIGINAL FUNCTION STAYS REACHABLE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`wraps()` sets `__wrapped__`, which helps introspection tools reach the original callable.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "wrapped",
+                      "text": "`__wrapped__`",
+                      "required": true
+                    },
+                    {
+                      "id": "introspection",
+                      "text": "introspection",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "without",
+              "kind": "not_this",
+              "label": "WITHOUT WRAPS()",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A decorator can otherwise expose the wrapper's name and docstring instead of the wrapped function's metadata.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "wrapper-name",
+                      "text": "wrapper's name",
+                      "required": true
+                    },
+                    {
+                      "id": "metadata",
+                      "text": "metadata",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -97,7 +188,26 @@
             "x": 0.12,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "functools — Higher-order functions — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/functools.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "metadata",
+              "definition": "Information describing an object, such as a function's name, docstring, annotations, and module."
+            },
+            {
+              "term": "introspection",
+              "definition": "Examining program objects at runtime, for example reading attributes such as a function's name or signature."
+            },
+            {
+              "term": "wrapper function",
+              "definition": "A function that calls another function while adding behavior before, after, or around that call."
+            }
+          ]
         },
         {
           "id": "domain-3-functools_cache",
@@ -106,6 +216,31 @@
             "ai.python.functools_cache"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "CACHE VS LRU_CACHE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`@cache` provides unbounded memoization; `@lru_cache(maxsize=N)` limits entries and uses eviction.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "memo",
+                      "text": "memoization",
+                      "required": true
+                    },
+                    {
+                      "id": "eviction",
+                      "text": "eviction",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -128,20 +263,58 @@
                     },
                     "title": "Unbounded memoization",
                     "explanation": "Repeated calls with the same hashable arguments reuse the stored result.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "fibonacci(10) -> 55\nrepeated calls reuse cached results"
+                    }
                   }
                 ]
               }
             },
             {
-              "id": "bounded",
-              "kind": "when",
-              "label": "WHEN TO BOUND THE CACHE",
-              "placeholder": "What if the input space is large?",
+              "id": "arguments",
+              "kind": "not_this",
+              "label": "CACHED ARGUMENTS MUST BE HASHABLE",
+              "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Use lru_cache(maxsize=...) when you need bounded memoization and eviction."
+                "text": "Cached positional and keyword arguments must be hashable because the cache uses them as lookup keys.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "hashable",
+                      "text": "hashable",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "observe",
+              "kind": "when",
+              "label": "MEASURE WHETHER THE CACHE HELPS",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "`cache_info()` reports hits and misses; a cache hit reuses a stored result.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "cache-info",
+                      "text": "`cache_info()`",
+                      "required": true
+                    },
+                    {
+                      "id": "hit",
+                      "text": "cache hit",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -152,7 +325,30 @@
             "x": 0.35,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "functools — Higher-order functions — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/functools.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "memoization",
+              "definition": "Saving a function result so the same input can reuse it instead of recomputing it."
+            },
+            {
+              "term": "hashable",
+              "definition": "Able to provide a stable hash value, which is required for dictionary keys and cached function arguments."
+            },
+            {
+              "term": "cache hit",
+              "definition": "A call whose result is already stored and can be reused without recomputing the function."
+            },
+            {
+              "term": "eviction",
+              "definition": "Removing a stored cache entry, usually to keep a bounded cache from growing indefinitely."
+            }
+          ]
         },
         {
           "id": "domain-3-functools_partial",
@@ -161,6 +357,31 @@
             "ai.python.functools_partial"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES PARTIAL() CREATE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`partial()` creates a new callable with selected positional argument or keyword argument values pre-filled.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "callable",
+                      "text": "callable",
+                      "required": true
+                    },
+                    {
+                      "id": "prefilled",
+                      "text": "pre-filled",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -183,9 +404,63 @@
                     },
                     "title": "Bind arguments early",
                     "explanation": "The new callable supplies method='GET' and timeout=2 while leaving url open.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "result = ('GET', 'https://example.com', 2)"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "later",
+              "kind": "mental_model",
+              "label": "THE FUNCTION DOES NOT RUN YET",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Creating a partial stores call configuration; the underlying function runs only when the new callable is invoked.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "later",
+                      "text": "only when",
+                      "required": true
+                    },
+                    {
+                      "id": "callable",
+                      "text": "callable",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "override",
+              "kind": "when",
+              "label": "CALL-TIME KEYWORDS CAN OVERRIDE STORED KEYWORDS",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Additional keyword argument values supplied later extend and can override the keywords stored by `partial()`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "keyword",
+                      "text": "keyword argument",
+                      "required": true
+                    },
+                    {
+                      "id": "override",
+                      "text": "override",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -196,7 +471,26 @@
             "x": 0.58,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "functools — Higher-order functions — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/functools.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "callable",
+              "definition": "An object that can be called with parentheses, such as a function, method, class, or partial object."
+            },
+            {
+              "term": "positional argument",
+              "definition": "A function-call argument matched to a parameter by its position."
+            },
+            {
+              "term": "keyword argument",
+              "definition": "A function-call argument matched to a parameter by name."
+            }
+          ]
         }
       ]
     },
@@ -224,6 +518,31 @@
           ],
           "prompts": [
             {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHY USE DEFAULT_FACTORY?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`field(default_factory=list)` calls a factory when an instance needs its default value.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "factory",
+                      "text": "factory",
+                      "required": true
+                    },
+                    {
+                      "id": "instance",
+                      "text": "instance",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
               "id": "code",
               "kind": "look_for",
               "label": "CREATE A FRESH MUTABLE DEFAULT",
@@ -245,9 +564,63 @@
                     },
                     "title": "Per-instance list",
                     "explanation": "Each Job gets a fresh list instead of sharing one mutable default.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "Job('a').tags is Job('b').tags -> False"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "fresh",
+              "kind": "mental_model",
+              "label": "EACH INSTANCE GETS A FRESH VALUE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A mutable list created by `default_factory` is separate for each dataclass instance.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "mutable",
+                      "text": "mutable",
+                      "required": true
+                    },
+                    {
+                      "id": "separate",
+                      "text": "separate",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "callable",
+              "kind": "not_this",
+              "label": "PASS THE FACTORY, NOT list()",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Use `default_factory=list`, not `default_factory=list()`: dataclasses need a callable that can create each default.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "factory",
+                      "text": "`default_factory=list`",
+                      "required": true
+                    },
+                    {
+                      "id": "callable",
+                      "text": "callable",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -256,7 +629,26 @@
             "x": 0.12,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "dataclasses — Data Classes — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/dataclasses.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "factory",
+              "definition": "A callable used to create a new value when one is needed."
+            },
+            {
+              "term": "mutable",
+              "definition": "Able to change after creation, such as a list or dictionary."
+            },
+            {
+              "term": "instance",
+              "definition": "One concrete object created from a class."
+            }
+          ]
         },
         {
           "id": "domain-3-dataclass_replace",
@@ -265,6 +657,31 @@
             "ai.python.dataclass_replace"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES REPLACE() RETURN?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`dataclasses.replace()` creates a new object of the same dataclass type while changing selected fields.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "new",
+                      "text": "new object",
+                      "required": true
+                    },
+                    {
+                      "id": "selected",
+                      "text": "selected fields",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -287,9 +704,58 @@
                     },
                     "title": "Modified copy",
                     "explanation": "A new Config is created with host replaced and the other fields preserved.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "prod = Config(host='db.prod', port=5432)\nlocal = Config(host='localhost', port=5432)"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "original",
+              "kind": "when",
+              "label": "USE IT FOR IMMUTABLE-STYLE UPDATES",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Because the original object is unchanged, `replace()` fits an immutable-style update workflow.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "unchanged",
+                      "text": "unchanged",
+                      "required": true
+                    },
+                    {
+                      "id": "immutable",
+                      "text": "immutable-style update",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "post-init",
+              "kind": "mental_model",
+              "label": "INITIALIZATION RUNS AGAIN",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "`replace()` constructs the new object through the dataclass initializer, so `__post_init__` runs when defined.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "post",
+                      "text": "`__post_init__`",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -300,7 +766,22 @@
             "x": 0.35,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "dataclasses — Data Classes — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/dataclasses.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "immutable-style update",
+              "definition": "Creating a changed copy instead of mutating the original object."
+            },
+            {
+              "term": "__post_init__",
+              "definition": "A dataclass hook called after the generated `__init__()` finishes."
+            }
+          ]
         },
         {
           "id": "domain-3-enum_auto",
@@ -309,6 +790,31 @@
             "ai.python.enum_auto"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES AUTO() ASK ENUM TO DO?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`auto()` asks the Enum machinery to choose a generated value for each member.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "generated",
+                      "text": "generated value",
+                      "required": true
+                    },
+                    {
+                      "id": "member",
+                      "text": "member",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -331,9 +837,58 @@
                     },
                     "title": "Automatic member value",
                     "explanation": "Enum generates the value according to its automatic-value rules.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "State.PENDING.value = 1\nState.RUNNING.value = 2\nState.COMPLETE.value = 3"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "plain-enum",
+              "kind": "mental_model",
+              "label": "PLAIN ENUM VALUES START AT ONE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For a standard `Enum`, automatic integer values start at 1 and increase.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "one",
+                      "text": "start at 1",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "specialized",
+              "kind": "not_this",
+              "label": "DO NOT ASSUME EVERY ENUM USES INTEGERS",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "`StrEnum` uses lower-cased member names for `auto()`, and custom enums can override value generation.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "strenum",
+                      "text": "`StrEnum`",
+                      "required": true
+                    },
+                    {
+                      "id": "lower",
+                      "text": "lower-cased member names",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -344,7 +899,26 @@
             "x": 0.58,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "enum — Support for enumerations — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/enum.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "member",
+              "definition": "A named value defined inside an Enum class, such as `State.PENDING`."
+            },
+            {
+              "term": "generated value",
+              "definition": "A value produced automatically rather than written explicitly by the author."
+            },
+            {
+              "term": "StrEnum",
+              "definition": "An Enum variant whose members are also strings."
+            }
+          ]
         }
       ]
     },
@@ -371,6 +945,31 @@
             "ai.python.contextlib_contextmanager"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES @contextmanager ADAPT?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`@contextmanager` turns a generator function with one `yield` into a context manager.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "generator",
+                      "text": "generator function",
+                      "required": true
+                    },
+                    {
+                      "id": "manager",
+                      "text": "context manager",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -415,9 +1014,63 @@
                     },
                     "title": "Cleanup path",
                     "explanation": "Cleanup after yield belongs in finally so it also runs on exceptions.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "inside with -> connection is available\nleaving with -> connection.close() runs"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "yield",
+              "kind": "mental_model",
+              "label": "YIELD SPLITS SETUP FROM CLEANUP",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Code before `yield` performs setup; code after it performs exit work and cleanup.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "setup",
+                      "text": "setup",
+                      "required": true
+                    },
+                    {
+                      "id": "cleanup",
+                      "text": "cleanup",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "finally",
+              "kind": "not_this",
+              "label": "PUT REQUIRED CLEANUP IN FINALLY",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A `finally` block after `yield` ensures cleanup runs even when the `with` body raises.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "finally",
+                      "text": "`finally`",
+                      "required": true
+                    },
+                    {
+                      "id": "cleanup",
+                      "text": "cleanup",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -426,7 +1079,26 @@
             "x": 0.12,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "contextlib — Utilities for with-statement contexts — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/contextlib.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "generator function",
+              "definition": "A function containing `yield`; calling it creates a generator instead of running the whole body immediately."
+            },
+            {
+              "term": "context manager",
+              "definition": "An object used by `with` to define setup and cleanup around a block."
+            },
+            {
+              "term": "cleanup",
+              "definition": "Work that releases or restores resources after an operation, such as closing a connection."
+            }
+          ]
         },
         {
           "id": "domain-3-contextlib_suppress",
@@ -435,6 +1107,31 @@
             "ai.python.contextlib_suppress"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES SUPPRESS() IGNORE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`suppress()` ignores only a listed exception type when that exception occurs inside its `with` block.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "type",
+                      "text": "exception type",
+                      "required": true
+                    },
+                    {
+                      "id": "inside",
+                      "text": "`with` block",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -457,9 +1154,58 @@
                     },
                     "title": "Suppress a specific exception",
                     "explanation": "Only the listed exception type is ignored; unrelated exceptions still propagate.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "cache.tmp missing -> FileNotFoundError is suppressed\nexecution continues after the with block"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "other",
+              "kind": "not_this",
+              "label": "UNLISTED EXCEPTIONS STILL ESCAPE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "An exception not listed in `suppress()` continues to propagate normally.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "propagate",
+                      "text": "propagate",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "narrow",
+              "kind": "when",
+              "label": "KEEP THE SUPPRESSION SCOPE NARROW",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A small scope makes it clear which specific operation is allowed to fail silently.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scope",
+                      "text": "scope",
+                      "required": true
+                    },
+                    {
+                      "id": "specific",
+                      "text": "specific operation",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -470,7 +1216,26 @@
             "x": 0.35,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "contextlib — Utilities for with-statement contexts — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/contextlib.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "exception type",
+              "definition": "A class describing a category of runtime error, such as `FileNotFoundError`."
+            },
+            {
+              "term": "propagate",
+              "definition": "Continue carrying an exception outward to surrounding code instead of suppressing it."
+            },
+            {
+              "term": "scope",
+              "definition": "The limited region of code to which a behavior applies."
+            }
+          ]
         },
         {
           "id": "domain-3-contextlib_nullcontext",
@@ -479,6 +1244,31 @@
             "ai.python.contextlib_nullcontext"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES NULLCONTEXT() DO?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`nullcontext(enter_result)` returns the enter_result from `with` but otherwise performs no setup or cleanup.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "enter",
+                      "text": "enter_result",
+                      "required": true
+                    },
+                    {
+                      "id": "nothing",
+                      "text": "no setup or cleanup",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -501,9 +1291,64 @@
                     },
                     "title": "Do-nothing context manager",
                     "explanation": "The caller-owned stream can share the same with structure without being opened here.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "source is stream -> True\ncaller-owned stream is not closed by nullcontext"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "ownership",
+              "kind": "when",
+              "label": "USE IT FOR OPTIONAL RESOURCE OWNERSHIP",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "It lets a caller-owned resource share one `with` structure with a resource opened by the function.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "caller",
+                      "text": "caller-owned resource",
+                      "required": true
+                    },
+                    {
+                      "id": "ownership",
+                      "text": "resource",
+                      "occurrence": 2,
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "close",
+              "kind": "not_this",
+              "label": "NULLCONTEXT DOES NOT CLOSE THE OBJECT",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "`nullcontext()` does not take resource ownership, so cleanup remains the caller's responsibility.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "ownership",
+                      "text": "resource ownership",
+                      "required": true
+                    },
+                    {
+                      "id": "caller",
+                      "text": "caller's responsibility",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -514,7 +1359,26 @@
             "x": 0.58,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "contextlib — Utilities for with-statement contexts — Python 3.14",
+              "url": "https://docs.python.org/3.14/library/contextlib.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "enter_result",
+              "definition": "The value returned by a context manager's `__enter__()` method and optionally bound after `as`."
+            },
+            {
+              "term": "caller-owned resource",
+              "definition": "A resource created and managed by the caller rather than by the current function."
+            },
+            {
+              "term": "resource ownership",
+              "definition": "Responsibility for creating, closing, or otherwise cleaning up a resource."
+            }
+          ]
         }
       ]
     }

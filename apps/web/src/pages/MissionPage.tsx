@@ -26,6 +26,21 @@ export default function MissionPage() {
     return <p role="status">Loading mission…</p>;
   }
 
+  if (runner.phase === "stale") {
+    return (
+      <section className="mission-page">
+        <h1>Mission updated</h1>
+        <p>
+          This mission was built from an older version of the content and can no
+          longer be scored. Start a new mission to continue.
+        </p>
+        <p>
+          <Link to="/tracks">Back to learning tracks</Link>
+        </p>
+      </section>
+    );
+  }
+
   if (runner.phase === "missing" || !runner.mission || !runner.question) {
     return (
       <section className="mission-page">
@@ -97,6 +112,7 @@ export default function MissionPage() {
         question={runner.question}
         disabled={runner.submitting || runner.phase === "feedback"}
         feedback={runner.feedback}
+        canonicalAnswer={runner.question.canonical_answer}
         onSubmit={(answer) => void runner.submit(answer)}
       />
 

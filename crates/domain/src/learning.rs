@@ -62,6 +62,8 @@ pub enum InteractionType {
     MultipleChoice,
     /// Choose an exact set of options from a list.
     MultipleResponse,
+    /// Write Python that is executed and tested locally in the browser.
+    PythonCode,
 }
 
 impl AssessmentMode {
@@ -116,6 +118,7 @@ impl InteractionType {
             Self::TypedFillBlank => "typed_fill_blank",
             Self::MultipleChoice => "multiple_choice",
             Self::MultipleResponse => "multiple_response",
+            Self::PythonCode => "python_code",
         }
     }
 }
@@ -140,6 +143,7 @@ impl TryFrom<&str> for InteractionType {
             "typed_fill_blank" => Ok(Self::TypedFillBlank),
             "multiple_choice" => Ok(Self::MultipleChoice),
             "multiple_response" => Ok(Self::MultipleResponse),
+            "python_code" => Ok(Self::PythonCode),
             _ => Err(DomainError::invalid(
                 "interaction_type",
                 "unknown interaction type",
@@ -201,7 +205,8 @@ impl TryFrom<&str> for MissionStatus {
 /// The quiz mode a mission was issued for.
 ///
 /// `task_practice` is kept for the demo/task flow and internal debugging; the
-/// three learner-facing modes are quick, domain, and full practice.
+/// learner-facing modes are quick, domain, full practice, and the one-question
+/// section quiz that concludes a learning module.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QuizMode {
@@ -215,6 +220,8 @@ pub enum QuizMode {
     TaskPractice,
     /// A short set anchored on one recommended question.
     RecommendedPractice,
+    /// One adaptive question that concludes a learning module (section).
+    SectionQuiz,
 }
 
 impl QuizMode {
@@ -226,6 +233,7 @@ impl QuizMode {
             Self::FullPractice => "full_practice",
             Self::TaskPractice => "task_practice",
             Self::RecommendedPractice => "recommended_practice",
+            Self::SectionQuiz => "section_quiz",
         }
     }
 
@@ -242,6 +250,7 @@ impl QuizMode {
             Self::FullPractice => 180,
             Self::TaskPractice => 60,
             Self::RecommendedPractice => 60,
+            Self::SectionQuiz => 60,
         }
     }
 }
@@ -262,6 +271,7 @@ impl TryFrom<&str> for QuizMode {
             "full_practice" => Ok(Self::FullPractice),
             "task_practice" => Ok(Self::TaskPractice),
             "recommended_practice" => Ok(Self::RecommendedPractice),
+            "section_quiz" => Ok(Self::SectionQuiz),
             _ => Err(DomainError::invalid("quiz_mode", "unknown quiz mode")),
         }
     }
@@ -297,6 +307,8 @@ pub struct MissionInstance {
     pub domain_id: Option<String>,
     /// Task covered, when the mission is task-scoped.
     pub task_id: Option<String>,
+    /// Learning module (section) covered, when the mission is a section quiz.
+    pub module_id: Option<String>,
     /// Questions selected for the mission, in presentation order. For
     /// mixed-domain modes this is the authoritative scope, not domain_id/task_id.
     pub question_ids: Vec<String>,

@@ -17,6 +17,14 @@ pub const BASE_BITS: i64 = 10;
 /// A single configurable V1 constant so the value is not scattered.
 pub const DAILY_MISSION_BONUS_BITS: i64 = 25;
 
+/// Bits bonus awarded once per learner when a learning section's quiz is
+/// completed.
+///
+/// The section (module) is identified by certification version, domain, and
+/// module id. Settlement is idempotent, so retaking the section quiz cannot
+/// award the bonus twice.
+pub const SECTION_QUIZ_BONUS_BITS: i64 = 20;
+
 /// Difficulty bonus in `[0, 6]`, derived from the question's difficulty prior.
 pub fn difficulty_bonus(difficulty_prior: f64) -> i64 {
     (difficulty_prior.clamp(0.0, 1.0) * 6.0).round() as i64

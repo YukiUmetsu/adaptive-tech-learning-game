@@ -93,6 +93,14 @@ fn full_discovery(registry: &ContentRegistry, version: &str, domain_id: &str) ->
                         }
                     }
                 }
+                LearningReveal::Text {
+                    progressive_reveal: Some(progressive),
+                    ..
+                } => {
+                    for span in &progressive.spans {
+                        ids.push(format!("span:{}", span.id));
+                    }
+                }
                 _ => {}
             }
             if !ids.is_empty() {

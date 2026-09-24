@@ -5,7 +5,7 @@ import type {
   LearningDomainResponse,
   LearningModule,
 } from "../api/types";
-import { deriveProgressiveTable, elementId } from "../lib/learningElements";
+import { deriveProgressiveTable, elementId, isProgressiveText } from "../lib/learningElements";
 import { enqueueDiscovery } from "./auxiliaryQueue";
 import { unionElementIds, unionPromptIds } from "./discovery";
 
@@ -21,8 +21,9 @@ import { unionElementIds, unionPromptIds } from "./discovery";
  * state are derived from them, so progress cannot drift out of sync with the
  * curriculum.
  *
- * Element ids are namespaced (`annotation:`, `row:`, `column:`, `cell:`) so code
- * annotations and progressive-table units share one generic structure.
+ * Element ids are namespaced (`annotation:`, `row:`, `column:`, `cell:`,
+ * `span:`) so code annotations, progressive-table units, and progressive-text
+ * spans share one generic structure.
  */
 
 /** Versioned storage key so a future schema can migrate cleanly. */
@@ -51,7 +52,7 @@ export interface DomainLearningProgress {
    * Knowledge node id -> prompt id -> revealed discovery element ids.
    *
    * Element ids are namespaced: `annotation:<id>`, `row:<id>`,
-   * `column:<id>`, or `cell:<row_id>:<column_id>`.
+   * `column:<id>`, `cell:<row_id>:<column_id>`, or `span:<id>`.
    */
   revealedElementIds: Record<string, Record<string, string[]>>;
   /** Last update time, ISO-8601. */
@@ -579,9 +580,11 @@ export function nodePromptProgress(
  *   block it.
  * - A progressive table completes when every required reveal unit
  *   (row/column/cell) is revealed.
- * - A code file without required annotations (including an empty list)
- *   completes on an explicit mark-as-reviewed reveal, and every other reveal
- *   completes on its own prompt reveal.
+ * - A progressive text reveal completes when every required span
+ *   (`span:<id>`) is revealed; optional spans never block it.
+ * - A code file with no required annotations, or a progressive text reveal
+ *   with no required spans, completes on an explicit mark-as-reviewed reveal,
+ *   and every other reveal completes on its own prompt reveal.
  */
 export function isPromptComplete(
   prompt: KnowledgePrompt,
@@ -595,6 +598,18 @@ export function isPromptComplete(
     if (required.length > 0) {
       return required.every((annotation) =>
         revealedElementIds.has(elementId.annotation(annotation.id)),
+      );
+    }
+    return revealedPromptIds.has(prompt.id);
+  }
+
+  if (isProgressiveText(prompt.reveal)) {
+    const required = (prompt.reveal.progressive_reveal.spans ?? []).filter(
+      (span) => span.required !== false,
+    );
+    if (required.length > 0) {
+      return required.every((span) =>
+        revealedElementIds.has(elementId.span(span.id)),
       );
     }
     return revealedPromptIds.has(prompt.id);
@@ -618,8 +633,8 @@ export function isPromptComplete(
  * Every prompt id and element id needed to render a node fully revealed.
  *
  * Used by read-only review so a completed node's content can be revisited
- * without any reveals or clicks. Optional code annotations are included so the
- * whole authored material is visible.
+ * without any reveals or clicks. Optional code annotations and optional text
+ * spans are included so the whole authored material is visible.
  */
 export function fullPromptReveals(node: KnowledgeNode): {
   promptIds: string[];
@@ -632,6 +647,10 @@ export function fullPromptReveals(node: KnowledgeNode): {
     if (prompt.reveal.type === "code_file") {
       elementIds[prompt.id] = (prompt.reveal.annotations ?? []).map((annotation) =>
         elementId.annotation(annotation.id),
+      );
+    } else if (isProgressiveText(prompt.reveal)) {
+      elementIds[prompt.id] = (prompt.reveal.progressive_reveal.spans ?? []).map(
+        (span) => elementId.span(span.id),
       );
     } else if (
       prompt.reveal.type === "table" &&

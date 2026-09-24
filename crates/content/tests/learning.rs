@@ -132,7 +132,11 @@ fn learning_node_lookup_is_version_scoped() {
     let node = registry
         .learning_node("soa-c03", "domain-1", "d1-cloudtrail")
         .expect("cloudtrail node");
-    assert_eq!(node.title, "CloudTrail");
+    assert!(
+        node.title.contains("CloudTrail"),
+        "resolved the CloudTrail node, got {:?}",
+        node.title
+    );
     assert!(node.concept_ids.contains(&"aws.cloudtrail".to_owned()));
     assert!(
         registry
@@ -296,7 +300,7 @@ fn coverage_counts_match_the_authored_curriculum() {
         (modules, nodes, prompts)
     };
 
-    assert_eq!(totals("aws-soa-c03"), (23, 97, 150));
+    assert_eq!(totals("aws-soa-c03"), (23, 102, 536));
     assert_eq!(totals("aws-aip-c01"), (20, 98, 392));
 }
 
@@ -740,6 +744,73 @@ fn rejects_duplicate_code_annotation_anchor() {
     );
 
     expect_error(&value, "learning_code_annotation_duplicate_anchor");
+}
+
+#[test]
+fn rejects_overlapping_code_annotations() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    set_first_prompt_reveal(
+        &mut value,
+        serde_json::json!({
+            "type": "code_file",
+            "filename": "unzip.py",
+            "language": "python",
+            "code": "names, scores = zip(*pairs)\n",
+            "annotations": [
+                {
+                    "id": "zip-call",
+                    "anchor": { "line": 1, "text": "zip(*pairs)" },
+                    "title": "Transpose the pairs",
+                    "explanation": "zip regroups values by position.",
+                    "required": true
+                },
+                {
+                    "id": "star",
+                    "anchor": { "line": 1, "text": "*pairs" },
+                    "title": "Expand rows into arguments",
+                    "explanation": "* expands each pair as an argument.",
+                    "required": true
+                }
+            ]
+        }),
+    );
+
+    expect_error(&value, "learning_code_annotation_overlap");
+}
+
+#[test]
+fn accepts_adjacent_code_annotations_without_overlap() {
+    let mut value = learning_value("aws-soa-c03", "domain-1");
+    set_first_prompt_reveal(
+        &mut value,
+        serde_json::json!({
+            "type": "code_file",
+            "filename": "unzip.py",
+            "language": "python",
+            "code": "names, scores = zip(*pairs)\n",
+            "annotations": [
+                {
+                    "id": "zip-call",
+                    "anchor": { "line": 1, "text": "zip" },
+                    "title": "Transpose the pairs",
+                    "explanation": "zip regroups values by position.",
+                    "required": true
+                },
+                {
+                    "id": "star",
+                    "anchor": { "line": 1, "text": "*pairs" },
+                    "title": "Expand rows into arguments",
+                    "explanation": "* expands each pair as an argument.",
+                    "required": true
+                }
+            ]
+        }),
+    );
+
+    assert!(
+        validate_value(&value).is_ok(),
+        "annotations that merely sit next to each other must validate"
+    );
 }
 
 #[test]

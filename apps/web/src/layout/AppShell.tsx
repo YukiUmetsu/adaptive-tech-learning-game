@@ -7,6 +7,7 @@ import BitsHud from "../components/BitsHud";
 import FocusRuntime from "../components/FocusRuntime";
 import FocusWidget from "../components/FocusWidget";
 import PreferencesEffects from "../components/PreferencesEffects";
+import { useDailyMissionHref } from "../hooks/useDailyMissionHref";
 import { MOBILE_NAV_QUERY, useMediaQuery } from "../hooks/useMediaQuery";
 import { useSignOut } from "../hooks/useSignOut";
 import { flushAuxiliary } from "../state/syncAuxiliary";
@@ -48,6 +49,7 @@ export default function AppShell() {
   const { status, user } = useAuth();
   const handleSignOut = useSignOut();
   const isMobileNav = useMediaQuery(MOBILE_NAV_QUERY);
+  const dailyMissionHref = useDailyMissionHref();
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -93,7 +95,11 @@ export default function AppShell() {
               Home
             </NavLink>
             <LearningTracksNav />
-            <NavLink to="/demo">Demo</NavLink>
+            {status === "authenticated" ? (
+              <NavLink to={dailyMissionHref}>Daily missions</NavLink>
+            ) : (
+              <NavLink to="/demo">Demo</NavLink>
+            )}
             {status === "authenticated" ? (
               <>
                 <BitsHud size="sm" />

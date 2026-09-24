@@ -237,3 +237,26 @@ describe("ProgressiveLearningTable — accessibility", () => {
     expect(within(given.closest("td")!).queryByRole("button")).toBeNull();
   });
 });
+
+describe("ProgressiveLearningTable — mobile card affordances", () => {
+  it("exposes the reveal mode and a column label on every data cell", () => {
+    const { container } = render(<Harness reveal={rowTableReveal} />);
+
+    expect(container.querySelector("table")).toHaveClass(
+      "learning-table--mode-row",
+    );
+    const labeled = container.querySelectorAll("td[data-label]");
+    expect(labeled.length).toBeGreaterThan(0);
+  });
+
+  it("marks the column-mode header controls that must stay visible on mobile", () => {
+    const { container } = render(<Harness reveal={columnTableReveal} />);
+
+    expect(container.querySelector("table")).toHaveClass(
+      "learning-table--mode-column",
+    );
+    expect(
+      container.querySelectorAll("th.learning-table-th--reveal").length,
+    ).toBeGreaterThan(0);
+  });
+});

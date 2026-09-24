@@ -25,6 +25,13 @@ pub enum ApiError {
     /// The request conflicts with current state.
     #[error("{0}")]
     Conflict(String),
+    /// The mission references content that no longer exists because the
+    /// certification content changed after the mission was issued.
+    ///
+    /// A distinct code lets the client drop the stale mission and start a new
+    /// one instead of retrying an answer that can never be accepted.
+    #[error("study mission is based on content that has changed")]
+    MissionStale,
     /// A dependency is temporarily unavailable.
     #[error("service temporarily unavailable")]
     Unavailable,
@@ -42,6 +49,7 @@ impl ApiError {
             Self::Unauthorized => StatusCode::UNAUTHORIZED,
             Self::Forbidden => StatusCode::FORBIDDEN,
             Self::Conflict(_) => StatusCode::CONFLICT,
+            Self::MissionStale => StatusCode::CONFLICT,
             Self::Unavailable => StatusCode::SERVICE_UNAVAILABLE,
             Self::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
@@ -55,6 +63,7 @@ impl ApiError {
             Self::Unauthorized => "unauthorized",
             Self::Forbidden => "forbidden",
             Self::Conflict(_) => "conflict",
+            Self::MissionStale => "mission_content_stale",
             Self::Unavailable => "unavailable",
             Self::Internal(_) => "internal_error",
         }
@@ -63,6 +72,9 @@ impl ApiError {
     fn public_message(&self) -> &str {
         match self {
             Self::Internal(_) => "internal server error",
+            Self::MissionStale => {
+                "this study mission was created from an older content version; start a new mission"
+            }
             other => match other {
                 Self::BadRequest(message) | Self::Conflict(message) => message,
                 _ => other.code(),
@@ -153,5 +165,19 @@ mod tests {
         assert_eq!(body["error"]["code"], "internal_error");
         assert_eq!(body["error"]["message"], "internal server error");
         assert!(!body.to_string().contains("secret"));
+    }
+
+    #[tokio::test]
+    async fn mission_stale_maps_to_a_recoverable_conflict() {
+        let (status, body) = body_json(ApiError::MissionStale).await;
+
+        assert_eq!(status, StatusCode::CONFLICT);
+        assert_eq!(body["error"]["code"], "mission_content_stale");
+        assert!(
+            body["error"]["message"]
+                .as_str()
+                .is_some_and(|message| message.contains("start a new mission")),
+            "{body}"
+        );
     }
 }

@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuthContext, type AuthContextValue } from "../auth/context";
+import { publishFocusDaily, resetFocusDaily } from "../state/focusDaily";
 import AppShell from "./AppShell";
 
 const originalMatchMedia = window.matchMedia;
@@ -60,6 +61,7 @@ function renderShell() {
 
 beforeEach(() => {
   window.localStorage.clear();
+  resetFocusDaily();
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL) => {
@@ -115,5 +117,34 @@ describe("AppShell mobile navigation shell", () => {
       within(nav).getByRole("button", { name: "Sign out" }),
     ).toBeInTheDocument();
     expect(screen.queryByText("Tracks")).not.toBeInTheDocument();
+  });
+
+  it("shows Daily missions instead of Demo for signed-in learners", () => {
+    stubViewport(false);
+    renderShell();
+
+    const nav = screen.getByRole("navigation", { name: "Primary" });
+    expect(within(nav).queryByRole("link", { name: "Demo" })).toBeNull();
+    // No track is known yet, so it falls back to the Learning Tracks page.
+    expect(
+      within(nav).getByRole("link", { name: "Daily missions" }),
+    ).toHaveAttribute("href", "/tracks");
+  });
+
+  it("links Daily missions to the most recent track's mission", () => {
+    publishFocusDaily({
+      trackId: "aws-soa-c03",
+      completed: 1,
+      total: 4,
+      nextTitle: "Practice",
+      nextMinutes: 5,
+    });
+    stubViewport(false);
+    renderShell();
+
+    const nav = screen.getByRole("navigation", { name: "Primary" });
+    expect(
+      within(nav).getByRole("link", { name: "Daily missions" }),
+    ).toHaveAttribute("href", "/tracks/aws-soa-c03/daily");
   });
 });

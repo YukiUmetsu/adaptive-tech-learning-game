@@ -26,7 +26,7 @@ pub use learning::{
     AssessmentMode, ConceptWeight, InteractionType, LearningEvent, MissionInstance, MissionStatus,
     QuizMode,
 };
-pub use reward::{BASE_BITS, DAILY_MISSION_BONUS_BITS, reward_bits};
+pub use reward::{BASE_BITS, DAILY_MISSION_BONUS_BITS, SECTION_QUIZ_BONUS_BITS, reward_bits};
 pub use streak::{StreakSummary, summarize_streak};
 pub use sync::{NewSyncBatch, SyncBatch, SyncBatchStatus};
 pub use user::{NewUser, User};

@@ -1,6 +1,6 @@
 {
   "schema_version": "2.0.0",
-  "content_version": "saa-c03-learning-2026-09-19-v2-interactive",
+  "content_version": "saa-c03-learning-2026-09-23-v3-audit-fix",
   "certification_id": "aws-saa-c03",
   "certification_version": "saa-c03",
   "exam_guide_revision": "SAA-C03 / reviewed 2026-09-19",
@@ -48,9 +48,9 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 18,
-    "prompt_count": 54
+    "prompt_count": 59
   },
-  "authoring_notes": "Interactive v2 refresh. Uses progressive tables for service/trade-off comparisons and annotated code files where reading a real policy/configuration improves understanding.",
+  "authoring_notes": "Domain 1 audit refresh: deeper secure-access/workload/data-security coverage, selective glossary, and direct AWS refs for higher-risk claims.",
   "modules": [
     {
       "id": "domain-1-module-1",
@@ -86,11 +86,11 @@
               "id": "shared-responsibility-what",
               "kind": "what",
               "label": "WHAT?",
-              "placeholder": "What should this concept make you think of?",
+              "placeholder": "Who secures what, and how should the account root user be handled?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "AWS secures the cloud infrastructure, while customers secure their data, identities, configurations, and workloads in the cloud."
+                "text": "AWS secures the infrastructure that runs AWS services. Customers secure what they run and configure in AWS, including identities, data, network controls, operating systems where applicable, and application settings. Protect the AWS account root user with MFA, avoid routine root use, and use least-privilege identities for day-to-day administration."
               }
             },
             {
@@ -175,6 +175,56 @@
               }
             },
             {
+              "id": "shared-responsibility-root-hygiene",
+              "kind": "mental_model",
+              "label": "ROOT USER HYGIENE",
+              "placeholder": "Which practices should you remember?",
+              "required": false,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "practice",
+                    "label": "Practice"
+                  },
+                  {
+                    "id": "remember",
+                    "label": "Remember"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "root",
+                    "cells": {
+                      "practice": "Root user",
+                      "remember": "Use only for tasks that require root credentials; not for routine administration."
+                    }
+                  },
+                  {
+                    "id": "mfa",
+                    "cells": {
+                      "practice": "MFA",
+                      "remember": "Protect root access with MFA and secure recovery mechanisms."
+                    }
+                  },
+                  {
+                    "id": "keys",
+                    "cells": {
+                      "practice": "Programmatic access",
+                      "remember": "Do not create root access keys for normal automation; use roles and temporary credentials."
+                    }
+                  },
+                  {
+                    "id": "least",
+                    "cells": {
+                      "practice": "Daily access",
+                      "remember": "Use federated or role-based access with least privilege."
+                    }
+                  }
+                ]
+              }
+            },
+            {
               "id": "shared-responsibility-clue",
               "kind": "exam_clue",
               "label": "EXAM CLUE",
@@ -184,7 +234,9 @@
                 "type": "keywords",
                 "items": [
                   "shared responsibility model",
-                  "Shared responsibility and root-user hygiene"
+                  "root user",
+                  "MFA",
+                  "least privilege"
                 ]
               }
             }
@@ -193,6 +245,20 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Root user best practices",
+              "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/root-user-best-practices.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "MFA",
+              "definition": "Multi-factor authentication. It requires an additional sign-in factor beyond a password."
+            },
+            {
+              "term": "least privilege",
+              "definition": "Giving an identity only the permissions it needs to do its job."
             }
           ]
         },
@@ -279,6 +345,16 @@
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
+          ],
+          "glossary": [
+            {
+              "term": "explicit deny",
+              "definition": "A Deny statement that applies to a request. An applicable explicit deny overrides allows."
+            },
+            {
+              "term": "principal",
+              "definition": "An identity that can make or receive AWS permissions, such as a role, user, account, or AWS service."
+            }
           ]
         },
         {
@@ -310,13 +386,14 @@
               "id": "sts-roles-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When are roles and STS the strong clue?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: IAM roles provide temporary credentials and are commonly assumed through AWS STS instead of using long-term access keys.",
-                  "Key retrieval phrase: AWS STS."
+                  "A workload needs AWS API access without stored long-term keys: use an IAM role and temporary credentials.",
+                  "One account needs controlled access to another: assume a cross-account role through AWS STS.",
+                  "Temporary credentials expire automatically, reducing exposure from long-lived secrets."
                 ]
               }
             },
@@ -339,12 +416,26 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Temporary security credentials in IAM",
+              "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "temporary credentials",
+              "definition": "Short-lived AWS credentials that expire automatically."
+            },
+            {
+              "term": "cross-account",
+              "definition": "Access in which an identity in one AWS account uses a role or resource in another account."
             }
           ]
         },
         {
           "id": "domain-1-identity-center",
-          "title": "IAM Identity Center and federation",
+          "title": "IAM Identity Center, federation, and Amazon Cognito",
           "concept_ids": [
             "aws.saa.identity_center"
           ],
@@ -364,20 +455,56 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "AWS IAM Identity Center centralizes workforce access to multiple AWS accounts and applications by using federated identities and permission sets."
+                "text": "IAM Identity Center centralizes workforce access to AWS accounts and applications. Amazon Cognito is for users of web and mobile applications: user pools handle app sign-up/sign-in and tokens, while identity pools can exchange app identities for temporary AWS credentials."
               }
             },
             {
               "id": "identity-center-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Choose from who is signing in and what they need.",
               "required": true,
               "reveal": {
-                "type": "bullets",
-                "items": [
-                  "Choose it when the requirement aligns with: AWS IAM Identity Center centralizes workforce access to multiple AWS accounts and applications by using federated identities and permission sets.",
-                  "Key retrieval phrase: IAM Identity Center."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "service",
+                    "label": "Service"
+                  },
+                  {
+                    "id": "fit",
+                    "label": "Best fit"
+                  },
+                  {
+                    "id": "clue",
+                    "label": "Exam clue"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "center",
+                    "cells": {
+                      "service": "IAM Identity Center",
+                      "fit": "Workforce access",
+                      "clue": "Employees, SSO, multiple AWS accounts, permission sets"
+                    }
+                  },
+                  {
+                    "id": "pool",
+                    "cells": {
+                      "service": "Cognito user pool",
+                      "fit": "App sign-up/sign-in and tokens",
+                      "clue": "Customers signing in to a web/mobile app"
+                    }
+                  },
+                  {
+                    "id": "identity",
+                    "cells": {
+                      "service": "Cognito identity pool",
+                      "fit": "Temporary AWS credentials for app users",
+                      "clue": "App user needs scoped access to S3/DynamoDB"
+                    }
+                  }
                 ]
               }
             },
@@ -390,8 +517,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "IAM Identity Center",
-                  "IAM Identity Center and federation"
+                  "workforce SSO -> IAM Identity Center",
+                  "app sign-in -> Cognito user pool",
+                  "temporary AWS credentials for app users -> Cognito identity pool"
                 ]
               }
             }
@@ -400,6 +528,28 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Amazon Cognito documentation",
+              "url": "https://docs.aws.amazon.com/cognito/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "federation",
+              "definition": "Using identities from another trusted identity system instead of creating a separate long-term IAM user for each person."
+            },
+            {
+              "term": "permission set",
+              "definition": "An IAM Identity Center configuration that defines permissions a workforce user receives in an AWS account."
+            },
+            {
+              "term": "user pool",
+              "definition": "An Amazon Cognito user directory for application sign-up, sign-in, and token-based authentication."
+            },
+            {
+              "term": "identity pool",
+              "definition": "An Amazon Cognito feature that can exchange an app identity for temporary AWS credentials."
             }
           ]
         },
@@ -432,13 +582,14 @@
               "id": "organizations-scp-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When is an SCP or Control Tower the clue?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: AWS Organizations groups accounts, SCPs set permission guardrails, and AWS Control Tower helps establish and govern a multi-account landing zone.",
-                  "Key retrieval phrase: SCP."
+                  "Use SCPs for permission guardrails across member accounts or OUs.",
+                  "An SCP limits available permissions; it does not grant permission by itself.",
+                  "Use Control Tower when the requirement is a governed multi-account landing zone."
                 ]
               }
             },
@@ -461,6 +612,20 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "SCP",
+              "definition": "Service control policy. It limits the maximum permissions available in affected member accounts but does not grant permissions."
+            },
+            {
+              "term": "OU",
+              "definition": "Organizational unit. A container used to group AWS accounts in AWS Organizations."
+            },
+            {
+              "term": "landing zone",
+              "definition": "A governed multi-account AWS environment with standardized account, identity, logging, and security foundations."
             }
           ]
         },
@@ -547,6 +712,16 @@
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
+          ],
+          "glossary": [
+            {
+              "term": "principal",
+              "definition": "An identity named by a resource policy, such as an AWS account, IAM role, IAM user, or AWS service."
+            },
+            {
+              "term": "cross-account",
+              "definition": "Access in which an identity from one AWS account uses a resource in another AWS account."
+            }
           ]
         },
         {
@@ -578,13 +753,13 @@
               "id": "permissions-boundary-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When is a permissions boundary the right control?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: A permissions boundary sets the maximum permissions that an IAM user or role can receive from identity-based policies.",
-                  "Key retrieval phrase: permissions boundary."
+                  "Use a permissions boundary when a delegated administrator can create/manage IAM identities but must never exceed a defined permission ceiling.",
+                  "A permissions boundary does not grant permission by itself; an applicable allow is still required."
                 ]
               }
             },
@@ -607,6 +782,20 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Permissions boundaries for IAM entities",
+              "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "identity-based policy",
+              "definition": "An IAM policy attached to a user, group, or role that can grant permissions to that identity."
+            },
+            {
+              "term": "maximum permissions",
+              "definition": "The largest permission set an identity can receive after applicable limits are considered."
             }
           ]
         }
@@ -729,6 +918,63 @@
               }
             },
             {
+              "id": "vpc-segmentation-external-connectivity",
+              "kind": "not_this",
+              "label": "VPN VS DIRECT CONNECT",
+              "placeholder": "How do you choose secure hybrid connectivity?",
+              "required": false,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "option",
+                    "label": "Option"
+                  },
+                  {
+                    "id": "path",
+                    "label": "Path"
+                  },
+                  {
+                    "id": "encryption",
+                    "label": "Encryption"
+                  },
+                  {
+                    "id": "clue",
+                    "label": "Strong clue"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "vpn",
+                    "cells": {
+                      "option": "Site-to-Site VPN",
+                      "path": "IPsec tunnels",
+                      "encryption": "IPsec",
+                      "clue": "Encrypted hybrid connectivity"
+                    }
+                  },
+                  {
+                    "id": "dx",
+                    "cells": {
+                      "option": "Direct Connect",
+                      "path": "Dedicated connection",
+                      "encryption": "Not encrypted by default",
+                      "clue": "Dedicated/consistent private connectivity"
+                    }
+                  },
+                  {
+                    "id": "vpn-dx",
+                    "cells": {
+                      "option": "VPN over Direct Connect",
+                      "path": "IPsec over the dedicated path",
+                      "encryption": "IPsec",
+                      "clue": "Dedicated path plus encryption"
+                    }
+                  }
+                ]
+              }
+            },
+            {
               "id": "vpc-segmentation-clue",
               "kind": "exam_clue",
               "label": "EXAM CLUE",
@@ -747,6 +993,24 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Encryption in AWS Direct Connect",
+              "url": "https://docs.aws.amazon.com/directconnect/latest/UserGuide/encryption-in-transit.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "route table",
+              "definition": "Rules that determine where network traffic is sent based on its destination."
+            },
+            {
+              "term": "Site-to-Site VPN",
+              "definition": "An IPsec-encrypted connection between an on-premises network and AWS."
+            },
+            {
+              "term": "Direct Connect",
+              "definition": "A dedicated network connection to AWS. Its traffic is not encrypted by default."
             }
           ]
         },
@@ -853,6 +1117,20 @@
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
+          ],
+          "glossary": [
+            {
+              "term": "stateful",
+              "definition": "Return traffic for an allowed connection is automatically allowed."
+            },
+            {
+              "term": "stateless",
+              "definition": "Traffic in each direction is evaluated separately, so return traffic also needs an allowed rule."
+            },
+            {
+              "term": "ENI",
+              "definition": "Elastic Network Interface. A virtual network interface in a VPC that can have private IP addresses and security groups."
+            }
           ]
         },
         {
@@ -873,24 +1151,52 @@
               "id": "vpc-endpoints-what",
               "kind": "what",
               "label": "WHAT?",
-              "placeholder": "What should this concept make you think of?",
+              "placeholder": "How do gateway and interface endpoints differ?",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "VPC endpoints provide private access to supported services without requiring traffic to traverse an internet gateway or NAT gateway."
+                "text": "VPC endpoints provide private service connectivity without requiring an internet gateway or NAT device for that service path. Gateway endpoints use route tables for Amazon S3 and DynamoDB and do not use AWS PrivateLink. Interface endpoints create private ENIs in your subnets and are powered by AWS PrivateLink."
               }
             },
             {
               "id": "vpc-endpoints-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Choose the endpoint type from the connectivity requirement.",
               "required": true,
               "reveal": {
-                "type": "bullets",
-                "items": [
-                  "Choose it when the requirement aligns with: VPC endpoints provide private access to supported services without requiring traffic to traverse an internet gateway or NAT gateway.",
-                  "Key retrieval phrase: VPC endpoint."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "type",
+                    "label": "Endpoint type"
+                  },
+                  {
+                    "id": "how",
+                    "label": "How it works"
+                  },
+                  {
+                    "id": "use",
+                    "label": "Use when"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "gateway",
+                    "cells": {
+                      "type": "Gateway endpoint",
+                      "how": "Route-table target; no PrivateLink",
+                      "use": "S3/DynamoDB from supported VPC paths"
+                    }
+                  },
+                  {
+                    "id": "interface",
+                    "cells": {
+                      "type": "Interface endpoint",
+                      "how": "Private ENIs; powered by PrivateLink",
+                      "use": "Private-IP connectivity to supported services, including cases needing interface-endpoint reachability"
+                    }
+                  }
                 ]
               }
             },
@@ -903,8 +1209,8 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "VPC endpoint",
-                  "VPC endpoints and AWS PrivateLink"
+                  "S3/DynamoDB + route table -> gateway endpoint",
+                  "private ENIs / PrivateLink -> interface endpoint"
                 ]
               }
             }
@@ -913,6 +1219,28 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Gateway endpoints",
+              "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html"
+            },
+            {
+              "title": "AWS PrivateLink for Amazon S3",
+              "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/privatelink-interface-endpoints.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "gateway endpoint",
+              "definition": "A route-table-based VPC endpoint for supported services such as Amazon S3 and DynamoDB."
+            },
+            {
+              "term": "interface endpoint",
+              "definition": "A VPC endpoint that creates private ENIs in your subnets and is powered by AWS PrivateLink."
+            },
+            {
+              "term": "PrivateLink",
+              "definition": "AWS networking technology used by interface endpoints for private service connectivity."
             }
           ]
         },
@@ -945,13 +1273,13 @@
               "id": "secrets-manager-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "What strongly points to Secrets Manager?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: AWS Secrets Manager stores sensitive credentials and supports controlled retrieval and automated rotation for supported secret types.",
-                  "Key retrieval phrase: Secrets Manager."
+                  "Use Secrets Manager when an application must retrieve passwords, API keys, or other secrets securely instead of embedding them in code.",
+                  "Automatic or managed credential rotation is a strong Secrets Manager clue."
                 ]
               }
             },
@@ -974,6 +1302,16 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "credentials",
+              "definition": "Secret values used to prove identity, such as passwords, API keys, or tokens."
+            },
+            {
+              "term": "rotation",
+              "definition": "Replacing a secret with a new value on a schedule or when needed."
             }
           ]
         },
@@ -999,20 +1337,49 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "AWS WAF filters HTTP and HTTPS requests with web ACL rules, while AWS Shield provides managed protection against distributed denial-of-service attacks."
+                "text": "AWS WAF inspects HTTP/HTTPS requests with web ACL rules, making it a strong clue for SQL injection, XSS, header/URI matching, and rate-based web rules. AWS Shield provides managed DDoS protection; Shield Advanced adds expanded protection and response capabilities."
               }
             },
             {
               "id": "waf-shield-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Map the attack clue to the service.",
               "required": true,
               "reveal": {
-                "type": "bullets",
-                "items": [
-                  "Choose it when the requirement aligns with: AWS WAF filters HTTP and HTTPS requests with web ACL rules, while AWS Shield provides managed protection against distributed denial-of-service attacks.",
-                  "Key retrieval phrase: AWS WAF."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "clue",
+                    "label": "Threat / requirement"
+                  },
+                  {
+                    "id": "service",
+                    "label": "Service"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "sql",
+                    "cells": {
+                      "clue": "SQL injection or XSS",
+                      "service": "AWS WAF"
+                    }
+                  },
+                  {
+                    "id": "request",
+                    "cells": {
+                      "clue": "Filter by HTTP header/URI/IP/geography",
+                      "service": "AWS WAF"
+                    }
+                  },
+                  {
+                    "id": "ddos",
+                    "cells": {
+                      "clue": "DDoS protection",
+                      "service": "AWS Shield"
+                    }
+                  }
                 ]
               }
             },
@@ -1025,8 +1392,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "AWS WAF",
-                  "AWS WAF and AWS Shield"
+                  "SQL injection / XSS -> AWS WAF",
+                  "web ACL -> AWS WAF",
+                  "DDoS -> AWS Shield"
                 ]
               }
             }
@@ -1035,6 +1403,32 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "What are AWS WAF and AWS Shield?",
+              "url": "https://docs.aws.amazon.com/waf/latest/developerguide/what-is-aws-waf.html"
+            },
+            {
+              "title": "How AWS Shield and Shield Advanced work",
+              "url": "https://docs.aws.amazon.com/waf/latest/developerguide/ddos-overview.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "web ACL",
+              "definition": "A collection of AWS WAF rules that evaluates web requests."
+            },
+            {
+              "term": "DDoS",
+              "definition": "Distributed denial of service. An attack that overwhelms a service with traffic from many sources."
+            },
+            {
+              "term": "SQL injection",
+              "definition": "A web attack that places malicious SQL into application input."
+            },
+            {
+              "term": "XSS",
+              "definition": "Cross-site scripting. A web attack that tries to make a browser run untrusted script."
             }
           ]
         },
@@ -1067,13 +1461,57 @@
               "id": "security-services-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "Choose the service from the evidence being analyzed.",
               "required": true,
               "reveal": {
-                "type": "bullets",
-                "items": [
-                  "Choose it when the requirement aligns with: GuardDuty detects suspicious activity, Inspector identifies software and network exposure vulnerabilities, Macie discovers sensitive data in S3, and Security Hub aggregates security findings.",
-                  "Key retrieval phrase: GuardDuty."
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "service",
+                    "label": "Service"
+                  },
+                  {
+                    "id": "job",
+                    "label": "Primary job"
+                  },
+                  {
+                    "id": "clue",
+                    "label": "Strong clue"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "gd",
+                    "cells": {
+                      "service": "GuardDuty",
+                      "job": "Threat detection",
+                      "clue": "Suspicious/malicious AWS activity"
+                    }
+                  },
+                  {
+                    "id": "ins",
+                    "cells": {
+                      "service": "Inspector",
+                      "job": "Vulnerability/exposure management",
+                      "clue": "CVEs or unintended exposure"
+                    }
+                  },
+                  {
+                    "id": "macie",
+                    "cells": {
+                      "service": "Macie",
+                      "job": "Sensitive-data discovery",
+                      "clue": "PII/credentials in S3"
+                    }
+                  },
+                  {
+                    "id": "hub",
+                    "cells": {
+                      "service": "Security Hub",
+                      "job": "Security posture and finding aggregation",
+                      "clue": "Central security findings/posture"
+                    }
+                  }
                 ]
               }
             },
@@ -1086,8 +1524,10 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "GuardDuty",
-                  "GuardDuty, Inspector, Macie, and Security Hub"
+                  "suspicious activity -> GuardDuty",
+                  "CVEs -> Inspector",
+                  "sensitive data in S3 -> Macie",
+                  "central findings/posture -> Security Hub"
                 ]
               }
             }
@@ -1096,6 +1536,28 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "What is Amazon GuardDuty?",
+              "url": "https://docs.aws.amazon.com/guardduty/latest/ug/what-is-guardduty.html"
+            },
+            {
+              "title": "What is Amazon Macie?",
+              "url": "https://docs.aws.amazon.com/macie/latest/user/what-is-macie.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "finding",
+              "definition": "A security result describing a detected issue, risk, or suspicious condition."
+            },
+            {
+              "term": "CVE",
+              "definition": "Common Vulnerabilities and Exposures. A public identifier for a known software vulnerability."
+            },
+            {
+              "term": "sensitive data",
+              "definition": "Data needing extra protection, such as credentials, financial information, or personal information."
             }
           ]
         }
@@ -1139,7 +1601,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "AWS KMS creates and controls encryption keys that AWS services can use to protect data at rest."
+                "text": "AWS KMS creates and controls KMS keys used to protect data. Every KMS key has a key policy, which is the primary resource policy controlling who can administer or use the key."
               }
             },
             {
@@ -1210,6 +1672,28 @@
               }
             },
             {
+              "id": "kms-key-policy",
+              "kind": "mental_model",
+              "label": "KEY POLICY",
+              "placeholder": "Why can an IAM allow still be insufficient?",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A key policy is attached to the KMS key. It must allow the access directly or enable the account to delegate access through IAM policies. Cross-account KMS access must account for both key-side permission and caller-side IAM permission."
+              }
+            },
+            {
+              "id": "kms-key-rotation",
+              "kind": "when",
+              "label": "KEY ROTATION",
+              "placeholder": "What should you remember about rotation?",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Eligible customer managed symmetric KMS keys can use automatic or on-demand rotation. Rotation changes key material while AWS KMS retains older material needed to decrypt existing ciphertext."
+              }
+            },
+            {
               "id": "kms-clue",
               "kind": "exam_clue",
               "label": "EXAM CLUE",
@@ -1218,8 +1702,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "AWS KMS",
-                  "KMS encryption and key policies"
+                  "encryption key -> KMS",
+                  "who can use/administer the key -> key policy",
+                  "rotate key material -> KMS rotation"
                 ]
               }
             }
@@ -1228,6 +1713,28 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Key policies in AWS KMS",
+              "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html"
+            },
+            {
+              "title": "Rotate AWS KMS keys",
+              "url": "https://docs.aws.amazon.com/kms/latest/developerguide/rotate-keys.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "key policy",
+              "definition": "The resource policy attached to a KMS key and the primary way to control access to that key."
+            },
+            {
+              "term": "customer managed key",
+              "definition": "A KMS key created in your account that you manage, including its policy and lifecycle."
+            },
+            {
+              "term": "key rotation",
+              "definition": "Replacing the cryptographic key material used by a KMS key while keeping the key identity available."
             }
           ]
         },
@@ -1260,14 +1767,25 @@
               "id": "acm-tls-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When is ACM the strong choice?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: AWS Certificate Manager provisions and manages TLS certificates for supported integrated AWS services.",
-                  "Key retrieval phrase: AWS Certificate Manager."
+                  "Use ACM when a supported AWS service such as an ALB or CloudFront distribution needs a TLS certificate.",
+                  "For eligible Amazon-issued certificates, ACM can manage renewal so the team does not manually replace certificates before expiration."
                 ]
+              }
+            },
+            {
+              "id": "acm-managed-renewal",
+              "kind": "exam_clue",
+              "label": "CERTIFICATE RENEWAL",
+              "placeholder": "What renewal detail matters?",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "ACM provides managed renewal for eligible Amazon-issued certificates. Imported certificates are not eligible for ACM managed renewal and must be renewed and reimported by you."
               }
             },
             {
@@ -1279,8 +1797,8 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "AWS Certificate Manager",
-                  "ACM and encryption in transit"
+                  "TLS certificate on integrated AWS service -> ACM",
+                  "managed certificate renewal -> ACM"
                 ]
               }
             }
@@ -1289,6 +1807,20 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "Managed certificate renewal in ACM",
+              "url": "https://docs.aws.amazon.com/acm/latest/userguide/managed-renewal.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "TLS",
+              "definition": "Transport Layer Security. The protocol commonly used by HTTPS to encrypt data in transit."
+            },
+            {
+              "term": "certificate renewal",
+              "definition": "Replacing an expiring TLS certificate with a new valid certificate."
             }
           ]
         },
@@ -1375,6 +1907,20 @@
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
             }
+          ],
+          "glossary": [
+            {
+              "term": "versioning",
+              "definition": "An S3 feature that keeps multiple versions of an object so earlier versions can be recovered."
+            },
+            {
+              "term": "retention period",
+              "definition": "A period during which protected data must be kept and cannot be removed under the configured control."
+            },
+            {
+              "term": "WORM",
+              "definition": "Write once, read many. Data can be read after writing but not changed during the protected period."
+            }
           ]
         },
         {
@@ -1406,13 +1952,14 @@
               "id": "backup-replication-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "When do you need backup vs replication?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Backups create recoverable copies, while replication maintains additional copies in another location for availability, locality, or disaster-recovery objectives.",
-                  "Key retrieval phrase: backup."
+                  "Use backups to restore an earlier known-good state after deletion, corruption, or another failure.",
+                  "Use replication to maintain an additional copy for availability, locality, or disaster recovery.",
+                  "Replication is not automatically a substitute for historical backup because a bad change can also be replicated."
                 ]
               }
             },
@@ -1435,6 +1982,16 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "recovery point",
+              "definition": "A stored backup state that can be used to restore data or a resource to an earlier point."
+            },
+            {
+              "term": "RPO",
+              "definition": "Recovery point objective. The maximum recent data loss a design is intended to tolerate, measured in time."
             }
           ]
         },
@@ -1460,20 +2017,20 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Data classification identifies sensitive or regulated information so that access, encryption, retention, and monitoring controls can match the data's requirements."
+                "text": "Data classification identifies sensitive or regulated information so encryption, access, retention, monitoring, and handling controls can match the data. Amazon Macie is the AWS-service clue when the requirement is to discover sensitive data in Amazon S3."
               }
             },
             {
               "id": "data-classification-use",
               "kind": "when",
               "label": "WHEN?",
-              "placeholder": "What requirement should trigger this choice?",
+              "placeholder": "What scenario strongly points to Macie?",
               "required": true,
               "reveal": {
                 "type": "bullets",
                 "items": [
-                  "Choose it when the requirement aligns with: Data classification identifies sensitive or regulated information so that access, encryption, retention, and monitoring controls can match the data's requirements.",
-                  "Key retrieval phrase: Amazon Macie."
+                  "Use Macie when the company needs to discover PII, credentials, financial data, or other sensitive information stored in S3.",
+                  "Do not map every generic data-classification requirement to Macie; the strong AWS-service clue is sensitive-data discovery in S3."
                 ]
               }
             },
@@ -1486,8 +2043,9 @@
               "reveal": {
                 "type": "keywords",
                 "items": [
-                  "Amazon Macie",
-                  "Data classification and governance"
+                  "sensitive data in S3",
+                  "PII discovery",
+                  "Amazon Macie"
                 ]
               }
             }
@@ -1496,6 +2054,20 @@
             {
               "title": "AWS Certified Solutions Architect - Associate (SAA-C03) exam guide",
               "url": "https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03.html"
+            },
+            {
+              "title": "What is Amazon Macie?",
+              "url": "https://docs.aws.amazon.com/macie/latest/user/what-is-macie.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "PII",
+              "definition": "Personally identifiable information. Data that can identify or be linked to a person."
+            },
+            {
+              "term": "sensitive data",
+              "definition": "Data requiring extra protection because disclosure or misuse could cause harm or violate policy."
             }
           ]
         }

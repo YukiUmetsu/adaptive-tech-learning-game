@@ -93,11 +93,11 @@ const MILESTONES: Milestone[] = [
     available: false,
   },
   {
-    id: "security",
-    name: "Security Certification",
-    examCode: "Security+",
+    id: "comptia-security-plus",
+    name: "CompTIA Security+",
+    examCode: "SY0-701",
     icon: "🛡️",
-    available: false,
+    available: true,
   },
   {
     id: "aws-aip-c01",

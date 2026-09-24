@@ -3,11 +3,12 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { MissionResponse, QuestionView } from "../api/types";
+import type { MissionResponse, StudyQuestionView } from "../api/types";
 import type { SyncState } from "../hooks/useMissionRunner";
 import { clearCatalogCache } from "../hooks/useCatalog";
 import { resetMissionCelebrations } from "../state/celebration";
 import type { AttemptRecord } from "../state/persistence";
+import { isSectionQuizComplete } from "../state/sectionQuiz";
 import { playMissionComplete } from "../state/sound";
 import { reconcileBits } from "../state/wallet";
 import { setReducedMotion, restoreMatchMedia } from "../test/matchMedia";
@@ -99,7 +100,7 @@ function question(
   domainId: string,
   taskId: string,
   conceptIds: string[],
-): QuestionView {
+): StudyQuestionView {
   return {
     id,
     domain_id: domainId,
@@ -114,6 +115,10 @@ function question(
     })),
     hints: [],
     interaction: { type: "classification", items: [], categories: [] },
+    canonical_answer: { type: "classification", placements: {} },
+    explanation: "",
+    choice_feedback: {},
+    error_codes: [],
   };
 }
 
@@ -121,6 +126,7 @@ function makeMission(
   mode: MissionResponse["mode"],
   domainId: string | null,
   id: string,
+  moduleId: string | null = null,
 ): MissionResponse {
   return {
     id,
@@ -131,6 +137,7 @@ function makeMission(
     mode,
     domain_id: domainId,
     task_id: null,
+    module_id: moduleId,
     issued_at: "2026-09-19T10:00:00Z",
     expires_at: "2026-09-19T11:00:00Z",
     questions: [
@@ -219,6 +226,7 @@ function renderSummary(options: {
   mode: MissionResponse["mode"];
   syncState?: SyncState;
   domainId?: string;
+  moduleId?: string;
   missionId?: string;
 }) {
   const missionId = options.missionId ?? "mission-1";
@@ -226,6 +234,7 @@ function renderSummary(options: {
     options.mode,
     options.domainId ?? null,
     missionId,
+    options.moduleId ?? null,
   );
 
   return render(
@@ -307,6 +316,25 @@ describe("QuizCompletionSummary", () => {
       expect(screen.getByTestId("completion-message")).toBeInTheDocument();
     },
   );
+
+  it("marks the section complete and returns to the section for a Section Quiz", async () => {
+    renderSummary({
+      mode: "section_quiz",
+      domainId: "domain-1",
+      moduleId: "module-1",
+    });
+
+    expect(
+      await screen.findByRole("heading", { name: "Section Quiz Complete" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Continue Section/ }),
+    ).toHaveAttribute("href", "/tracks/aws-soa-c03/domains/domain-1/learn");
+    expect(isSectionQuizComplete("soa-c03", "domain-1", "module-1")).toBe(true);
+    expect(
+      screen.getByText(/Section completion bonus added to your Bits/),
+    ).toBeInTheDocument();
+  });
 
   it("makes Bits earned the main reward and uses friendly knowledge names", async () => {
     renderSummary({ mode: "quick_adaptive" });

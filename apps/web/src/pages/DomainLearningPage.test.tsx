@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { learningFixture } from "../test/learningFixture";
 import { restoreMatchMedia, setReducedMotion } from "../test/matchMedia";
 import { loadDomainProgress } from "../state/learningProgress";
+import { markSectionQuizComplete } from "../state/sectionQuiz";
 import DomainLearningPage from "./DomainLearningPage";
 
 vi.mock("../state/sound", async (importOriginal) => {
@@ -351,8 +352,50 @@ describe("DomainLearningPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("offers the Domain Quiz when the whole map is complete", async () => {
+  it("finishes a section with a section-scoped quiz", async () => {
     const user = userEvent.setup();
+    renderPage();
+    await ready();
+
+    await unlockFirstModule();
+    await screen.findByText(/MODULE COMPLETE/);
+
+    await user.click(
+      screen.getByRole("button", { name: /Take Section Quiz/ }),
+    );
+    await screen.findByText("Mission runner");
+
+    const issue = requests.find((request) =>
+      request.url.includes("/v1/missions/issue"),
+    );
+    expect(issue?.method).toBe("POST");
+    expect(issue?.body).toMatchObject({
+      certification_id: "test-cert",
+      certification_version: "v1",
+      mode: "section_quiz",
+      domain_id: "domain-1",
+      module_id: "m1",
+    });
+  });
+
+  it("keeps a durable section-quiz entry point after the celebration closes", async () => {
+    const user = userEvent.setup();
+    markSectionQuizComplete("v1", "domain-1", "m1");
+    renderPage();
+    await ready();
+
+    await unlockFirstModule();
+    await screen.findByText(/MODULE COMPLETE/);
+    await user.click(screen.getByRole("button", { name: "Continue Exploring" }));
+    await selectGroup("Foundations");
+
+    expect(await screen.findByText("Section quiz complete")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Retake Section Quiz/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("offers the Domain Quiz when the whole map is complete", async () => {    const user = userEvent.setup();
     renderPage();
     await ready();
 

@@ -40,6 +40,9 @@ pub const DOMAIN_QUIZ_LEN: usize = 20;
 pub const FULL_PRACTICE_LEN: usize = 65;
 /// Questions in a focused recommended-practice set (anchor + related).
 pub const RECOMMENDED_PRACTICE_LEN: usize = 5;
+/// Questions in a section quiz: exactly one, so a section ends with a single
+/// retrieval check rather than a full practice set.
+pub const SECTION_QUIZ_LEN: usize = 1;
 /// How many recent events are treated as "just practiced".
 const RECENT_WINDOW: usize = 12;
 /// Immediate-repeat penalty subtracted from a candidate's rank.
@@ -117,6 +120,7 @@ pub const fn target_len(mode: QuizMode) -> usize {
         QuizMode::FullPractice => FULL_PRACTICE_LEN,
         QuizMode::TaskPractice => 0,
         QuizMode::RecommendedPractice => RECOMMENDED_PRACTICE_LEN,
+        QuizMode::SectionQuiz => SECTION_QUIZ_LEN,
     }
 }
 
@@ -546,6 +550,9 @@ pub fn select(
             interleave(per_domain)
         }
         QuizMode::TaskPractice => Vec::new(),
+        // Section quiz candidates are already scoped to the module by the
+        // caller and chosen by `section_quiz`, not by the general selector.
+        QuizMode::SectionQuiz => Vec::new(),
         // Recommended practice is anchored on a specific question and built by
         // `recommended_practice`, not by the general selector.
         QuizMode::RecommendedPractice => Vec::new(),
@@ -640,6 +647,46 @@ pub fn recommended_practice(
     selected
 }
 
+/// Chooses the single best question for a section (module) quiz.
+///
+/// Candidates are already scoped to the section by the caller. Ranking reuses
+/// the same adaptive signal as every other mode (weakness, forgetting risk,
+/// difficulty fit, novelty, and a repeat penalty), so the section quiz favors
+/// what the learner is most likely to need. Returns at most
+/// [`SECTION_QUIZ_LEN`] ids; empty when the section has no questions.
+pub fn section_quiz(
+    candidates: &[Candidate],
+    domains: &[(String, f64)],
+    history: &[HistoryEntry],
+    states: &[ConceptEvidence],
+    now: DateTime<Utc>,
+) -> Vec<String> {
+    if candidates.is_empty() {
+        return Vec::new();
+    }
+
+    let summary = RecentHistory::build(history);
+    let state_map: HashMap<(String, AssessmentMode), ConceptEvidence> = states
+        .iter()
+        .map(|state| {
+            (
+                (state.concept_id.clone(), state.assessment_mode),
+                state.clone(),
+            )
+        })
+        .collect();
+    let weights: HashMap<&str, f64> = domains
+        .iter()
+        .map(|(id, weight)| (id.as_str(), *weight))
+        .collect();
+
+    ordered(candidates, &summary, &state_map, &weights, now)
+        .into_iter()
+        .take(SECTION_QUIZ_LEN)
+        .map(|candidate| candidate.id.clone())
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -713,6 +760,36 @@ mod tests {
             evidence_mass: mass,
             last_practiced_at: Some(at),
         }
+    }
+
+    #[test]
+    fn section_quiz_returns_exactly_one_best_question() {
+        let candidates = vec![
+            candidate(
+                "s-strong",
+                "d1",
+                "t1",
+                InteractionType::Ordering,
+                "c-strong",
+            ),
+            candidate("s-weak", "d1", "t1", InteractionType::Ordering, "c-weak"),
+        ];
+        // The learner is strong on `c-strong` and weak on `c-weak`, so the weak
+        // concept's question is the better single retrieval check.
+        let states = vec![
+            evidence("c-strong", 0.95, 5.0, now()),
+            evidence("c-weak", 0.05, 5.0, now()),
+        ];
+
+        let selected = section_quiz(&candidates, &[("d1".to_owned(), 1.0)], &[], &states, now());
+
+        assert_eq!(selected, vec!["s-weak".to_owned()]);
+    }
+
+    #[test]
+    fn section_quiz_is_empty_without_questions() {
+        let selected = section_quiz(&[], &[("d1".to_owned(), 1.0)], &[], &[], now());
+        assert!(selected.is_empty());
     }
 
     #[test]

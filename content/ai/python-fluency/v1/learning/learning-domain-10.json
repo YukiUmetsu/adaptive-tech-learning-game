@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "python-fluency-learning-2026-09-19-v2",
+  "content_version": "python-fluency-learning-2026-09-22-v3-domain10-code-results-reviewed",
   "certification_id": "ai-python-fluency",
   "certification_version": "python-fluency-v1",
-  "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; official Python documentation and selected AnyIO/HTTPX docs reviewed 2026-09-19.",
+  "exam_guide_revision": "Not a certification. Practical Python 3.10-3.14 fluency track; Domain 10 Python 3.13 additions revalidated against official Python 3.13 documentation on 2026-09-22. The updater remains executable on Python 3.10 by conditionally skipping runtime semantic checks for APIs that do not exist before Python 3.13.",
   "domain": {
     "id": "domain-10",
     "name": "Python 3.13",
@@ -16,8 +16,24 @@
   },
   "source_refs": [
     {
-      "title": "Python 3 documentation",
-      "url": "https://docs.python.org/3/"
+      "title": "What's New In Python 3.13",
+      "url": "https://docs.python.org/3.13/whatsnew/3.13.html"
+    },
+    {
+      "title": "itertools.batched — Python 3.13",
+      "url": "https://docs.python.org/3.13/library/itertools.html#itertools.batched"
+    },
+    {
+      "title": "copy.replace — Python 3.13",
+      "url": "https://docs.python.org/3.13/library/copy.html#copy.replace"
+    },
+    {
+      "title": "queue.Queue.shutdown — Python 3.13",
+      "url": "https://docs.python.org/3.13/library/queue.html#queue.Queue.shutdown"
+    },
+    {
+      "title": "typing.TypeIs — Python 3.13",
+      "url": "https://docs.python.org/3.13/library/typing.html#typing.TypeIs"
     }
   ],
   "coverage": {
@@ -33,9 +49,9 @@
     ],
     "module_count": 2,
     "knowledge_node_count": 4,
-    "prompt_count": 4
+    "prompt_count": 16
   },
-  "authoring_notes": "Updated for the learning-v2 renderer. Code examples are authored as first-class syntax-highlighted code_file reveals with clickable annotations instead of prose strings. Tables are used for contrasts that benefit from progressive reveal.",
+  "authoring_notes": "Domain 10 quality pass: every Python 3.13 feature node now combines short ADHD-friendly progressive explanations with its existing code example. Each code example has one click-to-reveal result panel. Progressive text hides one key phrase normally and at most two. Glossary terms are scoped per node and explain supporting vocabulary only. Lazy batched strict checking, copy.replace protocol limits, graceful versus immediate Queue shutdown behavior, and TypeIs positive/negative narrowing plus subtype compatibility were explicitly revalidated.",
   "modules": [
     {
       "id": "domain-10-task-10-1",
@@ -58,6 +74,31 @@
           ],
           "prompts": [
             {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES STRICT=TRUE CHANGE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Python 3.13 adds `strict=True` to `batched()`, making an incomplete batch raise `ValueError` instead of being yielded.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "strict",
+                      "text": "`strict=True`",
+                      "required": true
+                    },
+                    {
+                      "id": "incomplete",
+                      "text": "incomplete batch",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
               "id": "code",
               "kind": "look_for",
               "label": "REQUIRE COMPLETE BATCHES",
@@ -79,9 +120,63 @@
                     },
                     "title": "Reject incomplete final batches",
                     "explanation": "A shorter final batch raises ValueError instead of being yielded.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "groups = [(0, 1, 2), (3, 4, 5), (6, 7, 8), (9, 10, 11)]"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "lazy",
+              "kind": "mental_model",
+              "label": "STRICT VALIDATION IS STILL LAZY",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`batched()` remains lazy, so the final-size check occurs during consumption when the iterator reaches the incomplete batch.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "lazy",
+                      "text": "lazy",
+                      "required": true
+                    },
+                    {
+                      "id": "consumption",
+                      "text": "consumption",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "exact",
+              "kind": "when",
+              "label": "USE STRICT MODE FOR EXACT-SIZE GROUPS",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Strict mode fits protocols where every batch must contain exactly `n` items rather than accepting a shorter final group.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "exact",
+                      "text": "exactly `n` items",
+                      "required": true
+                    },
+                    {
+                      "id": "shorter",
+                      "text": "shorter final group",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -90,7 +185,30 @@
             "x": 0.12,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "itertools.batched — Python 3.13",
+              "url": "https://docs.python.org/3.13/library/itertools.html#itertools.batched"
+            },
+            {
+              "title": "What's New In Python 3.13",
+              "url": "https://docs.python.org/3.13/whatsnew/3.13.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "lazy",
+              "definition": "Producing values only as iteration requests them instead of materializing the whole result first."
+            },
+            {
+              "term": "incomplete batch",
+              "definition": "A final group containing fewer items than the requested batch size."
+            },
+            {
+              "term": "consumption",
+              "definition": "Advancing an iterator so that it actually produces values and performs deferred work."
+            }
+          ]
         },
         {
           "id": "domain-10-py313_copy_replace",
@@ -99,6 +217,31 @@
             "ai.python.py313_copy_replace"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES COPY.REPLACE() DO?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`copy.replace(obj, **changes)` uses the replacement protocol to create a new same-type object with selected fields changed.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "protocol",
+                      "text": "replacement protocol",
+                      "required": true
+                    },
+                    {
+                      "id": "new",
+                      "text": "new same-type object",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -121,9 +264,63 @@
                     },
                     "title": "Create a modified copy",
                     "explanation": "copy.replace returns a new supported record-like object with selected fields changed.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "start = Point(x=2, y=3)\nmoved = Point(x=10, y=3)\nstart is unchanged"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "support",
+              "kind": "mental_model",
+              "label": "IT WORKS WITH RECORD-LIKE TYPES",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Python 3.13 supports dataclass instances, named tuples, several standard-library record-like types, and custom classes implementing `__replace__`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "dataclass",
+                      "text": "dataclass",
+                      "required": true
+                    },
+                    {
+                      "id": "custom",
+                      "text": "`__replace__`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "not-copy",
+              "kind": "not_this",
+              "label": "IT IS NOT A GENERAL DEEP COPY",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "`copy.replace()` changes named fields through the replacement protocol; it does not recursively deep-copy every nested object.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "not-deep",
+                      "text": "does not recursively deep-copy",
+                      "required": true
+                    },
+                    {
+                      "id": "protocol",
+                      "text": "replacement protocol",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -134,7 +331,30 @@
             "x": 0.35,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "copy.replace — Python 3.13",
+              "url": "https://docs.python.org/3.13/library/copy.html#copy.replace"
+            },
+            {
+              "title": "What's New In Python 3.13",
+              "url": "https://docs.python.org/3.13/whatsnew/3.13.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "replacement protocol",
+              "definition": "The Python 3.13 convention used by `copy.replace()` to request a same-type object with selected fields changed."
+            },
+            {
+              "term": "dataclass",
+              "definition": "A class decorated with `@dataclass` so Python can generate record-like methods from declared fields."
+            },
+            {
+              "term": "__replace__",
+              "definition": "The special method a custom class can implement to participate in `copy.replace()`."
+            }
+          ]
         }
       ]
     },
@@ -161,6 +381,31 @@
           ],
           "prompts": [
             {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT HAPPENS AFTER QUEUE.SHUTDOWN()?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A graceful shutdown rejects future `put()` calls while allowing already queued items to be retrieved and finished normally.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "graceful",
+                      "text": "graceful shutdown",
+                      "required": true
+                    },
+                    {
+                      "id": "puts",
+                      "text": "rejects future `put()` calls",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
               "id": "code",
               "kind": "look_for",
               "label": "SIGNAL A QUEUE TO STOP ACCEPTING WORK",
@@ -182,7 +427,11 @@
                     },
                     "title": "Begin shutdown",
                     "explanation": "The queue enters shutdown so new puts are rejected and blocked operations respond according to the API.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "existing 'job' can still be retrieved\nfuture put() calls raise ShutDown"
+                    }
                   },
                   {
                     "id": "exception",
@@ -197,6 +446,56 @@
                   }
                 ]
               }
+            },
+            {
+              "id": "empty",
+              "kind": "mental_model",
+              "label": "GET() FAILS AFTER THE GRACEFUL QUEUE DRAINS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "After a graceful shutdown becomes empty, later `get()` calls raise `ShutDown`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "empty",
+                      "text": "becomes empty",
+                      "required": true
+                    },
+                    {
+                      "id": "error",
+                      "text": "`ShutDown`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "immediate",
+              "kind": "not_this",
+              "label": "IMMEDIATE SHUTDOWN BREAKS NORMAL JOIN MEANING",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "An immediate shutdown drains queued work and can unblock `join()` without normal processing, so the usual join invariant no longer applies.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "immediate",
+                      "text": "immediate shutdown",
+                      "required": true
+                    },
+                    {
+                      "id": "join",
+                      "text": "join invariant",
+                      "required": true
+                    }
+                  ]
+                }
+              }
             }
           ],
           "prerequisite_node_ids": [],
@@ -204,7 +503,30 @@
             "x": 0.12,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "queue.Queue.shutdown — Python 3.13",
+              "url": "https://docs.python.org/3.13/library/queue.html#queue.Queue.shutdown"
+            },
+            {
+              "title": "What's New In Python 3.13",
+              "url": "https://docs.python.org/3.13/whatsnew/3.13.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "graceful shutdown",
+              "definition": "Stopping new queue work while allowing already queued work to be retrieved and completed normally."
+            },
+            {
+              "term": "immediate shutdown",
+              "definition": "Queue termination that drains remaining work instead of waiting for normal processing."
+            },
+            {
+              "term": "join invariant",
+              "definition": "The normal rule that `join()` unblocks only after every enqueued item has received a matching `task_done()`."
+            }
+          ]
         },
         {
           "id": "domain-10-py313_typeis",
@@ -213,6 +535,31 @@
             "ai.python.py313_typeis"
           ],
           "prompts": [
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT DOES TYPEIS DESCRIBE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`TypeIs[T]` marks a Boolean type predicate that tells a static type checker how to narrow its argument.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "predicate",
+                      "text": "type predicate",
+                      "required": true
+                    },
+                    {
+                      "id": "narrow",
+                      "text": "narrow its argument",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
             {
               "id": "code",
               "kind": "look_for",
@@ -235,9 +582,63 @@
                     },
                     "title": "User-defined narrowing",
                     "explanation": "A true result tells the type checker value is str in the positive branch, with complementary narrowing where valid.",
-                    "required": true
+                    "required": true,
+                    "result": {
+                      "type": "value",
+                      "output": "if is_string(value) is True: type checker narrows value to str\nelse: it excludes str when possible"
+                    }
                   }
                 ]
+              }
+            },
+            {
+              "id": "branches",
+              "kind": "mental_model",
+              "label": "TYPEIS NARROWS BOTH BRANCHES",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The positive branch narrows toward `T`, while the negative branch excludes `T` when that exclusion is representable.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "positive",
+                      "text": "positive branch",
+                      "required": true
+                    },
+                    {
+                      "id": "negative",
+                      "text": "negative branch",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "constraint",
+              "kind": "not_this",
+              "label": "THE NARROWED TYPE MUST BE COMPATIBLE",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "The `TypeIs` target must be a subtype compatible with the function's input type; otherwise a static type checker should reject the annotation.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "subtype",
+                      "text": "subtype",
+                      "required": true
+                    },
+                    {
+                      "id": "checker",
+                      "text": "static type checker",
+                      "required": true
+                    }
+                  ]
+                }
               }
             }
           ],
@@ -248,7 +649,34 @@
             "x": 0.35,
             "y": 0.15
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "typing.TypeIs — Python 3.13",
+              "url": "https://docs.python.org/3.13/library/typing.html#typing.TypeIs"
+            },
+            {
+              "title": "What's New In Python 3.13",
+              "url": "https://docs.python.org/3.13/whatsnew/3.13.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "type predicate",
+              "definition": "A Boolean function whose result lets a static type checker refine the type of one of its arguments."
+            },
+            {
+              "term": "positive branch",
+              "definition": "The code path taken when a type predicate returns `True`."
+            },
+            {
+              "term": "negative branch",
+              "definition": "The code path taken when a type predicate returns `False`."
+            },
+            {
+              "term": "subtype",
+              "definition": "A type whose values are valid wherever values of a broader parent type are expected."
+            }
+          ]
         }
       ]
     }

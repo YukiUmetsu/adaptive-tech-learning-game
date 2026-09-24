@@ -1,0 +1,26 @@
+# Versioned, immutable runtime assets. The URL includes the pinned Pyodide
+# version, so a new version is a new URL and these headers never need purging.
+/python-runtime/*
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
+
+# Restrictive policy for the isolated execution document only.
+#
+# * default-src 'none' blocks everything not explicitly allowed (images, fonts,
+#   frames, objects, media, forms, base URLs).
+# * script-src allows same-origin scripts plus the narrow WASM compilation
+#   permission; the pinned Pyodide build must be re-tested when it changes.
+# * connect-src 'self' prevents arbitrary network fetches from the sandbox. In
+#   the default same-origin deployment it also covers the runtime's own asset
+#   fetches; Python itself has no JS bridge (jsglobals: {}), so it cannot call
+#   fetch at all.
+# * worker-src 'self' allows only the sandbox's own worker script.
+# * frame-ancestors allows the app origin to embed it and blocks third parties.
+#
+# Keep Pyodide-specific directives here. Never copy them into the main app CSP.
+/python-sandbox/*
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'self' https://*.shidenlabs.com
+  Permissions-Policy: accelerometer=(), camera=(), clipboard-read=(), clipboard-write=(), display-capture=(), geolocation=(), gyroscope=(), hid=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), screen-wake-lock=(), serial=(), usb=(), xr-spatial-tracking=()
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Cache-Control: no-store

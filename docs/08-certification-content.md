@@ -30,10 +30,11 @@ Do not start with six ecosystems simultaneously.
 
 Current authored content lives under `content/<category>/<certification>/<version>/`
 and is surfaced through the API catalog plus `apps/web/src/state/catalogMeta.ts`:
-AWS SOA-C03, SAA-C03, and AIP-C01; HashiCorp Terraform Associate 004; and the
-AI/Python tracks (Python fluency, Python data stack, PyTorch core). Demo bundles
-live under `content/demo/`. Each certification also ships learning knowledge
-maps alongside its scored question bundles.
+AWS SOA-C03, SAA-C03, and AIP-C01; CompTIA Security+ SY0-701; HashiCorp
+Terraform Associate 004; and the AI/Python tracks (Python fluency, Python data
+stack, PyTorch core). Demo bundles live under `content/demo/`. Each
+certification also ships learning knowledge maps alongside its scored question
+bundles.
 
 ## Content sources
 
@@ -168,7 +169,9 @@ Each `LearningDomain` contains ordered `LearningModule`s of `KnowledgeNode`s.
 A node carries `concept_ids` (the bridge to quiz evidence), authored
 `prerequisite_node_ids` and `map_position`, and progressive `prompts` whose
 `reveal` is one of `text`, `sequence`, `bullets`, `keywords`, `comparison`,
-`table`, or `code_file`.
+`table`, or `code_file`. A prompt's `placeholder` is optional: an ordinary
+reveal with an empty placeholder shows a generic `?` blank, and an interactive
+reveal simply omits the context line.
 
 `table` is a real table with typed column ids and one row per record; every row
 must fill every column. `code_file` is a read-only, syntax-highlighted file with
@@ -179,11 +182,15 @@ never editable or executed. See `crates/content/src/learning.rs` for the
 authoritative schema and validation.
 
 A `LearningDomain` may carry a `glossary`: a list of `{ "term", "definition" }`
-entries. The app highlights each term where it appears in learner-facing
+entries. A `KnowledgeNode` may also carry its own `glossary` for that page. When
+a card renders, the node glossary is merged with the domain glossary and a node
+term wins over a domain term with the same text, so a page can refine or
+override a shared definition while keeping domain-wide terms available
+everywhere. The app highlights each term where it appears in learner-facing
 learning text (case-insensitive, whole words, and never inside a `code` span)
 and reveals the definition when the learner activates it. Terms and definitions
-must be non-empty and unique. The glossary is explanation only: it never affects
-discovery progress, scoring, or rewards.
+must be non-empty and unique within one glossary. The glossary is explanation
+only: it never affects discovery progress, scoring, or rewards.
 
 A `table` may carry optional `progressive_reveal` to reveal discovery one row,
 one column, or one cell at a time. Its `initially_visible` lists combine: a cell
@@ -218,6 +225,30 @@ Example:
 }
 ```
 
+A `text` reveal may carry optional `progressive_reveal` to hide individual words or
+phrases inside the sentence and reveal them one at a time. The sentence itself is
+always rendered; only the authored spans become inline reveal controls. Each span
+has a stable `id`, the exact `text` to hide (which may be several words), an
+optional 1-based `occurrence` for repeated wording, and an optional `required`
+flag that defaults to `true`. Spans are located by exact text plus occurrence, so
+repeated wording is unambiguous; spans may not overlap. A text reveal without
+`progressive_reveal` keeps the whole-prompt reveal.
+
+Example:
+
+```json
+{
+  "type": "text",
+  "text": "Security groups are stateful, while network ACLs are stateless.",
+  "progressive_reveal": {
+    "spans": [
+      { "id": "sg-state", "text": "stateful", "required": true },
+      { "id": "nacl-state", "text": "stateless", "required": true }
+    ]
+  }
+}
+```
+
 Rules:
 
 - Learning is a discovery layer before retrieval practice, not a fourth quiz
@@ -225,9 +256,10 @@ Rules:
   including individual code-annotation reveals.
 - Discovery progress (`adaptive-learn.learning-progress.v3` in local storage)
   stores revealed prompt ids and generic element-discovery ids. Code
-  annotations and progressive-table rows, columns, and cells share one
-  namespaced structure: `annotation:<id>`, `row:<id>`, `column:<id>`,
-  `cell:<row_id>:<column_id>`. A one-time, idempotent migration converts the v2
+  annotations, progressive-table rows, columns, and cells, and progressive-text
+  spans share one namespaced structure: `annotation:<id>`, `row:<id>`,
+  `column:<id>`, `cell:<row_id>:<column_id>`, `span:<id>`. A one-time,
+  idempotent migration converts the v2
   key (prompt progress plus raw code-annotation ids, re-prefixed as
   `annotation:`) and the v1 key (prompt progress only) without losing discovery
   progress, then drops the legacy key. Node and module state are derived, so
@@ -238,7 +270,11 @@ Rules:
   annotations (including an empty list) completes on an explicit mark-as-reviewed
   action. A progressive `table` completes when every non-given reveal unit is
   explored: hidden rows in `row` mode, hidden columns in `column` mode, or
-  hidden cells in `cell` mode. Static tables complete on the whole-prompt
+  hidden cells in `cell` mode. A progressive `text` reveal completes when every
+  span flagged `required` is revealed; optional spans never block completion,
+  and a progressive text reveal with no required spans completes on an explicit
+  mark-as-reviewed action. Static tables and ordinary text reveals complete on
+  the whole-prompt
   reveal. `ready`, `in_progress`, and `locked` are derived from node
   prerequisites, module prerequisites, and reveals.
 - Vocabulary stays game-like: Knowledge Map, Knowledge Node, Locked, Ready,
@@ -260,8 +296,12 @@ empty needed row ids, unknown or duplicate `initially_visible` entries, cell ids
 that do not resolve to a row and column, colliding reveal-unit ids, and a table
 whose initial visibility leaves nothing to reveal. For `code_file` reveals it
 rejects empty filename/language/code, duplicate annotation ids, duplicate
-anchors, missing titles/explanations, anchors on lines outside the code, target
-text that does not occur on its line, and out-of-range occurrences.
+anchors, overlapping annotation ranges, missing titles/explanations, anchors on
+lines outside the code, target text that does not occur on its line, and
+out-of-range occurrences. For
+progressive `text` reveals it rejects empty span lists, duplicate or empty span
+ids, empty span text, span text that does not occur in the sentence, out-of-range
+occurrences, and overlapping spans.
 
 ## Interaction schema
 
@@ -595,6 +635,20 @@ deprecated concepts
 ```
 
 Run a manual/automated diff when a vendor changes its official blueprint. Never silently remap historical mastery to a new exam version.
+
+A content revision also invalidates in-flight missions: question ids may be
+renamed or removed and the content version is bumped, so a persisted mission can
+reference questions that no longer exist. That is recoverable, never a server
+error:
+
+- an answer for a stale mission returns `409` with code `mission_content_stale`;
+- `/v1/sync` rejects only the stale event (its `error_code` is
+  `mission_content_stale`) and keeps the rest of the batch;
+- starting a Daily Mission item replaces a stale mission with one built from
+  current content instead of resuming the unscoreable one.
+
+The client drops the stale mission and its queued events, then starts a new
+mission. Historical mastery is never remapped onto the changed content.
 
 ## Trademark and licensing
 

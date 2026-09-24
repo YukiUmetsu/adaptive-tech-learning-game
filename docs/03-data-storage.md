@@ -58,6 +58,7 @@ recommendation_events
 study_session_log
 daily_missions
 daily_mission_items
+section_quiz_rewards
 discovery_progress
 user_study_days
 prediction_snapshots
@@ -181,6 +182,25 @@ later than the most recent one. The plan is generated once and never recomputed.
 Daily Mission completion is not learning evidence. The completion bonus is a
 single idempotent ledger event (`daily_mission_complete`, `event_id` =
 mission id), so retries and concurrent requests can never award it twice.
+
+## Section quizzes
+
+A Section Quiz is a one-question mission that concludes a learning module. The
+mission carries `mode = 'section_quiz'` and `mission_instances.module_id`, the
+learning module it was scoped to. The server resolves the module's authored
+questions from the learning curriculum and selects one; the client never
+supplies the question pool.
+
+`section_quiz_rewards` records the one-time completion bonus for
+`(user_id, track_version, domain_id, module_id)`, unique. Settlement reuses the
+reward row id as the wallet ledger `event_id` and runs in one transaction, so a
+retried or concurrent completion cannot award the bonus twice. The bonus is only
+settled when the mission's question has an accepted answer, so the explicit
+completion endpoint cannot mint Bits without evidence. Per-answer Bits remain
+ordinary `bit_transactions` keyed by the learning event.
+
+Section-quiz completion is not mastery evidence by itself: only the accepted
+`learning_events` change concept state.
 
 ## Prediction measurement (analytics only)
 

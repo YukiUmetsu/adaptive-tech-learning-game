@@ -62,12 +62,23 @@ later attempt, fully correct (recovery):
 
 not fully correct:
     0 Bits, never negative
+
+section quiz completion (once per learner and section):
+    +20 Bits
 ```
 
 Settlement is server-authoritative and idempotent: the reward is written with
 the accepted learning event in one transaction, keyed by `event_id`, so a
-retried sync cannot award the same attempt twice. The scoring response returns a
-`bits_preview` for immediate feedback; only sync settles the wallet balance.
+retried sync cannot award the same attempt twice. A `bits_preview` is shown for
+immediate feedback. For ordinary study missions the client may compute that
+preview locally, but it is display-only and is neither persisted as settled
+currency nor trusted by the server; only sync settles the wallet balance.
+
+A section quiz's completion bonus is separate from per-answer Bits and settles
+at most once per `(user, track version, domain, module)`, even if the section
+quiz is retaken. It requires accepted evidence for the mission's question, so
+marking a mission complete without answering cannot mint Bits. The `Daily
+Mission` completion bonus follows the same once-only pattern.
 
 Conceptually:
 

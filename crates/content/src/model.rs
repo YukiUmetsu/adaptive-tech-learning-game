@@ -4,8 +4,11 @@
 //! it can be used, so invalid concept references, broken answers, duplicate
 //! identifiers, and bad weights fail loudly instead of reaching learners.
 //!
-//! Canonical answers live only in the bundle. They are never sent with a
-//! mission and are returned only after an answer has been scored.
+//! Canonical answers live only in the bundle. The transport layer decides
+//! whether a given payload exposes them: ordinary study missions ship them for
+//! local optimistic scoring, while practice tests and pre-submit content never
+//! do. The server always re-scores raw answers authoritatively before recording
+//! evidence.
 
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -232,6 +235,38 @@ pub enum TypedFillTableCell {
         language: String,
         /// Code template containing `{{slot_id}}` placeholders.
         template: String,
+    },
+}
+
+/// One data-driven assertion in a browser-executed Python exercise.
+///
+/// Tests are trusted authored content, never learner input. They ship to the
+/// browser so the learner's program can be executed and checked locally, which
+/// means they are inspectable rather than secret. Expected values are passed as
+/// structured JSON data: they are never interpolated into generated Python
+/// source and never evaluated by the server.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum PythonTest {
+    /// Call the entrypoint with positional arguments and compare the returned
+    /// value for equality.
+    Call {
+        /// Positional arguments as JSON values.
+        args: Vec<serde_json::Value>,
+        /// Expected return value as a JSON value.
+        expected: serde_json::Value,
+    },
+    /// Call the entrypoint and require it to raise a named exception.
+    Raises {
+        /// Positional arguments as JSON values.
+        args: Vec<serde_json::Value>,
+        /// Expected exception class name, for example `ValueError`.
+        exception: String,
+    },
+    /// Compare the program's captured standard output.
+    Stdout {
+        /// Expected standard output, compared after trimming trailing newlines.
+        expected: String,
     },
 }
 
@@ -462,6 +497,25 @@ pub enum Interaction {
         /// Number of options the learner must select.
         required_selections: usize,
     },
+    /// Write Python that is executed and checked locally in the browser.
+    ///
+    /// Learner source is never sent to the API for execution. The browser runs
+    /// it in an isolated runtime and submits only the count of authored tests
+    /// that passed; the server re-scores that primitive against the canonical
+    /// test list. See `docs/14-security-privacy.md`.
+    PythonCode {
+        /// Runtime language. Only `python` is supported initially.
+        language: String,
+        /// Name of the callable under test. Empty for script-style exercises.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        entrypoint: String,
+        /// Learner-facing starter code.
+        starter_code: String,
+        /// Packages the content explicitly declares from the application
+        /// allowlist. Empty for standard-library-only exercises.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        packages: Vec<String>,
+    },
 }
 
 /// The canonical answer for a question.
@@ -549,6 +603,14 @@ pub enum CanonicalAnswer {
     MultipleResponse {
         /// Correct choice ids; order is not significant.
         choice_ids: Vec<String>,
+    },
+    /// Data-driven tests the browser executes against the learner's program.
+    ///
+    /// These are the canonical behavioral specification. They are inspectable
+    /// because execution happens client-side, so they must not encode secrets.
+    PythonCode {
+        /// Authored tests, run in declaration order.
+        tests: Vec<PythonTest>,
     },
 }
 

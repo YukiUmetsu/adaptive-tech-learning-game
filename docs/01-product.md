@@ -92,17 +92,19 @@ After each interaction:
 3. Record structured mistake information.
 4. Continue without modal interruption.
 
-Learners pick from three quiz modes, not from raw interaction types:
+Learners pick from four quiz modes, not from raw interaction types:
 
 | Mode | Questions | Purpose |
 |---|---:|---|
 | Quick Quiz | 3 | adaptive cross-domain practice |
 | Domain Quiz | ~20 | one exam domain |
+| Section Quiz | 1 | the retrieval check that concludes one learning section |
 | Full Practice | 65 | weighted full-certification coverage |
 
 The interaction types above are the tactile scoring primitives underneath these
 modes. Correct answers award **Bits**, a server-authoritative spendable currency
-kept separate from mastery.
+kept separate from mastery. Finishing a section quiz also settles a one-time
+per-section completion bonus.
 
 ### Progress
 

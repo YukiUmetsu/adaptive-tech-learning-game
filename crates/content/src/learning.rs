@@ -137,6 +137,12 @@ pub struct KnowledgeNode {
     pub map_position: MapPosition,
     /// Progressive reveal prompts. All required prompts unlock the node.
     pub prompts: Vec<KnowledgePrompt>,
+    /// Clickable terms with short explanations, scoped to this node's page.
+    ///
+    /// Merged with the domain glossary when the card renders; a node term wins
+    /// over a domain term with the same text.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub glossary: Vec<GlossaryTerm>,
     /// Official references for this node.
     #[serde(default)]
     pub source_refs: Vec<SourceRef>,
@@ -160,7 +166,8 @@ pub struct KnowledgePrompt {
     pub kind: PromptKind,
     /// Learner-facing label, authored by the curriculum.
     pub label: String,
-    /// Blank text shown before the reveal.
+    /// Blank text shown before the reveal. Optional: an empty placeholder
+    /// renders a generic `?` blank, and interactive reveals ignore it.
     pub placeholder: String,
     /// Whether revealing this prompt counts toward unlocking the node.
     #[serde(default = "default_true")]
@@ -217,6 +224,12 @@ pub enum LearningReveal {
     Text {
         /// Revealed text. Keep it to one or two sentences.
         text: String,
+        /// Optional progressive reveal configuration. When present, the
+        /// sentence is always rendered and only the authored spans inside it
+        /// are hidden until the learner reveals each one. When omitted the
+        /// whole text is revealed as a unit exactly as before.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        progressive_reveal: Option<TextProgressiveReveal>,
     },
     /// An ordered sequence, rendered top-to-bottom with arrows.
     Sequence {
@@ -377,6 +390,36 @@ impl TableProgressiveReveal {
     }
 }
 
+/// Progressive reveal configuration for a `text` reveal.
+///
+/// The sentence is always rendered in full. Discovery is limited to the
+/// authored `spans` inside it: each span is replaced by an inline reveal
+/// control until the learner activates it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct TextProgressiveReveal {
+    /// Hidden words or phrases inside the reveal text, in any order.
+    pub spans: Vec<TextRevealSpan>,
+}
+
+/// One hidden word or phrase inside a progressive `text` reveal.
+///
+/// Span text may contain multiple words. It is located inside the parent
+/// sentence by exact text plus an optional occurrence, so repeated wording is
+/// disambiguated the same way code annotation anchors are.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct TextRevealSpan {
+    /// Stable span identifier, also the persisted progress key.
+    pub id: String,
+    /// Exact authored text to hide. May contain multiple words.
+    pub text: String,
+    /// 1-based occurrence of `text` in the sentence. Defaults to the first.
+    #[serde(default = "default_one")]
+    pub occurrence: usize,
+    /// Whether revealing this span is needed to complete the prompt.
+    #[serde(default = "default_true")]
+    pub required: bool,
+}
+
 /// A clickable region inside a `code_file` reveal.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
 pub struct CodeAnnotation {
@@ -514,13 +557,21 @@ pub fn validate_learning_domain(domain: &LearningDomain) -> Result<(), Vec<Conte
 }
 
 /// Validates authored glossary terms: non-empty fields and unique terms.
+///
+/// The same rules apply to the domain-level glossary and each node-level
+/// glossary. A node term may intentionally repeat a domain term; that is an
+/// override, not a duplicate, so uniqueness is only enforced within one list.
 fn validate_glossary(domain: &LearningDomain, errors: &mut Vec<ContentError>) {
+    validate_glossary_terms(&domain.glossary, "glossary", errors);
+}
+
+fn validate_glossary_terms(terms: &[GlossaryTerm], scope: &str, errors: &mut Vec<ContentError>) {
     let mut seen: HashSet<String> = HashSet::new();
-    for term in &domain.glossary {
+    for term in terms {
         if term.term.trim().is_empty() || term.definition.trim().is_empty() {
             errors.push(ContentError::new(
                 "learning_glossary_field_missing",
-                "glossary terms need a non-empty term and definition",
+                format!("{scope} terms need a non-empty term and definition"),
             ));
             continue;
         }
@@ -528,7 +579,7 @@ fn validate_glossary(domain: &LearningDomain, errors: &mut Vec<ContentError>) {
         if !seen.insert(key) {
             errors.push(ContentError::new(
                 "learning_glossary_duplicate_term",
-                format!("glossary term `{}` is defined more than once", term.term),
+                format!("{scope} term `{}` is defined more than once", term.term),
             ));
         }
     }
@@ -655,6 +706,11 @@ fn validate_node(node: &KnowledgeNode, node_ids: &HashSet<&str>, errors: &mut Ve
         }
     }
     validate_source_refs(&node.source_refs, errors);
+    validate_glossary_terms(
+        &node.glossary,
+        &format!("knowledge node {}", node.id),
+        errors,
+    );
 
     if node.prompts.is_empty() {
         errors.push(ContentError::new(
@@ -681,15 +737,18 @@ fn validate_node(node: &KnowledgeNode, node_ids: &HashSet<&str>, errors: &mut Ve
                 format!("knowledge node {} has a prompt with an empty id", node.id),
             ));
         }
-        if prompt.label.trim().is_empty() || prompt.placeholder.trim().is_empty() {
+        if prompt.label.trim().is_empty() {
             errors.push(ContentError::new(
                 "learning_prompt_field_missing",
                 format!(
-                    "knowledge node {} prompt {} needs a label and placeholder",
+                    "knowledge node {} prompt {} needs a label",
                     node.id, prompt.id
                 ),
             ));
         }
+        // `placeholder` is optional. Interactive reveals render their content
+        // immediately, and an ordinary reveal with no authored placeholder
+        // shows a generic `?` blank instead.
         if prompt.required {
             required += 1;
         }
@@ -720,9 +779,15 @@ fn validate_reveal(node: &KnowledgeNode, prompt: &KnowledgePrompt, errors: &mut 
     };
 
     match &prompt.reveal {
-        LearningReveal::Text { text } => {
+        LearningReveal::Text {
+            text,
+            progressive_reveal,
+        } => {
             if text.trim().is_empty() {
                 errors.push(invalid("text reveal must not be empty".to_owned()));
+            }
+            if let Some(progressive) = progressive_reveal {
+                validate_text_progressive_reveal(node, prompt, text, progressive, errors);
             }
         }
         LearningReveal::Sequence { items } => {
@@ -781,6 +846,125 @@ fn validate_reveal(node: &KnowledgeNode, prompt: &KnowledgePrompt, errors: &mut 
             validate_code_file(node, prompt, filename, language, code, annotations, errors);
         }
     }
+}
+
+/// Validates a progressive `text` reveal's spans.
+///
+/// Each span must have a unique, non-empty id and non-empty text that actually
+/// occurs in the parent sentence at the authored occurrence. Overlapping spans
+/// are rejected so a hidden phrase always has one unambiguous reveal control.
+/// Anchors are located the same way code annotation anchors are, which makes
+/// repeated wording deterministic instead of silently revealing the wrong
+/// occurrence.
+fn validate_text_progressive_reveal(
+    node: &KnowledgeNode,
+    prompt: &KnowledgePrompt,
+    text: &str,
+    progressive: &TextProgressiveReveal,
+    errors: &mut Vec<ContentError>,
+) {
+    let span_error = |code: &'static str, message: String| {
+        ContentError::new(
+            code,
+            format!("knowledge node {} prompt {} {message}", node.id, prompt.id),
+        )
+    };
+
+    if progressive.spans.is_empty() {
+        errors.push(span_error(
+            "learning_text_reveal_empty",
+            "progressive text reveal needs at least one span".to_owned(),
+        ));
+        return;
+    }
+
+    let mut seen_ids: HashSet<&str> = HashSet::new();
+    let mut ranges: Vec<(usize, usize, &str)> = Vec::new();
+
+    for span in &progressive.spans {
+        if span.id.trim().is_empty() {
+            errors.push(span_error(
+                "learning_text_span_field_missing",
+                "text reveal span id must not be empty".to_owned(),
+            ));
+        } else if !seen_ids.insert(span.id.as_str()) {
+            errors.push(span_error(
+                "learning_text_span_duplicate_id",
+                format!("duplicate text reveal span id {}", span.id),
+            ));
+        }
+
+        if span.text.trim().is_empty() {
+            errors.push(span_error(
+                "learning_text_span_field_missing",
+                format!("text reveal span {} text must not be empty", span.id),
+            ));
+            continue;
+        }
+
+        let occurrences = count_occurrences(text, &span.text);
+        if occurrences == 0 {
+            errors.push(span_error(
+                "learning_text_span_target_missing",
+                format!(
+                    "text reveal span {} text {:?} does not occur in the reveal text",
+                    span.id, span.text
+                ),
+            ));
+            continue;
+        }
+        if span.occurrence == 0 || span.occurrence > occurrences {
+            errors.push(span_error(
+                "learning_text_span_occurrence_invalid",
+                format!(
+                    "text reveal span {} occurrence {} is invalid for {:?} ({} found)",
+                    span.id, span.occurrence, span.text, occurrences
+                ),
+            ));
+            continue;
+        }
+
+        if let Some(start) = occurrence_offset(text, &span.text, span.occurrence) {
+            ranges.push((start, start + span.text.len(), span.id.as_str()));
+        }
+    }
+
+    // Two spans may never cover the same character, or one control would have
+    // to reveal overlapping content.
+    ranges.sort_by_key(|(start, _, _)| *start);
+    for pair in ranges.windows(2) {
+        let (_, previous_end, previous_id) = pair[0];
+        let (next_start, _, next_id) = pair[1];
+        if next_start < previous_end {
+            errors.push(span_error(
+                "learning_text_span_overlap",
+                format!("text reveal spans {previous_id} and {next_id} overlap"),
+            ));
+        }
+    }
+}
+
+/// Returns the byte offset of the `occurrence`-th non-overlapping match.
+fn occurrence_offset(haystack: &str, needle: &str, occurrence: usize) -> Option<usize> {
+    if needle.is_empty() || occurrence == 0 {
+        return None;
+    }
+    let mut seen = 0;
+    let mut search_from = 0;
+    while search_from <= haystack.len() {
+        match haystack[search_from..].find(needle) {
+            Some(index) => {
+                seen += 1;
+                let start = search_from + index;
+                if seen == occurrence {
+                    return Some(start);
+                }
+                search_from = start + needle.len();
+            }
+            None => break,
+        }
+    }
+    None
 }
 
 /// Validates a `table` reveal: known, unique columns; at least one row; and a
@@ -1055,6 +1239,9 @@ fn validate_code_file(
 
     let mut seen_ids = HashSet::new();
     let mut seen_anchors = HashSet::new();
+    // Resolved `(line, start, end, annotation id)` ranges, checked for overlap
+    // after every anchor has been validated.
+    let mut ranges: Vec<(usize, usize, usize, &str)> = Vec::new();
     for annotation in annotations {
         if annotation.id.trim().is_empty() {
             errors.push(annotation_error(
@@ -1132,6 +1319,28 @@ fn validate_code_file(
                     "code annotation {} duplicates the anchor line {} occurrence {}",
                     annotation.id, anchor.line, anchor.occurrence
                 ),
+            ));
+        } else if let Some(start) = occurrence_offset(line, &anchor.text, anchor.occurrence) {
+            ranges.push((
+                anchor.line,
+                start,
+                start + anchor.text.len(),
+                annotation.id.as_str(),
+            ));
+        }
+    }
+
+    // Two annotations may never cover the same characters. The UI renders one
+    // control per resolved range, so an overlap would silently hide the nested
+    // annotation and ship a prompt that can never be completed.
+    ranges.sort_by_key(|(line, start, _, _)| (*line, *start));
+    for pair in ranges.windows(2) {
+        let (line, _, previous_end, previous_id) = pair[0];
+        let (next_line, next_start, _, next_id) = pair[1];
+        if line == next_line && next_start < previous_end {
+            errors.push(annotation_error(
+                "learning_code_annotation_overlap",
+                format!("code annotations {previous_id} and {next_id} overlap on line {line}"),
             ));
         }
     }

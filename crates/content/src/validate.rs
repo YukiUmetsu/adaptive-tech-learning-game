@@ -53,6 +53,39 @@ pub const TYPED_BLANK_MIN_ROWS: u8 = 2;
 /// See [`TYPED_BLANK_MIN_ROWS`].
 pub const TYPED_BLANK_MAX_ROWS: u8 = 12;
 
+/// Maximum authored learner source length, in bytes.
+///
+/// Keeps a malformed or hostile bundle from shipping an unbounded program to
+/// the browser runtime.
+pub const PYTHON_MAX_SOURCE_BYTES: usize = 20_000;
+/// Maximum authored starter-code length, in bytes.
+pub const PYTHON_MAX_STARTER_BYTES: usize = 20_000;
+/// Maximum number of authored tests per Python question.
+///
+/// The browser refuses to run more than this many tests for one execution, so
+/// validation keeps authored content and runtime limits consistent.
+pub const PYTHON_MAX_TESTS: usize = 50;
+/// Maximum number of positional arguments one authored call may pass.
+pub const PYTHON_MAX_TEST_ARGS: usize = 16;
+/// Maximum serialized size of one authored expected value, in bytes.
+pub const PYTHON_MAX_VALUE_BYTES: usize = 8_000;
+/// Maximum expected standard output length, in bytes.
+pub const PYTHON_MAX_EXPECTED_STDOUT_BYTES: usize = 8_000;
+
+/// Maximum number of packages one question may declare.
+pub const PYTHON_MAX_PACKAGES: usize = 4;
+
+/// Runtime packages content may explicitly load into the Python sandbox.
+///
+/// These are the scientific packages shipped by the pinned Pyodide
+/// distribution; the browser loads them from the self-hosted runtime with
+/// Pyodide's own package loader. Learner code can never request a package that
+/// is not on this list, and `micropip`/PyPI are never used.
+///
+/// `seaborn` is intentionally absent: the pinned Pyodide build does not ship
+/// it, and enabling it would require installing a wheel from PyPI.
+pub const PYTHON_ALLOWED_PACKAGES: &[&str] = &["numpy", "pandas", "matplotlib"];
+
 /// Validates a bundle, returning every problem found.
 pub fn validate(bundle: &ContentBundle) -> Result<(), Vec<ContentError>> {
     let mut errors = Vec::new();
@@ -650,6 +683,217 @@ pub(crate) fn validate_interaction(question: &Question, errors: &mut Vec<Content
                 ));
             }
             ensure_unique_choice_ids(question, choices, "multiple-response", errors);
+        }
+        Interaction::PythonCode {
+            language,
+            entrypoint,
+            starter_code,
+            packages,
+        } => {
+            validate_python_code(
+                question,
+                language,
+                entrypoint,
+                starter_code,
+                packages,
+                errors,
+            );
+        }
+    }
+}
+
+/// A Python identifier: ASCII letter or underscore, then letters/digits/underscores.
+fn is_python_identifier(value: &str) -> bool {
+    let mut chars = value.chars();
+    match chars.next() {
+        Some(first) if first.is_ascii_alphabetic() || first == '_' => {}
+        _ => return false,
+    }
+    chars.all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+}
+
+/// Validates a browser-executed Python interaction.
+fn validate_python_code(
+    question: &Question,
+    language: &str,
+    entrypoint: &str,
+    starter_code: &str,
+    packages: &[String],
+    errors: &mut Vec<ContentError>,
+) {
+    if language != "python" {
+        errors.push(ContentError::new(
+            "python_code_language_unsupported",
+            format!(
+                "question {} python_code language must be \"python\", got {language:?}",
+                question.id
+            ),
+        ));
+    }
+
+    if !entrypoint.is_empty() && !is_python_identifier(entrypoint) {
+        errors.push(ContentError::new(
+            "python_code_entrypoint_invalid",
+            format!(
+                "question {} entrypoint {entrypoint:?} is not a valid Python identifier",
+                question.id
+            ),
+        ));
+    }
+
+    if starter_code.trim().is_empty() {
+        errors.push(ContentError::new(
+            "python_code_starter_missing",
+            format!("question {} needs learner starter code", question.id),
+        ));
+    } else if starter_code.len() > PYTHON_MAX_STARTER_BYTES {
+        errors.push(ContentError::new(
+            "python_code_starter_too_large",
+            format!(
+                "question {} starter code exceeds {PYTHON_MAX_STARTER_BYTES} bytes",
+                question.id
+            ),
+        ));
+    }
+
+    if packages.len() > PYTHON_MAX_PACKAGES {
+        errors.push(ContentError::new(
+            "python_code_packages_too_many",
+            format!(
+                "question {} declares {} packages; the cap is {PYTHON_MAX_PACKAGES}",
+                question.id,
+                packages.len()
+            ),
+        ));
+    }
+
+    for package in packages {
+        if !PYTHON_ALLOWED_PACKAGES.contains(&package.as_str()) {
+            errors.push(ContentError::new(
+                "python_code_package_not_allowed",
+                format!(
+                    "question {} requests package {package:?}, which is not on the runtime allowlist",
+                    question.id
+                ),
+            ));
+        }
+    }
+}
+
+/// Validates the authored behavioral tests of a Python exercise.
+fn validate_python_tests(
+    question: &Question,
+    entrypoint: &str,
+    tests: &[crate::model::PythonTest],
+    errors: &mut Vec<ContentError>,
+) {
+    use crate::model::PythonTest;
+
+    if tests.is_empty() {
+        errors.push(ContentError::new(
+            "python_code_tests_missing",
+            format!(
+                "question {} needs at least one executable test",
+                question.id
+            ),
+        ));
+    }
+    if tests.len() > PYTHON_MAX_TESTS {
+        errors.push(ContentError::new(
+            "python_code_tests_too_many",
+            format!(
+                "question {} has {} tests; the runtime cap is {PYTHON_MAX_TESTS}",
+                question.id,
+                tests.len()
+            ),
+        ));
+    }
+
+    let mut needs_entrypoint = false;
+    for test in tests {
+        match test {
+            PythonTest::Call { args, expected } => {
+                needs_entrypoint = true;
+                check_python_args(question, args, errors);
+                let size = serde_json::to_vec(expected)
+                    .map(|bytes| bytes.len())
+                    .unwrap_or(0);
+                if size > PYTHON_MAX_VALUE_BYTES {
+                    errors.push(ContentError::new(
+                        "python_code_expected_too_large",
+                        format!(
+                            "question {} expected value exceeds {PYTHON_MAX_VALUE_BYTES} bytes",
+                            question.id
+                        ),
+                    ));
+                }
+            }
+            PythonTest::Raises { args, exception } => {
+                needs_entrypoint = true;
+                check_python_args(question, args, errors);
+                if !is_python_identifier(exception) {
+                    errors.push(ContentError::new(
+                        "python_code_exception_invalid",
+                        format!(
+                            "question {} expected exception {exception:?} is not a valid Python identifier",
+                            question.id
+                        ),
+                    ));
+                }
+            }
+            PythonTest::Stdout { expected } => {
+                if expected.len() > PYTHON_MAX_EXPECTED_STDOUT_BYTES {
+                    errors.push(ContentError::new(
+                        "python_code_stdout_too_large",
+                        format!(
+                            "question {} expected stdout exceeds {PYTHON_MAX_EXPECTED_STDOUT_BYTES} bytes",
+                            question.id
+                        ),
+                    ));
+                }
+            }
+        }
+    }
+
+    if needs_entrypoint && entrypoint.is_empty() {
+        errors.push(ContentError::new(
+            "python_code_entrypoint_missing",
+            format!(
+                "question {} has call/raises tests but no entrypoint to call",
+                question.id
+            ),
+        ));
+    }
+}
+
+/// Bounds the positional arguments of one authored test.
+fn check_python_args(
+    question: &Question,
+    args: &[serde_json::Value],
+    errors: &mut Vec<ContentError>,
+) {
+    if args.len() > PYTHON_MAX_TEST_ARGS {
+        errors.push(ContentError::new(
+            "python_code_args_too_many",
+            format!(
+                "question {} test passes {} arguments; the cap is {PYTHON_MAX_TEST_ARGS}",
+                question.id,
+                args.len()
+            ),
+        ));
+    }
+    for arg in args {
+        let size = serde_json::to_vec(arg)
+            .map(|bytes| bytes.len())
+            .unwrap_or(0);
+        if size > PYTHON_MAX_VALUE_BYTES {
+            errors.push(ContentError::new(
+                "python_code_args_too_large",
+                format!(
+                    "question {} test argument exceeds {PYTHON_MAX_VALUE_BYTES} bytes",
+                    question.id
+                ),
+            ));
         }
     }
 }
@@ -1852,6 +2096,9 @@ pub(crate) fn validate_canonical_answer(question: &Question, errors: &mut Vec<Co
                 ));
             }
         }
+        (Interaction::PythonCode { entrypoint, .. }, CanonicalAnswer::PythonCode { tests }) => {
+            validate_python_tests(question, entrypoint, tests, errors);
+        }
         _ => errors.push(ContentError::new(
             "canonical_answer_mismatch",
             format!(
@@ -2021,6 +2268,7 @@ pub(crate) fn interaction_matches(question: &Question) -> bool {
                 InteractionType::MultipleResponse,
                 Interaction::MultipleResponse { .. }
             )
+            | (InteractionType::PythonCode, Interaction::PythonCode { .. })
     )
 }
 

@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import type { KnowledgeNode } from "../api/types";
@@ -119,6 +120,83 @@ describe("KnowledgeCard charge", () => {
         onClose={() => {}}
         onDiscoverNext={() => {}}
         glossary={[{ term: "IaC", definition: "Infrastructure as Code." }]}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /IaC/ })).toBeInTheDocument();
+  });
+
+  it("highlights the node's own page glossary terms", async () => {
+    const nodeWithGlossary: KnowledgeNode = {
+      ...node,
+      glossary: [{ term: "IaC", definition: "Page-specific definition." }],
+    };
+    render(
+      <KnowledgeCard
+        node={nodeWithGlossary}
+        moduleTitle="Foundations"
+        state="in_progress"
+        revealedPromptIds={["what"]}
+        revealedElementIds={{}}
+        nextNode={null}
+        reducedMotion
+        onReveal={() => {}}
+        onRevealElement={() => {}}
+        onClose={() => {}}
+        onDiscoverNext={() => {}}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /IaC/ }));
+    expect(screen.getByText("Page-specific definition.")).toBeInTheDocument();
+  });
+
+  it("prefers the node definition over the domain definition", async () => {
+    const nodeWithGlossary: KnowledgeNode = {
+      ...node,
+      glossary: [{ term: "IaC", definition: "Page-specific definition." }],
+    };
+    render(
+      <KnowledgeCard
+        node={nodeWithGlossary}
+        moduleTitle="Foundations"
+        state="in_progress"
+        revealedPromptIds={["what"]}
+        revealedElementIds={{}}
+        nextNode={null}
+        reducedMotion
+        onReveal={() => {}}
+        onRevealElement={() => {}}
+        onClose={() => {}}
+        onDiscoverNext={() => {}}
+        glossary={[{ term: "IaC", definition: "Domain definition." }]}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /IaC/ }));
+    expect(screen.getByText("Page-specific definition.")).toBeInTheDocument();
+    expect(screen.queryByText("Domain definition.")).toBeNull();
+  });
+
+  it("still highlights a domain-only term on a node with its own glossary", () => {
+    const nodeWithGlossary: KnowledgeNode = {
+      ...node,
+      glossary: [{ term: "tool", definition: "Page tool." }],
+    };
+    render(
+      <KnowledgeCard
+        node={nodeWithGlossary}
+        moduleTitle="Foundations"
+        state="in_progress"
+        revealedPromptIds={["what"]}
+        revealedElementIds={{}}
+        nextNode={null}
+        reducedMotion
+        onReveal={() => {}}
+        onRevealElement={() => {}}
+        onClose={() => {}}
+        onDiscoverNext={() => {}}
+        glossary={[{ term: "IaC", definition: "Domain definition." }]}
       />,
     );
 

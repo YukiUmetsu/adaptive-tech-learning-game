@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "soa-c03-learning-2026-09-21-v9-fact-reviewed",
+  "content_version": "soa-c03-learning-2026-09-22-v11-domain4-node-glossary",
   "certification_id": "aws-soa-c03",
   "certification_version": "soa-c03",
   "exam_guide_revision": "1.1",
@@ -43,7 +43,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "IAM authorization starts with an implicit deny. Applicable allows can permit an action, but an applicable explicit deny overrides allows."
+                "text": "AWS requests start implicitly denied. An applicable explicit deny overrides allows. If no explicit deny applies, AWS evaluates the relevant identity/resource permissions and limits such as permissions boundaries, session policies, and organization policies to decide whether the request is allowed."
               }
             },
             {
@@ -89,10 +89,11 @@
                 "type": "sequence",
                 "items": [
                   "Start with implicit deny",
-                  "Collect applicable policies/guardrails",
-                  "Look for explicit deny",
-                  "Look for applicable allow",
-                  "Return final authorization result"
+                  "Identify the principal, action, resource, and request context",
+                  "Collect the applicable policies and guardrails",
+                  "If any applicable explicit deny exists, deny the request",
+                  "Otherwise confirm that the required allows survive all applicable limits",
+                  "Return the final authorization result"
                 ]
               }
             },
@@ -149,7 +150,7 @@
               "id": "policy-layers",
               "kind": "mental_model",
               "label": "IAM POLICY LAYERS",
-              "placeholder": "Identity policy can grant • permissions boundary caps one principal • SCP caps accounts/OUs • explicit deny still wins.",
+              "placeholder": "Compare the main IAM policy layers that can grant or limit access.",
               "required": false,
               "reveal": {
                 "type": "table",
@@ -160,49 +161,55 @@
                   },
                   {
                     "id": "job",
-                    "label": "What it does"
+                    "label": "Main job"
                   },
                   {
-                    "id": "trap",
-                    "label": "Common trap"
+                    "id": "remember",
+                    "label": "Remember"
                   }
                 ],
                 "rows": [
                   {
                     "id": "identity",
                     "cells": {
-                      "layer": "Identity policy",
-                      "job": "Can grant permissions to a user/role",
-                      "trap": "An Allow is not enough if another boundary/guardrail blocks it"
+                      "layer": "Identity-based policy",
+                      "job": "Can grant actions to an IAM user or role",
+                      "remember": "An Allow can still be limited by other applicable controls"
+                    }
+                  },
+                  {
+                    "id": "resource",
+                    "cells": {
+                      "layer": "Resource-based policy",
+                      "job": "Controls access on a supported resource and can name principals",
+                      "remember": "Common in cross-account access; exact evaluation depends on principal and request context"
                     }
                   },
                   {
                     "id": "boundary",
                     "cells": {
                       "layer": "Permissions boundary",
-                      "job": "Sets the maximum permissions an IAM principal may receive",
-                      "trap": "Does not grant permission by itself"
+                      "job": "Caps the permissions an IAM principal can receive",
+                      "remember": "Does not grant permission by itself"
+                    }
+                  },
+                  {
+                    "id": "session",
+                    "cells": {
+                      "layer": "Session policy",
+                      "job": "Further limits a temporary session",
+                      "remember": "Does not expand the parent role/user permissions"
                     }
                   },
                   {
                     "id": "scp",
                     "cells": {
                       "layer": "SCP",
-                      "job": "Sets the maximum permissions available in affected accounts/OUs",
-                      "trap": "Does not grant permission by itself"
+                      "job": "Sets the maximum permissions available in affected organization accounts/OUs",
+                      "remember": "Does not grant permission by itself"
                     }
                   }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "layer"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
+                ]
               }
             }
           ],
@@ -211,7 +218,38 @@
             "x": 0.12,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "IAM policy evaluation logic",
+              "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic_policy-eval-denyallow.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "implicit deny",
+              "definition": "The default IAM result when no applicable permission allows a request."
+            },
+            {
+              "term": "explicit deny",
+              "definition": "A Deny statement that directly applies to a request. An applicable explicit deny overrides allows."
+            },
+            {
+              "term": "permissions boundary",
+              "definition": "A policy that sets the maximum permissions an IAM user or role can receive. It does not grant permissions by itself."
+            },
+            {
+              "term": "session policy",
+              "definition": "A policy that can further limit the permissions of a temporary role or federated session."
+            },
+            {
+              "term": "principal",
+              "definition": "An identity that can make or receive AWS permissions, such as an account, IAM role, IAM user, federated user, or AWS service."
+            },
+            {
+              "term": "guardrails",
+              "definition": "A control that limits or checks what is allowed without being the application's normal permission grant."
+            }
+          ]
         },
         {
           "id": "d4-roles",
@@ -223,7 +261,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS IAM ROLES: TRUST VS PERMISSIONS?",
+              "label": "HOW DO IAM ROLE TRUST AND PERMISSIONS POLICIES DIFFER?",
               "placeholder": "An IAM role has a trust policy that controls who or what may assume the…",
               "required": true,
               "reveal": {
@@ -373,7 +411,33 @@
             "x": 0.36,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "principal",
+              "definition": "An identity that can make or receive AWS permissions, such as an account, IAM role, IAM user, federated user, or AWS service."
+            },
+            {
+              "term": "role session",
+              "definition": "The temporary identity and credentials created when a role is assumed."
+            },
+            {
+              "term": "instance profile",
+              "definition": "The container that lets an EC2 instance receive an IAM role and use temporary AWS credentials."
+            },
+            {
+              "term": "temporary credentials",
+              "definition": "Short-lived AWS credentials that expire automatically, commonly produced by role assumption or workforce federation."
+            },
+            {
+              "term": "cross-account",
+              "definition": "Access that crosses AWS account boundaries, such as a role in one account using a resource in another account."
+            },
+            {
+              "term": "guardrails",
+              "definition": "A control that limits or checks what is allowed without being the application's normal permission grant."
+            }
+          ]
         },
         {
           "id": "d4-resource-policies",
@@ -385,7 +449,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS RESOURCE-BASED POLICIES?",
+              "label": "WHAT ARE RESOURCE-BASED POLICIES?",
               "placeholder": "A resource-based policy is attached directly to a supported AWS resource and grants or denies…",
               "required": true,
               "reveal": {
@@ -434,7 +498,21 @@
             "x": 0.6,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "principal",
+              "definition": "An identity that can make or receive AWS permissions, such as an account, IAM role, IAM user, federated user, or AWS service."
+            },
+            {
+              "term": "key policy",
+              "definition": "The resource policy attached to a KMS key. Every KMS key has one, and it is the primary way to control access to that key."
+            },
+            {
+              "term": "cross-account",
+              "definition": "Access that crosses AWS account boundaries, such as a role in one account using a resource in another account."
+            }
+          ]
         },
         {
           "id": "d4-conditions-mfa",
@@ -447,7 +525,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS IAM CONDITIONS, MFA, AND CREDENTIAL CONTROLS?",
+              "label": "WHAT ARE IAM CONDITIONS, MFA, AND CREDENTIAL CONTROLS?",
               "placeholder": "IAM policy conditions restrict when a statement applies by testing request context such as source…",
               "required": true,
               "reveal": {
@@ -496,7 +574,13 @@
             "x": 0.84,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "TLS",
+              "definition": "Transport Layer Security. It encrypts data while it travels between systems, such as HTTPS traffic."
+            }
+          ]
         }
       ]
     },
@@ -527,12 +611,12 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS ACCESS ANALYZER VS POLICY SIMULATOR VS CLOUDTRAIL?",
+              "label": "HOW DO ACCESS ANALYZER, POLICY SIMULATOR, AND CLOUDTRAIL DIFFER?",
               "placeholder": "These tools answer different access questions: Access Analyzer finds unintended/external access paths, Policy Simulator evaluates…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "IAM Access Analyzer can identify external access, internal access, and unused access depending on analyzer type. It also provides policy validation and policy generation. Policy Simulator evaluates whether policies would allow an action. CloudTrail records AWS API activity that actually occurred."
+                "text": "IAM Access Analyzer can analyze external, internal, and unused access depending on analyzer type. It also validates policies and can generate policies from observed access activity. Policy Simulator evaluates hypothetical authorization. CloudTrail records AWS API activity that actually occurred."
               }
             },
             {
@@ -634,7 +718,18 @@
             "x": 0.12,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "IAM Access Analyzer",
+              "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/what-is-access-analyzer.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "findings",
+              "definition": "A security or compliance result that describes a detected issue, risk, or condition and the affected resource or evidence."
+            }
+          ]
         },
         {
           "id": "d4-org-scp",
@@ -648,7 +743,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS AWS ORGANIZATIONS AND SCPS?",
+              "label": "HOW DO AWS ORGANIZATIONS AND SCPS WORK TOGETHER?",
               "placeholder": "AWS Organizations groups and governs AWS accounts. A service control policy (SCP) sets the maximum…",
               "required": true,
               "reveal": {
@@ -742,7 +837,7 @@
               "id": "control-tower",
               "kind": "mental_model",
               "label": "CONTROL TOWER VS ORGANIZATIONS / SCPS",
-              "placeholder": "Organizations = account hierarchy/policies • Control Tower = prescriptive landing zone + controls built on multi-account services.",
+              "placeholder": "Compare AWS Organizations, AWS Control Tower, and service control policies.",
               "required": false,
               "reveal": {
                 "type": "table",
@@ -806,7 +901,21 @@
             "x": 0.36,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "organizational units",
+              "definition": "A container in AWS Organizations used to group accounts so policies and governance can be applied to the group."
+            },
+            {
+              "term": "guardrail",
+              "definition": "A control that limits or checks what is allowed without being the application's normal permission grant."
+            },
+            {
+              "term": "landing zone",
+              "definition": "A governed multi-account AWS environment with an established account structure, controls, and baseline configuration."
+            }
+          ]
         },
         {
           "id": "d4-identity-center",
@@ -824,7 +933,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "IAM Identity Center centrally manages workforce access to AWS accounts and applications, commonly through users/groups and permission sets."
+                "text": "IAM Identity Center centrally manages workforce access to AWS accounts and applications. Users or groups receive account access through permission sets and use temporary AWS credentials instead of permanent IAM-user access keys."
               }
             },
             {
@@ -879,7 +988,26 @@
             "x": 0.6,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "IAM Identity Center temporary credentials",
+              "url": "https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "federated identity",
+              "definition": "A user who authenticates through an external identity system and receives temporary access instead of a permanent IAM user credential."
+            },
+            {
+              "term": "permission sets",
+              "definition": "An IAM Identity Center definition of the permissions users or groups receive when assigned access to an AWS account."
+            },
+            {
+              "term": "temporary AWS credentials",
+              "definition": "Short-lived AWS credentials that expire automatically, commonly produced by role assumption or workforce federation."
+            }
+          ]
         }
       ]
     },
@@ -908,7 +1036,7 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS TRUSTED ADVISOR SECURITY CHECKS?",
+              "label": "WHAT ARE TRUSTED ADVISOR SECURITY CHECKS?",
               "placeholder": "AWS Trusted Advisor provides checks and recommendations across areas such as security, resilience, performance, quotas…",
               "required": true,
               "reveal": {
@@ -955,7 +1083,13 @@
             "x": 0.12,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "finding",
+              "definition": "A security or compliance result that describes a detected issue, risk, or condition and the affected resource or evidence."
+            }
+          ]
         },
         {
           "id": "d4-config",
@@ -984,17 +1118,6 @@
               "reveal": {
                 "type": "text",
                 "text": "Use it to answer how a resource configuration changed, whether it is compliant, and what related resources are involved."
-              }
-            },
-            {
-              "id": "concrete-example",
-              "kind": "mental_model",
-              "label": "CONCRETE EXAMPLE",
-              "placeholder": "At 09:00 an S3 bucket is compliant; at 09:15 public access settings change.",
-              "required": false,
-              "reveal": {
-                "type": "text",
-                "text": "At 09:00 an S3 bucket is compliant; at 09:15 public access settings change. AWS Config records the configuration change and can evaluate the bucket against a compliance rule. CloudTrail can separately identify the API caller."
               }
             },
             {
@@ -1132,12 +1255,12 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS AWS CONFIG CONFORMANCE PACKS?",
+              "label": "WHAT ARE AWS CONFIG CONFORMANCE PACKS?",
               "placeholder": "A conformance pack packages AWS Config rules and remediation actions into a reusable compliance framework.",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "A conformance pack packages AWS Config rules and remediation actions into a reusable compliance framework."
+                "text": "An AWS Config conformance pack packages Config rules and optional remediation actions into a reusable governance framework. A sample conformance pack can help map checks to a standard, but using the pack does not by itself prove that an organization is compliant with that standard."
               }
             },
             {
@@ -1148,7 +1271,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Use it to deploy a consistent set of compliance checks across supported accounts and Regions."
+                "text": "Use conformance packs to deploy a consistent set of configuration checks and supported remediation across accounts or Regions. Treat the results as technical compliance evidence, not as a complete legal or regulatory compliance determination."
               }
             },
             {
@@ -1181,7 +1304,12 @@
             "x": 0.6,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "AWS Config conformance packs",
+              "url": "https://docs.aws.amazon.com/config/latest/developerguide/conformance-packs.html"
+            }
+          ]
         }
       ]
     },
@@ -1277,7 +1405,7 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "AWS Key Management Service (KMS) creates and controls cryptographic keys used by AWS services and applications. Many AWS services use envelope encryption with KMS keys protecting data keys."
+                "text": "AWS Key Management Service (KMS) creates and controls cryptographic keys used by AWS services and applications. Many AWS encryption workflows use envelope encryption: a data key encrypts the data, and a KMS key protects the data key."
               }
             },
             {
@@ -1317,60 +1445,58 @@
               "id": "kms-auth-table",
               "kind": "mental_model",
               "label": "KMS AUTHORIZATION LAYERS",
-              "placeholder": "Compare: Data resource policy / IAM • KMS key policy / IAM • KMS grant",
+              "placeholder": "Compare access to encrypted data with authorization to use the KMS key.",
               "required": false,
               "reveal": {
                 "type": "table",
                 "columns": [
                   {
-                    "id": "layer",
-                    "label": "Layer"
+                    "id": "control",
+                    "label": "Control"
                   },
                   {
                     "id": "job",
                     "label": "What it controls"
                   },
                   {
-                    "id": "symptom",
-                    "label": "Common symptom"
+                    "id": "clue",
+                    "label": "Troubleshooting clue"
                   }
                 ],
                 "rows": [
                   {
                     "id": "data",
                     "cells": {
-                      "layer": "Data resource policy / IAM",
-                      "job": "Access to the encrypted S3/EBS/RDS/etc. resource.",
-                      "symptom": "Data resource denies access."
+                      "control": "Data-resource policy / IAM",
+                      "job": "Access to the encrypted S3/EBS/RDS/etc. resource",
+                      "clue": "The caller may reach the resource but still fail at KMS authorization"
                     }
                   },
                   {
-                    "id": "key",
+                    "id": "key-policy",
                     "cells": {
-                      "layer": "KMS key policy / IAM",
-                      "job": "Permission to use the KMS key for decrypt/encrypt.",
-                      "symptom": "KMS AccessDenied even when data access exists."
+                      "control": "KMS key policy",
+                      "job": "Primary resource policy for the KMS key",
+                      "clue": "Every KMS key has one; it must permit the intended authorization path"
+                    }
+                  },
+                  {
+                    "id": "iam",
+                    "cells": {
+                      "control": "IAM policy",
+                      "job": "Can allow KMS operations when the key policy enables IAM-based permissions",
+                      "clue": "An IAM Allow alone is not always sufficient for a KMS key"
                     }
                   },
                   {
                     "id": "grant",
                     "cells": {
-                      "layer": "KMS grant",
-                      "job": "Delegated permission for supported key operations.",
-                      "symptom": "Service/workload needs scoped key-use permission."
+                      "control": "KMS grant",
+                      "job": "Delegates selected KMS key operations",
+                      "clue": "Common for scoped or service-managed key use"
                     }
                   }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "layer"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
+                ]
               }
             },
             {
@@ -1430,7 +1556,42 @@
             "x": 0.36,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "KMS key policies",
+              "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html"
+            },
+            {
+              "title": "KMS grants",
+              "url": "https://docs.aws.amazon.com/kms/latest/developerguide/grants.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "principal",
+              "definition": "An identity that can make or receive AWS permissions, such as an account, IAM role, IAM user, federated user, or AWS service."
+            },
+            {
+              "term": "envelope encryption",
+              "definition": "Encrypting data with a data key, then protecting that data key with another key such as a KMS key."
+            },
+            {
+              "term": "data key",
+              "definition": "A key used to encrypt the actual application data. In envelope encryption, KMS protects an encrypted copy of this key."
+            },
+            {
+              "term": "key policy",
+              "definition": "The resource policy attached to a KMS key. Every KMS key has one, and it is the primary way to control access to that key."
+            },
+            {
+              "term": "KMS grant",
+              "definition": "A KMS permission mechanism that delegates selected operations on a KMS key without editing the key policy or IAM policy."
+            },
+            {
+              "term": "cross-account",
+              "definition": "Access that crosses AWS account boundaries, such as a role in one account using a resource in another account."
+            }
+          ]
         },
         {
           "id": "d4-acm",
@@ -1491,7 +1652,13 @@
             "x": 0.6,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [],
+          "glossary": [
+            {
+              "term": "TLS",
+              "definition": "Transport Layer Security. It encrypts data while it travels between systems, such as HTTPS traffic."
+            }
+          ]
         },
         {
           "id": "d4-secrets",
@@ -1504,12 +1671,12 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS SECRETS MANAGER VS PARAMETER STORE?",
+              "label": "HOW DO SECRETS MANAGER AND PARAMETER STORE DIFFER?",
               "placeholder": "AWS Secrets Manager stores secrets and supports secret-lifecycle features such as managed rotation integrations. Systems…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "AWS Secrets Manager stores secrets and supports secret-lifecycle features such as managed rotation integrations. Systems Manager Parameter Store stores hierarchical configuration values and can also store encrypted parameters."
+                "text": "AWS Secrets Manager is designed for secrets and supports rotation workflows. Systems Manager Parameter Store provides hierarchical configuration storage and can store encrypted `SecureString` values, but Parameter Store does not provide automatic rotation for those stored secrets."
               }
             },
             {
@@ -1544,46 +1711,36 @@
                 "type": "table",
                 "columns": [
                   {
-                    "id": "option",
-                    "label": "Option"
+                    "id": "service",
+                    "label": "Service"
                   },
                   {
-                    "id": "what",
-                    "label": "What it means / does"
+                    "id": "best_for",
+                    "label": "Best fit"
                   },
                   {
-                    "id": "use",
-                    "label": "When to use / key distinction"
+                    "id": "rotation",
+                    "label": "Rotation"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "option-1",
+                    "id": "secrets-manager",
                     "cells": {
-                      "option": "Secrets Manager",
-                      "what": "Secret storage and rotation workflows",
-                      "use": "Credentials/secrets with lifecycle management"
+                      "service": "Secrets Manager",
+                      "best_for": "Credentials and other secrets with lifecycle management",
+                      "rotation": "Supports configured secret rotation workflows"
                     }
                   },
                   {
-                    "id": "option-2",
+                    "id": "parameter-store",
                     "cells": {
-                      "option": "Parameter Store",
-                      "what": "Hierarchical configuration/parameters, including encrypted values",
-                      "use": "General configuration and simpler secret storage"
+                      "service": "Parameter Store",
+                      "best_for": "Hierarchical configuration and parameters, including encrypted SecureString values",
+                      "rotation": "No automatic rotation service for stored parameters"
                     }
                   }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "option"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
+                ]
               }
             },
             {
@@ -1605,7 +1762,12 @@
             "x": 0.84,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Secrets Manager secrets in Parameter Store",
+              "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/integrating_parameterstore.html"
+            }
+          ]
         }
       ]
     },
@@ -1636,12 +1798,12 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS GUARDDUTY, INSPECTOR, MACIE, SECURITY HUB?",
+              "label": "HOW DO GUARDDUTY, INSPECTOR, MACIE, AND SECURITY HUB DIFFER?",
               "placeholder": "AWS security services focus on different evidence: GuardDuty detects suspicious/threat activity, Inspector identifies supported workload…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "AWS security services focus on different evidence: GuardDuty detects suspicious/threat activity, Inspector identifies supported workload vulnerabilities/exposure, Macie discovers sensitive data in S3, and Security Hub aggregates/prioritizes security findings."
+                "text": "GuardDuty detects suspicious or malicious activity. Inspector finds software vulnerabilities and unintended exposure in supported workloads. Macie discovers sensitive data in S3. Security Hub CSPM evaluates security posture and normalizes findings, while Security Hub correlates findings from security services into prioritized risks and exposures."
               }
             },
             {
@@ -1652,97 +1814,84 @@
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Choose the service from the object being analyzed: threat telemetry, vulnerabilities, sensitive S3 data, or centralized findings."
-              }
-            },
-            {
-              "id": "concrete-example",
-              "kind": "mental_model",
-              "label": "CONCRETE EXAMPLE",
-              "placeholder": "GuardDuty = threats • Inspector = vulnerabilities • Macie = sensitive S3 data • Security Hub = aggregated findings",
-              "required": false,
-              "reveal": {
-                "type": "text",
-                "text": "GuardDuty raises a finding for suspicious API or network behavior. Inspector finds a vulnerable package on EC2. Macie identifies sensitive data in S3. Security Hub aggregates findings so the team can prioritize response."
+                "text": "Choose the service from the security question: threat activity, software vulnerability, sensitive S3 data, posture/compliance findings, or cross-service risk prioritization."
               }
             },
             {
               "id": "compare",
               "kind": "not_this",
               "label": "DON'T CONFUSE THESE",
-              "placeholder": "Compare: GuardDuty • Inspector • Macie • Security Hub",
+              "placeholder": "Compare the main security result produced by each service.",
               "required": true,
               "reveal": {
                 "type": "table",
                 "columns": [
                   {
-                    "id": "option",
-                    "label": "Option"
+                    "id": "service",
+                    "label": "Service"
                   },
                   {
-                    "id": "what",
-                    "label": "What it means / does"
+                    "id": "main_job",
+                    "label": "Main job"
                   },
                   {
-                    "id": "use",
-                    "label": "When to use / key distinction"
+                    "id": "example",
+                    "label": "Think of"
                   }
                 ],
                 "rows": [
                   {
-                    "id": "option-1",
+                    "id": "guardduty",
                     "cells": {
-                      "option": "GuardDuty",
-                      "what": "Threat detection",
-                      "use": "Suspicious activity from AWS telemetry"
+                      "service": "GuardDuty",
+                      "main_job": "Threat detection",
+                      "example": "Suspicious account, network, or workload activity"
                     }
                   },
                   {
-                    "id": "option-2",
+                    "id": "inspector",
                     "cells": {
-                      "option": "Inspector",
-                      "what": "Vulnerability/exposure management",
-                      "use": "Supported EC2/container/Lambda software findings"
+                      "service": "Inspector",
+                      "main_job": "Vulnerability and exposure management",
+                      "example": "Vulnerable package or unintended network exposure on supported workloads"
                     }
                   },
                   {
-                    "id": "option-3",
+                    "id": "macie",
                     "cells": {
-                      "option": "Macie",
-                      "what": "Sensitive-data discovery",
-                      "use": "S3 data"
+                      "service": "Macie",
+                      "main_job": "Sensitive-data discovery",
+                      "example": "PII or other sensitive data in S3"
                     }
                   },
                   {
-                    "id": "option-4",
+                    "id": "security-hub-cspm",
                     "cells": {
-                      "option": "Security Hub",
-                      "what": "Central findings aggregation/prioritization",
-                      "use": "Cross-service security operations"
+                      "service": "Security Hub CSPM",
+                      "main_job": "Security posture, standards, controls, and normalized findings",
+                      "example": "Misconfiguration/compliance posture across AWS resources"
+                    }
+                  },
+                  {
+                    "id": "security-hub",
+                    "cells": {
+                      "service": "Security Hub",
+                      "main_job": "Correlate security findings into prioritized risks/exposures",
+                      "example": "Cross-service security triage and response"
                     }
                   }
-                ],
-                "progressive_reveal": {
-                  "mode": "row",
-                  "initially_visible": {
-                    "column_ids": [
-                      "option"
-                    ],
-                    "row_ids": [],
-                    "cell_ids": []
-                  }
-                }
+                ]
               }
             },
             {
               "id": "exam-clue",
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
-              "placeholder": "Sensitive PII in S3 -> Macie; suspicious API/network behavior -> GuardDuty.",
+              "placeholder": "Sensitive data in S3 -> Macie. Suspicious activity -> GuardDuty. Vulnerability/exposure scanning -> Inspector. Security posture/controls -> Security Hub CSPM. Cross-service prioritized risks/exposures -> Security Hub.",
               "required": false,
               "reveal": {
                 "type": "text",
-                "text": "Sensitive PII in S3 -> Macie; suspicious API/network behavior -> GuardDuty."
+                "text": "Sensitive data in S3 -> Macie. Suspicious activity -> GuardDuty. Vulnerability/exposure scanning -> Inspector. Security posture/controls -> Security Hub CSPM. Cross-service prioritized risks/exposures -> Security Hub."
               }
             }
           ],
@@ -1751,11 +1900,26 @@
             "x": 0.12,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "Security Hub and Security Hub CSPM",
+              "url": "https://docs.aws.amazon.com/securityhub/latest/userguide/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "findings",
+              "definition": "A security or compliance result that describes a detected issue, risk, or condition and the affected resource or evidence."
+            },
+            {
+              "term": "PII",
+              "definition": "Personally identifiable information: data that can identify or be linked to a person."
+            }
+          ]
         },
         {
           "id": "d4-security-agent",
-          "title": "AWS Security Agent (AWS Continuum)",
+          "title": "AWS Security Agent (now part of AWS Continuum)",
           "concept_ids": [
             "aws.securityagent"
           ],
@@ -1763,12 +1927,12 @@
             {
               "id": "definition",
               "kind": "what",
-              "label": "WHAT IS AWS SECURITY AGENT (AWS CONTINUUM)?",
+              "label": "WHAT IS AWS SECURITY AGENT, NOW PART OF AWS CONTINUUM?",
               "placeholder": "AWS Security Agent, now part of AWS Continuum, proactively reviews application security through activities such…",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "AWS Security Agent, now part of AWS Continuum, proactively reviews application security through activities such as design/code security review, threat modeling, and context-aware penetration testing."
+                "text": "AWS Security Agent, now part of AWS Continuum, provides proactive application-security capabilities such as design review, code review, threat modeling, and authorized penetration testing."
               }
             },
             {
@@ -1864,7 +2028,26 @@
             "x": 0.36,
             "y": 0.12
           },
-          "source_refs": []
+          "source_refs": [
+            {
+              "title": "How AWS Security Agent works",
+              "url": "https://docs.aws.amazon.com/securityagent/latest/userguide/how-it-works.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "finding",
+              "definition": "A security or compliance result that describes a detected issue, risk, or condition and the affected resource or evidence."
+            },
+            {
+              "term": "threat modeling",
+              "definition": "A structured review of what could attack a system, what could go wrong, and which protections are needed."
+            },
+            {
+              "term": "penetration testing",
+              "definition": "Authorized security testing that actively tries to find exploitable weaknesses in an application or system."
+            }
+          ]
         }
       ]
     }
@@ -1902,7 +2085,7 @@
     ],
     "module_count": 5,
     "knowledge_node_count": 16,
-    "prompt_count": 80
+    "prompt_count": 78
   },
-  "authoring_notes": "V9 fact-reviewed: current official-document factual audit applied after the coverage, concrete-example, and ADHD/readability passes. Known factual errors, ambiguous service behavior, outdated service limits, and incomplete configuration examples were corrected."
+  "authoring_notes": "Domain 4 editorial/glossary review: corrected grammar, removed two redundant learning prompts, simplified answer-heavy placeholders, added beginner-friendly supporting vocabulary, clarified IAM evaluation/KMS authorization/secret rotation, updated current Security Hub vs Security Hub CSPM behavior and AWS Security Agent naming, and recalculated coverage counts.\n\nGlossary migration: Domain 4 glossary terms are now scoped per knowledge node/page. Each page includes only supporting terminology actually used on that page, while the page's main subject is not added merely because it is the node topic. The former domain-wide glossary was removed."
 }
