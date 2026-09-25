@@ -231,6 +231,7 @@ async fn planner_context(
             assessment_mode: question.assessment_mode,
             difficulty_prior: question.difficulty_prior,
             concepts: concept_weights(question),
+            pedagogy: question.pedagogy.clone(),
         })
         .collect();
 
@@ -751,6 +752,7 @@ fn candidate_from_planner_question(question: &PlannerQuestion) -> Candidate {
         assessment_mode: question.assessment_mode,
         difficulty_prior: question.difficulty_prior,
         concepts: question.concepts.clone(),
+        pedagogy: question.pedagogy.clone(),
     }
 }
 
@@ -2284,6 +2286,7 @@ fn candidate_from(question: &Question) -> Candidate {
         assessment_mode: question.assessment_mode,
         difficulty_prior: question.difficulty_prior,
         concepts: concept_weights(question),
+        pedagogy: question.pedagogy.clone(),
     }
 }
 
@@ -3820,6 +3823,7 @@ mod tests {
             assessment_mode: mode,
             difficulty_prior: 0.5,
             concepts: concept_ids.iter().map(|id| concept_weight(id)).collect(),
+            pedagogy: None,
         }
     }
 

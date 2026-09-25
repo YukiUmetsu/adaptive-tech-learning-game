@@ -1230,6 +1230,7 @@ mod tests {
             assessment_mode: adaptive_learn_domain::AssessmentMode::Recognition,
             interaction_type: adaptive_learn_domain::InteractionType::Classification,
             difficulty_prior: 0.3,
+            pedagogy: None,
             prompt: "prompt".to_owned(),
             instruction: None,
             interaction,

@@ -24,7 +24,7 @@ pub use evaluation::{
 };
 pub use learning::{
     AssessmentMode, ConceptWeight, InteractionType, LearningEvent, MissionInstance, MissionStatus,
-    QuizMode,
+    PedagogyMetadata, PedagogyStage, QuizMode,
 };
 pub use reward::{
     BASE_BITS, DAILY_MISSION_BONUS_BITS, SECTION_QUIZ_BONUS_BITS, cyber_defense_upgrade_bits,

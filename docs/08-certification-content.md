@@ -96,6 +96,39 @@ hints
 source references
 ```
 
+### Optional pedagogical metadata
+
+A question may also carry an optional, track-agnostic `pedagogy` object. It is
+descriptive in Phase 1 (it never changes mastery, scoring, rewards, or
+selection) and every field is optional, so existing content keeps loading
+unchanged.
+
+```jsonc
+"pedagogy": {
+  "family_id": "aws.storage.cost_latency_tradeoff", // reusable pattern (opaque)
+  "stage": "differentiate",                          // PedagogyStage
+  "scaffold_level": 2,                               // 0..=6 embedded help
+  "transfer_group_id": "tradeoff_under_constraints", // opaque
+  "surface_context": "order_processing",             // opaque
+  "challenge_group_id": "storage-tradeoff-01"        // opaque
+}
+```
+
+- `stage` is one of `discover`, `recognize`, `differentiate`, `reason`,
+  `trace`, `diagnose`, `construct`, `transfer`.
+- `scaffold_level` is how much help is embedded, **not** difficulty.
+- `family_id`, `transfer_group_id`, `surface_context`, and `challenge_group_id`
+  are author-defined strings; the validator rejects blank values when a field is
+  present but does not constrain their contents or impose cross-question rules.
+
+See [06-learning-engine.md](06-learning-engine.md#pedagogical-metadata-phase-1)
+for the semantics and the intentional distinction between assessment mode,
+pedagogy stage, difficulty, and scaffolding.
+
+`pedagogy` is authored content. It is not sent in learner-facing question DTOs
+before scoring, because some `family_id` values could reveal the intended
+approach.
+
 ## Learning modules (knowledge maps)
 
 Quiz bundles, learning content, and practice tests are distinct first-class

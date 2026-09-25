@@ -71,6 +71,69 @@ KMeans         0.20
 data leakage   0.10
 ```
 
+## Pedagogical metadata (Phase 1)
+
+A question may carry an optional, track-agnostic `pedagogy` object. It is
+**descriptive** in Phase 1: it is authored in canonical content and available to
+server-side planning, but it does not change mastery, scoring, rewards, or
+selection yet.
+
+```text
+Question
+├── concepts
+├── assessment_mode
+├── interaction_type
+├── difficulty_prior
+└── pedagogy                 # optional; every field optional
+    ├── family_id            # deeper reusable pattern/structure (opaque string)
+    ├── stage                # PedagogyStage
+    ├── scaffold_level       # 0..=6 embedded help
+    ├── transfer_group_id    # same deep transferable structure (opaque string)
+    ├── surface_context      # domain/story context (opaque string)
+    └── challenge_group_id   # may form one multi-stage journey (opaque string)
+```
+
+`stage` is one of the domain-neutral values `discover`, `recognize`,
+`differentiate`, `reason`, `trace`, `diagnose`, `construct`, `transfer`. The
+`*_id` and `surface_context` values are opaque author-defined strings: core code
+never branches on them, and they are deliberately not enums, so any current or
+future track (DSA, Python, AWS, Terraform, cybersecurity, ML) can use the same
+contract.
+
+`scaffold_level` measures how much help is embedded (`0` no help, `6` strongly
+guided/reconstruction-level). It is **not** difficulty.
+
+These distinctions are intentional and must stay separate:
+
+```text
+difficulty        != scaffold level
+assessment mode   != pedagogy stage
+concept           != family
+interaction type  != pedagogy stage
+```
+
+- `assessment_mode` is what kind of **evidence** an attempt provides.
+- `pedagogy.stage` is the **instructional role** of the activity.
+- `concept` is a mastery component; `family_id` is a reusable structural pattern.
+- `interaction_type` is the rendering/scoring primitive; a `spot_the_fault`
+  activity can be `diagnose`, and a `python_code` activity can be `construct`.
+
+Phase 1 exists to establish the content contract and plumbing. It deliberately
+does **not** yet implement scaffold fading, transfer-aware selection, same-family
+balancing, challenge sequencing, cold-transfer detection, family mastery, or
+surface-context rotation. Those are Phase 2 concerns that this metadata is meant
+to enable without another content-schema redesign.
+
+### Transport boundary
+
+`pedagogy` lives on the authored/internal `Question` and on the server-side
+planner/selector types (`PlannerQuestion`, selection `Candidate`). It is **not**
+attached to learner-facing question DTOs (`QuestionView`, `StudyQuestionView`):
+some `family_id` values could reveal the intended approach before scoring, and
+Phase 1 has no UI for it. The `PedagogyStage`/`PedagogyMetadata` schemas are
+published in the OpenAPI/type layer so future frontend and planner code can
+reference the contract, but no question payload carries the values yet.
+
 ## Interaction features
 
 Record:

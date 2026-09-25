@@ -18,7 +18,8 @@
 use std::collections::{HashMap, HashSet};
 
 use adaptive_learn_domain::{
-    AssessmentMode, ConceptWeight, InteractionType, PRIOR_ESTIMATE, retrievability,
+    AssessmentMode, ConceptWeight, InteractionType, PRIOR_ESTIMATE, PedagogyMetadata,
+    retrievability,
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -172,6 +173,12 @@ pub struct PlannerQuestion {
     pub difficulty_prior: f64,
     /// Authored concept mappings with their evidence weights.
     pub concepts: Vec<ConceptWeight>,
+    /// Optional authored pedagogical metadata.
+    ///
+    /// Descriptive in Phase 1: it is carried so future scaffold/transfer/
+    /// challenge planning can read it without another content-schema change.
+    /// Nothing in the planner reads it yet, so ranking is unchanged.
+    pub pedagogy: Option<PedagogyMetadata>,
 }
 
 /// Everything the planner needs, independent of storage and transport.
@@ -1051,6 +1058,7 @@ mod tests {
             assessment_mode: mode,
             difficulty_prior: difficulty,
             concepts,
+            pedagogy: None,
         }
     }
 

@@ -27,8 +27,8 @@
 use std::collections::{HashMap, HashSet};
 
 use adaptive_learn_domain::{
-    AssessmentMode, ConceptWeight, InteractionType, PRIOR_ESTIMATE, QuizMode, retrievability,
-    uncertainty,
+    AssessmentMode, ConceptWeight, InteractionType, PRIOR_ESTIMATE, PedagogyMetadata, QuizMode,
+    retrievability, uncertainty,
 };
 use chrono::{DateTime, Utc};
 
@@ -80,6 +80,12 @@ pub struct Candidate {
     pub difficulty_prior: f64,
     /// Authored concept mappings with their evidence weights.
     pub concepts: Vec<ConceptWeight>,
+    /// Optional authored pedagogical metadata.
+    ///
+    /// Descriptive in Phase 1: selection ranking does not read it yet. It is
+    /// carried so future scaffold fading, transfer-aware selection, and
+    /// challenge sequencing can use it without another content-schema change.
+    pub pedagogy: Option<PedagogyMetadata>,
 }
 
 /// One recent accepted attempt, used for novelty and cold-start fallback.
@@ -718,6 +724,7 @@ mod tests {
             assessment_mode: AssessmentMode::Application,
             difficulty_prior: 0.5,
             concepts: vec![concept(concept_id)],
+            pedagogy: None,
         }
     }
 

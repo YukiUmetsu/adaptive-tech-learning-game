@@ -538,13 +538,16 @@ fn to_candidate(question: &PlannerQuestion) -> Candidate {
         assessment_mode: question.assessment_mode,
         difficulty_prior: question.difficulty_prior,
         concepts: question.concepts.clone(),
+        pedagogy: question.pedagogy.clone(),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use adaptive_learn_domain::{AssessmentMode, ConceptWeight, InteractionType};
+    use adaptive_learn_domain::{
+        AssessmentMode, ConceptWeight, InteractionType, PedagogyMetadata, PedagogyStage,
+    };
     use chrono::{DateTime, TimeZone, Utc};
 
     fn now() -> DateTime<Utc> {
@@ -592,6 +595,7 @@ mod tests {
             assessment_mode: AssessmentMode::Application,
             difficulty_prior: 0.5,
             concepts: concepts.iter().map(|c| concept(c)).collect(),
+            pedagogy: None,
         }
     }
 
@@ -939,5 +943,24 @@ mod tests {
         let session = plan_session(&input).expect("session");
         assert_eq!(session.track_id, "ai-python-fluency");
         assert!(!session.activities.is_empty());
+    }
+
+    #[test]
+    fn planner_candidate_carries_pedagogy_metadata() {
+        // Phase 1 plumbing only: the metadata must survive the
+        // `PlannerQuestion -> Candidate` projection so future selector code can
+        // read it. No ranking behavior is asserted or changed here.
+        let mut planner_question = question("q1", "d1", &["c1"]);
+        planner_question.pedagogy = Some(PedagogyMetadata {
+            family_id: Some("python.async.task_lifecycle".to_owned()),
+            stage: Some(PedagogyStage::Trace),
+            scaffold_level: Some(1),
+            transfer_group_id: Some("async_cancellation".to_owned()),
+            surface_context: Some("background_worker".to_owned()),
+            challenge_group_id: None,
+        });
+
+        let candidate = to_candidate(&planner_question);
+        assert_eq!(candidate.pedagogy, planner_question.pedagogy);
     }
 }

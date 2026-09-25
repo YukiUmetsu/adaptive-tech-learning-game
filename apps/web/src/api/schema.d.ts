@@ -160,7 +160,7 @@ export interface paths {
          * Scores and reviews a complete practice-test attempt.
          * @description The whole attempt is submitted at once; the response reveals canonical
          *     answers, explanations, and per-choice feedback. The raw practice score is
-         *     not an AWS scaled score.
+         *     not an official scaled score.
          */
         post: operations["submit_practice_test"];
         delete?: never;
@@ -1834,6 +1834,59 @@ export interface components {
             /** @description Knowledge node identifier. */
             node_id: string;
         };
+        /**
+         * @description Optional, track-agnostic pedagogical metadata authored on a question.
+         *
+         *     Every field is optional, so existing content without `pedagogy` keeps
+         *     loading unchanged. The metadata is descriptive in Phase 1: it is stored in
+         *     canonical content and exposed to server-side planning, but it never changes
+         *     mastery, scoring, rewards, or selection ranking.
+         *
+         *     The `*_id` and `surface_context` values are opaque, author-defined strings.
+         *     Core code must never branch on their contents, and no global enum exists for
+         *     them, so any current or future track (DSA, Python, AWS, Terraform, security,
+         *     ML) can use the same contract.
+         */
+        PedagogyMetadata: {
+            /**
+             * @description Groups questions that may eventually form one multi-stage learning
+             *     journey. Phase 1 stores the grouping only; it does not sequence it.
+             */
+            challenge_group_id?: string | null;
+            /**
+             * @description Deeper reusable family/pattern/strategy/conceptual structure this
+             *     activity belongs to, for example `dsa.sliding_window.variable`.
+             */
+            family_id?: string | null;
+            /**
+             * Format: int32
+             * @description How much assistance is embedded in the activity, `0..=6`.
+             *
+             *     This is not difficulty: an easy question may embed no help and a hard
+             *     question may embed substantial help. It never modifies
+             *     `difficulty_prior`.
+             */
+            scaffold_level?: number | null;
+            stage?: null | components["schemas"]["PedagogyStage"];
+            /** @description Surface/domain/story context, for example `api_rate_limiting`. */
+            surface_context?: string | null;
+            /** @description Groups activities that exercise the same deep transferable structure. */
+            transfer_group_id?: string | null;
+        };
+        /**
+         * @description The instructional role an authored activity plays.
+         *
+         *     This is deliberately separate from [`AssessmentMode`]: an assessment mode
+         *     describes the *evidence* an attempt provides, while a pedagogy stage
+         *     describes *what the learner is being asked to do* in the activity. The
+         *     values are domain-neutral; track-specific structure belongs in authored
+         *     `family_id`/`transfer_group_id`/`challenge_group_id` strings, never here.
+         *
+         *     Phase 1 is descriptive only. The stage is stored and exposed to server-side
+         *     planning code, but does not yet change selection or mastery.
+         * @enum {string}
+         */
+        PedagogyStage: "discover" | "recognize" | "differentiate" | "reason" | "trace" | "diagnose" | "construct" | "transfer";
         /** @description One axis of a two-dimensional conceptual map. */
         PlacementAxis: {
             /** @description Label for the high end of the axis. */
@@ -1989,7 +2042,7 @@ export interface components {
              * @description Raw accuracy across scored items, in `[0, 1]`.
              */
             raw_accuracy: number;
-            /** @description Explicit note that this raw score is not an AWS scaled score. */
+            /** @description Explicit note that this raw score is not an official scaled score. */
             score_note: string;
             /** @description Items that count toward the practice score. */
             scored_question_count: number;

@@ -34,6 +34,7 @@
 - Question concepts: ≥1, all known, none duplicated, weights ∈ `(0, 1]` summing to `1.0`.
 - `error_codes`: non-empty and unique, each with a code and description.
 - `source_refs`: non-empty, each with non-empty `title` and `url`. *(Presence and shape only — accuracy is the fact-check gate.)*
+- `pedagogy` (optional): when present, `family_id`, `transfer_group_id`, `surface_context`, and `challenge_group_id` must be non-blank (trim-aware); `scaffold_level` ∈ `0..=6`; `stage` must be a known `PedagogyStage` value (parse-time). No cross-question pedagogy rule is enforced in Phase 1.
 
 **Interaction ↔ canonical answer** (both must match the interaction; the answer must cover the authored shape):
 
@@ -425,6 +426,29 @@ A question is complete only when:
 - [ ] it is not semantically redundant with adjacent questions;
 - [ ] it stays within intended track scope;
 - [ ] its reading burden matches the quiz mode/difficulty.
+
+## 4.17 Pedagogical metadata audit (only when authored)
+
+`pedagogy` is optional. These checks apply **only** to questions that use it;
+old tracks without the metadata are not required to add it.
+
+- [ ] `family_id` names a genuinely shared deeper structure — the same pattern,
+      strategy, or conceptual family would describe every member, not just this
+      question's surface wording.
+- [ ] `stage` accurately describes what the learner is actually doing
+      (`recognize` for identification, `diagnose` for fault-finding,
+      `construct` for building, `transfer` for applying the structure in a
+      substantially different context, and so on).
+- [ ] `scaffold_level` reflects the help actually embedded in the activity
+      (`0` none … `6` strongly guided), independent of `difficulty_prior`.
+- [ ] `surface_context` is not misleading: it names the domain/story the learner
+      sees, not a hidden hint at the answer.
+- [ ] every `transfer_group_id` member really exercises the same underlying
+      structure in a different surface context.
+- [ ] every `challenge_group_id` member genuinely belongs together as one
+      intended multi-stage journey.
+- [ ] pedagogy metadata is not used to reveal the intended approach before
+      scoring (it is authored and server-side only).
 
 ---
 

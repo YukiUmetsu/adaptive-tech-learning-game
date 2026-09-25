@@ -296,7 +296,7 @@
           "practice-tests"
         ],
         "summary": "Scores and reviews a complete practice-test attempt.",
-        "description": "The whole attempt is submitted at once; the response reveals canonical\nanswers, explanations, and per-choice feedback. The raw practice score is\nnot an AWS scaled score.",
+        "description": "The whole attempt is submitted at once; the response reveals canonical\nanswers, explanations, and per-choice feedback. The raw practice score is\nnot an official scaled score.",
         "operationId": "submit_practice_test",
         "parameters": [
           {
@@ -4910,6 +4910,74 @@
           }
         }
       },
+      "PedagogyMetadata": {
+        "type": "object",
+        "description": "Optional, track-agnostic pedagogical metadata authored on a question.\n\nEvery field is optional, so existing content without `pedagogy` keeps\nloading unchanged. The metadata is descriptive in Phase 1: it is stored in\ncanonical content and exposed to server-side planning, but it never changes\nmastery, scoring, rewards, or selection ranking.\n\nThe `*_id` and `surface_context` values are opaque, author-defined strings.\nCore code must never branch on their contents, and no global enum exists for\nthem, so any current or future track (DSA, Python, AWS, Terraform, security,\nML) can use the same contract.",
+        "properties": {
+          "challenge_group_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Groups questions that may eventually form one multi-stage learning\njourney. Phase 1 stores the grouping only; it does not sequence it."
+          },
+          "family_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Deeper reusable family/pattern/strategy/conceptual structure this\nactivity belongs to, for example `dsa.sliding_window.variable`."
+          },
+          "scaffold_level": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "How much assistance is embedded in the activity, `0..=6`.\n\nThis is not difficulty: an easy question may embed no help and a hard\nquestion may embed substantial help. It never modifies\n`difficulty_prior`.",
+            "minimum": 0
+          },
+          "stage": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PedagogyStage",
+                "description": "Instructional role of this particular activity."
+              }
+            ]
+          },
+          "surface_context": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Surface/domain/story context, for example `api_rate_limiting`."
+          },
+          "transfer_group_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Groups activities that exercise the same deep transferable structure."
+          }
+        }
+      },
+      "PedagogyStage": {
+        "type": "string",
+        "description": "The instructional role an authored activity plays.\n\nThis is deliberately separate from [`AssessmentMode`]: an assessment mode\ndescribes the *evidence* an attempt provides, while a pedagogy stage\ndescribes *what the learner is being asked to do* in the activity. The\nvalues are domain-neutral; track-specific structure belongs in authored\n`family_id`/`transfer_group_id`/`challenge_group_id` strings, never here.\n\nPhase 1 is descriptive only. The stage is stored and exposed to server-side\nplanning code, but does not yet change selection or mastery.",
+        "enum": [
+          "discover",
+          "recognize",
+          "differentiate",
+          "reason",
+          "trace",
+          "diagnose",
+          "construct",
+          "transfer"
+        ]
+      },
       "PlacementAxis": {
         "type": "object",
         "description": "One axis of a two-dimensional conceptual map.",
@@ -5301,7 +5369,7 @@
           },
           "score_note": {
             "type": "string",
-            "description": "Explicit note that this raw score is not an AWS scaled score."
+            "description": "Explicit note that this raw score is not an official scaled score."
           },
           "scored_question_count": {
             "type": "integer",

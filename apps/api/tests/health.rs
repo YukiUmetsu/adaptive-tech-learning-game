@@ -24,6 +24,26 @@ async fn openapi_document_lists_the_learning_endpoints() {
     assert!(body["paths"]["/v1/certifications"]["get"].is_object());
     assert!(body["paths"]["/v1/missions/issue"]["post"].is_object());
     assert!(body["paths"]["/v1/sync"]["post"].is_object());
+
+    // The pedagogical metadata contract is part of the published type layer so
+    // future planner/frontend code can reference it. It is never attached to a
+    // learner-facing question DTO in Phase 1.
+    assert!(
+        body["components"]["schemas"]["PedagogyMetadata"].is_object(),
+        "PedagogyMetadata must be a published schema"
+    );
+    assert!(
+        body["components"]["schemas"]["PedagogyStage"].is_object(),
+        "PedagogyStage must be a published schema"
+    );
+    assert!(
+        body["components"]["schemas"]["QuestionView"]["properties"]["pedagogy"].is_null(),
+        "QuestionView must not expose pedagogy"
+    );
+    assert!(
+        body["components"]["schemas"]["StudyQuestionView"]["properties"]["pedagogy"].is_null(),
+        "StudyQuestionView must not expose pedagogy"
+    );
 }
 
 #[tokio::test]

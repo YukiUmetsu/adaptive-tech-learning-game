@@ -6,6 +6,8 @@
 use utoipa::OpenApi;
 use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
 
+use adaptive_learn_domain::{PedagogyMetadata, PedagogyStage};
+
 use crate::dto::{
     AnswerPayload, AnswerRequest, AuxiliaryEventRequest, CalibrationBucketDto, CatalogResponse,
     CertificationDto, CertificationVersionDto, CompleteMissionRequest, CompleteMissionResponse,
@@ -76,6 +78,8 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         DomainDto,
         TaskDto,
         ConceptDto,
+        PedagogyStage,
+        PedagogyMetadata,
         IssueMissionRequest,
         MissionResponse,
         WalletResponse,

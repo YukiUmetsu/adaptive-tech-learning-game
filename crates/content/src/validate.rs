@@ -86,6 +86,15 @@ pub const PYTHON_MAX_PACKAGES: usize = 4;
 /// it, and enabling it would require installing a wheel from PyPI.
 pub const PYTHON_ALLOWED_PACKAGES: &[&str] = &["numpy", "pandas", "matplotlib"];
 
+/// Inclusive lower bound for an authored `pedagogy.scaffold_level`.
+pub const PEDAGOGY_MIN_SCAFFOLD_LEVEL: u8 = 0;
+/// Inclusive upper bound for an authored `pedagogy.scaffold_level`.
+///
+/// `0` means no embedded help; `6` means strongly guided,
+/// reconstruction-level support. Scaffolding is independent of
+/// `difficulty_prior`.
+pub const PEDAGOGY_MAX_SCAFFOLD_LEVEL: u8 = 6;
+
 /// Validates a bundle, returning every problem found.
 pub fn validate(bundle: &ContentBundle) -> Result<(), Vec<ContentError>> {
     let mut errors = Vec::new();
@@ -320,6 +329,7 @@ fn validate_questions(bundle: &ContentBundle, errors: &mut Vec<ContentError>) {
         validate_canonical_answer(question, errors);
         validate_error_codes(question, errors);
         validate_source_refs(question, errors);
+        validate_pedagogy(question, errors);
     }
 }
 
@@ -377,6 +387,54 @@ fn validate_question_concepts(
                 question.id
             ),
         ));
+    }
+}
+
+/// Validates optional pedagogical metadata.
+///
+/// Phase 1 only enforces local, non-cross-question invariants: present string
+/// identifiers must not be blank and `scaffold_level` must be within
+/// `0..=6`. It deliberately does not require any field, so content authored
+/// before this contract keeps validating unchanged, and it deliberately does
+/// not impose cross-question constraints (for example, that a challenge group
+/// stays inside one domain): future tracks must be able to use the same
+/// metadata without a redesign.
+///
+/// An unknown `stage` string never reaches this function: `PedagogyStage`
+/// deserialization rejects it, so the content source fails loudly at parse
+/// time.
+pub(crate) fn validate_pedagogy(question: &Question, errors: &mut Vec<ContentError>) {
+    let Some(pedagogy) = &question.pedagogy else {
+        return;
+    };
+
+    for (field, value) in [
+        ("family_id", pedagogy.family_id.as_deref()),
+        ("transfer_group_id", pedagogy.transfer_group_id.as_deref()),
+        ("surface_context", pedagogy.surface_context.as_deref()),
+        ("challenge_group_id", pedagogy.challenge_group_id.as_deref()),
+    ] {
+        if value.is_some_and(|value| value.trim().is_empty()) {
+            errors.push(ContentError::new(
+                "pedagogy_field_empty",
+                format!(
+                    "question {} pedagogy.{field} must not be blank when present",
+                    question.id
+                ),
+            ));
+        }
+    }
+
+    if let Some(level) = pedagogy.scaffold_level {
+        if !(PEDAGOGY_MIN_SCAFFOLD_LEVEL..=PEDAGOGY_MAX_SCAFFOLD_LEVEL).contains(&level) {
+            errors.push(ContentError::new(
+                "pedagogy_scaffold_level_invalid",
+                format!(
+                    "question {} pedagogy.scaffold_level {} must be within {}..={}",
+                    question.id, level, PEDAGOGY_MIN_SCAFFOLD_LEVEL, PEDAGOGY_MAX_SCAFFOLD_LEVEL
+                ),
+            ));
+        }
     }
 }
 
