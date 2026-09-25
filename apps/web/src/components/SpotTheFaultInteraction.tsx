@@ -53,7 +53,7 @@ export default function SpotTheFaultInteraction({
                   {isSelected ? "⚑" : "○"}
                 </span>
                 <span>
-                  <InlineText text={element.label} />
+                  <InlineText text={element.label} terms={[]} />
                 </span>
                 <span className="sr-only">
                   {isSelected ? "flagged as faulty" : "not flagged"}

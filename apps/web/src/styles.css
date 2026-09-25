@@ -1230,6 +1230,17 @@ button.primary:hover:not(:disabled) {
   }
 }
 
+/* iOS Safari zooms the page when a focused field computes under 16px. Typed
+   answers inherit code/table sizes as small as 0.82rem, so keep them legible
+   on phones while leaving desktop code typography unchanged. */
+@media (max-width: 640px) {
+  .typed-blank-input,
+  .typed-code .typed-blank-input,
+  .typed-blank-textarea {
+    font-size: 1rem;
+  }
+}
+
 /* Reconstruction */
 .reconstruction {
   display: grid;
@@ -1320,7 +1331,10 @@ button.primary:hover:not(:disabled) {
   background-image: radial-gradient(var(--border) 1px, transparent 1px);
   background-size: 22px 22px;
   overflow: hidden;
-  touch-action: none;
+  /* The graph only implements HTML5 drag-and-drop plus click, so there is no
+     touch gesture to protect here. Allowing vertical panning lets a finger
+     that lands on the 340px map scroll the question. */
+  touch-action: pan-y;
 }
 
 .reconstruction-graph-node {
@@ -7397,6 +7411,12 @@ button.primary:hover:not(:disabled) {
   transform: translateY(6px) scale(0.98);
   transform-origin: bottom left;
   pointer-events: none;
+  /* The panel grows upward from a bottom-anchored pill. Cap it so a short
+     phone viewport can still scroll to the header and actions. */
+  max-height: min(70vh, calc(100vh - 6rem));
+  max-height: min(70dvh, calc(100dvh - 6rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   transition:
     opacity 0.18s ease,
     transform 0.18s ease;
@@ -7709,6 +7729,45 @@ button.primary:hover:not(:disabled) {
     flex: none;
     width: 1.5rem;
     height: 1.5rem;
+  }
+
+  /* Touch-target floor for controls that are only ~24-40px tall. Keeps the
+     existing look but meets the ~44px minimum on phones. */
+  .settings-link {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .ordering-controls button,
+  .focus-widget-actions button,
+  .focus-widget-break-options button,
+  .navigator-toggle,
+  .navigator-cell,
+  .track-hub-tabs > button,
+  .track-hub-tabs > a,
+  .quest-step-review {
+    min-height: 2.75rem;
+  }
+
+  /* The relationship handle is the only tap path to an edge; expand its hit
+     area without changing its visual size. */
+  .reconstruction-handle::before {
+    content: "";
+    position: absolute;
+    inset: -0.65rem;
+  }
+
+  /* Inline glossary terms only paint a text-height hit box; grow it downward
+     and upward without shifting the prose. */
+  .glossary-term::after {
+    content: "";
+    position: absolute;
+    inset: -0.5rem -0.15rem;
+  }
+
+  .cyber-call-button,
+  .cyber-hud-start {
+    min-height: 44px;
   }
 }
 
@@ -8295,6 +8354,20 @@ button.primary:hover:not(:disabled) {
   border-radius: var(--radius);
   background: var(--bg-elevated);
   box-shadow: var(--shadow);
+}
+
+/* Lift the exam action bar and its confirmation above the fixed mobile tab
+   bar, which is 3.5rem tall and paints at z-index 35. */
+@media (max-width: 640px) {
+  .practice-test-footer {
+    bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px) + 0.75rem);
+    z-index: 36;
+  }
+
+  .practice-test-confirm {
+    bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px) + 1rem);
+    z-index: 46;
+  }
 }
 
 .practice-test-score-main {
@@ -11471,6 +11544,19 @@ button.primary:hover:not(:disabled) {
   color: var(--text-muted);
 }
 
+/* The chip row scrolls horizontally; on phones keep the only cancel affordance
+   pinned to the right edge instead of off-screen. Desktop is unchanged because
+   the row never overflows there. */
+@media (max-width: 640px) {
+  .cyber-shop-clear {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: var(--bg-elevated);
+    box-shadow: -10px 0 10px -8px rgba(0, 0, 0, 0.7);
+  }
+}
+
 .cyber-shop-feedback {
   margin: 0;
   padding: 0.45rem 0.65rem;
@@ -11596,6 +11682,12 @@ button.primary:hover:not(:disabled) {
 /* Tower pads */
 .cyber-pad {
   cursor: pointer;
+}
+
+/* Enlarged transparent tap target for touch, mirroring .cyber-enemy-hit. */
+.cyber-pad-hit {
+  fill: transparent;
+  pointer-events: all;
 }
 
 .cyber-pad-base {

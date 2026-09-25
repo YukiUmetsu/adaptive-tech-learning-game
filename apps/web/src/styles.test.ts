@@ -75,3 +75,33 @@ describe("mobile node detail sheet CSS", () => {
     expect(css).toContain("node-sheet-in");
   });
 });
+
+describe("mobile layout guards", () => {
+  it("clears the fixed tab bar for practice-test controls", () => {
+    expect(css).toContain(
+      ".practice-test-footer {\n    bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px) + 0.75rem);",
+    );
+    expect(css).toContain(
+      ".practice-test-confirm {\n    bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px) + 1rem);",
+    );
+  });
+
+  it("keeps typed answers at 1rem so iOS does not zoom on focus", () => {
+    expect(css).toMatch(
+      /\.typed-code \.typed-blank-input,[\s\S]*?\.typed-blank-textarea \{\s*font-size: 1rem;/,
+    );
+  });
+
+  it("gives small controls a 44px touch-target floor", () => {
+    expect(css).toContain(".settings-link {\n    width: 2.75rem;");
+    expect(css).toContain(".reconstruction-handle::before {");
+  });
+
+  it("does not trap page scroll on the reconstruction map", () => {
+    expect(css).toMatch(/\.reconstruction-map \{[\s\S]*?touch-action: pan-y;/);
+  });
+
+  it("caps the focus panel so it stays on screen", () => {
+    expect(css).toMatch(/\.focus-widget-panel \{[\s\S]*?max-height: min\(70dvh/);
+  });
+});

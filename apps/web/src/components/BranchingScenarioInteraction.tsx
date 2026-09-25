@@ -102,7 +102,7 @@ export default function BranchingScenarioInteraction({
                     disabled={disabled}
                     onClick={() => onChange([...value, choice.id])}
                   >
-                    <InlineText text={choice.label} />
+                    <InlineText text={choice.label} terms={[]} />
                   </button>
                 </li>
               ),

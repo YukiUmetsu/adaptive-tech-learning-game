@@ -54,7 +54,7 @@ export default function EvidenceSelectionInteraction({
                   {isSelected ? "✓" : "○"}
                 </span>
                 <span>
-                  <InlineText text={option.label} />
+                  <InlineText text={option.label} terms={[]} />
                 </span>
                 <span className="sr-only">
                   {isSelected ? "selected" : "not selected"}

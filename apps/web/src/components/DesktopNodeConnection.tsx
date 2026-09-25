@@ -354,7 +354,7 @@ export default function DesktopNodeConnection({
               dragStart.current = null;
             }}
           >
-            <InlineText text={node.label} />
+            <InlineText text={node.label} terms={[]} />
           </button>
         ))}
       </div>

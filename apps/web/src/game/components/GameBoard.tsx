@@ -664,6 +664,8 @@ export default function GameBoard({
               }
             }}
           >
+            {/* Enlarged transparent tap target for touch. */}
+            <circle className="cyber-pad-hit" r={22} />
             <polygon className="cyber-pad-base" points="0,-20 17.3,-10 17.3,10 0,20 -17.3,10 -17.3,-10" />
             <polygon className="cyber-pad-ring" points="0,-20 17.3,-10 17.3,10 0,20 -17.3,10 -17.3,-10" />
             <text className="cyber-pad-plus" x={0} y={7} textAnchor="middle">

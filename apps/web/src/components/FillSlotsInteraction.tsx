@@ -73,7 +73,7 @@ export default function FillSlotsInteraction({
                   )
                 }
               >
-                <InlineText text={option.label} />
+                <InlineText text={option.label} terms={[]} />
               </button>
             </li>
           ))}
@@ -116,7 +116,7 @@ export default function FillSlotsInteraction({
                 disabled={disabled || selectedOption === null}
                 onClick={() => placeOption(slot.id, selectedOption)}
               >
-                <InlineText text={chosenLabel} />
+                <InlineText text={chosenLabel} terms={[]} />
               </button>
               <button
                 type="button"

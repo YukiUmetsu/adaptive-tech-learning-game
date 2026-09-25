@@ -244,7 +244,7 @@ export default function TwoDimensionalPlacementInteraction({
               }}
               onKeyDown={onMarkerKeyDown(item.id)}
             >
-              <InlineText text={item.label} />
+              <InlineText text={item.label} terms={[]} />
             </button>
           );
         })}
@@ -275,7 +275,7 @@ export default function TwoDimensionalPlacementInteraction({
                     setSelectedItem(item.id);
                   }}
                 >
-                  <InlineText text={item.label} />
+                  <InlineText text={item.label} terms={[]} />
                   {isPlaced ? (
                     <span className="muted"> · placed</span>
                   ) : null}
