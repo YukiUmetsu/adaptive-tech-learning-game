@@ -60,7 +60,7 @@ pub async fn get_practice_test(
 ///
 /// The whole attempt is submitted at once; the response reveals canonical
 /// answers, explanations, and per-choice feedback. The raw practice score is
-/// not an AWS scaled score.
+/// not an official scaled score.
 #[utoipa::path(
     post,
     path = "/v1/certifications/{certification_id}/practice-tests/{practice_test_id}/submit",

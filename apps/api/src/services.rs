@@ -3268,9 +3268,10 @@ fn study_question_view(question: &adaptive_learn_content::Question) -> StudyQues
 
 /// Note shown with every practice-test result.
 ///
-/// The raw practice score is a study aid, not an official AWS scaled score.
+/// Certification-neutral: the raw practice score is a study aid, not an
+/// official vendor scaled score or a pass/fail result.
 pub const PRACTICE_TEST_SCORE_NOTE: &str =
-    "This is a raw practice score, not an AWS scaled score or an official pass/fail result.";
+    "This is a raw practice score, not an official scaled score or a pass/fail result.";
 
 /// Lists the practice tests available for a certification.
 pub fn list_practice_tests(state: &AppState, certification_id: &str) -> PracticeTestListResponse {
@@ -3554,6 +3555,14 @@ fn matches_submitted_shape(item: &PracticeTestItem, submitted: &SubmittedAnswer)
 mod tests {
     use super::*;
     use std::collections::BTreeMap;
+
+    #[test]
+    fn practice_test_score_note_is_vendor_neutral() {
+        // Practice tests exist for both AWS and Microsoft certifications, so the
+        // note must not name a single vendor's scoring scale.
+        assert!(!PRACTICE_TEST_SCORE_NOTE.contains("AWS"));
+        assert!(PRACTICE_TEST_SCORE_NOTE.contains("not"));
+    }
 
     #[tokio::test]
     async fn recommendation_logging_failure_is_swallowed() {

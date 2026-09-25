@@ -93,6 +93,13 @@ const MILESTONES: Milestone[] = [
     available: true,
   },
   {
+    id: "microsoft-az-104",
+    name: "Microsoft Certified: Azure Administrator Associate",
+    examCode: "AZ-104",
+    icon: "🔷",
+    available: true,
+  },
+  {
     id: "comptia-security-plus",
     name: "CompTIA Security+",
     examCode: "SY0-701",

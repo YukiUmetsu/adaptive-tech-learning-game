@@ -115,6 +115,13 @@ export const CATALOG: CatalogCategory[] = [
         examCode: "AZ-900",
         wip: false,
       },
+      {
+        id: "microsoft-az-104",
+        name: "Microsoft Certified: Azure Administrator Associate",
+        shortName: "Azure Administrator Associate",
+        examCode: "AZ-104",
+        wip: false,
+      },
     ],
   },
   {

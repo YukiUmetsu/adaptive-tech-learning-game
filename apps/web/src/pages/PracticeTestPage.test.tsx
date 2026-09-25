@@ -333,4 +333,139 @@ describe("PracticeTestPage", () => {
       { timeout: 2000 },
     );
   });
+
+  it("renders tactile interactions in an exam and reviews their canonical answer", async () => {
+    const classification = {
+      type: "classification",
+      items: [
+        { id: "i1", label: "Storage account" },
+        { id: "i2", label: "Virtual network" },
+      ],
+      categories: [
+        { id: "c1", label: "Storage" },
+        { id: "c2", label: "Networking" },
+      ],
+    };
+    const azureTest = {
+      ...practiceTest,
+      id: "microsoft-az-104-practice-test-1",
+      title: "AZ-104 Practice Test 1",
+      exam_code: "AZ-104",
+      certification_version: "az-104",
+      question_count: 1,
+      scored_question_count: 1,
+      question_types: ["classification"],
+      items: [
+        {
+          order: 1,
+          question: {
+            id: "q-classify",
+            domain_id: "domain-1",
+            task_id: "1.1",
+            prompt: "Place the resources.",
+            instruction: "Choose ONE.",
+            interaction_type: "classification",
+            assessment_mode: "recognition",
+            difficulty_prior: 0.4,
+            concepts: [],
+            hints: [],
+            interaction: classification,
+          },
+        },
+      ],
+    } as unknown as PracticeTestResponse;
+
+    const azureResult = {
+      ...result,
+      id: azureTest.id,
+      total_questions: 1,
+      scored_question_count: 1,
+      correct_count: 1,
+      raw_accuracy: 1,
+      answered_count: 1,
+      unanswered_count: 0,
+      domain_breakdown: [{ domain_id: "domain-1", correct: 1, scored_count: 1 }],
+      questions: [
+        {
+          order: 1,
+          question_id: "q-classify",
+          domain_id: "domain-1",
+          task_id: "1.1",
+          prompt: "Place the resources.",
+          instruction: "Choose ONE.",
+          interaction_type: "classification",
+          assessment_mode: "recognition",
+          interaction: classification,
+          canonical_answer: {
+            type: "classification",
+            placements: { i1: "c1", i2: "c2" },
+          },
+          explanation: "Storage accounts belong to the Storage category.",
+          choice_feedback: {},
+          is_scored: true,
+          answered: true,
+          submitted_answer: { placements: { i1: "c1", i2: "c2" } },
+          correct: true,
+        },
+      ],
+      score_note: "This is a raw practice score, not an official scaled score.",
+    } as unknown as PracticeTestResultResponse;
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = requestUrl(input);
+        if (url.includes("/submit")) {
+          return jsonResponse(azureResult);
+        }
+        if (url.includes("/practice-tests/")) {
+          return jsonResponse(azureTest);
+        }
+        return jsonResponse({ error: { code: "not_found" } }, 404);
+      }),
+    );
+
+    renderPage();
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", { name: /Start practice test/i }),
+    );
+    await screen.findByText("Place the resources.");
+
+    // The tactile interaction renders instead of the "unsupported" fallback.
+    expect(
+      screen.queryByText(/not supported in exam simulation/i),
+    ).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Storage account" }));
+    await user.click(
+      within(screen.getByRole("group", { name: "Storage" })).getByRole(
+        "button",
+        { name: "Place here" },
+      ),
+    );
+    await user.click(screen.getByRole("button", { name: "Virtual network" }));
+    await user.click(
+      within(screen.getByRole("group", { name: "Networking" })).getByRole(
+        "button",
+        { name: "Place here" },
+      ),
+    );
+
+    await user.click(screen.getByRole("button", { name: "All questions" }));
+    expect(
+      screen.getByRole("button", { name: "Question 1, answered, current" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Submit test" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(
+      within(dialog).getByRole("button", { name: "Submit test" }),
+    );
+
+    // The review falls back to readable canonical-answer lines.
+    expect(await screen.findByText("Correct answer")).toBeInTheDocument();
+    expect(screen.getByText("Storage account")).toBeInTheDocument();
+    expect(screen.getByText("Storage")).toBeInTheDocument();
+  });
 });

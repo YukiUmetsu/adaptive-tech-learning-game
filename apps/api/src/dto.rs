@@ -1311,6 +1311,6 @@ pub struct PracticeTestResultResponse {
     pub domain_breakdown: Vec<PracticeTestDomainResult>,
     /// Per-item review in authored order.
     pub questions: Vec<PracticeTestItemResult>,
-    /// Explicit note that this raw score is not an AWS scaled score.
+    /// Explicit note that this raw score is not an official scaled score.
     pub score_note: String,
 }

@@ -98,14 +98,17 @@ Phase 1 ships real, multi-certification content:
   Certified Generative AI Developer - Professional (`aws-aip-c01`).
 - Microsoft Certified: Azure Fundamentals (`microsoft-az-900`, `AZ-900`): all
   three domains, each with authored tasks, questions, and learning maps.
+- Microsoft Certified: Azure Administrator Associate (`microsoft-az-104`,
+  `AZ-104`): all five domains, each with authored tasks, questions, learning
+  maps, and a tactile practice exam.
 - CompTIA Security+ (`comptia-security-plus`, `SY0-701`): all five domains.
 - HashiCorp Certified: Terraform Associate (`hashicorp-terraform-associate-004`).
 - AI tracks: Python fluency, Python data stack (NumPy/pandas/Matplotlib/Seaborn),
   and PyTorch core.
 
 Each certification also has learning knowledge maps for pre-quiz discovery;
-AWS SOA-C03, Microsoft AZ-900, CompTIA Security+, and the AI tracks are fully
-covered, and Terraform covers all eight domains. The web catalog and dashboard
+AWS SOA-C03, Microsoft AZ-900 and AZ-104, CompTIA Security+, and the AI tracks
+are fully covered, and Terraform covers all eight domains. The web catalog and dashboard
 read certification metadata from `apps/web/src/state/catalogMeta.ts` plus the
 API catalog.
 
@@ -188,8 +191,8 @@ sync fails, events remain pending and can be retried from the summary.
   runner surfaces a warning rather than silently losing evidence; synced events
   are removed from the pending queue.
 - **Content scope.** Authored questions now span all SOA-C03 domains plus SAA-C03,
-  AIP-C01, Microsoft AZ-900, Terraform Associate 004, and the AI/Python tracks.
-  The equation interaction is still not implemented.
+  AIP-C01, Microsoft AZ-900 and AZ-104, Terraform Associate 004, and the AI/Python
+  tracks. The equation interaction is still not implemented.
 - **Auth session persistence.** With the default `api.workos.com` host the
   refresh token is stored in `localStorage` (`devMode`); a custom AuthKit
   authentication domain gives first-party cookie persistence instead. See

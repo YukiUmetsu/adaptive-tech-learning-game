@@ -104,11 +104,16 @@ describe("buildCatalog", () => {
     expect(saa?.available).toBe(false);
 
     const azure = sections.find((section) => section.id === "azure");
-    // The planned AZ-104 placeholder was removed; only AZ-900 remains, and it is
-    // muted until the API reports content for it.
-    expect(azure?.cards.map((card) => card.id)).toEqual(["microsoft-az-900"]);
+    // AZ-900 and AZ-104 are both authored; without API content they stay muted.
+    expect(azure?.cards.map((card) => card.id)).toEqual([
+      "microsoft-az-900",
+      "microsoft-az-104",
+    ]);
     expect(
       azure?.cards.find((card) => card.id === "microsoft-az-900")?.available,
+    ).toBe(false);
+    expect(
+      azure?.cards.find((card) => card.id === "microsoft-az-104")?.available,
     ).toBe(false);
   });
 
@@ -133,6 +138,27 @@ describe("buildCatalog", () => {
 
     const azure = sections.find((section) => section.id === "azure");
     expect(azure?.kind).toBe("certification");
+  });
+
+  it("offers Azure Administrator Associate under Azure when content exists", () => {
+    const entries = CATALOG.flatMap((section) => section.certifications);
+    const entry = entries.find(
+      (candidate) => candidate.id === "microsoft-az-104",
+    );
+    expect(entry?.examCode).toBe("AZ-104");
+    expect(entry?.wip).toBe(false);
+    expect(entry?.shortName).toBe("Azure Administrator Associate");
+
+    const sections = buildCatalog(CATALOG, [
+      certification(
+        "microsoft-az-104",
+        "Microsoft Certified: Azure Administrator Associate",
+      ),
+    ]);
+    const azure = sections.find((section) => section.id === "azure");
+    expect(
+      azure?.cards.find((card) => card.id === "microsoft-az-104")?.available,
+    ).toBe(true);
   });
 
   it("drops the DVA-C02 and MLA-C01 planned entries", () => {

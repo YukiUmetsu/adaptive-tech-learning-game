@@ -1,0 +1,923 @@
+{
+  "schema_version": "2.0.0",
+  "content_version": "az-104-learning-2026-09-25-v1",
+  "certification_id": "microsoft-az-104",
+  "certification_version": "az-104",
+  "exam_guide_revision": "Microsoft AZ-104 skills measured as of April 17, 2026; reviewed 2026-09-25",
+  "domain": {
+    "id": "domain-5",
+    "name": "Monitor and maintain Azure resources",
+    "weight": 0.14
+  },
+  "learning_design": {
+    "progress_label": "Discovery Progress",
+    "unlock_rule": "Reveal the short definition, mental model, and recognition clues to unlock each knowledge node.",
+    "mastery_note": "Discovery builds the mental model first; scored questions provide recall and application evidence."
+  },
+  "source_refs": [
+    {
+      "title": "Study guide for Exam AZ-104: Microsoft Azure Administrator",
+      "url": "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104"
+    },
+    {
+      "title": "Diagnostic settings in Azure Monitor",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-monitor/platform/diagnostic-settings"
+    },
+    {
+      "title": "Log queries in Azure Monitor",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-monitor/logs/log-query-overview"
+    },
+    {
+      "title": "Overview of Azure Monitor alerts",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-overview"
+    },
+    {
+      "title": "Action groups in Azure Monitor",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/action-groups"
+    },
+    {
+      "title": "Network insights",
+      "url": "https://learn.microsoft.com/en-us/azure/network-watcher/network-insights-overview"
+    },
+    {
+      "title": "Overview of VM insights",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-monitor/vm/vminsights-overview"
+    },
+    {
+      "title": "Monitoring Azure Storage with Azure Monitor Storage insights",
+      "url": "https://learn.microsoft.com/en-us/azure/storage/common/storage-insights-overview"
+    },
+    {
+      "title": "Azure Network Watcher documentation",
+      "url": "https://learn.microsoft.com/en-us/azure/network-watcher/"
+    },
+    {
+      "title": "Connection monitor overview",
+      "url": "https://learn.microsoft.com/en-us/azure/networking/network-monitoring-overview"
+    },
+    {
+      "title": "What is Azure Backup?",
+      "url": "https://learn.microsoft.com/en-us/azure/backup/backup-overview"
+    },
+    {
+      "title": "Recovery Services vaults overview",
+      "url": "https://learn.microsoft.com/en-us/azure/backup/backup-azure-recovery-services-vault-overview"
+    },
+    {
+      "title": "Create and delete Backup vaults",
+      "url": "https://learn.microsoft.com/en-us/azure/backup/create-manage-backup-vault"
+    },
+    {
+      "title": "Create vaults to back up and replicate resources",
+      "url": "https://learn.microsoft.com/en-us/azure/resiliency/backup-vaults"
+    },
+    {
+      "title": "Azure-to-Azure disaster recovery architecture",
+      "url": "https://learn.microsoft.com/en-us/azure/site-recovery/azure-to-azure-architecture"
+    },
+    {
+      "title": "Monitoring and reporting solutions for Azure Backup",
+      "url": "https://learn.microsoft.com/en-us/azure/backup/monitoring-and-alerts-overview"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "metric",
+      "definition": "A numeric time-series measurement."
+    },
+    {
+      "term": "resource log",
+      "definition": "A platform log emitted by an Azure resource that can be routed through diagnostic settings."
+    },
+    {
+      "term": "recovery point",
+      "definition": "A retained backup state that can be selected for restore."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "5.1",
+      "5.2"
+    ],
+    "skill_ids": [
+      "5.1",
+      "5.2"
+    ],
+    "module_count": 2,
+    "knowledge_node_count": 9,
+    "prompt_count": 36
+  },
+  "authoring_notes": "Original AZ-104 learning content aligned to Microsoft skills measured as of 2026-04-17. Domain weights are authored point values within Microsoft published ranges and normalized to sum to 1.0 for the repository validator. Definition-first, ADHD-friendly wording and explicit similar-service differentiation follow docs/16-content-audit.md.",
+  "modules": [
+    {
+      "id": "domain-5-module-1",
+      "title": "Monitor resources in Azure",
+      "order": 1,
+      "task_ids": [
+        "5.1"
+      ],
+      "skill_ids": [
+        "5.1"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "az104-d5-n01",
+          "title": "Metrics, logs, and Azure Monitor",
+          "concept_ids": [
+            "azure.monitor.signals"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "az104-d5-n01-what",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Azure Monitor collects monitoring data about Azure resources and applications. Metrics are lightweight numeric time-series values; logs are records that can carry richer structured detail and are queried for investigation and analysis."
+              }
+            },
+            {
+              "id": "az104-d5-n01-why",
+              "kind": "when",
+              "label": "WHY IT MATTERS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choosing the right signal lets you answer the right question quickly: “how much/how many?” often fits metrics, while “what exactly happened?” often needs logs."
+              }
+            },
+            {
+              "id": "az104-d5-n01-model",
+              "kind": "mental_model",
+              "label": "HOW TO THINK ABOUT IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Metrics",
+                    "items": [
+                      "Numeric time-series measurements",
+                      "Efficient for thresholds, charts, and near-real-time alert conditions",
+                      "Examples: CPU percentage, request count"
+                    ]
+                  },
+                  {
+                    "title": "Logs",
+                    "items": [
+                      "Structured/semi-structured records",
+                      "Queried for detailed investigation/correlation",
+                      "Examples: resource logs, activity or application records routed to a workspace"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "az104-d5-n01-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / PRACTICAL CLUE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A graph of CPU over time points to metrics. Searching many detailed records by fields/time points to logs."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Study guide for Exam AZ-104: Microsoft Azure Administrator",
+              "url": "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104"
+            },
+            {
+              "title": "Diagnostic settings in Azure Monitor",
+              "url": "https://learn.microsoft.com/en-us/azure/azure-monitor/platform/diagnostic-settings"
+            },
+            {
+              "title": "Log queries in Azure Monitor",
+              "url": "https://learn.microsoft.com/en-us/azure/azure-monitor/logs/log-query-overview"
+            }
+          ]
+        },
+        {
+          "id": "az104-d5-n02",
+          "title": "Diagnostic settings and Log Analytics",
+          "concept_ids": [
+            "azure.monitor.diagnostic"
+          ],
+          "prerequisite_node_ids": [
+            "az104-d5-n01"
+          ],
+          "map_position": {
+            "x": 0.31,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "az104-d5-n02-what",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A diagnostic setting routes supported platform logs and metrics from an Azure resource to configured destinations such as a Log Analytics workspace, storage account, or event streaming destination. Log Analytics stores/query data using Kusto Query Language (KQL)."
+              }
+            },
+            {
+              "id": "az104-d5-n02-why",
+              "kind": "when",
+              "label": "WHY IT MATTERS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Resources do not automatically send every resource log to the workspace you want. Diagnostic settings establish that route."
+              }
+            },
+            {
+              "id": "az104-d5-n02-model",
+              "kind": "mental_model",
+              "label": "HOW TO THINK ABOUT IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Choose the resource and supported log/metric categories",
+                  "Create a diagnostic setting",
+                  "Select the destination such as Log Analytics",
+                  "Generate/collect data",
+                  "Query the workspace with KQL and validate retention/access"
+                ]
+              }
+            },
+            {
+              "id": "az104-d5-n02-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / PRACTICAL CLUE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If a Log Analytics query returns no resource logs, first confirm the resource category is enabled in a diagnostic setting and routed to that workspace."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Study guide for Exam AZ-104: Microsoft Azure Administrator",
+              "url": "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104"
+            },
+            {
+              "title": "Diagnostic settings in Azure Monitor",
+              "url": "https://learn.microsoft.com/en-us/azure/azure-monitor/platform/diagnostic-settings"
+            },
+            {
+              "title": "Log queries in Azure Monitor",
+              "url": "https://learn.microsoft.com/en-us/azure/azure-monitor/logs/log-query-overview"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "KQL",
+              "definition": "Kusto Query Language, the query language used to analyze log data in Azure Monitor Logs."
+            }
+          ]
+        },
+        {
+          "id": "az104-d5-n03",
+          "title": "Alerts, action groups, and processing rules",
+          "concept_ids": [
+            "azure.monitor.alerting"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.5,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "az104-d5-n03-what",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "An Azure Monitor alert rule evaluates a condition against a signal. An action group contains notification or automation actions. Alert processing rules can add/suppress action groups or control notification behavior for matching alerts, including scheduled suppression scenarios."
+              }
+            },
+            {
+              "id": "az104-d5-n03-why",
+              "kind": "when",
+              "label": "WHY IT MATTERS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Keeping the condition and the response separate makes one action group reusable across many alert rules and lets maintenance windows suppress noise without deleting monitoring."
+              }
+            },
+            {
+              "id": "az104-d5-n03-model",
+              "kind": "mental_model",
+              "label": "HOW TO THINK ABOUT IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "part",
+                    "label": "Part"
+                  },
+                  {
+                    "id": "job",
+                    "label": "Primary job"
+                  },
+                  {
+                    "id": "clue",
+                    "label": "Clue"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "rule",
+                    "cells": {
+                      "part": "Alert rule",
+                      "job": "Decide when a condition is met",
+                      "clue": "CPU > threshold, log query matches"
+                    }
+                  },
+                  {
+                    "id": "group",
+                    "cells": {
+                      "part": "Action group",
+                      "job": "Notify or invoke an action",
+                      "clue": "Email, SMS, webhook, automation target"
+                    }
+                  },
+                  {
+                    "id": "processing",
+                    "cells": {
+                      "part": "Alert processing rule",
+                      "job": "Modify/suppress actions for matching fired alerts",
+                      "clue": "Maintenance-window notification suppression"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "az104-d5-n03-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / PRACTICAL CLUE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If the metric threshold is correct but notifications must be muted during maintenance, use alert-processing behavior rather than deleting the alert rule."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Study guide for Exam AZ-104: Microsoft Azure Administrator",
+              "url": "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104"
+            },
+            {
+              "title": "Overview of Azure Monitor alerts",
+              "url": "https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-overview"
+            },
+            {
+              "title": "Action groups in Azure Monitor",
+              "url": "https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/action-groups"
+            }
+          ]
+        },
+        {
+          "id": "az104-d5-n04",
+          "title": "Insights for VMs, storage, and networks",
+          "concept_ids": [
+            "azure.monitor.insights"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.69,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "az104-d5-n04-what",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Azure Monitor Insights are curated monitoring experiences that combine relevant metrics, logs, visualizations, and dependency/health views for particular resource types or solutions."
+              }
+            },
+            {
+              "id": "az104-d5-n04-why",
+              "kind": "when",
+              "label": "WHY IT MATTERS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Insights reduce the work of building every monitoring view from scratch while still using Azure Monitor data underneath."
+              }
+            },
+            {
+              "id": "az104-d5-n04-model",
+              "kind": "mental_model",
+              "label": "HOW TO THINK ABOUT IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "VM insights focuses on virtual-machine performance and dependencies when configured.",
+                  "Storage insights summarizes storage-account health/performance/usage signals.",
+                  "Network insights provides topology and health views for supported network resources."
+                ]
+              }
+            },
+            {
+              "id": "az104-d5-n04-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / PRACTICAL CLUE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A request for a built-in, resource-specific monitoring workbook/experience often points to an Insight rather than a custom dashboard built from zero."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Study guide for Exam AZ-104: Microsoft Azure Administrator",
+              "url": "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104"
+            },
+            {
+              "title": "Network insights",
+              "url": "https://learn.microsoft.com/en-us/azure/network-watcher/network-insights-overview"
+            },
+            {
+              "title": "Diagnostic settings in Azure Monitor",
+              "url": "https://learn.microsoft.com/en-us/azure/azure-monitor/platform/diagnostic-settings"
+            }
+          ]
+        },
+        {
+          "id": "az104-d5-n05",
+          "title": "Network Watcher and Connection Monitor",
+          "concept_ids": [
+            "azure.monitor.network"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.88,
+            "y": 0.1
+          },
+          "prompts": [
+            {
+              "id": "az104-d5-n05-what",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Network Watcher provides Azure networking monitoring and diagnostic tools. Connection Monitor continuously tests and records connectivity between chosen sources and destinations so you can observe reachability and latency over time."
+              }
+            },
+            {
+              "id": "az104-d5-n05-why",
+              "kind": "when",
+              "label": "WHY IT MATTERS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "These tools provide network-path evidence beyond a single resource configuration page."
+              }
+            },
+            {
+              "id": "az104-d5-n05-model",
+              "kind": "mental_model",
+              "label": "HOW TO THINK ABOUT IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Network Watcher diagnostics",
+                    "items": [
+                      "Inspect IP flow/security, next hop, topology, packet capture and other supported diagnostics",
+                      "Useful for point-in-time path investigation"
+                    ]
+                  },
+                  {
+                    "title": "Connection Monitor",
+                    "items": [
+                      "Continuously test selected endpoint paths",
+                      "Track reachability/latency and detect changes over time"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "az104-d5-n05-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / PRACTICAL CLUE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If the requirement is ongoing endpoint-to-endpoint reachability monitoring, Connection Monitor is the clue. For a specific next-hop/security decision, use the corresponding Network Watcher diagnostic."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Study guide for Exam AZ-104: Microsoft Azure Administrator",
+              "url": "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104"
+            },
+            {
+              "title": "Azure Network Watcher documentation",
+              "url": "https://learn.microsoft.com/en-us/azure/network-watcher/"
+            },
+            {
+              "title": "Connection monitor overview",
+              "url": "https://learn.microsoft.com/en-us/azure/networking/network-monitoring-overview"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-5-module-2",
+      "title": "Implement backup and recovery",
+      "order": 2,
+      "task_ids": [
+        "5.2"
+      ],
+      "skill_ids": [
+        "5.2"
+      ],
+      "prerequisite_module_ids": [
+        "domain-5-module-1"
+      ],
+      "nodes": [
+        {
+          "id": "az104-d5-n06",
+          "title": "Recovery Services vaults and Backup vaults",
+          "concept_ids": [
+            "azure.backup.vaults"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.32
+          },
+          "prompts": [
+            {
+              "id": "az104-d5-n06-what",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Azure Backup stores protection configuration and recovery points in Azure-managed vault resources. Recovery Services vaults and Backup vaults support different workload sets, so the administrator chooses the vault type supported by the workload being protected."
+              }
+            },
+            {
+              "id": "az104-d5-n06-why",
+              "kind": "when",
+              "label": "WHY IT MATTERS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The vault is the management boundary for backup policies, protected items, recovery points, security settings, and monitoring for its supported scenarios."
+              }
+            },
+            {
+              "id": "az104-d5-n06-model",
+              "kind": "mental_model",
+              "label": "HOW TO THINK ABOUT IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Recovery Services vault",
+                    "items": [
+                      "Established Azure Backup vault for workloads such as Azure VM and supported in-VM/file scenarios",
+                      "Also used by Azure Site Recovery for supported replication scenarios"
+                    ]
+                  },
+                  {
+                    "title": "Backup vault",
+                    "items": [
+                      "Newer Azure Backup vault resource used by supported modern workloads",
+                      "Use the workload support matrix rather than assuming every workload can use either vault"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "az104-d5-n06-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / PRACTICAL CLUE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Do not select a vault only by name. First identify the workload and then choose the vault type Azure Backup supports for that workload."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Study guide for Exam AZ-104: Microsoft Azure Administrator",
+              "url": "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104"
+            },
+            {
+              "title": "What is Azure Backup?",
+              "url": "https://learn.microsoft.com/en-us/azure/backup/backup-overview"
+            },
+            {
+              "title": "Recovery Services vaults overview",
+              "url": "https://learn.microsoft.com/en-us/azure/backup/backup-azure-recovery-services-vault-overview"
+            }
+          ]
+        },
+        {
+          "id": "az104-d5-n07",
+          "title": "Backup policies, backup jobs, and restore",
+          "concept_ids": [
+            "azure.backup.policy"
+          ],
+          "prerequisite_node_ids": [
+            "az104-d5-n06"
+          ],
+          "map_position": {
+            "x": 0.31,
+            "y": 0.32
+          },
+          "prompts": [
+            {
+              "id": "az104-d5-n07-what",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "An Azure Backup policy defines when backups run and how long recovery points are retained for a supported workload. Backup jobs create recovery points; restore operations use those recovery points to recover data or resources."
+              }
+            },
+            {
+              "id": "az104-d5-n07-why",
+              "kind": "when",
+              "label": "WHY IT MATTERS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A backup is valuable only if the schedule/retention meet the recovery requirement and restores are tested."
+              }
+            },
+            {
+              "id": "az104-d5-n07-model",
+              "kind": "mental_model",
+              "label": "HOW TO THINK ABOUT IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Choose the supported vault/workload",
+                  "Create or select a backup policy",
+                  "Enable protection for the resource",
+                  "Monitor backup jobs and recovery points",
+                  "Perform and validate restores when needed"
+                ]
+              }
+            },
+            {
+              "id": "az104-d5-n07-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / PRACTICAL CLUE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "RPO-like requirements drive backup frequency; retention requirements drive how long recovery points are kept. A policy does not replace restore testing."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Study guide for Exam AZ-104: Microsoft Azure Administrator",
+              "url": "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104"
+            },
+            {
+              "title": "What is Azure Backup?",
+              "url": "https://learn.microsoft.com/en-us/azure/backup/backup-overview"
+            },
+            {
+              "title": "Recovery Services vaults overview",
+              "url": "https://learn.microsoft.com/en-us/azure/backup/backup-azure-recovery-services-vault-overview"
+            }
+          ]
+        },
+        {
+          "id": "az104-d5-n08",
+          "title": "Azure Site Recovery and regional failover",
+          "concept_ids": [
+            "azure.recovery.site_recovery"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.5,
+            "y": 0.32
+          },
+          "prompts": [
+            {
+              "id": "az104-d5-n08-what",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Azure Site Recovery (ASR) is a disaster-recovery service that replicates supported workloads and orchestrates failover to a secondary location, with planned/unplanned failover and failback workflows where supported."
+              }
+            },
+            {
+              "id": "az104-d5-n08-why",
+              "kind": "when",
+              "label": "WHY IT MATTERS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "ASR solves continuity of a running workload after a site/region failure; Azure Backup solves recovery from retained backup points. They complement each other but are not interchangeable."
+              }
+            },
+            {
+              "id": "az104-d5-n08-model",
+              "kind": "mental_model",
+              "label": "HOW TO THINK ABOUT IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Azure Backup",
+                    "items": [
+                      "Point-in-time recovery copies",
+                      "Recover deleted/corrupted data or a resource from a recovery point",
+                      "Retention-focused protection"
+                    ]
+                  },
+                  {
+                    "title": "Azure Site Recovery",
+                    "items": [
+                      "Replicated standby workload/location",
+                      "Orchestrated failover and failback",
+                      "Continuity-focused disaster recovery"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "az104-d5-n08-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / PRACTICAL CLUE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "“Fail over the application to a secondary Azure region” is a Site Recovery clue. “Restore last night’s VM backup” is an Azure Backup clue."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Study guide for Exam AZ-104: Microsoft Azure Administrator",
+              "url": "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104"
+            },
+            {
+              "title": "Azure-to-Azure disaster recovery architecture",
+              "url": "https://learn.microsoft.com/en-us/azure/site-recovery/azure-to-azure-architecture"
+            },
+            {
+              "title": "What is Azure Backup?",
+              "url": "https://learn.microsoft.com/en-us/azure/backup/backup-overview"
+            }
+          ]
+        },
+        {
+          "id": "az104-d5-n09",
+          "title": "Backup monitoring, reports, and alerts",
+          "concept_ids": [
+            "azure.backup.monitoring"
+          ],
+          "prerequisite_node_ids": [
+            "az104-d5-n07"
+          ],
+          "map_position": {
+            "x": 0.69,
+            "y": 0.32
+          },
+          "prompts": [
+            {
+              "id": "az104-d5-n09-what",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Azure Backup monitoring surfaces protection status, job results, and alerts; reporting helps administrators review trends and protection posture across backup estates."
+              }
+            },
+            {
+              "id": "az104-d5-n09-why",
+              "kind": "when",
+              "label": "WHY IT MATTERS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A silent backup failure is discovered at the worst possible time. Monitoring makes failed or stale protection visible before recovery is needed."
+              }
+            },
+            {
+              "id": "az104-d5-n09-model",
+              "kind": "mental_model",
+              "label": "HOW TO THINK ABOUT IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Review failed/warning backup jobs and alerts.",
+                  "Track protected instances and recovery-point health.",
+                  "Use reporting/workbooks as appropriate for estate-level trends and compliance views.",
+                  "Route operational notifications to the team responsible for remediation."
+                ]
+              }
+            },
+            {
+              "id": "az104-d5-n09-clue",
+              "kind": "exam_clue",
+              "label": "EXAM / PRACTICAL CLUE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If the requirement is “know when backup protection fails,” configure/monitor backup alerts and jobs rather than waiting for a restore request."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Study guide for Exam AZ-104: Microsoft Azure Administrator",
+              "url": "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104"
+            },
+            {
+              "title": "Monitoring and reporting solutions for Azure Backup",
+              "url": "https://learn.microsoft.com/en-us/azure/backup/monitoring-and-alerts-overview"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
