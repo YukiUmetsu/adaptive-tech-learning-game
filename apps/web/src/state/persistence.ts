@@ -5,6 +5,7 @@ const DEVICE_KEY = "adaptive-learn.device-id";
 const MISSION_KEY = "adaptive-learn.active-mission";
 const PENDING_KEY = "adaptive-learn.pending-events";
 const BITS_KEY = "adaptive-learn.bits-cache";
+const PENDING_SPENDS_KEY = "adaptive-learn.pending-bit-spends";
 
 /** One scored attempt, mirrored locally for the mission summary. */
 export interface AttemptRecord {
@@ -155,4 +156,41 @@ export function loadCachedBits(): number {
 
 export function saveCachedBits(bits: number): boolean {
   return writeJson(BITS_KEY, bits);
+}
+
+/**
+ * One Bits spend that has been applied locally but not yet settled by the
+ * server.
+ *
+ * The `eventId` is the server-side idempotency key, so a queued spend can be
+ * retried after a reload or a dropped response without debiting twice.
+ */
+export interface PendingBitSpend {
+  eventId: string;
+  runId: string;
+  defenseId: string;
+  fromLevel: number;
+  amount: number;
+}
+
+/** Pending Bits spends, oldest first. */
+export function loadPendingBitSpends(): PendingBitSpend[] {
+  const value = readJson<PendingBitSpend[]>(PENDING_SPENDS_KEY);
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter(
+    (spend): spend is PendingBitSpend =>
+      !!spend &&
+      typeof spend.eventId === "string" &&
+      typeof spend.runId === "string" &&
+      typeof spend.defenseId === "string" &&
+      typeof spend.fromLevel === "number" &&
+      typeof spend.amount === "number" &&
+      spend.amount > 0,
+  );
+}
+
+export function savePendingBitSpends(spends: PendingBitSpend[]): boolean {
+  return writeJson(PENDING_SPENDS_KEY, spends);
 }

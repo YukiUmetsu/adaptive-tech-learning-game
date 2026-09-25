@@ -261,7 +261,7 @@ export default function ReconstructionInteraction({
                   setSelectedPiece(selectedPiece === piece.id ? null : piece.id)
                 }
               >
-                <InlineText text={piece.label} />
+                <InlineText text={piece.label} terms={[]} />
               </button>
             </li>
           ))}
@@ -479,7 +479,7 @@ export default function ReconstructionInteraction({
                       bodyActivate(node);
                     }}
                   >
-                    <InlineText text={node.label} />
+                    <InlineText text={node.label} terms={[]} />
                   </button>
 
                   {node.edgeId ? (

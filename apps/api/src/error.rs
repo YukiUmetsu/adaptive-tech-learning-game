@@ -22,6 +22,9 @@ pub enum ApiError {
     /// The caller is authenticated but not permitted.
     #[error("not permitted")]
     Forbidden,
+    /// The wallet cannot cover the requested spend.
+    #[error("insufficient Bits")]
+    InsufficientBits,
     /// The request conflicts with current state.
     #[error("{0}")]
     Conflict(String),
@@ -48,6 +51,7 @@ impl ApiError {
             Self::BadRequest(_) => StatusCode::BAD_REQUEST,
             Self::Unauthorized => StatusCode::UNAUTHORIZED,
             Self::Forbidden => StatusCode::FORBIDDEN,
+            Self::InsufficientBits => StatusCode::CONFLICT,
             Self::Conflict(_) => StatusCode::CONFLICT,
             Self::MissionStale => StatusCode::CONFLICT,
             Self::Unavailable => StatusCode::SERVICE_UNAVAILABLE,
@@ -62,6 +66,7 @@ impl ApiError {
             Self::BadRequest(_) => "bad_request",
             Self::Unauthorized => "unauthorized",
             Self::Forbidden => "forbidden",
+            Self::InsufficientBits => "insufficient_bits",
             Self::Conflict(_) => "conflict",
             Self::MissionStale => "mission_content_stale",
             Self::Unavailable => "unavailable",

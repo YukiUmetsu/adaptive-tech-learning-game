@@ -75,7 +75,7 @@ function KnowledgeNodeGlyph({
         </span>
       ) : null}
       <span className="signal-node-label">
-        <InlineText text={title} />
+        <InlineText text={title} terms={[]} />
       </span>
     </button>
   );

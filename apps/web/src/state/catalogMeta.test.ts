@@ -104,8 +104,61 @@ describe("buildCatalog", () => {
     expect(saa?.available).toBe(false);
 
     const azure = sections.find((section) => section.id === "azure");
-    const wip = azure?.cards.find((card) => card.id === "azure-az-104");
-    expect(wip?.available).toBe(false);
+    // AZ-900 and AZ-104 are both authored; without API content they stay muted.
+    expect(azure?.cards.map((card) => card.id)).toEqual([
+      "microsoft-az-900",
+      "microsoft-az-104",
+    ]);
+    expect(
+      azure?.cards.find((card) => card.id === "microsoft-az-900")?.available,
+    ).toBe(false);
+    expect(
+      azure?.cards.find((card) => card.id === "microsoft-az-104")?.available,
+    ).toBe(false);
+  });
+
+  it("offers the Microsoft Azure Fundamentals certification under Azure when content exists", () => {
+    const entries = CATALOG.flatMap((section) => section.certifications);
+    const entry = entries.find(
+      (candidate) => candidate.id === "microsoft-az-900",
+    );
+    expect(entry?.examCode).toBe("AZ-900");
+    expect(entry?.wip).toBe(false);
+    // The "Microsoft Azure" category label supplies the vendor, so the compact
+    // label keeps only the certification name.
+    expect(entry?.shortName).toBe("Azure Fundamentals");
+
+    const sections = buildCatalog(CATALOG, [
+      certification("microsoft-az-900", "Microsoft Certified: Azure Fundamentals"),
+    ]);
+    const cards = sections.flatMap((section) => section.cards);
+    expect(
+      cards.find((card) => card.id === "microsoft-az-900")?.available,
+    ).toBe(true);
+
+    const azure = sections.find((section) => section.id === "azure");
+    expect(azure?.kind).toBe("certification");
+  });
+
+  it("offers Azure Administrator Associate under Azure when content exists", () => {
+    const entries = CATALOG.flatMap((section) => section.certifications);
+    const entry = entries.find(
+      (candidate) => candidate.id === "microsoft-az-104",
+    );
+    expect(entry?.examCode).toBe("AZ-104");
+    expect(entry?.wip).toBe(false);
+    expect(entry?.shortName).toBe("Azure Administrator Associate");
+
+    const sections = buildCatalog(CATALOG, [
+      certification(
+        "microsoft-az-104",
+        "Microsoft Certified: Azure Administrator Associate",
+      ),
+    ]);
+    const azure = sections.find((section) => section.id === "azure");
+    expect(
+      azure?.cards.find((card) => card.id === "microsoft-az-104")?.available,
+    ).toBe(true);
   });
 
   it("drops the DVA-C02 and MLA-C01 planned entries", () => {

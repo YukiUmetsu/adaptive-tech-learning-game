@@ -9,9 +9,9 @@ import type {
   PracticeTestResponse,
   PracticeTestResultResponse,
 } from "../api/types";
+import ExamInteraction from "../components/ExamInteraction";
 import InlineText from "../components/InlineText";
-import MultipleChoiceInteraction from "../components/MultipleChoiceInteraction";
-import MultipleResponseInteraction from "../components/MultipleResponseInteraction";
+import { formatCanonicalAnswer, labelIndex } from "../lib/canonicalAnswer";
 import {
   answeredCount,
   clearAttempt,
@@ -380,26 +380,12 @@ export default function PracticeTestPage() {
           <InlineText text={question.prompt} />
         </h2>
 
-        {question.interaction.type === "multiple_choice" ? (
-          <MultipleChoiceInteraction
-            choices={question.interaction.choices}
-            value={selected?.choice_id ?? null}
-            disabled={expired || submitting}
-            onChange={(choiceId) => setAnswer({ choice_id: choiceId })}
-          />
-        ) : question.interaction.type === "multiple_response" ? (
-          <MultipleResponseInteraction
-            choices={question.interaction.choices}
-            requiredSelections={question.interaction.required_selections}
-            value={selected?.choice_ids ?? []}
-            disabled={expired || submitting}
-            onChange={(choiceIds) => setAnswer({ choice_ids: choiceIds })}
-          />
-        ) : (
-          <p role="alert">
-            This question type is not supported in exam simulation yet.
-          </p>
-        )}
+        <ExamInteraction
+          question={question}
+          value={selected}
+          disabled={expired || submitting}
+          onChange={setAnswer}
+        />
       </article>
 
       {error ? <p role="alert">{error}</p> : null}
@@ -638,38 +624,58 @@ function PracticeTestItemReview({ item }: { item: PracticeTestItemResult }) {
         <InlineText text={item.prompt} />
       </h3>
 
-      <ul className="item-list choice-list review-choice-list">
-        {choices.map((choice) => {
-          const isCorrect = canonicalIds.has(choice.id);
-          const isChosen = selectedIds.has(choice.id);
-          const feedback = item.choice_feedback[choice.id];
-          const marker = isCorrect
-            ? isChosen
-              ? "✓ your answer"
-              : "✓ correct answer"
-            : isChosen
-              ? "✗ your answer"
-              : "";
-          return (
-            <li
-              key={choice.id}
-              className={`review-choice${isCorrect ? " review-choice--correct" : ""}${
-                isChosen && !isCorrect ? " review-choice--wrong" : ""
-              }${!isCorrect && !isChosen ? " review-choice--neutral" : ""}`}
-            >
-              <span className="choice-label">
-                <InlineText text={choice.label} />
-              </span>
-              {marker ? <span className="review-marker">{marker}</span> : null}
-              {feedback ? (
-                <span className="review-choice-feedback">
-                  <InlineText text={feedback} />
+      {choices.length > 0 ? (
+        <ul className="item-list choice-list review-choice-list">
+          {choices.map((choice) => {
+            const isCorrect = canonicalIds.has(choice.id);
+            const isChosen = selectedIds.has(choice.id);
+            const feedback = item.choice_feedback[choice.id];
+            const marker = isCorrect
+              ? isChosen
+                ? "✓ your answer"
+                : "✓ correct answer"
+              : isChosen
+                ? "✗ your answer"
+                : "";
+            return (
+              <li
+                key={choice.id}
+                className={`review-choice${isCorrect ? " review-choice--correct" : ""}${
+                  isChosen && !isCorrect ? " review-choice--wrong" : ""
+                }${!isCorrect && !isChosen ? " review-choice--neutral" : ""}`}
+              >
+                <span className="choice-label">
+                  <InlineText text={choice.label} />
                 </span>
-              ) : null}
-            </li>
-          );
-        })}
-      </ul>
+                {marker ? <span className="review-marker">{marker}</span> : null}
+                {feedback ? (
+                  <span className="review-choice-feedback">
+                    <InlineText text={feedback} />
+                  </span>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <div className="practice-test-review-answer">
+          <h4>Correct answer</h4>
+          <ul className="item-list review-answer-list">
+            {formatCanonicalAnswer(
+              item.canonical_answer,
+              labelIndex(item.interaction),
+              item.interaction,
+            ).map((line, index) => (
+              <li key={index}>
+                {line.label ? (
+                  <span className="review-answer-label">{line.label}</span>
+                ) : null}
+                <InlineText text={line.value} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {item.explanation ? (
         <p className="practice-test-explanation">

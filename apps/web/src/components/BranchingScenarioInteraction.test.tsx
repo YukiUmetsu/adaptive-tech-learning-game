@@ -101,4 +101,23 @@ describe("BranchingScenarioInteraction", () => {
     expect(screen.getByRole("button", { name: "Back" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Restart" })).toBeDisabled();
   });
+
+  it("does not lead with the authored first option", () => {
+    render(
+      <BranchingScenarioInteraction
+        startStepId="start"
+        steps={steps}
+        value={[]}
+        seed="question-1"
+        onChange={() => undefined}
+      />,
+    );
+
+    const options = screen
+      .getAllByRole("button")
+      .filter((button) =>
+        /Target health|RDS metrics/.test(button.textContent ?? ""),
+      );
+    expect(options[0]).toHaveTextContent("RDS metrics");
+  });
 });

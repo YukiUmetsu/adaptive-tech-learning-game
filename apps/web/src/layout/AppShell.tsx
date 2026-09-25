@@ -11,6 +11,7 @@ import { useDailyMissionHref } from "../hooks/useDailyMissionHref";
 import { MOBILE_NAV_QUERY, useMediaQuery } from "../hooks/useMediaQuery";
 import { useSignOut } from "../hooks/useSignOut";
 import { flushAuxiliary } from "../state/syncAuxiliary";
+import { flushBitSpends } from "../state/bitSpends";
 import { refreshWallet, resetWallet } from "../state/wallet";
 import LearningTracksNav from "./LearningTracksNav";
 import MobileTabBar from "./MobileTabBar";
@@ -53,17 +54,23 @@ export default function AppShell() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      void refreshWallet();
+      // Settle any queued Bit spends before reading the authoritative balance,
+      // so the balance already reflects confirmed upgrades.
+      void (async () => {
+        await flushBitSpends();
+        await refreshWallet();
+      })();
     } else if (status === "anonymous") {
       resetWallet();
     }
   }, [status]);
 
-  // Returning online is a natural boundary to flush queued auxiliary work.
-  // No polling timer is introduced.
+  // Returning online is a natural boundary to flush queued auxiliary work and
+  // any pending Bits spends. No polling timer is introduced.
   useEffect(() => {
     const handleOnline = () => {
       void flushAuxiliary();
+      void flushBitSpends();
     };
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
@@ -95,6 +102,7 @@ export default function AppShell() {
               Home
             </NavLink>
             <LearningTracksNav />
+            <NavLink to="/game">Cyber Defense</NavLink>
             {status === "authenticated" ? (
               <NavLink to={dailyMissionHref}>Daily missions</NavLink>
             ) : (
@@ -164,6 +172,7 @@ export default function AppShell() {
             Home
           </NavLink>
           <NavLink to="/tracks">Learning Tracks</NavLink>
+          <NavLink to="/game">Cyber Defense</NavLink>
           <NavLink to="/demo">Demo</NavLink>
         </nav>
         <p className="app-footer-copy">

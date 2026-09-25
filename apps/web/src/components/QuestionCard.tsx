@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 
 import type {
   AnswerPayload,
@@ -9,7 +9,7 @@ import type {
   ReconstructionAnswerPayload,
 } from "../api/types";
 import { firstSourceNodeId } from "../lib/nodeConnection";
-import { shuffledOrder } from "../lib/shuffle";
+import { shuffledChoices, shuffledOrder } from "../lib/shuffle";
 import { typedBlankStatuses } from "../lib/typedBlank";
 import type { PythonExecutionResult } from "../pythonExecution";
 import { toRuntimeTests } from "../pythonExecution/protocol";
@@ -97,6 +97,20 @@ export default function QuestionCard({
     question.interaction.type === "node_connection"
       ? firstSourceNodeId(canonicalAnswer)
       : undefined;
+
+  // Choice options are authored with the correct answer first, so shuffle the
+  // display order. Scoring is keyed by choice id, so order is free to change.
+  const choiceOptions = useMemo(
+    () =>
+      question.interaction.type === "multiple_choice" ||
+      question.interaction.type === "multiple_response"
+        ? shuffledChoices(
+            question.interaction.choices,
+            `${question.id}:${question.interaction.type}`,
+          )
+        : [],
+    [question],
+  );
 
   const canSubmit = (() => {
     switch (question.interaction.type) {
@@ -337,7 +351,7 @@ export default function QuestionCard({
 
       {question.interaction.type === "multiple_choice" ? (
         <MultipleChoiceInteraction
-          choices={question.interaction.choices}
+          choices={choiceOptions}
           value={choiceId}
           disabled={disabled}
           onChange={setChoiceId}
@@ -346,7 +360,7 @@ export default function QuestionCard({
 
       {question.interaction.type === "multiple_response" ? (
         <MultipleResponseInteraction
-          choices={question.interaction.choices}
+          choices={choiceOptions}
           requiredSelections={question.interaction.required_selections}
           value={choiceIds}
           disabled={disabled}
@@ -382,6 +396,7 @@ export default function QuestionCard({
           startStepId={question.interaction.start_step_id}
           steps={question.interaction.steps}
           value={choices}
+          seed={question.id}
           disabled={disabled}
           onChange={setChoices}
         />

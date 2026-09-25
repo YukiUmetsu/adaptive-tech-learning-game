@@ -11,6 +11,8 @@ import AppShell from "./layout/AppShell";
 import AccountPage from "./pages/AccountPage";
 import CertificationDashboardPage from "./pages/CertificationDashboardPage";
 import CertificationsPage from "./pages/CertificationsPage";
+import CyberDefenseMissionPage from "./pages/CyberDefenseMissionPage";
+import CyberDefensePage from "./pages/CyberDefensePage";
 import DailyMissionPage from "./pages/DailyMissionPage";
 import DemoPage from "./pages/DemoPage";
 import DomainLearningPage from "./pages/DomainLearningPage";
@@ -67,6 +69,15 @@ export default function App() {
           element={<PracticeTestPage />}
         />
         <Route path="demo" element={<DemoPage />} />
+        <Route path="game" element={<CyberDefensePage />} />
+        <Route
+          path="game/missions/:missionId"
+          element={
+            <RequireAuth>
+              <CyberDefenseMissionPage />
+            </RequireAuth>
+          }
+        />
         <Route path="login" element={<LoginPage />} />
         <Route
           path="account"

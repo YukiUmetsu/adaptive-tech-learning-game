@@ -164,11 +164,12 @@ export default function KnowledgeMap({
                 </span>
                 <span className="knowledge-node-body">
                   <span className="knowledge-node-title">
-                    <InlineText text={node.title} />
+                    <InlineText text={node.title} terms={[]} />
                   </span>
                   <span className="knowledge-node-meta">
                     <InlineText
                       text={metaText(node, nodeState, domain, state)}
+                      terms={[]}
                     />
                   </span>
                 </span>

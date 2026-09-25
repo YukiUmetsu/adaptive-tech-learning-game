@@ -80,6 +80,30 @@ quiz is retaken. It requires accepted evidence for the mission's question, so
 marking a mission complete without answering cannot mint Bits. The `Daily
 Mission` completion bonus follows the same once-only pattern.
 
+## Spending
+
+Bits are also spent. The only V1 spend is a mid-mission Cyber Defense control
+upgrade (`POST /v1/cyber-defense/upgrades`).
+
+- The server derives the cost from canonical policy
+  (`cyber_defense_upgrade_bits`) and derives the control's level from the
+  settled ledger for that run; the client never sends an amount, only the
+  action's primitives and an idempotency `event_id`. A `from_level` that does
+  not match the server's derived level is rejected as a conflict.
+- A spend is a negative `bit_transactions` row written in the same transaction
+  as a conditional debit (`WHERE bits_balance >= amount`), so the balance can
+  never go negative and a retried request cannot debit twice. An unaffordable
+  spend rolls back and returns `insufficient_bits`. An `event_id` reused for a
+  different user, item, run, amount, or a reward row is rejected rather than
+  treated as an idempotent retry.
+- Spending is account-scoped: the wallet comes from the verified token, and an
+  unauthenticated request is rejected. Anonymous play keeps no wallet.
+- The client reserves the amount locally and queues the spend, so an upgrade is
+  never blocked by the network. The queue settles on the server response and is
+  retried on the next wallet refresh or when the browser comes back online.
+  Unconfirmed spends are subtracted from the displayed balance, so
+  reconciliation never silently refunds them.
+
 Conceptually:
 
 ```text

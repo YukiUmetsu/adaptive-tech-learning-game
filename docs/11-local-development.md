@@ -96,16 +96,21 @@ Phase 1 ships real, multi-certification content:
   five domains, each with authored tasks and questions.
 - AWS Certified Solutions Architect - Associate (`aws-saa-c03`) and AWS
   Certified Generative AI Developer - Professional (`aws-aip-c01`).
+- Microsoft Certified: Azure Fundamentals (`microsoft-az-900`, `AZ-900`): all
+  three domains, each with authored tasks, questions, and learning maps.
+- Microsoft Certified: Azure Administrator Associate (`microsoft-az-104`,
+  `AZ-104`): all five domains, each with authored tasks, questions, learning
+  maps, and a tactile practice exam.
 - CompTIA Security+ (`comptia-security-plus`, `SY0-701`): all five domains.
 - HashiCorp Certified: Terraform Associate (`hashicorp-terraform-associate-004`).
 - AI tracks: Python fluency, Python data stack (NumPy/pandas/Matplotlib/Seaborn),
   and PyTorch core.
 
 Each certification also has learning knowledge maps for pre-quiz discovery;
-AWS SOA-C03, CompTIA Security+, and the AI tracks are fully covered, and
-Terraform covers all eight domains. The web catalog and dashboard read
-certification metadata from `apps/web/src/state/catalogMeta.ts` plus the API
-catalog.
+AWS SOA-C03, Microsoft AZ-900 and AZ-104, CompTIA Security+, and the AI tracks
+are fully covered, and Terraform covers all eight domains. The web catalog and dashboard
+read certification metadata from `apps/web/src/state/catalogMeta.ts` plus the
+API catalog.
 
 Content is authored as versioned JSON organized as
 `content/<category>/<certification>/<version>/<file>.json`. The content crate
@@ -186,8 +191,8 @@ sync fails, events remain pending and can be retried from the summary.
   runner surfaces a warning rather than silently losing evidence; synced events
   are removed from the pending queue.
 - **Content scope.** Authored questions now span all SOA-C03 domains plus SAA-C03,
-  AIP-C01, Terraform Associate 004, and the AI/Python tracks. The equation
-  interaction is still not implemented.
+  AIP-C01, Microsoft AZ-900 and AZ-104, Terraform Associate 004, and the AI/Python
+  tracks. The equation interaction is still not implemented.
 - **Auth session persistence.** With the default `api.workos.com` host the
   refresh token is stored in `localStorage` (`devMode`); a custom AuthKit
   authentication domain gives first-party cookie persistence instead. See
@@ -323,6 +328,52 @@ Do not point E2E at production infrastructure.
 cd ml
 uv run pytest
 ```
+
+### Code review (OpenCodeReview)
+
+[OpenCodeReview](https://github.com/alibaba/open-code-review) is an optional
+AI review assistant for the [OpenCode](https://opencode.ai) agent. The `ocr`
+CLI is a global tool, installed outside the repository:
+
+```bash
+npm install -g @alibaba-group/open-code-review   # provides the `ocr` binary
+```
+
+The integration is versioned under `.opencode/`:
+
+- `.opencode/plugins/open-code-review.ts` — the OpenCode plugin. It registers
+  the `ocr_review` / `ocr_health` tools and the `/ocr-review` / `/ocr-health`
+  commands.
+- `.opencode/skills/open-code-review-delegate/SKILL.md` — delegation mode, where
+  OpenCode itself performs the review.
+
+Two ways to run a review:
+
+1. **Delegation mode (no OCR model or API key).** Ask OpenCode to use the
+   `open-code-review-delegate` skill. `ocr` only selects files and resolves
+   rules (`ocr delegate preview`, `ocr delegate rule <paths>`); OpenCode's own
+   model writes the findings.
+2. **OCR-managed mode (needs an LLM).** Configure OCR once, then use the
+   `ocr_review` tool or `/ocr-review`:
+
+   ```bash
+   ocr config provider
+   ocr config model
+   ocr llm test
+   ```
+
+   `ocr_review` accepts `preview: true` to list the files that would be
+   reviewed without spending tokens.
+
+> **Vendored plugin note.** Upstream `open-code-review.ts` is a dual V1/V2 plugin
+> that imports `@opencode-ai/plugin` at its top level. The compiled OpenCode
+> binary cannot resolve packages from `.opencode/node_modules`, so that import
+> breaks plugin loading. This copy keeps only the V2 entrypoint, which needs no
+> runtime packages. Do not add package imports to the plugin without bundling
+> them into a single file. Re-fetch and re-trim from upstream when updating.
+
+Global OpenCode also loads plugins from `~/.config/opencode/plugins/`, but the
+project copy keeps the integration reproducible for everyone in the repository.
 
 ### Container (optional)
 

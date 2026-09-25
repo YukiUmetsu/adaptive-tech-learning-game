@@ -120,6 +120,38 @@ fn embedded_quiz_content_still_validates() {
 }
 
 #[test]
+fn azure_practice_tests_are_embedded_and_discoverable() {
+    let registry = ContentRegistry::embedded().expect("embedded content is valid");
+
+    let az_900 = registry.practice_tests_for_certification("microsoft-az-900");
+    assert_eq!(az_900.len(), 1, "AZ-900 has exactly one practice test");
+    let az_900 = az_900[0];
+    assert_eq!(az_900.id, "microsoft-az-900-practice-test-1");
+    assert_eq!(az_900.certification_version, "az-900");
+    assert_eq!(az_900.question_count, az_900.items.len());
+    assert_eq!(az_900.items.len(), 50);
+
+    let az_104 = registry.practice_tests_for_certification("microsoft-az-104");
+    assert_eq!(az_104.len(), 1, "AZ-104 has exactly one practice test");
+    let az_104 = az_104[0];
+    assert_eq!(az_104.id, "microsoft-az-104-practice-test-1");
+    assert_eq!(az_104.certification_version, "az-104");
+    assert_eq!(az_104.question_count, az_104.items.len());
+    assert_eq!(az_104.items.len(), 50);
+    assert_eq!(az_104.scored_question_count(), 45);
+
+    // The authored Azure exams mix tactile interactions, so the exam surface
+    // must not assume choice-only questions.
+    assert!(
+        az_104
+            .items
+            .iter()
+            .any(|item| item.question.interaction_type.as_str() != "multiple_choice"),
+        "AZ-104 practice test includes non-choice interactions"
+    );
+}
+
+#[test]
 fn duplicate_practice_test_ids_are_rejected() {
     let errors = ContentRegistry::from_all_sources(&[], &[], &[soa_source(), soa_source()])
         .expect_err("duplicate ids must fail");

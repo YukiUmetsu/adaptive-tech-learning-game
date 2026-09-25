@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { shuffledOrder, stableShuffle } from "./shuffle";
+import { shuffledChoices, shuffledOrder, stableShuffle } from "./shuffle";
 
 function expectPermutation(result: string[], input: string[]): void {
   expect(result).toHaveLength(input.length);
@@ -39,5 +39,35 @@ describe("shuffledOrder", () => {
 
   it("leaves an empty list unchanged", () => {
     expect(shuffledOrder([], "q1")).toEqual([]);
+  });
+});
+
+describe("shuffledChoices", () => {
+  const choices = [
+    { id: "a", label: "correct" },
+    { id: "b", label: "distractor one" },
+    { id: "c", label: "distractor two" },
+    { id: "d", label: "distractor three" },
+  ];
+
+  it("is deterministic for a given seed", () => {
+    expect(shuffledChoices(choices, "q1")).toEqual(shuffledChoices(choices, "q1"));
+  });
+
+  it("preserves the option set", () => {
+    const result = shuffledChoices(choices, "q1");
+    expect(result.map((choice) => choice.id).sort()).toEqual(["a", "b", "c", "d"]);
+  });
+
+  it("never shows the authored first option first", () => {
+    for (const seed of ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8"]) {
+      expect(shuffledChoices(choices, seed)[0].id).not.toBe("a");
+    }
+  });
+
+  it("leaves a single option unchanged", () => {
+    expect(shuffledChoices([{ id: "a", label: "only" }], "q1")).toEqual([
+      { id: "a", label: "only" },
+    ]);
   });
 });

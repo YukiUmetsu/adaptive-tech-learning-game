@@ -1230,6 +1230,17 @@ button.primary:hover:not(:disabled) {
   }
 }
 
+/* iOS Safari zooms the page when a focused field computes under 16px. Typed
+   answers inherit code/table sizes as small as 0.82rem, so keep them legible
+   on phones while leaving desktop code typography unchanged. */
+@media (max-width: 640px) {
+  .typed-blank-input,
+  .typed-code .typed-blank-input,
+  .typed-blank-textarea {
+    font-size: 1rem;
+  }
+}
+
 /* Reconstruction */
 .reconstruction {
   display: grid;
@@ -1320,7 +1331,10 @@ button.primary:hover:not(:disabled) {
   background-image: radial-gradient(var(--border) 1px, transparent 1px);
   background-size: 22px 22px;
   overflow: hidden;
-  touch-action: none;
+  /* The graph only implements HTML5 drag-and-drop plus click, so there is no
+     touch gesture to protect here. Allowing vertical panning lets a finger
+     that lands on the 340px map scroll the question. */
+  touch-action: pan-y;
 }
 
 .reconstruction-graph-node {
@@ -7397,6 +7411,12 @@ button.primary:hover:not(:disabled) {
   transform: translateY(6px) scale(0.98);
   transform-origin: bottom left;
   pointer-events: none;
+  /* The panel grows upward from a bottom-anchored pill. Cap it so a short
+     phone viewport can still scroll to the header and actions. */
+  max-height: min(70vh, calc(100vh - 6rem));
+  max-height: min(70dvh, calc(100dvh - 6rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   transition:
     opacity 0.18s ease,
     transform 0.18s ease;
@@ -7709,6 +7729,45 @@ button.primary:hover:not(:disabled) {
     flex: none;
     width: 1.5rem;
     height: 1.5rem;
+  }
+
+  /* Touch-target floor for controls that are only ~24-40px tall. Keeps the
+     existing look but meets the ~44px minimum on phones. */
+  .settings-link {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .ordering-controls button,
+  .focus-widget-actions button,
+  .focus-widget-break-options button,
+  .navigator-toggle,
+  .navigator-cell,
+  .track-hub-tabs > button,
+  .track-hub-tabs > a,
+  .quest-step-review {
+    min-height: 2.75rem;
+  }
+
+  /* The relationship handle is the only tap path to an edge; expand its hit
+     area without changing its visual size. */
+  .reconstruction-handle::before {
+    content: "";
+    position: absolute;
+    inset: -0.65rem;
+  }
+
+  /* Inline glossary terms only paint a text-height hit box; grow it downward
+     and upward without shifting the prose. */
+  .glossary-term::after {
+    content: "";
+    position: absolute;
+    inset: -0.5rem -0.15rem;
+  }
+
+  .cyber-call-button,
+  .cyber-hud-start {
+    min-height: 44px;
   }
 }
 
@@ -8295,6 +8354,20 @@ button.primary:hover:not(:disabled) {
   border-radius: var(--radius);
   background: var(--bg-elevated);
   box-shadow: var(--shadow);
+}
+
+/* Lift the exam action bar and its confirmation above the fixed mobile tab
+   bar, which is 3.5rem tall and paints at z-index 35. */
+@media (max-width: 640px) {
+  .practice-test-footer {
+    bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px) + 0.75rem);
+    z-index: 36;
+  }
+
+  .practice-test-confirm {
+    bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px) + 1rem);
+    z-index: 46;
+  }
 }
 
 .practice-test-score-main {
@@ -8889,4 +8962,3548 @@ button.primary:hover:not(:disabled) {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Cyber Defense game
+   --------------------------------------------------------------------------- */
+
+/* Home / mission select */
+.cyber-home {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+/* Command-center hero */
+.cyber-home-hero {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1.75rem 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(720px 260px at 0% 0%, rgba(56, 189, 248, 0.2), transparent 62%),
+    radial-gradient(640px 320px at 100% 110%, rgba(167, 139, 250, 0.18), transparent 58%),
+    var(--bg-elevated);
+  box-shadow: var(--shadow);
+}
+
+/* Drifting circuit grid behind the copy. */
+.cyber-home-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(56, 189, 248, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.07) 1px, transparent 1px);
+  background-size: 38px 38px;
+  -webkit-mask-image: radial-gradient(circle at 68% 45%, #000 0%, transparent 72%);
+  mask-image: radial-gradient(circle at 68% 45%, #000 0%, transparent 72%);
+  animation: cyber-grid-drift 14s linear infinite;
+}
+
+@keyframes cyber-grid-drift {
+  to {
+    background-position:
+      38px 38px,
+      38px 38px;
+  }
+}
+
+.cyber-home-hero-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.cyber-home-lede {
+  max-width: 42rem;
+  color: var(--text-muted);
+}
+
+.cyber-home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-top: 1rem;
+}
+
+.cyber-home-cta-note {
+  font-size: 0.8rem;
+}
+
+.cyber-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.15rem;
+  border: 1px solid var(--accent-strong);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-strong) 100%);
+  color: var(--accent-contrast);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  box-shadow: 0 10px 26px -14px rgba(56, 189, 248, 0.95);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.cyber-cta:hover {
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px -14px rgba(56, 189, 248, 1);
+}
+
+.cyber-cta:active {
+  transform: translateY(0);
+}
+
+/* Decorative battle diorama */
+.cyber-home-hero-art {
+  position: relative;
+  z-index: 1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 78% 45%, rgba(52, 211, 153, 0.16), transparent 60%),
+    linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    #081120;
+  background-size:
+    auto,
+    30px 30px,
+    30px 30px,
+    auto;
+  box-shadow: inset 0 0 46px rgba(0, 0, 0, 0.6);
+}
+
+.cyber-diorama {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.cyber-diorama-lane {
+  fill: none;
+  stroke: rgba(56, 189, 248, 0.28);
+  stroke-width: 12;
+  stroke-linecap: round;
+}
+
+.cyber-diorama-flow {
+  fill: none;
+  stroke: rgba(125, 211, 252, 0.7);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 4 16;
+  animation: cyber-lane-flow 1.1s linear infinite;
+}
+
+.cyber-diorama-enemy {
+  animation: cyber-diorama-march 2.6s ease-in-out infinite alternate;
+}
+
+@keyframes cyber-diorama-march {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(15px, -2px);
+  }
+}
+
+.cyber-diorama-tower {
+  animation: cyber-diorama-bob 2.4s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes cyber-diorama-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2.5px);
+  }
+}
+
+.cyber-diorama-core {
+  animation: cyber-core-float 2.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+  filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.55));
+}
+
+/* Progress strip */
+.cyber-stat-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cyber-stat-strip li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 0.5rem;
+  row-gap: 0.15rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.cyber-stat-icon {
+  grid-row: 1;
+  grid-column: 1;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.cyber-stat-icon--star {
+  color: var(--warning);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.cyber-stat-value {
+  grid-row: 1;
+  grid-column: 2;
+  color: var(--text);
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.cyber-stat-total {
+  color: var(--text-faint);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.cyber-stat-label {
+  grid-row: 2;
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Mission select */
+.cyber-mission-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cyber-mission-head h2 {
+  margin: 0;
+}
+
+.cyber-mission-progress {
+  font-size: 0.82rem;
+}
+
+.cyber-mission-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cyber-mission-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  align-items: center;
+  min-height: 64px;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    transform 140ms ease;
+}
+
+.cyber-mission-card:hover:not(.is-locked) {
+  text-decoration: none;
+  border-color: var(--accent);
+  background: #16233d;
+  transform: translateY(-2px);
+}
+
+.cyber-mission-card.is-cleared {
+  border-color: color-mix(in srgb, var(--success) 45%, var(--border));
+}
+
+.cyber-mission-card.is-boss {
+  background:
+    radial-gradient(520px 200px at 100% 0%, rgba(251, 191, 36, 0.13), transparent 62%),
+    var(--surface);
+}
+
+.cyber-mission-card.is-locked {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.cyber-mission-index {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-muted);
+  font-weight: 800;
+}
+
+.cyber-mission-card.is-boss .cyber-mission-index {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 55%, var(--border));
+}
+
+.cyber-mission-card.is-cleared .cyber-mission-index {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 55%, var(--border));
+}
+
+.cyber-mission-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.cyber-mission-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cyber-mission-title {
+  font-weight: 700;
+}
+
+.cyber-mission-tag {
+  padding: 0.05rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--warning) 55%, transparent);
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--warning);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cyber-mission-tag.is-cleared {
+  border-color: color-mix(in srgb, var(--success) 55%, transparent);
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.cyber-mission-desc {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.cyber-mission-threats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cyber-mission-threat-icons {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.cyber-threat-glyph {
+  width: 26px;
+  height: 26px;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.22));
+}
+
+.cyber-mission-threat-names,
+.cyber-mission-meta,
+.cyber-mission-locked {
+  font-size: 0.8rem;
+}
+
+.cyber-mission-locked {
+  color: var(--warning);
+}
+
+.cyber-mission-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+}
+
+.cyber-mission-stars {
+  color: var(--warning);
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.cyber-mission-open {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.85;
+}
+
+.cyber-mission-card.is-locked .cyber-mission-open {
+  color: var(--text-faint);
+}
+
+/* Operators and arsenal */
+.cyber-roster {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cyber-roster h2 {
+  margin: 0;
+}
+
+.cyber-hero-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cyber-hero-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.cyber-hero-card-art {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(56, 189, 248, 0.16), transparent 70%),
+    var(--surface-muted);
+}
+
+.cyber-hero-card-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cyber-hero-card-name {
+  font-weight: 700;
+}
+
+.cyber-hero-card-ability {
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cyber-hero-card-desc {
+  margin-top: 0.15rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.cyber-arsenal {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.1rem 0.1rem 0.65rem;
+  overflow-x: auto;
+  list-style: none;
+  scroll-snap-type: x proximity;
+}
+
+.cyber-arsenal-item {
+  display: flex;
+  flex: 0 0 98px;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.6rem 0.4rem;
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--tower-color, var(--border));
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+  text-align: center;
+  scroll-snap-align: start;
+}
+
+.cyber-arsenal-thumb {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+}
+
+.cyber-arsenal-thumb svg {
+  width: 44px;
+  height: 44px;
+}
+
+.cyber-arsenal-name {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+/* Briefing */
+.cyber-briefing {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+}
+
+.cyber-back {
+  align-self: flex-start;
+  padding: 0.35rem 0.7rem;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+}
+
+.cyber-briefing-lede {
+  color: var(--text-muted);
+}
+
+.cyber-briefing-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.cyber-briefing-stats dt {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.cyber-briefing-stats dd {
+  margin: 0.15rem 0 0;
+  font-weight: 600;
+}
+
+.cyber-briefing-defenses {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cyber-briefing-defenses li {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+}
+
+.cyber-briefing-locked {
+  color: var(--warning);
+}
+
+.cyber-briefing-actions,
+.cyber-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.cyber-primary-button {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--accent-contrast);
+  font-weight: 700;
+}
+
+.cyber-primary-button:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.cyber-secondary-button {
+  background: var(--surface);
+}
+
+/* Game shell */
+.cyber-game {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 0 0.75rem 1.5rem;
+}
+
+.cyber-game-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.85rem;
+}
+
+.cyber-map-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.cyber-sheet {
+  min-width: 0;
+}
+
+/* HUD */
+.cyber-hud {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+
+.cyber-hud-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+}
+
+.cyber-hud-row--controls {
+  justify-content: space-between;
+}
+
+.cyber-hud-health {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.cyber-hud-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.cyber-hud-icon {
+  font-size: 0.95rem;
+}
+
+.cyber-hud-value {
+  font-weight: 700;
+}
+
+.cyber-hud-caption {
+  color: var(--text-faint);
+  font-size: 0.75rem;
+}
+
+.cyber-hud-stat.is-warning .cyber-hud-value {
+  color: var(--warning);
+}
+
+.cyber-hud-backup.is-ready .cyber-hud-value,
+.cyber-hud-backup.is-ready .cyber-hud-icon {
+  color: var(--accent);
+}
+
+.cyber-hud-backup.is-used .cyber-hud-value,
+.cyber-hud-backup.is-used .cyber-hud-icon {
+  color: var(--text-faint);
+}
+
+.cyber-health-bar {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 4rem;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.cyber-health-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--success), #22d3ee);
+  transition: width 0.2s ease;
+}
+
+.cyber-hud-wave {
+  font-weight: 600;
+}
+
+.cyber-hud-building {
+  color: var(--accent);
+  font-style: normal;
+}
+
+.cyber-hud-time {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cyber-hud-button {
+  min-height: 44px;
+  padding: 0.5rem 0.85rem;
+}
+
+.cyber-hud-button--ghost {
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.cyber-speed {
+  display: inline-flex;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.cyber-speed-button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.4rem 0.6rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
+}
+
+.cyber-speed-button.is-active {
+  background: var(--accent-strong);
+  color: var(--accent-contrast);
+  font-weight: 700;
+}
+
+.cyber-hud-warning {
+  margin: 0;
+  color: var(--warning);
+  font-size: 0.85rem;
+}
+
+/* Map */
+.cyber-map {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 16rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+    var(--surface-muted);
+  background-size: 32px 32px;
+}
+
+.cyber-map-edge {
+  stroke: var(--border-strong);
+  stroke-width: 2.5;
+}
+
+.cyber-map-arrow {
+  fill: var(--border-strong);
+}
+
+.cyber-map-cap-note {
+  fill: var(--text-faint);
+  font-size: 13px;
+}
+
+.cyber-node {
+  cursor: pointer;
+}
+
+.cyber-node-box {
+  fill: var(--bg-elevated);
+  stroke: var(--border-strong);
+  stroke-width: 2;
+  transition: stroke 0.15s ease, fill 0.15s ease;
+}
+
+.cyber-node:hover .cyber-node-box,
+.cyber-node:focus-visible .cyber-node-box {
+  stroke: var(--accent);
+}
+
+.cyber-node.is-selected .cyber-node-box {
+  stroke: var(--accent);
+  fill: #16233d;
+}
+
+.cyber-node--auth .cyber-node-box {
+  stroke-dasharray: 6 4;
+}
+
+.cyber-node--database .cyber-node-box {
+  fill: #131a2e;
+}
+
+.cyber-node-label {
+  fill: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.cyber-node-type {
+  fill: var(--text-faint);
+  font-size: 11px;
+}
+
+.cyber-defense-chip rect {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+.cyber-defense-chip text {
+  fill: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cyber-defense-chip.is-selected rect {
+  fill: var(--accent-strong);
+}
+
+.cyber-defense-chip.is-selected text {
+  fill: var(--accent-contrast);
+}
+
+.cyber-enemy-body {
+  fill: rgba(56, 189, 248, 0.9);
+  stroke: rgba(4, 18, 31, 0.7);
+  stroke-width: 2;
+}
+
+.cyber-enemy--injection .cyber-enemy-body {
+  fill: rgba(251, 191, 36, 0.92);
+}
+
+.cyber-enemy--identity .cyber-enemy-body {
+  fill: rgba(167, 139, 250, 0.92);
+}
+
+.cyber-enemy--malware .cyber-enemy-body {
+  fill: rgba(248, 113, 113, 0.92);
+}
+
+.cyber-enemy-glyph {
+  fill: #04121f;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.cyber-enemy-name {
+  fill: var(--text-muted);
+  font-size: 9px;
+}
+
+/* Hero bar */
+.cyber-heroes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cyber-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.cyber-hero-name {
+  font-weight: 600;
+}
+
+.cyber-hero-ability,
+.cyber-hero-role {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.cyber-hero.is-active {
+  border-color: var(--success);
+  background: var(--success-bg);
+}
+
+/* Defense panel */
+.cyber-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+
+.cyber-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.cyber-panel-head h2 {
+  margin: 0;
+}
+
+.cyber-panel-head p {
+  margin: 0.15rem 0 0;
+}
+
+.cyber-panel-close {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.cyber-panel-feedback {
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.cyber-panel-stats {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.cyber-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cyber-action-button {
+  min-height: 44px;
+}
+
+.cyber-action-button--danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.cyber-defense-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 44vh;
+  overflow-y: auto;
+  padding-right: 0.15rem;
+}
+
+.cyber-defense-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.cyber-defense-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.cyber-defense-card-head h3 {
+  margin: 0;
+}
+
+.cyber-defense-category {
+  color: var(--text-faint);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.cyber-defense-desc {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.cyber-defense-strengths {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.15rem 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+}
+
+.cyber-defense-strengths li {
+  display: contents;
+}
+
+.cyber-defense-attack {
+  color: var(--text-muted);
+}
+
+.cyber-defense-stars {
+  color: var(--warning);
+  letter-spacing: 0.06em;
+}
+
+.cyber-defense-support {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.cyber-defense-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.cyber-defense-cost {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.cyber-defense-latency {
+  color: var(--text-faint);
+  font-weight: 400;
+}
+
+.cyber-deploy-button {
+  min-height: 44px;
+  min-width: 44px;
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--accent-contrast);
+  font-weight: 700;
+}
+
+.cyber-deploy-button:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.cyber-defense-hint {
+  margin: 0;
+  color: var(--warning);
+  font-size: 0.8rem;
+}
+
+.cyber-synergies {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.cyber-synergies h3 {
+  color: var(--accent);
+}
+
+.cyber-synergies ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Start bar */
+.cyber-start-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.cyber-start-bar p {
+  margin: 0;
+}
+
+/* Result */
+.cyber-game--result {
+  max-width: 46rem;
+}
+
+.cyber-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+}
+
+.cyber-result-banner {
+  margin: 0;
+  padding: 0.35rem 0.7rem;
+  align-self: flex-start;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.cyber-result-banner.is-success {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+.cyber-result-banner.is-failure {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.cyber-result-stars {
+  margin: 0;
+  color: var(--warning);
+  font-size: 1.8rem;
+  letter-spacing: 0.15em;
+}
+
+.cyber-result-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.cyber-result-stats dt {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.cyber-result-stats dd {
+  margin: 0.1rem 0 0;
+  font-weight: 600;
+}
+
+.cyber-result-stats dd.is-warning {
+  color: var(--warning);
+}
+
+.cyber-result-tally ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--text-muted);
+}
+
+.cyber-result-cause,
+.cyber-result-best {
+  margin: 0;
+}
+
+.cyber-result-lesson {
+  padding: 0.7rem 0.85rem;
+  border-left: 3px solid var(--accent);
+  background: var(--surface-muted);
+  border-radius: var(--radius-sm);
+}
+
+.cyber-result-lesson h2 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+}
+
+.cyber-result-lesson p {
+  margin: 0;
+}
+
+.cyber-result-bits {
+  margin: 0;
+}
+
+/* Victory burst -------------------------------------------------------- */
+.cyber-result.is-celebrating {
+  position: relative;
+  overflow: hidden;
+}
+
+.cyber-result.is-celebrating .cyber-result-banner.is-success {
+  animation: cyber-result-pop 520ms cubic-bezier(0.2, 1.5, 0.4, 1) 60ms backwards;
+  box-shadow:
+    0 0 0 1px var(--success),
+    0 0 26px -6px var(--success);
+}
+
+.cyber-result.is-celebrating .cyber-result-stars {
+  animation: cyber-result-stars 700ms ease-out 180ms backwards;
+  text-shadow: 0 0 22px rgba(251, 191, 36, 0.7);
+}
+
+/* A one-shot sheen sweeping across the card. */
+.cyber-result.is-celebrating::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.14) 50%,
+    transparent 60%
+  );
+  transform: translateX(-120%);
+  animation: cyber-result-sheen 1100ms ease-out 120ms;
+}
+
+@keyframes cyber-result-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes cyber-result-stars {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) translateY(6px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.25) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes cyber-result-sheen {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+.cyber-celebration {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cyber-celebration-flash {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(
+    circle at 50% 22%,
+    rgba(56, 189, 248, 0.3),
+    transparent 62%
+  );
+  animation: cyber-celebration-flash 900ms ease-out forwards;
+}
+
+.cyber-celebration.is-boss .cyber-celebration-flash {
+  background: radial-gradient(
+    circle at 50% 22%,
+    rgba(251, 191, 36, 0.34),
+    transparent 62%
+  );
+}
+
+@keyframes cyber-celebration-flash {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* A thin ring that grows outward. Animating width/height (not scale) keeps the
+   stroke crisp instead of ballooning into a heavy disc. */
+.cyber-celebration-wave {
+  position: absolute;
+  top: 22%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  opacity: 0;
+  animation: cyber-celebration-wave 900ms cubic-bezier(0.2, 0.7, 0.3, 1) 80ms
+    forwards;
+}
+
+.cyber-celebration-wave--late {
+  animation-delay: 260ms;
+  border-color: var(--warning);
+}
+
+.cyber-celebration.is-boss .cyber-celebration-wave {
+  border-color: var(--warning);
+}
+
+@keyframes cyber-celebration-wave {
+  0% {
+    width: 12px;
+    height: 12px;
+    opacity: 0.9;
+  }
+  100% {
+    width: 560px;
+    height: 560px;
+    opacity: 0;
+  }
+}
+
+.cyber-celebration-confetti {
+  position: absolute;
+  inset: 0;
+}
+
+.cyber-confetti {
+  position: absolute;
+  top: -8%;
+  left: var(--x);
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: cyber-confetti-fall 1700ms cubic-bezier(0.25, 0.6, 0.4, 1)
+    var(--delay) forwards;
+}
+
+.cyber-confetti--1 {
+  background: #38bdf8;
+}
+
+.cyber-confetti--2 {
+  background: #a78bfa;
+}
+
+.cyber-confetti--3 {
+  background: #fbbf24;
+}
+
+.cyber-confetti--4 {
+  background: #34d399;
+}
+
+.cyber-confetti--5 {
+  background: #f472b6;
+}
+
+@keyframes cyber-confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(0.8);
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--drift), 120vh, 0) rotate(var(--spin)) scale(1);
+  }
+}
+
+.cyber-celebration-sparks {
+  position: absolute;
+  top: 22%;
+  left: 50%;
+}
+
+.cyber-spark {
+  position: absolute;
+  color: var(--accent);
+  font-size: 0.8rem;
+  opacity: 0;
+  animation: cyber-spark-out 900ms ease-out var(--delay) forwards;
+}
+
+.cyber-spark:nth-child(3n) {
+  color: var(--warning);
+}
+
+.cyber-spark:nth-child(3n + 2) {
+  color: #a78bfa;
+}
+
+@keyframes cyber-spark-out {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(0) scale(0.6);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(-120px) scale(1);
+  }
+}
+
+/* Accessibility and Gamification switches hide the burst entirely; the result
+   content is already the static, equally informative version. */
+:root[data-reduced-motion="true"] .cyber-celebration,
+:root[data-reward-animations="off"] .cyber-celebration,
+:root[data-reduced-motion="true"] .cyber-result.is-celebrating::after,
+:root[data-reward-animations="off"] .cyber-result.is-celebrating::after {
+  display: none;
+}
+
+:root[data-reduced-motion="true"]
+  .cyber-result.is-celebrating
+  .cyber-result-banner.is-success,
+:root[data-reduced-motion="true"]
+  .cyber-result.is-celebrating
+  .cyber-result-stars,
+:root[data-reward-animations="off"]
+  .cyber-result.is-celebrating
+  .cyber-result-banner.is-success,
+:root[data-reward-animations="off"]
+  .cyber-result.is-celebrating
+  .cyber-result-stars {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-celebration,
+  .cyber-result.is-celebrating::after {
+    display: none;
+  }
+
+  .cyber-result.is-celebrating .cyber-result-banner.is-success,
+  .cyber-result.is-celebrating .cyber-result-stars {
+    animation: none;
+  }
+}
+
+/* Desktop layout */
+@media (min-width: 900px) {
+  .cyber-game-body {
+    grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 0.85fr);
+    align-items: start;
+  }
+
+  .cyber-defense-list {
+    max-height: calc(100vh - 20rem);
+  }
+}
+
+@media (max-width: 880px) {
+  .cyber-home-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+
+  .cyber-stat-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .cyber-home {
+    padding: 1rem 0.85rem 2rem;
+  }
+
+  .cyber-mission-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .cyber-mission-side {
+    grid-column: 2;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.75rem;
+  }
+
+  .cyber-hud-row--controls {
+    justify-content: flex-start;
+  }
+
+  .cyber-hud-button--ghost {
+    order: 5;
+  }
+
+  .cyber-map {
+    min-height: 20rem;
+  }
+
+  .cyber-start-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cyber-result-actions .cyber-primary-button,
+  .cyber-result-actions .cyber-secondary-button {
+    flex: 1 1 44%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-health-fill {
+    transition: none;
+  }
+
+  .cyber-home-hero::before,
+  .cyber-diorama-flow,
+  .cyber-diorama-enemy,
+  .cyber-diorama-tower,
+  .cyber-diorama-core {
+    animation: none;
+  }
+
+  .cyber-cta {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Cyber Defense — game board (lane, towers, beams, juice)
+   --------------------------------------------------------------------------- */
+
+.cyber-map {
+  background:
+    radial-gradient(circle at 20% 0%, rgba(56, 189, 248, 0.12), transparent 55%),
+    radial-gradient(circle at 85% 100%, rgba(167, 139, 250, 0.12), transparent 55%),
+    linear-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.07) 1px, transparent 1px),
+    #081120;
+  background-size: auto, auto, 34px 34px, 34px 34px, auto;
+  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.6);
+}
+
+/* The defended lane */
+.cyber-lane {
+  fill: none;
+  stroke: rgba(56, 189, 248, 0.28);
+  stroke-width: 14;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cyber-lane-flow {
+  fill: none;
+  stroke: rgba(125, 211, 252, 0.75);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 4 18;
+  animation: cyber-lane-flow 1.1s linear infinite;
+}
+
+@keyframes cyber-lane-flow {
+  to {
+    stroke-dashoffset: -22;
+  }
+}
+
+/* Build-slot range preview */
+.cyber-range-fill {
+  fill: color-mix(in srgb, var(--range-color, #38bdf8) 14%, transparent);
+}
+
+.cyber-range-ring {
+  fill: none;
+  stroke: var(--range-color, #38bdf8);
+  stroke-width: 2;
+  stroke-dasharray: 8 8;
+  opacity: 0.85;
+  animation: cyber-range-spin 12s linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes cyber-range-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Node chrome */
+.cyber-node-box {
+  fill: #0e1a30;
+  stroke: #2b3f63;
+  stroke-width: 2;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.45));
+}
+
+.cyber-node-accent {
+  fill: #38bdf8;
+  opacity: 0.85;
+}
+
+.cyber-node--auth .cyber-node-accent {
+  fill: #fbbf24;
+}
+
+.cyber-node--application .cyber-node-accent {
+  fill: #a78bfa;
+}
+
+.cyber-node--database .cyber-node-accent {
+  fill: #34d399;
+}
+
+.cyber-node.is-selected .cyber-node-box {
+  stroke: #38bdf8;
+  fill: #12233f;
+}
+
+.cyber-node-empty {
+  fill: #475569;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cyber-core-ring {
+  fill: none;
+  stroke: #34d399;
+  stroke-width: 2.5;
+  stroke-dasharray: 10 6;
+  opacity: 0.75;
+  animation: cyber-core-pulse 2.4s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes cyber-core-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.03);
+  }
+}
+
+/* Towers */
+.cyber-tower {
+  cursor: pointer;
+}
+
+.cyber-tower-base {
+  fill: #0b1526;
+  stroke: var(--tower-color, #38bdf8);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 6px var(--tower-color, #38bdf8));
+}
+
+.cyber-tower-ring {
+  fill: none;
+  stroke: var(--tower-color, #38bdf8);
+  stroke-width: 1.5;
+  opacity: 0.55;
+}
+
+.cyber-tower-icon {
+  font-size: 15px;
+}
+
+.cyber-tower-muzzle {
+  fill: var(--tower-color, #38bdf8);
+  opacity: 0.55;
+  animation: cyber-muzzle 0.28s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes cyber-muzzle {
+  0% {
+    opacity: 0.65;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.25);
+  }
+}
+
+.cyber-tower.is-selected .cyber-tower-ring {
+  opacity: 1;
+  stroke-width: 3;
+}
+
+.cyber-tower-pips circle {
+  fill: var(--tower-color, #38bdf8);
+}
+
+/* Beams */
+.cyber-beam-glow {
+  stroke-width: 7;
+  opacity: 0.35;
+  stroke-linecap: round;
+}
+
+.cyber-beam-core {
+  stroke-width: 2.5;
+  opacity: 0.95;
+  stroke-linecap: round;
+}
+
+.cyber-impact {
+  opacity: 0.9;
+  animation: cyber-impact 0.2s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes cyber-impact {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+}
+
+/* Enemies */
+.cyber-enemy-body {
+  stroke: rgba(3, 10, 20, 0.75);
+  stroke-width: 2;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.cyber-enemy.is-boss .cyber-enemy-body {
+  stroke: #fde68a;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.8));
+}
+
+.cyber-enemy.is-hidden .cyber-enemy-body {
+  fill: rgba(100, 116, 139, 0.85);
+}
+
+.cyber-enemy-health-bg {
+  fill: rgba(3, 10, 20, 0.85);
+}
+
+.cyber-enemy-health-fill {
+  fill: #4ade80;
+}
+
+.cyber-enemy-crown {
+  font-size: 13px;
+}
+
+/* Enemy inspection: tap an attack to read what it is until it is destroyed */
+.cyber-enemy {
+  --enemy-tone: #38bdf8;
+  cursor: pointer;
+}
+
+.cyber-enemy--injection {
+  --enemy-tone: #fbbf24;
+}
+
+.cyber-enemy--identity {
+  --enemy-tone: #a78bfa;
+}
+
+.cyber-enemy--malware {
+  --enemy-tone: #f87171;
+}
+
+.cyber-enemy-hit {
+  fill: transparent;
+  pointer-events: all;
+}
+
+.cyber-enemy-select-ring {
+  fill: none;
+  stroke: var(--enemy-tone);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+  opacity: 0;
+}
+
+.cyber-enemy.is-selected .cyber-enemy-select-ring {
+  opacity: 0.95;
+}
+
+.cyber-enemy:focus-visible {
+  outline: none;
+}
+
+.cyber-enemy:focus-visible .cyber-enemy-select-ring {
+  opacity: 1;
+  stroke: var(--text);
+  stroke-dasharray: 3 3;
+}
+
+.cyber-enemy-callout {
+  pointer-events: none;
+}
+
+.cyber-enemy-callout-box {
+  fill: rgba(8, 17, 32, 0.96);
+  stroke: var(--enemy-tone);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+}
+
+.cyber-enemy-callout-pointer {
+  fill: rgba(8, 17, 32, 0.96);
+  stroke: var(--enemy-tone);
+  stroke-width: 1.5;
+}
+
+.cyber-enemy-callout-title {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.cyber-enemy-callout-sub {
+  fill: var(--enemy-tone);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.cyber-enemy-callout-desc {
+  fill: var(--text-muted);
+  font-size: 10.5px;
+}
+
+.cyber-enemy-callout-stat {
+  fill: #cbd5e1;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+/* Blocked / breach bursts */
+.cyber-fx-ring {
+  fill: none;
+  stroke-width: 3;
+  animation: cyber-fx-burst 0.65s ease-out forwards;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.cyber-fx--blocked .cyber-fx-ring {
+  stroke: #34d399;
+}
+
+.cyber-fx--leak .cyber-fx-ring {
+  stroke: #f87171;
+  stroke-width: 4;
+}
+
+.cyber-fx--leak.is-boss .cyber-fx-ring {
+  stroke: #fbbf24;
+}
+
+/* Backup recovery: a calmer, longer blue pulse so the save is readable. */
+.cyber-fx--restore .cyber-fx-ring {
+  stroke: #60a5fa;
+  stroke-width: 3;
+  animation-duration: 1.2s;
+}
+
+.cyber-fx--restore .cyber-fx-label {
+  fill: #bfdbfe;
+  animation-duration: 1.2s;
+}
+
+@keyframes cyber-fx-burst {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
+.cyber-fx-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  animation: cyber-fx-label 0.65s ease-out forwards;
+}
+
+.cyber-fx--blocked .cyber-fx-label {
+  fill: #6ee7b7;
+}
+
+.cyber-fx--leak .cyber-fx-label {
+  fill: #fca5a5;
+}
+
+@keyframes cyber-fx-label {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-lane-flow,
+  .cyber-range-ring,
+  .cyber-core-ring,
+  .cyber-tower-muzzle,
+  .cyber-impact,
+  .cyber-fx-ring,
+  .cyber-fx-label {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Cyber Defense — game chrome (HUD, banners, cards, juice)
+   --------------------------------------------------------------------------- */
+
+.cyber-hud {
+  gap: 0.45rem;
+  padding: 0.55rem 0.7rem;
+  background:
+    linear-gradient(180deg, rgba(56, 189, 248, 0.08), transparent 70%),
+    var(--bg-elevated);
+  border-color: #2b3f63;
+}
+
+.cyber-hud-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cyber-hud-spacer {
+  flex: 1 1 auto;
+}
+
+.cyber-hud-bar--wave {
+  border-top: 1px solid var(--border);
+  padding-top: 0.45rem;
+}
+
+.cyber-health-bar.is-critical .cyber-health-fill {
+  background: linear-gradient(90deg, #f87171, #fbbf24);
+  animation: cyber-critical-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes cyber-critical-pulse {
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.cyber-wave-pill {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--accent-strong);
+  color: var(--accent-contrast);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.cyber-build-note {
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.cyber-wave-preview {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.cyber-wave-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.cyber-wave-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38bdf8;
+}
+
+.cyber-wave-dot--sql_injection {
+  background: #fbbf24;
+}
+.cyber-wave-dot--xss {
+  background: #f472b6;
+}
+.cyber-wave-dot--credential_stuffing {
+  background: #a78bfa;
+}
+.cyber-wave-dot--ransomware {
+  background: #f87171;
+}
+.cyber-wave-dot--prompt_injection {
+  background: #34d399;
+}
+
+.cyber-call-button {
+  min-height: 40px;
+  padding: 0.4rem 0.8rem;
+  background: linear-gradient(180deg, #f59e0b, #d97706);
+  border-color: #fbbf24;
+  color: #1a1206;
+  font-weight: 800;
+  box-shadow: 0 0 14px rgba(251, 191, 36, 0.4);
+}
+
+.cyber-call-button:hover:not(:disabled) {
+  background: linear-gradient(180deg, #fbbf24, #f59e0b);
+  border-color: #fde68a;
+}
+
+/* Boss bar */
+.cyber-boss-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.cyber-boss-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #fca5a5;
+  white-space: nowrap;
+}
+
+.cyber-boss-track {
+  position: relative;
+  flex: 1 1 auto;
+  height: 12px;
+  border-radius: 999px;
+  background: #2a0d0d;
+  border: 1px solid #7f1d1d;
+  overflow: hidden;
+}
+
+.cyber-boss-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #fbbf24, #f87171);
+  transition: width 0.2s ease;
+}
+
+/* Tower / enemy animation */
+.cyber-tower-glow {
+  fill: var(--tower-color, #38bdf8);
+  opacity: 0.12;
+  filter: blur(1px);
+}
+
+.tower-art-bob {
+  animation: cyber-tower-bob 2.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes cyber-tower-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.6px);
+  }
+}
+
+.cyber-tower.is-firing .tower-art-bob {
+  animation: cyber-tower-recoil 0.24s ease-out infinite;
+}
+
+@keyframes cyber-tower-recoil {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(0.92);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.enemy-art-bob {
+  animation: cyber-enemy-walk 0.7s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.enemy-art-bob.is-boss {
+  animation-duration: 1.3s;
+}
+
+@keyframes cyber-enemy-walk {
+  0%,
+  100% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+
+/* Wave banner */
+.cyber-map-wrap {
+  position: relative;
+}
+
+.cyber-wave-banner {
+  position: absolute;
+  top: 22%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.5rem 1.4rem;
+  border-radius: var(--radius);
+  background: rgba(8, 17, 32, 0.86);
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 30px rgba(56, 189, 248, 0.5);
+  pointer-events: none;
+  animation: cyber-banner-in 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+
+.cyber-wave-banner.is-boss {
+  border-color: #f87171;
+  box-shadow: 0 0 34px rgba(248, 113, 113, 0.6);
+}
+
+.cyber-wave-banner-kicker {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  color: var(--text-muted);
+}
+
+.cyber-wave-banner-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+
+.cyber-wave-banner.is-boss .cyber-wave-banner-title {
+  color: #fca5a5;
+}
+
+@keyframes cyber-banner-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.7);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+/* Screen shake on breach */
+.cyber-map-wrap.is-shaking {
+  animation: cyber-shake 0.24s ease-in-out;
+}
+
+@keyframes cyber-shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-4px, 2px);
+  }
+  50% {
+    transform: translate(4px, -2px);
+  }
+  75% {
+    transform: translate(-2px, -2px);
+  }
+}
+
+/* Defense cards with art */
+.cyber-defense-card {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.7rem;
+  border-color: color-mix(in srgb, var(--tower-color, #38bdf8) 40%, var(--border));
+}
+
+.cyber-defense-thumb {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  background: radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.16), transparent 70%);
+  border: 1px solid var(--border);
+}
+
+.cyber-defense-thumb svg {
+  width: 100%;
+  height: 100%;
+}
+
+.cyber-defense-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Briefing thumbnails */
+.cyber-briefing-defenses li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.cyber-briefing-thumb {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+}
+
+/* Start bar as a launch button */
+.cyber-start-bar {
+  border-color: #fbbf24;
+  background: linear-gradient(180deg, rgba(251, 191, 36, 0.12), rgba(56, 189, 248, 0.06));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tower-art-bob,
+  .enemy-art-bob,
+  .cyber-tower.is-firing .tower-art-bob,
+  .cyber-wave-banner,
+  .cyber-map-wrap.is-shaking,
+  .cyber-health-bar.is-critical .cyber-health-fill {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .cyber-defense-list {
+    max-height: 40vh;
+  }
+
+  .cyber-wave-preview {
+    width: 100%;
+  }
+}
+
+/* Icon alignment for game chrome */
+.cyber-hud-icon,
+.cyber-hud-time,
+.cyber-boss-label,
+.cyber-call-button,
+.cyber-defense-cost,
+.cyber-primary-button,
+.cyber-hud-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cyber-hud-button {
+  justify-content: center;
+}
+
+.cyber-hud-icon svg,
+.cyber-hud-time svg,
+.cyber-boss-label svg,
+.cyber-defense-cost svg {
+  flex: 0 0 auto;
+}
+
+.cyber-core-badge {
+  filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.65));
+  animation: cyber-core-float 2.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes cyber-core-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-core-badge {
+    animation: none;
+  }
+}
+
+/* Recoverable mission error */
+.cyber-error {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+  max-width: 40rem;
+  margin: 2rem auto;
+  padding: 1.25rem;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-lg);
+  background: var(--danger-bg);
+}
+
+.cyber-error h1 {
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Cyber Defense — full-width board + compact shop
+   --------------------------------------------------------------------------- */
+
+.cyber-game {
+  max-width: 1500px;
+  gap: 0.7rem;
+  padding: 0 0.9rem 2rem;
+}
+
+.cyber-board-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.cyber-board-wrap.is-shaking {
+  animation: cyber-shake 0.24s ease-in-out;
+}
+
+.cyber-map {
+  min-height: 0;
+}
+
+/* Build sockets */
+.cyber-slot {
+  cursor: pointer;
+}
+
+.cyber-slot-ring {
+  fill: rgba(15, 28, 51, 0.55);
+  stroke: #33456b;
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  transition: stroke 0.15s ease, fill 0.15s ease;
+}
+
+.cyber-slot-plus {
+  fill: #64748b;
+  font-size: 19px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.cyber-slot:hover .cyber-slot-ring,
+.cyber-slot:focus-visible .cyber-slot-ring {
+  stroke: var(--accent);
+}
+
+.cyber-slot.is-selected .cyber-slot-ring {
+  stroke: var(--accent);
+  fill: #16233d;
+}
+
+.cyber-slot.is-selected .cyber-slot-plus {
+  fill: var(--accent);
+}
+
+.cyber-slot.is-available .cyber-slot-ring {
+  stroke: var(--accent);
+  stroke-dasharray: none;
+  animation: cyber-slot-ready 1.1s ease-in-out infinite;
+}
+
+.cyber-slot.is-available .cyber-slot-plus {
+  fill: var(--accent);
+}
+
+@keyframes cyber-slot-ready {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.cyber-node.is-armed-target .cyber-node-box {
+  stroke: var(--accent);
+  stroke-dasharray: 9 5;
+}
+
+/* Shop */
+.cyber-shop {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.cyber-shop-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.cyber-shop-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  flex: 0 0 auto;
+  min-width: 92px;
+  min-height: 76px;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.cyber-shop-chip:hover:not(:disabled) {
+  border-color: var(--tower-color, var(--accent));
+}
+
+.cyber-shop-chip.is-armed {
+  border-color: var(--tower-color, var(--accent));
+  background: color-mix(in srgb, var(--tower-color, #38bdf8) 16%, var(--surface));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--tower-color, #38bdf8) 45%, transparent);
+}
+
+.cyber-shop-chip.is-poor {
+  opacity: 0.55;
+}
+
+.cyber-shop-chip-art {
+  width: 34px;
+  height: 34px;
+}
+
+.cyber-shop-chip-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.1;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.cyber-shop-chip-cost {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--warning);
+}
+
+.cyber-shop-clear {
+  flex: 0 0 auto;
+  align-self: center;
+  min-width: 44px;
+  min-height: 44px;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+/* The chip row scrolls horizontally; on phones keep the only cancel affordance
+   pinned to the right edge instead of off-screen. Desktop is unchanged because
+   the row never overflows there. */
+@media (max-width: 640px) {
+  .cyber-shop-clear {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: var(--bg-elevated);
+    box-shadow: -10px 0 10px -8px rgba(0, 0, 0, 0.7);
+  }
+}
+
+.cyber-shop-feedback {
+  margin: 0;
+  padding: 0.45rem 0.65rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.cyber-shop-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  animation: cyber-detail-in 0.18s ease-out;
+}
+
+.cyber-shop-detail--hint {
+  border-style: dashed;
+  border-color: var(--border);
+}
+
+.cyber-shop-detail-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cyber-shop-detail-head h2 {
+  margin: 0;
+}
+
+.cyber-shop-stats {
+  margin: 0;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cyber-shop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cyber-action-button--danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+@keyframes cyber-detail-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-slot.is-available .cyber-slot-ring,
+  .cyber-board-wrap.is-shaking,
+  .cyber-shop-detail {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .cyber-game {
+    padding: 0 0.6rem 1.5rem;
+  }
+
+  .cyber-shop-chip {
+    min-width: 78px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Cyber Defense — road, pads, portal, core, heroes
+   --------------------------------------------------------------------------- */
+
+.cyber-road-edge {
+  fill: none;
+  stroke: #24344f;
+  stroke-width: 58;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.cyber-road {
+  fill: none;
+  stroke: #0c1626;
+  stroke-width: 50;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.cyber-road-line {
+  fill: none;
+  stroke: rgba(148, 163, 184, 0.5);
+  stroke-width: 3;
+  stroke-dasharray: 16 18;
+  stroke-linecap: round;
+  animation: cyber-road-flow 1.4s linear infinite;
+}
+
+@keyframes cyber-road-flow {
+  to {
+    stroke-dashoffset: -34;
+  }
+}
+
+.cyber-road-line.is-static {
+  animation: none;
+}
+
+/* Tower pads */
+.cyber-pad {
+  cursor: pointer;
+}
+
+/* Enlarged transparent tap target for touch, mirroring .cyber-enemy-hit. */
+.cyber-pad-hit {
+  fill: transparent;
+  pointer-events: all;
+}
+
+.cyber-pad-base {
+  fill: #101d33;
+  stroke: #33456b;
+  stroke-width: 2;
+}
+
+.cyber-pad-ring {
+  fill: none;
+  stroke: #3b5177;
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+  transition: stroke 0.15s ease;
+}
+
+.cyber-pad-plus {
+  fill: #5b6b85;
+  font-size: 20px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.cyber-pad:hover .cyber-pad-ring,
+.cyber-pad:focus-visible .cyber-pad-ring {
+  stroke: var(--accent);
+}
+
+.cyber-pad.is-selected .cyber-pad-base {
+  fill: #16233d;
+}
+
+.cyber-pad.is-selected .cyber-pad-ring {
+  stroke: var(--accent);
+}
+
+.cyber-pad.is-selected .cyber-pad-plus {
+  fill: var(--accent);
+}
+
+.cyber-pad.is-available .cyber-pad-ring {
+  stroke: var(--accent);
+  stroke-dasharray: none;
+  animation: cyber-slot-ready 1.1s ease-in-out infinite;
+}
+
+.cyber-pad.is-available .cyber-pad-plus {
+  fill: var(--accent);
+}
+
+/* Spawn portal */
+.cyber-portal-ring {
+  fill: none;
+  stroke: #f87171;
+  stroke-width: 3;
+  stroke-dasharray: 9 7;
+  animation: cyber-portal-spin 6s linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.cyber-portal-core {
+  fill: #f87171;
+  opacity: 0.85;
+  animation: cyber-slot-ready 1.2s ease-in-out infinite;
+}
+
+@keyframes cyber-portal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Defended core */
+.cyber-core {
+  filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.6));
+}
+
+.cyber-core-badge {
+  animation: cyber-core-float 2.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Towers */
+.tower-muzzle {
+  animation: cyber-muzzle 0.22s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Heroes */
+.cyber-hero {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 66px;
+  padding: 0.5rem 0.75rem;
+  overflow: hidden;
+  text-align: left;
+}
+
+.cyber-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.cyber-hero-role {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  max-width: 22rem;
+}
+
+.cyber-hero-cooldown {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--accent);
+  transition: width 0.2s linear;
+}
+
+.cyber-hero.is-active {
+  border-color: var(--success);
+  background: var(--success-bg);
+}
+
+.hero-art {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.hero-art-bob {
+  animation: cyber-hero-bob 2.4s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.hero-art.is-active .hero-art-bob {
+  animation-duration: 1.1s;
+}
+
+.hero-aura {
+  animation: cyber-hero-aura 1.2s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes cyber-hero-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes cyber-hero-aura {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.08);
+  }
+}
+
+.cyber-hero-burst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(56, 189, 248, 0.35),
+    transparent 62%
+  );
+  animation: cyber-hero-burst 0.9s ease-out forwards;
+}
+
+@keyframes cyber-hero-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-road-line,
+  .cyber-pad.is-available .cyber-pad-ring,
+  .cyber-portal-ring,
+  .cyber-portal-core,
+  .cyber-core-badge,
+  .tower-muzzle,
+  .hero-art-bob,
+  .hero-aura,
+  .cyber-hero-burst {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Cyber Defense — tutorial popup
+   --------------------------------------------------------------------------- */
+
+.cyber-tutorial {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(4, 10, 20, 0.74);
+  backdrop-filter: blur(3px);
+}
+
+.cyber-tutorial-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  width: min(30rem, 92vw);
+  padding: 1.6rem 1.4rem 1.3rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  box-shadow: 0 0 40px rgba(56, 189, 248, 0.35);
+  text-align: center;
+  animation: cyber-banner-in 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+
+.cyber-tutorial-art {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.cyber-tutorial-card h2 {
+  margin: 0;
+}
+
+.cyber-tutorial-card p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.cyber-tutorial-dots {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.cyber-tutorial-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.cyber-tutorial-dot.is-active {
+  background: var(--accent);
+}
+
+.cyber-tutorial-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.35rem;
+}
+
+.cyber-start-bar {
+  justify-content: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-tutorial-card {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Cyber Defense — tray (heroes + tower shop)
+   --------------------------------------------------------------------------- */
+
+.cyber-tray {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.cyber-heroes {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+
+.cyber-tray-label {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0 0.35rem;
+}
+
+.cyber-hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 52px;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.cyber-hero-chip.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+}
+
+.cyber-hero-chip.is-active {
+  border-color: var(--success);
+  background: var(--success-bg);
+}
+
+.cyber-hero-chip.is-cooldown {
+  opacity: 0.65;
+}
+
+.cyber-hero-chip-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.cyber-hero-chip-name {
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.cyber-hero-chip-status {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.cyber-hero-detail-body {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cyber-hud-start {
+  min-height: 40px;
+}
+
+/* Core layer label */
+.cyber-core-label {
+  fill: #6ee7b7;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 640px) {
+  .cyber-hero-chip-name {
+    display: none;
+  }
+}
+
+/* Heroes and towers on one line on desktop */
+@media (min-width: 900px) {
+  .cyber-tray {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .cyber-heroes {
+    flex: 0 0 auto;
+  }
+
+  .cyber-shop {
+    flex: 1 1 26rem;
+    min-width: 0;
+  }
+
+  .cyber-hero-detail {
+    flex: 1 1 100%;
+  }
+}
+
+/* Evil hacker at the spawn */
+.hacker-art {
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.85));
+  animation: cyber-hacker-pulse 1.6s ease-in-out infinite;
+}
+
+.hacker-aura {
+  animation: cyber-hacker-aura 1.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.hacker-eye {
+  animation: cyber-hacker-eye 1.1s steps(2, jump-none) infinite;
+}
+
+@keyframes cyber-hacker-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px rgba(239, 68, 68, 1));
+  }
+}
+
+@keyframes cyber-hacker-aura {
+  0%,
+  100% {
+    opacity: 0.22;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes cyber-hacker-eye {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hacker-art,
+  .hacker-aura,
+  .hacker-eye {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Cyber Defense — heroes on the road
+   --------------------------------------------------------------------------- */
+
+.cyber-map.is-deploying {
+  cursor: crosshair;
+}
+
+.cyber-map.is-deploying .cyber-road {
+  stroke: #16243c;
+}
+
+.cyber-hero-unit {
+  pointer-events: none;
+}
+
+.cyber-hero-pad {
+  fill: color-mix(in srgb, var(--hero-color, #38bdf8) 16%, transparent);
+  stroke: var(--hero-color, #38bdf8);
+  stroke-width: 2;
+}
+
+.cyber-hero-ttl {
+  fill: none;
+  stroke: var(--hero-color, #38bdf8);
+  stroke-width: 3;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0.85;
+}
+
+/* Combat stance: a quick wind-up, then a lunge toward the target, with a glow
+   while the hero is landing hits. */
+.cyber-hero-unit.is-attacking {
+  filter: drop-shadow(0 0 7px var(--hero-color, #38bdf8));
+}
+
+.cyber-hero-unit.is-attacking .cyber-hero-pad {
+  animation: cyber-hero-pad-pulse 0.56s ease-in-out infinite;
+}
+
+.cyber-hero-unit.is-attacking .hero-art-bob {
+  animation: cyber-hero-fight 0.56s cubic-bezier(0.3, 0.9, 0.4, 1) infinite;
+}
+
+@keyframes cyber-hero-fight {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  18% {
+    transform: translate(-3px, 1px) rotate(5deg) scale(0.97);
+  }
+  45% {
+    transform: translate(7px, -4px) rotate(-11deg) scale(1.08);
+  }
+  62% {
+    transform: translate(3px, -1px) rotate(-4deg) scale(1.02);
+  }
+}
+
+@keyframes cyber-hero-pad-pulse {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  45% {
+    opacity: 1;
+  }
+}
+
+.cyber-hero-slash {
+  stroke-width: 3;
+  stroke-linecap: round;
+  animation: cyber-hero-slash 0.56s ease-out infinite;
+}
+
+@keyframes cyber-hero-slash {
+  0%,
+  30% {
+    opacity: 0;
+    stroke-dasharray: 0 400;
+  }
+  45% {
+    opacity: 1;
+    stroke-dasharray: 400 400;
+  }
+  70%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Impact flash where the blade lands. */
+.cyber-hero-impact {
+  pointer-events: none;
+}
+
+.cyber-hero-impact-ring {
+  fill: none;
+  stroke: var(--hero-color, #38bdf8);
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cyber-hero-impact-ring 0.56s ease-out infinite;
+}
+
+.cyber-hero-impact-spark {
+  fill: #ffffff;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cyber-hero-impact-spark 0.56s ease-out infinite;
+}
+
+@keyframes cyber-hero-impact-ring {
+  0%,
+  38% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
+@keyframes cyber-hero-impact-spark {
+  0%,
+  38% {
+    opacity: 0;
+    transform: scale(0.4) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(25deg);
+  }
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(0.6) rotate(45deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-hero-unit.is-attacking .hero-art-bob,
+  .cyber-hero-unit.is-attacking .cyber-hero-pad,
+  .cyber-hero-slash,
+  .cyber-hero-impact-ring,
+  .cyber-hero-impact-spark {
+    animation: none;
+  }
+}
+
+/* Rate-limiter gate across the road */
+.cyber-gate-bar {
+  stroke: #22d3ee;
+  stroke-width: 5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 7px rgba(34, 211, 238, 0.8));
+  animation: cyber-gate-pulse 1.6s ease-in-out infinite;
+}
+
+.cyber-gate-post {
+  fill: #0b1526;
+  stroke: #22d3ee;
+  stroke-width: 2.5;
+}
+
+@keyframes cyber-gate-pulse {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.cyber-fx--timeout .cyber-fx-ring {
+  stroke: #22d3ee;
+}
+
+.cyber-fx--timeout .cyber-fx-label {
+  fill: #67e8f9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-gate-bar {
+    animation: none;
+  }
+}
+
+/* Hero melee hit spark */
+.cyber-fx-hit {
+  fill: none;
+  stroke: #fde68a;
+  stroke-width: 3;
+  animation: cyber-fx-hit 0.32s ease-out forwards;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes cyber-fx-hit {
+  0% {
+    opacity: 1;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-fx-hit {
+    animation: none;
+  }
+}
+
+/* Projectiles: cannon shells and bombs */
+.cyber-projectile {
+  pointer-events: none;
+}
+
+.cyber-shell {
+  stroke: #020617;
+  stroke-width: 1.5;
+}
+
+.cyber-bomb {
+  stroke: #020617;
+  stroke-width: 2;
+  animation: cyber-bomb-spin 0.5s linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.cyber-blast {
+  animation: cyber-blast 0.5s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes cyber-bomb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes cyber-blast {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+/* Sword slash is a stroked arc */
+.cyber-hero-slash {
+  fill: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-bomb,
+  .cyber-blast {
+    animation: none;
+  }
+}
+
+/* Attribute rows (towers + heroes) */
+.game-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.7rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.game-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.game-stat-icon {
+  display: inline-flex;
+  color: var(--text-faint);
+}
+
+.game-stat-value {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.game-stat.is-cost .game-stat-value {
+  color: var(--warning);
+}
+
+.game-stat.is-danger .game-stat-value {
+  color: var(--danger);
+}
+
+/* Upgrade-available badge on a tower */
+.cyber-tower-upgrade circle {
+  fill: #22c55e;
+  stroke: #04120a;
+  stroke-width: 1.5;
+}
+
+.cyber-tower-upgrade text {
+  fill: #04120a;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.cyber-tower-upgrade {
+  animation: cyber-upgrade-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes cyber-upgrade-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-tower-upgrade {
+    animation: none;
+  }
 }

@@ -17,8 +17,8 @@ use adaptive_learn_db as db;
 use adaptive_learn_domain::concept_state::SUCCESS_THRESHOLD;
 use adaptive_learn_domain::{
     ConceptWeight, DAILY_MISSION_BONUS_BITS, LearningEvent, MODEL_VERSION, MissionInstance,
-    MissionStatus, PredictionSample, QuizMode, SECTION_QUIZ_BONUS_BITS, evaluate, predict_question,
-    retrievability, reward_bits, summarize_streak,
+    MissionStatus, PredictionSample, QuizMode, SECTION_QUIZ_BONUS_BITS, cyber_defense_upgrade_bits,
+    evaluate, predict_question, retrievability, reward_bits, summarize_streak,
 };
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use uuid::Uuid;
@@ -27,12 +27,13 @@ use crate::auth::AuthenticatedUser;
 use crate::dto::{
     AnswerPayload, AnswerRequest, AuxiliaryEventRequest, CalibrationBucketDto, CatalogResponse,
     CertificationDto, CertificationVersionDto, CompleteMissionResponse, ConceptDto,
-    DailyItemCompleteRequest, DailyItemCompleteResponse, DailyMissionItemDto, DailyMissionItemKind,
-    DailyMissionItemStatus, DailyMissionPlanType, DailyMissionRequest, DailyMissionResponse,
-    DailyMissionStatus, DiscoveryResponse, DiscoveryState, DiscoveryUpdateRequest, DomainDto,
-    DomainProgressDto, EvaluationSliceDto, FeedbackResponse, IssueMissionRequest,
-    LearningDomainResponse, MissionResponse, MissionReviewResponse, ModelEvaluationResponse,
-    NodeProgressDto, PracticeTestDomainResult, PracticeTestItemResult, PracticeTestItemView,
+    CyberDefenseUpgradeRequest, CyberDefenseUpgradeResponse, DailyItemCompleteRequest,
+    DailyItemCompleteResponse, DailyMissionItemDto, DailyMissionItemKind, DailyMissionItemStatus,
+    DailyMissionPlanType, DailyMissionRequest, DailyMissionResponse, DailyMissionStatus,
+    DiscoveryResponse, DiscoveryState, DiscoveryUpdateRequest, DomainDto, DomainProgressDto,
+    EvaluationSliceDto, FeedbackResponse, IssueMissionRequest, LearningDomainResponse,
+    MissionResponse, MissionReviewResponse, ModelEvaluationResponse, NodeProgressDto,
+    PracticeTestDomainResult, PracticeTestItemResult, PracticeTestItemView,
     PracticeTestListResponse, PracticeTestResponse, PracticeTestResultResponse,
     PracticeTestSubmissionRequest, PracticeTestSummaryDto, QuestionView,
     RecommendationEventRequest, RecommendationEventResponse, RecommendationResponse,
@@ -2556,6 +2557,101 @@ pub async fn wallet(
     })
 }
 
+/// Debits Bits for a Cyber Defense control upgrade.
+///
+/// The cost is derived from canonical policy, never from the client: the server
+/// derives the control's level from the settled ledger for this run and checks
+/// that the client's `from_level` agrees, so a client cannot choose a cheaper
+/// tier. The debit and its ledger row commit in one transaction, and `event_id`
+/// makes a retry safe, so a dropped response can be resent without
+/// double-charging.
+pub async fn cyber_defense_upgrade(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    request: CyberDefenseUpgradeRequest,
+) -> Result<CyberDefenseUpgradeResponse, ApiError> {
+    let defense_id = request.defense_id.trim();
+    if defense_id.is_empty() || defense_id.len() > 64 {
+        return Err(ApiError::BadRequest("invalid defense id".to_owned()));
+    }
+    if request.from_level < 1 {
+        return Err(ApiError::BadRequest("invalid upgrade level".to_owned()));
+    }
+
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+
+    // Lock the wallet so the level derived from the ledger cannot race with a
+    // concurrent upgrade of the same control.
+    db::wallets::lock_wallet(&mut tx, user.id).await?;
+
+    // Derive the level from the settled ledger, not from the client. A retry of
+    // an existing `event_id` is excluded from the count, so it resolves to the
+    // level it originally upgraded from.
+    let settled = db::wallets::count_upgrades(
+        &mut tx,
+        user.id,
+        request.run_id,
+        defense_id,
+        request.event_id,
+    )
+    .await?;
+    let from_level = settled + 1;
+
+    if i64::from(request.from_level) != from_level {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return Err(ApiError::Conflict(
+            "upgrade level is out of sequence".to_owned(),
+        ));
+    }
+
+    let cost = i32::try_from(from_level)
+        .ok()
+        .and_then(cyber_defense_upgrade_bits)
+        .ok_or_else(|| ApiError::Conflict("control is already at its maximum level".to_owned()))?;
+
+    let spend = db::wallets::BitSpend {
+        user_id: user.id,
+        device_id: None,
+        event_id: request.event_id,
+        run_id: request.run_id,
+        item_id: defense_id.to_owned(),
+        amount: cost,
+        reason: "cyber_defense_upgrade".to_owned(),
+    };
+
+    match db::wallets::spend(&mut tx, &spend).await? {
+        db::wallets::SpendOutcome::Settled { balance } => {
+            tx.commit().await.map_err(db::DbError::from)?;
+            Ok(CyberDefenseUpgradeResponse {
+                bits_balance: balance,
+                spent: cost,
+                newly_settled: true,
+            })
+        }
+        db::wallets::SpendOutcome::AlreadySettled => {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            let bits_balance = db::wallets::balance(&state.pool, user.id).await?;
+            Ok(CyberDefenseUpgradeResponse {
+                bits_balance,
+                spent: cost,
+                newly_settled: false,
+            })
+        }
+        db::wallets::SpendOutcome::KeyReused => {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            Err(ApiError::Conflict(
+                "idempotency key was reused for a different spend".to_owned(),
+            ))
+        }
+        db::wallets::SpendOutcome::InsufficientFunds => {
+            // Rolling back discards the provisional ledger row, so an
+            // unaffordable spend leaves no trace.
+            tx.rollback().await.map_err(db::DbError::from)?;
+            Err(ApiError::InsufficientBits)
+        }
+    }
+}
+
 /// Why a single synced event was not accepted.
 enum SyncRejection {
     /// The event is invalid; other events in the batch may still succeed.
@@ -3172,9 +3268,10 @@ fn study_question_view(question: &adaptive_learn_content::Question) -> StudyQues
 
 /// Note shown with every practice-test result.
 ///
-/// The raw practice score is a study aid, not an official AWS scaled score.
+/// Certification-neutral: the raw practice score is a study aid, not an
+/// official vendor scaled score or a pass/fail result.
 pub const PRACTICE_TEST_SCORE_NOTE: &str =
-    "This is a raw practice score, not an AWS scaled score or an official pass/fail result.";
+    "This is a raw practice score, not an official scaled score or a pass/fail result.";
 
 /// Lists the practice tests available for a certification.
 pub fn list_practice_tests(state: &AppState, certification_id: &str) -> PracticeTestListResponse {
@@ -3458,6 +3555,14 @@ fn matches_submitted_shape(item: &PracticeTestItem, submitted: &SubmittedAnswer)
 mod tests {
     use super::*;
     use std::collections::BTreeMap;
+
+    #[test]
+    fn practice_test_score_note_is_vendor_neutral() {
+        // Practice tests exist for both AWS and Microsoft certifications, so the
+        // note must not name a single vendor's scoring scale.
+        assert!(!PRACTICE_TEST_SCORE_NOTE.contains("AWS"));
+        assert!(PRACTICE_TEST_SCORE_NOTE.contains("not"));
+    }
 
     #[tokio::test]
     async fn recommendation_logging_failure_is_swallowed() {

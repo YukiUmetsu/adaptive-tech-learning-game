@@ -44,8 +44,8 @@ Exit: useful study sessions work without game mechanics and events are determini
 
 > Phase 1 implementation note: the MVP now spans more than the original narrow
 > slice. All five AWS SOA-C03 domains are authored, joined by AWS SAA-C03,
-> AWS AIP-C01, CompTIA Security+ SY0-701 (all five domains), HashiCorp
-> Terraform Associate 004, and AI/Python tracks
+> AWS AIP-C01, Microsoft AZ-900 and AZ-104, CompTIA Security+ SY0-701 (all five domains),
+> HashiCorp Terraform Associate 004, and AI/Python tracks
 > (Python fluency, Python data stack, PyTorch core), with original demo bundles
 > for every interaction type. The web app has a certification catalog, a
 > certification dashboard, three quiz modes with server-side selection, a

@@ -62,7 +62,7 @@ export default function ClassificationInteraction({
                     event.dataTransfer.setData("text/plain", item.id);
                   }}
                 >
-                  <InlineText text={item.label} />
+                  <InlineText text={item.label} terms={[]} />
                 </button>
               </li>
             ))}
@@ -118,7 +118,7 @@ export default function ClassificationInteraction({
                         )
                       }
                     >
-                      <InlineText text={item.label} />
+                      <InlineText text={item.label} terms={[]} />
                     </button>
                   </li>
                 ))}

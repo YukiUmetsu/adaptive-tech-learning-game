@@ -127,7 +127,7 @@ export default function KnowledgeMapHud({
                     </span>
                   </span>
                   <span className="knowledge-group-card-title">
-                    <InlineText text={module.title} />
+                    <InlineText text={module.title} terms={[]} />
                   </span>
                   <span className="knowledge-group-card-bar" aria-hidden="true">
                     <span

@@ -72,7 +72,7 @@ export default function MultipleResponseInteraction({
                 />
                 <span className="choice-marker" aria-hidden="true" />
                 <span className="choice-label">
-                  <InlineText text={choice.label} />
+                  <InlineText text={choice.label} terms={[]} />
                 </span>
               </label>
             </li>
