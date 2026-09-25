@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import CyberDefensePage from "./CyberDefensePage";
+import { AuthContext, type AuthContextValue } from "../auth/context";
 import {
   recordMissionResult,
   resetGameProgress,
@@ -13,11 +14,29 @@ beforeEach(() => {
   resetGameProgress();
 });
 
-function renderPage() {
+function authValue(status: "anonymous" | "authenticated"): AuthContextValue {
+  return {
+    status,
+    user:
+      status === "authenticated"
+        ? { id: "user-1", email: "learner@example.com", name: "Ada" }
+        : null,
+    configured: status === "authenticated",
+    devSignIn: false,
+    authError: null,
+    signIn: async () => {},
+    signOut: async () => {},
+    getAccessToken: async () => null,
+  };
+}
+
+function renderPage(status: "anonymous" | "authenticated" = "authenticated") {
   return render(
-    <MemoryRouter>
-      <CyberDefensePage />
-    </MemoryRouter>,
+    <AuthContext.Provider value={authValue(status)}>
+      <MemoryRouter>
+        <CyberDefensePage />
+      </MemoryRouter>
+    </AuthContext.Provider>,
   );
 }
 
@@ -79,5 +98,22 @@ describe("CyberDefensePage", () => {
       screen.getByRole("link", { name: /continue mission/i }),
     ).toHaveAttribute("href", "/game/missions/sql-injection");
     expect(screen.getByText("1 of 5 cleared")).toBeInTheDocument();
+  });
+
+  it("lets a signed-out visitor browse but sends them to sign in to play", () => {
+    renderPage("anonymous");
+
+    // The page is still viewable: mission content and stats render.
+    expect(screen.getByText("Protect the Storefront")).toBeInTheDocument();
+    expect(screen.getByText("Systems secured")).toBeInTheDocument();
+
+    const cta = screen.getByRole("link", { name: /sign in to play/i });
+    expect(cta).toHaveAttribute(
+      "href",
+      "/login?returnTo=%2Fgame%2Fmissions%2Fddos-basics",
+    );
+    expect(
+      screen.getByText(/account is required to play/i),
+    ).toBeInTheDocument();
   });
 });

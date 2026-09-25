@@ -1839,6 +1839,11 @@ Optional:
 Daily Mission
 ```
 
+The home/mission-select page is public so signed-out visitors can see what the
+game is. **Playing a mission requires an account**: the mission route is guarded
+and sends a signed-out visitor to sign in (returning them to the mission after).
+The economy is already account-scoped, so anonymous play would have no wallet.
+
 ---
 
 ## 38.2 Mission Select

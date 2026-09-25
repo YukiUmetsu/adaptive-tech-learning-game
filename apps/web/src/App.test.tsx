@@ -103,6 +103,25 @@ describe("App routing", () => {
     ).toBeInTheDocument();
   });
 
+  it("lets a signed-out visitor view the Cyber Defense page", () => {
+    renderAt("/game");
+
+    expect(
+      screen.getByRole("heading", { name: /protect systems/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /sign in to play/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("requires sign-in to play a Cyber Defense mission", async () => {
+    renderAt("/game/missions/ddos-basics");
+
+    expect(
+      await screen.findByRole("heading", { name: "Welcome back" }),
+    ).toBeInTheDocument();
+  });
+
   it("renders the settings page at /settings for an authenticated learner", () => {
     renderAuthenticatedAt("/settings");
 

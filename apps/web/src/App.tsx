@@ -72,7 +72,11 @@ export default function App() {
         <Route path="game" element={<CyberDefensePage />} />
         <Route
           path="game/missions/:missionId"
-          element={<CyberDefenseMissionPage />}
+          element={
+            <RequireAuth>
+              <CyberDefenseMissionPage />
+            </RequireAuth>
+          }
         />
         <Route path="login" element={<LoginPage />} />
         <Route

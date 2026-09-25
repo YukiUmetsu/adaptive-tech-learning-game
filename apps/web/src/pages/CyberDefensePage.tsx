@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 
+import { useAuth } from "../auth/context";
 import CoreArt from "../game/components/art/CoreArt";
 import EnemyArt from "../game/components/art/EnemyArt";
 import HeroArt from "../game/components/art/HeroArt";
@@ -119,13 +120,17 @@ function DefenseDiorama() {
 /**
  * Cyber Defense home and mission select (spec sections 38.1 and 38.2).
  *
- * Public and offline-friendly: no sign-in is required to play, so it works with
- * a static client even if every API is unavailable (spec section 43).
+ * The page itself is public so signed-out visitors can see what the game is.
+ * Playing a mission requires an account: the mission route is guarded, and the
+ * primary action sends a signed-out visitor to sign in instead of straight into
+ * a mission.
  */
 export default function CyberDefensePage() {
+  const { status } = useAuth();
   const progress = useGameProgress();
   const missions = GAME_CATALOG.missions;
   const totalMissions = missions.length;
+  const requiresSignIn = status === "anonymous";
 
   const cleared = missions.filter(
     (mission) => progress.missions[mission.id]?.completed === true,
@@ -164,14 +169,30 @@ export default function CyberDefensePage() {
           </p>
           {nextMission ? (
             <div className="cyber-home-actions">
-              <Link className="cyber-cta" to={`/game/missions/${nextMission.id}`}>
+              <Link
+                className="cyber-cta"
+                to={
+                  requiresSignIn
+                    ? `/login?returnTo=${encodeURIComponent(
+                        `/game/missions/${nextMission.id}`,
+                      )}`
+                    : `/game/missions/${nextMission.id}`
+                }
+              >
                 <PlayIcon size={16} />
-                {allCleared
-                  ? "Replay a mission"
-                  : cleared > 0
-                    ? "Continue mission"
-                    : "Start first mission"}
+                {requiresSignIn
+                  ? "Sign in to play"
+                  : allCleared
+                    ? "Replay a mission"
+                    : cleared > 0
+                      ? "Continue mission"
+                      : "Start first mission"}
               </Link>
+              {requiresSignIn ? (
+                <span className="cyber-home-cta-note muted">
+                  An account is required to play missions.
+                </span>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -292,7 +313,11 @@ export default function CyberDefensePage() {
                     {stars > 0 ? "★".repeat(stars) : "—"}
                   </span>
                   <span className="cyber-mission-open" aria-hidden="true">
-                    {unlocked ? "Deploy ▸" : "Locked"}
+                    {unlocked
+                      ? requiresSignIn
+                        ? "Sign in ▸"
+                        : "Deploy ▸"
+                      : "Locked"}
                   </span>
                 </span>
               </Link>
