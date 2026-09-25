@@ -35,7 +35,7 @@ use crate::dto::{
     MissionResponse, MissionReviewResponse, ModelEvaluationResponse, NodeProgressDto,
     PracticeTestDomainResult, PracticeTestItemResult, PracticeTestItemView,
     PracticeTestListResponse, PracticeTestResponse, PracticeTestResultResponse,
-    PracticeTestSubmissionRequest, PracticeTestSummaryDto, QuestionView,
+    PracticeTestSubmissionRequest, PracticeTestSummaryDto, QuestionErrorCode, QuestionView,
     RecommendationEventRequest, RecommendationEventResponse, RecommendationResponse,
     ReviewedAttempt, ReviewedQuestion, StreakDto, StudyQuestionView, StudySessionRequest,
     StudySessionResponse, SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse,
@@ -47,7 +47,8 @@ use crate::pedagogy::RecentPedagogy;
 use crate::planner::{
     self, ConceptStateView, PlannerDomain, PlannerInput, PlannerNode, PlannerQuestion,
 };
-use crate::selection::{self, Candidate, ConceptEvidence, HistoryEntry};
+use crate::remediation;
+use crate::selection::{self, Candidate, ConceptEvidence, HistoryEntry, HistoryErrorCode};
 use crate::signals;
 use crate::state::AppState;
 
@@ -235,6 +236,9 @@ async fn planner_context(
     };
 
     let recent_pedagogy = RecentPedagogy::build(&history);
+    // Structured-error resolution is separate from ranking: resolve at most one
+    // active remediation target from the same recent accepted history.
+    let remediation = remediation::resolve_active_remediation(&history);
     let input = PlannerInput {
         track_id: track_id.to_owned(),
         track_version: track_version.clone(),
@@ -261,6 +265,7 @@ async fn planner_context(
             .map(|entry| entry.question_id.clone())
             .collect(),
         recent_pedagogy,
+        remediation,
     };
 
     Ok(PlannerContext {
@@ -2282,10 +2287,27 @@ fn history_entries(
 ) -> Vec<HistoryEntry> {
     rows.into_iter()
         .map(|entry| {
-            let pedagogy = state
-                .content
-                .question(version, &entry.question_id)
-                .and_then(|question| question.pedagogy.clone());
+            let question = state.content.question(version, &entry.question_id);
+            let pedagogy = question.and_then(|question| question.pedagogy.clone());
+            // Pair each authoritative stored error code with its authored
+            // remediation metadata. The code comes from the accepted event; the
+            // metadata is joined from canonical content, never duplicated onto
+            // the event.
+            let error_codes = entry
+                .structured_error_codes
+                .iter()
+                .map(|code| HistoryErrorCode {
+                    code: code.clone(),
+                    remediation: question
+                        .and_then(|question| {
+                            question
+                                .error_codes
+                                .iter()
+                                .find(|definition| &definition.code == code)
+                        })
+                        .and_then(|definition| definition.remediation.clone()),
+                })
+                .collect();
             HistoryEntry {
                 question_id: entry.question_id,
                 score: entry.score,
@@ -2295,6 +2317,7 @@ fn history_entries(
                 attempt_number: entry.attempt_number,
                 hint_count: entry.hint_count,
                 pedagogy,
+                error_codes,
             }
         })
         .collect()
@@ -3275,7 +3298,16 @@ fn study_question_view(question: &adaptive_learn_content::Question) -> StudyQues
         canonical_answer: question.canonical_answer.clone(),
         explanation: question.explanation.clone(),
         choice_feedback: question.choice_feedback.clone(),
-        error_codes: question.error_codes.clone(),
+        // Learner-safe projection: strips authored remediation metadata, which
+        // could reveal the intended repair before scoring.
+        error_codes: question
+            .error_codes
+            .iter()
+            .map(|definition| QuestionErrorCode {
+                code: definition.code.clone(),
+                description: definition.description.clone(),
+            })
+            .collect(),
     }
 }
 
@@ -3861,6 +3893,7 @@ mod tests {
                 completed_module_ids: HashSet::new(),
                 recent_question_ids: recent,
                 recent_pedagogy: RecentPedagogy::default(),
+                remediation: None,
             },
             history: Vec::new(),
         }

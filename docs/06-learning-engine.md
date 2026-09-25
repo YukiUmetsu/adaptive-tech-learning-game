@@ -233,6 +233,133 @@ layer so frontend and planner code can reference the contract, but no question
 payload carries the values. Phase 2 uses them internally for selection only, so
 the pre-answer boundary is unchanged.
 
+## Structured-error remediation (Phase 3)
+
+Phase 3 is a **teaching-policy** layer on top of the same student model. It
+distinguishes "the learner got this question wrong" from "the learner appears to
+have made *this* particular mistake" and, when the content authors a repair for
+that mistake, prefers a targeted next activity.
+
+The flow is entirely server-authoritative and deterministic:
+
+```text
+client submits answer primitive
+-> server scores against canonical content
+-> authoritative structured error codes
+-> accepted learning event stores those codes
+-> recent error resolver reads them with authored remediation metadata
+-> bounded teaching-policy preference in planner / selector
+-> review or practice activity
+-> a later relevant success marks the error recovered
+-> normal adaptive policy resumes
+```
+
+### Structured error is not a misconception label
+
+A wrong answer is not proof of a stable misconception. The system treats a
+structured error as **recent, local evidence about how one attempt failed**:
+
+- nothing is persisted as a misconception; there is no `user_misconceptions`
+  table and no permanent learner label;
+- only authoritative, server-scored error codes are used — never client input,
+  free text, or an LLM classification;
+- only errors inside a small recent window influence selection;
+- a later success on the same target concept or family suppresses the signal;
+- the effect is a bounded ranking preference, not an unbreakable redirect.
+
+### Authored remediation contract
+
+An optional, track-agnostic `remediation` object may be attached to any
+`ErrorCodeDef`. Every field is optional, so existing `{"code", "description"}`
+errors keep loading unchanged:
+
+```text
+error_codes[]
+└── remediation                 # optional; at least one target when present
+    ├── concept_ids             # narrower concepts implicated by the error
+    ├── node_id                 # a learning node that repairs the mistake
+    ├── preferred_stage         # PedagogyStage of the follow-up activity
+    ├── preferred_family_id     # reusable family to stay within/redirect to
+    └── min_scaffold_level      # temporary scaffold floor for repair
+```
+
+Validation enforces non-empty targets, non-blank ids, unique concept ids, and
+the Phase 1 scaffold bounds. In a scored bundle, `concept_ids` must resolve to
+authored concepts. A `node_id` is cross-checked in the registry against the
+learning map of the same `(certification_id, certification_version)`; the check
+is skipped when no learning content exists for that version, so a quiz bundle
+can be authored ahead of its knowledge map. Node ids are never assumed globally
+unique.
+
+### Resolving an active target
+
+`apps/api/src/remediation.rs` is a pure, testable component separate from
+ranking. It returns at most **one** target, chosen deterministically:
+
+1. an error with an authored `node_id` (most specific);
+2. then an error with explicit target concepts;
+3. then a family/stage preference;
+4. ties break newest-first, then by stable code.
+
+Errors without remediation metadata are ignored, so a track with zero
+remediation coverage behaves exactly like Phase 2. The target's `concept_ids`
+fall back to the errored question's own concepts when authors supplied none, so
+a floor-only or stage-only repair is still actionable.
+
+### Recovery
+
+A success that is **strictly later in occurrence time** suppresses an earlier
+error only when it also:
+
+- is in the **same assessment mode** (a recognition success must not hide a weak
+  application attempt), and
+- overlaps the remediation's target concept(s) or family.
+
+Ordering uses the attempt's `occurred_at`, not sync order, so a late-synced
+offline success cannot suppress a newer error and an earlier success cannot
+either. Unrelated successes, different-mode successes, and earlier successes do
+not suppress. Scaffold comparison is still not enforced in Phase 3.
+
+### How remediation influences selection
+
+- **Next-action planner.** An accessible authored `node_id` becomes a
+  `targeted_remediation` recommendation (`learn_node`/`review_node`). A locked
+  node is never opened: the rule falls through to the ordinary prerequisite and
+  practice rules. Concept/family/stage-only targets flow through practice
+  ranking.
+- **Session planner and Daily Missions.** Node and practice scoring receive the
+  same bounded bonus, so a session naturally includes at most a top repair node
+  and a top repair practice activity. Daily Missions remain immutable once
+  generated; a new error only affects tomorrow's mission or a later explicit
+  recommendation.
+- **Quick Quiz / Domain Quiz / Section Quiz / Recommended Practice.** The
+  ordinary adaptive ranking receives a bounded remediation bonus; every existing
+  signal (weakness, forgetting, difficulty, novelty, interaction variety,
+  recent repeats) still applies.
+- **Full Practice.** Structured errors are recorded, but remediation is
+  deliberately not applied: the weighted exam composition is preserved and
+  repair happens after the session. Authored fixed practice tests are untouched.
+
+### Bounded and integrated with Phase 2
+
+The remediation match is a named, bounded constant (`WEIGHT_REMEDIATION`)
+computed from concept overlap, preferred family, and preferred stage. It stays
+below the concept-weakness and forgetting weights. The authored
+`min_scaffold_level` raises the Phase 2 scaffold target **only** for matching
+candidates while the error is active; recovery removes it, so normal scaffold
+fading and transfer-aware practice resume. A locked remediation node is handled
+by the ordinary prerequisite rules rather than bypassed.
+
+### No new persistence, network, or answer leakage
+
+Remediation is derived from accepted events, canonical content, and current
+concept state at normal planning boundaries. No new tables are added and no
+extra request is made. The learner-facing error-code view (`QuestionErrorCode`)
+carries only `code` and `description`; authored remediation targets, nodes,
+families, stages, and scaffold floors are server-side only and never sent
+pre-answer. Post-answer feedback stays short — the targeted next activity does
+the deeper repair.
+
 ## Interaction features
 
 Record:

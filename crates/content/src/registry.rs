@@ -440,6 +440,7 @@ fn assemble(
     }
     validate_unique_learning_domains(&learning_domains, &mut errors);
     validate_unique_practice_tests(&practice_tests, &mut errors);
+    validate_remediation_nodes_against_learning(&bundles, &learning_domains, &mut errors);
 
     for test in &practice_tests {
         validate_practice_test_against_bundles(test, &bundles, &mut errors);
@@ -795,6 +796,65 @@ fn validate_practice_test_against_bundles(
                     test.id, item.question.id, item.question.domain_id
                 ),
             ));
+        }
+    }
+}
+
+/// Cross-checks remediation `node_id` targets against the learning map.
+///
+/// A question's remediation node must resolve somewhere in the same
+/// certification version. The check is skipped when no learning content exists
+/// for that version, so a quiz bundle can be authored ahead of its knowledge
+/// map without becoming invalid. Node ids are only unique within a track
+/// version, so the search is scoped by `(certification_id, certification_version)`.
+fn validate_remediation_nodes_against_learning(
+    bundles: &[ContentBundle],
+    learning_domains: &[LearningDomain],
+    errors: &mut Vec<ContentError>,
+) {
+    // Index every node id by (certification, version) once, so each question's
+    // remediation reference is an O(1) lookup instead of scanning all nodes.
+    let mut nodes_by_version: HashMap<(&str, &str), HashSet<&str>> = HashMap::new();
+    for domain in learning_domains {
+        let nodes = nodes_by_version
+            .entry((
+                domain.certification_id.as_str(),
+                domain.certification_version.as_str(),
+            ))
+            .or_default();
+        for node in domain.nodes() {
+            nodes.insert(node.id.as_str());
+        }
+    }
+
+    for bundle in bundles {
+        let Some(nodes) =
+            nodes_by_version.get(&(bundle.certification.id.as_str(), bundle.version.id.as_str()))
+        else {
+            // No learning content for this version: skip the check so a quiz
+            // bundle can be authored ahead of its knowledge map.
+            continue;
+        };
+
+        for question in &bundle.questions {
+            for error_code in &question.error_codes {
+                let Some(node_id) = error_code
+                    .remediation
+                    .as_ref()
+                    .and_then(|remediation| remediation.node_id.as_deref())
+                else {
+                    continue;
+                };
+                if !nodes.contains(node_id) {
+                    errors.push(ContentError::new(
+                        "error_remediation_unknown_node",
+                        format!(
+                            "question {} error code {} remediation references unknown learning node {} for version {}",
+                            question.id, error_code.code, node_id, bundle.version.id
+                        ),
+                    ));
+                }
+            }
         }
     }
 }

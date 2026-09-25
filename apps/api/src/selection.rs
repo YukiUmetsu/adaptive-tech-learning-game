@@ -27,12 +27,13 @@
 use std::collections::{HashMap, HashSet};
 
 use adaptive_learn_domain::{
-    AssessmentMode, ConceptWeight, InteractionType, PRIOR_ESTIMATE, PedagogyMetadata, QuizMode,
-    retrievability, uncertainty,
+    AssessmentMode, ConceptWeight, ErrorRemediation, InteractionType, PRIOR_ESTIMATE,
+    PedagogyMetadata, QuizMode, retrievability, uncertainty,
 };
 use chrono::{DateTime, Utc};
 
 use crate::pedagogy::{self, RecentPedagogy};
+use crate::remediation::{self, RemediationTarget};
 
 /// Questions in a Quick Quiz.
 pub const QUICK_QUIZ_LEN: usize = 3;
@@ -117,6 +118,23 @@ pub struct HistoryEntry {
     /// Joined from canonical content by `question_id`; it is never stored on the
     /// learning event.
     pub pedagogy: Option<PedagogyMetadata>,
+    /// Authoritative structured error codes the scorer produced for the attempt,
+    /// each paired with the authored remediation metadata for that code.
+    ///
+    /// The code comes from the accepted learning event; the remediation is
+    /// joined from canonical content by `question_id`. No remediation metadata
+    /// is duplicated onto the event.
+    pub error_codes: Vec<HistoryErrorCode>,
+}
+
+/// One authoritative structured error on an accepted attempt, with its
+/// authored remediation metadata when the content provides it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct HistoryErrorCode {
+    /// Stable server-scored error code.
+    pub code: String,
+    /// Authored remediation target for this code, when present.
+    pub remediation: Option<ErrorRemediation>,
 }
 
 /// One derived concept-state row, reduced to what selection needs.
@@ -173,6 +191,11 @@ struct RecentHistory {
     recently_practiced: HashSet<String>,
     /// Bounded pedagogy summary (scaffold/transfer/stage) built once.
     pedagogy: RecentPedagogy,
+    /// Highest-priority active remediation target, if any.
+    ///
+    /// Resolved once from the authoritative recent error signals; ranking then
+    /// reads it as a bounded preference.
+    remediation: Option<RemediationTarget>,
 }
 
 impl RecentHistory {
@@ -198,6 +221,7 @@ impl RecentHistory {
 
         summary.recently_practiced = window;
         summary.pedagogy = RecentPedagogy::build(history);
+        summary.remediation = remediation::resolve_active_remediation(history);
         summary
     }
 }
@@ -333,12 +357,20 @@ fn rank(
     // Bounded teaching-policy preference derived from optional authored
     // pedagogy metadata. It stays small so weakness, forgetting, difficulty,
     // and variety remain the dominant signals.
-    let pedagogy = pedagogy::pedagogy_fit(
+    let remediation = history
+        .remediation
+        .as_ref()
+        .map(|target| remediation::fit(target, candidate.pedagogy.as_ref(), &candidate.concepts));
+    let scaffold_floor = remediation.and_then(|fit| fit.scaffold_floor);
+    let pedagogy = pedagogy::pedagogy_fit_with_floor(
         candidate.pedagogy.as_ref(),
         signal.estimate,
         signal.uncertainty,
         &history.pedagogy,
+        scaffold_floor,
     );
+    let remediation_bonus =
+        remediation.map_or(0.0, |fit| remediation::WEIGHT_REMEDIATION * fit.bonus);
 
     WEIGHT_WEAKNESS * weakness
         + WEIGHT_FORGETTING * signal.forgetting_risk
@@ -347,6 +379,7 @@ fn rank(
         + WEIGHT_DIFFICULTY_FIT * difficulty_fit
         + WEIGHT_NOVELTY * novelty
         + pedagogy.total()
+        + remediation_bonus
         - repeat_penalty
 }
 
@@ -527,7 +560,13 @@ pub fn select(
         return Vec::new();
     }
 
-    let summary = RecentHistory::build(history);
+    let mut summary = RecentHistory::build(history);
+    if mode == QuizMode::FullPractice {
+        // Full Practice is an exam simulation. Structured errors are still
+        // recorded, but targeted remediation must not reshape the weighted exam
+        // composition; it happens after the session instead.
+        summary.remediation = None;
+    }
     let state_map: HashMap<(String, AssessmentMode), ConceptEvidence> = states
         .iter()
         .map(|state| {
@@ -691,15 +730,26 @@ pub fn recommended_practice(
                 0.0
             };
             // Same bounded teaching-policy preference as the general selector so
-            // related practice also fades support and varies surface context.
+            // related practice also fades support, varies surface context, and
+            // honours an active remediation target.
             let (estimate, uncertainty) = summary.pedagogy_context(candidate);
-            let pedagogy = pedagogy::pedagogy_fit(
+            let remediation = summary.remediation.as_ref().map(|target| {
+                remediation::fit(target, candidate.pedagogy.as_ref(), &candidate.concepts)
+            });
+            let scaffold_floor = remediation.and_then(|fit| fit.scaffold_floor);
+            let pedagogy = pedagogy::pedagogy_fit_with_floor(
                 candidate.pedagogy.as_ref(),
                 estimate,
                 uncertainty,
                 &summary.pedagogy,
+                scaffold_floor,
             );
-            Some((candidate, shared + mode_bonus + pedagogy.total() - repeat))
+            let remediation_bonus =
+                remediation.map_or(0.0, |fit| remediation::WEIGHT_REMEDIATION * fit.bonus);
+            Some((
+                candidate,
+                shared + mode_bonus + pedagogy.total() + remediation_bonus - repeat,
+            ))
         })
         .collect();
 
@@ -906,6 +956,7 @@ mod tests {
                 attempt_number: 1,
                 hint_count: 0,
                 pedagogy: c.pedagogy.clone(),
+                error_codes: Vec::new(),
             })
             .collect();
 
@@ -938,6 +989,7 @@ mod tests {
             attempt_number: 1,
             hint_count: 0,
             pedagogy: None,
+            error_codes: Vec::new(),
         }];
 
         let d1: Vec<Candidate> = corpus.into_iter().filter(|c| c.domain_id == "d1").collect();
@@ -1288,6 +1340,7 @@ mod tests {
             attempt_number: 1,
             hint_count: 0,
             pedagogy: None,
+            error_codes: Vec::new(),
         }];
 
         let candidates = [recent.clone(), fresh.clone()];
@@ -1372,6 +1425,7 @@ mod tests {
             attempt_number,
             hint_count,
             pedagogy: Some(pedagogy),
+            error_codes: Vec::new(),
         }
     }
 
@@ -1848,6 +1902,186 @@ mod tests {
             assert_eq!(
                 domain_quiz(&[low.clone(), high.clone()], &[], &states),
                 first
+            );
+        }
+    }
+
+    // --- Phase 3: structured-error remediation ---
+
+    fn errored(
+        question_id: &str,
+        concept_id: &str,
+        score: f64,
+        remediation: ErrorRemediation,
+    ) -> HistoryEntry {
+        HistoryEntry {
+            question_id: question_id.to_owned(),
+            score,
+            assessment_mode: AssessmentMode::Application,
+            occurred_at: now(),
+            concepts: vec![concept(concept_id)],
+            attempt_number: 1,
+            hint_count: 0,
+            pedagogy: None,
+            error_codes: vec![HistoryErrorCode {
+                code: "generic_error".to_owned(),
+                remediation: Some(remediation),
+            }],
+        }
+    }
+
+    fn recovered(question_id: &str, concept_id: &str) -> HistoryEntry {
+        HistoryEntry {
+            question_id: question_id.to_owned(),
+            score: 1.0,
+            assessment_mode: AssessmentMode::Application,
+            // Strictly later in occurrence time, so it supersedes the error.
+            occurred_at: now() + chrono::Duration::minutes(1),
+            concepts: vec![concept(concept_id)],
+            attempt_number: 1,
+            hint_count: 0,
+            pedagogy: None,
+            error_codes: Vec::new(),
+        }
+    }
+
+    fn concept_remediation(concept_id: &str, floor: Option<u8>) -> ErrorRemediation {
+        ErrorRemediation {
+            concept_ids: vec![concept_id.to_owned()],
+            node_id: None,
+            preferred_stage: None,
+            preferred_family_id: None,
+            min_scaffold_level: floor,
+        }
+    }
+
+    #[test]
+    fn remediation_floor_keeps_support_for_a_strong_learner() {
+        let high = scaffolded("d1-z-high", "generic.family", 3);
+        let low = scaffolded("d1-a-low", "generic.family", 0);
+        let states = vec![evidence("c1", 0.95, 8.0, now())];
+        let history = vec![errored(
+            "err-q",
+            "c1",
+            0.0,
+            concept_remediation("c1", Some(3)),
+        )];
+
+        let selected = domain_quiz(&[low, high], &history, &states);
+        assert_eq!(
+            selected.first().map(String::as_str),
+            Some("d1-z-high"),
+            "a recent error's scaffold floor should keep embedded support: {selected:?}"
+        );
+    }
+
+    #[test]
+    fn recovery_resumes_normal_scaffold_fading() {
+        let high = scaffolded("d1-high", "generic.family", 4);
+        let low = scaffolded("d1-low", "generic.family", 1);
+        let states = vec![evidence("c1", 0.95, 8.0, now())];
+        // A newer success on the target concept supersedes the older error.
+        let history = vec![
+            recovered("success-q", "c1"),
+            errored("err-q", "c1", 0.0, concept_remediation("c1", Some(3))),
+        ];
+
+        let selected = domain_quiz(&[high, low], &history, &states);
+        assert_eq!(
+            selected.first().map(String::as_str),
+            Some("d1-low"),
+            "after recovery, normal Phase 2 fading resumes: {selected:?}"
+        );
+    }
+
+    #[test]
+    fn remediation_does_not_reshape_full_practice() {
+        let matching = with_ped(
+            candidate("d1-z-match", "d1", "d1-tz", InteractionType::Ordering, "c1"),
+            ped_meta(None, None, None, None, None),
+        );
+        let other = with_ped(
+            candidate("d1-a-other", "d1", "d1-ta", InteractionType::Ordering, "c2"),
+            ped_meta(None, None, None, None, None),
+        );
+        let states = vec![
+            evidence("c1", 0.5, 4.0, now()),
+            evidence("c2", 0.5, 4.0, now()),
+        ];
+        let history = vec![errored("err-q", "c1", 0.0, concept_remediation("c1", None))];
+        let domains = d1();
+
+        let domain_selected = select(
+            &[other.clone(), matching.clone()],
+            &domains,
+            &history,
+            &states,
+            QuizMode::DomainQuiz,
+            Some("d1"),
+            now(),
+        );
+        assert_eq!(
+            domain_selected.first().map(String::as_str),
+            Some("d1-z-match"),
+            "an ordinary quiz targets the remediation concept"
+        );
+
+        let full_selected = select(
+            &[other, matching],
+            &domains,
+            &history,
+            &states,
+            QuizMode::FullPractice,
+            None,
+            now(),
+        );
+        assert_eq!(
+            full_selected.first().map(String::as_str),
+            Some("d1-a-other"),
+            "Full Practice keeps its exam composition and ignores remediation"
+        );
+    }
+
+    #[test]
+    fn remediation_matching_is_domain_neutral() {
+        // The resolver/ranking only sees metadata shape, never subject names.
+        for concept_id in [
+            "dsa.sliding_window.interval",
+            "aws.messaging.queue_vs_pubsub",
+            "python.async.execution",
+            "security.authn_vs_authz",
+            "ml.data_leakage",
+        ] {
+            let matching = candidate(
+                "d1-z-match",
+                "d1",
+                "d1-tz",
+                InteractionType::Ordering,
+                concept_id,
+            );
+            let other = candidate(
+                "d1-a-other",
+                "d1",
+                "d1-ta",
+                InteractionType::Ordering,
+                "unrelated",
+            );
+            let states = vec![
+                evidence(concept_id, 0.5, 4.0, now()),
+                evidence("unrelated", 0.5, 4.0, now()),
+            ];
+            let history = vec![errored(
+                "err-q",
+                concept_id,
+                0.0,
+                concept_remediation(concept_id, None),
+            )];
+
+            let selected = domain_quiz(&[other, matching], &history, &states);
+            assert_eq!(
+                selected.first().map(String::as_str),
+                Some("d1-z-match"),
+                "concept {concept_id} should behave like every other concept"
             );
         }
     }

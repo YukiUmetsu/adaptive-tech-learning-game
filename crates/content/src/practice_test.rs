@@ -25,8 +25,8 @@ use utoipa::ToSchema;
 
 use crate::model::Question;
 use crate::validate::{
-    ContentError, interaction_matches, validate_canonical_answer, validate_interaction,
-    validate_pedagogy,
+    ContentError, interaction_matches, validate_canonical_answer, validate_error_remediation,
+    validate_interaction, validate_pedagogy,
 };
 
 /// The only supported practice-test schema version.
@@ -265,6 +265,11 @@ pub fn validate_practice_test(test: &PracticeTest) -> Result<(), Vec<ContentErro
         validate_interaction(question, &mut errors);
         validate_canonical_answer(question, &mut errors);
         validate_pedagogy(question, &mut errors);
+        // Error codes are optional on practice-test items, but when authored
+        // their remediation metadata still follows the same structural rules.
+        for error_code in &question.error_codes {
+            validate_error_remediation(question, error_code, &mut errors);
+        }
     }
 
     if errors.is_empty() {

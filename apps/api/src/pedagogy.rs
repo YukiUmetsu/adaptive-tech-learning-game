@@ -219,29 +219,39 @@ fn readiness(estimate: f64, uncertainty: f64) -> f64 {
 ///
 /// A missing `family_id` or missing scaffold level skips the adjustment and
 /// uses the concept-based readiness target alone.
-fn scaffold_target(pedagogy: &PedagogyMetadata, readiness: f64, recent: &RecentPedagogy) -> f64 {
+///
+/// `scaffold_floor` is the temporary Phase 3 remediation minimum: when present
+/// it raises the target so targeted repair keeps embedded support, without
+/// permanently changing scaffold state. It is applied last so it wins over a
+/// fade cap while the error signal is active.
+fn scaffold_target(
+    pedagogy: &PedagogyMetadata,
+    readiness: f64,
+    recent: &RecentPedagogy,
+    scaffold_floor: Option<u8>,
+) -> f64 {
     let mut target = (1.0 - readiness) * MAX_SCAFFOLD;
 
-    let Some(family) = non_blank(pedagogy.family_id.as_deref()) else {
-        return target.clamp(0.0, MAX_SCAFFOLD);
-    };
-    let Some(attempt) = recent.family.get(family) else {
-        return target.clamp(0.0, MAX_SCAFFOLD);
-    };
-    let Some(level) = attempt.scaffold_level else {
-        return target.clamp(0.0, MAX_SCAFFOLD);
-    };
-    let level = level.min(PEDAGOGY_MAX_SCAFFOLD_LEVEL) as f64;
+    if let Some(family) = non_blank(pedagogy.family_id.as_deref()) {
+        if let Some(attempt) = recent.family.get(family) {
+            if let Some(level) = attempt.scaffold_level {
+                let level = level.min(PEDAGOGY_MAX_SCAFFOLD_LEVEL) as f64;
+                if attempt.success {
+                    let cap = if attempt.clean_success {
+                        (level - SCAFFOLD_FADE_STEP).max(0.0)
+                    } else {
+                        level
+                    };
+                    target = target.min(cap);
+                } else {
+                    target = target.max((level + SCAFFOLD_SUPPORT_STEP).min(MAX_SCAFFOLD));
+                }
+            }
+        }
+    }
 
-    if attempt.success {
-        let cap = if attempt.clean_success {
-            (level - SCAFFOLD_FADE_STEP).max(0.0)
-        } else {
-            level
-        };
-        target = target.min(cap);
-    } else {
-        target = target.max((level + SCAFFOLD_SUPPORT_STEP).min(MAX_SCAFFOLD));
+    if let Some(floor) = scaffold_floor {
+        target = target.max(f64::from(floor.min(PEDAGOGY_MAX_SCAFFOLD_LEVEL)));
     }
 
     target.clamp(0.0, MAX_SCAFFOLD)
@@ -271,12 +281,28 @@ pub fn pedagogy_fit(
     uncertainty: f64,
     recent: &RecentPedagogy,
 ) -> PedagogySignal {
+    pedagogy_fit_with_floor(pedagogy, estimate, uncertainty, recent, None)
+}
+
+/// [`pedagogy_fit`] with a temporary scaffold floor.
+///
+/// Phase 3 remediation passes the authored `min_scaffold_level` here for
+/// candidates that match an active error target. The floor only affects the
+/// scaffold target while the error signal is active; normal fading resumes once
+/// the learner recovers.
+pub fn pedagogy_fit_with_floor(
+    pedagogy: Option<&PedagogyMetadata>,
+    estimate: f64,
+    uncertainty: f64,
+    recent: &RecentPedagogy,
+    scaffold_floor: Option<u8>,
+) -> PedagogySignal {
     let Some(pedagogy) = pedagogy else {
         return PedagogySignal::NEUTRAL;
     };
 
     let readiness = readiness(estimate, uncertainty);
-    let target = scaffold_target(pedagogy, readiness, recent);
+    let target = scaffold_target(pedagogy, readiness, recent, scaffold_floor);
 
     let scaffold_fit = pedagogy.scaffold_level.map_or(NEUTRAL_FIT, |level| {
         fit_distance(level as f64, target, MAX_SCAFFOLD)
@@ -357,6 +383,7 @@ mod tests {
             attempt_number,
             hint_count,
             pedagogy,
+            error_codes: Vec::new(),
         }
     }
 
@@ -432,14 +459,29 @@ mod tests {
             2,
         )]);
 
-        let clean_target = scaffold_target(&candidate, readiness(weak.0, weak.1), &clean);
-        let hinted_target = scaffold_target(&candidate, readiness(weak.0, weak.1), &hinted);
+        let clean_target = scaffold_target(&candidate, readiness(weak.0, weak.1), &clean, None);
+        let hinted_target = scaffold_target(&candidate, readiness(weak.0, weak.1), &hinted, None);
         assert!(
             hinted_target > clean_target,
             "hinted/recovery success must fade less: hinted {hinted_target} <= clean {clean_target}"
         );
         // Clean success drops at most one level below what succeeded.
         assert_eq!(clean_target, 4.0);
+    }
+
+    #[test]
+    fn remediation_floor_raises_the_scaffold_target_temporarily() {
+        let candidate = pedagogy(Some("generic.family"), None, Some(0), None, None);
+        let strong = (0.95, 0.1);
+        let recent = RecentPedagogy::default();
+
+        let base = scaffold_target(&candidate, readiness(strong.0, strong.1), &recent, None);
+        let floored = scaffold_target(&candidate, readiness(strong.0, strong.1), &recent, Some(3));
+        assert_eq!(floored, 3.0, "the floor raises the target for repair");
+        assert!(
+            floored > base,
+            "without the floor a strong learner fades lower"
+        );
     }
 
     #[test]
@@ -456,8 +498,8 @@ mod tests {
             0,
         )]);
 
-        let base = scaffold_target(&candidate, readiness(strong.0, strong.1), &no_failure);
-        let recovered = scaffold_target(&candidate, readiness(strong.0, strong.1), &failure);
+        let base = scaffold_target(&candidate, readiness(strong.0, strong.1), &no_failure, None);
+        let recovered = scaffold_target(&candidate, readiness(strong.0, strong.1), &failure, None);
         assert!(
             recovered > base,
             "a recent failure should raise the support target: {recovered} vs {base}"

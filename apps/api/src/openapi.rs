@@ -20,12 +20,12 @@ use crate::dto::{
     PracticeTestAnswerRequest, PracticeTestDomainResult, PracticeTestItemResult,
     PracticeTestItemView, PracticeTestListResponse, PracticeTestResponse,
     PracticeTestResultResponse, PracticeTestSubmissionRequest, PracticeTestSummaryDto,
-    PythonCodeAnswer, QuestionView, RecommendationEventRequest, RecommendationEventResponse,
-    RecommendationRequest, RecommendationResponse, ReconstructionAnswerPayload, ReviewedAttempt,
-    ReviewedQuestion, StreakDto, StudyQuestionView, StudySessionRequest, StudySessionResponse,
-    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, SyncSectionResult, TaskDto,
-    TrackMapResponse, TrackProgressResponse, UpdateSettingsRequest, UserSettingsDto,
-    WalletResponse,
+    PythonCodeAnswer, QuestionErrorCode, QuestionView, RecommendationEventRequest,
+    RecommendationEventResponse, RecommendationRequest, RecommendationResponse,
+    ReconstructionAnswerPayload, ReviewedAttempt, ReviewedQuestion, StreakDto, StudyQuestionView,
+    StudySessionRequest, StudySessionResponse, SyncEventRequest, SyncEventResult, SyncRequest,
+    SyncResponse, SyncSectionResult, TaskDto, TrackMapResponse, TrackProgressResponse,
+    UpdateSettingsRequest, UserSettingsDto, WalletResponse,
 };
 use crate::error::{ErrorBody, ErrorResponse};
 use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
@@ -86,6 +86,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         CyberDefenseUpgradeRequest,
         CyberDefenseUpgradeResponse,
         MeResponse,
+        QuestionErrorCode,
         QuestionView,
         StudyQuestionView,
         AnswerPayload,

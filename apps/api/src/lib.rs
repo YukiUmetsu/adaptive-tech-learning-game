@@ -11,6 +11,7 @@ pub mod error;
 pub mod openapi;
 pub mod pedagogy;
 pub mod planner;
+pub mod remediation;
 pub mod routes;
 pub mod selection;
 pub mod services;

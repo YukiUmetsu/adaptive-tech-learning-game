@@ -18,6 +18,7 @@ use super::{
     ConceptSummary, LITTLE_EVIDENCE_MASS, Model, PlannerInput, PlannerQuestion,
     STALE_RETRIEVABILITY, UNSEEN_BONUS, WEAK_ESTIMATE, WEIGHT_DIFFICULTY_FIT, WEIGHT_DOMAIN,
 };
+use crate::remediation;
 use crate::selection::{self, Candidate, HistoryEntry};
 
 /// Estimated minutes for one knowledge-node activity.
@@ -329,6 +330,13 @@ fn node_activities(model: &Model<'_>) -> Vec<NodeActivity> {
         } else {
             0.0
         };
+        // A recent structured error's authored node (or a node teaching one of
+        // its target concepts) is preferred as one repair activity, bounded and
+        // never a bypass of accessibility.
+        let remediation_bonus = model.input.remediation.as_ref().map_or(0.0, |target| {
+            remediation::WEIGHT_REMEDIATION
+                * remediation::node_fit(target, &node.id, &node.concept_ids)
+        });
         let retrieval = summaries
             .iter()
             .map(|summary| summary.retrieval(model.input.now))
@@ -340,7 +348,8 @@ fn node_activities(model: &Model<'_>) -> Vec<NodeActivity> {
                 node_index,
                 score: (1.0 - retrieval)
                     + model.domain_weight(&node.domain_id) * WEIGHT_DOMAIN
-                    + prereq_bonus,
+                    + prereq_bonus
+                    + remediation_bonus,
             });
         } else if model.node_has_weak(node) && !model.node_explored(node) {
             let little_evidence = model
@@ -354,7 +363,8 @@ fn node_activities(model: &Model<'_>) -> Vec<NodeActivity> {
                     score: model.node_avg_weakness(node)
                         + model.domain_weight(&node.domain_id) * WEIGHT_DOMAIN
                         + UNSEEN_BONUS
-                        + prereq_bonus,
+                        + prereq_bonus
+                        + remediation_bonus,
                 });
             }
         }
@@ -388,7 +398,7 @@ fn practice_activities(model: &Model<'_>, history: &[HistoryEntry]) -> Vec<Pract
         } else {
             0.0
         };
-        let pedagogy = model.question_pedagogy(question, &signal);
+        let pedagogy = model.question_policy_score(question, &signal);
         let score = signal.weakness
             + fit * WEIGHT_DIFFICULTY_FIT
             + model.domain_weight(&question.domain_id) * WEIGHT_DOMAIN
@@ -636,6 +646,7 @@ mod tests {
                 completed_module_ids: HashSet::new(),
                 recent_question_ids: HashSet::new(),
                 recent_pedagogy: crate::pedagogy::RecentPedagogy::default(),
+                remediation: None,
             },
             available_minutes: 20,
             preference: SessionPreference::Balanced,

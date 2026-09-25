@@ -3244,6 +3244,65 @@
           "description": {
             "type": "string",
             "description": "Learner-safe description."
+          },
+          "remediation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ErrorRemediation",
+                "description": "Optional, track-agnostic remediation metadata.\n\nPhase 3 uses it as a bounded teaching-policy signal when this error is a\nrecent, unresolved part of accepted history. It never changes scoring,\nmastery, or rewards, and absent metadata keeps old content working.\nServer-side only: it is never attached to a learner-facing question DTO."
+              }
+            ]
+          }
+        }
+      },
+      "ErrorRemediation": {
+        "type": "object",
+        "description": "Optional, track-agnostic remediation metadata authored on a structured\nerror code.\n\nThis describes the *teaching-policy* response to a recent structured error.\nIt is not mastery and it never permanently labels a learner: a structured\nerror is temporary, local evidence about how one attempt failed, and it only\ninfluences selection while it is recent and not superseded by a recovery.\n\nEvery field is optional, so an existing `{\"code\", \"description\"}` error\ndefinition keeps working unchanged. The `*_id` values are opaque authored\nstrings; core code never branches on their contents.",
+        "properties": {
+          "concept_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Concepts most directly implicated by the error.\n\nLets a specific mistake target a narrower concept than the whole\nquestion. When present in a scored bundle these must be known concepts."
+          },
+          "min_scaffold_level": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Temporary lower bound on embedded support for immediate remediation.\n\nCooperates with scaffold fading: it raises the preferred scaffold while\nthe error signal is active and disappears once the learner recovers. It\nnever permanently raises scaffold state.",
+            "maximum": 6,
+            "minimum": 0
+          },
+          "node_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A learning node that directly addresses the misconception."
+          },
+          "preferred_family_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A reusable family the remediation should stay within or redirect to."
+          },
+          "preferred_stage": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PedagogyStage",
+                "description": "The kind of follow-up activity most useful for this error."
+              }
+            ]
           }
         }
       },
@@ -5570,6 +5629,24 @@
         ],
         "description": "One data-driven assertion in a browser-executed Python exercise.\n\nTests are trusted authored content, never learner input. They ship to the\nbrowser so the learner's program can be executed and checked locally, which\nmeans they are inspectable rather than secret. Expected values are passed as\nstructured JSON data: they are never interpolated into generated Python\nsource and never evaluated by the server."
       },
+      "QuestionErrorCode": {
+        "type": "object",
+        "description": "Learner-safe structured error-code definition.\n\nDeliberately excludes the optional Phase 3 remediation metadata: authored\ntarget concepts, nodes, stages, families, and scaffold floors could reveal\nthe intended repair (and thus the answer) before scoring. The canonical\ndefinition stays server-side; only the code and its learner-safe description\ntravel to the client.",
+        "required": [
+          "code",
+          "description"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Stable code, for example `classification_misplaced`."
+          },
+          "description": {
+            "type": "string",
+            "description": "Learner-safe description."
+          }
+        }
+      },
       "QuestionView": {
         "type": "object",
         "description": "A question shown to the learner. Contains no answer key.",
@@ -5819,7 +5896,8 @@
           "needs_practice",
           "stale_knowledge",
           "domain_review",
-          "strong_and_fresh"
+          "strong_and_fresh",
+          "targeted_remediation"
         ]
       },
       "RecommendationRequest": {
@@ -6342,9 +6420,9 @@
           "error_codes": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ErrorCodeDef"
+              "$ref": "#/components/schemas/QuestionErrorCode"
             },
-            "description": "Authored structured error-code definitions for this question."
+            "description": "Learner-safe structured error-code definitions for this question.\n\nNever includes remediation metadata; see [`QuestionErrorCode`]."
           },
           "explanation": {
             "type": "string",

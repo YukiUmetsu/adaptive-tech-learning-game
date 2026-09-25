@@ -284,6 +284,25 @@ fn every_prompt_kind_maps_to_the_shared_vocabulary() {
     assert_eq!(seen, expected);
 }
 
+/// Discovery completion is "all hidden text revealed". An optional prompt would
+/// let a node unlock (and celebrate) while its reveal is still hidden, so every
+/// authored prompt is required.
+#[test]
+fn every_authored_prompt_is_required() {
+    let registry = registry();
+    for domain in registry.learning_domains() {
+        for node in domain.nodes() {
+            for prompt in &node.prompts {
+                assert!(
+                    prompt.required,
+                    "{}/{} prompt {} must be required",
+                    domain.domain.id, node.id, prompt.id
+                );
+            }
+        }
+    }
+}
+
 #[test]
 fn coverage_counts_match_the_authored_curriculum() {
     let registry = registry();

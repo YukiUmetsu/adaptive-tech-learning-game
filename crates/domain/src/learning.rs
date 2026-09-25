@@ -302,6 +302,58 @@ pub struct PedagogyMetadata {
     pub challenge_group_id: Option<String>,
 }
 
+/// Optional, track-agnostic remediation metadata authored on a structured
+/// error code.
+///
+/// This describes the *teaching-policy* response to a recent structured error.
+/// It is not mastery and it never permanently labels a learner: a structured
+/// error is temporary, local evidence about how one attempt failed, and it only
+/// influences selection while it is recent and not superseded by a recovery.
+///
+/// Every field is optional, so an existing `{"code", "description"}` error
+/// definition keeps working unchanged. The `*_id` values are opaque authored
+/// strings; core code never branches on their contents.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, ToSchema)]
+pub struct ErrorRemediation {
+    /// Concepts most directly implicated by the error.
+    ///
+    /// Lets a specific mistake target a narrower concept than the whole
+    /// question. When present in a scored bundle these must be known concepts.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub concept_ids: Vec<String>,
+    /// A learning node that directly addresses the misconception.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub node_id: Option<String>,
+    /// The kind of follow-up activity most useful for this error.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub preferred_stage: Option<PedagogyStage>,
+    /// A reusable family the remediation should stay within or redirect to.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub preferred_family_id: Option<String>,
+    /// Temporary lower bound on embedded support for immediate remediation.
+    ///
+    /// Cooperates with scaffold fading: it raises the preferred scaffold while
+    /// the error signal is active and disappears once the learner recovers. It
+    /// never permanently raises scaffold state.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schema(maximum = 6)]
+    pub min_scaffold_level: Option<u8>,
+}
+
+impl ErrorRemediation {
+    /// Whether the object carries no actionable target at all.
+    ///
+    /// A present-but-empty remediation is rejected by content validation; this
+    /// helper is the single definition of "empty" used by that check.
+    pub fn is_empty(&self) -> bool {
+        self.concept_ids.is_empty()
+            && self.node_id.is_none()
+            && self.preferred_stage.is_none()
+            && self.preferred_family_id.is_none()
+            && self.min_scaffold_level.is_none()
+    }
+}
+
 /// A concept mapped to a question, with its share of the evidence.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
 pub struct ConceptWeight {

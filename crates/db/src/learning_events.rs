@@ -86,6 +86,11 @@ pub struct UserHistoryEntry {
     /// A heavily hinted success is weaker evidence and must not fade
     /// scaffolding aggressively.
     pub hint_count: i32,
+    /// Authoritative server-scored structured error codes for the attempt.
+    ///
+    /// Read straight from the accepted event; remediation never trusts a
+    /// client-supplied error code.
+    pub structured_error_codes: Vec<String>,
 }
 
 #[derive(sqlx::FromRow)]
@@ -97,6 +102,7 @@ struct HistoryRow {
     concepts: Json<Vec<ConceptWeight>>,
     attempt_number: i32,
     hint_count: i32,
+    structured_error_codes: Vec<String>,
 }
 
 /// Accepts a learning event, assigns the next server-derived attempt number,
@@ -219,7 +225,7 @@ pub async fn recent_for_user(
 ) -> Result<Vec<UserHistoryEntry>, DbError> {
     let rows = sqlx::query_as::<_, HistoryRow>(
         "SELECT question_id, score, assessment_mode, occurred_at, concepts,
-                attempt_number, hint_count
+                attempt_number, hint_count, structured_error_codes
          FROM learning_events
          WHERE user_id = $1 AND certification_id = $2
          ORDER BY received_at DESC
@@ -241,6 +247,7 @@ pub async fn recent_for_user(
                 concepts: row.concepts.0,
                 attempt_number: row.attempt_number,
                 hint_count: row.hint_count,
+                structured_error_codes: row.structured_error_codes,
             })
         })
         .collect()

@@ -621,6 +621,14 @@ pub struct ErrorCodeDef {
     pub code: String,
     /// Learner-safe description.
     pub description: String,
+    /// Optional, track-agnostic remediation metadata.
+    ///
+    /// Phase 3 uses it as a bounded teaching-policy signal when this error is a
+    /// recent, unresolved part of accepted history. It never changes scoring,
+    /// mastery, or rewards, and absent metadata keeps old content working.
+    /// Server-side only: it is never attached to a learner-facing question DTO.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub remediation: Option<adaptive_learn_domain::ErrorRemediation>,
 }
 
 /// A reference to the official source of a content unit.

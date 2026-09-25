@@ -1172,6 +1172,43 @@ export interface components {
             code: string;
             /** @description Learner-safe description. */
             description: string;
+            remediation?: null | components["schemas"]["ErrorRemediation"];
+        };
+        /**
+         * @description Optional, track-agnostic remediation metadata authored on a structured
+         *     error code.
+         *
+         *     This describes the *teaching-policy* response to a recent structured error.
+         *     It is not mastery and it never permanently labels a learner: a structured
+         *     error is temporary, local evidence about how one attempt failed, and it only
+         *     influences selection while it is recent and not superseded by a recovery.
+         *
+         *     Every field is optional, so an existing `{"code", "description"}` error
+         *     definition keeps working unchanged. The `*_id` values are opaque authored
+         *     strings; core code never branches on their contents.
+         */
+        ErrorRemediation: {
+            /**
+             * @description Concepts most directly implicated by the error.
+             *
+             *     Lets a specific mistake target a narrower concept than the whole
+             *     question. When present in a scored bundle these must be known concepts.
+             */
+            concept_ids?: string[];
+            /**
+             * Format: int32
+             * @description Temporary lower bound on embedded support for immediate remediation.
+             *
+             *     Cooperates with scaffold fading: it raises the preferred scaffold while
+             *     the error signal is active and disappears once the learner recovers. It
+             *     never permanently raises scaffold state.
+             */
+            min_scaffold_level?: number | null;
+            /** @description A learning node that directly addresses the misconception. */
+            node_id?: string | null;
+            /** @description A reusable family the remediation should stay within or redirect to. */
+            preferred_family_id?: string | null;
+            preferred_stage?: null | components["schemas"]["PedagogyStage"];
         };
         /** @description Envelope returned for every API error. */
         ErrorResponse: {
@@ -2137,6 +2174,21 @@ export interface components {
             /** @enum {string} */
             type: "stdout";
         };
+        /**
+         * @description Learner-safe structured error-code definition.
+         *
+         *     Deliberately excludes the optional Phase 3 remediation metadata: authored
+         *     target concepts, nodes, stages, families, and scaffold floors could reveal
+         *     the intended repair (and thus the answer) before scoring. The canonical
+         *     definition stays server-side; only the code and its learner-safe description
+         *     travel to the client.
+         */
+        QuestionErrorCode: {
+            /** @description Stable code, for example `classification_misplaced`. */
+            code: string;
+            /** @description Learner-safe description. */
+            description: string;
+        };
         /** @description A question shown to the learner. Contains no answer key. */
         QuestionView: {
             /** @description Evidence mode. */
@@ -2238,7 +2290,7 @@ export interface components {
          * @description A stable, explainable reason code for a recommendation.
          * @enum {string}
          */
-        RecommendationReason: "cold_start" | "weak_concept" | "weak_prerequisite" | "needs_practice" | "stale_knowledge" | "domain_review" | "strong_and_fresh";
+        RecommendationReason: "cold_start" | "weak_concept" | "weak_prerequisite" | "needs_practice" | "stale_knowledge" | "domain_review" | "strong_and_fresh" | "targeted_remediation";
         /**
          * @description Request body for a recommendation.
          *
@@ -2495,8 +2547,12 @@ export interface components {
             difficulty_prior: number;
             /** @description Owning domain. */
             domain_id: string;
-            /** @description Authored structured error-code definitions for this question. */
-            error_codes: components["schemas"]["ErrorCodeDef"][];
+            /**
+             * @description Learner-safe structured error-code definitions for this question.
+             *
+             *     Never includes remediation metadata; see [`QuestionErrorCode`].
+             */
+            error_codes: components["schemas"]["QuestionErrorCode"][];
             /** @description Short explanation shown after scoring. */
             explanation: string;
             /** @description Optional hints. */

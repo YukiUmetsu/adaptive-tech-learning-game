@@ -23,9 +23,9 @@ pub use evaluation::{
     predict_question,
 };
 pub use learning::{
-    AssessmentMode, ConceptWeight, InteractionType, LearningEvent, MissionInstance, MissionStatus,
-    PEDAGOGY_MAX_SCAFFOLD_LEVEL, PEDAGOGY_MIN_SCAFFOLD_LEVEL, PEDAGOGY_STAGE_COUNT,
-    PedagogyMetadata, PedagogyStage, QuizMode,
+    AssessmentMode, ConceptWeight, ErrorRemediation, InteractionType, LearningEvent,
+    MissionInstance, MissionStatus, PEDAGOGY_MAX_SCAFFOLD_LEVEL, PEDAGOGY_MIN_SCAFFOLD_LEVEL,
+    PEDAGOGY_STAGE_COUNT, PedagogyMetadata, PedagogyStage, QuizMode,
 };
 pub use reward::{
     BASE_BITS, DAILY_MISSION_BONUS_BITS, SECTION_QUIZ_BONUS_BITS, cyber_defense_upgrade_bits,

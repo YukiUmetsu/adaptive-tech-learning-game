@@ -32,7 +32,7 @@
 - Tasks: `id`/`name` non-empty and unique; every `question_ids` entry references an authored question.
 - Questions: `id`/`prompt` non-empty and unique; `content_version` matches the bundle; `certification_version` matches the version id; `domain_id`/`task_id` resolve to a real task; `difficulty_prior` ∈ `[0, 1]`; `interaction_type` matches the `interaction` shape.
 - Question concepts: ≥1, all known, none duplicated, weights ∈ `(0, 1]` summing to `1.0`.
-- `error_codes`: non-empty and unique, each with a code and description.
+- `error_codes`: non-empty and unique, each with a code and description. Optional `remediation` (when present) must carry at least one target, with non-blank `node_id`/`preferred_family_id`, unique non-blank `concept_ids` that resolve in the bundle, and a `min_scaffold_level` within `0..=6`; a remediation `node_id` is cross-checked against the learning map for the same track/version when learning content exists.
 - `source_refs`: non-empty, each with non-empty `title` and `url`. *(Presence and shape only — accuracy is the fact-check gate.)*
 - `pedagogy` (optional): when present, `family_id`, `transfer_group_id`, `surface_context`, and `challenge_group_id` must be non-blank (trim-aware); `scaffold_level` ∈ `0..=6`; `stage` must be a known `PedagogyStage` value (parse-time). No cross-question pedagogy rule is enforced in Phase 1.
 
@@ -449,6 +449,37 @@ old tracks without the metadata are not required to add it.
       intended multi-stage journey.
 - [ ] pedagogy metadata is not used to reveal the intended approach before
       scoring (it is authored and server-side only).
+
+## 4.18 Structured-error remediation audit (only when authored)
+
+`error_codes[].remediation` is optional. These checks apply **only** to error
+definitions that use it; old tracks without the metadata are not required to add
+it, and the runtime ignores an error code that has no remediation.
+
+- [ ] the error code represents a real, distinguishable mistake — the scorer can
+      actually produce it from the submitted answer, not a guess about intent;
+- [ ] the code is stable and meaningful (not a renamed human description), and
+      the description is learner-safe and useful;
+- [ ] a broad error is not split into narrower codes merely because granular
+      remediation sounds useful; if the scorer cannot reliably tell two errors
+      apart, keep the error broader;
+- [ ] `concept_ids`, when present, name the concepts that genuinely explain the
+      mistake (not just a copy of every concept on the question);
+- [ ] `node_id`, when present, actually teaches the missing idea, is
+      definition-first, and lives in the same track/version;
+- [ ] `preferred_stage` matches the needed repair (`differentiate` for a
+      confused pair, `trace` for a boundary/state bug, `diagnose` for an
+      implementation bug, `reason` for an unclear invariant, …);
+- [ ] `preferred_family_id`, when present, is pedagogically sensible as a place
+      to stay within or redirect to;
+- [ ] `min_scaffold_level`, when present, is justified by the difficulty of the
+      mistake and is not a permanent support increase;
+- [ ] the remediation still makes sense in a different surface context (it is
+      not secretly tied to one scenario);
+- [ ] learner-facing wording (the error description and the resulting
+      recommendation title) is natural and never exposes an internal code;
+- [ ] the mapping does not reveal the intended approach or answer before
+      scoring.
 
 ---
 

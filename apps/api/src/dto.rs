@@ -9,8 +9,8 @@
 use std::collections::BTreeMap;
 
 use adaptive_learn_content::{
-    CanonicalAnswer, ErrorCodeDef, GlossaryTerm, Interaction, LearningDesign, LearningDomainMeta,
-    LearningModule, PlacementPoint, SourceRef,
+    CanonicalAnswer, GlossaryTerm, Interaction, LearningDesign, LearningDomainMeta, LearningModule,
+    PlacementPoint, SourceRef,
 };
 use adaptive_learn_domain::{
     AssessmentMode, ConceptWeight, InteractionType, MissionStatus, QuizMode,
@@ -234,6 +234,21 @@ pub struct QuestionView {
     pub interaction: Interaction,
 }
 
+/// Learner-safe structured error-code definition.
+///
+/// Deliberately excludes the optional Phase 3 remediation metadata: authored
+/// target concepts, nodes, stages, families, and scaffold floors could reveal
+/// the intended repair (and thus the answer) before scoring. The canonical
+/// definition stays server-side; only the code and its learner-safe description
+/// travel to the client.
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct QuestionErrorCode {
+    /// Stable code, for example `classification_misplaced`.
+    pub code: String,
+    /// Learner-safe description.
+    pub description: String,
+}
+
 /// A question for an ordinary study mission that supports local scoring.
 ///
 /// This is the only mission-facing DTO that carries canonical answers. It keeps
@@ -276,8 +291,10 @@ pub struct StudyQuestionView {
     pub explanation: String,
     /// Per-choice feedback keyed by choice id.
     pub choice_feedback: BTreeMap<String, String>,
-    /// Authored structured error-code definitions for this question.
-    pub error_codes: Vec<ErrorCodeDef>,
+    /// Learner-safe structured error-code definitions for this question.
+    ///
+    /// Never includes remediation metadata; see [`QuestionErrorCode`].
+    pub error_codes: Vec<QuestionErrorCode>,
 }
 
 /// Answer primitives for one attempt. Exactly one field is set.

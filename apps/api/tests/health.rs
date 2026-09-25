@@ -50,7 +50,32 @@ async fn openapi_document_lists_the_learning_endpoints() {
             schema["properties"].get("pedagogy").is_none(),
             "{view} must not expose pedagogy"
         );
+        assert!(
+            schema["properties"].get("remediation").is_none(),
+            "{view} must not expose remediation metadata"
+        );
     }
+
+    // Phase 3: the learner-facing error-code view carries only code and
+    // description. The canonical `ErrorCodeDef` (with optional remediation)
+    // stays published but is never attached to a learner payload.
+    let error_code_view = &body["components"]["schemas"]["QuestionErrorCode"];
+    assert!(
+        error_code_view["properties"].is_object(),
+        "QuestionErrorCode must be an object schema"
+    );
+    assert!(
+        error_code_view["properties"].get("remediation").is_none(),
+        "QuestionErrorCode must not expose remediation metadata"
+    );
+    let study_view_error_codes = &body["components"]["schemas"]["StudyQuestionView"]["properties"]
+        ["error_codes"]["items"]["$ref"];
+    assert!(
+        study_view_error_codes
+            .as_str()
+            .is_some_and(|reference| reference.ends_with("/QuestionErrorCode")),
+        "StudyQuestionView.error_codes must reference the learner-safe view, got {study_view_error_codes}"
+    );
 }
 
 #[tokio::test]
