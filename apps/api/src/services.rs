@@ -43,6 +43,7 @@ use crate::dto::{
     UserSettingsDto, WalletResponse,
 };
 use crate::error::ApiError;
+use crate::pedagogy::RecentPedagogy;
 use crate::planner::{
     self, ConceptStateView, PlannerDomain, PlannerInput, PlannerNode, PlannerQuestion,
 };
@@ -194,18 +195,11 @@ async fn planner_context(
     let track_version = bundle.version.id.clone();
 
     let states = db::concept_state::list_for_user(&state.pool, user.id, &track_version).await?;
-    let history: Vec<HistoryEntry> =
-        db::learning_events::recent_for_user(&state.pool, user.id, track_id, HISTORY_LIMIT)
-            .await?
-            .into_iter()
-            .map(|entry| HistoryEntry {
-                question_id: entry.question_id,
-                score: entry.score,
-                assessment_mode: entry.assessment_mode,
-                occurred_at: entry.occurred_at,
-                concepts: entry.concepts,
-            })
-            .collect();
+    let history = history_entries(
+        state,
+        &track_version,
+        db::learning_events::recent_for_user(&state.pool, user.id, track_id, HISTORY_LIMIT).await?,
+    );
 
     let domains: Vec<PlannerDomain> = bundle
         .version
@@ -240,6 +234,7 @@ async fn planner_context(
         derive_track_discovery(state, &track_version, &merged)
     };
 
+    let recent_pedagogy = RecentPedagogy::build(&history);
     let input = PlannerInput {
         track_id: track_id.to_owned(),
         track_version: track_version.clone(),
@@ -265,6 +260,7 @@ async fn planner_context(
             .iter()
             .map(|entry| entry.question_id.clone())
             .collect(),
+        recent_pedagogy,
     };
 
     Ok(PlannerContext {
@@ -2101,23 +2097,18 @@ async fn select_recommended_practice(
     }
 
     let anchor_candidate = candidate_from(anchor);
-    let history: Vec<HistoryEntry> = match state.content.bundle_for_version(version) {
-        Some(bundle) => db::learning_events::recent_for_user(
-            &state.pool,
-            owner,
-            &bundle.certification.id,
-            HISTORY_LIMIT,
-        )
-        .await?
-        .into_iter()
-        .map(|entry| HistoryEntry {
-            question_id: entry.question_id,
-            score: entry.score,
-            assessment_mode: entry.assessment_mode,
-            occurred_at: entry.occurred_at,
-            concepts: entry.concepts,
-        })
-        .collect(),
+    let history = match state.content.bundle_for_version(version) {
+        Some(bundle) => history_entries(
+            state,
+            version,
+            db::learning_events::recent_for_user(
+                &state.pool,
+                owner,
+                &bundle.certification.id,
+                HISTORY_LIMIT,
+            )
+            .await?,
+        ),
         None => Vec::new(),
     };
 
@@ -2164,18 +2155,12 @@ async fn select_section_quiz(
         })
         .unwrap_or_default();
 
-    let history: Vec<HistoryEntry> =
+    let history = history_entries(
+        state,
+        version,
         db::learning_events::recent_for_user(&state.pool, owner, certification_id, HISTORY_LIMIT)
-            .await?
-            .into_iter()
-            .map(|entry| HistoryEntry {
-                question_id: entry.question_id,
-                score: entry.score,
-                assessment_mode: entry.assessment_mode,
-                occurred_at: entry.occurred_at,
-                concepts: entry.concepts,
-            })
-            .collect();
+            .await?,
+    );
 
     let states: Vec<ConceptEvidence> =
         db::concept_state::list_for_user(&state.pool, owner, version)
@@ -2234,22 +2219,17 @@ async fn select_ids(
         .unwrap_or_default();
 
     // History is combined across every device the learner has signed in on.
-    let history: Vec<HistoryEntry> = db::learning_events::recent_for_user(
-        &state.pool,
-        user_id,
-        &request.certification_id,
-        HISTORY_LIMIT,
-    )
-    .await?
-    .into_iter()
-    .map(|entry| HistoryEntry {
-        question_id: entry.question_id,
-        score: entry.score,
-        assessment_mode: entry.assessment_mode,
-        occurred_at: entry.occurred_at,
-        concepts: entry.concepts,
-    })
-    .collect();
+    let history = history_entries(
+        state,
+        version,
+        db::learning_events::recent_for_user(
+            &state.pool,
+            user_id,
+            &request.certification_id,
+            HISTORY_LIMIT,
+        )
+        .await?,
+    );
 
     // Derived concept state is the primary adaptation signal. It is absent for
     // a cold-start learner; selection falls back to accepted history instead.
@@ -2288,6 +2268,36 @@ fn candidate_from(question: &Question) -> Candidate {
         concepts: concept_weights(question),
         pedagogy: question.pedagogy.clone(),
     }
+}
+
+/// Maps accepted history rows, joining authored pedagogy metadata by question id.
+///
+/// The learning event never stores pedagogy metadata; it is reconstructed from
+/// canonical content here so selection can use it without duplication or a
+/// schema change. A missing or changed question simply contributes no metadata.
+fn history_entries(
+    state: &AppState,
+    version: &str,
+    rows: Vec<db::learning_events::UserHistoryEntry>,
+) -> Vec<HistoryEntry> {
+    rows.into_iter()
+        .map(|entry| {
+            let pedagogy = state
+                .content
+                .question(version, &entry.question_id)
+                .and_then(|question| question.pedagogy.clone());
+            HistoryEntry {
+                question_id: entry.question_id,
+                score: entry.score,
+                assessment_mode: entry.assessment_mode,
+                occurred_at: entry.occurred_at,
+                concepts: entry.concepts,
+                attempt_number: entry.attempt_number,
+                hint_count: entry.hint_count,
+                pedagogy,
+            }
+        })
+        .collect()
 }
 
 /// Scores one attempt without persisting an event.
@@ -3850,6 +3860,7 @@ mod tests {
                 unlocked_node_ids: HashSet::new(),
                 completed_module_ids: HashSet::new(),
                 recent_question_ids: recent,
+                recent_pedagogy: RecentPedagogy::default(),
             },
             history: Vec::new(),
         }

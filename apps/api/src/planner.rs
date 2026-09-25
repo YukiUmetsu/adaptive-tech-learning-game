@@ -19,11 +19,13 @@ use std::collections::{HashMap, HashSet};
 
 use adaptive_learn_domain::{
     AssessmentMode, ConceptWeight, InteractionType, PRIOR_ESTIMATE, PedagogyMetadata,
-    retrievability,
+    retrievability, uncertainty,
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+
+use crate::pedagogy::{self, RecentPedagogy};
 
 pub mod session;
 
@@ -175,9 +177,9 @@ pub struct PlannerQuestion {
     pub concepts: Vec<ConceptWeight>,
     /// Optional authored pedagogical metadata.
     ///
-    /// Descriptive in Phase 1: it is carried so future scaffold/transfer/
-    /// challenge planning can read it without another content-schema change.
-    /// Nothing in the planner reads it yet, so ranking is unchanged.
+    /// Phase 2 uses it as a bounded teaching-policy preference (scaffold fit,
+    /// transfer context, stage fit). It never changes mastery, scoring, or
+    /// reward.
     pub pedagogy: Option<PedagogyMetadata>,
 }
 
@@ -206,6 +208,12 @@ pub struct PlannerInput {
     pub completed_module_ids: HashSet<String>,
     /// Recently answered question ids, to avoid immediate repeats.
     pub recent_question_ids: HashSet<String>,
+    /// Bounded teaching-policy summary built from the same accepted history.
+    ///
+    /// Derived from canonical pedagogy metadata joined by question id, so no
+    /// metadata is duplicated onto learning events. Empty for a cold learner,
+    /// which leaves ranking unchanged.
+    pub recent_pedagogy: RecentPedagogy,
 }
 
 /// A structured, explainable recommendation.
@@ -263,6 +271,21 @@ impl ConceptSummary {
     fn retrieval(self, now: DateTime<Utc>) -> f64 {
         retrievability(self.evidence_mass, self.last_practiced_at, now)
     }
+}
+
+/// Aggregated per-question concept signal for planner ranking.
+#[derive(Debug, Clone, Copy)]
+struct QuestionSignal {
+    /// Authored-weight average of `1 - estimate` across the question's concepts.
+    weakness: f64,
+    /// Authored-weight average estimate.
+    estimate: f64,
+    /// Authored-weight average evidence uncertainty.
+    uncertainty: f64,
+    /// Weakest single concept estimate.
+    min_estimate: f64,
+    /// Whether any mapped concept has been explored.
+    any_explored: bool,
 }
 
 /// One scored planner candidate before it is chosen.
@@ -540,10 +563,11 @@ impl<'a> Model<'a> {
             })
     }
 
-    /// Weighted per-mode weakness and exploration for a practice question.
-    fn question_signal(&self, question: &PlannerQuestion) -> (f64, f64, bool) {
+    /// Weighted per-mode signal and exploration for a practice question.
+    fn question_signal(&self, question: &PlannerQuestion) -> QuestionSignal {
         let mut weight_sum = 0.0;
         let mut weakness = 0.0;
+        let mut uncertainty_total = 0.0;
         let mut min_estimate: f64 = 1.0;
         let mut any_explored = false;
 
@@ -555,6 +579,7 @@ impl<'a> Model<'a> {
             let summary = self.mode_summary(&concept.concept_id, question.assessment_mode);
             weight_sum += weight;
             weakness += weight * (1.0 - summary.estimate);
+            uncertainty_total += weight * uncertainty(summary.evidence_mass);
             min_estimate = min_estimate.min(summary.estimate);
             any_explored = any_explored || summary.explored;
         }
@@ -562,9 +587,33 @@ impl<'a> Model<'a> {
         if weight_sum <= 0.0 {
             // A question with no usable concept mapping is only actionable if
             // the learner has no other signal; treat it as neutral.
-            return (0.5, PRIOR_ESTIMATE, false);
+            return QuestionSignal {
+                weakness: 0.5,
+                estimate: PRIOR_ESTIMATE,
+                uncertainty: 1.0,
+                min_estimate: PRIOR_ESTIMATE,
+                any_explored: false,
+            };
         }
-        (weakness / weight_sum, min_estimate, any_explored)
+        let weakness = weakness / weight_sum;
+        QuestionSignal {
+            weakness,
+            estimate: 1.0 - weakness,
+            uncertainty: uncertainty_total / weight_sum,
+            min_estimate,
+            any_explored,
+        }
+    }
+
+    /// Bounded teaching-policy contribution for a practice question.
+    fn question_pedagogy(&self, question: &PlannerQuestion, signal: &QuestionSignal) -> f64 {
+        pedagogy::pedagogy_fit(
+            question.pedagogy.as_ref(),
+            signal.estimate,
+            signal.uncertainty,
+            &self.input.recent_pedagogy,
+        )
+        .total()
     }
 
     fn choose(&self, candidates: Vec<Candidate>) -> Option<Recommendation> {
@@ -651,16 +700,21 @@ fn cold_start(model: &Model<'_>) -> Option<Recommendation> {
             .questions
             .iter()
             .filter_map(|question| {
-                let (weakness, min_estimate, any_explored) = model.question_signal(question);
-                (any_explored && min_estimate < WEAK_ESTIMATE).then(|| Candidate {
-                    score: weakness + model.domain_weight(&question.domain_id) * WEIGHT_DOMAIN,
-                    action: PlannerAction::PracticeQuestion,
-                    reason: RecommendationReason::NeedsPractice,
-                    domain_id: question.domain_id.clone(),
-                    node_id: None,
-                    question_id: Some(question.id.clone()),
-                    assessment_mode: Some(question.assessment_mode),
-                    concept_ids: concepts_of(question),
+                let signal = model.question_signal(question);
+                (signal.any_explored && signal.min_estimate < WEAK_ESTIMATE).then(|| {
+                    let pedagogy = model.question_pedagogy(question, &signal);
+                    Candidate {
+                        score: signal.weakness
+                            + model.domain_weight(&question.domain_id) * WEIGHT_DOMAIN
+                            + pedagogy,
+                        action: PlannerAction::PracticeQuestion,
+                        reason: RecommendationReason::NeedsPractice,
+                        domain_id: question.domain_id.clone(),
+                        node_id: None,
+                        question_id: Some(question.id.clone()),
+                        assessment_mode: Some(question.assessment_mode),
+                        concept_ids: concepts_of(question),
+                    }
                 })
             })
             .collect();
@@ -842,22 +896,23 @@ fn practice_question(model: &Model<'_>) -> Option<Recommendation> {
         .questions
         .iter()
         .filter_map(|question| {
-            let (weakness, min_estimate, any_explored) = model.question_signal(question);
-            if !any_explored || min_estimate >= WEAK_ESTIMATE {
+            let signal = model.question_signal(question);
+            if !signal.any_explored || signal.min_estimate >= WEAK_ESTIMATE {
                 return None;
             }
-            let estimate = 1.0 - weakness;
-            let fit = 1.0 - (question.difficulty_prior.clamp(0.0, 1.0) - estimate).abs();
+            let fit = 1.0 - (question.difficulty_prior.clamp(0.0, 1.0) - signal.estimate).abs();
             let repeat = if model.input.recent_question_ids.contains(&question.id) {
                 REPEAT_PENALTY
             } else {
                 0.0
             };
+            let pedagogy = model.question_pedagogy(question, &signal);
             Some(Candidate {
-                score: weakness
+                score: signal.weakness
                     + fit * WEIGHT_DIFFICULTY_FIT
                     + model.domain_weight(&question.domain_id) * WEIGHT_DOMAIN
                     + PRACTICE_TIE_BONUS
+                    + pedagogy
                     - repeat,
                 action: PlannerAction::PracticeQuestion,
                 reason: RecommendationReason::NeedsPractice,
@@ -939,10 +994,13 @@ fn advance(model: &Model<'_>) -> Option<Recommendation> {
         } else {
             0.0
         };
+        let signal = model.question_signal(question);
+        let pedagogy = model.question_pedagogy(question, &signal);
         candidates.push(Candidate {
             score: question.difficulty_prior.clamp(0.0, 1.0)
                 + applied
                 + model.domain_weight(&question.domain_id) * WEIGHT_DOMAIN
+                + pedagogy
                 - repeat,
             action: PlannerAction::PracticeQuestion,
             reason: RecommendationReason::StrongAndFresh,
@@ -1097,6 +1155,7 @@ mod tests {
             unlocked_node_ids: HashSet::new(),
             completed_module_ids: HashSet::new(),
             recent_question_ids: HashSet::new(),
+            recent_pedagogy: RecentPedagogy::default(),
         }
     }
 
@@ -1386,6 +1445,57 @@ mod tests {
         assert_eq!(recommendation.action, PlannerAction::PracticeQuestion);
         assert_eq!(recommendation.reason, RecommendationReason::StrongAndFresh);
         assert_eq!(recommendation.question_id.as_deref(), Some("q-app"));
+    }
+
+    #[test]
+    fn next_action_prefers_less_scaffolding_for_a_strong_learner() {
+        let mut scaffolded = question(
+            "q-high",
+            "domain-1",
+            AssessmentMode::Application,
+            0.8,
+            vec![concept("python.loops", 1.0)],
+        );
+        scaffolded.pedagogy = Some(PedagogyMetadata {
+            family_id: Some("generic.family".to_owned()),
+            stage: None,
+            scaffold_level: Some(5),
+            transfer_group_id: None,
+            surface_context: None,
+            challenge_group_id: None,
+        });
+        let mut cold = question(
+            "q-low",
+            "domain-1",
+            AssessmentMode::Application,
+            0.8,
+            vec![concept("python.loops", 1.0)],
+        );
+        cold.pedagogy = Some(PedagogyMetadata {
+            family_id: Some("generic.family".to_owned()),
+            stage: None,
+            scaffold_level: Some(1),
+            transfer_group_id: None,
+            surface_context: None,
+            challenge_group_id: None,
+        });
+
+        let content = input(
+            vec![domain("domain-1", 1.0)],
+            Vec::new(),
+            vec![scaffolded, cold],
+            vec![state(
+                "python.loops",
+                AssessmentMode::Application,
+                0.95,
+                9.0,
+                now(),
+            )],
+        );
+
+        let recommendation = recommend(&content).expect("recommendation");
+        assert_eq!(recommendation.action, PlannerAction::PracticeQuestion);
+        assert_eq!(recommendation.question_id.as_deref(), Some("q-low"));
     }
 
     #[test]

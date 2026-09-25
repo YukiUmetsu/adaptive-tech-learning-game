@@ -187,8 +187,11 @@ pub enum PedagogyStage {
     Transfer,
 }
 
+/// Number of authored pedagogy stages.
+pub const PEDAGOGY_STAGE_COUNT: u8 = 8;
+
 impl PedagogyStage {
-    /// Canonical string stored in PostgreSQL and authored in JSON.
+    /// Canonical string authored in JSON and exposed to server-side planning.
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Discover => "discover",
@@ -199,6 +202,24 @@ impl PedagogyStage {
             Self::Diagnose => "diagnose",
             Self::Construct => "construct",
             Self::Transfer => "transfer",
+        }
+    }
+
+    /// Position of the stage in the authored progression, `0..PEDAGOGY_STAGE_COUNT`.
+    ///
+    /// `discover` is the earliest, most supported role and `transfer` the latest,
+    /// least supported one. This is a coarse authoring order, not a required
+    /// prerequisite chain: selection uses it only as a soft ranking preference.
+    pub const fn ordinal(self) -> u8 {
+        match self {
+            Self::Discover => 0,
+            Self::Recognize => 1,
+            Self::Differentiate => 2,
+            Self::Reason => 3,
+            Self::Trace => 4,
+            Self::Diagnose => 5,
+            Self::Construct => 6,
+            Self::Transfer => 7,
         }
     }
 }
@@ -230,6 +251,15 @@ impl TryFrom<&str> for PedagogyStage {
     }
 }
 
+/// Inclusive lower bound for an authored `pedagogy.scaffold_level`.
+pub const PEDAGOGY_MIN_SCAFFOLD_LEVEL: u8 = 0;
+/// Inclusive upper bound for an authored `pedagogy.scaffold_level`.
+///
+/// `0` means no embedded help; `6` means strongly guided,
+/// reconstruction-level support. Scaffolding is independent of
+/// `difficulty_prior`.
+pub const PEDAGOGY_MAX_SCAFFOLD_LEVEL: u8 = 6;
+
 /// Optional, track-agnostic pedagogical metadata authored on a question.
 ///
 /// Every field is optional, so existing content without `pedagogy` keeps
@@ -256,6 +286,9 @@ pub struct PedagogyMetadata {
     /// question may embed substantial help. It never modifies
     /// `difficulty_prior`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    // utoipa requires a literal here; keep it in sync with
+    // `PEDAGOGY_MAX_SCAFFOLD_LEVEL`, which validation enforces.
+    #[schema(maximum = 6)]
     pub scaffold_level: Option<u8>,
     /// Groups activities that exercise the same deep transferable structure.
     #[serde(default, skip_serializing_if = "Option::is_none")]

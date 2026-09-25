@@ -69,7 +69,7 @@
 
 - `schema_version == "practice-test-v2"`; `id`/`title`/`exam_code`/`certification_version`/`content_version` non-empty; `time_limit_minutes > 0`.
 - ≥1 item; `question_count == items.len()`; `order` unique and contiguous `1..=N`; question ids unique; question `id`/`prompt` non-empty; interaction type matches; `assessment_mode` a valid enum (parse-time); `difficulty_prior` in range; question `certification_version`/`content_version` match the test; when `question_types` is declared, every item type appears in it.
-- Each item's `interaction` and `canonical_answer` use the same structural rules as quiz questions.
+- Each item's `interaction` and `canonical_answer` use the same structural rules as quiz questions, and `pedagogy` (when present) follows the same rules as in §1.1.
 - Items are **not** required to declare concepts, `error_codes`, or `source_refs`; the editorial fact-check gate still requires a source for any factual claim.
 
 ## 1.4 Cross-source checks (`crates/content/src/registry.rs`)

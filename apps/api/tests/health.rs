@@ -36,14 +36,21 @@ async fn openapi_document_lists_the_learning_endpoints() {
         body["components"]["schemas"]["PedagogyStage"].is_object(),
         "PedagogyStage must be a published schema"
     );
-    assert!(
-        body["components"]["schemas"]["QuestionView"]["properties"]["pedagogy"].is_null(),
-        "QuestionView must not expose pedagogy"
-    );
-    assert!(
-        body["components"]["schemas"]["StudyQuestionView"]["properties"]["pedagogy"].is_null(),
-        "StudyQuestionView must not expose pedagogy"
-    );
+
+    // `Value`'s string index returns `Null` for a missing key, so assert the
+    // view schemas exist first; otherwise these leakage checks could pass
+    // vacuously if the DTOs are renamed or restructured.
+    for view in ["QuestionView", "StudyQuestionView"] {
+        let schema = &body["components"]["schemas"][view];
+        assert!(
+            schema["properties"].is_object(),
+            "{view} must be an object schema"
+        );
+        assert!(
+            schema["properties"].get("pedagogy").is_none(),
+            "{view} must not expose pedagogy"
+        );
+    }
 }
 
 #[tokio::test]

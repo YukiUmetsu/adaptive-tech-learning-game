@@ -75,6 +75,17 @@ pub struct UserHistoryEntry {
     pub occurred_at: DateTime<Utc>,
     /// Concept mappings with their authored weights.
     pub concepts: Vec<ConceptWeight>,
+    /// Server-derived 1-based attempt number for the question.
+    ///
+    /// Exposed so the pedagogy policy can tell a clean first-attempt success
+    /// from a recovery; it is read straight from the accepted event, never
+    /// stored again.
+    pub attempt_number: i32,
+    /// Hints used before submitting.
+    ///
+    /// A heavily hinted success is weaker evidence and must not fade
+    /// scaffolding aggressively.
+    pub hint_count: i32,
 }
 
 #[derive(sqlx::FromRow)]
@@ -84,6 +95,8 @@ struct HistoryRow {
     assessment_mode: String,
     occurred_at: DateTime<Utc>,
     concepts: Json<Vec<ConceptWeight>>,
+    attempt_number: i32,
+    hint_count: i32,
 }
 
 /// Accepts a learning event, assigns the next server-derived attempt number,
@@ -205,7 +218,8 @@ pub async fn recent_for_user(
     limit: i64,
 ) -> Result<Vec<UserHistoryEntry>, DbError> {
     let rows = sqlx::query_as::<_, HistoryRow>(
-        "SELECT question_id, score, assessment_mode, occurred_at, concepts
+        "SELECT question_id, score, assessment_mode, occurred_at, concepts,
+                attempt_number, hint_count
          FROM learning_events
          WHERE user_id = $1 AND certification_id = $2
          ORDER BY received_at DESC
@@ -225,6 +239,8 @@ pub async fn recent_for_user(
                 assessment_mode: AssessmentMode::try_from(row.assessment_mode.as_str())?,
                 occurred_at: row.occurred_at,
                 concepts: row.concepts.0,
+                attempt_number: row.attempt_number,
+                hint_count: row.hint_count,
             })
         })
         .collect()

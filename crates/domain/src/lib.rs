@@ -24,6 +24,7 @@ pub use evaluation::{
 };
 pub use learning::{
     AssessmentMode, ConceptWeight, InteractionType, LearningEvent, MissionInstance, MissionStatus,
+    PEDAGOGY_MAX_SCAFFOLD_LEVEL, PEDAGOGY_MIN_SCAFFOLD_LEVEL, PEDAGOGY_STAGE_COUNT,
     PedagogyMetadata, PedagogyStage, QuizMode,
 };
 pub use reward::{

@@ -9,6 +9,7 @@ pub mod config;
 pub mod dto;
 pub mod error;
 pub mod openapi;
+pub mod pedagogy;
 pub mod planner;
 pub mod routes;
 pub mod selection;

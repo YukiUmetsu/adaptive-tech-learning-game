@@ -118,21 +118,120 @@ interaction type  != pedagogy stage
 - `interaction_type` is the rendering/scoring primitive; a `spot_the_fault`
   activity can be `diagnose`, and a `python_code` activity can be `construct`.
 
-Phase 1 exists to establish the content contract and plumbing. It deliberately
-does **not** yet implement scaffold fading, transfer-aware selection, same-family
-balancing, challenge sequencing, cold-transfer detection, family mastery, or
-surface-context rotation. Those are Phase 2 concerns that this metadata is meant
-to enable without another content-schema redesign.
+Phase 1 establishes the content contract and plumbing. Phase 2 (below) turns the
+metadata into a bounded teaching-policy preference. Still deferred: multi-stage
+challenge orchestration, family/transfer/scaffold mastery persistence,
+error-driven remediation, and track-specific pedagogy rules.
+
+## Scaffold fading and transfer-aware practice (Phase 2)
+
+Phase 2 is a **teaching-policy** change, not a new knowledge model. It keeps
+`heuristic-v1`, concept estimates, assessment-mode separation, forgetting,
+evidence mass, difficulty fit, novelty, and repeat avoidance exactly as they
+were. The student model still answers "what does the learner probably know
+now?"; the teaching policy now also answers "what form of activity is most
+useful next?" using the optional authored pedagogy metadata.
+
+One pure, shared policy (`apps/api/src/pedagogy.rs`) computes a small
+[`PedagogySignal`](../../apps/api/src/pedagogy.rs) for every candidate in every
+selection path: Quick Quiz, Domain Quiz, Full Practice, Section Quiz,
+Recommended Practice, study sessions, Daily Missions, and the next-action
+planner. There is no per-mode pedagogy logic and no track-specific branch.
+Scaffold level stays separate from `difficulty_prior`; these terms never change
+difficulty, scoring, rewards, mastery, or concept state.
+
+### Adaptive scaffold fading
+
+Scaffold level measures help embedded in an activity. A learner with a weak or
+low-evidence concept is matched to more embedded support; a strong, confident
+learner is matched to less. The base preference comes from the existing concept
+estimate, damped by evidence confidence, so a high estimate on thin evidence
+stays *developing* rather than *strong*:
+
+```text
+weak / low evidence   -> prefer more embedded support
+developing            -> prefer middle support
+strong + confident    -> prefer less support
+```
+
+Within the same authored `family_id`, recent accepted attempts refine the
+target so support changes gradually instead of leaping:
+
+```text
+clean first-attempt, unaided success at level L -> target at most L - 1
+hinted / recovery success at level L            -> target at most L  (fade less)
+recent failure at level L                       -> target at least L + 2
+```
+
+The result is the intended trajectory — `high support -> success -> modestly
+lower support -> success -> lower support -> cold application` — rather than an
+immediate jump from level 5 to level 0. Failure lets support increase; it is
+never punitive, never resets mastery, and never forces the exact same question
+back.
+
+### Transfer-aware selection
+
+Once a learner has shown some success in a transfer group, a *different*
+authored `surface_context` is preferred over repeating the same one:
+
+```text
+same deep family / transfer group
++ a different surface context
+-> preferred, once the learner has some success
+```
+
+The rule is a light preference, not random rotation. It still respects concept
+weakness, assessment mode, difficulty fit, forgetting risk, novelty, domain
+coverage, interaction variety, and recent-repeat avoidance. A recent success at
+a low scaffold level, a low preferred scaffold, and a novel surface context make
+`stage = transfer` work more appropriate over time, but transfer questions are
+never gated at the schema level — only ranked.
+
+### Bounded, explainable, deterministic
+
+Each term is a named constant with a documented purpose and a bounded
+contribution:
+
+```text
+WEIGHT_SCAFFOLD_FIT       0.08
+WEIGHT_TRANSFER_CONTEXT   0.05
+WEIGHT_STAGE_FIT          0.04
+PENALTY_SURFACE_REPEAT    0.06
+```
+
+The whole pedagogy contribution stays within a small interval around zero, well
+below the existing weakness and forgetting weights, so the current adaptive
+signals remain dominant. Ranking is pure and deterministic; ties still break by
+question id, and familiarity and difficulty are never traded away for variety.
+
+### Missing metadata and backward compatibility
+
+Every pedagogy field is optional. Questions without it — or without the
+specific field being scored — contribute a constant neutral value, so a track
+with 0% pedagogy coverage ranks exactly as it did before Phase 2. Partial
+metadata uses only the signals present. The policy never infers meaning from the
+contents of `family_id`, `transfer_group_id`, or `surface_context`.
+
+### No new persistence or network
+
+The policy is derived from accepted learning events, current `heuristic-v1`
+concept state, and canonical authored content at normal mission-generation
+boundaries. Authored metadata is reconstructed from canonical content by
+`question_id`; no pedagogy fields are stored on learning events, no new tables
+are added, and no extra request is made. Full Practice keeps its domain
+allocation, and authored fixed practice tests are untouched.
 
 ### Transport boundary
 
 `pedagogy` lives on the authored/internal `Question` and on the server-side
-planner/selector types (`PlannerQuestion`, selection `Candidate`). It is **not**
-attached to learner-facing question DTOs (`QuestionView`, `StudyQuestionView`):
-some `family_id` values could reveal the intended approach before scoring, and
-Phase 1 has no UI for it. The `PedagogyStage`/`PedagogyMetadata` schemas are
-published in the OpenAPI/type layer so future frontend and planner code can
-reference the contract, but no question payload carries the values yet.
+planner/selector types (`PlannerQuestion`, selection `Candidate`, the Phase 2
+policy). It is **not** attached to learner-facing question DTOs (`QuestionView`,
+`StudyQuestionView`): some `family_id` values could reveal the intended approach
+before scoring, and there is no learner UI for it. The
+`PedagogyStage`/`PedagogyMetadata` schemas are published in the OpenAPI/type
+layer so frontend and planner code can reference the contract, but no question
+payload carries the values. Phase 2 uses them internally for selection only, so
+the pre-answer boundary is unchanged.
 
 ## Interaction features
 

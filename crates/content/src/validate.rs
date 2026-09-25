@@ -5,7 +5,9 @@
 
 use std::collections::{BTreeSet, HashSet};
 
-use adaptive_learn_domain::InteractionType;
+use adaptive_learn_domain::{
+    InteractionType, PEDAGOGY_MAX_SCAFFOLD_LEVEL, PEDAGOGY_MIN_SCAFFOLD_LEVEL,
+};
 
 use crate::model::{CanonicalAnswer, ContentBundle, Interaction, Question, QuestionConcept};
 
@@ -85,15 +87,6 @@ pub const PYTHON_MAX_PACKAGES: usize = 4;
 /// `seaborn` is intentionally absent: the pinned Pyodide build does not ship
 /// it, and enabling it would require installing a wheel from PyPI.
 pub const PYTHON_ALLOWED_PACKAGES: &[&str] = &["numpy", "pandas", "matplotlib"];
-
-/// Inclusive lower bound for an authored `pedagogy.scaffold_level`.
-pub const PEDAGOGY_MIN_SCAFFOLD_LEVEL: u8 = 0;
-/// Inclusive upper bound for an authored `pedagogy.scaffold_level`.
-///
-/// `0` means no embedded help; `6` means strongly guided,
-/// reconstruction-level support. Scaffolding is independent of
-/// `difficulty_prior`.
-pub const PEDAGOGY_MAX_SCAFFOLD_LEVEL: u8 = 6;
 
 /// Validates a bundle, returning every problem found.
 pub fn validate(bundle: &ContentBundle) -> Result<(), Vec<ContentError>> {

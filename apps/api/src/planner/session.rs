@@ -378,20 +378,21 @@ fn practice_activities(model: &Model<'_>, history: &[HistoryEntry]) -> Vec<Pract
 
     let mut anchors: Vec<(f64, usize)> = Vec::new();
     for (index, question) in model.input.questions.iter().enumerate() {
-        let (weakness, min_estimate, any_explored) = model.question_signal(question);
-        if !any_explored || min_estimate >= WEAK_ESTIMATE {
+        let signal = model.question_signal(question);
+        if !signal.any_explored || signal.min_estimate >= WEAK_ESTIMATE {
             continue;
         }
-        let estimate = 1.0 - weakness;
-        let fit = 1.0 - (question.difficulty_prior.clamp(0.0, 1.0) - estimate).abs();
+        let fit = 1.0 - (question.difficulty_prior.clamp(0.0, 1.0) - signal.estimate).abs();
         let repeat = if model.input.recent_question_ids.contains(&question.id) {
             super::REPEAT_PENALTY
         } else {
             0.0
         };
-        let score = weakness
+        let pedagogy = model.question_pedagogy(question, &signal);
+        let score = signal.weakness
             + fit * WEIGHT_DIFFICULTY_FIT
             + model.domain_weight(&question.domain_id) * WEIGHT_DOMAIN
+            + pedagogy
             - repeat;
         anchors.push((score, index));
     }
@@ -634,6 +635,7 @@ mod tests {
                 unlocked_node_ids: HashSet::new(),
                 completed_module_ids: HashSet::new(),
                 recent_question_ids: HashSet::new(),
+                recent_pedagogy: crate::pedagogy::RecentPedagogy::default(),
             },
             available_minutes: 20,
             preference: SessionPreference::Balanced,
@@ -922,6 +924,51 @@ mod tests {
                 "question must come from server content"
             );
         }
+    }
+
+    #[test]
+    fn session_practice_uses_the_shared_scaffold_policy() {
+        // The low-scaffold id sorts first, so only the policy can anchor on the
+        // supported question.
+        let mut high = question("q-z-high", "d1", &["c1"]);
+        high.pedagogy = Some(PedagogyMetadata {
+            family_id: Some("generic.family".to_owned()),
+            stage: None,
+            scaffold_level: Some(5),
+            transfer_group_id: None,
+            surface_context: None,
+            challenge_group_id: None,
+        });
+        let mut low = question("q-a-low", "d1", &["c1"]);
+        low.pedagogy = Some(PedagogyMetadata {
+            family_id: Some("generic.family".to_owned()),
+            stage: None,
+            scaffold_level: Some(1),
+            transfer_group_id: None,
+            surface_context: None,
+            challenge_group_id: None,
+        });
+
+        // A weak concept makes both questions eligible practice anchors.
+        let input = session_input(
+            vec![domain("d1", 1.0)],
+            Vec::new(),
+            vec![low, high],
+            vec![state("c1", 0.15, 4.0, now())],
+        );
+
+        let session = plan_session(&input).expect("session");
+        let practice = session
+            .activities
+            .iter()
+            .find(|a| a.kind == SessionActivityKind::Practice)
+            .expect("practice activity");
+        assert_eq!(
+            practice.question_ids.first().map(String::as_str),
+            Some("q-z-high"),
+            "a weak learner's session practice should start with support: {:?}",
+            practice.question_ids
+        );
     }
 
     #[test]

@@ -32,6 +32,8 @@ use adaptive_learn_domain::{
 };
 use chrono::{DateTime, Utc};
 
+use crate::pedagogy::{self, RecentPedagogy};
+
 /// Questions in a Quick Quiz.
 pub const QUICK_QUIZ_LEN: usize = 3;
 /// Questions in a Domain Quiz when the domain has enough content.
@@ -82,9 +84,9 @@ pub struct Candidate {
     pub concepts: Vec<ConceptWeight>,
     /// Optional authored pedagogical metadata.
     ///
-    /// Descriptive in Phase 1: selection ranking does not read it yet. It is
-    /// carried so future scaffold fading, transfer-aware selection, and
-    /// challenge sequencing can use it without another content-schema change.
+    /// Phase 2 uses it as a bounded teaching-policy signal (scaffold fit,
+    /// transfer context, stage fit). It never changes mastery, scoring,
+    /// difficulty, or rewards.
     pub pedagogy: Option<PedagogyMetadata>,
 }
 
@@ -101,6 +103,20 @@ pub struct HistoryEntry {
     pub occurred_at: DateTime<Utc>,
     /// Authored concept mappings with their evidence weights.
     pub concepts: Vec<ConceptWeight>,
+    /// Server-derived 1-based attempt number for the question.
+    ///
+    /// Lets the teaching policy treat a clean first-attempt success
+    /// differently from a recovery.
+    pub attempt_number: i32,
+    /// Hints used before submitting.
+    ///
+    /// A hinted success fades scaffolding less aggressively than an unaided one.
+    pub hint_count: i32,
+    /// Authored pedagogy metadata of the answered question.
+    ///
+    /// Joined from canonical content by `question_id`; it is never stored on the
+    /// learning event.
+    pub pedagogy: Option<PedagogyMetadata>,
 }
 
 /// One derived concept-state row, reduced to what selection needs.
@@ -155,6 +171,8 @@ struct RecentHistory {
     by_concept: HashMap<(String, AssessmentMode), (f64, DateTime<Utc>)>,
     /// Distinct question ids seen in the most recent window.
     recently_practiced: HashSet<String>,
+    /// Bounded pedagogy summary (scaffold/transfer/stage) built once.
+    pedagogy: RecentPedagogy,
 }
 
 impl RecentHistory {
@@ -179,6 +197,7 @@ impl RecentHistory {
         }
 
         summary.recently_practiced = window;
+        summary.pedagogy = RecentPedagogy::build(history);
         summary
     }
 }
@@ -257,6 +276,34 @@ impl RecentHistory {
             forgetting_risk: forgetting_risk / weight_sum,
         }
     }
+
+    /// Estimate and uncertainty for a candidate from accepted history alone.
+    ///
+    /// `recommended_practice` receives no derived concept-state rows, so the
+    /// teaching policy falls back to the newest accepted score per concept and
+    /// treats it as low-confidence evidence.
+    fn pedagogy_context(&self, candidate: &Candidate) -> (f64, f64) {
+        let mut weight_sum = 0.0;
+        let mut estimate = 0.0;
+        for concept in &candidate.concepts {
+            let weight = concept.weight.clamp(0.0, 1.0);
+            if weight <= 0.0 {
+                continue;
+            }
+            weight_sum += weight;
+            let key = (concept.concept_id.clone(), candidate.assessment_mode);
+            let score = self
+                .by_concept
+                .get(&key)
+                .map(|(score, _)| score.clamp(0.0, 1.0))
+                .unwrap_or(PRIOR_ESTIMATE);
+            estimate += weight * score;
+        }
+        if weight_sum <= 0.0 {
+            return (PRIOR_ESTIMATE, 1.0);
+        }
+        (estimate / weight_sum, 1.0)
+    }
 }
 
 /// Ranks one candidate. Higher is more useful to practice now.
@@ -283,6 +330,15 @@ fn rank(
     } else {
         0.0
     };
+    // Bounded teaching-policy preference derived from optional authored
+    // pedagogy metadata. It stays small so weakness, forgetting, difficulty,
+    // and variety remain the dominant signals.
+    let pedagogy = pedagogy::pedagogy_fit(
+        candidate.pedagogy.as_ref(),
+        signal.estimate,
+        signal.uncertainty,
+        &history.pedagogy,
+    );
 
     WEIGHT_WEAKNESS * weakness
         + WEIGHT_FORGETTING * signal.forgetting_risk
@@ -290,6 +346,7 @@ fn rank(
         + WEIGHT_UNCERTAINTY * signal.uncertainty
         + WEIGHT_DIFFICULTY_FIT * difficulty_fit
         + WEIGHT_NOVELTY * novelty
+        + pedagogy.total()
         - repeat_penalty
 }
 
@@ -633,7 +690,16 @@ pub fn recommended_practice(
             } else {
                 0.0
             };
-            Some((candidate, shared + mode_bonus - repeat))
+            // Same bounded teaching-policy preference as the general selector so
+            // related practice also fades support and varies surface context.
+            let (estimate, uncertainty) = summary.pedagogy_context(candidate);
+            let pedagogy = pedagogy::pedagogy_fit(
+                candidate.pedagogy.as_ref(),
+                estimate,
+                uncertainty,
+                &summary.pedagogy,
+            );
+            Some((candidate, shared + mode_bonus + pedagogy.total() - repeat))
         })
         .collect();
 
@@ -696,6 +762,7 @@ pub fn section_quiz(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use adaptive_learn_domain::PedagogyStage;
     use chrono::TimeZone;
 
     fn now() -> DateTime<Utc> {
@@ -836,6 +903,9 @@ mod tests {
                 assessment_mode: c.assessment_mode,
                 occurred_at: now(),
                 concepts: c.concepts.clone(),
+                attempt_number: 1,
+                hint_count: 0,
+                pedagogy: c.pedagogy.clone(),
             })
             .collect();
 
@@ -865,6 +935,9 @@ mod tests {
             assessment_mode: AssessmentMode::Application,
             occurred_at: now() - chrono::Duration::days(30),
             concepts: vec![concept("d1.concept0")],
+            attempt_number: 1,
+            hint_count: 0,
+            pedagogy: None,
         }];
 
         let d1: Vec<Candidate> = corpus.into_iter().filter(|c| c.domain_id == "d1").collect();
@@ -1212,6 +1285,9 @@ mod tests {
                 concept_id: "d1.core".to_owned(),
                 weight: 1.0,
             }],
+            attempt_number: 1,
+            hint_count: 0,
+            pedagogy: None,
         }];
 
         let candidates = [recent.clone(), fresh.clone()];
@@ -1241,5 +1317,538 @@ mod tests {
             recommended_practice(&anchor, &[unrelated], &[], 5),
             vec!["anchor"]
         );
+    }
+
+    // --- Phase 2: adaptive scaffold fading and transfer-aware selection ---
+
+    fn ped_meta(
+        family: Option<&str>,
+        stage: Option<PedagogyStage>,
+        scaffold: Option<u8>,
+        group: Option<&str>,
+        surface: Option<&str>,
+    ) -> PedagogyMetadata {
+        PedagogyMetadata {
+            family_id: family.map(str::to_owned),
+            stage,
+            scaffold_level: scaffold,
+            transfer_group_id: group.map(str::to_owned),
+            surface_context: surface.map(str::to_owned),
+            challenge_group_id: None,
+        }
+    }
+
+    fn with_ped(mut candidate: Candidate, pedagogy: PedagogyMetadata) -> Candidate {
+        candidate.pedagogy = Some(pedagogy);
+        candidate
+    }
+
+    fn scaffolded(id: &str, family: &str, level: u8) -> Candidate {
+        with_ped(
+            candidate(
+                id,
+                "d1",
+                &format!("{id}-task"),
+                InteractionType::Ordering,
+                "c1",
+            ),
+            ped_meta(Some(family), None, Some(level), None, None),
+        )
+    }
+
+    fn recent(
+        question_id: &str,
+        pedagogy: PedagogyMetadata,
+        score: f64,
+        attempt_number: i32,
+        hint_count: i32,
+    ) -> HistoryEntry {
+        HistoryEntry {
+            question_id: question_id.to_owned(),
+            score,
+            assessment_mode: AssessmentMode::Application,
+            occurred_at: now(),
+            concepts: vec![concept("c1")],
+            attempt_number,
+            hint_count,
+            pedagogy: Some(pedagogy),
+        }
+    }
+
+    fn d1() -> Vec<(String, f64)> {
+        vec![("d1".to_owned(), 1.0)]
+    }
+
+    fn domain_quiz(
+        candidates: &[Candidate],
+        history: &[HistoryEntry],
+        states: &[ConceptEvidence],
+    ) -> Vec<String> {
+        select(
+            candidates,
+            &d1(),
+            history,
+            states,
+            QuizMode::DomainQuiz,
+            Some("d1"),
+            now(),
+        )
+    }
+
+    #[test]
+    fn no_pedagogy_metadata_leaves_ranking_unchanged() {
+        // Two otherwise identical candidates with no pedagogy metadata: the
+        // new teaching-policy term is a constant, so the existing id tie-break
+        // still decides.
+        let first = candidate("d1-a", "d1", "d1-ta", InteractionType::Ordering, "c1");
+        let second = candidate("d1-b", "d1", "d1-tb", InteractionType::Ordering, "c1");
+        let states = vec![evidence("c1", 0.8, 4.0, now())];
+
+        let selected = domain_quiz(&[second, first], &[], &states);
+        assert_eq!(selected, vec!["d1-a".to_owned(), "d1-b".to_owned()]);
+    }
+
+    #[test]
+    fn weak_learner_prefers_more_scaffolding() {
+        // The low-scaffold candidate sorts first by id, so only the policy can
+        // put the supported candidate ahead of it for a weak learner.
+        let high = scaffolded("d1-z-high", "generic.family", 4);
+        let low = scaffolded("d1-a-low", "generic.family", 1);
+        let states = vec![evidence("c1", 0.15, 4.0, now())];
+
+        let selected = domain_quiz(&[low, high], &[], &states);
+        assert_eq!(
+            selected.first().map(String::as_str),
+            Some("d1-z-high"),
+            "a weak learner should receive embedded support: {selected:?}"
+        );
+    }
+
+    #[test]
+    fn strong_learner_prefers_less_scaffolding() {
+        // The high-scaffold candidate sorts first by id, so only the policy can
+        // put the lean candidate ahead of it for a strong learner.
+        let high = scaffolded("d1-a-high", "generic.family", 4);
+        let low = scaffolded("d1-z-low", "generic.family", 1);
+        let states = vec![evidence("c1", 0.95, 8.0, now())];
+
+        let selected = domain_quiz(&[high, low], &[], &states);
+        assert_eq!(
+            selected.first().map(String::as_str),
+            Some("d1-z-low"),
+            "a strong learner should receive less support: {selected:?}"
+        );
+    }
+
+    #[test]
+    fn success_fades_one_step_rather_than_jumping_to_zero() {
+        // A developing learner whose readiness target sits between 2 and 3, with
+        // a recent clean success at scaffold 4. The intermediate candidate must
+        // beat a cold scaffold-0 candidate.
+        let intermediate = scaffolded("d1-mid", "generic.family", 3);
+        let cold = scaffolded("d1-cold", "generic.family", 0);
+        let states = vec![evidence("c1", 0.65, 4.0, now())];
+        let history = vec![recent(
+            "recent",
+            ped_meta(Some("generic.family"), None, Some(4), None, None),
+            1.0,
+            1,
+            0,
+        )];
+
+        let selected = domain_quiz(&[cold, intermediate], &history, &states);
+        assert_eq!(
+            selected.first().map(String::as_str),
+            Some("d1-mid"),
+            "support should fade gradually, not collapse to zero: {selected:?}"
+        );
+    }
+
+    #[test]
+    fn recent_failure_allows_more_support_back_in() {
+        let supported = scaffolded("d1-supported", "generic.family", 2);
+        let cold = scaffolded("d1-cold", "generic.family", 0);
+        let states = vec![evidence("c1", 0.95, 8.0, now())];
+
+        // Without failure history the strong learner gets the cold candidate.
+        let without = domain_quiz(&[cold.clone(), supported.clone()], &[], &states);
+        assert_eq!(without.first().map(String::as_str), Some("d1-cold"));
+
+        // A recent failure at scaffold 0 permits more embedded support.
+        let failed = vec![recent(
+            "recent",
+            ped_meta(Some("generic.family"), None, Some(0), None, None),
+            0.0,
+            1,
+            0,
+        )];
+        let with = domain_quiz(&[cold, supported], &failed, &states);
+        assert_eq!(
+            with.first().map(String::as_str),
+            Some("d1-supported"),
+            "a recent failure should allow support to increase: {with:?}"
+        );
+    }
+
+    #[test]
+    fn hinted_success_fades_less_than_a_clean_success() {
+        let high = scaffolded("d1-high", "generic.family", 5);
+        let mid = scaffolded("d1-mid", "generic.family", 4);
+        let states = vec![evidence("c1", 0.25, 8.0, now())];
+
+        let clean = vec![recent(
+            "recent",
+            ped_meta(Some("generic.family"), None, Some(5), None, None),
+            1.0,
+            1,
+            0,
+        )];
+        let clean_selected = domain_quiz(&[high.clone(), mid.clone()], &clean, &states);
+        assert_eq!(
+            clean_selected.first().map(String::as_str),
+            Some("d1-mid"),
+            "a clean success may fade one step: {clean_selected:?}"
+        );
+
+        let hinted = vec![recent(
+            "recent",
+            ped_meta(Some("generic.family"), None, Some(5), None, None),
+            1.0,
+            2,
+            2,
+        )];
+        let hinted_selected = domain_quiz(&[high, mid], &hinted, &states);
+        assert_eq!(
+            hinted_selected.first().map(String::as_str),
+            Some("d1-high"),
+            "a hinted/recovery success must fade less aggressively: {hinted_selected:?}"
+        );
+    }
+
+    #[test]
+    fn difficulty_still_beats_an_ideal_scaffold_level() {
+        // The weakest-fit difficulty must not win just because its scaffold is
+        // ideal: a strong learner should not receive a trivially easy item.
+        let mut ideal_scaffold_hard_mismatch = scaffolded("d1-mismatch", "generic.family", 1);
+        ideal_scaffold_hard_mismatch.difficulty_prior = 0.0;
+        let mut right_difficulty_wrong_scaffold = scaffolded("d1-right", "generic.family", 5);
+        right_difficulty_wrong_scaffold.difficulty_prior = 0.9;
+        let states = vec![evidence("c1", 0.9, 8.0, now())];
+
+        let selected = domain_quiz(
+            &[
+                ideal_scaffold_hard_mismatch,
+                right_difficulty_wrong_scaffold,
+            ],
+            &[],
+            &states,
+        );
+        assert_eq!(
+            selected.first().map(String::as_str),
+            Some("d1-right"),
+            "difficulty fit must remain dominant over scaffold fit: {selected:?}"
+        );
+    }
+
+    #[test]
+    fn transfer_prefers_a_new_surface_context_after_success() {
+        // The repeated-context candidate sorts first by id, so only the
+        // transfer policy can put the novel context ahead of it.
+        let api = with_ped(
+            candidate(
+                "d1-z-api",
+                "d1",
+                "d1-api-task",
+                InteractionType::Ordering,
+                "c1",
+            ),
+            ped_meta(
+                None,
+                None,
+                None,
+                Some("generic.transfer"),
+                Some("context_api"),
+            ),
+        );
+        let strings = with_ped(
+            candidate(
+                "d1-a-strings",
+                "d1",
+                "d1-str-task",
+                InteractionType::Ordering,
+                "c1",
+            ),
+            ped_meta(
+                None,
+                None,
+                None,
+                Some("generic.transfer"),
+                Some("context_strings"),
+            ),
+        );
+        let states = vec![evidence("c1", 0.8, 6.0, now())];
+        // Recent success in the strings context of the same transfer group.
+        let history = vec![recent(
+            "recent",
+            ped_meta(
+                None,
+                None,
+                None,
+                Some("generic.transfer"),
+                Some("context_strings"),
+            ),
+            1.0,
+            1,
+            0,
+        )];
+
+        let selected = domain_quiz(&[strings, api], &history, &states);
+        assert_eq!(
+            selected.first().map(String::as_str),
+            Some("d1-z-api"),
+            "a new surface context should be preferred after success: {selected:?}"
+        );
+    }
+
+    #[test]
+    fn context_novelty_does_not_override_concept_weakness() {
+        let weak_strings = with_ped(
+            candidate(
+                "d1-weak",
+                "d1",
+                "d1-weak-task",
+                InteractionType::Ordering,
+                "c-weak",
+            ),
+            ped_meta(
+                None,
+                None,
+                None,
+                Some("generic.transfer"),
+                Some("context_strings"),
+            ),
+        );
+        let strong_api = with_ped(
+            candidate(
+                "d1-strong",
+                "d1",
+                "d1-str-task",
+                InteractionType::Ordering,
+                "c-strong",
+            ),
+            ped_meta(
+                None,
+                None,
+                None,
+                Some("generic.transfer"),
+                Some("context_api"),
+            ),
+        );
+        let states = vec![
+            evidence("c-weak", 0.1, 4.0, now()),
+            evidence("c-strong", 0.95, 8.0, now()),
+        ];
+        let history = vec![recent(
+            "recent",
+            ped_meta(
+                None,
+                None,
+                None,
+                Some("generic.transfer"),
+                Some("context_strings"),
+            ),
+            1.0,
+            1,
+            0,
+        )];
+
+        let selected = domain_quiz(&[strong_api, weak_strings], &history, &states);
+        assert_eq!(
+            selected.first().map(String::as_str),
+            Some("d1-weak"),
+            "concept weakness must remain dominant over context novelty: {selected:?}"
+        );
+    }
+
+    #[test]
+    fn selector_works_with_a_single_surface_context() {
+        let a = with_ped(
+            candidate("d1-a", "d1", "d1-ta", InteractionType::Ordering, "c1"),
+            ped_meta(
+                None,
+                None,
+                Some(2),
+                Some("generic.transfer"),
+                Some("context_strings"),
+            ),
+        );
+        let b = with_ped(
+            candidate("d1-b", "d1", "d1-tb", InteractionType::Ordering, "c1"),
+            ped_meta(
+                None,
+                None,
+                Some(2),
+                Some("generic.transfer"),
+                Some("context_strings"),
+            ),
+        );
+        let states = vec![evidence("c1", 0.5, 4.0, now())];
+        let history = vec![recent(
+            "recent",
+            ped_meta(
+                None,
+                None,
+                None,
+                Some("generic.transfer"),
+                Some("context_strings"),
+            ),
+            1.0,
+            1,
+            0,
+        )];
+
+        let selected = domain_quiz(&[b, a], &history, &states);
+        assert_eq!(selected.len(), 2, "both candidates remain selectable");
+    }
+
+    #[test]
+    fn transfer_stage_can_lead_for_a_strong_learner() {
+        let transfer = with_ped(
+            candidate(
+                "d1-transfer",
+                "d1",
+                "d1-tt",
+                InteractionType::Ordering,
+                "c1",
+            ),
+            ped_meta(None, Some(PedagogyStage::Transfer), Some(0), None, None),
+        );
+        let recognition = with_ped(
+            candidate(
+                "d1-recognize",
+                "d1",
+                "d1-tr",
+                InteractionType::Ordering,
+                "c1",
+            ),
+            ped_meta(None, Some(PedagogyStage::Recognize), Some(5), None, None),
+        );
+        let states = vec![evidence("c1", 0.95, 8.0, now())];
+
+        let selected = domain_quiz(&[recognition, transfer], &[], &states);
+        assert_eq!(
+            selected.first().map(String::as_str),
+            Some("d1-transfer"),
+            "a strong learner should be able to reach transfer work: {selected:?}"
+        );
+    }
+
+    #[test]
+    fn cold_learner_is_not_pushed_into_transfer() {
+        // The transfer candidate sorts first by id, so only the policy can put
+        // the supported recognition item ahead of it for a cold learner.
+        let transfer = with_ped(
+            candidate(
+                "d1-a-transfer",
+                "d1",
+                "d1-tt",
+                InteractionType::Ordering,
+                "c1",
+            ),
+            ped_meta(None, Some(PedagogyStage::Transfer), Some(0), None, None),
+        );
+        let recognition = with_ped(
+            candidate(
+                "d1-z-recognize",
+                "d1",
+                "d1-tr",
+                InteractionType::Ordering,
+                "c1",
+            ),
+            ped_meta(None, Some(PedagogyStage::Recognize), Some(5), None, None),
+        );
+
+        // No states and no history: a cold learner.
+        let selected = domain_quiz(&[transfer, recognition], &[], &[]);
+        assert_eq!(
+            selected.first().map(String::as_str),
+            Some("d1-z-recognize"),
+            "a cold learner should begin with supported recognition: {selected:?}"
+        );
+    }
+
+    #[test]
+    fn direct_repeat_penalty_still_dominates_context_novelty() {
+        // The repeated candidate sorts first by id and carries the novel
+        // `context_b`, yet the existing repeat penalty must still beat variety.
+        let repeated = with_ped(
+            candidate(
+                "d1-a-repeat",
+                "d1",
+                "d1-tr",
+                InteractionType::Ordering,
+                "c1",
+            ),
+            ped_meta(None, None, None, Some("g"), Some("context_a")),
+        );
+        let novel = with_ped(
+            candidate("d1-z-novel", "d1", "d1-tn", InteractionType::Ordering, "c1"),
+            ped_meta(None, None, None, Some("g"), Some("context_b")),
+        );
+        let states = vec![evidence("c1", 0.8, 6.0, now())];
+        let repeat_entry = recent(
+            "d1-a-repeat",
+            ped_meta(None, None, None, Some("g"), Some("context_a")),
+            1.0,
+            1,
+            0,
+        );
+        let history = vec![repeat_entry];
+
+        let selected = domain_quiz(&[repeated, novel], &history, &states);
+        assert_eq!(
+            selected.first().map(String::as_str),
+            Some("d1-z-novel"),
+            "the same recently answered question must not win on novelty: {selected:?}"
+        );
+    }
+
+    #[test]
+    fn scaffold_policy_is_domain_neutral() {
+        // The same metadata shape under very different subject names must behave
+        // identically: the core never inspects `family_id` contents.
+        let families = [
+            "dsa.sliding_window.variable",
+            "aws.messaging.decoupling",
+            "python.async.task_lifecycle",
+            "security.authz.misconfiguration",
+            "ml.data_leakage",
+        ];
+        let states = vec![evidence("c1", 0.15, 4.0, now())];
+        for family in families {
+            // The low-scaffold id sorts first, so the policy must flip it.
+            let high = scaffolded("d1-z-high", family, 4);
+            let low = scaffolded("d1-a-low", family, 1);
+            let selected = domain_quiz(&[low, high], &[], &states);
+            assert_eq!(
+                selected.first().map(String::as_str),
+                Some("d1-z-high"),
+                "family {family} should behave like every other family"
+            );
+        }
+    }
+
+    #[test]
+    fn pedagogy_ranking_is_deterministic() {
+        let high = scaffolded("d1-high", "generic.family", 4);
+        let low = scaffolded("d1-low", "generic.family", 1);
+        let states = vec![evidence("c1", 0.2, 4.0, now())];
+        let first = domain_quiz(&[low.clone(), high.clone()], &[], &states);
+        for _ in 0..5 {
+            assert_eq!(
+                domain_quiz(&[low.clone(), high.clone()], &[], &states),
+                first
+            );
+        }
     }
 }
