@@ -62,7 +62,7 @@ describe("HomePage", () => {
     expect(screen.getByText("Visual, interactive knowledge maps")).toBeInTheDocument();
   });
 
-  it("links the available certification and marks planned ones as WIP", () => {
+  it("links the available certifications", () => {
     renderHome();
 
     expect(
@@ -74,7 +74,11 @@ describe("HomePage", () => {
     expect(
       screen.getByRole("link", { name: /CompTIA Security\+/ }),
     ).toHaveAttribute("href", "/tracks/comptia-security-plus");
-    expect(screen.getAllByText("WIP").length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("link", { name: /Microsoft Certified: Azure Fundamentals/ }),
+    ).toHaveAttribute("href", "/tracks/microsoft-az-900");
+    // The DevOps placeholder was replaced by a real, available certification.
+    expect(screen.queryByText("DevOps Certification")).toBeNull();
   });
 
   it("ends with a demo call to action", () => {

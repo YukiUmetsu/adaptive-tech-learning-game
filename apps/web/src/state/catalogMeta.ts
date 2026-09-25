@@ -107,10 +107,13 @@ export const CATALOG: CatalogCategory[] = [
     kind: "certification",
     certifications: [
       {
-        id: "azure-az-104",
-        name: "Microsoft Azure Administrator",
-        examCode: "AZ-104",
-        wip: true,
+        id: "microsoft-az-900",
+        name: "Microsoft Certified: Azure Fundamentals",
+        // The "Microsoft Azure" category label already names the vendor, so the
+        // compact navbar label drops "Microsoft Certified:".
+        shortName: "Azure Fundamentals",
+        examCode: "AZ-900",
+        wip: false,
       },
     ],
   },

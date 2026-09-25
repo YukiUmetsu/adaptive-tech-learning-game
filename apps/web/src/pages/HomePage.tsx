@@ -86,11 +86,11 @@ const MILESTONES: Milestone[] = [
     available: true,
   },
   {
-    id: "devops",
-    name: "DevOps Certification",
-    examCode: "DevOps",
-    icon: "⚙️",
-    available: false,
+    id: "microsoft-az-900",
+    name: "Microsoft Certified: Azure Fundamentals",
+    examCode: "AZ-900",
+    icon: "🔷",
+    available: true,
   },
   {
     id: "comptia-security-plus",

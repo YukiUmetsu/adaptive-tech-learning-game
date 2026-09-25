@@ -30,9 +30,9 @@ Do not start with six ecosystems simultaneously.
 
 Current authored content lives under `content/<category>/<certification>/<version>/`
 and is surfaced through the API catalog plus `apps/web/src/state/catalogMeta.ts`:
-AWS SOA-C03, SAA-C03, and AIP-C01; CompTIA Security+ SY0-701; HashiCorp
-Terraform Associate 004; and the AI/Python tracks (Python fluency, Python data
-stack, PyTorch core). Demo bundles live under `content/demo/`. Each
+AWS SOA-C03, SAA-C03, and AIP-C01; Microsoft AZ-900; CompTIA Security+ SY0-701;
+HashiCorp Terraform Associate 004; and the AI/Python tracks (Python fluency,
+Python data stack, PyTorch core). Demo bundles live under `content/demo/`. Each
 certification also ships learning knowledge maps alongside its scored question
 bundles.
 
@@ -334,6 +334,10 @@ Design constraints:
 - Component pools, options, and evidence lists may contain distractors.
   Learner-facing labels must never encode answer metadata such as
   `(distractor)`, `(correct)`, or `(wrong)`.
+- Choice options and branching decisions are shuffled deterministically for
+  display, seeded per question and step. Authors frequently list the correct
+  option first, so the authored first option is never rendered first. Scoring
+  is always by id, never by position.
 - Every interaction must have a non-drag alternative and must not signal
   correctness by color alone.
 - Branching interactions are deterministic; the client collects the learner's
