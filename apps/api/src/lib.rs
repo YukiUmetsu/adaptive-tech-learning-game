@@ -117,6 +117,10 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
         )
         .route("/v1/sync", post(routes::sync::sync))
         .route("/v1/wallet", get(routes::wallet::get_wallet))
+        .route(
+            "/v1/cyber-defense/upgrades",
+            post(routes::cyber_defense::spend_upgrade),
+        )
         .route("/v1/me", get(routes::me::get_me))
         .route("/v1/me/settings", put(routes::me::update_settings));
 

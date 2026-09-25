@@ -30,6 +30,21 @@ pub fn difficulty_bonus(difficulty_prior: f64) -> i64 {
     (difficulty_prior.clamp(0.0, 1.0) * 6.0).round() as i64
 }
 
+/// Bits charged to upgrade a Cyber Defense control from `from_level`.
+///
+/// Mirrors the client's display-only `upgradeBitsCost`: a control's first
+/// upgrade costs 15 Bits and later upgrades cost 25. The API derives
+/// `from_level` from the settled ledger, so the cost is server-authoritative and
+/// the client value is only a preview. An unknown level yields `None`, which the
+/// API rejects.
+pub fn cyber_defense_upgrade_bits(from_level: i32) -> Option<i64> {
+    match from_level {
+        1 => Some(15),
+        2 => Some(25),
+        _ => None,
+    }
+}
+
 /// Bits earned for one accepted attempt.
 ///
 /// A non-fully-correct attempt earns nothing. The first fully-correct attempt
@@ -72,5 +87,13 @@ mod tests {
         assert!(recovery > 0, "recovery must still be rewarded");
         assert!(recovery < first, "recovery must be less than first attempt");
         assert_eq!(recovery, (first / 2).max(1));
+    }
+
+    #[test]
+    fn cyber_defense_upgrade_costs_are_canonical() {
+        assert_eq!(cyber_defense_upgrade_bits(1), Some(15));
+        assert_eq!(cyber_defense_upgrade_bits(2), Some(25));
+        assert_eq!(cyber_defense_upgrade_bits(0), None);
+        assert_eq!(cyber_defense_upgrade_bits(3), None);
     }
 }

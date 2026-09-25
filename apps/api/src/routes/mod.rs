@@ -1,4 +1,5 @@
 pub mod certifications;
+pub mod cyber_defense;
 pub mod daily_missions;
 pub mod discovery;
 pub mod health;

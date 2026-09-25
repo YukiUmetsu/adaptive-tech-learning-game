@@ -27,6 +27,7 @@ export default function MobileTabBar() {
   const tabs: Tab[] = [
     { id: "home", to: "/", label: "Home", icon: "🏠", end: true },
     { id: "tracks", to: "/tracks", label: "Tracks", icon: "🗺️" },
+    { id: "game", to: "/game", label: "Defense", icon: "🛡️" },
     // Signed-in learners get today's mission instead of the public demo; the
     // label stays short to match the other tab-bar destinations. The id keeps
     // the key unique when the fallback href equals the Tracks tab.

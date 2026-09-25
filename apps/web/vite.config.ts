@@ -76,8 +76,35 @@ export default defineConfig(({ mode }) => {
             "**/PythonCodeInteraction-*.js",
             "**/pythonWorker-*.js",
             "**/pythonSandbox-*.js",
+            // The shell is fetched from the network (see runtimeCaching below)
+            // instead of being pinned in the precache. A precached shell would
+            // keep serving hashed asset names that a later deploy has removed,
+            // which shows up as a blank page on refresh after a new release.
+            "**/index.html",
           ],
-          navigateFallbackDenylist: [/^\/python-sandbox\//],
+          // No precached navigation fallback: navigations are handled by the
+          // NetworkFirst route below, so an online client always gets the
+          // current shell.
+          navigateFallback: null,
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: true,
+          runtimeCaching: [
+            {
+              // Serve page loads from the network first so a new deploy is
+              // picked up immediately, and fall back to the cached shell only
+              // when offline. The Python sandbox is its own document and must
+              // not be captured by the app shell.
+              urlPattern: ({ request, url }) =>
+                request.mode === "navigate" &&
+                !url.pathname.startsWith("/python-sandbox/"),
+              handler: "NetworkFirst",
+              options: {
+                cacheName: "app-shell",
+                networkTimeoutSeconds: 3,
+              },
+            },
+          ],
         },
         manifest: {
           name: "Adaptive Learning",

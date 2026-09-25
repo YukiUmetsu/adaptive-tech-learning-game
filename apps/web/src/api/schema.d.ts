@@ -169,6 +169,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cyber-defense/upgrades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Debits Bits for one Cyber Defense control upgrade.
+         * @description The wallet is taken from the verified token, so an anonymous caller is
+         *     rejected: spending is an account-scoped, server-authoritative action. The
+         *     client sends the action's primitives and an idempotency `event_id`; the
+         *     server derives the cost and settles the debit exactly once.
+         */
+        post: operations["spend_upgrade"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/daily-missions/{mission_id}/items/{position}/complete": {
         parameters: {
             query?: never;
@@ -903,6 +926,49 @@ export interface components {
             id: string;
             /** @description Learner-facing label for the role, for example `IPv4 default route target`. */
             label: string;
+        };
+        /**
+         * @description Request to debit Bits for one Cyber Defense control upgrade.
+         *
+         *     The client sends only the action's primitives: the server derives the
+         *     control's level from its own settled ledger, computes the canonical cost from
+         *     policy, and never trusts a client-supplied amount. `event_id` is the
+         *     idempotency key, so a retry after a timeout cannot debit twice.
+         */
+        CyberDefenseUpgradeRequest: {
+            /** @description Control being upgraded. Recorded for audit; it does not affect the cost. */
+            defense_id: string;
+            /**
+             * Format: uuid
+             * @description Client-generated idempotency key for this upgrade action.
+             */
+            event_id: string;
+            /**
+             * Format: int32
+             * @description Level the client believes it is upgrading from. The server derives the
+             *     expected level from the settled ledger and rejects a mismatch.
+             */
+            from_level: number;
+            /**
+             * Format: uuid
+             * @description Client-generated id for the mission attempt the upgrade belongs to.
+             */
+            run_id: string;
+        };
+        /** @description Outcome of a Cyber Defense upgrade spend. */
+        CyberDefenseUpgradeResponse: {
+            /**
+             * Format: int64
+             * @description Settled balance after the spend. Unchanged on an idempotent retry.
+             */
+            bits_balance: number;
+            /** @description `false` when this `event_id` was already settled (a safe retry). */
+            newly_settled: boolean;
+            /**
+             * Format: int64
+             * @description Bits charged for this upgrade.
+             */
+            spent: number;
         };
         /** @description Request to complete a learning-node Daily Mission item. */
         DailyItemCompleteRequest: {
@@ -3066,6 +3132,57 @@ export interface operations {
             };
             /** @description Unknown practice test */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    spend_upgrade: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CyberDefenseUpgradeRequest"];
+            };
+        };
+        responses: {
+            /** @description Bits debited; settled balance returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberDefenseUpgradeResponse"];
+                };
+            };
+            /** @description Malformed request or invalid upgrade */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Insufficient Bits, an out-of-sequence upgrade level, or a reused idempotency key */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

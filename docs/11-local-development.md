@@ -324,6 +324,52 @@ cd ml
 uv run pytest
 ```
 
+### Code review (OpenCodeReview)
+
+[OpenCodeReview](https://github.com/alibaba/open-code-review) is an optional
+AI review assistant for the [OpenCode](https://opencode.ai) agent. The `ocr`
+CLI is a global tool, installed outside the repository:
+
+```bash
+npm install -g @alibaba-group/open-code-review   # provides the `ocr` binary
+```
+
+The integration is versioned under `.opencode/`:
+
+- `.opencode/plugins/open-code-review.ts` — the OpenCode plugin. It registers
+  the `ocr_review` / `ocr_health` tools and the `/ocr-review` / `/ocr-health`
+  commands.
+- `.opencode/skills/open-code-review-delegate/SKILL.md` — delegation mode, where
+  OpenCode itself performs the review.
+
+Two ways to run a review:
+
+1. **Delegation mode (no OCR model or API key).** Ask OpenCode to use the
+   `open-code-review-delegate` skill. `ocr` only selects files and resolves
+   rules (`ocr delegate preview`, `ocr delegate rule <paths>`); OpenCode's own
+   model writes the findings.
+2. **OCR-managed mode (needs an LLM).** Configure OCR once, then use the
+   `ocr_review` tool or `/ocr-review`:
+
+   ```bash
+   ocr config provider
+   ocr config model
+   ocr llm test
+   ```
+
+   `ocr_review` accepts `preview: true` to list the files that would be
+   reviewed without spending tokens.
+
+> **Vendored plugin note.** Upstream `open-code-review.ts` is a dual V1/V2 plugin
+> that imports `@opencode-ai/plugin` at its top level. The compiled OpenCode
+> binary cannot resolve packages from `.opencode/node_modules`, so that import
+> breaks plugin loading. This copy keeps only the V2 entrypoint, which needs no
+> runtime packages. Do not add package imports to the plugin without bundling
+> them into a single file. Re-fetch and re-trim from upstream when updating.
+
+Global OpenCode also loads plugins from `~/.config/opencode/plugins/`, but the
+project copy keeps the integration reproducible for everyone in the repository.
+
 ### Container (optional)
 
 ```bash

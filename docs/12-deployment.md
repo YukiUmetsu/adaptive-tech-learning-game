@@ -92,8 +92,12 @@ pnpm verify:python # optional: exercise the pinned runtime and packages
   `Permissions-Policy` (see [Security and Privacy](14-security-privacy.md)).
 - The PWA service worker excludes the runtime, the sandbox page, and the Python
   editor chunk from its install-time precache, so non-Python learners do not
-  download them. `python-runtime` is also excluded from the SPA navigation
-  fallback.
+  download them. The app shell (`index.html`) is deliberately **not** precached:
+  page navigations use a network-first strategy, so a new deploy is picked up on
+  the next load instead of a stale shell pointing at deleted hashed assets
+  (which shows up as a blank page until the worker is cleared). The cached shell
+  is only used when the network is unavailable. `python-runtime` and
+  `/python-sandbox/` are excluded from the SPA navigation handling.
 
 ### Python sandbox origin
 

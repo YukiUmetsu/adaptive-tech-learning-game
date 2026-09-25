@@ -362,6 +362,73 @@
         }
       }
     },
+    "/v1/cyber-defense/upgrades": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Debits Bits for one Cyber Defense control upgrade.",
+        "description": "The wallet is taken from the verified token, so an anonymous caller is\nrejected: spending is an account-scoped, server-authoritative action. The\nclient sends the action's primitives and an idempotency `event_id`; the\nserver derives the cost and settles the debit exactly once.",
+        "operationId": "spend_upgrade",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberDefenseUpgradeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Bits debited; settled balance returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberDefenseUpgradeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request or invalid upgrade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Insufficient Bits, an out-of-sequence upgrade level, or a reused idempotency key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/daily-missions/{mission_id}/items/{position}/complete": {
       "post": {
         "tags": [
@@ -2683,6 +2750,62 @@
           "label": {
             "type": "string",
             "description": "Learner-facing label for the role, for example `IPv4 default route target`."
+          }
+        }
+      },
+      "CyberDefenseUpgradeRequest": {
+        "type": "object",
+        "description": "Request to debit Bits for one Cyber Defense control upgrade.\n\nThe client sends only the action's primitives: the server derives the\ncontrol's level from its own settled ledger, computes the canonical cost from\npolicy, and never trusts a client-supplied amount. `event_id` is the\nidempotency key, so a retry after a timeout cannot debit twice.",
+        "required": [
+          "event_id",
+          "run_id",
+          "defense_id",
+          "from_level"
+        ],
+        "properties": {
+          "defense_id": {
+            "type": "string",
+            "description": "Control being upgraded. Recorded for audit; it does not affect the cost."
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Client-generated idempotency key for this upgrade action."
+          },
+          "from_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Level the client believes it is upgrading from. The server derives the\nexpected level from the settled ledger and rejects a mismatch."
+          },
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Client-generated id for the mission attempt the upgrade belongs to."
+          }
+        }
+      },
+      "CyberDefenseUpgradeResponse": {
+        "type": "object",
+        "description": "Outcome of a Cyber Defense upgrade spend.",
+        "required": [
+          "bits_balance",
+          "spent",
+          "newly_settled"
+        ],
+        "properties": {
+          "bits_balance": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Settled balance after the spend. Unchanged on an idempotent retry."
+          },
+          "newly_settled": {
+            "type": "boolean",
+            "description": "`false` when this `event_id` was already settled (a safe retry)."
+          },
+          "spent": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Bits charged for this upgrade."
           }
         }
       },
@@ -6986,6 +7109,10 @@
     {
       "name": "wallet",
       "description": "Server-authoritative Bits balance"
+    },
+    {
+      "name": "cyber-defense",
+      "description": "Server-authoritative Cyber Defense spending"
     },
     {
       "name": "account",

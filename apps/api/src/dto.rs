@@ -176,6 +176,36 @@ pub struct WalletResponse {
     pub bits_balance: i64,
 }
 
+/// Request to debit Bits for one Cyber Defense control upgrade.
+///
+/// The client sends only the action's primitives: the server derives the
+/// control's level from its own settled ledger, computes the canonical cost from
+/// policy, and never trusts a client-supplied amount. `event_id` is the
+/// idempotency key, so a retry after a timeout cannot debit twice.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberDefenseUpgradeRequest {
+    /// Client-generated idempotency key for this upgrade action.
+    pub event_id: Uuid,
+    /// Client-generated id for the mission attempt the upgrade belongs to.
+    pub run_id: Uuid,
+    /// Control being upgraded. Recorded for audit; it does not affect the cost.
+    pub defense_id: String,
+    /// Level the client believes it is upgrading from. The server derives the
+    /// expected level from the settled ledger and rejects a mismatch.
+    pub from_level: i32,
+}
+
+/// Outcome of a Cyber Defense upgrade spend.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberDefenseUpgradeResponse {
+    /// Settled balance after the spend. Unchanged on an idempotent retry.
+    pub bits_balance: i64,
+    /// Bits charged for this upgrade.
+    pub spent: i64,
+    /// `false` when this `event_id` was already settled (a safe retry).
+    pub newly_settled: bool,
+}
+
 /// A question shown to the learner. Contains no answer key.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct QuestionView {
