@@ -45,3 +45,28 @@ export function shuffledOrder<T>(items: readonly T[], seed: string): T[] {
   [swapped[0], swapped[1]] = [swapped[1], swapped[0]];
   return swapped;
 }
+
+/**
+ * A deterministic display order for answer options.
+ *
+ * Choice options are frequently authored with the correct answer listed first,
+ * which lets a learner guess from position alone. Scoring is keyed by choice
+ * id, so the display order is free to change: this shuffles the options for
+ * presentation while keeping rendering stable across renders and tests.
+ *
+ * The authored first option is never shown first, so an authored pattern of
+ * "correct answer first" cannot be read off the screen.
+ */
+export function shuffledChoices<T extends { id: string }>(
+  choices: readonly T[],
+  seed: string,
+): T[] {
+  if (choices.length < 2) {
+    return [...choices];
+  }
+  const result = stableShuffle(choices, seed);
+  if (result[0].id === choices[0].id) {
+    [result[0], result[1]] = [result[1], result[0]];
+  }
+  return result;
+}

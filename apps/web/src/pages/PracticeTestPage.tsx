@@ -12,6 +12,7 @@ import type {
 import InlineText from "../components/InlineText";
 import MultipleChoiceInteraction from "../components/MultipleChoiceInteraction";
 import MultipleResponseInteraction from "../components/MultipleResponseInteraction";
+import { shuffledChoices } from "../lib/shuffle";
 import {
   answeredCount,
   clearAttempt,
@@ -382,14 +383,20 @@ export default function PracticeTestPage() {
 
         {question.interaction.type === "multiple_choice" ? (
           <MultipleChoiceInteraction
-            choices={question.interaction.choices}
+            choices={shuffledChoices(
+              question.interaction.choices,
+              `${questionId}:multiple_choice`,
+            )}
             value={selected?.choice_id ?? null}
             disabled={expired || submitting}
             onChange={(choiceId) => setAnswer({ choice_id: choiceId })}
           />
         ) : question.interaction.type === "multiple_response" ? (
           <MultipleResponseInteraction
-            choices={question.interaction.choices}
+            choices={shuffledChoices(
+              question.interaction.choices,
+              `${questionId}:multiple_response`,
+            )}
             requiredSelections={question.interaction.required_selections}
             value={selected?.choice_ids ?? []}
             disabled={expired || submitting}
