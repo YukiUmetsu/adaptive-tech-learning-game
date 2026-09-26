@@ -1,0 +1,1602 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "dsa-interview-learning-2026-09-26-v4",
+  "certification_id": "cs-dsa-interview",
+  "certification_version": "dsa-interview-v1",
+  "exam_guide_revision": "Reviewed anti-boring v4, 2026-09-26. Full learning and question editorial audit completed; weak/generic prompts and distractors were rewritten while preserving compatibility.",
+  "domain": {
+    "id": "domain-7",
+    "name": "Graphs, Connectivity & Shortest Paths",
+    "weight": 0.13
+  },
+  "learning_design": {
+    "progress_label": "Pattern Vision",
+    "unlock_rule": "All learning reveals are required. Each node moves quickly through a concrete problem, the obvious failure/waste, the maintained state or invariant that fixes it, the pattern name, a different real-world transfer, and one quick check.",
+    "mastery_note": "The goal is not to enjoy studying algorithms. The goal is to recognize the structure fast enough that an unfamiliar problem starts to look like a problem you have already solved."
+  },
+  "source_refs": [
+    {
+      "title": "MIT OpenCourseWare 6.006 — Breadth-First Search",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Depth-First Search",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Shortest Paths",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+    },
+    {
+      "title": "Princeton Algorithms — Graphs",
+      "url": "https://algs4.cs.princeton.edu/40graphs/"
+    },
+    {
+      "title": "Princeton Algorithms — Directed Graphs",
+      "url": "https://algs4.cs.princeton.edu/42digraph/"
+    },
+    {
+      "title": "Princeton Algorithms — Shortest Paths",
+      "url": "https://algs4.cs.princeton.edu/44sp/"
+    },
+    {
+      "title": "Wikipedia — Disjoint-set data structure",
+      "url": "https://en.wikipedia.org/wiki/Disjoint-set_data_structure"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "frontier",
+      "definition": "Discovered graph vertices waiting to be processed."
+    },
+    {
+      "term": "component",
+      "definition": "A set of vertices connected to one another under the graph's connectivity rule."
+    },
+    {
+      "term": "topological order",
+      "definition": "An ordering of a DAG where every prerequisite appears before each dependent vertex."
+    },
+    {
+      "term": "relaxation",
+      "definition": "Trying an edge to see whether it improves the best known path cost to its destination."
+    },
+    {
+      "term": "tentative distance",
+      "definition": "The best path cost to a vertex known so far, before finalization."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "7.1",
+      "7.2",
+      "7.3"
+    ],
+    "skill_ids": [
+      "7.1.01",
+      "7.1.02",
+      "7.1.03",
+      "7.2.01",
+      "7.2.02",
+      "7.2.03",
+      "7.3.01",
+      "7.3.02",
+      "7.3.03"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 54
+  },
+  "authoring_notes": "Anti-boring rule set: no optional reveals; no definition-first nodes; no university-course voice; no fake corporate narrative; start with code/data/workload; expose the waste or bug; name the useful state; then name the pattern; finish with transfer.",
+  "modules": [
+    {
+      "id": "domain-7-module-1-traversal",
+      "title": "Traverse relationships with the right frontier",
+      "order": 1,
+      "task_ids": [
+        "7.1"
+      ],
+      "skill_ids": [
+        "7.1.01",
+        "7.1.02",
+        "7.1.03"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-7-graph-model",
+          "title": "When relationships stop looking like a tree, model the connections directly",
+          "concept_ids": [
+            "dsa.graph.model_visited"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A service can call several downstream services, and one downstream service can be shared by many callers. You are learning to recognize graph structure and track discovery so shared paths/cycles do not create repeated traversal.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A service can call several downstream services, and one downstream service can be shared by many callers.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to recognize graph structure and track discovery so shared paths/cycles do not create repeated traversal",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Forcing this into a strict tree duplicates shared services and hides cycles.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "many-to-many relationships do not fit one-parent hierarchy assumptions",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Model services as vertices and calls as directed edges. During traversal, mark discovered vertices so alternate paths do not repeatedly re-add them.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "vertices, edges, and discovery/visited state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Graph model + visited state. Trigger: entities can have multiple incoming/outgoing relationships or cycles",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Graph model + visited state",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "entities can have multiple incoming/outgoing relationships or cycles",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Accounts/delegations, package dependencies, network topology, and workflow states all become graphs when relationships can reconverge.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "explicit relationships + discovery state handle shared/cyclic structure",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Why is visited state important even if you only want reachability? Answer: Cycles and multiple paths can otherwise revisit the same vertices indefinitely or repeatedly.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Cycles and multiple paths can otherwise revisit the same vertices indefinitely or repeatedly.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Algorithms — Graphs",
+              "url": "https://algs4.cs.princeton.edu/40graphs/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Breadth-First Search",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Depth-First Search",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "vertex",
+              "definition": "An entity or state represented as a node in a graph."
+            },
+            {
+              "term": "edge",
+              "definition": "A relationship or transition connecting graph vertices."
+            },
+            {
+              "term": "reachability",
+              "definition": "Whether one vertex can be reached from another by following edges."
+            }
+          ]
+        },
+        {
+          "id": "domain-7-bfs",
+          "title": "Fewest hops? Let the frontier move in layers",
+          "concept_ids": [
+            "dsa.graph.bfs_unweighted"
+          ],
+          "prerequisite_node_ids": [
+            "domain-7-graph-model"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Every service-to-service call counts as one hop. Find the minimum number of hops from gateway to database service. You are learning to use BFS when every edge has equal cost and the objective is minimum edge count.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Every service-to-service call counts as one hop. Find the minimum number of hops from gateway to database service.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to use BFS when every edge has equal cost and the objective is minimum edge count",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "DFS may find a valid path quickly, but the first path it finds can be much longer than another unexplored path.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "depth-first discovery order does not guarantee minimum hop count",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A FIFO queue processes all vertices at distance d before distance d+1. The first discovery gives a shortest hop count.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "FIFO frontier + discovered distance",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "BFS shortest path in unweighted graph. Trigger: fewest moves/hops/edges where every transition has equal cost",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "BFS shortest path in unweighted graph",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "fewest moves/hops/edges where every transition has equal cost",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Minimum delegation steps, minimum state transitions, and shortest maze moves all share the equal-cost frontier.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "layered FIFO expansion matches edge-count distance",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If edge latencies differ, does BFS still minimize latency? Answer: No — it minimizes hop count, not weighted cost.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — it minimizes hop count, not weighted cost.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Breadth-First Search",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "Princeton Algorithms — Graphs",
+              "url": "https://algs4.cs.princeton.edu/40graphs/"
+            }
+          ]
+        },
+        {
+          "id": "domain-7-dfs",
+          "title": "To detect a directed cycle, 'visited' is not enough — you need 'still active'",
+          "concept_ids": [
+            "dsa.graph.dfs_structure",
+            "dsa.graph.cycle_state"
+          ],
+          "prerequisite_node_ids": [
+            "domain-7-graph-model"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Module imports form directed edges and you need to detect A→B→C→A. You are learning to use DFS path state to distinguish a back edge from an edge into an already finished branch.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Module imports form directed edges and you need to detect A→B→C→A.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to use DFS path state to distinguish a back edge from an edge into an already finished branch",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Treating every edge to any previously visited module as a cycle creates false positives.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "finished nodes and ancestors on the current path are conflated",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Track active/on-path state separately from finished state. Reaching an active ancestor closes a directed cycle.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "DFS active path versus fully finished vertices",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Directed DFS cycle detection. Trigger: directed dependencies where cycles matter",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Directed DFS cycle detection",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "directed dependencies where cycles matter",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Build graphs, import graphs, task dependencies, and workflow prerequisites use the same active-path reasoning.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "a back edge to the active recursion path proves a cycle",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Edge points to a finished vertex from another branch. Cycle proven? Answer: No.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Depth-First Search",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "Princeton Algorithms — Directed Graphs",
+              "url": "https://algs4.cs.princeton.edu/42digraph/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-7-module-2-connectivity",
+      "title": "Handle dependencies and connectivity without repeated traversal",
+      "order": 2,
+      "task_ids": [
+        "7.2"
+      ],
+      "skill_ids": [
+        "7.2.01",
+        "7.2.02",
+        "7.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-7-module-1-traversal"
+      ],
+      "nodes": [
+        {
+          "id": "domain-7-topological",
+          "title": "Dependency order exists only if the prerequisites do not chase each other in a circle",
+          "concept_ids": [
+            "dsa.graph.topological",
+            "dsa.graph.cycle_state"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Database migration must finish before API deploy; API deploy before smoke tests. You are learning to produce a prerequisite-respecting order and recognize when a cycle makes that impossible.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Database migration must finish before API deploy; API deploy before smoke tests.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to produce a prerequisite-respecting order and recognize when a cycle makes that impossible",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A generic sort by task name or priority can put dependents before prerequisites.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "ordinary ordering ignores directed dependency constraints",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Build a DAG and topologically order it. If a directed cycle exists, no complete prerequisite-respecting order can exist.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "directed prerequisites and remaining dependency counts / DFS finishing structure",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Topological ordering. Trigger: must happen before dependencies in a directed acyclic graph",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Topological ordering",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "must happen before dependencies in a directed acyclic graph",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Builds, deployments, course prerequisites, and workflow stages use the same dependency-order structure.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "every edge imposes a before/after constraint",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A depends on B, B on C, C on A. Valid topological order? Answer: No — the dependency graph contains a cycle.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — the dependency graph contains a cycle.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Algorithms — Directed Graphs",
+              "url": "https://algs4.cs.princeton.edu/42digraph/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Depth-First Search",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            }
+          ]
+        },
+        {
+          "id": "domain-7-union-find",
+          "title": "If links only get added and you keep asking 'same component?', stop re-traversing the graph",
+          "concept_ids": [
+            "dsa.graph.union_find"
+          ],
+          "prerequisite_node_ids": [
+            "domain-7-topological"
+          ],
+          "map_position": {
+            "x": 0.44,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Network links come online over time and the system repeatedly asks whether two devices are connected somehow. You are learning to recognize dynamic connectivity under edge additions as a union/find problem.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Network links come online over time and the system repeatedly asks whether two devices are connected somehow.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to recognize dynamic connectivity under edge additions as a union/find problem",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Running a fresh BFS after every link/query repeats large traversals even though the only output is same-component membership.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "path structure is recomputed when only component identity is needed",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Union the components of each newly connected endpoint. `find(x) == find(y)` answers connectivity.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "a representative for each connected component",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Disjoint-set union / union-find. Trigger: repeated union operations + same-component queries; actual path not required",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Disjoint-set union / union-find",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "repeated union operations + same-component queries; actual path not required",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Account-group merges, network components, clustering edges, and offline connectivity queries share this structure.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "maintain component identity instead of rediscovering paths",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Can union-find directly return the shortest path between two connected devices? Answer: No — it tracks component membership, not path structure.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — it tracks component membership, not path structure.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Wikipedia — Disjoint-set data structure",
+              "url": "https://en.wikipedia.org/wiki/Disjoint-set_data_structure"
+            },
+            {
+              "title": "Princeton Algorithms — Graphs",
+              "url": "https://algs4.cs.princeton.edu/40graphs/"
+            }
+          ]
+        },
+        {
+          "id": "domain-7-algorithm-choice",
+          "title": "The same graph can need four completely different algorithms",
+          "concept_ids": [
+            "dsa.graph.algorithm_choice",
+            "dsa.graph.bfs_unweighted",
+            "dsa.graph.topological",
+            "dsa.graph.union_find"
+          ],
+          "prerequisite_node_ids": [
+            "domain-7-union-find",
+            "domain-7-bfs"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "One service graph may ask: can A reach B, fewest hops, deployment order, or minimum total latency. You are learning to choose the graph algorithm from the query and edge semantics rather than from the word 'graph'.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "One service graph may ask: can A reach B, fewest hops, deployment order, or minimum total latency.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to choose the graph algorithm from the query and edge semantics rather than from the word 'graph'",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "'Use BFS for graphs' is as unhelpful as 'use a loop for arrays.' Different outputs require different maintained state.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "one data model is confused with one algorithm",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Reachability → BFS/DFS. Fewest equal-cost hops → BFS. Dependency order → topo. Repeated connectivity under added edges → union-find. Nonnegative weighted shortest path → Dijkstra.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "the exact output plus whether edges are directed/weighted/dynamic",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Graph algorithm discrimination. Trigger: several graph methods could traverse the same vertices but answer different questions",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Graph algorithm discrimination",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "several graph methods could traverse the same vertices but answer different questions",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A single production dependency graph may legitimately use all of these algorithms for different tools.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "query semantics choose the frontier/state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Need minimum nonnegative latency, not fewest calls. BFS or Dijkstra? Answer: Dijkstra.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Dijkstra.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Breadth-First Search",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Depth-First Search",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Shortest Paths",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "Princeton Algorithms — Directed Graphs",
+              "url": "https://algs4.cs.princeton.edu/42digraph/"
+            },
+            {
+              "title": "Wikipedia — Disjoint-set data structure",
+              "url": "https://en.wikipedia.org/wiki/Disjoint-set_data_structure"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-7-module-3-shortest",
+      "title": "Use weighted frontier state for shortest cost",
+      "order": 3,
+      "task_ids": [
+        "7.3"
+      ],
+      "skill_ids": [
+        "7.3.01",
+        "7.3.02",
+        "7.3.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-7-module-2-connectivity"
+      ],
+      "nodes": [
+        {
+          "id": "domain-7-dijkstra",
+          "title": "Weighted shortest path: always expand the cheapest known frontier first",
+          "concept_ids": [
+            "dsa.graph.dijkstra"
+          ],
+          "prerequisite_node_ids": [
+            "domain-7-algorithm-choice"
+          ],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Service edges carry nonnegative latency estimates. Find the route with minimum total estimated latency. You are learning to use a priority frontier when edge costs differ but remain nonnegative.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Service edges carry nonnegative latency estimates. Find the route with minimum total estimated latency.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to use a priority frontier when edge costs differ but remain nonnegative",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "BFS treats a 1 ms edge and a 500 ms edge as the same cost, so fewest hops can be much slower overall.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "edge count is no longer the objective",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Maintain tentative distances. Repeatedly take the unsettled vertex with the smallest known distance and relax its outgoing edges.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "best known distance per vertex + min-priority frontier",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Dijkstra. Trigger: shortest total cost with nonnegative edge weights",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Dijkstra",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "shortest total cost with nonnegative edge weights",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Latency routing, toll cost, transition cost, and weighted state graphs share the same priority-frontier logic.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "the next safe frontier is the smallest tentative total cost",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Why do negative edges break standard Dijkstra's finalization argument? Answer: A later path could use a negative edge and make an already-finalized vertex cheaper.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "A later path could use a negative edge and make an already-finalized vertex cheaper.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Shortest Paths",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "Princeton Algorithms — Shortest Paths",
+              "url": "https://algs4.cs.princeton.edu/44sp/"
+            }
+          ]
+        },
+        {
+          "id": "domain-7-relaxation",
+          "title": "A shorter route is discovered one edge at a time",
+          "concept_ids": [
+            "dsa.graph.relaxation",
+            "dsa.graph.dijkstra"
+          ],
+          "prerequisite_node_ids": [
+            "domain-7-dijkstra"
+          ],
+          "map_position": {
+            "x": 0.46,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "You know `dist[A]=4`, `dist[B]=12`, and edge A→B costs 3. You are learning to update shortest-path state by comparing the current best route with a new candidate through one edge.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "You know `dist[A]=4`, `dist[B]=12`, and edge A→B costs 3.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to update shortest-path state by comparing the current best route with a new candidate through one edge",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "RELAXATION IS JUST AN IF STATEMENT WITH A MEANING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "relax.py",
+                "language": "python",
+                "code": "candidate = dist[u] + weight\nif candidate < dist[v]:\n    dist[v] = candidate\n    prev[v] = u\n    heappush(pq, (candidate, v))\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "candidate",
+                    "anchor": {
+                      "line": 1,
+                      "text": "dist[u] + weight",
+                      "occurrence": 1
+                    },
+                    "title": "Route through u",
+                    "explanation": "This is one valid candidate total cost to v.",
+                    "required": true
+                  },
+                  {
+                    "id": "prev",
+                    "anchor": {
+                      "line": 4,
+                      "text": "prev[v] = u",
+                      "occurrence": 1
+                    },
+                    "title": "Remember who improved v",
+                    "explanation": "Predecessor state lets you reconstruct the actual route later.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If the route through u is cheaper, replace v's best-known cost and predecessor.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "best known cost + predecessor for each vertex",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Shortest-path relaxation. Trigger: a new edge provides a candidate path that might improve known state",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Shortest-path relaxation",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "a new edge provides a candidate path that might improve known state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Dynamic programming recurrences and shortest-path relaxation share a 'improve state from predecessor states' flavor, though the structures differ.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "new predecessor state competes with the current best state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "12 versus 4+3. What becomes dist[B]? Answer: 7.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "7.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Shortest Paths",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "Princeton Algorithms — Shortest Paths",
+              "url": "https://algs4.cs.princeton.edu/44sp/"
+            }
+          ]
+        },
+        {
+          "id": "domain-7-dijkstra-practice",
+          "title": "The heap can contain old history; the distance map is the truth",
+          "concept_ids": [
+            "dsa.graph.dijkstra",
+            "dsa.graph.relaxation",
+            "dsa.graph.algorithm_choice"
+          ],
+          "prerequisite_node_ids": [
+            "domain-7-relaxation"
+          ],
+          "map_position": {
+            "x": 0.8,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Your Python Dijkstra implementation pushes a new heap entry every time a shorter route is found instead of decreasing a key in place. You are learning to separate stale priority-queue entries from current canonical shortest-path state.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Your Python Dijkstra implementation pushes a new heap entry every time a shorter route is found instead of decreasing a key in place.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to separate stale priority-queue entries from current canonical shortest-path state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If a vertex was first pushed with distance 20 and later improved to 8, the old `(20,v)` entry can still be sitting in the heap.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "queue history contains superseded candidate states",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "When an entry is popped, compare it with the current `dist[v]`. If it is larger, skip it as stale.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "canonical best distance in the map; heap entries are only scheduling candidates",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Lazy priority-queue updates. Trigger: heap implementation does not decrease keys and instead pushes improved duplicates",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Lazy priority-queue updates",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "heap implementation does not decrease keys and instead pushes improved duplicates",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Event schedulers and best-first searches often use the same lazy-invalid-entry trick.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "authoritative state lives outside the heap; old heap records may be ignored",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Pop `(20,v)` but `dist[v]` is 8. Process its outgoing edges? Answer: No — skip the stale entry.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — skip the stale entry.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Shortest Paths",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "Princeton Algorithms — Shortest Paths",
+              "url": "https://algs4.cs.princeton.edu/44sp/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

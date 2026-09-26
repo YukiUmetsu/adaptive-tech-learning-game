@@ -1,0 +1,1643 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "dsa-interview-learning-2026-09-26-v4",
+  "certification_id": "cs-dsa-interview",
+  "certification_version": "dsa-interview-v1",
+  "exam_guide_revision": "Reviewed anti-boring v4, 2026-09-26. Full learning and question editorial audit completed; weak/generic prompts and distractors were rewritten while preserving compatibility.",
+  "domain": {
+    "id": "domain-2",
+    "name": "Arrays, Strings, Hashing & Prefix State",
+    "weight": 0.18
+  },
+  "learning_design": {
+    "progress_label": "Pattern Vision",
+    "unlock_rule": "All learning reveals are required. Each node moves quickly through a concrete problem, the obvious failure/waste, the maintained state or invariant that fixes it, the pattern name, a different real-world transfer, and one quick check.",
+    "mastery_note": "The goal is not to enjoy studying algorithms. The goal is to recognize the structure fast enough that an unfamiliar problem starts to look like a problem you have already solved."
+  },
+  "source_refs": [
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+    },
+    {
+      "title": "Princeton Competitive Programming — Prefix Sums",
+      "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+    },
+    {
+      "title": "Python documentation — Mapping Types: dict",
+      "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+    },
+    {
+      "title": "Python documentation — Set Types: set, frozenset",
+      "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "membership",
+      "definition": "Whether a key is present, without attached per-key state."
+    },
+    {
+      "term": "canonical key",
+      "definition": "A normalized key used only when different forms are defined as equivalent."
+    },
+    {
+      "term": "complement",
+      "definition": "The counterpart needed to satisfy an equation, such as target - x."
+    },
+    {
+      "term": "prefix boundary",
+      "definition": "A position between elements storing cumulative state for everything before it."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "2.1",
+      "2.2",
+      "2.3"
+    ],
+    "skill_ids": [
+      "2.1.01",
+      "2.1.02",
+      "2.1.03",
+      "2.2.01",
+      "2.2.02",
+      "2.2.03",
+      "2.3.01",
+      "2.3.02",
+      "2.3.03"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 54
+  },
+  "authoring_notes": "Anti-boring rule set: no optional reveals; no definition-first nodes; no university-course voice; no fake corporate narrative; start with code/data/workload; expose the waste or bug; name the useful state; then name the pattern; finish with transfer.",
+  "modules": [
+    {
+      "id": "domain-2-module-1-sequences",
+      "title": "Do not destroy useful sequence information",
+      "order": 1,
+      "task_ids": [
+        "2.1"
+      ],
+      "skill_ids": [
+        "2.1.01",
+        "2.1.02",
+        "2.1.03"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-2-sequence-meaning",
+          "title": "Before you sort or use a set, ask what the sequence itself is telling you",
+          "concept_ids": [
+            "dsa.sequence.order_position"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A log function must return the FIRST failed request index and duplicates are meaningful. You are learning to recognize when order, position, adjacency, or multiplicity are part of the answer.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A log function must return the FIRST failed request index and duplicates are meaningful.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to recognize when order, position, adjacency, or multiplicity are part of the answer",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Converting the log to a set keeps unique values but destroys first position, duplicates, and adjacency.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "the transformation throws away sequence information the output needs",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Name the required sequence semantics first. If you need first/index/contiguous/original order, preserve positions while you optimize.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "the positional information the contract still requires",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sequence-semantics check. Trigger: the prompt contains first, last, index, contiguous, adjacent, original order, or duplicate count",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Sequence-semantics check",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "the prompt contains first, last, index, contiguous, adjacent, original order, or duplicate count",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A longest contiguous burst and a first duplicate index are different problems, but both fail if you turn the sequence into an unordered set.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "position-sensitive outputs require position-preserving state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Can a plain set answer 'where did X first occur'? Answer: No — membership survives, first position does not.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — membership survives, first position does not.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            },
+            {
+              "title": "Python documentation — Set Types: set, frozenset",
+              "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+            }
+          ]
+        },
+        {
+          "id": "domain-2-running-state",
+          "title": "If the next item only needs one fact from the past, carry that one fact",
+          "concept_ids": [
+            "dsa.sequence.single_pass_state"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-sequence-meaning"
+          ],
+          "map_position": {
+            "x": 0.44,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A telemetry file is invalid if any timestamp is lower than the timestamp immediately before it. You are learning to recognize a one-pass scan where a tiny state summary replaces keeping the whole history.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A telemetry file is invalid if any timestamp is lower than the timestamp immediately before it.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to recognize a one-pass scan where a tiny state summary replaces keeping the whole history",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "THE WHOLE SOLUTION FITS IN ONE PASS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "first_decrease.py",
+                "language": "python",
+                "code": "def first_decrease(ts):\n    for i in range(1, len(ts)):\n        if ts[i] < ts[i - 1]:\n            return i\n    return -1\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "prev",
+                    "anchor": {
+                      "line": 3,
+                      "text": "ts[i - 1]",
+                      "occurrence": 1
+                    },
+                    "title": "Only the previous value matters",
+                    "explanation": "The rule compares adjacent timestamps, not arbitrary history.",
+                    "required": true
+                  },
+                  {
+                    "id": "first",
+                    "anchor": {
+                      "line": 4,
+                      "text": "return i",
+                      "occurrence": 1
+                    },
+                    "title": "Scan order gives the earliest violation",
+                    "explanation": "Left-to-right traversal preserves the 'first' contract.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Ask what the next element needs from the processed prefix. Sometimes it is just previous value, best-so-far, running min/max, or one index.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "the smallest summary needed to make the next decision",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "One-pass running state. Trigger: each new element can be evaluated using a bounded summary of what came before",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "One-pass running state",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "each new element can be evaluated using a bounded summary of what came before",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "First out-of-order version, running peak memory, and maximum-so-far latency all use the same 'carry a tiny summary' shape.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "future decisions depend on a compact processed-prefix summary",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For 'first adjacent timestamp decrease', do you need a hash map? Answer: No — the previous timestamp is enough.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — the previous timestamp is enough.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            }
+          ]
+        },
+        {
+          "id": "domain-2-canonical-key",
+          "title": "Normalization is a business rule, not a cleanup reflex",
+          "concept_ids": [
+            "dsa.sequence.canonical_key"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-running-state"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Feature tags are explicitly case-insensitive and surrounding whitespace does not matter. You are learning to build canonical hash keys only when multiple input forms are defined as the same identity.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Feature tags are explicitly case-insensitive and surrounding whitespace does not matter.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to build canonical hash keys only when multiple input forms are defined as the same identity",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Lowercasing every identifier 'for convenience' can silently merge identities when the real contract is case-sensitive.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "normalization can corrupt identity semantics",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Encode only the equivalence the contract grants. For these tags, `tag.strip().lower()` is valid; for case-sensitive usernames it is not.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "a canonical key that preserves exactly the intended equivalence relation",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Intentional canonicalization. Trigger: the problem explicitly defines multiple spellings/representations as equivalent",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Intentional canonicalization",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "the problem explicitly defines multiple spellings/representations as equivalent",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "URLs, file paths, tags, and IDs may each have different normalization rules. The algorithmic move is the same; the equivalence rule is domain-specific.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "canonicalization must match the declared identity semantics",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If `Alice` and `alice` are distinct usernames, should you lowercase before hashing? Answer: No — that would merge two valid identities.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — that would merge two valid identities.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Python documentation — Mapping Types: dict",
+              "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+            },
+            {
+              "title": "Python documentation — Set Types: set, frozenset",
+              "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-2-module-2-hashing",
+      "title": "Use exactly the hash state the question asks for",
+      "order": 2,
+      "task_ids": [
+        "2.2"
+      ],
+      "skill_ids": [
+        "2.2.01",
+        "2.2.02",
+        "2.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-2-module-1-sequences"
+      ],
+      "nodes": [
+        {
+          "id": "domain-2-seen-set",
+          "title": "The moment you hear 'have I seen this exact key before?', think set",
+          "concept_ids": [
+            "dsa.hashing.membership"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-canonical-key"
+          ],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A consumer must ignore duplicate request IDs that already appeared earlier in the current batch. You are learning to replace repeated prefix membership scans with a seen-set.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A consumer must ignore duplicate request IDs that already appeared earlier in the current batch.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to replace repeated prefix membership scans with a seen-set",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "THE STATE MATCHES THE QUESTION EXACTLY",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "first_duplicate.py",
+                "language": "python",
+                "code": "seen = set()\nfor i, request_id in enumerate(ids):\n    if request_id in seen:\n        return i\n    seen.add(request_id)\nreturn -1\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "query",
+                    "anchor": {
+                      "line": 3,
+                      "text": "request_id in seen",
+                      "occurrence": 1
+                    },
+                    "title": "This is the repeated question",
+                    "explanation": "The set answers whether the key appeared in earlier positions.",
+                    "required": true
+                  },
+                  {
+                    "id": "order",
+                    "anchor": {
+                      "line": 5,
+                      "text": "seen.add(request_id)",
+                      "occurrence": 1
+                    },
+                    "title": "Check before adding",
+                    "explanation": "Otherwise the current item would match itself.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Make the set mean exactly one thing: keys from the processed history. Membership becomes expected O(1) instead of rescanning that history.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "the exact keys already processed",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Seen-before set. Trigger: the baseline repeatedly asks whether this exact value/key has appeared",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Seen-before set",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "the baseline repeatedly asks whether this exact value/key has appeared",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Idempotency keys, duplicate filenames, repeated user IDs, and graph visited-state all share the same membership skeleton.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "exact-key history membership",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Why must you check membership before adding the current ID? Answer: So the set represents earlier positions only, not the current item itself.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "So the set represents earlier positions only, not the current item itself.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+            },
+            {
+              "title": "Python documentation — Set Types: set, frozenset",
+              "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+            }
+          ]
+        },
+        {
+          "id": "domain-2-map-state",
+          "title": "If 'present?' is not enough, attach the missing fact to the key",
+          "concept_ids": [
+            "dsa.hashing.frequency"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-seen-set"
+          ],
+          "map_position": {
+            "x": 0.44,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A log summary must output the number of responses for every HTTP status code. You are learning to recognize when a set must become a map because each key needs associated state.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A log summary must output the number of responses for every HTTP status code.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to recognize when a set must become a map because each key needs associated state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "SET IS NOT ENOUGH HERE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "status_counts.py",
+                "language": "python",
+                "code": "counts = {}\nfor status in statuses:\n    counts[status] = counts.get(status, 0) + 1\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "key",
+                    "anchor": {
+                      "line": 3,
+                      "text": "counts[status]",
+                      "occurrence": 1
+                    },
+                    "title": "Key chooses the group",
+                    "explanation": "All equal status codes update the same entry.",
+                    "required": true
+                  },
+                  {
+                    "id": "value",
+                    "anchor": {
+                      "line": 3,
+                      "text": "counts.get(status, 0) + 1",
+                      "occurrence": 1
+                    },
+                    "title": "Value stores the missing fact",
+                    "explanation": "The needed fact is frequency, not mere membership.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choose the map value from the output: count, first index, last timestamp, object, list, or other per-key state.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "key → the exact fact the future/output needs",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Key-attached hash state. Trigger: the question is not just 'does k exist?' but 'what/count/where for k?'",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Key-attached hash state",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "the question is not just 'does k exist?' but 'what/count/where for k?'",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Most frequent error code, first index of a value, and latest event per user all differ only in what value you attach to each key.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "a key needs associated state beyond membership",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Need the first index for each ID. Set or map? Answer: Map — store ID → first index.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Map — store ID → first index.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+            },
+            {
+              "title": "Python documentation — Mapping Types: dict",
+              "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+            },
+            {
+              "title": "Python documentation — Set Types: set, frozenset",
+              "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+            }
+          ]
+        },
+        {
+          "id": "domain-2-complement",
+          "title": "Pair-sum stops being 'search every pair' once you write the missing value",
+          "concept_ids": [
+            "dsa.hashing.complement"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-map-state"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Two job memory requests must add exactly to a 64 GiB budget, and you need their original indices. You are learning to translate a pair equation into one exact hash lookup per current value.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Two job memory requests must add exactly to a 64 GiB budget, and you need their original indices.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to translate a pair equation into one exact hash lookup per current value",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "THE EQUATION BECOMES THE LOOKUP KEY",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "two_sum.py",
+                "language": "python",
+                "code": "index = {}\nfor i, x in enumerate(nums):\n    need = target - x\n    if need in index:\n        return [index[need], i]\n    if x not in index:\n        index[x] = i\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "need",
+                    "anchor": {
+                      "line": 3,
+                      "text": "need = target - x",
+                      "occurrence": 1
+                    },
+                    "title": "Solve the equation for the missing partner",
+                    "explanation": "For current x, every other value except target-x is irrelevant.",
+                    "required": true
+                  },
+                  {
+                    "id": "store",
+                    "anchor": {
+                      "line": 7,
+                      "text": "index[x] = i",
+                      "occurrence": 1
+                    },
+                    "title": "Store what the output needs",
+                    "explanation": "The result needs indices, so the map stores an index.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Do not memorize 'Two Sum'. Derive `need = target - x`, then decide what earlier state the output requires.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "earlier value → output-relevant information such as index",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Complement lookup. Trigger: two values must satisfy an equation such as a + b = target",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Complement lookup",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "two values must satisfy an equation such as a + b = target",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Budget matching, two resource allocations, and two transaction amounts can all have the same equation even when the stories look unrelated.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "solve for the missing counterpart and look it up",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Current x=19, target=64. What key do you look for? Answer: 45.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "45.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+            },
+            {
+              "title": "Python documentation — Mapping Types: dict",
+              "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-2-module-3-prefix",
+      "title": "Reuse cumulative work instead of re-adding ranges",
+      "order": 3,
+      "task_ids": [
+        "2.3"
+      ],
+      "skill_ids": [
+        "2.3.01",
+        "2.3.02",
+        "2.3.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-2-module-2-hashing"
+      ],
+      "nodes": [
+        {
+          "id": "domain-2-prefix-boundaries",
+          "title": "Stop re-adding the same range: store cumulative totals at boundaries",
+          "concept_ids": [
+            "dsa.prefix.range_sum"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-complement"
+          ],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A dashboard loads 365 daily request counts once, then answers thousands of range-total queries. You are learning to precompute prefix boundary totals so repeated immutable range aggregation becomes O(1).",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A dashboard loads 365 daily request counts once, then answers thousands of range-total queries.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to precompute prefix boundary totals so repeated immutable range aggregation becomes O(1)",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "ONE PASS BUILDS EVERY BOUNDARY TOTAL",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "prefix.py",
+                "language": "python",
+                "code": "prefix = [0] * (len(values) + 1)\nfor i, x in enumerate(values):\n    prefix[i + 1] = prefix[i] + x\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "extra",
+                    "anchor": {
+                      "line": 1,
+                      "text": "len(values) + 1",
+                      "occurrence": 1
+                    },
+                    "title": "n values create n+1 boundaries",
+                    "explanation": "Boundary 0 is before the first value.",
+                    "required": true
+                  },
+                  {
+                    "id": "reuse",
+                    "anchor": {
+                      "line": 3,
+                      "text": "prefix[i] + x",
+                      "occurrence": 1
+                    },
+                    "title": "Reuse previous work",
+                    "explanation": "Each cumulative total extends the previous one instead of re-summing from zero.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Define `prefix[i]` as the sum of values before index i. Build once; reuse for every query.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "cumulative state at each sequence boundary",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Prefix sum / prefix state. Trigger: many queries repeatedly aggregate overlapping portions of mostly static data",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Prefix sum / prefix state",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "many queries repeatedly aggregate overlapping portions of mostly static data",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Daily request totals, byte deltas, revenue, counts, and any additive metric share the same cumulative-boundary skeleton.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "precompute reusable cumulative boundaries",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "With n elements, how many prefix boundaries are convenient? Answer: n + 1, including prefix[0] = 0.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "n + 1, including prefix[0] = 0.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Competitive Programming — Prefix Sums",
+              "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            }
+          ]
+        },
+        {
+          "id": "domain-2-prefix-query",
+          "title": "Range sum is subtraction, not another loop",
+          "concept_ids": [
+            "dsa.prefix.range_sum"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-prefix-boundaries"
+          ],
+          "map_position": {
+            "x": 0.46,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For `[4,7,2,5]`, the dashboard asks for the half-open range `[1,3)`. You are learning to use a consistent boundary convention to turn a range query into two prefix lookups.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "For `[4,7,2,5]`, the dashboard asks for the half-open range `[1,3)`.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to use a consistent boundary convention to turn a range query into two prefix lookups",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Re-summing `7+2` works for one query but repeats work across thousands of overlapping ranges.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "each query performs aggregation that was already encoded in cumulative state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "With `prefix[i] = sum(values[0:i])`, the answer is `prefix[r] - prefix[l]`. For this range: 13 - 4 = 9.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "left and right cumulative boundaries",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Prefix difference. Trigger: you need aggregate state for a half-open interval of static data",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Prefix difference",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "you need aggregate state for a half-open interval of static data",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The same subtraction works for request counts, bytes, revenue, or any additive sequence metric.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "range aggregate = right boundary state - left boundary state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For half-open `[l,r)`, what is the formula? Answer: prefix[r] - prefix[l].",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "prefix[r] - prefix[l].",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Competitive Programming — Prefix Sums",
+              "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+            }
+          ]
+        },
+        {
+          "id": "domain-2-prefix-hash",
+          "title": "Signed values break window intuition — use the equation between prefix states",
+          "concept_ids": [
+            "dsa.prefix.hash_state"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-prefix-query"
+          ],
+          "map_position": {
+            "x": 0.8,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A stream contains positive and negative byte deltas. You need any contiguous period whose net change is exactly 0. You are learning to recognize target-subarray problems where the useful lookup is an earlier prefix state, not an individual value.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A stream contains positive and negative byte deltas. You need any contiguous period whose net change is exactly 0.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to recognize target-subarray problems where the useful lookup is an earlier prefix state, not an individual value",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "THE HASH KEY IS A PREFIX TOTAL",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "target_subarrays.py",
+                "language": "python",
+                "code": "seen_prefix = {0}\nprefix = 0\nfor x in deltas:\n    prefix += x\n    if prefix - target in seen_prefix:\n        return True\n    seen_prefix.add(prefix)\nreturn False\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "equation",
+                    "anchor": {
+                      "line": 5,
+                      "text": "prefix - target",
+                      "occurrence": 1
+                    },
+                    "title": "Solve current - earlier = target",
+                    "explanation": "The earlier boundary must equal current_prefix - target.",
+                    "required": true
+                  },
+                  {
+                    "id": "zero",
+                    "anchor": {
+                      "line": 1,
+                      "text": "{0}",
+                      "occurrence": 1
+                    },
+                    "title": "Boundary before the stream",
+                    "explanation": "This allows a target interval to start at index 0.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Think in boundaries: if current prefix is P and interval sum should be T, find an earlier prefix P-T.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "earlier cumulative states stored in a set/map",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Prefix-state hashing. Trigger: a contiguous target aggregate is the difference between two prefix states, especially when negatives destroy monotonic window behavior",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Prefix-state hashing",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "a contiguous target aggregate is the difference between two prefix states, especially when negatives destroy monotonic window behavior",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Zero-net byte change, target cash-flow delta, and target sensor drift all use the same current-prefix minus earlier-prefix equation.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "target interval = difference between two cumulative boundary states",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Current prefix P=17, target T=5. Which earlier prefix would prove a target-sum interval? Answer: 12.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "12.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Competitive Programming — Prefix Sums",
+              "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+            },
+            {
+              "title": "Python documentation — Mapping Types: dict",
+              "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

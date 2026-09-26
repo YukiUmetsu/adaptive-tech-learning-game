@@ -1,0 +1,1625 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "dsa-interview-learning-2026-09-26-v4",
+  "certification_id": "cs-dsa-interview",
+  "certification_version": "dsa-interview-v1",
+  "exam_guide_revision": "Reviewed anti-boring v4, 2026-09-26. Full learning and question editorial audit completed; weak/generic prompts and distractors were rewritten while preserving compatibility.",
+  "domain": {
+    "id": "domain-8",
+    "name": "Backtracking, Greedy & Dynamic Programming",
+    "weight": 0.1
+  },
+  "learning_design": {
+    "progress_label": "Pattern Vision",
+    "unlock_rule": "All learning reveals are required. Each node moves quickly through a concrete problem, the obvious failure/waste, the maintained state or invariant that fixes it, the pattern name, a different real-world transfer, and one quick check.",
+    "mastery_note": "The goal is not to enjoy studying algorithms. The goal is to recognize the structure fast enough that an unfamiliar problem starts to look like a problem you have already solved."
+  },
+  "source_refs": [
+    {
+      "title": "MIT OpenCourseWare 6.006 — Depth-First Search",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.046J — Greedy Algorithms",
+      "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/pages/lecture-notes/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Dynamic Programming II",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-20-dynamic-programming-ii-text-justification-blackjack/"
+    },
+    {
+      "title": "MIT Press — Introduction to Algorithms",
+      "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+    },
+    {
+      "title": "Princeton Algorithms — Dynamic Programming (context through algorithmic applications)",
+      "url": "https://algs4.cs.princeton.edu/"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "backtracking",
+      "definition": "Systematically explore choices while undoing a choice before trying a sibling alternative."
+    },
+    {
+      "term": "pruning",
+      "definition": "Stop exploring a branch after proving no completion below it can produce a valid or better answer."
+    },
+    {
+      "term": "greedy",
+      "definition": "Commit to a local choice without later revisiting it."
+    },
+    {
+      "term": "memoization",
+      "definition": "Cache answers to states computed by top-down recursion."
+    },
+    {
+      "term": "tabulation",
+      "definition": "Compute DP states bottom-up in an order that satisfies their dependencies."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "8.1",
+      "8.2",
+      "8.3"
+    ],
+    "skill_ids": [
+      "8.1.01",
+      "8.1.02",
+      "8.1.03",
+      "8.2.01",
+      "8.2.02",
+      "8.2.03",
+      "8.3.01",
+      "8.3.02",
+      "8.3.03"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 54
+  },
+  "authoring_notes": "Anti-boring rule set: no optional reveals; no definition-first nodes; no university-course voice; no fake corporate narrative; start with code/data/workload; expose the waste or bug; name the useful state; then name the pattern; finish with transfer.",
+  "modules": [
+    {
+      "id": "domain-8-module-1-backtracking",
+      "title": "Explore choices without leaking branch state",
+      "order": 1,
+      "task_ids": [
+        "8.1"
+      ],
+      "skill_ids": [
+        "8.1.01",
+        "8.1.02",
+        "8.1.03"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-8-backtracking-tree",
+          "title": "When one decision creates several possible next decisions, you are walking a choice tree",
+          "concept_ids": [
+            "dsa.backtracking.choose_explore_undo"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A test generator must choose region, database, cache mode, and feature flags while obeying compatibility rules. You are learning to recognize constrained enumeration where you must explore alternatives rather than commit to one guess.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A test generator must choose region, database, cache mode, and feature flags while obeying compatibility rules.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to recognize constrained enumeration where you must explore alternatives rather than commit to one guess",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choosing the first locally valid option and never revisiting it can miss valid configurations that require a different earlier choice.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "an irreversible early choice hides other valid branches",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choose one option, apply it, explore the remaining decisions, then undo and try the next option.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "the current partial candidate plus which decision comes next",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Backtracking / choice-tree search. Trigger: build a solution through several choices and multiple branches may still lead to valid answers",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Backtracking / choice-tree search",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "build a solution through several choices and multiple branches may still lead to valid answers",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Rule assignments, combinations, permutations, Sudoku-like constraints, and test-config generation all share choose/explore/undo.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "explore sibling choices from the same restored parent state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "After exploring choice A, what must happen before trying sibling B? Answer: Undo A's state changes.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Undo A's state changes.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Depth-First Search",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "decision tree",
+              "definition": "A conceptual tree whose branches represent alternative choices made while constructing a solution."
+            },
+            {
+              "term": "partial candidate",
+              "definition": "The choices selected so far before a full solution is complete."
+            }
+          ]
+        },
+        {
+          "id": "domain-8-backtracking-state",
+          "title": "Backtracking is mostly about not leaking one branch into the next",
+          "concept_ids": [
+            "dsa.backtracking.state",
+            "dsa.backtracking.choose_explore_undo"
+          ],
+          "prerequisite_node_ids": [
+            "domain-8-backtracking-tree"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Feature flags have incompatibilities. You append a flag, recurse, then try another flag. You are learning to maintain reversible state so every sibling branch starts from the same parent state.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Feature flags have incompatibilities. You append a flag, recurse, then try another flag.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to maintain reversible state so every sibling branch starts from the same parent state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "MUTATE, EXPLORE, RESTORE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "backtrack.py",
+                "language": "python",
+                "code": "def search(chosen):\n    if complete(chosen):\n        emit(chosen.copy())\n        return\n    for option in candidates(chosen):\n        chosen.append(option)\n        search(chosen)\n        chosen.pop()\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "copy",
+                    "anchor": {
+                      "line": 3,
+                      "text": "chosen.copy()",
+                      "occurrence": 1
+                    },
+                    "title": "Save the completed answer",
+                    "explanation": "The mutable list will keep changing after this branch returns.",
+                    "required": true
+                  },
+                  {
+                    "id": "undo",
+                    "anchor": {
+                      "line": 8,
+                      "text": "chosen.pop()",
+                      "occurrence": 1
+                    },
+                    "title": "Restore parent state",
+                    "explanation": "Without this, state from one sibling leaks into the next.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Keep only the partial candidate and compact constraint state you can update and undo safely.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "reversible partial solution + constraint bookkeeping",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Backtracking state discipline. Trigger: recursive choice exploration mutates shared/compact state",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Backtracking state discipline",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "recursive choice exploration mutates shared/compact state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Used-value sets, occupied columns, remaining capacity, and active feature groups are all reversible branch state.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "branch-local mutation must be restored before sibling exploration",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Why copy a completed mutable list before emitting it? Answer: Because later backtracking will mutate the same list object.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Because later backtracking will mutate the same list object.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Depth-First Search",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ]
+        },
+        {
+          "id": "domain-8-backtracking-prune",
+          "title": "Pruning is not 'this branch looks bad' — it is 'this branch cannot possibly recover'",
+          "concept_ids": [
+            "dsa.backtracking.pruning",
+            "dsa.backtracking.state"
+          ],
+          "prerequisite_node_ids": [
+            "domain-8-backtracking-state"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A deployment config may request at most 16 GiB, and the partial selection already requests 18 GiB. You are learning to prune only when a hard constraint or bound proves every completion below the branch will fail.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A deployment config may request at most 16 GiB, and the partial selection already requests 18 GiB.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to prune only when a hard constraint or bound proves every completion below the branch will fail",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Stopping a branch because it looks unlikely can silently delete a valid solution.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "heuristic preference is confused with correctness-preserving elimination",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Prune when the branch already violates an irreversible constraint or cannot beat the current best even under an optimistic bound.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "a proof that no descendant can become valid/better",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Backtracking pruning. Trigger: partial state contains enough information to prove an entire subtree impossible",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Backtracking pruning",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "partial state contains enough information to prove an entire subtree impossible",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Capacity overflow, duplicate use, impossible prerequisite satisfaction, and branch-and-bound limits all support proof-based pruning.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "one partial-state fact rules out every completion below it",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Partial memory is 18 GiB with a 16 GiB max and future choices only add memory. Continue? Answer: No — prune immediately.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — prune immediately.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-8-module-2-greedy",
+      "title": "Commit greedily only when the choice is provably safe",
+      "order": 2,
+      "task_ids": [
+        "8.2"
+      ],
+      "skill_ids": [
+        "8.2.01",
+        "8.2.02",
+        "8.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-8-module-1-backtracking"
+      ],
+      "nodes": [
+        {
+          "id": "domain-8-greedy-safe",
+          "title": "A greedy choice is a permanent commitment — earn it with a reason",
+          "concept_ids": [
+            "dsa.greedy.safe_choice"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "You want to schedule as many equal-value non-overlapping maintenance jobs as possible. You are learning to distinguish a provably safe local choice from a merely tempting local choice.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "You want to schedule as many equal-value non-overlapping maintenance jobs as possible.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to distinguish a provably safe local choice from a merely tempting local choice",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choosing 'shortest', 'earliest start', or 'highest value' because it sounds sensible can fail on small counterexamples.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "local attractiveness is mistaken for global optimality",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For maximum interval count, earliest finish is safe because it leaves at least as much remaining timeline as any other compatible first choice.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "a proof that an optimal solution can be transformed to include the local choice",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Greedy safe-choice reasoning. Trigger: the algorithm wants to commit irreversibly without comparing future alternatives",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Greedy safe-choice reasoning",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "the algorithm wants to commit irreversibly without comparing future alternatives",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Several classic greedy algorithms differ in the choice rule, but all require a proof that the commitment cannot destroy optimality.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "local commitment is valid only when an optimal solution can be made consistent with it",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Is 'works on three examples' enough evidence for a greedy rule? Answer: No — you need a correctness argument or proof.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — you need a correctness argument or proof.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.046J — Greedy Algorithms",
+              "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/pages/lecture-notes/"
+            },
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "greedy choice",
+              "definition": "A locally preferred decision committed to without later backtracking."
+            },
+            {
+              "term": "exchange argument",
+              "definition": "A proof technique showing an optimal solution can be transformed to use the greedy choice without becoming worse."
+            }
+          ]
+        },
+        {
+          "id": "domain-8-greedy-interval",
+          "title": "If every booking counts equally, finish early and leave room for more",
+          "concept_ids": [
+            "dsa.greedy.interval_scheduling",
+            "dsa.greedy.safe_choice"
+          ],
+          "prerequisite_node_ids": [
+            "domain-8-greedy-safe"
+          ],
+          "map_position": {
+            "x": 0.44,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "One test lab can run one booking at a time. Maximize the number of accepted bookings. You are learning to recognize the classic interval-count objective where earliest compatible finish is optimal.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "One test lab can run one booking at a time. Maximize the number of accepted bookings.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to recognize the classic interval-count objective where earliest compatible finish is optimal",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Earliest start can choose a long booking that blocks many short later bookings.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "the wrong local metric consumes future scheduling space",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sort by finish time. Repeatedly accept the next booking whose start is at or after the last accepted finish.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "finish time of the last accepted interval",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Greedy interval scheduling. Trigger: maximize number of non-overlapping equal-value intervals",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Greedy interval scheduling",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "maximize number of non-overlapping equal-value intervals",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Maintenance jobs, meeting slots, lab reservations, and batch windows all share this exact objective when every accepted interval counts equally.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "earliest finish preserves the largest remaining suffix for future choices",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If jobs have different profits, does earliest finish still maximize total profit? Answer: Not generally — weighted interval scheduling is a different problem.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Not generally — weighted interval scheduling is a different problem.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.046J — Greedy Algorithms",
+              "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/pages/lecture-notes/"
+            },
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ]
+        },
+        {
+          "id": "domain-8-greedy-vs-dp",
+          "title": "When combinations matter, a locally good item can be globally terrible",
+          "concept_ids": [
+            "dsa.greedy.discrimination",
+            "dsa.greedy.safe_choice"
+          ],
+          "prerequisite_node_ids": [
+            "domain-8-greedy-interval"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Cache capacity is 10. Artifact A uses 10 and saves 10 minutes; B and C each use 5 and save 9. You are learning to use counterexamples to detect when future trade-offs require DP instead of greedy commitment.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Cache capacity is 10. Artifact A uses 10 and saves 10 minutes; B and C each use 5 and save 9.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to use counterexamples to detect when future trade-offs require DP instead of greedy commitment",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Greedy 'take the highest-saving artifact first' chooses A=10, but B+C fits and saves 18.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "one attractive local choice blocks a better combination",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If no safe local commitment proof exists and choices interact through remaining capacity/value, keep the future-relevant trade-off in state.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "remaining resources + remaining choices rather than one irreversible local pick",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Greedy-vs-DP discrimination. Trigger: indivisible choices compete for a shared resource and combinations can beat the best-looking item",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Greedy-vs-DP discrimination",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "indivisible choices compete for a shared resource and combinations can beat the best-looking item",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Weighted interval scheduling and 0/1 cache selection both need to compare future consequences rather than lock in one local choice.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "future trade-offs must stay available when no safe greedy choice exists",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A saves 10; B+C saves 18 within the same capacity. What did the greedy rule miss? Answer: The value of combining two individually smaller choices.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "The value of combining two individually smaller choices.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.046J — Greedy Algorithms",
+              "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/pages/lecture-notes/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+            },
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-8-module-3-dp",
+      "title": "Reuse future-equivalent states with DP",
+      "order": 3,
+      "task_ids": [
+        "8.3"
+      ],
+      "skill_ids": [
+        "8.3.01",
+        "8.3.02",
+        "8.3.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-8-module-2-greedy"
+      ],
+      "nodes": [
+        {
+          "id": "domain-8-dp-state",
+          "title": "DP starts by forgetting history that no longer matters",
+          "concept_ids": [
+            "dsa.dp.state_transition"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choose indivisible build-cache artifacts to maximize saved rebuild time under a storage limit. You are learning to define a state that preserves exactly the information future choices need.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Choose indivisible build-cache artifacts to maximize saved rebuild time under a storage limit.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to define a state that preserves exactly the information future choices need",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Using the full history as a cache key prevents reuse; using too little state merges situations with different futures.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "subproblems are either unnecessarily unique or incorrectly treated as equivalent",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A useful state is `(i, remaining_capacity)`: which items remain and how much space remains. Histories with the same state now have the same future options.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "the minimal future-relevant subproblem identity",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Dynamic-programming state. Trigger: different choice histories can reach the same future decision problem",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Dynamic-programming state",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "different choice histories can reach the same future decision problem",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sequence DP often uses `(i,j)`; resource DP often uses `(i,capacity)`. Different surface, same state-design principle.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "histories are equivalent when all future consequences are identical",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If two histories have the same item index but different remaining capacity, are they the same DP state? Answer: No — future feasible choices differ.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — future feasible choices differ.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+            },
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "DP state",
+              "definition": "A compact description of one subproblem whose answer can be reused."
+            },
+            {
+              "term": "transition",
+              "definition": "The rule relating one DP state to smaller/dependent states."
+            },
+            {
+              "term": "overlapping subproblems",
+              "definition": "The same subproblem is reached repeatedly from different decision paths."
+            }
+          ]
+        },
+        {
+          "id": "domain-8-dp-memo",
+          "title": "If you solve the same state twice, cache it the first time",
+          "concept_ids": [
+            "dsa.dp.memoization",
+            "dsa.dp.state_transition"
+          ],
+          "prerequisite_node_ids": [
+            "domain-8-dp-state"
+          ],
+          "map_position": {
+            "x": 0.46,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Recursive cache selection repeatedly reaches the same `(item_index, remaining_capacity)` from different histories. You are learning to turn an exponential-looking recursive decision tree into reusable state computation.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Recursive cache selection repeatedly reaches the same `(item_index, remaining_capacity)` from different histories.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to turn an exponential-looking recursive decision tree into reusable state computation",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "TOP-DOWN DP IS JUST RECURSION + A STATE CACHE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "memo_dp.py",
+                "language": "python",
+                "code": "from functools import lru_cache\n\n@lru_cache(None)\ndef best(i, remaining):\n    if i == len(items):\n        return 0\n    answer = best(i + 1, remaining)\n    size, value = items[i]\n    if size <= remaining:\n        answer = max(answer, value + best(i + 1, remaining - size))\n    return answer\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "key",
+                    "anchor": {
+                      "line": 4,
+                      "text": "def best(i, remaining):",
+                      "occurrence": 1
+                    },
+                    "title": "The state is explicit",
+                    "explanation": "Same i and remaining means the same future decision problem.",
+                    "required": true
+                  },
+                  {
+                    "id": "cache",
+                    "anchor": {
+                      "line": 3,
+                      "text": "@lru_cache(None)",
+                      "occurrence": 1
+                    },
+                    "title": "Compute each state once",
+                    "explanation": "Repeated histories reuse the cached answer.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Memoization computes states on demand; tabulation computes them in an explicit dependency order. The recurrence can be the same.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "cache from DP state → solved answer",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Memoization / tabulation. Trigger: overlapping subproblems: the same state is reached through multiple histories",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Memoization / tabulation",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "overlapping subproblems: the same state is reached through multiple histories",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Fibonacci is the toy example; resource allocation, edit distance, parsing, and sequence problems are the useful versions.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "repeated identical subproblems should be solved once",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "What changes when you add memoization to a correct recurrence? Answer: Repeated states reuse cached answers instead of being recomputed.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Repeated states reuse cached answers instead of being recomputed.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Dynamic Programming II",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-20-dynamic-programming-ii-text-justification-blackjack/"
+            },
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ]
+        },
+        {
+          "id": "domain-8-dp-sequence-resource",
+          "title": "Two recurring DP shapes: positions in sequences, or choices under a remaining budget",
+          "concept_ids": [
+            "dsa.dp.sequence_resource",
+            "dsa.dp.state_transition",
+            "dsa.greedy.discrimination"
+          ],
+          "prerequisite_node_ids": [
+            "domain-8-dp-memo",
+            "domain-8-greedy-vs-dp"
+          ],
+          "map_position": {
+            "x": 0.8,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "You need minimum edits between two config strings, and elsewhere you need the best artifacts under a cache budget. You are learning to recognize DP state from the axes that determine the remaining future problem.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "You need minimum edits between two config strings, and elsewhere you need the best artifacts under a cache budget.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to recognize DP state from the axes that determine the remaining future problem",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Greedily fixing the first string mismatch or always taking the highest-value fitting artifact can block a better global solution.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "local actions change future options in interacting ways",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sequence alignment: state `(i,j)` for remaining suffixes. Resource allocation: `(i,capacity)` for remaining items and budget. Write transitions that compare the legal future choices.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "the small coordinates that fully describe the remaining decision problem",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sequence/resource dynamic programming. Trigger: future cost/value depends on positions or remaining resource and subproblems overlap",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Sequence/resource dynamic programming",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "future cost/value depends on positions or remaining resource and subproblems overlap",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Edit distance, LCS-style alignment, 0/1 selection, weighted scheduling, and many grid DPs all come from careful state + transition design.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "represent future consequences explicitly instead of committing greedily",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For edit distance between two suffixes, what two coordinates naturally identify a state? Answer: The current positions `(i, j)` in the two sequences.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "The current positions `(i, j)` in the two sequences.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Dynamic Programming II",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-20-dynamic-programming-ii-text-justification-blackjack/"
+            },
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

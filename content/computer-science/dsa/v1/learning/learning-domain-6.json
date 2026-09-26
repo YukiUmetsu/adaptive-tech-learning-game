@@ -1,0 +1,1601 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "dsa-interview-learning-2026-09-26-v4",
+  "certification_id": "cs-dsa-interview",
+  "certification_version": "dsa-interview-v1",
+  "exam_guide_revision": "Reviewed anti-boring v4, 2026-09-26. Full learning and question editorial audit completed; weak/generic prompts and distractors were rewritten while preserving compatibility.",
+  "domain": {
+    "id": "domain-6",
+    "name": "Trees, Recursion & Tries",
+    "weight": 0.13
+  },
+  "learning_design": {
+    "progress_label": "Pattern Vision",
+    "unlock_rule": "All learning reveals are required. Each node moves quickly through a concrete problem, the obvious failure/waste, the maintained state or invariant that fixes it, the pattern name, a different real-world transfer, and one quick check.",
+    "mastery_note": "The goal is not to enjoy studying algorithms. The goal is to recognize the structure fast enough that an unfamiliar problem starts to look like a problem you have already solved."
+  },
+  "source_refs": [
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 6 notes: Binary Trees, Part 1",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/376714cc85c6c784d90eec9c575ec027_MIT6_006S20_lec6.pdf"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Recitation 6: Binary Trees",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/e215840fd7b0e8cb07916a65c17252b2_MIT6_006S20_r06.pdf"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 9: Breadth-First Search",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 10: Depth-First Search",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+    },
+    {
+      "title": "Princeton Algorithms — Tries",
+      "url": "https://algs4.cs.princeton.edu/52trie/"
+    },
+    {
+      "title": "Princeton Algorithms — TrieSET",
+      "url": "https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/TrieSET.html"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "subtree",
+      "definition": "A node together with all descendants reachable below it."
+    },
+    {
+      "term": "preorder",
+      "definition": "Process the current node before its child subtrees."
+    },
+    {
+      "term": "inorder",
+      "definition": "For a binary tree, process the current node between the left and right subtrees."
+    },
+    {
+      "term": "postorder",
+      "definition": "Process child subtrees before the current node."
+    },
+    {
+      "term": "terminal marker",
+      "definition": "Trie state indicating that the current node ends a complete stored key."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "6.1",
+      "6.2",
+      "6.3"
+    ],
+    "skill_ids": [
+      "6.1.01",
+      "6.1.02",
+      "6.1.03",
+      "6.2.01",
+      "6.2.02",
+      "6.2.03",
+      "6.3.01",
+      "6.3.02",
+      "6.3.03"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 54
+  },
+  "authoring_notes": "Anti-boring rule set: no optional reveals; no definition-first nodes; no university-course voice; no fake corporate narrative; start with code/data/workload; expose the waste or bug; name the useful state; then name the pattern; finish with transfer.",
+  "modules": [
+    {
+      "id": "domain-6-module-1-recursion",
+      "title": "Make hierarchy solve itself",
+      "order": 1,
+      "task_ids": [
+        "6.1"
+      ],
+      "skill_ids": [
+        "6.1.01",
+        "6.1.02",
+        "6.1.03"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-6-recursion-contract",
+          "title": "Make each folder solve the same smaller problem",
+          "concept_ids": [
+            "dsa.recursion.base_case"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Compute the total bytes under a directory that can contain files and child directories. You are learning to define one recursive call as a contract over a smaller subtree.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Compute the total bytes under a directory that can contain files and child directories.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to define one recursive call as a contract over a smaller subtree",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Thinking 'recursion means call the function again' gives no reason the process will stop or what each call returns.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "recursive syntax exists without a shrinking subproblem or return contract",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Contract: `total_bytes(dir)` returns total bytes in that directory subtree. Each child directory is a smaller instance; an empty subtree contributes 0.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "a smaller subproblem with the same promised return value",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Recursive subtree contract. Trigger: hierarchical data where each child has the same problem shape as the parent",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Recursive subtree contract",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "hierarchical data where each child has the same problem shape as the parent",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Org charts, UI trees, JSON trees, file systems, and ASTs all let a child solve the same kind of subproblem.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "self-similar hierarchy + strictly smaller child subproblems",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "What must get smaller on each recursive call? Answer: The subtree / remaining hierarchical subproblem.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "The subtree / remaining hierarchical subproblem.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Recitation 6: Binary Trees",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/e215840fd7b0e8cb07916a65c17252b2_MIT6_006S20_r06.pdf"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "base case",
+              "definition": "An input simple enough that the function can return without making another recursive call."
+            },
+            {
+              "term": "subproblem",
+              "definition": "A smaller instance of the same problem solved as part of the larger result."
+            }
+          ]
+        },
+        {
+          "id": "domain-6-recursion-combine",
+          "title": "Let children return answers; combine them once at the parent",
+          "concept_ids": [
+            "dsa.recursion.decompose_combine"
+          ],
+          "prerequisite_node_ids": [
+            "domain-6-recursion-contract"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Every config-tree node has a local cost and zero or more child configs. You need subtree total cost. You are learning to decompose a hierarchical result into child answers plus local state.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Every config-tree node has a local cost and zero or more child configs. You need subtree total cost.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to decompose a hierarchical result into child answers plus local state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "THE PARENT ONLY NEEDS CHILD TOTALS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "subtree_cost.py",
+                "language": "python",
+                "code": "def total_cost(node):\n    if node is None:\n        return 0\n    child_total = 0\n    for child in node.children:\n        child_total += total_cost(child)\n    return node.cost + child_total\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "child",
+                    "anchor": {
+                      "line": 6,
+                      "text": "child_total += total_cost(child)",
+                      "occurrence": 1
+                    },
+                    "title": "Same contract on a smaller subtree",
+                    "explanation": "Each child returns the answer for its own subtree.",
+                    "required": true
+                  },
+                  {
+                    "id": "combine",
+                    "anchor": {
+                      "line": 7,
+                      "text": "return node.cost + child_total",
+                      "occurrence": 1
+                    },
+                    "title": "Combine once",
+                    "explanation": "The parent needs only child results plus local cost.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Work backward from the parent formula: what result would make each child easy to combine?",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "one useful summary returned by each child",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Recursive decompose + combine. Trigger: parent answer can be built directly from child-subproblem answers",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Recursive decompose + combine",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "parent answer can be built directly from child-subproblem answers",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Directory size, subtree node count, hierarchy cost, and tree height all differ mainly in the combine function.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "children solve identical subproblems and parent combines summaries",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If parent total is local + all child totals, what should each child return? Answer: Its subtree total.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Its subtree total.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 6 notes: Binary Trees, Part 1",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/376714cc85c6c784d90eec9c575ec027_MIT6_006S20_lec6.pdf"
+            }
+          ]
+        },
+        {
+          "id": "domain-6-tree-return-state",
+          "title": "Return the smallest subtree summary that makes the parent easy",
+          "concept_ids": [
+            "dsa.tree.return_state",
+            "dsa.recursion.decompose_combine"
+          ],
+          "prerequisite_node_ids": [
+            "domain-6-recursion-combine"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "You need the height of every subtree. You are learning to design recursive return state from what the parent actually consumes.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "You need the height of every subtree.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to design recursive return state from what the parent actually consumes",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "THE CHILD RETURNS ONE NUMBER, NOT ITS WHOLE HISTORY",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "height.py",
+                "language": "python",
+                "code": "def height(node):\n    if node is None:\n        return 0\n    left_h = height(node.left)\n    right_h = height(node.right)\n    return 1 + max(left_h, right_h)\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "summary",
+                    "anchor": {
+                      "line": 4,
+                      "text": "left_h = height(node.left)",
+                      "occurrence": 1
+                    },
+                    "title": "Minimal child summary",
+                    "explanation": "Parent needs only height, not a list of descendant nodes.",
+                    "required": true
+                  },
+                  {
+                    "id": "combine",
+                    "anchor": {
+                      "line": 6,
+                      "text": "1 + max(left_h, right_h)",
+                      "occurrence": 1
+                    },
+                    "title": "Parent formula reveals the state",
+                    "explanation": "The needed child state is exactly what this formula consumes.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Ask: if the child subtree were magically solved, what exact value(s) would the parent need back?",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "the minimal future-relevant subtree summary",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Tree DFS return state. Trigger: recursive tree problem where the parent depends on a compact child summary",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Tree DFS return state",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "recursive tree problem where the parent depends on a compact child summary",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Subtree sum returns one number; balanced-tree checks may return a pair like `(is_balanced, height)`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "design the recursive interface from the parent combine step",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For tree height, should a child return all root-to-leaf paths? Answer: No — its height is enough.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — its height is enough.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Recitation 6: Binary Trees",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/e215840fd7b0e8cb07916a65c17252b2_MIT6_006S20_r06.pdf"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-6-module-2-trees",
+      "title": "Choose tree traversal from the output dependency",
+      "order": 2,
+      "task_ids": [
+        "6.2"
+      ],
+      "skill_ids": [
+        "6.2.01",
+        "6.2.02",
+        "6.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-6-module-1-recursion"
+      ],
+      "nodes": [
+        {
+          "id": "domain-6-tree-order",
+          "title": "Traversal order is just 'when must the parent act relative to the children?'",
+          "concept_ids": [
+            "dsa.tree.traversal_order"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Some resource trees must delete children before parent; inherited config must flow parent before descendants. You are learning to choose preorder/postorder/inorder from dependency timing instead of memorizing names.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Some resource trees must delete children before parent; inherited config must flow parent before descendants.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to choose preorder/postorder/inorder from dependency timing instead of memorizing names",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Picking DFS order by habit can violate the actual dependency: deleting parent first may make children inaccessible or invalid.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "the processing order contradicts parent/child dependency",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Parent before children → preorder. Children before parent → postorder. In a BST, left-node-right inorder exposes key order.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "when node work must happen relative to child work",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Traversal-order selection. Trigger: hierarchical processing has explicit before/after dependencies",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Traversal-order selection",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "hierarchical processing has explicit before/after dependencies",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Apply permissions downward with preorder; aggregate or delete upward with postorder.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "dependency timing determines traversal order",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Delete descendants before directory: preorder or postorder? Answer: Postorder.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Postorder.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 6 notes: Binary Trees, Part 1",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/376714cc85c6c784d90eec9c575ec027_MIT6_006S20_lec6.pdf"
+            }
+          ]
+        },
+        {
+          "id": "domain-6-tree-bfs",
+          "title": "Need hierarchy depth? Process one layer before the next",
+          "concept_ids": [
+            "dsa.tree.bfs_levels"
+          ],
+          "prerequisite_node_ids": [
+            "domain-6-tree-order"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "An organization report must group people by management distance from the CEO. You are learning to use a FIFO frontier when the output is organized by tree depth.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "An organization report must group people by management distance from the CEO.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to use a FIFO frontier when the output is organized by tree depth",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Depth-first traversal can dive through five management levels before visiting another direct report.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "DFS visit order does not match the required layer order",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use a queue. Process all depth-d nodes before the depth-(d+1) children they enqueue.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "a FIFO frontier ordered by distance from the root",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Tree BFS / level order. Trigger: group or process nodes by depth / number of edges from root",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Tree BFS / level order",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "group or process nodes by depth / number of edges from root",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "UI nesting levels, filesystem depth reports, and minimum-edge tree distances have the same layer frontier.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "FIFO discovery preserves nondecreasing depth",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Who appears before grandchildren in level order? Answer: All direct children of the root.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "All direct children of the root.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 9: Breadth-First Search",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
+            }
+          ]
+        },
+        {
+          "id": "domain-6-bst-search",
+          "title": "A BST comparison lets you ignore an entire subtree — if the tree is actually well-shaped",
+          "concept_ids": [
+            "dsa.bst.ordered_search"
+          ],
+          "prerequisite_node_ids": [
+            "domain-6-tree-order"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "An in-memory ordered index stores unique keys in a binary search tree. You are learning to use the BST order invariant to choose one child and understand why complexity depends on height.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "An in-memory ordered index stores unique keys in a binary search tree.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to use the BST order invariant to choose one child and understand why complexity depends on height",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Searching both subtrees ignores the BST property; claiming O(log n) for every unbalanced BST ignores height.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "either order information is wasted or performance is overstated",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Compare target with current key and follow only the side that can contain it. Complexity is O(h); balancing is what keeps h near log n.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "current node + ordering invariant over its subtrees",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "BST ordered search. Trigger: binary tree with a maintained key-order invariant",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "BST ordered search",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "binary tree with a maintained key-order invariant",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Ordered maps/sets may use balanced trees to support lookup plus predecessor/successor operations.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "comparison discards one ordered subtree",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Target 32 at node 50: which side remains possible? Answer: The left subtree.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "The left subtree.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 6 notes: Binary Trees, Part 1",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/376714cc85c6c784d90eec9c575ec027_MIT6_006S20_lec6.pdf"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-6-module-3-tries",
+      "title": "Index prefixes instead of rescanning strings",
+      "order": 3,
+      "task_ids": [
+        "6.3"
+      ],
+      "skill_ids": [
+        "6.3.01",
+        "6.3.02",
+        "6.3.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-6-module-2-trees"
+      ],
+      "nodes": [
+        {
+          "id": "domain-6-trie-path",
+          "title": "Autocomplete is easier when shared prefixes literally share a path",
+          "concept_ids": [
+            "dsa.trie.prefix_path"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A CLI stores commands like `deploy`, `describe`, and `delete` and frequently asks for suggestions after `de`. You are learning to recognize a trie when queries are about shared string prefixes rather than only exact equality.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A CLI stores commands like `deploy`, `describe`, and `delete` and frequently asks for suggestions after `de`.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to recognize a trie when queries are about shared string prefixes rather than only exact equality",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A hash set is excellent for exact membership but does not directly expose all keys beginning with a prefix.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "exact-key indexing does not organize keys by shared beginnings",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Consume characters along a path. Keys with the same prefix reuse the same early nodes; reaching `de` gives a focused subtree of candidates.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "the trie node reached after consuming the query prefix",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Trie / prefix tree. Trigger: autocomplete, keys-with-prefix, or longest-prefix style queries",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Trie / prefix tree",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "autocomplete, keys-with-prefix, or longest-prefix style queries",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Command completion, dictionary suggestions, and prefix routing all reuse shared prefix paths.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "shared prefixes become shared path state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "After walking prefix `de`, where should suggestion search begin? Answer: At the trie node reached by `de`, not back at the root.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "At the trie node reached by `de`, not back at the root.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Algorithms — Tries",
+              "url": "https://algs4.cs.princeton.edu/52trie/"
+            },
+            {
+              "title": "Princeton Algorithms — TrieSET",
+              "url": "https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/TrieSET.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "trie",
+              "definition": "A tree-like index whose path edges/steps represent successive characters or symbols of keys."
+            },
+            {
+              "term": "prefix",
+              "definition": "The beginning portion of a string key."
+            }
+          ]
+        },
+        {
+          "id": "domain-6-trie-terminal",
+          "title": "A path can exist without the shorter key being stored",
+          "concept_ids": [
+            "dsa.trie.terminal_marker"
+          ],
+          "prerequisite_node_ids": [
+            "domain-6-trie-path"
+          ],
+          "map_position": {
+            "x": 0.44,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The trie contains `deploy-prod`. Does that automatically mean exact key `deploy` exists? You are learning to separate prefix-path existence from full-key existence with terminal state.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "The trie contains `deploy-prod`. Does that automatically mean exact key `deploy` exists?",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to separate prefix-path existence from full-key existence with terminal state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Returning true after successfully walking every character of `deploy` would incorrectly treat every prefix of a longer command as a registered command.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "path existence is confused with complete-key membership",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Mark nodes where a complete key ends. Exact lookup requires both a valid path and a terminal/value marker at the final node.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "terminal/value state at the final prefix node",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Trie terminal marker. Trigger: some stored keys are prefixes of other keys",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Trie terminal marker",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "some stored keys are prefixes of other keys",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Route registries, command registries, and dictionaries all need to distinguish 'prefix exists' from 'full key exists'.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "complete-key state is separate from path state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Trie has only `apple`. Is `app` automatically an exact stored key? Answer: No — only if the `app` node is terminal.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — only if the `app` node is terminal.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Algorithms — Tries",
+              "url": "https://algs4.cs.princeton.edu/52trie/"
+            },
+            {
+              "title": "Princeton Algorithms — TrieSET",
+              "url": "https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/TrieSET.html"
+            }
+          ]
+        },
+        {
+          "id": "domain-6-trie-prefix-query",
+          "title": "Once you reach the prefix node, ignore the rest of the trie",
+          "concept_ids": [
+            "dsa.trie.prefix_query",
+            "dsa.trie.prefix_path"
+          ],
+          "prerequisite_node_ids": [
+            "domain-6-trie-terminal"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A routing-style table needs the longest stored prefix matching the beginning of a query key. You are learning to turn the reached prefix/path node into the frontier for focused descendant or longest-prefix work.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A routing-style table needs the longest stored prefix matching the beginning of a query key.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to turn the reached prefix/path node into the frontier for focused descendant or longest-prefix work",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Scanning every stored key compares unrelated prefixes again and again.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "global search ignores the prefix structure already traversed",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Walk the query path once. For autocomplete, enumerate descendants from the prefix node. For longest-prefix matching, remember the deepest terminal node encountered.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "the current prefix node plus terminal checkpoints on the path",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Trie prefix query. Trigger: query result depends on all keys under a prefix or the deepest matching prefix",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Trie prefix query",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "query result depends on all keys under a prefix or the deepest matching prefix",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Autocomplete and longest-prefix routing differ in output but reuse the same prefix-path traversal.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "the prefix path narrows the search frontier",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For longest stored prefix, what should you remember while walking the query? Answer: The deepest terminal/value-bearing node seen so far.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "The deepest terminal/value-bearing node seen so far.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Algorithms — Tries",
+              "url": "https://algs4.cs.princeton.edu/52trie/"
+            },
+            {
+              "title": "Princeton Algorithms — TrieSET",
+              "url": "https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/TrieSET.html"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -178,6 +178,20 @@ export const CATALOG: CatalogCategory[] = [
       },
     ],
   },
+  {
+    id: "computer-science",
+    label: "Computer Science",
+    kind: "track",
+    certifications: [
+      {
+        id: "cs-dsa",
+        name: "Data Structures & Algorithms",
+        shortName: "DSA",
+        examCode: "DSA",
+        wip: false,
+      },
+    ],
+  },
 ];
 
 export interface CatalogCard {

@@ -5,13 +5,13 @@
     "name": "Data Structures & Algorithms Interview",
     "exam_code": "DSA-INTERVIEW",
     "official_source_url": "https://careers.microsoft.com/v2/global/en/hiring-tips/technical-interviewing",
-    "last_reviewed": "2026-09-25"
+    "last_reviewed": "2026-09-26"
   },
   "version": {
     "id": "dsa-interview-v1",
     "exam_code": "DSA-INTERVIEW",
     "effective_date": "2026-09-25",
-    "content_version": "dsa-interview-content-2026-09-25-v1",
+    "content_version": "dsa-interview-content-2026-09-26-v4",
     "domains": [
       {
         "id": "domain-1",
@@ -109,63 +109,63 @@
   "concepts": [
     {
       "id": "dsa.interview.signal",
-      "name": "Interview reasoning signal",
-      "description": "Make the problem-solving process visible: clarify requirements, state a plan, explain trade-offs, write correct code, and test it."
+      "name": "Problem contract extraction",
+      "description": "Extract output, semantic constraints, scale, mutation, and memory facts before choosing an algorithm."
     },
     {
       "id": "dsa.reasoning.correct_baseline",
-      "name": "Correct baseline first",
-      "description": "Start from a simple correct approach before optimizing so correctness and the real bottleneck are explicit."
+      "name": "Traceable brute-force baseline",
+      "description": "Start from the simplest clearly correct solution so repeated work is visible."
     },
     {
       "id": "dsa.interview.workflow",
-      "name": "Repeatable interview workflow",
-      "description": "Use a stable fallback loop: clarify, example, baseline, bottleneck, invariant/complexity, code, and test."
+      "name": "Baseline → bottleneck → maintained state",
+      "description": "Optimize by identifying repeated expensive work and the information that would eliminate it."
     },
     {
       "id": "dsa.complexity.big_o",
-      "name": "Asymptotic growth",
-      "description": "Use Big O to describe how time or extra space grows with input size and to reject approaches that do not scale to the stated constraints."
+      "name": "Growth-rate reasoning",
+      "description": "Use asymptotic growth as a scale filter."
     },
     {
       "id": "dsa.complexity.aggregate_work",
-      "name": "Count aggregate operations",
-      "description": "Analyze how many times the expensive operation can occur overall instead of judging complexity from loop nesting alone."
+      "name": "Aggregate operation counting",
+      "description": "Count total pointer moves/operations across the full run rather than relying on loop nesting."
     },
     {
       "id": "dsa.optimization.from_bruteforce",
-      "name": "Brute force to bottleneck",
-      "description": "Improve a correct baseline by identifying repeated expensive work and maintaining or precomputing the information that removes it."
+      "name": "Repeated-work elimination",
+      "description": "Cache, index, maintain, or incrementally update information the baseline repeatedly recomputes."
     },
     {
       "id": "dsa.correctness.invariant",
-      "name": "Invariant and progress",
-      "description": "State what remains true as the algorithm runs and verify that each update preserves that condition while making progress toward termination."
+      "name": "Invariant and progress rule",
+      "description": "State what remains true and what strictly moves toward termination."
     },
     {
       "id": "dsa.correctness.edge_cases",
-      "name": "Boundary and counterexample testing",
-      "description": "Use small boundary cases and counterexamples to expose off-by-one errors, missing cases, invalid assumptions, and no-solution behavior."
+      "name": "Counterexample-driven edge testing",
+      "description": "Use tiny hostile cases to attack assumptions and boundaries."
     }
   ],
   "questions": [
     {
       "id": "dsa1-frame-evidence-001",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.1",
       "assessment_mode": "recognition",
       "interaction_type": "evidence_selection",
       "difficulty_prior": 0.34,
-      "prompt": "A prompt says: “Given a sequence of IDs, return whether any ID repeats.” Which clarifications can materially change the solution or its contract?",
+      "prompt": "A batch deduper currently checks whether any event ID repeats. Before choosing a faster design, which missing facts could materially change the implementation?",
       "concepts": [
         {
           "concept_id": "dsa.interview.signal",
           "weight": 1.0
         }
       ],
-      "explanation": "Input scale can change what complexity is practical; mutation rules can rule out sorting in place; memory limits can change whether extra state is acceptable. Variable names do not change the algorithmic contract.",
+      "explanation": "Scale, mutation rules, and memory constraints can change which optimizations are legal or worthwhile. Local variable naming does not change the algorithmic contract.",
       "blueprint_skill_ids": [
         "1.1.01"
       ],
@@ -175,25 +175,25 @@
       ],
       "error_codes": [
         {
-          "code": "relevant_evidence_missed",
+          "code": "evidence_missing_relevant",
           "description": "At least one relevant clarification was missed.",
           "remediation": {
             "concept_ids": [
               "dsa.interview.signal"
             ],
-            "node_id": "domain-1-interview-signal",
+            "node_id": "domain-1-problem-contract",
             "preferred_stage": "recognize",
             "min_scaffold_level": 3
           }
         },
         {
-          "code": "irrelevant_evidence_selected",
+          "code": "evidence_selected_irrelevant",
           "description": "At least one irrelevant clarification was selected.",
           "remediation": {
             "concept_ids": [
               "dsa.interview.signal"
             ],
-            "node_id": "domain-1-interview-signal",
+            "node_id": "domain-1-problem-contract",
             "preferred_stage": "differentiate",
             "min_scaffold_level": 3
           }
@@ -221,19 +221,19 @@
         "evidence": [
           {
             "id": "scale",
-            "label": "Maximum input size"
+            "label": "Maximum batch size / expected scale"
           },
           {
             "id": "mutation",
-            "label": "Whether the input may be reordered or modified"
+            "label": "Whether reordering or mutating the input is allowed"
           },
           {
             "id": "memory",
-            "label": "Whether extra memory is constrained"
+            "label": "Whether O(n) extra memory is acceptable"
           },
           {
             "id": "names",
-            "label": "Preferred local variable names"
+            "label": "Whether local variables are named `seen` or `visited`"
           }
         ]
       },
@@ -248,21 +248,21 @@
     },
     {
       "id": "dsa1-workflow-order-002",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.1",
       "assessment_mode": "procedural_recall",
       "interaction_type": "ordering",
       "difficulty_prior": 0.39,
-      "prompt": "Put the fallback interview workflow in a useful order.",
+      "prompt": "A duplicate checker is correct but too slow. Put the refactor process in an order that lets the code itself reveal the right optimization.",
       "concepts": [
         {
           "concept_id": "dsa.interview.workflow",
           "weight": 1.0
         }
       ],
-      "explanation": "The order deliberately makes correctness visible before optimization: clarify the contract, test a tiny example, state a correct baseline, identify its bottleneck, state the invariant/complexity, then code and test.",
+      "explanation": "Preserve behavior first, make repeated work visible, decide what state removes it, then implement and attack the changed logic with targeted tests.",
       "blueprint_skill_ids": [
         "1.1.03"
       ],
@@ -278,7 +278,7 @@
             "concept_ids": [
               "dsa.interview.workflow"
             ],
-            "node_id": "domain-1-interview-loop",
+            "node_id": "domain-1-bottleneck-to-pattern",
             "preferred_stage": "construct",
             "min_scaffold_level": 5
           }
@@ -305,31 +305,31 @@
         "items": [
           {
             "id": "code",
-            "label": "Implement the chosen approach"
+            "label": "Implement the optimization"
           },
           {
             "id": "baseline",
-            "label": "State a simple correct baseline"
+            "label": "Keep/state the simple correct baseline"
           },
           {
             "id": "clarify",
-            "label": "Clarify output and constraints"
+            "label": "Pin down output/constraints that must not change"
           },
           {
             "id": "test",
-            "label": "Test normal and boundary cases"
+            "label": "Attack the new state/boundaries with tiny hostile tests"
           },
           {
             "id": "example",
-            "label": "Walk through one tiny example"
+            "label": "Trace one tiny input so the required behavior is concrete"
           },
           {
             "id": "bottleneck",
-            "label": "Identify the expensive repeated operation"
+            "label": "Name the repeated expensive operation"
           },
           {
             "id": "commit",
-            "label": "State invariant/state and complexity"
+            "label": "Choose maintained state; state its invariant and expected complexity"
           }
         ]
       },
@@ -348,14 +348,14 @@
     },
     {
       "id": "dsa1-baseline-choice-003",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.1",
       "assessment_mode": "application",
       "interaction_type": "multiple_choice",
       "difficulty_prior": 0.43,
-      "prompt": "You need to detect whether a list contains a duplicate, but the interviewer has not given useful size constraints yet. Which opening explanation is the strongest baseline?",
+      "prompt": "You inherited a duplicate detector and want a tiny, obviously correct reference implementation for differential testing before optimizing it. Which approach is the best reference baseline?",
       "concepts": [
         {
           "concept_id": "dsa.reasoning.correct_baseline",
@@ -382,7 +382,7 @@
             "concept_ids": [
               "dsa.reasoning.correct_baseline"
             ],
-            "node_id": "domain-1-correct-baseline",
+            "node_id": "domain-1-bruteforce-baseline",
             "preferred_stage": "reason",
             "preferred_family_id": "dsa.reasoning.bruteforce_to_bottleneck",
             "min_scaffold_level": 2
@@ -408,29 +408,29 @@
         "challenge_group_id": "d1-framing-01"
       },
       "choice_feedback": {
-        "pairwise": "Good baseline: it is easy to justify as correct, and its cost is visible.",
-        "sort_now": "Sorting may be useful, but it assumes reordering is acceptable and skips the baseline reasoning.",
-        "binary_search": "Binary search is not valid on unsorted input without additional work.",
-        "hash_magic": "A hash set may be a strong optimization, but jumping there without explaining the baseline hides the bottleneck-removal reasoning this step is practicing."
+        "pairwise": "Correct: a simple independent oracle is valuable precisely because it is easy to reason about.",
+        "sort_now": "Sorting may be a valid final approach, but mutating/reordering before checking the contract is a poor reference baseline.",
+        "binary_search": "Binary search does not apply directly to an unsorted array.",
+        "hash_magic": "A reference implementation should ideally fail differently from the optimized implementation, not share its core state logic."
       },
       "interaction": {
         "type": "multiple_choice",
         "choices": [
           {
             "id": "pairwise",
-            "label": "“I can first compare each pair. That is correct but O(n²); then I’ll see whether the repeated search can be removed.”"
+            "label": "Compare every distinct pair. It is O(n²), but its behavior is easy to verify."
           },
           {
             "id": "sort_now",
-            "label": "“Arrays mean sorting, so I’ll sort immediately.”"
+            "label": "Sort the production input in place and compare neighbors, without first checking whether mutation/order is allowed."
           },
           {
             "id": "binary_search",
-            "label": "“I’ll binary-search each value in the original list.”"
+            "label": "For each value, binary-search the still-unsorted original array."
           },
           {
             "id": "hash_magic",
-            "label": "“I remember this is a hash-set question, so I’ll code that without discussing a baseline.”"
+            "label": "Use the same hash-set optimization you are trying to verify, so both implementations share the same state/update risks."
           }
         ]
       },
@@ -441,14 +441,14 @@
     },
     {
       "id": "dsa1-contract-classify-004",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.1",
       "assessment_mode": "relationship_recall",
       "interaction_type": "classification",
       "difficulty_prior": 0.46,
-      "prompt": "Classify each statement from a coding-interview discussion.",
+      "prompt": "While redesigning a search function, classify each statement by what role it plays.",
       "concepts": [
         {
           "concept_id": "dsa.interview.signal",
@@ -476,7 +476,7 @@
             "concept_ids": [
               "dsa.interview.signal"
             ],
-            "node_id": "domain-1-interview-signal",
+            "node_id": "domain-1-problem-contract",
             "preferred_stage": "differentiate",
             "min_scaffold_level": 3
           }
@@ -488,7 +488,7 @@
             "concept_ids": [
               "dsa.interview.signal"
             ],
-            "node_id": "domain-1-interview-signal",
+            "node_id": "domain-1-problem-contract",
             "preferred_stage": "differentiate",
             "min_scaffold_level": 3
           }
@@ -514,11 +514,11 @@
           },
           {
             "id": "sorted",
-            "label": "“The input is probably already sorted.”"
+            "label": "“I think the input may already be sorted, but the contract does not say so.”"
           },
           {
             "id": "set",
-            "label": "“We can maintain a set so we do not rescan prior values.”"
+            "label": "“Maintain a set so repeated exact-key lookups do not rescan prior values.”"
           },
           {
             "id": "nomutate",
@@ -552,7 +552,7 @@
     },
     {
       "id": "dsa1-assumption-fault-005",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.1",
@@ -588,20 +588,20 @@
               "dsa.interview.signal",
               "dsa.reasoning.correct_baseline"
             ],
-            "node_id": "domain-1-correct-baseline",
+            "node_id": "domain-1-bruteforce-baseline",
             "preferred_stage": "diagnose",
             "preferred_family_id": "dsa.reasoning.bruteforce_to_bottleneck",
             "min_scaffold_level": 2
           }
         },
         {
-          "code": "false_positive_fault",
+          "code": "fault_false_positive",
           "description": "A sound reasoning step was incorrectly flagged.",
           "remediation": {
             "concept_ids": [
               "dsa.interview.signal"
             ],
-            "node_id": "domain-1-interview-signal",
+            "node_id": "domain-1-problem-contract",
             "preferred_stage": "differentiate",
             "min_scaffold_level": 2
           }
@@ -653,14 +653,14 @@
     },
     {
       "id": "dsa1-before-code-mr-006",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.1",
       "assessment_mode": "recognition",
       "interaction_type": "multiple_response",
       "difficulty_prior": 0.42,
-      "prompt": "Which THREE things are most useful to make explicit before you start implementing an unfamiliar interview problem?",
+      "prompt": "You are about to replace a slow implementation with a faster one. Which THREE things give you the strongest footing before changing the algorithm?",
       "concepts": [
         {
           "concept_id": "dsa.interview.signal",
@@ -671,7 +671,7 @@
           "weight": 0.4
         }
       ],
-      "explanation": "A concrete output contract, a small example, and a correct baseline give you enough structure to reason about optimization. Naming and style choices can wait.",
+      "explanation": "Contract, a concrete example, and a trusted baseline give you something to preserve and something specific to optimize. Pattern guessing and micro-optimization do not.",
       "blueprint_skill_ids": [
         "1.1.01",
         "1.1.03"
@@ -688,7 +688,7 @@
             "concept_ids": [
               "dsa.interview.workflow"
             ],
-            "node_id": "domain-1-interview-loop",
+            "node_id": "domain-1-bottleneck-to-pattern",
             "preferred_stage": "recognize",
             "min_scaffold_level": 3
           }
@@ -700,7 +700,7 @@
             "concept_ids": [
               "dsa.interview.signal"
             ],
-            "node_id": "domain-1-interview-signal",
+            "node_id": "domain-1-problem-contract",
             "preferred_stage": "differentiate",
             "min_scaffold_level": 2
           }
@@ -712,7 +712,7 @@
             "concept_ids": [
               "dsa.interview.workflow"
             ],
-            "node_id": "domain-1-interview-loop",
+            "node_id": "domain-1-bottleneck-to-pattern",
             "preferred_stage": "differentiate",
             "min_scaffold_level": 3
           }
@@ -739,23 +739,23 @@
         "choices": [
           {
             "id": "contract",
-            "label": "What exactly must be returned"
+            "label": "The exact behavior/output the refactor must preserve"
           },
           {
             "id": "tiny",
-            "label": "A tiny example with expected output"
+            "label": "A tiny input with the expected behavior"
           },
           {
             "id": "baseline",
-            "label": "A simple correct baseline"
+            "label": "The current correct baseline and its repeated expensive work"
           },
           {
             "id": "names",
-            "label": "Final variable names"
+            "label": "A favorite data structure chosen before looking at the repeated work"
           },
           {
             "id": "formatting",
-            "label": "Preferred code formatting style"
+            "label": "Constant-factor syntax tweaks before identifying the bottleneck"
           }
         ],
         "required_selections": 3
@@ -771,14 +771,14 @@
     },
     {
       "id": "dsa1-stuck-evidence-007",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.1",
       "assessment_mode": "application",
       "interaction_type": "evidence_selection",
       "difficulty_prior": 0.5,
-      "prompt": "You have a correct O(n²) baseline but cannot see the optimized solution yet. Which next moves create useful evidence instead of guessing?",
+      "prompt": "Your O(n²) implementation is correct, but the faster pattern is not obvious. Which next moves help the existing code reveal the optimization?",
       "concepts": [
         {
           "concept_id": "dsa.reasoning.correct_baseline",
@@ -789,7 +789,7 @@
           "weight": 0.6
         }
       ],
-      "explanation": "Naming the repeated operation, checking constraints, and tracing a tiny case all generate information you can reason from. Guessing pattern names does not explain why they fit.",
+      "explanation": "The repeated operation, constraints, and a concrete trace expose what information should be maintained. Changing syntax does not change the algorithmic work.",
       "blueprint_skill_ids": [
         "1.1.02",
         "1.1.03"
@@ -800,26 +800,26 @@
       ],
       "error_codes": [
         {
-          "code": "relevant_evidence_missed",
+          "code": "evidence_missing_relevant",
           "description": "At least one useful reasoning move was missed.",
           "remediation": {
             "concept_ids": [
               "dsa.interview.workflow"
             ],
-            "node_id": "domain-1-interview-loop",
+            "node_id": "domain-1-bottleneck-to-pattern",
             "preferred_stage": "reason",
             "preferred_family_id": "dsa.reasoning.bruteforce_to_bottleneck",
             "min_scaffold_level": 2
           }
         },
         {
-          "code": "irrelevant_evidence_selected",
+          "code": "evidence_selected_irrelevant",
           "description": "A guessing step was selected instead of evidence-producing reasoning.",
           "remediation": {
             "concept_ids": [
               "dsa.reasoning.correct_baseline"
             ],
-            "node_id": "domain-1-correct-baseline",
+            "node_id": "domain-1-bruteforce-baseline",
             "preferred_stage": "differentiate",
             "preferred_family_id": "dsa.reasoning.bruteforce_to_bottleneck",
             "min_scaffold_level": 2
@@ -853,15 +853,15 @@
           },
           {
             "id": "constraints",
-            "label": "Re-check input scale and memory/mutation constraints"
+            "label": "Re-check scale plus memory/reordering constraints"
           },
           {
             "id": "trace",
-            "label": "Trace a tiny example and record what information is recomputed"
+            "label": "Trace a tiny input and write down which information gets recomputed"
           },
           {
             "id": "random",
-            "label": "Pick a random memorized pattern and start coding it"
+            "label": "Rewrite the same algorithm in another syntax before identifying the bottleneck"
           }
         ]
       },
@@ -876,14 +876,14 @@
     },
     {
       "id": "dsa1-fallback-reconstruct-008",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.1",
       "assessment_mode": "structural_reconstruction",
       "interaction_type": "reconstruction",
       "difficulty_prior": 0.56,
-      "prompt": "Rebuild the reasoning skeleton you can use when a problem feels unfamiliar.",
+      "prompt": "A dedupe service is correct but times out at scale. Rebuild the sequence that turns the trusted slow implementation into a justified fast one.",
       "concepts": [
         {
           "concept_id": "dsa.interview.workflow",
@@ -894,7 +894,7 @@
           "weight": 0.35
         }
       ],
-      "explanation": "The skeleton creates a chain from contract to evidence: clarify → tiny example → correct baseline → bottleneck → invariant/complexity → code → tests.",
+      "explanation": "This workflow turns a vague optimization problem into a sequence of observable decisions and is intentionally pattern-name-last.",
       "blueprint_skill_ids": [
         "1.1.02",
         "1.1.03"
@@ -905,25 +905,25 @@
       ],
       "error_codes": [
         {
-          "code": "reconstruction_misplaced",
+          "code": "reconstruction_wrong_position",
           "description": "At least one reasoning step was placed in the wrong position.",
           "remediation": {
             "concept_ids": [
               "dsa.interview.workflow"
             ],
-            "node_id": "domain-1-interview-loop",
+            "node_id": "domain-1-bottleneck-to-pattern",
             "preferred_stage": "construct",
             "min_scaffold_level": 5
           }
         },
         {
-          "code": "reconstruction_incomplete",
+          "code": "reconstruction_unfilled_slot",
           "description": "At least one required reasoning slot was left incomplete.",
           "remediation": {
             "concept_ids": [
               "dsa.interview.workflow"
             ],
-            "node_id": "domain-1-interview-loop",
+            "node_id": "domain-1-bottleneck-to-pattern",
             "preferred_stage": "construct",
             "min_scaffold_level": 5
           }
@@ -952,35 +952,35 @@
         "pieces": [
           {
             "id": "clarify",
-            "label": "Clarify the contract"
+            "label": "Lock down the behavior/constraints"
           },
           {
             "id": "example",
-            "label": "Trace a tiny example"
+            "label": "Trace one tiny concrete input"
           },
           {
             "id": "baseline",
-            "label": "State a correct baseline"
+            "label": "State the trusted correct baseline"
           },
           {
             "id": "bottleneck",
-            "label": "Identify repeated expensive work"
+            "label": "Find the repeated expensive operation"
           },
           {
             "id": "commit",
-            "label": "State invariant/state + complexity"
+            "label": "Choose maintained state + invariant + expected complexity"
           },
           {
             "id": "code",
-            "label": "Implement"
+            "label": "Implement the changed algorithm"
           },
           {
             "id": "tests",
-            "label": "Test boundaries and failure cases"
+            "label": "Attack the changed state/boundaries with targeted tests"
           },
           {
             "id": "guess",
-            "label": "Guess a pattern name from a keyword"
+            "label": "Choose a famous pattern from a keyword before understanding the repeated work"
           }
         ],
         "slots": [
@@ -1023,14 +1023,14 @@
     },
     {
       "id": "dsa1-linear-scan-009",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.2",
       "assessment_mode": "recognition",
       "interaction_type": "multiple_choice",
       "difficulty_prior": 0.31,
-      "prompt": "What is the time complexity of this code as a function of n = len(values)?\n\n`total = 0`\n`for value in values:`\n`    total += value`",
+      "prompt": "A billing pass reads each of n usage records once and adds its value to a running total. How does runtime grow with n?",
       "concepts": [
         {
           "concept_id": "dsa.complexity.big_o",
@@ -1053,7 +1053,7 @@
             "concept_ids": [
               "dsa.complexity.big_o"
             ],
-            "node_id": "domain-1-big-o",
+            "node_id": "domain-1-growth-shapes",
             "preferred_stage": "recognize",
             "preferred_family_id": "dsa.reasoning.complexity_by_operation",
             "min_scaffold_level": 3
@@ -1112,14 +1112,14 @@
     },
     {
       "id": "dsa1-growth-classify-010",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.2",
       "assessment_mode": "relationship_recall",
       "interaction_type": "classification",
       "difficulty_prior": 0.48,
-      "prompt": "Classify each code shape by its dominant asymptotic time.",
+      "prompt": "During a performance review, classify each code shape by the growth rate that will dominate as the input gets large.",
       "concepts": [
         {
           "concept_id": "dsa.complexity.big_o",
@@ -1147,7 +1147,7 @@
             "concept_ids": [
               "dsa.complexity.big_o"
             ],
-            "node_id": "domain-1-big-o",
+            "node_id": "domain-1-growth-shapes",
             "preferred_stage": "differentiate",
             "preferred_family_id": "dsa.reasoning.complexity_by_operation",
             "min_scaffold_level": 3
@@ -1160,7 +1160,7 @@
             "concept_ids": [
               "dsa.complexity.big_o"
             ],
-            "node_id": "domain-1-big-o",
+            "node_id": "domain-1-growth-shapes",
             "preferred_stage": "differentiate",
             "preferred_family_id": "dsa.reasoning.complexity_by_operation",
             "min_scaffold_level": 3
@@ -1235,7 +1235,7 @@
     },
     {
       "id": "dsa1-bottleneck-evidence-011",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.2",
@@ -1264,20 +1264,20 @@
       ],
       "error_codes": [
         {
-          "code": "relevant_evidence_missed",
+          "code": "evidence_missing_relevant",
           "description": "Part of the repeated expensive work was missed.",
           "remediation": {
             "concept_ids": [
               "dsa.optimization.from_bruteforce"
             ],
-            "node_id": "domain-1-bottleneck",
+            "node_id": "domain-1-bottleneck-to-pattern",
             "preferred_stage": "reason",
             "preferred_family_id": "dsa.reasoning.bruteforce_to_bottleneck",
             "min_scaffold_level": 2
           }
         },
         {
-          "code": "irrelevant_evidence_selected",
+          "code": "evidence_selected_irrelevant",
           "description": "A low-cost operation was mistaken for the dominant bottleneck.",
           "remediation": {
             "concept_ids": [
@@ -1336,7 +1336,7 @@
     },
     {
       "id": "dsa1-pointer-complexity-fault-012",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.2",
@@ -1373,7 +1373,7 @@
           }
         },
         {
-          "code": "false_positive_fault",
+          "code": "fault_false_positive",
           "description": "A correct aggregate-work statement was incorrectly flagged.",
           "remediation": {
             "concept_ids": [
@@ -1434,7 +1434,7 @@
     },
     {
       "id": "dsa1-quadratic-ops-013",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.2",
@@ -1482,7 +1482,7 @@
             "concept_ids": [
               "dsa.complexity.big_o"
             ],
-            "node_id": "domain-1-big-o",
+            "node_id": "domain-1-growth-shapes",
             "preferred_stage": "differentiate",
             "preferred_family_id": "dsa.reasoning.complexity_by_operation",
             "min_scaffold_level": 3
@@ -1548,14 +1548,14 @@
     },
     {
       "id": "dsa1-nested-scan-typed-014",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.2",
       "assessment_mode": "recall",
       "interaction_type": "typed_fill_blank",
       "difficulty_prior": 0.45,
-      "prompt": "Complete the asymptotic growth statement.",
+      "prompt": "A validator performs a full n-item scan for each of n input records. Complete the dominant asymptotic growth.",
       "concepts": [
         {
           "concept_id": "dsa.complexity.big_o",
@@ -1584,7 +1584,7 @@
               "dsa.complexity.big_o",
               "dsa.complexity.aggregate_work"
             ],
-            "node_id": "domain-1-big-o",
+            "node_id": "domain-1-growth-shapes",
             "preferred_stage": "reason",
             "preferred_family_id": "dsa.reasoning.complexity_by_operation",
             "min_scaffold_level": 3
@@ -1597,7 +1597,7 @@
             "concept_ids": [
               "dsa.complexity.big_o"
             ],
-            "node_id": "domain-1-big-o",
+            "node_id": "domain-1-growth-shapes",
             "preferred_stage": "recall",
             "preferred_family_id": "dsa.reasoning.complexity_by_operation",
             "min_scaffold_level": 4
@@ -1647,14 +1647,14 @@
     },
     {
       "id": "dsa1-optimize-order-015",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.2",
       "assessment_mode": "procedural_recall",
       "interaction_type": "ordering",
       "difficulty_prior": 0.55,
-      "prompt": "Order the reasoning steps for improving a slow but correct baseline.",
+      "prompt": "A correct endpoint is too slow. Put the engineering reasoning steps in the order that preserves behavior while exposing the real bottleneck.",
       "concepts": [
         {
           "concept_id": "dsa.optimization.from_bruteforce",
@@ -1682,7 +1682,7 @@
             "concept_ids": [
               "dsa.optimization.from_bruteforce"
             ],
-            "node_id": "domain-1-bottleneck",
+            "node_id": "domain-1-bottleneck-to-pattern",
             "preferred_stage": "construct",
             "preferred_family_id": "dsa.reasoning.bruteforce_to_bottleneck",
             "min_scaffold_level": 4
@@ -1750,14 +1750,14 @@
     },
     {
       "id": "dsa1-hash-bottleneck-transfer-016",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.2",
       "assessment_mode": "application",
       "interaction_type": "multiple_choice",
       "difficulty_prior": 0.63,
-      "prompt": "A service processes n event IDs once. The baseline checks each new ID by scanning all previously seen IDs. Which change most directly removes the repeated expensive operation?",
+      "prompt": "A service must preserve event order while detecting whether an ID has appeared earlier. The current code rescans the entire processed prefix for every event. Which change most directly targets that repeated work?",
       "concepts": [
         {
           "concept_id": "dsa.optimization.from_bruteforce",
@@ -1782,7 +1782,7 @@
             "concept_ids": [
               "dsa.optimization.from_bruteforce"
             ],
-            "node_id": "domain-1-bottleneck",
+            "node_id": "domain-1-bottleneck-to-pattern",
             "preferred_stage": "reason",
             "preferred_family_id": "dsa.reasoning.bruteforce_to_bottleneck",
             "min_scaffold_level": 2
@@ -1822,15 +1822,15 @@
           },
           {
             "id": "rename",
-            "label": "Use shorter variable names in the nested scan"
+            "label": "Keep the repeated prefix scan but move it into a helper function"
           },
           {
             "id": "reverse",
-            "label": "Reverse the input before running the same nested scan"
+            "label": "Copy and sort the IDs, then compare neighbors; this changes the approach to O(n log n)"
           },
           {
             "id": "copy",
-            "label": "Copy the input before checking duplicates"
+            "label": "Store earlier IDs in a balanced ordered structure, giving O(log n) membership rather than expected O(1)"
           }
         ]
       },
@@ -1841,7 +1841,7 @@
     },
     {
       "id": "dsa1-prefix-invariant-017",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.3",
@@ -1926,7 +1926,7 @@
     },
     {
       "id": "dsa1-binary-progress-fault-018",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.3",
@@ -1963,7 +1963,7 @@
           }
         },
         {
-          "code": "false_positive_fault",
+          "code": "fault_false_positive",
           "description": "A valid search step was incorrectly flagged.",
           "remediation": {
             "concept_ids": [
@@ -2020,7 +2020,7 @@
     },
     {
       "id": "dsa1-binary-update-reason-019",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.3",
@@ -2105,14 +2105,14 @@
     },
     {
       "id": "dsa1-binary-trace-order-020",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.3",
       "assessment_mode": "procedural_recall",
       "interaction_type": "ordering",
       "difficulty_prior": 0.61,
-      "prompt": "For `values = [2, 5, 8, 12, 19]` and `target = 12`, order the search states for the standard inclusive binary search.",
+      "prompt": "A sorted version index contains `[2, 5, 8, 12, 19]`. A lookup for version key 12 uses inclusive binary search. Order the states the search visits.",
       "concepts": [
         {
           "concept_id": "dsa.correctness.invariant",
@@ -2189,7 +2189,7 @@
     },
     {
       "id": "dsa1-edge-cases-mr-021",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.3",
@@ -2219,7 +2219,7 @@
             "concept_ids": [
               "dsa.correctness.edge_cases"
             ],
-            "node_id": "domain-1-edge-cases",
+            "node_id": "domain-1-counterexamples",
             "preferred_stage": "recognize",
             "preferred_family_id": "dsa.reasoning.invariant_progress",
             "min_scaffold_level": 3
@@ -2232,7 +2232,7 @@
             "concept_ids": [
               "dsa.correctness.edge_cases"
             ],
-            "node_id": "domain-1-edge-cases",
+            "node_id": "domain-1-counterexamples",
             "preferred_stage": "differentiate",
             "preferred_family_id": "dsa.reasoning.invariant_progress",
             "min_scaffold_level": 3
@@ -2245,7 +2245,7 @@
             "concept_ids": [
               "dsa.correctness.edge_cases"
             ],
-            "node_id": "domain-1-edge-cases",
+            "node_id": "domain-1-counterexamples",
             "preferred_stage": "differentiate",
             "preferred_family_id": "dsa.reasoning.invariant_progress",
             "min_scaffold_level": 3
@@ -2308,14 +2308,14 @@
     },
     {
       "id": "dsa1-tests-classify-022",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.3",
       "assessment_mode": "relationship_recall",
       "interaction_type": "classification",
       "difficulty_prior": 0.47,
-      "prompt": "Classify each test by the main behavior it probes for a search function that returns an index or `-1`.",
+      "prompt": "A search helper just had a boundary bug fixed. Match each small regression test to the failure mode it is mainly trying to catch.",
       "concepts": [
         {
           "concept_id": "dsa.correctness.edge_cases",
@@ -2338,7 +2338,7 @@
             "concept_ids": [
               "dsa.correctness.edge_cases"
             ],
-            "node_id": "domain-1-edge-cases",
+            "node_id": "domain-1-counterexamples",
             "preferred_stage": "differentiate",
             "min_scaffold_level": 3
           }
@@ -2350,7 +2350,7 @@
             "concept_ids": [
               "dsa.correctness.edge_cases"
             ],
-            "node_id": "domain-1-edge-cases",
+            "node_id": "domain-1-counterexamples",
             "preferred_stage": "differentiate",
             "min_scaffold_level": 3
           }
@@ -2414,14 +2414,14 @@
     },
     {
       "id": "dsa1-invariant-proof-reconstruct-023",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.3",
       "assessment_mode": "structural_reconstruction",
       "interaction_type": "reconstruction",
       "difficulty_prior": 0.66,
-      "prompt": "Reconstruct the compact correctness checklist for a loop.",
+      "prompt": "You are reviewing a loop optimization that now maintains extra state. Reconstruct the minimum correctness argument you want before approving it.",
       "concepts": [
         {
           "concept_id": "dsa.correctness.invariant",
@@ -2438,7 +2438,7 @@
       ],
       "error_codes": [
         {
-          "code": "reconstruction_misplaced",
+          "code": "reconstruction_wrong_position",
           "description": "At least one correctness step was misplaced.",
           "remediation": {
             "concept_ids": [
@@ -2451,7 +2451,7 @@
           }
         },
         {
-          "code": "reconstruction_incomplete",
+          "code": "reconstruction_unfilled_slot",
           "description": "At least one correctness step was missing.",
           "remediation": {
             "concept_ids": [
@@ -2531,7 +2531,7 @@
     },
     {
       "id": "dsa1-invariant-transfer-024",
-      "content_version": "dsa-interview-content-2026-09-25-v1",
+      "content_version": "dsa-interview-content-2026-09-26-v4",
       "certification_version": "dsa-interview-v1",
       "domain_id": "domain-1",
       "task_id": "1.3",

@@ -1,0 +1,1567 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "dsa-interview-learning-2026-09-26-v4",
+  "certification_id": "cs-dsa-interview",
+  "certification_version": "dsa-interview-v1",
+  "exam_guide_revision": "Reviewed anti-boring v4, 2026-09-26. Full learning and question editorial audit completed; weak/generic prompts and distractors were rewritten while preserving compatibility.",
+  "domain": {
+    "id": "domain-5",
+    "name": "Binary Search, Sorting & Ordered Reasoning",
+    "weight": 0.1
+  },
+  "learning_design": {
+    "progress_label": "Pattern Vision",
+    "unlock_rule": "All learning reveals are required. Each node moves quickly through a concrete problem, the obvious failure/waste, the maintained state or invariant that fixes it, the pattern name, a different real-world transfer, and one quick check.",
+    "mastery_note": "The goal is not to enjoy studying algorithms. The goal is to recognize the structure fast enough that an unfamiliar problem starts to look like a problem you have already solved."
+  },
+  "source_refs": [
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 3 notes: Sets and Sorting",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/16d78ce4aa9f365920d109ac278c281e_MIT6_006S20_lec3.pdf"
+    },
+    {
+      "title": "Python documentation — bisect",
+      "url": "https://docs.python.org/3/library/bisect.html"
+    },
+    {
+      "title": "Python documentation — Sorting HOW TO",
+      "url": "https://docs.python.org/3/howto/sorting.html"
+    },
+    {
+      "title": "Princeton Algorithms — Sorting",
+      "url": "https://algs4.cs.princeton.edu/20sorting/"
+    },
+    {
+      "title": "Princeton Algorithms — Mergesort",
+      "url": "https://algs4.cs.princeton.edu/22mergesort/"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "lower bound",
+      "definition": "The first position where a value or monotonic condition reaches the requested threshold."
+    },
+    {
+      "term": "feasibility predicate",
+      "definition": "A boolean test that says whether a candidate answer satisfies the required constraint."
+    },
+    {
+      "term": "stable sort",
+      "definition": "A sort that preserves relative order among records with equal sort keys."
+    },
+    {
+      "term": "sort key",
+      "definition": "The value extracted from each record that determines its ordering."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "5.1",
+      "5.2",
+      "5.3"
+    ],
+    "skill_ids": [
+      "5.1.01",
+      "5.1.02",
+      "5.1.03",
+      "5.2.01",
+      "5.2.02",
+      "5.2.03",
+      "5.3.01",
+      "5.3.02",
+      "5.3.03"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 54
+  },
+  "authoring_notes": "Anti-boring rule set: no optional reveals; no definition-first nodes; no university-course voice; no fake corporate narrative; start with code/data/workload; expose the waste or bug; name the useful state; then name the pattern; finish with transfer.",
+  "modules": [
+    {
+      "id": "domain-5-module-1-binary",
+      "title": "Exploit ordered search space",
+      "order": 1,
+      "task_ids": [
+        "5.1"
+      ],
+      "skill_ids": [
+        "5.1.01",
+        "5.1.02",
+        "5.1.03"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-5-binary-exact",
+          "title": "Sorted data lets one comparison delete half the candidates",
+          "concept_ids": [
+            "dsa.binary.exact"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A sorted list of sequence numbers must locate exact ID 42017 or report absent. You are learning to use sorted order as proof that an entire half cannot contain the target.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A sorted list of sequence numbers must locate exact ID 42017 or report absent.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to use sorted order as proof that an entire half cannot contain the target",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A linear scan works but ignores the strongest structural guarantee in the input.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "every candidate is inspected even though order can rule out many at once",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Compare target with the midpoint. Smaller target → discard right half; larger target → discard left half.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "the candidate interval that could still contain the target",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Exact binary search. Trigger: ordered search space + exact key lookup",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Exact binary search",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "ordered search space + exact key lookup",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sorted timestamps, version numbers, IDs, and offsets all share the same half-elimination structure.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "midpoint comparison proves one half impossible",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If `values[mid] < target`, which side is impossible? Answer: Mid and everything left of mid.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Mid and everything left of mid.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "Python documentation — bisect",
+              "url": "https://docs.python.org/3/library/bisect.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "candidate interval",
+              "definition": "The portion of the ordered search space that could still contain the answer."
+            }
+          ]
+        },
+        {
+          "id": "domain-5-binary-progress",
+          "title": "Most binary-search bugs are not 'binary search' bugs — they are interval bugs",
+          "concept_ids": [
+            "dsa.binary.progress"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-binary-exact"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Your search sometimes hangs on two remaining elements. You are learning to define one interval convention and make every update strictly shrink it.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Your search sometimes hangs on two remaining elements.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to define one interval convention and make every update strictly shrink it",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "THE BUG HIDES IN ONE BOUNDARY UPDATE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "binary_search_bug.py",
+                "language": "python",
+                "code": "while left <= right:\n    mid = (left + right) // 2\n    if values[mid] < target:\n        left = mid\n    else:\n        right = mid - 1\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "stuck",
+                    "anchor": {
+                      "line": 4,
+                      "text": "left = mid",
+                      "occurrence": 1
+                    },
+                    "title": "Can repeat the same interval",
+                    "explanation": "With two elements, mid can equal left.",
+                    "required": true
+                  },
+                  {
+                    "id": "right",
+                    "anchor": {
+                      "line": 6,
+                      "text": "right = mid - 1",
+                      "occurrence": 1
+                    },
+                    "title": "This side removes mid",
+                    "explanation": "The interval strictly shrinks here.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Pick inclusive `[left,right]` or half-open `[left,right)` and keep the loop condition/update math consistent. Proven-impossible candidates must actually leave the interval.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "interval semantics + a strict progress rule",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Binary-search boundary discipline. Trigger: off-by-one, infinite-loop, or missed-edge bugs around midpoint updates",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Binary-search boundary discipline",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "off-by-one, infinite-loop, or missed-edge bugs around midpoint updates",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The same discipline appears in answer-space binary search: the math is less about memorizing a template and more about preserving a boundary meaning.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "every boundary update must preserve the candidate invariant and make progress",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "With inclusive bounds and floor mid, what replaces `left = mid` when mid is too small? Answer: `left = mid + 1`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`left = mid + 1`.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "Python documentation — bisect",
+              "url": "https://docs.python.org/3/library/bisect.html"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-binary-boundary",
+          "title": "Sometimes you do not want a match — you want the exact place where behavior changes",
+          "concept_ids": [
+            "dsa.binary.boundary",
+            "dsa.binary.progress"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-binary-progress"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A sorted timestamp list may not contain 10:30 exactly. You need the first record at or after 10:30. You are learning to search for a boundary such as first `>= x` rather than stopping on any equality.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A sorted timestamp list may not contain 10:30 exactly. You need the first record at or after 10:30.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to search for a boundary such as first `>= x` rather than stopping on any equality",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Exact-match binary search can correctly report 'not found' even though the requested insertion/boundary position exists.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "the search target is a transition position, not necessarily an existing equal value",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Define predicate `timestamp >= requested`. Find the first index where it becomes true.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "the first true / lower-bound transition",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Boundary binary search / lower bound. Trigger: first at least, first greater, last at most, insertion point, first compatible",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Boundary binary search / lower bound",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "first at least, first greater, last at most, insertion point, first compatible",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "First compatible release and first capacity meeting a threshold have the same first-true boundary shape.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "search for the transition in an ordered boolean predicate",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If mid satisfies the condition, can you always stop? Answer: No — an earlier satisfying position may still exist.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — an earlier satisfying position may still exist.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Python documentation — bisect",
+              "url": "https://docs.python.org/3/library/bisect.html"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-5-module-2-answer-space",
+      "title": "Search thresholds only when the predicate is monotonic",
+      "order": 2,
+      "task_ids": [
+        "5.2"
+      ],
+      "skill_ids": [
+        "5.2.01",
+        "5.2.02",
+        "5.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-5-module-1-binary"
+      ],
+      "nodes": [
+        {
+          "id": "domain-5-answer-monotonic",
+          "title": "Binary search can search answers, not just arrays",
+          "concept_ids": [
+            "dsa.binary.answer_space"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.16,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A batch can use 1..10,000 workers. `finishes_on_time(w)` is false for small w and stays true after enough workers. You are learning to binary-search the smallest feasible answer when feasibility is monotonic.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A batch can use 1..10,000 workers. `finishes_on_time(w)` is false for small w and stays true after enough workers.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to binary-search the smallest feasible answer when feasibility is monotonic",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Trying every worker count from 1 upward works but ignores the false...false,true...true structure.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "a large ordered answer range is checked one candidate at a time",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Search worker count itself. Mid fails → answer must be larger. Mid succeeds → keep it as a candidate and search smaller.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "an ordered answer interval with a monotonic feasibility predicate",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Binary search on answer space. Trigger: find minimum/maximum numeric answer and feasibility changes only once",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Binary search on answer space",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "find minimum/maximum numeric answer and feasibility changes only once",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Minimum capacity, minimum rate limit, smallest batch size, and threshold version can all have this structure.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "the ordered answer domain has one feasibility transition",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "What are you binary-searching here: the input array or worker count? Answer: The worker-count answer space.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "The worker-count answer space.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-answer-predicate",
+          "title": "A numeric answer does NOT automatically make binary search legal",
+          "concept_ids": [
+            "dsa.binary.answer_space",
+            "dsa.binary.boundary"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-answer-monotonic"
+          ],
+          "map_position": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Throughput improves as concurrency rises, then drops from contention, then improves again. You are learning to prove monotonicity before using answer-space binary search.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Throughput improves as concurrency rises, then drops from contention, then improves again.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to prove monotonicity before using answer-space binary search",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If `meets_target(limit)` flips true→false→true, one midpoint result cannot safely eliminate an entire half.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "the feasibility predicate has more than one transition",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Write the true/false sequence you are assuming. Binary search needs one directional transition such as false...false,true...true.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "a proven monotonic predicate",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Monotonic-feasibility proof. Trigger: you are tempted to binary-search a threshold or numeric configuration",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Monotonic-feasibility proof",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "you are tempted to binary-search a threshold or numeric configuration",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Capacity often behaves monotonically in simplified models; real concurrency can fail this assumption because contention changes behavior.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "half-elimination requires a one-transition predicate",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Can standard boundary binary search safely use `T,T,F,T` over increasing x? Answer: No — the predicate is non-monotonic.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — the predicate is non-monotonic.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-answer-boundaries",
+          "title": "Finding the transition is not enough — return the side the product asked for",
+          "concept_ids": [
+            "dsa.binary.answer_space",
+            "dsa.binary.progress"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-answer-predicate"
+          ],
+          "map_position": {
+            "x": 0.82,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "You know worker counts switch from failing to passing. The product wants the cheapest passing count. You are learning to distinguish first true, last false, first greater, and neighboring boundary answers.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "You know worker counts switch from failing to passing. The product wants the cheapest passing count.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to distinguish first true, last false, first greater, and neighboring boundary answers",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Returning the last failing count is only one away from the right answer — and still wrong.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "the search locates the region but returns the wrong side of the boundary",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Translate the requirement into one exact boundary phrase before coding: 'minimum passing' = first true.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "which side of the transition the contract wants",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Boundary-side contract. Trigger: minimum feasible / maximum infeasible / first greater / last less terminology",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Boundary-side contract",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "minimum feasible / maximum infeasible / first greater / last less terminology",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "First compatible release versus latest incompatible release use the same transition but opposite boundary answers.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "same transition, different requested side",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Minimum worker count that meets deadline = first true or last false? Answer: First true.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "First true.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "Python documentation — bisect",
+              "url": "https://docs.python.org/3/library/bisect.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-5-module-3-sorting",
+      "title": "Use sorting to expose useful structure",
+      "order": 3,
+      "task_ids": [
+        "5.3"
+      ],
+      "skill_ids": [
+        "5.3.01",
+        "5.3.02",
+        "5.3.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-5-module-2-answer-space"
+      ],
+      "nodes": [
+        {
+          "id": "domain-5-sort-preprocess",
+          "title": "Sorting is worth paying for when it turns a global mess into local neighbors",
+          "concept_ids": [
+            "dsa.sort.preprocess"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.14,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Records may be reordered and you need to group equal customer IDs. You are learning to use sorting as preprocessing when order exposes adjacency, grouping, or a simple scan.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Records may be reordered and you need to group equal customer IDs.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to use sorting as preprocessing when order exposes adjacency, grouping, or a simple scan",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Repeatedly searching the whole unsorted collection for each customer's matching records can duplicate work.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "related values are scattered, so every group requires global searching",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sort once by customer ID. Equal IDs become adjacent; one scan can identify group boundaries.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "ordered adjacency created by preprocessing",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sort → scan. Trigger: reordering is allowed and order makes matching/grouping/merging local",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Sort → scan",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "reordering is allowed and order makes matching/grouping/merging local",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Interval merging, duplicate grouping, sweep-line scans, and ordered comparisons often start by buying useful adjacency with a sort.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "sort once to make future relationships local",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Should you sort if the required output is the original arrival order and no metadata is preserved? Answer: No — that would violate the output contract.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — that would violate the output contract.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3 notes: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/16d78ce4aa9f365920d109ac278c281e_MIT6_006S20_lec3.pdf"
+            },
+            {
+              "title": "Princeton Algorithms — Sorting",
+              "url": "https://algs4.cs.princeton.edu/20sorting/"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-sort-key",
+          "title": "Sorting the right field but losing the record is still wrong",
+          "concept_ids": [
+            "dsa.sort.key_contract"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-sort-preprocess"
+          ],
+          "map_position": {
+            "x": 0.47,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Jobs must be output by deadline, but the result still needs each job ID and payload. You are learning to choose a sort key from the contract while preserving the full record identity.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Jobs must be output by deadline, but the result still needs each job ID and payload.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to choose a sort key from the contract while preserving the full record identity",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Extracting only deadlines, sorting them, and discarding job IDs produces an ordered list you can no longer map back correctly.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "the ordering key was preserved but output metadata was destroyed",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sort records by a key such as deadline, not detached key values unless you also preserve identity.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "full records ordered by the contract-relevant key",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Keyed sorting. Trigger: records have many fields but only some determine order",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Keyed sorting",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "records have many fields but only some determine order",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sort API results by timestamp while keeping IDs, or jobs by priority while preserving payloads.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "order by one field without losing the rest of the record",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Need output job IDs ordered by deadline. What should be sorted? Answer: The records (or key+record pairs), not detached deadline values alone.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "The records (or key+record pairs), not detached deadline values alone.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Python documentation — Sorting HOW TO",
+              "url": "https://docs.python.org/3/howto/sorting.html"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-sort-stable-merge",
+          "title": "Stable sort preserves tie history; merge preserves work already done",
+          "concept_ids": [
+            "dsa.sort.stability",
+            "dsa.ordered.merge"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-sort-key"
+          ],
+          "map_position": {
+            "x": 0.8,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Equal-priority jobs should remain in arrival order, and two changelog feeds are already timestamp-sorted. You are learning to recognize when existing relative order and existing sorted order are useful information.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Equal-priority jobs should remain in arrival order, and two changelog feeds are already timestamp-sorted.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to recognize when existing relative order and existing sorted order are useful information",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "An unstable tie reorder can break fairness, while concatenating and re-sorting two sorted feeds discards ordering work they already contain.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "useful prior order is thrown away",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use stable sort when ties should preserve earlier order. Use ordered merge when inputs are already sorted.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "tie order / one frontier from each sorted input",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Stable ordering + ordered merge. Trigger: ties have semantic order or sorted inputs should be combined without full resort",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Stable ordering + ordered merge",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "ties have semantic order or sorted inputs should be combined without full resort",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Priority-then-arrival queues and merging timestamped shards both reward preserving earlier ordering guarantees.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "reuse order already present instead of destroying and rebuilding it",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Two sorted feeds: what records can possibly be globally next? Answer: Only the current front record from each feed.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Only the current front record from each feed.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Python documentation — Sorting HOW TO",
+              "url": "https://docs.python.org/3/howto/sorting.html"
+            },
+            {
+              "title": "Princeton Algorithms — Mergesort",
+              "url": "https://algs4.cs.princeton.edu/22mergesort/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1590 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "dsa-interview-learning-2026-09-26-v4",
+  "certification_id": "cs-dsa-interview",
+  "certification_version": "dsa-interview-v1",
+  "exam_guide_revision": "Reviewed anti-boring v4, 2026-09-26. Full learning and question editorial audit completed; weak/generic prompts and distractors were rewritten while preserving compatibility.",
+  "domain": {
+    "id": "domain-1",
+    "name": "Interview Reasoning, Complexity & Correctness",
+    "weight": 0.1
+  },
+  "learning_design": {
+    "progress_label": "Pattern Vision",
+    "unlock_rule": "All learning reveals are required. Each node moves quickly through a concrete problem, the obvious failure/waste, the maintained state or invariant that fixes it, the pattern name, a different real-world transfer, and one quick check.",
+    "mastery_note": "The goal is not to enjoy studying algorithms. The goal is to recognize the structure fast enough that an unfamiliar problem starts to look like a problem you have already solved."
+  },
+  "source_refs": [
+    {
+      "title": "Microsoft Careers — Technical interviewing",
+      "url": "https://careers.microsoft.com/v2/global/en/hiring-tips/technical-interviewing"
+    },
+    {
+      "title": "Amazon Jobs — Software development interview topics",
+      "url": "https://amazon.jobs/content/en/how-we-hire/interview-prep/software-development-topics"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+    },
+    {
+      "title": "Cornell CS 2112 — Loop invariants",
+      "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "baseline",
+      "definition": "The simplest clearly correct solution used as a reference point for optimization."
+    },
+    {
+      "term": "bottleneck",
+      "definition": "The repeated expensive operation that dominates avoidable work."
+    },
+    {
+      "term": "invariant",
+      "definition": "A property that remains true and explains what maintained state means."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "1.1",
+      "1.2",
+      "1.3"
+    ],
+    "skill_ids": [
+      "1.1.01",
+      "1.1.02",
+      "1.1.03",
+      "1.2.01",
+      "1.2.02",
+      "1.2.03",
+      "1.3.01",
+      "1.3.02",
+      "1.3.03"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 54
+  },
+  "authoring_notes": "Anti-boring rule set: no optional reveals; no definition-first nodes; no university-course voice; no fake corporate narrative; start with code/data/workload; expose the waste or bug; name the useful state; then name the pattern; finish with transfer.",
+  "modules": [
+    {
+      "id": "domain-1-module-1-concrete-reasoning",
+      "title": "Stop guessing patterns: make the problem show you the shape",
+      "order": 1,
+      "task_ids": [
+        "1.1"
+      ],
+      "skill_ids": [
+        "1.1.01",
+        "1.1.02",
+        "1.1.03"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-1-problem-contract",
+          "title": "The words FIRST, INDEX, and CONTIGUOUS can change the whole solution",
+          "concept_ids": [
+            "dsa.interview.signal"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A webhook processor must return the index of the FIRST repeated event ID. You are learning to extract the few prompt details that actually control the algorithm before touching code.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A webhook processor must return the index of the FIRST repeated event ID.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to extract the few prompt details that actually control the algorithm before touching code",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If you immediately convert the IDs to a set, duplicate membership survives but the first duplicate position disappears. That is a correct data structure solving the wrong contract.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "the transformation destroyed information the output still needs",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Write the contract in one sentence: preserve arrival order, return an index, and detect whether the current ID appeared earlier. Now the useful state becomes obvious.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "preserve only the information the output still needs",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Problem-shape extraction. Trigger: words such as first, index, contiguous, original order, distinct indices, sorted, or in-place change what transformations are legal",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Problem-shape extraction",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "words such as first, index, contiguous, original order, distinct indices, sorted, or in-place change what transformations are legal",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A 'longest contiguous request burst' problem also cannot be reduced to an unordered bag of values. The story changed; position semantics still control the solution.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "output semantics decide which information may be discarded",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A prompt asks for the ORIGINAL indices of two records. Is sorting values alone safe? Answer: No — not unless original indices travel with the values.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No — not unless original indices travel with the values.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Microsoft Careers — Technical interviewing",
+              "url": "https://careers.microsoft.com/v2/global/en/hiring-tips/technical-interviewing"
+            },
+            {
+              "title": "Amazon Jobs — Software development interview topics",
+              "url": "https://amazon.jobs/content/en/how-we-hire/interview-prep/software-development-topics"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "problem contract",
+              "definition": "The exact behavior and constraints your algorithm must preserve."
+            }
+          ]
+        },
+        {
+          "id": "domain-1-bruteforce-baseline",
+          "title": "Make the slow solution expose its own bottleneck",
+          "concept_ids": [
+            "dsa.reasoning.correct_baseline"
+          ],
+          "prerequisite_node_ids": [
+            "domain-1-problem-contract"
+          ],
+          "map_position": {
+            "x": 0.44,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "You need to find whether any two request sizes add exactly to a capacity. You are learning to use a simple correct baseline as an X-ray for the repeated work.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "You need to find whether any two request sizes add exactly to a capacity.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to use a simple correct baseline as an X-ray for the repeated work",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "THE SLOW VERSION IS USEFUL",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "pair_sum_baseline.py",
+                "language": "python",
+                "code": "def has_pair(nums, target):\n    for i in range(len(nums)):\n        for j in range(i + 1, len(nums)):\n            if nums[i] + nums[j] == target:\n                return True\n    return False\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "complete",
+                    "anchor": {
+                      "line": 3,
+                      "text": "for j in range(i + 1, len(nums)):",
+                      "occurrence": 1
+                    },
+                    "title": "Easy to trust",
+                    "explanation": "Every legal pair i<j is checked exactly once.",
+                    "required": true
+                  },
+                  {
+                    "id": "repeat",
+                    "anchor": {
+                      "line": 4,
+                      "text": "nums[i] + nums[j] == target",
+                      "occurrence": 1
+                    },
+                    "title": "The bottleneck is visible",
+                    "explanation": "For each i, later values are searched again and again.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Do not apologize for O(n²). Say what it buys you: obvious correctness. Then ask which question the inner loop answers repeatedly.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "the exact repeated question, not a guessed pattern name",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Correct baseline → bottleneck. Trigger: when the optimized solution is not obvious, first make the repeated work concrete",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Correct baseline → bottleneck",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "when the optimized solution is not obvious, first make the repeated work concrete",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Duplicate detection can start the same way: compare each ID with later IDs, then notice that 'have I seen this?' is the repeated question.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "the baseline reveals the query your future state should answer",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "In the pair-sum baseline, what repeated question is the inner search answering for current x? Answer: Whether target - x exists among the other candidate values.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Whether target - x exists among the other candidate values.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "Microsoft Careers — Technical interviewing",
+              "url": "https://careers.microsoft.com/v2/global/en/hiring-tips/technical-interviewing"
+            }
+          ]
+        },
+        {
+          "id": "domain-1-bottleneck-to-pattern",
+          "title": "Patterns are just remembered answers to repeated questions",
+          "concept_ids": [
+            "dsa.interview.workflow",
+            "dsa.optimization.from_bruteforce"
+          ],
+          "prerequisite_node_ids": [
+            "domain-1-bruteforce-baseline"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The pair-sum baseline keeps searching for target - x. A range dashboard keeps re-adding the same values. You are learning to derive a pattern from the information that would eliminate repeated work.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "The pair-sum baseline keeps searching for target - x. A range dashboard keeps re-adding the same values.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to derive a pattern from the information that would eliminate repeated work",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Memorizing 'Two Sum = hash map' works only until the surface story changes. The useful reasoning is to identify what the baseline repeatedly asks.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "keyword memorization does not transfer to unfamiliar stories",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Ask what answer you wish you already had. For pair sum: prior values/indices. For repeated range totals: cumulative boundaries. For a rolling fixed window: the previous window state.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "remember the answer to the expensive repeated query",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Repeated-work elimination. Trigger: the same expensive question is recomputed for overlapping or sequential states",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Repeated-work elimination",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "the same expensive question is recomputed for overlapping or sequential states",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A retry deduper and a pair-sum problem look unrelated, but both can become one-pass algorithms because old information is maintained instead of rescanned.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "maintained state replaces rescanning",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A baseline re-sums k numbers for every neighboring k-sized window. What should you remember? Answer: The previous window sum, then subtract the outgoing value and add the incoming one.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "The previous window sum, then subtract the outgoing value and add the incoming one.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-1-module-2-complexity",
+      "title": "Find the expensive repeat",
+      "order": 2,
+      "task_ids": [
+        "1.2"
+      ],
+      "skill_ids": [
+        "1.2.01",
+        "1.2.02",
+        "1.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-1-module-1-concrete-reasoning"
+      ],
+      "nodes": [
+        {
+          "id": "domain-1-growth-shapes",
+          "title": "At 100,000 items, O(n²) stops being an abstract symbol",
+          "concept_ids": [
+            "dsa.complexity.big_o"
+          ],
+          "prerequisite_node_ids": [
+            "domain-1-bottleneck-to-pattern"
+          ],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A batch of 100,000 event IDs is timing out because every new ID scans all earlier IDs. You are learning to use Big O as an early scale filter instead of a math chapter.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A batch of 100,000 event IDs is timing out because every new ID scans all earlier IDs.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to use Big O as an early scale filter instead of a math chapter",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The code may look small, but checking roughly every pair means billions of comparisons at this scale. Micro-optimizing Python syntax will not rescue the growth shape.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "the growth rate overwhelms constant-factor tweaks",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Estimate the shape first: direct lookup ~O(1), halving ~O(log n), one scan ~O(n), sort ~O(n log n), all pairs ~O(n²). Then decide which shapes are plausible for the input size.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "the dominant growth shape",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Growth-rate filtering. Trigger: input constraints are large enough that the wrong asymptotic shape dominates everything else",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Growth-rate filtering",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "input constraints are large enough that the wrong asymptotic shape dominates everything else",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The same filter works on a log processor, a cache warmer, or an interview array problem. The scale tells you which designs deserve attention.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "constraints eliminate implausible growth shapes before implementation details",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "At n=100,000, which deserves immediate suspicion: one scan or all-pairs comparison? Answer: All-pairs comparison — O(n²).",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "All-pairs comparison — O(n²).",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-1-aggregate-work",
+          "title": "A loop inside a loop can still be linear",
+          "concept_ids": [
+            "dsa.complexity.aggregate_work"
+          ],
+          "prerequisite_node_ids": [
+            "domain-1-growth-shapes"
+          ],
+          "map_position": {
+            "x": 0.44,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A window algorithm moves `right` forward once per item and moves `left` forward only when the window is invalid. You are learning to count total state changes across the run instead of multiplying indentation levels.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A window algorithm moves `right` forward once per item and moves `left` forward only when the window is invalid.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to count total state changes across the run instead of multiplying indentation levels",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "THIS NESTED LOOP IS NOT AUTOMATICALLY O(n²)",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "moving_window.py",
+                "language": "python",
+                "code": "left = 0\nfor right in range(len(nums)):\n    add(nums[right])\n    while invalid():\n        remove(nums[left])\n        left += 1\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "right",
+                    "anchor": {
+                      "line": 2,
+                      "text": "for right in range(len(nums)):",
+                      "occurrence": 1
+                    },
+                    "title": "right moves n times",
+                    "explanation": "It advances once through the sequence.",
+                    "required": true
+                  },
+                  {
+                    "id": "left",
+                    "anchor": {
+                      "line": 6,
+                      "text": "left += 1",
+                      "occurrence": 1
+                    },
+                    "title": "left also moves at most n times total",
+                    "explanation": "It never resets or moves backward.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Count events globally. If each element can enter and leave the maintained state once, the total work can stay linear even with a nested while.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "the total number of pointer moves / pushes / pops across the whole execution",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Aggregate-work reasoning. Trigger: inner work consumes progress that is not reset by the outer loop",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Aggregate-work reasoning",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "inner work consumes progress that is not reset by the outer loop",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Merging two sorted log feeds also uses a loop within a loop-like control flow, yet each cursor advances at most to the end once.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "monotonic cursors make total movement bounded",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If left never moves backward, how many times can `left += 1` run over an n-item input? Answer: At most n times total.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "At most n times total.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-1-time-space",
+          "title": "Sometimes the right optimization is simply: remember what you already learned",
+          "concept_ids": [
+            "dsa.optimization.from_bruteforce"
+          ],
+          "prerequisite_node_ids": [
+            "domain-1-aggregate-work"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A duplicate detector rescans the processed prefix for every new request ID. You are learning to recognize a time-space trade when a small amount of memory removes much larger repeated work.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A duplicate detector rescans the processed prefix for every new request ID.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to recognize a time-space trade when a small amount of memory removes much larger repeated work",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Using no extra memory sounds attractive, but repeated prefix scans make the runtime quadratic.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "saving memory forces the same membership question to be recomputed",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Store seen IDs. You spend O(n) extra space to make each membership question expected O(1), turning the full scan into expected O(n).",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "processed-history lookup state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Time-space trade-off. Trigger: the baseline repeatedly recomputes information that is cheap to store and reuse",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Time-space trade-off",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "the baseline repeatedly recomputes information that is cheap to store and reuse",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Caches, memoization, prefix arrays, maps, and visited sets are all versions of the same move: pay memory to avoid repeating work.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "stored state substitutes for recomputation",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If a set turns O(n²) duplicate checking into expected O(n), what did you buy the speed with? Answer: O(n) extra memory for the seen IDs.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "O(n) extra memory for the seen IDs.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-1-module-3-correctness",
+      "title": "Keep the faster solution correct",
+      "order": 3,
+      "task_ids": [
+        "1.3"
+      ],
+      "skill_ids": [
+        "1.3.01",
+        "1.3.02",
+        "1.3.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-1-module-2-complexity"
+      ],
+      "nodes": [
+        {
+          "id": "domain-1-invariant",
+          "title": "Your data structure needs a sentence that says what it means right now",
+          "concept_ids": [
+            "dsa.correctness.invariant"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A sliding-window implementation has a frequency map, `left`, and `right`. The code works on examples but feels fragile. You are learning to state the invariant that makes maintained state trustworthy after every update.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "A sliding-window implementation has a frequency map, `left`, and `right`. The code works on examples but feels fragile.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to state the invariant that makes maintained state trustworthy after every update",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Without a precise meaning for the map, it is easy to remove the wrong element, update counts in the wrong order, or accidentally let stale values remain.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "state exists, but nobody can say exactly what it represents",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Write the invariant before the tricky update: 'the frequency map exactly counts elements inside the current [left, right] window.' Every add/remove must preserve that sentence.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "one precise sentence describing the maintained state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Loop/state invariant. Trigger: an optimization depends on mutable state that must stay synchronized with the portion of input it summarizes",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Loop/state invariant",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "an optimization depends on mutable state that must stay synchronized with the portion of input it summarizes",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Binary search uses a different state but the same idea: if the target exists, it remains in the current candidate interval.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "updates are safe only if they preserve the state meaning",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "What is a useful invariant for a seen-set duplicate scan before processing index i? Answer: The set contains exactly the IDs from positions 0 through i-1.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "The set contains exactly the IDs from positions 0 through i-1.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Cornell CS 2112 — Loop invariants",
+              "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-1-progress",
+          "title": "A correct loop that never finishes is still broken",
+          "concept_ids": [
+            "dsa.correctness.invariant"
+          ],
+          "prerequisite_node_ids": [
+            "domain-1-invariant"
+          ],
+          "map_position": {
+            "x": 0.44,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Binary search passes most tests but hangs on a two-element interval. You are learning to pair an invariant with a progress rule so the algorithm cannot repeat the same state forever.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Binary search passes most tests but hangs on a two-element interval.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to pair an invariant with a progress rule so the algorithm cannot repeat the same state forever",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "THE ONE-LINE BUG",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "binary_progress_bug.py",
+                "language": "python",
+                "code": "while left <= right:\n    mid = (left + right) // 2\n    if values[mid] < target:\n        left = mid\n    else:\n        right = mid - 1\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "bug",
+                    "anchor": {
+                      "line": 4,
+                      "text": "left = mid",
+                      "occurrence": 1
+                    },
+                    "title": "Can make no progress",
+                    "explanation": "When mid == left, the next iteration can recreate the exact same interval.",
+                    "required": true
+                  },
+                  {
+                    "id": "other",
+                    "anchor": {
+                      "line": 6,
+                      "text": "right = mid - 1",
+                      "occurrence": 1
+                    },
+                    "title": "This side removes mid",
+                    "explanation": "The right boundary strictly decreases here.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Once `mid` is proven too small, remove it: `left = mid + 1`. Now the candidate interval strictly shrinks.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "a quantity that strictly advances or shrinks every non-terminal iteration",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Progress measure. Trigger: a loop narrows candidates, moves pointers, consumes work, or explores states",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Progress measure",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "a loop narrows candidates, moves pointers, consumes work, or explores states",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A graph traversal marks discoveries so it does not cycle forever; a two-pointer scan advances at least one cursor each iteration. Different pattern, same progress requirement.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "every iteration must make the remaining problem strictly smaller",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Why is `left = mid + 1` better than `left = mid` after proving `values[mid] < target`? Answer: It discards the proven-impossible midpoint and guarantees the interval shrinks.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "It discards the proven-impossible midpoint and guarantees the interval shrinks.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Cornell CS 2112 — Loop invariants",
+              "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-1-counterexamples",
+          "title": "Do not 'test more' — attack the exact assumption you just made",
+          "concept_ids": [
+            "dsa.correctness.edge_cases"
+          ],
+          "prerequisite_node_ids": [
+            "domain-1-progress"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "start",
+              "kind": "what",
+              "label": "START WITH A REAL PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Your two-sum code uses a hash map and looks correct. Now try to break the distinct-index logic. You are learning to choose tiny hostile tests that target boundaries, duplicates, and state-update assumptions.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "scenario",
+                      "text": "Your two-sum code uses a hash map and looks correct. Now try to break the distinct-index logic.",
+                      "required": true
+                    },
+                    {
+                      "id": "skill",
+                      "text": "You are learning to choose tiny hostile tests that target boundaries, duplicates, and state-update assumptions",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "WATCH THE OBVIOUS MOVE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A huge random test may pass while missing the one bug where the algorithm reuses the same index or skips the last candidate.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pain",
+                      "text": "broad testing does not necessarily attack the reasoning risk",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "move",
+              "kind": "action",
+              "label": "WHAT CHANGES EVERYTHING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use surgical cases: empty/one item, smallest nontrivial input, duplicates, answer at first/last position, and no answer.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "state",
+                      "text": "a test that directly challenges the algorithm's invariant or boundary rule",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "pattern",
+              "kind": "what",
+              "label": "THIS IS THE PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Counterexample-driven testing. Trigger: the algorithm relies on a boundary convention, duplicate rule, or state-update ordering",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "pattern-name",
+                      "text": "Counterexample-driven testing",
+                      "required": true
+                    },
+                    {
+                      "id": "trigger",
+                      "text": "the algorithm relies on a boundary convention, duplicate rule, or state-update ordering",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "transfer",
+              "kind": "connects_to",
+              "label": "SAME SKELETON, DIFFERENT JOB",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For pair sum, `[3]` target 6 must be false while `[3,3]` target 6 must be true. For binary search, test two items and absent values at both ends.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-skeleton",
+                      "text": "tiny cases expose logical mistakes faster than random volume",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "QUICK CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Which test catches illegal self-reuse in a pair-sum algorithm with target 6? Answer: `[3]` — one value cannot supply two distinct indices.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`[3]` — one value cannot supply two distinct indices.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Microsoft Careers — Technical interviewing",
+              "url": "https://careers.microsoft.com/v2/global/en/hiring-tips/technical-interviewing"
+            },
+            {
+              "title": "Amazon Jobs — Software development interview topics",
+              "url": "https://amazon.jobs/content/en/how-we-hire/interview-prep/software-development-topics"
+            },
+            {
+              "title": "Cornell CS 2112 — Loop invariants",
+              "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
