@@ -62,7 +62,7 @@
               "kind": "mental_model",
               "label": "CONCRETE EXAMPLE",
               "placeholder": "An identity policy allows `s3:GetObject`, but an applicable SCP explicitly denies `s3:*` outside approved Regions.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "An identity policy allows `s3:GetObject`, but an applicable SCP explicitly denies `s3:*` outside approved Regions. A request in a denied Region fails because explicit Deny overrides the Allow."
@@ -73,7 +73,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "\"IAM policy allows it but AccessDenied remains\" means another control may be limiting or explicitly…",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "\"IAM policy allows it but AccessDenied remains\" means another control may be limiting or explicitly denying the action."
@@ -84,7 +84,7 @@
               "kind": "mental_model",
               "label": "HOW IT FLOWS",
               "placeholder": "Flow: Start with implicit deny → … → Return final authorization result",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "sequence",
                 "items": [
@@ -102,7 +102,7 @@
               "kind": "mental_model",
               "label": "READ THE REAL CONFIG",
               "placeholder": "Key lines: Allow statement • Explicit deny • Narrower protected resource",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "code_file",
                 "filename": "identity-policy.json",
@@ -151,7 +151,7 @@
               "kind": "mental_model",
               "label": "IAM POLICY LAYERS",
               "placeholder": "Compare the main IAM policy layers that can grant or limit access.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "table",
                 "columns": [
@@ -285,7 +285,7 @@
               "kind": "mental_model",
               "label": "CONCRETE EXAMPLE",
               "placeholder": "An EC2 instance profile uses a role.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "An EC2 instance profile uses a role. The trust policy allows the EC2 service to assume the role; the role permissions policy allows `s3:GetObject` on one bucket. Trust answers 'who can assume'; permissions answer 'what can the session do.'"
@@ -348,7 +348,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "Cannot assume role -> inspect trust; assumed role cannot perform action -> inspect permissions and…",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Cannot assume role -> inspect trust; assumed role cannot perform action -> inspect permissions and other guardrails."
@@ -359,7 +359,7 @@
               "kind": "mental_model",
               "label": "READ THE REAL CONFIG",
               "placeholder": "Key lines: Principal • Trusted service • AssumeRole",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "code_file",
                 "filename": "trust-policy.json",
@@ -473,7 +473,7 @@
               "kind": "mental_model",
               "label": "CONCRETE EXAMPLE",
               "placeholder": "Account A owns an S3 bucket and must allow a role in Account B to read one prefix.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Account A owns an S3 bucket and must allow a role in Account B to read one prefix. A bucket policy can name that cross-account principal and scope access to the intended resource/action."
@@ -484,7 +484,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "S3 bucket policy, KMS key policy, or another policy attached to the resource -> resource-based…",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "S3 bucket policy, KMS key policy, or another policy attached to the resource -> resource-based policy."
@@ -549,7 +549,7 @@
               "kind": "mental_model",
               "label": "CONCRETE EXAMPLE",
               "placeholder": "A policy allows a sensitive action only when MFA context is present, or denies S3 requests when `aws:SecureTransport` is false.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "A policy allows a sensitive action only when MFA context is present, or denies S3 requests when `aws:SecureTransport` is false. Conditions make a statement depend on request context instead of only action/resource."
@@ -560,7 +560,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "Allow only when TLS/MFA/tag/source condition is present -> IAM Condition.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Allow only when TLS/MFA/tag/source condition is present -> IAM Condition."
@@ -635,7 +635,7 @@
               "kind": "mental_model",
               "label": "CONCRETE EXAMPLE",
               "placeholder": "A bucket might be exposed to another account: Access Analyzer helps identify the access path.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "A bucket might be exposed to another account: Access Analyzer helps identify the access path. You want to know whether a proposed policy would allow `s3:GetObject`: Policy Simulator. You want to know who actually called `DeleteBucket`: CloudTrail."
@@ -706,7 +706,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "Actual historical API call -> CloudTrail; hypothetical allow/deny -> Policy Simulator.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Actual historical API call -> CloudTrail; hypothetical allow/deny -> Policy Simulator."
@@ -767,7 +767,7 @@
               "kind": "mental_model",
               "label": "CONCRETE EXAMPLE",
               "placeholder": "A developer has `AdministratorAccess` in a member account, but an SCP denies leaving approved Regions.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "A developer has broad IAM permissions in a member account, but an SCP denies actions outside approved Regions. The developer still cannot perform denied actions. A Region-deny SCP should also account for required global services whose requests use fixed endpoints."
@@ -778,7 +778,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "Administrator policy allows an action but the member account is still denied -> check SCPs…",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Administrator policy allows an action but the member account is still denied -> check SCPs and other boundaries."
@@ -789,7 +789,7 @@
               "kind": "mental_model",
               "label": "READ THE REAL CONFIG",
               "placeholder": "Key lines: Guardrail deny • Scope of actions • Condition",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "code_file",
                 "filename": "scp.json",
@@ -838,7 +838,7 @@
               "kind": "mental_model",
               "label": "CONTROL TOWER VS ORGANIZATIONS / SCPS",
               "placeholder": "Compare AWS Organizations, AWS Control Tower, and service control policies.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "table",
                 "columns": [
@@ -952,7 +952,7 @@
               "kind": "mental_model",
               "label": "CONCRETE EXAMPLE",
               "placeholder": "One corporate sign-in can provide different permission sets in different AWS accounts.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "An employee signs in once through the corporate identity provider. IAM Identity Center permission sets then provide a developer role in Account A and a read-only role in Account B."
@@ -963,7 +963,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "One workforce portal for access to many AWS accounts -> IAM Identity Center.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "One workforce portal for access to many AWS accounts -> IAM Identity Center."
@@ -974,7 +974,7 @@
               "kind": "when",
               "label": "FEDERATED WORKFORCE IDENTITY",
               "placeholder": "Existing corporate identity provider + temporary AWS access → federate identities instead of creating long-lived IAM users for every employee.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Federated identity lets users authenticate through an external identity source and receive temporary AWS access. IAM Identity Center centrally manages workforce access to AWS accounts and applications. It can integrate with external identity providers. The key distinction is temporary workforce access versus long-lived IAM-user credentials."
@@ -1060,7 +1060,7 @@
               "kind": "mental_model",
               "label": "CONCRETE EXAMPLE",
               "placeholder": "Trusted Advisor reports a security group exposing an administrative port to the internet.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Trusted Advisor reports a security group exposing an administrative port to the internet. The operator validates whether that access is necessary, then narrows the source range rather than blindly accepting broad exposure."
@@ -1071,7 +1071,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "A Trusted Advisor security check flags broad exposure -> validate the resource and reduce unnecessary…",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "A Trusted Advisor security check flags broad exposure -> validate the resource and reduce unnecessary access."
@@ -1125,7 +1125,7 @@
               "kind": "mental_model",
               "label": "SAME INCIDENT, DIFFERENT QUESTIONS",
               "placeholder": "Bucket became public at 09:15: Config shows state/compliance; CloudTrail shows the API actor.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "table",
                 "columns": [
@@ -1229,7 +1229,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "Configuration drift/history/compliance -> AWS Config.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Configuration drift/history/compliance -> AWS Config."
@@ -1279,7 +1279,7 @@
               "kind": "mental_model",
               "label": "CONCRETE EXAMPLE",
               "placeholder": "Example: package approved Config rules into one conformance pack and deploy it consistently.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "A security team packages rules such as 'S3 public access blocked' and 'EBS volumes encrypted' into a conformance pack and deploys the pack consistently across supported accounts/Regions."
@@ -1290,7 +1290,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "Repeatable bundle of Config compliance rules/remediation -> conformance pack.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Repeatable bundle of Config compliance rules/remediation -> conformance pack."
@@ -1364,7 +1364,7 @@
               "kind": "mental_model",
               "label": "CONCRETE EXAMPLE",
               "placeholder": "Customer payment records are classified as highly sensitive, application debug logs as internal, and public website images as public.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Customer payment records are classified as highly sensitive, application debug logs as internal, and public website images as public. The classification drives encryption, access, retention, and monitoring requirements."
@@ -1375,7 +1375,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "Before choosing protection controls, identify how sensitive the data is and what requirements apply.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Before choosing protection controls, identify how sensitive the data is and what requirements apply."
@@ -1424,7 +1424,7 @@
               "kind": "mental_model",
               "label": "CONCRETE EXAMPLE",
               "placeholder": "An application can read an S3 object's metadata but `GetObject` fails with a KMS AccessDenied error.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "An application can read an S3 object's metadata but `GetObject` fails with a KMS AccessDenied error. The S3 permission may be correct while the principal still lacks permission to use the KMS key for decryption."
@@ -1435,7 +1435,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "Encrypted resource is inaccessible despite data permissions -> also inspect KMS key authorization.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Encrypted resource is inaccessible despite data permissions -> also inspect KMS key authorization."
@@ -1446,7 +1446,7 @@
               "kind": "mental_model",
               "label": "KMS AUTHORIZATION LAYERS",
               "placeholder": "Compare access to encrypted data with authorization to use the KMS key.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "table",
                 "columns": [
@@ -1504,7 +1504,7 @@
               "kind": "mental_model",
               "label": "READ THE REAL CONFIG",
               "placeholder": "Key lines: Principal • KMS operation • Key-policy resource",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "code_file",
                 "filename": "kms-key-policy.json",
@@ -1627,7 +1627,7 @@
               "kind": "mental_model",
               "label": "CONCRETE EXAMPLE",
               "placeholder": "An ALB serves `https://app.example.com`.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "An ALB serves `https://app.example.com`. ACM provides the TLS certificate attached to the HTTPS listener, so users get encrypted transport without the team manually installing a certificate on each EC2 instance."
@@ -1638,7 +1638,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "Encryption in transit using a managed public/private certificate on a supported AWS service -> ACM.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Encryption in transit using a managed public/private certificate on a supported AWS service -> ACM."
@@ -1695,7 +1695,7 @@
               "kind": "mental_model",
               "label": "CONCRETE EXAMPLE",
               "placeholder": "A database password must rotate automatically every 30 days, which points toward Secrets Manager.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "A database password must rotate automatically every 30 days, which points toward Secrets Manager. A non-secret setting such as `/prod/api/base_url` fits Parameter Store more naturally."
@@ -1748,7 +1748,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "Automatic credential rotation is a strong Secrets Manager clue.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Automatic credential rotation is a strong Secrets Manager clue."
@@ -1888,7 +1888,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "Sensitive data in S3 -> Macie. Suspicious activity -> GuardDuty. Vulnerability/exposure scanning -> Inspector. Security posture/controls -> Security Hub CSPM. Cross-service prioritized risks/exposures -> Security Hub.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Sensitive data in S3 -> Macie. Suspicious activity -> GuardDuty. Vulnerability/exposure scanning -> Inspector. Security posture/controls -> Security Hub CSPM. Cross-service prioritized risks/exposures -> Security Hub."
@@ -1951,7 +1951,7 @@
               "kind": "mental_model",
               "label": "CONCRETE EXAMPLE",
               "placeholder": "A development team wants automated application-security review, threat modeling, and context-aware penetration testing during development.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "A development team wants automated application-security review, threat modeling, and context-aware penetration testing during development. That is AWS Security Agent / Continuum territory, not the production-incident focus of DevOps Agent."
@@ -2014,7 +2014,7 @@
               "kind": "exam_clue",
               "label": "EXAM / SCENARIO CLUE",
               "placeholder": "Automated application security review or context-aware penetration testing -> AWS Security Agent / Continuum.",
-              "required": false,
+              "required": true,
               "reveal": {
                 "type": "text",
                 "text": "Automated application security review or context-aware penetration testing -> AWS Security Agent / Continuum."

@@ -297,7 +297,11 @@ Rules:
   `annotation:`) and the v1 key (prompt progress only) without losing discovery
   progress, then drops the legacy key. Node and module state are derived, so
   progress cannot drift from the curriculum and stale ids are ignored.
-- A node is `unlocked` when every required prompt is completed. A `code_file`
+- A node is `unlocked` when every required prompt is completed. Authored
+  prompts are always required: a hidden prompt must be revealed before the node
+  completes, so completion (including its sound) never fires while authored text
+  is still hidden. Optionality is reserved for individual reveal elements
+  (annotations and text spans), where it never blocks completion. A `code_file`
   prompt completes when every annotation flagged `required` is revealed;
   optional annotations never block completion. A `code_file` with no required
   annotations (including an empty list) completes on an explicit mark-as-reviewed

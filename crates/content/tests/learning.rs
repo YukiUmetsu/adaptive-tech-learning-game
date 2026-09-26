@@ -303,6 +303,90 @@ fn every_authored_prompt_is_required() {
     }
 }
 
+/// Byte offset of the `occurrence`-th non-overlapping match of `needle`.
+fn occurrence_offset(haystack: &str, needle: &str, occurrence: usize) -> Option<usize> {
+    if needle.is_empty() || occurrence == 0 {
+        return None;
+    }
+    let mut seen = 0;
+    let mut search_from = 0;
+    while search_from <= haystack.len() {
+        let Some(index) = haystack[search_from..].find(needle) else {
+            break;
+        };
+        seen += 1;
+        let start = search_from + index;
+        if seen == occurrence {
+            return Some(start);
+        }
+        search_from = start + needle.len();
+    }
+    None
+}
+
+/// A progressive-text span may never split an inline-code span.
+///
+/// The app renders each prose fragment around a span on its own, so an
+/// unbalanced backtick would stop the code from rendering as code and let
+/// glossary matching leak into it. A span that fully covers a code span
+/// (including both backticks) is fine.
+#[test]
+fn progressive_text_spans_do_not_split_inline_code() {
+    let registry = registry();
+    for domain in registry.learning_domains() {
+        for node in domain.nodes() {
+            for prompt in &node.prompts {
+                let LearningReveal::Text {
+                    text,
+                    progressive_reveal,
+                } = &prompt.reveal
+                else {
+                    continue;
+                };
+                let Some(progressive) = progressive_reveal else {
+                    continue;
+                };
+
+                let mut ranges: Vec<(usize, usize)> = progressive
+                    .spans
+                    .iter()
+                    .filter_map(|span| {
+                        occurrence_offset(text, &span.text, span.occurrence)
+                            .map(|start| (start, start + span.text.len()))
+                    })
+                    .collect();
+                ranges.sort_unstable();
+
+                let mut fragments: Vec<&str> = Vec::new();
+                let mut cursor = 0;
+                for (start, end) in ranges {
+                    if start < cursor {
+                        continue;
+                    }
+                    if start > cursor {
+                        fragments.push(&text[cursor..start]);
+                    }
+                    cursor = end;
+                }
+                if cursor < text.len() {
+                    fragments.push(&text[cursor..]);
+                }
+
+                for fragment in fragments {
+                    assert_eq!(
+                        fragment.matches('`').count() % 2,
+                        0,
+                        "{}/{} prompt {} splits inline code: {fragment:?}",
+                        domain.domain.id,
+                        node.id,
+                        prompt.id
+                    );
+                }
+            }
+        }
+    }
+}
+
 #[test]
 fn coverage_counts_match_the_authored_curriculum() {
     let registry = registry();
