@@ -64,7 +64,7 @@ def _al_install_airflow_shim():
             _al_link(other, self)
             return other
 
-        # Support `[a, b] >> c` and `c << [a, b]`, where the list is the
+        # Support "[a, b] >> c" and "c << [a, b]", where the list is the
         # left/right operand and this task is on the other side.
         def __rrshift__(self, other):
             _al_link(other, self)
@@ -198,7 +198,7 @@ def _al_install_airflow_shim():
             return [task.task_id for task in self.tasks]
 
         def dependencies(self):
-            """JSON-friendly `{task_id: [downstream ids]}` map."""
+            """JSON-friendly map of task id to sorted downstream ids."""
             return {
                 task.task_id: sorted(task.downstream_task_ids)
                 for task in self.tasks
