@@ -32,16 +32,17 @@ use crate::dto::{
     DailyItemCompleteResponse, DailyMissionItemDto, DailyMissionItemKind, DailyMissionItemStatus,
     DailyMissionPlanType, DailyMissionRequest, DailyMissionResponse, DailyMissionStatus,
     DiscoveryResponse, DiscoveryState, DiscoveryUpdateRequest, DomainDto, DomainProgressDto,
-    EvaluationSliceDto, FeedbackResponse, IssueMissionRequest, LearningDomainResponse,
-    MissionResponse, MissionReviewResponse, ModelEvaluationResponse, NodeProgressDto,
-    PracticeTestDomainResult, PracticeTestItemResult, PracticeTestItemView,
-    PracticeTestListResponse, PracticeTestResponse, PracticeTestResultResponse,
-    PracticeTestSubmissionRequest, PracticeTestSummaryDto, QuestionErrorCode, QuestionView,
-    RecommendationEventRequest, RecommendationEventResponse, RecommendationResponse,
-    ReviewedAttempt, ReviewedQuestion, StreakDto, StudyQuestionView, StudySessionRequest,
-    StudySessionResponse, SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse,
-    SyncSectionResult, TaskDto, TrackMapResponse, TrackProgressResponse, UpdateSettingsRequest,
-    UserSettingsDto, WalletResponse,
+    EvaluationSliceDto, FamilyConfusionDto, FamilyInsightDto, FamilyInsightsResponse,
+    FeedbackResponse, IssueMissionRequest, LearningDomainResponse, MissionResponse,
+    MissionReviewResponse, ModelEvaluationResponse, NodeProgressDto, PracticeTestDomainResult,
+    PracticeTestItemResult, PracticeTestItemView, PracticeTestListResponse, PracticeTestResponse,
+    PracticeTestResultResponse, PracticeTestSubmissionRequest, PracticeTestSummaryDto,
+    QuestionErrorCode, QuestionView, RecommendationEventRequest, RecommendationEventResponse,
+    RecommendationResponse, ReviewedAttempt, ReviewedQuestion, SeenExampleDto, StreakDto,
+    StructureComparisonDto, StudyQuestionView, StudySessionRequest, StudySessionResponse,
+    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, SyncSectionResult, TaskDto,
+    TrackMapResponse, TrackProgressResponse, UpdateSettingsRequest, UserSettingsDto,
+    WalletResponse,
 };
 use crate::error::ApiError;
 use crate::pedagogy::RecentPedagogy;
@@ -52,6 +53,7 @@ use crate::remediation;
 use crate::selection::{self, Candidate, ConceptEvidence, HistoryEntry, HistoryErrorCode};
 use crate::signals;
 use crate::state::AppState;
+use crate::structure;
 
 /// Response times are capped so background time cannot inflate study time.
 const MAX_RESPONSE_MS: i32 = 30 * 60 * 1000;
@@ -194,6 +196,183 @@ fn challenge_summary(
         estimated_minutes: challenge.estimated_minutes(),
         stage_count: challenge.stages.len(),
         prerequisite_node_ids: challenge.prerequisite_node_ids.clone(),
+    }
+}
+
+/// Returns learner-family insights for one track (Phase 5).
+///
+/// This is post-exposure teaching content derived on read from accepted history
+/// plus canonical authored guides. It never writes evidence, changes concept
+/// state, settles Bits, or exposes an answer key. A track with no authored
+/// guides, or a learner with no relevant exposure, returns an empty list.
+///
+/// When `mission_id` is supplied, the response is scoped to the families of
+/// that **completed, owned** mission, so a completion summary shows only
+/// structures the finished work actually involved. An in-progress or foreign
+/// mission yields an empty list rather than leaking mid-mission family metadata.
+pub async fn family_insights(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    track_id: &str,
+    mission_id: Option<Uuid>,
+) -> Result<FamilyInsightsResponse, ApiError> {
+    let bundle = state
+        .content
+        .bundle_for_certification(track_id)
+        .ok_or(ApiError::NotFound)?;
+    let track_version = bundle.version.id.clone();
+
+    let guides: Vec<&adaptive_learn_content::FamilyGuide> = state
+        .content
+        .family_guides()
+        .iter()
+        .filter(|guide| {
+            guide.certification_id == track_id && guide.certification_version == track_version
+        })
+        .collect();
+
+    if guides.is_empty() {
+        return Ok(FamilyInsightsResponse {
+            track_id: track_id.to_owned(),
+            track_version,
+            insights: Vec::new(),
+        });
+    }
+
+    // Optional mission scope: only families represented by a completed, owned
+    // mission are returned. Anything else is treated as an empty scope, never a
+    // fallback to the whole track.
+    let mission_families: Option<HashSet<String>> = match mission_id {
+        None => None,
+        Some(id) => {
+            let mission = load_mission(state, id).await?;
+            if mission.user_id != Some(user.id) || mission.certification_id != track_id {
+                return Err(ApiError::Forbidden);
+            }
+            if mission.status != MissionStatus::Completed {
+                return Ok(FamilyInsightsResponse {
+                    track_id: track_id.to_owned(),
+                    track_version,
+                    insights: Vec::new(),
+                });
+            }
+            Some(
+                mission
+                    .question_ids
+                    .iter()
+                    .filter_map(|question_id| state.content.question(&track_version, question_id))
+                    .filter_map(|question| {
+                        question
+                            .pedagogy
+                            .as_ref()
+                            .and_then(|pedagogy| pedagogy.family_id.as_deref())
+                    })
+                    .map(str::trim)
+                    .filter(|family_id| !family_id.is_empty())
+                    .map(str::to_owned)
+                    .collect(),
+            )
+        }
+    };
+
+    let rows = db::learning_events::distinct_seen_questions(&state.pool, user.id, track_id).await?;
+    let seen = seen_records(state, &track_version, &rows, mission_families.as_ref());
+
+    let insights = structure::build_family_insights(&guides, &seen)
+        .into_iter()
+        .map(family_insight_dto)
+        .collect();
+
+    Ok(FamilyInsightsResponse {
+        track_id: track_id.to_owned(),
+        track_version,
+        insights,
+    })
+}
+
+/// Joins all-time seen question ids to authored pedagogy and learner-safe titles.
+///
+/// The learning event never stores pedagogy metadata; it is reconstructed from
+/// canonical content here, so accepted events stay the single authoritative
+/// history and no duplicate "family history" table is needed. A question that no
+/// longer exists in the current content version is skipped safely, and when a
+/// mission scope is supplied only its families are kept.
+pub(crate) fn seen_records(
+    state: &AppState,
+    track_version: &str,
+    rows: &[db::learning_events::SeenQuestion],
+    mission_families: Option<&HashSet<String>>,
+) -> Vec<structure::SeenRecord> {
+    let mut seen = Vec::new();
+    for row in rows {
+        let Some(question) = state.content.question(track_version, &row.question_id) else {
+            continue;
+        };
+        let Some(pedagogy) = &question.pedagogy else {
+            continue;
+        };
+        let Some(family_id) = pedagogy
+            .family_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|family_id| !family_id.is_empty())
+        else {
+            continue;
+        };
+        if mission_families.is_some_and(|allowed| !allowed.contains(family_id)) {
+            continue;
+        }
+        seen.push(structure::SeenRecord {
+            family_id: family_id.to_owned(),
+            question_id: row.question_id.clone(),
+            transfer_group_id: pedagogy.transfer_group_id.clone(),
+            surface_context: pedagogy.surface_context.clone(),
+            title: question.prompt.clone(),
+            seen_at: row.last_occurred_at,
+        });
+    }
+    seen
+}
+
+/// Maps the pure insight into its learner-facing transport shape.
+fn family_insight_dto(insight: structure::FamilyInsight) -> FamilyInsightDto {
+    FamilyInsightDto {
+        family_id: insight.family_id,
+        title: insight.title,
+        summary: insight.summary,
+        recognition_signals: insight.recognition_signals,
+        core_rules: insight.core_rules,
+        structural_steps: insight.structural_steps,
+        example_contexts: insight.example_contexts,
+        common_confusions: insight
+            .common_confusions
+            .into_iter()
+            .map(|confusion| FamilyConfusionDto {
+                other_family_id: confusion.other_family_id,
+                other_family_title: confusion.other_family_title,
+                distinction: confusion.distinction,
+            })
+            .collect(),
+        source_refs: insight.source_refs,
+        seen_context_count: insight.seen_context_count,
+        seen_example_count: insight.seen_example_count,
+        comparison: insight.comparison.map(|comparison| StructureComparisonDto {
+            family_id: comparison.family_id,
+            title: comparison.title,
+            summary: comparison.summary,
+            recognition_signals: comparison.recognition_signals,
+            core_rules: comparison.core_rules,
+            structural_steps: comparison.structural_steps,
+            examples: comparison
+                .examples
+                .into_iter()
+                .map(|example| SeenExampleDto {
+                    title: example.title,
+                    context_label: example.context_label,
+                    seen_at: example.seen_at,
+                })
+                .collect(),
+        }),
     }
 }
 
@@ -4541,6 +4720,284 @@ mod tests {
                 .windows(2)
                 .all(|pair| pair[0].order < pair[1].order),
             "stages must be in authored order"
+        );
+    }
+
+    /// A question carrying full Phase 1 pedagogy metadata.
+    fn question_with_pedagogy() -> adaptive_learn_content::Question {
+        use adaptive_learn_content::{CanonicalAnswer, Choice, Interaction, Question, SourceRef};
+        use adaptive_learn_domain::{
+            AssessmentMode, InteractionType, PedagogyMetadata, PedagogyStage,
+        };
+
+        Question {
+            id: "leak-q-001".to_owned(),
+            content_version: "leak-v1-content".to_owned(),
+            certification_version: "leak-v1".to_owned(),
+            domain_id: "domain-1".to_owned(),
+            task_id: "1.1".to_owned(),
+            assessment_mode: AssessmentMode::Application,
+            interaction_type: InteractionType::MultipleChoice,
+            difficulty_prior: 0.4,
+            pedagogy: Some(PedagogyMetadata {
+                family_id: Some("dsa.sliding_window.variable".to_owned()),
+                stage: Some(PedagogyStage::Transfer),
+                scaffold_level: Some(0),
+                transfer_group_id: Some("moving_contiguous_range".to_owned()),
+                surface_context: Some("api_rate_limiting".to_owned()),
+                challenge_group_id: None,
+            }),
+            prompt: "Which approach fits this cold scenario?".to_owned(),
+            instruction: None,
+            interaction: Interaction::MultipleChoice {
+                choices: vec![
+                    Choice {
+                        id: "a".to_owned(),
+                        label: "A".to_owned(),
+                    },
+                    Choice {
+                        id: "b".to_owned(),
+                        label: "B".to_owned(),
+                    },
+                ],
+            },
+            canonical_answer: CanonicalAnswer::MultipleChoice {
+                choice_id: "a".to_owned(),
+            },
+            concepts: vec![adaptive_learn_content::QuestionConcept {
+                concept_id: "c1".to_owned(),
+                weight: 1.0,
+            }],
+            explanation: "A fits.".to_owned(),
+            choice_feedback: BTreeMap::new(),
+            blueprint_skill_ids: Vec::new(),
+            difficulty_label: None,
+            hints: Vec::new(),
+            error_codes: Vec::new(),
+            source_refs: vec![SourceRef {
+                title: "Source".to_owned(),
+                url: "https://example.com".to_owned(),
+            }],
+        }
+    }
+
+    /// Answer-leak regression: pre-answer payloads never expose family metadata.
+    ///
+    /// Phase 5 adds authored family guides and comparisons, but they are only
+    /// ever served post-exposure through a separate, authenticated endpoint. The
+    /// ordinary question payloads must stay free of `pedagogy`, family ids,
+    /// signals, and summaries so a cold-transfer item cannot be pre-labelled.
+    #[test]
+    fn learner_question_views_never_leak_family_metadata() {
+        let question = question_with_pedagogy();
+        let safe = serde_json::to_value(question_view(&question)).expect("serializes");
+        let study = serde_json::to_value(study_question_view(&question)).expect("serializes");
+
+        for payload in [&safe, &study] {
+            // Structural check: the whole pedagogy object is absent, not just
+            // its individual keys.
+            assert!(
+                payload.get("pedagogy").is_none(),
+                "a pre-answer payload must not carry a pedagogy object"
+            );
+            for forbidden in [
+                "pedagogy",
+                "family_id",
+                "transfer_group_id",
+                "surface_context",
+                "recognition_signals",
+                "structural_steps",
+                "core_rules",
+                "common_confusions",
+                "example_contexts",
+                "sliding_window",
+            ] {
+                assert!(
+                    !payload.to_string().contains(forbidden),
+                    "a pre-answer question payload must not expose {forbidden}"
+                );
+            }
+        }
+
+        // The learner-safe view never carries the answer key; the study view
+        // intentionally does, because ordinary missions score locally first and
+        // the server always re-scores authoritatively.
+        assert!(safe.get("canonical_answer").is_none());
+        assert!(study.get("canonical_answer").is_some());
+    }
+
+    /// A track without authored family guides returns an empty insight list.
+    #[tokio::test]
+    async fn family_insights_are_empty_without_guides() {
+        use crate::auth::{Authenticator, DevVerifier};
+        use std::sync::Arc;
+
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .acquire_timeout(std::time::Duration::from_millis(50))
+            .connect_lazy("postgres://app:app@127.0.0.1:1/app")
+            .expect("lazy pool");
+        let content = Arc::new(
+            adaptive_learn_content::ContentRegistry::embedded().expect("embedded content"),
+        );
+        let state = AppState::new(
+            pool,
+            content,
+            Authenticator {
+                verifier: Arc::new(DevVerifier),
+                profile: None,
+            },
+        );
+        let user = AuthenticatedUser {
+            id: Uuid::new_v4(),
+            auth_subject: "test-user".to_owned(),
+            email: None,
+        };
+
+        // No content currently authors family guides, so this returns early and
+        // never touches the unreachable database.
+        let response = family_insights(&state, &user, "aws-soa-c03", None)
+            .await
+            .expect("track resolves");
+        assert!(response.insights.is_empty());
+    }
+
+    /// A minimal content registry with one pedagogy question and one guide.
+    fn registry_with_family() -> adaptive_learn_content::ContentRegistry {
+        let bundle = serde_json::json!({
+            "certification": {
+                "id": "phase5-track",
+                "vendor": "Test",
+                "name": "Phase 5",
+                "exam_code": "PHASE5",
+                "official_source_url": "https://example.com/blueprint",
+                "last_reviewed": "2026-09-25"
+            },
+            "version": {
+                "id": "phase5-v1",
+                "exam_code": "PHASE5",
+                "effective_date": "2026-09-25",
+                "content_version": "phase5-v1-content",
+                "domains": [{
+                    "id": "domain-1",
+                    "name": "Domain",
+                    "weight": 1.0,
+                    "tasks": [{ "id": "1.1", "name": "Task", "question_ids": ["p5-q-1"] }]
+                }]
+            },
+            "concepts": [
+                { "id": "test.concept", "name": "Concept", "description": "A concept." }
+            ],
+            "questions": [{
+                "id": "p5-q-1",
+                "content_version": "phase5-v1-content",
+                "certification_version": "phase5-v1",
+                "domain_id": "domain-1",
+                "task_id": "1.1",
+                "assessment_mode": "application",
+                "interaction_type": "multiple_choice",
+                "difficulty_prior": 0.4,
+                "pedagogy": {
+                    "family_id": "dsa.sliding_window.variable",
+                    "surface_context": "api_rate_limiting",
+                    "transfer_group_id": "g1"
+                },
+                "prompt": "A rate-limiting window problem.",
+                "instruction": null,
+                "interaction": {
+                    "type": "multiple_choice",
+                    "choices": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }]
+                },
+                "canonical_answer": { "type": "multiple_choice", "choice_id": "a" },
+                "concepts": [{ "concept_id": "test.concept", "weight": 1.0 }],
+                "explanation": "A fits.",
+                "hints": [],
+                "error_codes": [{ "code": "wrong", "description": "Wrong." }],
+                "source_refs": [{ "title": "Source", "url": "https://example.com" }]
+            }]
+        })
+        .to_string();
+
+        let guide = serde_json::json!({
+            "schema_version": "family-guide-v1",
+            "certification_id": "phase5-track",
+            "certification_version": "phase5-v1",
+            "family_id": "dsa.sliding_window.variable",
+            "title": "Moving Valid Window",
+            "summary": "Maintain one active contiguous range.",
+            "recognition_signals": ["contiguous ranges"],
+            "core_rules": ["After repair, the range is valid."],
+            "structural_steps": ["add the incoming item"],
+            "common_confusions": [],
+            "example_contexts": [
+                { "context_id": "api_rate_limiting", "label": "API rate limiting" }
+            ],
+            "source_refs": [{ "title": "Source", "url": "https://example.com" }]
+        })
+        .to_string();
+
+        adaptive_learn_content::ContentRegistry::from_all_sources_with_families(
+            &[&bundle],
+            &[],
+            &[],
+            &[],
+            &[&guide],
+        )
+        .expect("custom content is valid")
+    }
+
+    fn state_with(config: adaptive_learn_content::ContentRegistry) -> AppState {
+        use crate::auth::{Authenticator, DevVerifier};
+        use std::sync::Arc;
+
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .acquire_timeout(std::time::Duration::from_millis(50))
+            .connect_lazy("postgres://app:app@127.0.0.1:1/app")
+            .expect("lazy pool");
+        AppState::new(
+            pool,
+            Arc::new(config),
+            Authenticator {
+                verifier: Arc::new(DevVerifier),
+                profile: None,
+            },
+        )
+    }
+
+    /// The history join resolves pedagogy and a learner-safe title, skips
+    /// unknown questions, and applies an optional mission family scope.
+    #[tokio::test]
+    async fn seen_records_join_pedagogy_and_scope_to_mission() {
+        let state = state_with(registry_with_family());
+        let rows = vec![
+            db::learning_events::SeenQuestion {
+                question_id: "p5-q-1".to_owned(),
+                last_occurred_at: Utc::now(),
+            },
+            db::learning_events::SeenQuestion {
+                question_id: "removed-question".to_owned(),
+                last_occurred_at: Utc::now(),
+            },
+        ];
+
+        let seen = seen_records(&state, "phase5-v1", &rows, None);
+        assert_eq!(seen.len(), 1, "an unknown question is skipped safely");
+        assert_eq!(seen[0].family_id, "dsa.sliding_window.variable");
+        assert_eq!(
+            seen[0].surface_context.as_deref(),
+            Some("api_rate_limiting")
+        );
+        assert_eq!(seen[0].title, "A rate-limiting window problem.");
+
+        let allowed: HashSet<String> = ["dsa.sliding_window.variable".to_owned()].into();
+        assert_eq!(
+            seen_records(&state, "phase5-v1", &rows, Some(&allowed)).len(),
+            1
+        );
+
+        let other: HashSet<String> = ["dsa.prefix_state".to_owned()].into();
+        assert!(
+            seen_records(&state, "phase5-v1", &rows, Some(&other)).is_empty(),
+            "a mission scope excludes other families"
         );
     }
 }

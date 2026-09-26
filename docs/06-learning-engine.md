@@ -461,6 +461,135 @@ question boundary is preserved — canonical answers ship only through the
 ordinary study-mission payload, and the challenge view contains only stage
 references.
 
+## Structural abstraction: reusable families (Phase 5)
+
+Phase 5 teaches that a **surface story** is not the same as the **deep
+structure** behind it. It does not add a mastery model, an assessment mode, a
+new interaction type, or a subject-specific engine. It builds directly on the
+Phase 1 `family_id` / `transfer_group_id` / `surface_context` metadata and on the
+ordinary accepted history.
+
+Terminology is strict:
+
+```text
+family guide         = authored explanation of a reusable deep structure
+transfer group       = authored set of examples intended to test/generalize that structure
+surface context      = the visible story/domain the learner sees
+same-skeleton view   = post-exposure teaching view that connects seen examples
+family insight       != mastery
+viewing an insight   != scored evidence
+family guide         != question
+family guide         != concept
+```
+
+A family is a reusable structural pattern or reasoning schema. A concept is a
+unit of learner knowledge/evidence. One family may involve several concepts, and
+one concept may participate in several families; the concept-state model is not
+collapsed into family state. A transfer group is distinct from a family: several
+transfer groups may use the same family, and a transfer group may compare
+related family variants.
+
+### Authored content
+
+A family guide is a distinct, opt-in content type (`family-guide-v1`) discovered
+under `content/**/families/**/*.json`, like learning domains, practice tests, and
+challenges. It is track-agnostic and keyed by `(certification_id,
+certification_version, family_id)`; `family_id` is opaque and core code never
+inspects its prefix or contents. A guide carries a learner-facing title, a
+plain-language deep-structure summary, recognition signals, optional core rules,
+optional structural steps, optional common-confusion distinctions, optional
+representative contexts, and source references.
+
+Validation is strict and server-side: non-empty identity/title/summary, at least
+one recognition signal, no blank or normalized-duplicate signals/rules/steps, no
+self-confusion or duplicate confusion target, resolvable confusion targets within
+the same track version, non-empty example contexts, and at least one valid source
+reference. A question `family_id` does **not** have to have a guide immediately:
+guides are optional, old tracks are unaffected, and audit tooling reports
+missing guides as a warning rather than a build failure.
+
+A **common confusion** is authored as `other_family_id` plus a distinction. It is
+the single source for the Family A vs Family B view, so no second comparison
+content system is introduced. The A-vs-B view is shown only once the learner has
+encountered **both** families, so it can never pre-label an unencountered
+neighbor before its first exposure.
+
+### Eligibility and the "same skeleton" view
+
+A family insight exists in content but is not shown immediately. The unlock and
+comparison rules are generic:
+
+```text
+family guide unlocked        after the learner has seen >= 1 relevant activity
+same-skeleton comparison     only after >= 2 distinct surface contexts
+A vs B confusion view        only after both families have been seen
+```
+
+Examples are derived from accepted learning history joined to canonical content;
+no "family history" table is persisted, and the existing event/history records
+stay authoritative. The seen-question set is derived from the learner's distinct
+answered questions, not a fixed recent window, so a family met earlier stays
+unlocked as newer practice accumulates. A failed attempt still counts as *seen*
+— it shows the learner met that example — but never implies understanding.
+Replayed/duplicate events cannot produce duplicate examples.
+
+The comparison is a pure, deterministic resolver
+(`apps/api/src/structure.rs`): grouping comes only from authored `family_id`,
+`transfer_group_id`, and `surface_context`. There is no embedding, vector search,
+LLM classification, or question-text similarity. When one transfer group has
+enough context variety it is preferred; otherwise the family as a whole is used.
+One newest example per context is kept, ordered newest first and bounded to a
+small number, so only examples the learner has already seen appear.
+
+### Progressive, non-blocking presentation
+
+The Track Hub exposes a compact, generalized pattern browser (neutral label
+"Reusable Patterns"; a track presentation layer may supply a different label
+such as "Pattern Toolbelt"). A completed mission can surface an optional,
+collapsed "See the structure these questions shared" teaser; that request is
+scoped to the finished mission's families, so the teaser relates to the work the
+learner actually did. The comparison itself is revealed in steps — seen examples
+→ shared signals → core rule → reusable steps — so the abstraction is not dumped
+at once. It never scores, awards Bits, changes concept state, or blocks
+completion, and it shows no mastery percentage; coverage is coarse ("Seen in 3
+contexts").
+
+Viewing a family insight is never scored evidence and never changes concept
+state. Phase 5 adds no economy, no DB table, no per-example request, no polling,
+and no runtime LLM call. One optional aggregate request per track returns every
+unlocked insight; a track with no guides simply returns an empty list.
+
+### Answer-leak boundary
+
+Cold-transfer items must not reveal the intended family before scoring. The
+ordinary learner-facing question payloads stay free of `pedagogy`, family ids,
+signals, and summaries. Family insight is served only through its own
+authenticated, post-exposure endpoint, and only for families the learner has
+already encountered. A track may intentionally teach a family label earlier in
+learning material; a cold practice item never labels it.
+
+### Relationship to Phases 2-4
+
+- **Phase 2.** The structural comparison explains *why* the transfer-aware
+  selector considered two cases related; it reuses the same authored metadata and
+  introduces no parallel grouping id.
+- **Phase 3.** A `preferred_stage = differentiate` remediation may point a
+  learner at an already-unlocked family comparison, but authored remediation
+  remains authoritative and no error is inferred from comparison behavior.
+- **Phase 4.** Challenge completion is an ideal moment to offer a
+  post-completion insight. Challenge progress and family-guide discovery stay
+  separate: opening an insight changes no completion, score, or reward.
+
+### Measuring Phase 5
+
+No learning claim is made until real product data supports it. Future evaluation
+can compare seeing a comparison against later cold-transfer success, scaffold
+needed later, time to identify a family, confusion errors between neighboring
+families, and voluntary insight use. The optional local telemetry events
+(`family_insight_shown`, `family_insight_opened`,
+`structure_comparison_completed`, `confusion_comparison_opened`) are
+non-authoritative and never affect concept state.
+
 ## Interaction features
 
 Record:

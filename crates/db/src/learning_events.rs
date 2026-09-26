@@ -253,6 +253,53 @@ pub async fn recent_for_user(
         .collect()
 }
 
+/// One distinct question a learner has answered for a certification.
+#[derive(Debug, Clone, PartialEq)]
+pub struct SeenQuestion {
+    /// Question the learner has answered at least once.
+    pub question_id: String,
+    /// Most recent time the learner answered it.
+    pub last_occurred_at: DateTime<Utc>,
+}
+
+#[derive(sqlx::FromRow)]
+struct SeenQuestionRow {
+    question_id: String,
+    last_occurred_at: DateTime<Utc>,
+}
+
+/// Returns every distinct question a learner has answered for a certification.
+///
+/// Unlike [`recent_for_user`], this is not bounded by a recent window, so a
+/// family the learner met long ago stays "seen" for Phase 5 insights even after
+/// a lot of newer practice. The row count is bounded by the authored question
+/// count, not by event volume, and only ids and timestamps are returned.
+pub async fn distinct_seen_questions(
+    pool: &PgPool,
+    user_id: Uuid,
+    certification_id: &str,
+) -> Result<Vec<SeenQuestion>, DbError> {
+    let rows = sqlx::query_as::<_, SeenQuestionRow>(
+        "SELECT question_id, MAX(occurred_at) AS last_occurred_at
+         FROM learning_events
+         WHERE user_id = $1 AND certification_id = $2
+         GROUP BY question_id
+         ORDER BY question_id",
+    )
+    .bind(user_id)
+    .bind(certification_id)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows
+        .into_iter()
+        .map(|row| SeenQuestion {
+            question_id: row.question_id,
+            last_occurred_at: row.last_occurred_at,
+        })
+        .collect())
+}
+
 /// Counts the distinct questions of a mission that have accepted evidence.
 ///
 /// Used to derive server-known mission completion without trusting any client

@@ -1410,6 +1410,84 @@
         ]
       }
     },
+    "/v1/tracks/{track_id}/family-insights": {
+      "get": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Returns learner-family structure insights for a track.",
+        "description": "One aggregate request covers every family the learner has already\nencountered, so the Track Hub never fetches per-family or per-example state.\nAn optional `mission_id` scopes the response to a completed mission's\nfamilies so a completion summary shows only structures the finished work\ninvolved. It is post-exposure teaching content only: it never returns a\nfamily the learner has not seen, never returns families for an in-progress\nmission, and never carries a canonical answer. A track with no authored\nfamily guides returns an empty list, so old tracks are unaffected.",
+        "operationId": "get_track_family_insights",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `aws-soa-c03`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mission_id",
+            "in": "query",
+            "description": "Completed mission whose families should scope the response.\n\nWhen present, only families the finished mission involved are returned.\nOmit it for the track-wide pattern browser.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Learner-family structure insights",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FamilyInsightsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Mission belongs to another account or track",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown learning track or mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/tracks/{track_id}/map": {
       "get": {
         "tags": [
@@ -3642,6 +3720,267 @@
           "developing",
           "substantial"
         ]
+      },
+      "FamilyConfusion": {
+        "type": "object",
+        "description": "One authored near-neighbor comparison for a family.",
+        "required": [
+          "other_family_id",
+          "distinction"
+        ],
+        "properties": {
+          "distinction": {
+            "type": "string",
+            "description": "The distinction that tells the two families apart."
+          },
+          "other_family_id": {
+            "type": "string",
+            "description": "The other family this one is commonly confused with.\n\nResolves to an authored guide in the same track/version; opaque to core\ncode."
+          }
+        }
+      },
+      "FamilyConfusionDto": {
+        "type": "object",
+        "description": "A resolved Family A vs Family B distinction.",
+        "required": [
+          "other_family_id",
+          "other_family_title",
+          "distinction"
+        ],
+        "properties": {
+          "distinction": {
+            "type": "string",
+            "description": "The authored distinction between the two families."
+          },
+          "other_family_id": {
+            "type": "string",
+            "description": "Authored id of the neighboring family. Opaque."
+          },
+          "other_family_title": {
+            "type": "string",
+            "description": "Learner-facing title of the neighboring family."
+          }
+        }
+      },
+      "FamilyExampleContext": {
+        "type": "object",
+        "description": "One representative context for a family.\n\nThe `context_id` matches an authored `pedagogy.surface_context` value; the\n`label` is the learner-facing text, so raw machine ids are never rendered.",
+        "required": [
+          "context_id",
+          "label"
+        ],
+        "properties": {
+          "context_id": {
+            "type": "string",
+            "description": "Opaque authored surface-context id, for example `api_rate_limiting`."
+          },
+          "label": {
+            "type": "string",
+            "description": "Learner-facing label, for example `API rate limiting`."
+          }
+        }
+      },
+      "FamilyGuide": {
+        "type": "object",
+        "description": "A reusable deep structure, authored once per track/version family.\n\nThis is *not* a concept and *not* a question: one family may involve several\nconcepts, and one concept may participate in several families. See\n`docs/06-learning-engine.md` and `docs/16-content-audit.md`.",
+        "required": [
+          "schema_version",
+          "certification_id",
+          "certification_version",
+          "family_id",
+          "title",
+          "summary",
+          "recognition_signals",
+          "source_refs"
+        ],
+        "properties": {
+          "certification_id": {
+            "type": "string",
+            "description": "Certification identifier, for example `aws-soa-c03`."
+          },
+          "certification_version": {
+            "type": "string",
+            "description": "Certification version identifier, for example `soa-c03`."
+          },
+          "common_confusions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FamilyConfusion"
+            },
+            "description": "Useful near-neighbor comparisons, authored as distinctions."
+          },
+          "core_rules": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The key rule(s) or invariant(s) that make the family work."
+          },
+          "example_contexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FamilyExampleContext"
+            },
+            "description": "Representative contexts, as explanatory examples rather than history."
+          },
+          "family_id": {
+            "type": "string",
+            "description": "Stable family identifier matching the Phase 1 `pedagogy.family_id`.\n\nOpaque: core code never inspects its prefix or contents."
+          },
+          "recognition_signals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Structural clues that should trigger the same reasoning next time."
+          },
+          "schema_version": {
+            "type": "string",
+            "description": "Schema discriminator; must equal `family-guide-v1`."
+          },
+          "source_refs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceRef"
+            },
+            "description": "Official references supporting the guide's factual claims."
+          },
+          "structural_steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional ordered conceptual skeleton (not executable instructions)."
+          },
+          "summary": {
+            "type": "string",
+            "description": "Short plain-language definition of the deep structure.\n\nIt should explain the structure, not merely name a technique."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing family name, for example `Moving Valid Window`."
+          }
+        }
+      },
+      "FamilyInsightDto": {
+        "type": "object",
+        "description": "One authored family guide plus what the learner has seen of it.",
+        "required": [
+          "family_id",
+          "title",
+          "summary",
+          "recognition_signals",
+          "core_rules",
+          "structural_steps",
+          "example_contexts",
+          "common_confusions",
+          "source_refs",
+          "seen_context_count",
+          "seen_example_count"
+        ],
+        "properties": {
+          "common_confusions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FamilyConfusionDto"
+            },
+            "description": "Authored near-neighbor distinctions, with resolved learner-facing titles."
+          },
+          "comparison": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StructureComparisonDto",
+                "description": "Same-skeleton comparison, present only once context variety exists."
+              }
+            ]
+          },
+          "core_rules": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Key rule(s) that make the family work."
+          },
+          "example_contexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FamilyExampleContext"
+            },
+            "description": "Representative authored contexts (explanatory, not learner history)."
+          },
+          "family_id": {
+            "type": "string",
+            "description": "Stable authored family identifier. Opaque."
+          },
+          "recognition_signals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Structural clues that should trigger the same reasoning next time."
+          },
+          "seen_context_count": {
+            "type": "integer",
+            "description": "Distinct surface contexts the learner has actually seen.",
+            "minimum": 0
+          },
+          "seen_example_count": {
+            "type": "integer",
+            "description": "Distinct examples the learner has actually seen.",
+            "minimum": 0
+          },
+          "source_refs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceRef"
+            },
+            "description": "Source references supporting the guide."
+          },
+          "structural_steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional reusable conceptual skeleton."
+          },
+          "summary": {
+            "type": "string",
+            "description": "Short plain-language deep-structure definition."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing family name."
+          }
+        }
+      },
+      "FamilyInsightsResponse": {
+        "type": "object",
+        "description": "Learner-facing family insights for one learning track (Phase 5).\n\nOne aggregate request returns every family the learner has already\nencountered, so the Track Hub never fetches per-family or per-example state.\nIt is post-exposure teaching content only: never a mastery claim, a score, or\nan answer key, and families with no exposure are omitted entirely.",
+        "required": [
+          "track_id",
+          "track_version",
+          "insights"
+        ],
+        "properties": {
+          "insights": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FamilyInsightDto"
+            },
+            "description": "Insights for families the learner has already seen, in family-id order."
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track identifier."
+          },
+          "track_version": {
+            "type": "string",
+            "description": "Learning track version identifier."
+          }
+        }
       },
       "FeedbackResponse": {
         "type": "object",
@@ -6497,6 +6836,30 @@
           }
         }
       },
+      "SeenExampleDto": {
+        "type": "object",
+        "description": "One already-seen example in a same-skeleton comparison.\n\nLearner-safe: a problem title, a learner-facing context label, and when the\nlearner saw it. It never carries a canonical answer or hidden metadata.",
+        "required": [
+          "title",
+          "context_label",
+          "seen_at"
+        ],
+        "properties": {
+          "context_label": {
+            "type": "string",
+            "description": "Learner-facing surface-context label."
+          },
+          "seen_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the learner encountered the example."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing problem title."
+          }
+        }
+      },
       "SessionActivity": {
         "type": "object",
         "description": "One planned activity.",
@@ -6630,6 +6993,61 @@
             "format": "int32",
             "description": "Longest consecutive run ever recorded.",
             "minimum": 0
+          }
+        }
+      },
+      "StructureComparisonDto": {
+        "type": "object",
+        "description": "A post-exposure comparison of two or more seen examples.",
+        "required": [
+          "family_id",
+          "title",
+          "summary",
+          "recognition_signals",
+          "core_rules",
+          "structural_steps",
+          "examples"
+        ],
+        "properties": {
+          "core_rules": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The rule(s) that make the family work."
+          },
+          "examples": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeenExampleDto"
+            },
+            "description": "The already-seen examples, newest first."
+          },
+          "family_id": {
+            "type": "string",
+            "description": "Stable authored family identifier. Opaque."
+          },
+          "recognition_signals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Structural clues shared by the examples."
+          },
+          "structural_steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional reusable skeleton (not executable instructions)."
+          },
+          "summary": {
+            "type": "string",
+            "description": "Plain-language deep-structure summary."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing family title."
           }
         }
       },

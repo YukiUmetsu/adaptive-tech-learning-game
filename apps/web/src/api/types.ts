@@ -57,6 +57,15 @@ export type AuxiliaryEventRequest =
   components["schemas"]["AuxiliaryEventRequest"];
 export type DiscoveryResponse = components["schemas"]["DiscoveryResponse"];
 export type TrackMapResponse = components["schemas"]["TrackMapResponse"];
+export type FamilyInsightsResponse =
+  components["schemas"]["FamilyInsightsResponse"];
+export type FamilyInsightDto = components["schemas"]["FamilyInsightDto"];
+export type FamilyConfusionDto = components["schemas"]["FamilyConfusionDto"];
+export type StructureComparisonDto =
+  components["schemas"]["StructureComparisonDto"];
+export type SeenExampleDto = components["schemas"]["SeenExampleDto"];
+export type FamilyExampleContext =
+  components["schemas"]["FamilyExampleContext"];
 export type TrackProgressResponse =
   components["schemas"]["TrackProgressResponse"];
 export type DomainProgressDto = components["schemas"]["DomainProgressDto"];

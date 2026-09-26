@@ -3,13 +3,14 @@ use std::collections::HashSet;
 use std::collections::hash_map::Entry;
 
 use crate::challenge::{ChallengeDefinition, validate_challenge};
+use crate::family_guide::{FamilyGuide, validate_family_guide};
 use crate::learning::{KnowledgeNode, LearningDomain, LearningModule, validate_learning_domain};
 use crate::model::{Certification, ContentBundle, Domain, Question, Task};
 use crate::practice_test::{PracticeTest, validate_practice_test};
 use crate::validate::{ContentError, validate};
 use crate::{
-    EMBEDDED_CHALLENGE_SOURCES, EMBEDDED_LEARNING_SOURCES, EMBEDDED_PRACTICE_TEST_SOURCES,
-    EMBEDDED_SOURCES, EmbeddedSource,
+    EMBEDDED_CHALLENGE_SOURCES, EMBEDDED_FAMILY_GUIDE_SOURCES, EMBEDDED_LEARNING_SOURCES,
+    EMBEDDED_PRACTICE_TEST_SOURCES, EMBEDDED_SOURCES, EmbeddedSource,
 };
 
 /// A raw content source plus the file it came from, when known.
@@ -31,6 +32,7 @@ pub struct ContentRegistry {
     learning_domains: Vec<LearningDomain>,
     practice_tests: Vec<PracticeTest>,
     challenges: Vec<ChallengeDefinition>,
+    family_guides: Vec<FamilyGuide>,
 }
 
 impl ContentRegistry {
@@ -56,7 +58,8 @@ impl ContentRegistry {
         let learning = embedded_refs(EMBEDDED_LEARNING_SOURCES);
         let practice = embedded_refs(EMBEDDED_PRACTICE_TEST_SOURCES);
         let challenges = embedded_refs(EMBEDDED_CHALLENGE_SOURCES);
-        Self::from_source_refs(&quiz, &learning, &practice, &challenges)
+        let families = embedded_refs(EMBEDDED_FAMILY_GUIDE_SOURCES);
+        Self::from_source_refs(&quiz, &learning, &practice, &challenges, &families)
     }
 
     /// Loads embedded content without failing on individual malformed files.
@@ -70,13 +73,15 @@ impl ContentRegistry {
         let learning = embedded_refs(EMBEDDED_LEARNING_SOURCES);
         let practice = embedded_refs(EMBEDDED_PRACTICE_TEST_SOURCES);
         let challenges = embedded_refs(EMBEDDED_CHALLENGE_SOURCES);
-        let assembled = assemble(&quiz, &learning, &practice, &challenges);
+        let families = embedded_refs(EMBEDDED_FAMILY_GUIDE_SOURCES);
+        let assembled = assemble(&quiz, &learning, &practice, &challenges, &families);
         (
             Self {
                 bundles: assembled.bundles,
                 learning_domains: assembled.learning_domains,
                 practice_tests: assembled.practice_tests,
                 challenges: assembled.challenges,
+                family_guides: assembled.family_guides,
             },
             assembled.errors,
         )
@@ -124,11 +129,30 @@ impl ContentRegistry {
         practice_test_sources: &[&str],
         challenge_sources: &[&str],
     ) -> Result<Self, Vec<ContentError>> {
+        Self::from_all_sources_with_families(
+            sources,
+            learning_sources,
+            practice_test_sources,
+            challenge_sources,
+            &[],
+        )
+    }
+
+    /// Parses, validates, and merges quiz, learning, practice-test, challenge,
+    /// and family-guide sources.
+    pub fn from_all_sources_with_families(
+        sources: &[&str],
+        learning_sources: &[&str],
+        practice_test_sources: &[&str],
+        challenge_sources: &[&str],
+        family_guide_sources: &[&str],
+    ) -> Result<Self, Vec<ContentError>> {
         let quiz = inline_refs(sources);
         let learning = inline_refs(learning_sources);
         let practice = inline_refs(practice_test_sources);
         let challenges = inline_refs(challenge_sources);
-        Self::from_source_refs(&quiz, &learning, &practice, &challenges)
+        let families = inline_refs(family_guide_sources);
+        Self::from_source_refs(&quiz, &learning, &practice, &challenges, &families)
     }
 
     fn from_source_refs(
@@ -136,12 +160,14 @@ impl ContentRegistry {
         learning_sources: &[SourceRef<'_>],
         practice_test_sources: &[SourceRef<'_>],
         challenge_sources: &[SourceRef<'_>],
+        family_guide_sources: &[SourceRef<'_>],
     ) -> Result<Self, Vec<ContentError>> {
         let assembled = assemble(
             sources,
             learning_sources,
             practice_test_sources,
             challenge_sources,
+            family_guide_sources,
         );
 
         if assembled.errors.is_empty() {
@@ -150,6 +176,7 @@ impl ContentRegistry {
                 learning_domains: assembled.learning_domains,
                 practice_tests: assembled.practice_tests,
                 challenges: assembled.challenges,
+                family_guides: assembled.family_guides,
             })
         } else {
             Err(assembled.errors)
@@ -236,6 +263,77 @@ impl ContentRegistry {
         self.challenges.iter().find(|challenge| {
             challenge.certification_id == certification_id && challenge.id == challenge_id
         })
+    }
+
+    /// All validated family guides.
+    pub fn family_guides(&self) -> &[FamilyGuide] {
+        &self.family_guides
+    }
+
+    /// Family guides authored for a certification id, in embedded order.
+    pub fn family_guides_for_certification(&self, certification_id: &str) -> Vec<&FamilyGuide> {
+        self.family_guides
+            .iter()
+            .filter(|guide| guide.certification_id == certification_id)
+            .collect()
+    }
+
+    /// Family guides authored for a certification version, in embedded order.
+    pub fn family_guides_for_version(&self, certification_version: &str) -> Vec<&FamilyGuide> {
+        self.family_guides
+            .iter()
+            .filter(|guide| guide.certification_version == certification_version)
+            .collect()
+    }
+
+    /// Finds one family guide within a certification version.
+    ///
+    /// `family_id` is opaque; the lookup never inspects its contents.
+    ///
+    /// This is keyed by version only, matching [`ContentRegistry::bundle_for_version`]'s
+    /// assumption that a certification version id is unique across the catalog.
+    /// Callers that already know the certification id should prefer
+    /// [`ContentRegistry::family_guides_for_certification`] to avoid relying on
+    /// that assumption.
+    pub fn family_guide(
+        &self,
+        certification_version: &str,
+        family_id: &str,
+    ) -> Option<&FamilyGuide> {
+        self.family_guides.iter().find(|guide| {
+            guide.certification_version == certification_version && guide.family_id == family_id
+        })
+    }
+
+    /// Families referenced by authored questions but missing a guide.
+    ///
+    /// This is an audit helper, not a validation rule: a track may author
+    /// `pedagogy.family_id` before its guide, and old tracks need no guides at
+    /// all. Only families that appear on questions in `certification_version`
+    /// are reported, sorted and deduplicated.
+    pub fn families_missing_guides(&self, certification_version: &str) -> Vec<String> {
+        let authored: HashSet<&str> = self
+            .family_guides
+            .iter()
+            .filter(|guide| guide.certification_version == certification_version)
+            .map(|guide| guide.family_id.as_str())
+            .collect();
+
+        let mut missing: Vec<String> = self
+            .questions_for_version(certification_version)
+            .into_iter()
+            .filter_map(|question| {
+                question
+                    .pedagogy
+                    .as_ref()
+                    .and_then(|pedagogy| pedagogy.family_id.as_deref())
+            })
+            .filter(|family_id| !family_id.trim().is_empty() && !authored.contains(family_id))
+            .map(str::to_owned)
+            .collect();
+        missing.sort();
+        missing.dedup();
+        missing
     }
 
     /// Finds the domain that owns a knowledge node, if any.
@@ -492,6 +590,7 @@ struct AssembledContent {
     learning_domains: Vec<LearningDomain>,
     practice_tests: Vec<PracticeTest>,
     challenges: Vec<ChallengeDefinition>,
+    family_guides: Vec<FamilyGuide>,
     errors: Vec<ContentError>,
 }
 
@@ -504,12 +603,14 @@ fn assemble(
     learning_sources: &[SourceRef<'_>],
     practice_test_sources: &[SourceRef<'_>],
     challenge_sources: &[SourceRef<'_>],
+    family_guide_sources: &[SourceRef<'_>],
 ) -> AssembledContent {
     let mut errors = Vec::new();
     let bundles = parse_bundles(sources, &mut errors);
     let learning_domains = parse_learning_domains(learning_sources, &mut errors);
     let practice_tests = parse_practice_tests(practice_test_sources, &mut errors);
     let challenges = parse_challenges(challenge_sources, &mut errors);
+    let family_guides = parse_family_guides(family_guide_sources, &mut errors);
 
     for domain in &learning_domains {
         validate_learning_against_bundles(domain, &bundles, &mut errors);
@@ -519,6 +620,8 @@ fn assemble(
     validate_remediation_nodes_against_learning(&bundles, &learning_domains, &mut errors);
     validate_unique_challenges(&challenges, &mut errors);
     validate_challenges_against_content(&challenges, &bundles, &learning_domains, &mut errors);
+    validate_unique_family_guides(&family_guides, &mut errors);
+    validate_family_confusions(&family_guides, &mut errors);
 
     for test in &practice_tests {
         validate_practice_test_against_bundles(test, &bundles, &mut errors);
@@ -529,6 +632,7 @@ fn assemble(
         learning_domains,
         practice_tests,
         challenges,
+        family_guides,
         errors,
     }
 }
@@ -848,6 +952,97 @@ fn parse_challenges(
     }
 
     challenges
+}
+
+/// Parses and validates family-guide sources, recording every error found.
+fn parse_family_guides(
+    sources: &[SourceRef<'_>],
+    errors: &mut Vec<ContentError>,
+) -> Vec<FamilyGuide> {
+    let mut guides = Vec::new();
+
+    for source in sources {
+        match serde_json::from_str::<FamilyGuide>(source.json) {
+            Ok(guide) => match validate_family_guide(&guide) {
+                Ok(()) => guides.push(guide),
+                Err(mut found) => {
+                    attribute(&mut found, source.path);
+                    errors.append(&mut found);
+                }
+            },
+            Err(error) => {
+                let error = ContentError::new("invalid_family_guide_json", error.to_string());
+                errors.push(match source.path {
+                    Some(path) => error.with_source(path),
+                    None => error,
+                });
+            }
+        }
+    }
+
+    guides
+}
+
+/// Rejects two family guides claiming the same id within a track version.
+fn validate_unique_family_guides(guides: &[FamilyGuide], errors: &mut Vec<ContentError>) {
+    let mut seen = HashSet::new();
+    for guide in guides {
+        let key = (
+            guide.certification_id.as_str(),
+            guide.certification_version.as_str(),
+            guide.family_id.as_str(),
+        );
+        if !seen.insert(key) {
+            errors.push(ContentError::new(
+                "duplicate_family_guide",
+                format!(
+                    "duplicate family guide {} for certification version {}",
+                    guide.family_id, guide.certification_version
+                ),
+            ));
+        }
+    }
+}
+
+/// Cross-checks family-guide confusion targets within the same track version.
+///
+/// A confusion target must resolve to an authored family guide in the same
+/// `(certification_id, certification_version)`. Cross-track or unknown targets
+/// are rejected so the learner-facing comparison never renders a raw id. Tracks
+/// with no guides are unaffected.
+fn validate_family_confusions(guides: &[FamilyGuide], errors: &mut Vec<ContentError>) {
+    let authored: HashSet<(&str, &str, &str)> = guides
+        .iter()
+        .map(|guide| {
+            (
+                guide.certification_id.as_str(),
+                guide.certification_version.as_str(),
+                guide.family_id.as_str(),
+            )
+        })
+        .collect();
+
+    for guide in guides {
+        for confusion in &guide.common_confusions {
+            if confusion.other_family_id.trim().is_empty() {
+                continue;
+            }
+            let key = (
+                guide.certification_id.as_str(),
+                guide.certification_version.as_str(),
+                confusion.other_family_id.as_str(),
+            );
+            if !authored.contains(&key) {
+                errors.push(ContentError::new(
+                    "family_guide_unknown_confusion_family",
+                    format!(
+                        "family guide {} confusion target {} is not authored for certification version {}",
+                        guide.family_id, confusion.other_family_id, guide.certification_version
+                    ),
+                ));
+            }
+        }
+    }
 }
 
 /// Rejects two challenges claiming the same id within a track version.
@@ -1253,7 +1448,7 @@ mod tests {
             },
         ];
 
-        let assembled = assemble(&sources, &[], &[], &[]);
+        let assembled = assemble(&sources, &[], &[], &[], &[]);
 
         assert!(
             !assembled.bundles.is_empty(),

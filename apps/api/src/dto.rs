@@ -882,6 +882,95 @@ pub struct TrackMapResponse {
     pub challenges: Vec<ChallengeSummaryDto>,
 }
 
+/// Learner-facing family insights for one learning track (Phase 5).
+///
+/// One aggregate request returns every family the learner has already
+/// encountered, so the Track Hub never fetches per-family or per-example state.
+/// It is post-exposure teaching content only: never a mastery claim, a score, or
+/// an answer key, and families with no exposure are omitted entirely.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct FamilyInsightsResponse {
+    /// Learning track identifier.
+    pub track_id: String,
+    /// Learning track version identifier.
+    pub track_version: String,
+    /// Insights for families the learner has already seen, in family-id order.
+    pub insights: Vec<FamilyInsightDto>,
+}
+
+/// One authored family guide plus what the learner has seen of it.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct FamilyInsightDto {
+    /// Stable authored family identifier. Opaque.
+    pub family_id: String,
+    /// Learner-facing family name.
+    pub title: String,
+    /// Short plain-language deep-structure definition.
+    pub summary: String,
+    /// Structural clues that should trigger the same reasoning next time.
+    pub recognition_signals: Vec<String>,
+    /// Key rule(s) that make the family work.
+    pub core_rules: Vec<String>,
+    /// Optional reusable conceptual skeleton.
+    pub structural_steps: Vec<String>,
+    /// Representative authored contexts (explanatory, not learner history).
+    pub example_contexts: Vec<adaptive_learn_content::FamilyExampleContext>,
+    /// Authored near-neighbor distinctions, with resolved learner-facing titles.
+    pub common_confusions: Vec<FamilyConfusionDto>,
+    /// Source references supporting the guide.
+    pub source_refs: Vec<SourceRef>,
+    /// Distinct surface contexts the learner has actually seen.
+    pub seen_context_count: usize,
+    /// Distinct examples the learner has actually seen.
+    pub seen_example_count: usize,
+    /// Same-skeleton comparison, present only once context variety exists.
+    pub comparison: Option<StructureComparisonDto>,
+}
+
+/// A resolved Family A vs Family B distinction.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct FamilyConfusionDto {
+    /// Authored id of the neighboring family. Opaque.
+    pub other_family_id: String,
+    /// Learner-facing title of the neighboring family.
+    pub other_family_title: String,
+    /// The authored distinction between the two families.
+    pub distinction: String,
+}
+
+/// A post-exposure comparison of two or more seen examples.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct StructureComparisonDto {
+    /// Stable authored family identifier. Opaque.
+    pub family_id: String,
+    /// Learner-facing family title.
+    pub title: String,
+    /// Plain-language deep-structure summary.
+    pub summary: String,
+    /// Structural clues shared by the examples.
+    pub recognition_signals: Vec<String>,
+    /// The rule(s) that make the family work.
+    pub core_rules: Vec<String>,
+    /// Optional reusable skeleton (not executable instructions).
+    pub structural_steps: Vec<String>,
+    /// The already-seen examples, newest first.
+    pub examples: Vec<SeenExampleDto>,
+}
+
+/// One already-seen example in a same-skeleton comparison.
+///
+/// Learner-safe: a problem title, a learner-facing context label, and when the
+/// learner saw it. It never carries a canonical answer or hidden metadata.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct SeenExampleDto {
+    /// Learner-facing problem title.
+    pub title: String,
+    /// Learner-facing surface-context label.
+    pub context_label: String,
+    /// When the learner encountered the example.
+    pub seen_at: DateTime<Utc>,
+}
+
 /// Account-wide daily study streak.
 ///
 /// Motivational only: it never feeds concept state, scoring, or rewards. It

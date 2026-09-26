@@ -455,6 +455,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tracks/{track_id}/family-insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns learner-family structure insights for a track.
+         * @description One aggregate request covers every family the learner has already
+         *     encountered, so the Track Hub never fetches per-family or per-example state.
+         *     An optional `mission_id` scopes the response to a completed mission's
+         *     families so a completion summary shows only structures the finished work
+         *     involved. It is post-exposure teaching content only: it never returns a
+         *     family the learner has not seen, never returns families for an in-progress
+         *     mission, and never carries a canonical answer. A track with no authored
+         *     family guides returns an empty list, so old tracks are unaffected.
+         */
+        get: operations["get_track_family_insights"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/tracks/{track_id}/map": {
         parameters: {
             query?: never;
@@ -1353,6 +1380,122 @@ export interface components {
          * @enum {string}
          */
         EvidenceLevel: "none" | "early" | "developing" | "substantial";
+        /** @description One authored near-neighbor comparison for a family. */
+        FamilyConfusion: {
+            /** @description The distinction that tells the two families apart. */
+            distinction: string;
+            /**
+             * @description The other family this one is commonly confused with.
+             *
+             *     Resolves to an authored guide in the same track/version; opaque to core
+             *     code.
+             */
+            other_family_id: string;
+        };
+        /** @description A resolved Family A vs Family B distinction. */
+        FamilyConfusionDto: {
+            /** @description The authored distinction between the two families. */
+            distinction: string;
+            /** @description Authored id of the neighboring family. Opaque. */
+            other_family_id: string;
+            /** @description Learner-facing title of the neighboring family. */
+            other_family_title: string;
+        };
+        /**
+         * @description One representative context for a family.
+         *
+         *     The `context_id` matches an authored `pedagogy.surface_context` value; the
+         *     `label` is the learner-facing text, so raw machine ids are never rendered.
+         */
+        FamilyExampleContext: {
+            /** @description Opaque authored surface-context id, for example `api_rate_limiting`. */
+            context_id: string;
+            /** @description Learner-facing label, for example `API rate limiting`. */
+            label: string;
+        };
+        /**
+         * @description A reusable deep structure, authored once per track/version family.
+         *
+         *     This is *not* a concept and *not* a question: one family may involve several
+         *     concepts, and one concept may participate in several families. See
+         *     `docs/06-learning-engine.md` and `docs/16-content-audit.md`.
+         */
+        FamilyGuide: {
+            /** @description Certification identifier, for example `aws-soa-c03`. */
+            certification_id: string;
+            /** @description Certification version identifier, for example `soa-c03`. */
+            certification_version: string;
+            /** @description Useful near-neighbor comparisons, authored as distinctions. */
+            common_confusions?: components["schemas"]["FamilyConfusion"][];
+            /** @description The key rule(s) or invariant(s) that make the family work. */
+            core_rules?: string[];
+            /** @description Representative contexts, as explanatory examples rather than history. */
+            example_contexts?: components["schemas"]["FamilyExampleContext"][];
+            /**
+             * @description Stable family identifier matching the Phase 1 `pedagogy.family_id`.
+             *
+             *     Opaque: core code never inspects its prefix or contents.
+             */
+            family_id: string;
+            /** @description Structural clues that should trigger the same reasoning next time. */
+            recognition_signals: string[];
+            /** @description Schema discriminator; must equal `family-guide-v1`. */
+            schema_version: string;
+            /** @description Official references supporting the guide's factual claims. */
+            source_refs: components["schemas"]["SourceRef"][];
+            /** @description Optional ordered conceptual skeleton (not executable instructions). */
+            structural_steps?: string[];
+            /**
+             * @description Short plain-language definition of the deep structure.
+             *
+             *     It should explain the structure, not merely name a technique.
+             */
+            summary: string;
+            /** @description Learner-facing family name, for example `Moving Valid Window`. */
+            title: string;
+        };
+        /** @description One authored family guide plus what the learner has seen of it. */
+        FamilyInsightDto: {
+            /** @description Authored near-neighbor distinctions, with resolved learner-facing titles. */
+            common_confusions: components["schemas"]["FamilyConfusionDto"][];
+            comparison?: null | components["schemas"]["StructureComparisonDto"];
+            /** @description Key rule(s) that make the family work. */
+            core_rules: string[];
+            /** @description Representative authored contexts (explanatory, not learner history). */
+            example_contexts: components["schemas"]["FamilyExampleContext"][];
+            /** @description Stable authored family identifier. Opaque. */
+            family_id: string;
+            /** @description Structural clues that should trigger the same reasoning next time. */
+            recognition_signals: string[];
+            /** @description Distinct surface contexts the learner has actually seen. */
+            seen_context_count: number;
+            /** @description Distinct examples the learner has actually seen. */
+            seen_example_count: number;
+            /** @description Source references supporting the guide. */
+            source_refs: components["schemas"]["SourceRef"][];
+            /** @description Optional reusable conceptual skeleton. */
+            structural_steps: string[];
+            /** @description Short plain-language deep-structure definition. */
+            summary: string;
+            /** @description Learner-facing family name. */
+            title: string;
+        };
+        /**
+         * @description Learner-facing family insights for one learning track (Phase 5).
+         *
+         *     One aggregate request returns every family the learner has already
+         *     encountered, so the Track Hub never fetches per-family or per-example state.
+         *     It is post-exposure teaching content only: never a mastery claim, a score, or
+         *     an answer key, and families with no exposure are omitted entirely.
+         */
+        FamilyInsightsResponse: {
+            /** @description Insights for families the learner has already seen, in family-id order. */
+            insights: components["schemas"]["FamilyInsightDto"][];
+            /** @description Learning track identifier. */
+            track_id: string;
+            /** @description Learning track version identifier. */
+            track_version: string;
+        };
         /** @description Feedback for one scored attempt. */
         FeedbackResponse: {
             /**
@@ -2552,6 +2695,23 @@ export interface components {
             /** @description What kind of decision this step represents. */
             stage: components["schemas"]["ScenarioStage"];
         };
+        /**
+         * @description One already-seen example in a same-skeleton comparison.
+         *
+         *     Learner-safe: a problem title, a learner-facing context label, and when the
+         *     learner saw it. It never carries a canonical answer or hidden metadata.
+         */
+        SeenExampleDto: {
+            /** @description Learner-facing surface-context label. */
+            context_label: string;
+            /**
+             * Format: date-time
+             * @description When the learner encountered the example.
+             */
+            seen_at: string;
+            /** @description Learner-facing problem title. */
+            title: string;
+        };
         /** @description One planned activity. */
         SessionActivity: {
             /** @description Concepts the activity targets. */
@@ -2617,6 +2777,23 @@ export interface components {
              * @description Longest consecutive run ever recorded.
              */
             longest: number;
+        };
+        /** @description A post-exposure comparison of two or more seen examples. */
+        StructureComparisonDto: {
+            /** @description The rule(s) that make the family work. */
+            core_rules: string[];
+            /** @description The already-seen examples, newest first. */
+            examples: components["schemas"]["SeenExampleDto"][];
+            /** @description Stable authored family identifier. Opaque. */
+            family_id: string;
+            /** @description Structural clues shared by the examples. */
+            recognition_signals: string[];
+            /** @description Optional reusable skeleton (not executable instructions). */
+            structural_steps: string[];
+            /** @description Plain-language deep-structure summary. */
+            summary: string;
+            /** @description Learner-facing family title. */
+            title: string;
         };
         /**
          * @description A question for an ordinary study mission that supports local scoring.
@@ -4096,6 +4273,64 @@ export interface operations {
                 };
             };
             /** @description Unknown learning track */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_track_family_insights: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Completed mission whose families should scope the response.
+                 *
+                 *     When present, only families the finished mission involved are returned.
+                 *     Omit it for the track-wide pattern browser.
+                 */
+                mission_id?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Learning track identifier, for example `aws-soa-c03`. */
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Learner-family structure insights */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FamilyInsightsResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Mission belongs to another account or track */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown learning track or mission */
             404: {
                 headers: {
                     [name: string]: unknown;

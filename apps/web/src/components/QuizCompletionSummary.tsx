@@ -2,9 +2,12 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useNavigate } from "react-router-dom";
 
 import type { MissionResponse, QuizMode } from "../api/types";
+import { useAuth } from "../auth/context";
 import { useCatalog } from "../hooks/useCatalog";
+import { useFamilyInsights } from "../hooks/useFamilyInsights";
 import type { SyncState } from "../hooks/useMissionRunner";
 import { claimMissionCelebration } from "../state/celebration";
+import { firstComparison } from "../state/familyInsights";
 import { buildKnowledgeGroups } from "../state/knowledge";
 import { startMission } from "../state/mission";
 import type { AttemptRecord } from "../state/persistence";
@@ -19,6 +22,7 @@ import DomainBreakdown, { type BreakdownRow } from "./DomainBreakdown";
 import KnowledgeReinforcement from "./KnowledgeReinforcement";
 import MissionCompleteHero from "./MissionCompleteHero";
 import PerformanceSummary from "./PerformanceSummary";
+import StructureComparisonCard from "./StructureComparisonCard";
 
 interface QuizCompletionSummaryProps {
   mission: MissionResponse;
@@ -139,10 +143,28 @@ export default function QuizCompletionSummary({
     [mission, attempts, syncState.pending],
   );
   const { state } = useCatalog();
+  const { status: authStatus } = useAuth();
   const bits = useBitsBalance();
   const navigate = useNavigate();
   const [starting, setStarting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Optional Phase 5 insight: one cached aggregate request per track, surfaced
+  // only as a collapsed, non-blocking teaser. Viewing it is never scored. It is
+  // scoped to this mission's families so the copy is truthful, and refreshed
+  // once per completed mission because finishing may unlock a new comparison.
+  const { state: familyState, refresh: refreshFamilyInsights } =
+    useFamilyInsights({
+      trackId: mission.certification_id,
+      enabled: authStatus === "authenticated",
+      missionId: mission.id,
+    });
+  const patternInsight =
+    familyState.status === "loaded" ? firstComparison(familyState.response) : null;
+
+  useEffect(() => {
+    void refreshFamilyInsights();
+  }, [mission.id, refreshFamilyInsights]);
 
   const celebrated = useMissionCelebration(mission.id);
 
@@ -382,6 +404,13 @@ export default function QuizCompletionSummary({
       ) : null}
 
       <KnowledgeReinforcement groups={knowledgeGroups} />
+
+      {patternInsight?.comparison ? (
+        <details className="completion-pattern">
+          <summary>See the structure these questions shared</summary>
+          <StructureComparisonCard comparison={patternInsight.comparison} />
+        </details>
+      ) : null}
 
       {mission.mode === "quick_adaptive" ? (
         <p className="completion-momentum">Nice momentum.</p>

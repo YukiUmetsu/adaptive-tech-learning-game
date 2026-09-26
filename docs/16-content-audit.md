@@ -88,6 +88,29 @@ Part 1 is the authoritative list of what is checked automatically; everything be
 
 Factual accuracy and currency; source quality/authority/relevance; teach-before-test; natural English, tone, ambiguity, readability; distractor plausibility; **answer predictability**; semantic duplication; interaction run length; coverage relevance beyond ids, weights, and counts. These are why Parts 2–4 exist.
 
+## 1.6 Family guides (`crates/content/src/family_guide.rs`)
+
+Family guides are optional (`family-guide-v1`). Discovery is by path:
+`**/families/**/*.json` → `FamilyGuide`. Every rule below is machine-checked;
+guide *quality* is the human audit in §4.20.
+
+- `schema_version == "family-guide-v1"`.
+- `certification_id`, `certification_version`, `family_id`, `title`, `summary` non-empty.
+- `recognition_signals` has ≥1 entry; no blank entries; no normalized duplicates
+  (case-insensitive, whitespace-collapsed).
+- `core_rules` and `structural_steps`, when present, have no blank or duplicate entries.
+- `common_confusions`, when present: non-blank `other_family_id` and `distinction`;
+  no self-confusion; no duplicate target. A target must resolve to an authored
+  guide in the **same** `(certification_id, certification_version)`.
+- `example_contexts`, when present: non-blank `context_id` and `label`; no duplicate `context_id`.
+- `source_refs`: ≥1 entry, each with non-empty title and URL.
+- Unique `family_id` per track version (`duplicate_family_guide`).
+
+Backward compatibility: a question's `family_id` does **not** have to have a
+guide; old tracks with no guides load and behave unchanged. Audit tooling
+(`ContentRegistry::families_missing_guides`) reports question families that lack
+a guide as a **warning**, never a build failure.
+
 ---
 
 # Part 2 — Editorial gates
@@ -512,6 +535,52 @@ checks apply **only** to authored `challenge-v1` definitions.
 - [ ] the challenge does not copy proprietary interview-question-bank text and
       contains no answer-revealing metadata in the learner-facing brief.
 
+## 4.20 Family guide audit (only when authored)
+
+Family guides are optional and opt-in; a track without them is not deficient.
+These checks apply **only** to authored `family-guide-v1` definitions.
+
+- [ ] the family represents a genuinely reusable structure — the same summary
+      would describe every member, not one question's surface wording;
+- [ ] the summary explains the deep structure in plain language, not just a
+      technique name ("Maintain one active range as boundaries move", not
+      "the famous sliding-window algorithm");
+- [ ] recognition signals describe meaningful structure, not shallow keywords,
+      and avoid leaking an implementation/answer name where possible;
+- [ ] core rules/invariants are correct and general enough to transfer;
+- [ ] structural steps are conceptual learning content, not executable
+      instructions, and are general across the family's contexts;
+- [ ] example contexts genuinely share the structure and are representative,
+      not a substitute for real learner history;
+- [ ] every common-confusion distinction is accurate, names a real near
+      neighbor, and explains the clue that separates the two families;
+- [ ] source references support the factual and conceptual claims, point at an
+      authoritative page/section, and are current;
+- [ ] wording is concise and natural (read-aloud test), with no undefined jargon;
+- [ ] the guide does not leak an answer into cold practice and is not shown
+      before first exposure;
+- [ ] the guide does not overclaim real-world use or vendor endorsement.
+
+## 4.21 Same-skeleton comparison audit
+
+For a structural comparison / transfer group, verify:
+
+- [ ] the compared examples differ meaningfully in surface context, not only in
+      cosmetic wording;
+- [ ] the examples genuinely share the same relevant deep structure, not merely a
+      shared topic or a matching noun;
+- [ ] the similarity points at the actual invariant/state relationship, not a
+      coincidence of story or formatting;
+- [ ] no future or unseen assessment question is used as an example;
+- [ ] an A-vs-B confusion is only shown once the learner has encountered
+      **both** families, so it cannot pre-label an unencountered neighbor;
+- [ ] a completion summary uses examples the finished work actually involved;
+- [ ] examples the learner has already encountered are used where intended, and a
+      failed attempt is not presented as understanding;
+- [ ] the comparison reveals no canonical answer or hidden solution metadata;
+- [ ] the view stays optional and non-blocking (no mandatory modal after every
+      answer) and shows no mastery percentage.
+
 ---
 
 # Part 5 — Audit output format
@@ -521,6 +590,46 @@ Every audit produces two sections: **Learning Material Audit** and **Questions A
 Question audits also include: interaction-type distribution; same-type run violations; semantic duplication; scenario/troubleshooting coverage; feedback/hint quality; answer predictability (position census, content cues, blind-guess test).
 
 Report any automated-validation failure (`ContentError` code + source path) verbatim **before** the editorial findings, since it blocks content from loading at all.
+
+## 5.1 Family / pattern coverage report
+
+When a track authors pedagogy metadata or family guides, include a per-family
+coverage block. This is reporting, never a build gate:
+
+```text
+Family: dsa.sliding_window.variable
+
+Guide: yes
+Questions: 14
+Transfer groups: 2
+Surface contexts: 4
+
+Stages:
+recognize       3
+differentiate   2
+reason          2
+trace           2
+diagnose        1
+construct       2
+transfer        2
+
+Common confusions:
+prefix state
+two pointers
+
+Warnings:
+none
+```
+
+A missing guide is a warning, not a failure:
+
+```text
+Family guide coverage: 0%
+```
+
+Old tracks with no family guides stay warning-free and are not required to
+migrate. `ContentRegistry::families_missing_guides(certification_version)` is the
+reporting surface for question families that lack a guide.
 
 ---
 

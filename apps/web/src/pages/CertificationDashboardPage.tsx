@@ -47,6 +47,8 @@ import { shortDomainName } from "../state/domainNames";
 import { ANSWER_REWARD_RANGE } from "../state/rewards";
 import ChallengeList from "../components/ChallengeList";
 import DailyMissionRunner from "../components/DailyMissionRunner";
+import FamilyInsightToolbelt from "../components/FamilyInsightToolbelt";
+import { useFamilyInsights } from "../hooks/useFamilyInsights";
 
 interface Launch {
   mode: QuizMode;
@@ -71,7 +73,9 @@ export default function CertificationDashboardPage() {
   const { status } = useAuth();
   const authenticated = status === "authenticated";
 
-  const [view, setView] = useState<"map" | "daily" | "practice">("map");
+  const [view, setView] = useState<"map" | "daily" | "practice" | "patterns">(
+    "map",
+  );
   const [starting, setStarting] = useState<string | null>(null);
   const [choosingDomain, setChoosingDomain] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +120,10 @@ export default function CertificationDashboardPage() {
     trackId: certificationId,
     enabled: authenticated,
     discovery,
+  });
+  const { state: familyState, reload: reloadFamilies } = useFamilyInsights({
+    trackId: certificationId,
+    enabled: authenticated,
   });
   const practiceTestsState = usePracticeTests(certificationId);
   const practiceTests = useMemo(
@@ -679,6 +687,16 @@ export default function CertificationDashboardPage() {
           >
             <span aria-hidden="true">🎯</span> Practice
           </button>
+          <button
+            type="button"
+            aria-current={view === "patterns" ? "page" : undefined}
+            onClick={() => {
+              setView("patterns");
+              void reloadFamilies();
+            }}
+          >
+            <span aria-hidden="true">🧩</span> Patterns
+          </button>
         </nav>
 
         <div className="track-hub-hud">
@@ -840,6 +858,24 @@ export default function CertificationDashboardPage() {
         ) : (
           <p role="status">Loading today&apos;s mission…</p>
         )
+      ) : view === "patterns" ? (
+        <section className="track-hub-practice-view" aria-label="Reusable patterns">
+          {!authenticated ? (
+            <FamilyInsightToolbelt trackId={certification.id} insights={[]} />
+          ) : familyState.status === "loaded" ? (
+            <FamilyInsightToolbelt
+              trackId={certification.id}
+              insights={familyState.response.insights}
+            />
+          ) : familyState.status === "error" ? (
+            <p className="muted">
+              Patterns are unavailable right now. You can still explore and
+              practice.
+            </p>
+          ) : (
+            <p role="status">Loading your patterns…</p>
+          )}
+        </section>
       ) : (
         <section className="track-hub-practice-view" aria-label="Practice">
           <div className="hub-practice-head">

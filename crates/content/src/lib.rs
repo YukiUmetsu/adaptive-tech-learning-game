@@ -7,6 +7,7 @@ mod embedded {
 
 pub mod challenge;
 pub mod discovery;
+pub mod family_guide;
 pub mod learning;
 pub mod model;
 pub mod practice_test;
@@ -35,8 +36,12 @@ pub use challenge::{
     CHALLENGE_SCHEMA_VERSION, ChallengeDefinition, ChallengeStage, validate_challenge,
 };
 pub use embedded::{
-    EMBEDDED_CHALLENGE_SOURCES, EMBEDDED_LEARNING_SOURCES, EMBEDDED_PRACTICE_TEST_SOURCES,
-    EMBEDDED_SOURCES,
+    EMBEDDED_CHALLENGE_SOURCES, EMBEDDED_FAMILY_GUIDE_SOURCES, EMBEDDED_LEARNING_SOURCES,
+    EMBEDDED_PRACTICE_TEST_SOURCES, EMBEDDED_SOURCES,
+};
+pub use family_guide::{
+    FAMILY_GUIDE_SCHEMA_VERSION, FamilyConfusion, FamilyExampleContext, FamilyGuide,
+    validate_family_guide,
 };
 pub use learning::*;
 pub use model::*;
