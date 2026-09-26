@@ -308,12 +308,16 @@ export default function CertificationDashboardPage() {
       ? recommendation.node_id ?? null
       : null;
 
+  const selectedNodeState = selected
+    ? (derivedByDomain[selected.domain.domain.id]?.nodeState[selected.node.id] ??
+      "ready")
+    : "ready";
+
   const selectedVisual =
     selected && trackMap
       ? deriveNodeVisual(
           selected.node.id,
-          derivedByDomain[selected.domain.domain.id]?.nodeState[selected.node.id] ??
-            "ready",
+          selectedNodeState,
           signals.get(selected.node.id),
           recommendedNodeId,
         )
@@ -794,6 +798,7 @@ export default function CertificationDashboardPage() {
                 domainName={shortDomainName(selected.domain.domain.name)}
                 moduleTitle={selected.module.title}
                 visual={selectedVisual}
+                state={selectedNodeState}
                 onExplore={() =>
                   navigate(
                     `/tracks/${certification.id}/domains/${selected.domain.domain.id}/learn?node=${encodeURIComponent(selected.node.id)}`,

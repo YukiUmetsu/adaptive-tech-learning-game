@@ -1044,7 +1044,10 @@ name in accessible labels and detail panels. Nodes align on their signal circle
 regardless of label length, grow subtly on hover, and the recommended node
 carries a small "Next" marker (explained in the map legend). The node detail
 panel hides evidence/review rows entirely when there is not enough data, and
-leads with a reward hook so exploring feels worthwhile.
+leads with a reward hook so exploring feels worthwhile. A **locked** node's
+panel keeps the topic summary, explains its prerequisite, and offers no explore
+action, so the learner is never sent to a card whose material cannot be revealed
+yet.
 
 The Daily Mission is embedded in the hub as a view, using the same runner as the
 standalone `/tracks/:id/daily` route (kept for deep links), so it no longer feels

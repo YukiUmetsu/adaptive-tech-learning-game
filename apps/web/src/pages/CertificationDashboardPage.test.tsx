@@ -475,6 +475,27 @@ describe("CertificationDashboardPage (Track Hub)", () => {
     ).toBeInTheDocument();
   });
 
+  it("hides Explore for a locked node and explains the prerequisite", async () => {
+    stubHub();
+    renderHub();
+    await ready();
+
+    // "Logs" is locked under the default guided path (Metrics comes first).
+    await userEvent.click(await screen.findByRole("button", { name: /Logs/ }));
+
+    const panel = await screen.findByLabelText("Logs details");
+    expect(
+      within(panel).queryByRole("button", { name: "Explore this topic" }),
+    ).not.toBeInTheDocument();
+    // The topic explanation stays; the lock note is shown alongside it.
+    expect(
+      within(panel).getByText(/A brand-new topic/),
+    ).toBeInTheDocument();
+    expect(
+      within(panel).getByText(/Finish the earlier topics/),
+    ).toBeInTheDocument();
+  });
+
   it("opens the Daily Mission in the same page", async () => {
     stubHub({ dailyMission: true });
     renderHub();
