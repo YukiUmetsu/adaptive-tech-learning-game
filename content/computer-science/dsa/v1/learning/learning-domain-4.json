@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "dsa-learning-2026-09-26-v5",
+  "content_version": "dsa-learning-2026-09-26-v12",
   "certification_id": "cs-dsa",
   "certification_version": "dsa-v1",
-  "exam_guide_revision": "Reviewed v5, 2026-09-26. This is a practical Data Structures & Algorithms track built around developer problems, code, performance, state, transfer, and pattern recognition.",
+  "exam_guide_revision": "Editorial and factual review 2026-09-26 using docs/16-content-audit.md. Problems and setup are visible immediately; every node is self-contained at entry.",
   "domain": {
     "id": "domain-4",
     "name": "Linked Lists, Stacks, Queues & Heaps",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Pattern Vision",
-    "unlock_rule": "All learning reveals are required. Each node moves quickly through a concrete problem, the obvious failure/waste, the maintained state or invariant that fixes it, the pattern name, a different real-world transfer, and one quick check.",
-    "mastery_note": "The goal is not to enjoy studying algorithms. The goal is to recognize the structure fast enough that an unfamiliar problem starts to look like a problem you have already solved."
+    "unlock_rule": "Problem context and example data stay visible. Progressive reveal is used only for answers or decisions. Each node defines the idea before asking the learner to use it.",
+    "mastery_note": "Recognize the structure, understand why the method works, and know when a similar-looking method does not fit."
   },
   "source_refs": [
     {
@@ -51,23 +51,23 @@
   "glossary": [
     {
       "term": "sentinel",
-      "definition": "A non-data node used to simplify boundary cases such as insertion or deletion at the logical head."
+      "definition": "An extra non-data node used to simplify boundary cases."
     },
     {
       "term": "LIFO",
-      "definition": "Last in, first out: the most recently added unresolved item is removed first."
+      "definition": "Last in, first out: the newest item leaves first."
     },
     {
       "term": "FIFO",
-      "definition": "First in, first out: the oldest waiting item is removed first."
+      "definition": "First in, first out: the oldest item leaves first."
     },
     {
       "term": "priority queue",
-      "definition": "A collection ordered by priority rather than arrival order."
+      "definition": "A collection that returns items by priority instead of arrival order."
     },
     {
       "term": "frontier",
-      "definition": "The small set of current candidates that can produce the next answer."
+      "definition": "The current candidate from an input that could be processed next."
     }
   ],
   "coverage": {
@@ -89,13 +89,13 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 9,
-    "prompt_count": 54
+    "prompt_count": 67
   },
-  "authoring_notes": "Anti-boring rule set: no optional reveals; no definition-first nodes; no university-course voice; no fake corporate narrative; start with code/data/workload; expose the waste or bug; name the useful state; then name the pattern; finish with transfer.",
+  "authoring_notes": "Audited against docs/16-content-audit.md: concrete context first; title/topic defined before use; one new idea per sentence where practical; short worked examples immediately follow abstract rules; technical terms are defined before reuse; similar concepts are explicitly differentiated; multi-step behavior is split into separate prompts; no opening depends on remembering an earlier card; no 'you are learning to' meta-prose; first problem/setup is never hidden.",
   "modules": [
     {
       "id": "domain-4-module-1-linked",
-      "title": "Mutate linked structures without losing data",
+      "title": "Linked lists",
       "order": 1,
       "task_ids": [
         "4.1"
@@ -109,7 +109,7 @@
       "nodes": [
         {
           "id": "domain-4-linked-rewire",
-          "title": "Linked-list surgery: never cut a pointer before you know what is behind it",
+          "title": "Rewire links",
           "concept_ids": [
             "dsa.linked.rewire"
           ],
@@ -120,136 +120,121 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "You already have `prev` and must remove `victim` from a singly linked chain without losing the rest. You are learning to rewire references while preserving reachability of the unprocessed suffix.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "You already have `prev` and must remove `victim` from a singly linked chain without losing the rest.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to rewire references while preserving reachability of the unprocessed suffix",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "A singly linked list is `A → B → C → None`. Each node stores a value and a `next` reference. You already have `prev = A` and want to remove `victim = B` without losing `C`."
               }
             },
             {
-              "id": "bad",
-              "kind": "mental_model",
-              "label": "ONE POINTER CHANGE REMOVES THE NODE",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "code_file",
-                "filename": "remove_node.py",
-                "language": "python",
-                "code": "# prev -> victim -> successor\nprev.next = victim.next\n",
-                "line_numbers": true,
-                "annotations": [
+                "type": "text",
+                "text": "A singly linked list reaches each next item by following references. To remove a known node when its predecessor is known, make the predecessor point to the victim's successor."
+              }
+            },
+            {
+              "id": "visual",
+              "kind": "mental_model",
+              "label": "BEFORE AND AFTER",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Before: `A → B → C → None`",
+                  "`prev = A`, `victim = B`, `victim.next = C`",
+                  "Update: `prev.next = victim.next`",
+                  "After: `A → C → None`"
+                ]
+              }
+            },
+            {
+              "id": "tradeoff",
+              "kind": "connects_to",
+              "label": "LINKED LIST VS ARRAY",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
                   {
-                    "id": "rewire",
-                    "anchor": {
-                      "line": 2,
-                      "text": "prev.next = victim.next",
-                      "occurrence": 1
-                    },
-                    "title": "Bypass victim",
-                    "explanation": "The predecessor now points directly to the successor, so the remaining chain stays reachable.",
-                    "required": true
+                    "id": "need",
+                    "label": "Need"
+                  },
+                  {
+                    "id": "linked",
+                    "label": "Linked list"
+                  },
+                  {
+                    "id": "array",
+                    "label": "Array"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "remove",
+                    "cells": {
+                      "need": "Remove after a known predecessor",
+                      "linked": "Rewire one link",
+                      "array": "May need to shift later items"
+                    }
+                  },
+                  {
+                    "id": "index",
+                    "cells": {
+                      "need": "Access item at index i",
+                      "linked": "Walk from a known start",
+                      "array": "Direct indexed access"
+                    }
                   }
                 ]
               }
             },
             {
-              "id": "move",
-              "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Before every mutation, identify which reference keeps the unprocessed suffix reachable. Takeaway: the links needed to reach both processed and unprocessed parts.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "the links needed to reach both processed and unprocessed parts",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Linked lists fit workloads that already have node references and frequently rewire nearby links. They are a poor fit when fast random indexing is the main operation."
               }
             },
             {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Linked-reference rewiring. Trigger: nodes are connected by explicit references and mutation can disconnect the remaining structure",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Linked-reference rewiring",
-                      "required": true
-                    },
-                    {
-                      "id": "trigger",
-                      "text": "nodes are connected by explicit references and mutation can disconnect the remaining structure",
-                      "required": true
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "id": "transfer",
-              "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
-              "placeholder": "",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Removing, inserting, reversing, and splicing linked nodes are all reachability-preservation problems. Takeaway: pointer updates must preserve access to the remaining chain.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "pointer updates must preserve access to the remaining chain",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Before changing a link, know which node must remain reachable afterward."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "To remove victim when prev is known, which link changes? Answer: `prev.next = victim.next`.",
+                "text": "To remove B from `A → B → C`, what should `A.next` become? Answer: `C`.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "`prev.next = victim.next`.",
+                      "text": "`C`.",
                       "required": true
                     }
                   ]
@@ -274,17 +259,17 @@
           "glossary": [
             {
               "term": "node",
-              "definition": "A container holding an item plus one or more references to other nodes."
+              "definition": "A value plus a reference to another node."
             },
             {
               "term": "predecessor",
-              "definition": "The node immediately before another node in a linked sequence."
+              "definition": "The node immediately before another node."
             }
           ]
         },
         {
           "id": "domain-4-linked-sentinel",
-          "title": "A dummy head turns 'remove the first node' into the normal case",
+          "title": "Sentinel node",
           "concept_ids": [
             "dsa.linked.sentinel"
           ],
@@ -297,129 +282,118 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Filter every expired node from a singly linked list, including possibly the real head. You are learning to use a sentinel node to eliminate special-case logic at the list boundary.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "Filter every expired node from a singly linked list, including possibly the real head.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to use a sentinel node to eliminate special-case logic at the list boundary",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Remove every `X` from `X → A → X → B → None`. The real head might need to be removed, which normally creates a special case."
               }
             },
             {
-              "id": "bad",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A sentinel, or dummy head, is an extra non-data node placed before the real list. It gives the first real node a predecessor, so head deletion can use the same rewiring rule as other deletions."
+              }
+            },
+            {
+              "id": "visual",
               "kind": "mental_model",
-              "label": "WATCH THE OBVIOUS MOVE",
+              "label": "WITH A SENTINEL",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Without a sentinel, removing the first real node needs different code because there is no real predecessor. Takeaway: head mutation breaks the otherwise uniform predecessor-based loop.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pain",
-                      "text": "head mutation breaks the otherwise uniform predecessor-based loop",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Start: `D → X → A → X → B → None`",
+                  "`D` is the sentinel.",
+                  "Remove first X with `D.next = X.next`.",
+                  "Final real list: `A → B → None`",
+                  "Return `D.next`, not `D`."
+                ]
               }
             },
             {
-              "id": "move",
+              "id": "code",
               "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "label": "CODE",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Create a dummy node whose `next` points to the real head. Now every removable node, including the original head, has a predecessor. Takeaway: a stable predecessor that exists even before the logical head.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "a stable predecessor that exists even before the logical head",
-                      "required": true
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
-              "placeholder": "",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Sentinel / dummy head. Trigger: linked-list operations repeatedly special-case insertion/removal at the head",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Sentinel / dummy head",
-                      "required": true
+                "type": "code_file",
+                "filename": "remove_x.py",
+                "language": "python",
+                "code": "def remove_x(head):\n    dummy = Node(None, head)\n    prev = dummy\n    current = head\n    while current:\n        if current.value == \"X\":\n            prev.next = current.next\n        else:\n            prev = current\n        current = current.next\n    return dummy.next\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "dummy",
+                    "anchor": {
+                      "line": 2,
+                      "text": "dummy = Node(None, head)",
+                      "occurrence": 1
                     },
-                    {
-                      "id": "trigger",
-                      "text": "linked-list operations repeatedly special-case insertion/removal at the head",
-                      "required": true
-                    }
-                  ]
-                }
+                    "title": "Create a predecessor for the head",
+                    "explanation": "The sentinel is not part of the logical data.",
+                    "required": true
+                  },
+                  {
+                    "id": "return",
+                    "anchor": {
+                      "line": 11,
+                      "text": "return dummy.next",
+                      "occurrence": 1
+                    },
+                    "title": "Return the real head",
+                    "explanation": "The real head may have changed during removals.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "transfer",
-              "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Partitioning, deleting all matches, or merging into a new linked result can all use a dummy node to simplify edge handling. Takeaway: invent a harmless boundary node so interior logic works at the edge.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "invent a harmless boundary node so interior logic works at the edge",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Use a sentinel when insertions or deletions at the logical head would otherwise need separate control flow."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The sentinel makes the head behave like an ordinary node with a predecessor."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "After filtering with a dummy head, what should you return? Answer: `dummy.next`, the possibly updated logical head.",
+                "text": "After using a dummy head, which reference is the real list head? Answer: `dummy.next`.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "`dummy.next`, the possibly updated logical head.",
+                      "text": "`dummy.next`.",
                       "required": true
                     }
                   ]
@@ -440,7 +414,7 @@
         },
         {
           "id": "domain-4-linked-reverse",
-          "title": "Reverse a chain one edge at a time — but save `next` first",
+          "title": "Reverse a list",
           "concept_ids": [
             "dsa.linked.reverse"
           ],
@@ -453,147 +427,136 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "You need to reverse a rollback-action chain in place. You are learning to reverse links without losing the unprocessed suffix.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "You need to reverse a rollback-action chain in place.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to reverse links without losing the unprocessed suffix",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Reverse `A → B → C → None` in place so the result is `C → B → A → None`. The main risk is losing the part of the list that has not been processed yet."
               }
             },
             {
-              "id": "bad",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Reverse one link at a time. Before changing `current.next`, save the original next node so the remaining suffix stays reachable."
+              }
+            },
+            {
+              "id": "step-1",
               "kind": "mental_model",
-              "label": "THE ORDER OF THESE THREE LINES MATTERS",
+              "label": "STEP 1",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "`prev = None`, `current = A`",
+                  "Save `next_node = B`.",
+                  "Set `A.next = None`.",
+                  "Move: `prev = A`, `current = B`."
+                ]
+              }
+            },
+            {
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Save `next_node = C`.",
+                  "Set `B.next = A`.",
+                  "Move: `prev = B`, `current = C`."
+                ]
+              }
+            },
+            {
+              "id": "step-3",
+              "kind": "mental_model",
+              "label": "STEP 3",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Save `next_node = None`.",
+                  "Set `C.next = B`.",
+                  "Result: `C → B → A → None`."
+                ]
+              }
+            },
+            {
+              "id": "code",
+              "kind": "action",
+              "label": "CODE",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "code_file",
-                "filename": "reverse_list.py",
+                "filename": "reverse.py",
                 "language": "python",
-                "code": "prev = None\ncur = head\nwhile cur:\n    nxt = cur.next\n    cur.next = prev\n    prev = cur\n    cur = nxt\nreturn prev\n",
+                "code": "def reverse(head):\n    prev = None\n    current = head\n    while current:\n        next_node = current.next\n        current.next = prev\n        prev = current\n        current = next_node\n    return prev\n",
                 "line_numbers": true,
                 "annotations": [
                   {
                     "id": "save",
                     "anchor": {
-                      "line": 4,
-                      "text": "nxt = cur.next",
+                      "line": 5,
+                      "text": "next_node = current.next",
                       "occurrence": 1
                     },
-                    "title": "Save the rest before cutting",
-                    "explanation": "After reversing cur.next, the old suffix would otherwise be unreachable.",
+                    "title": "Save before rewiring",
+                    "explanation": "Without this reference, the unprocessed suffix could become unreachable.",
                     "required": true
                   },
                   {
-                    "id": "advance",
+                    "id": "flip",
                     "anchor": {
-                      "line": 7,
-                      "text": "cur = nxt",
+                      "line": 6,
+                      "text": "current.next = prev",
                       "occurrence": 1
                     },
-                    "title": "Continue through the saved suffix",
-                    "explanation": "nxt preserves the unprocessed chain.",
+                    "title": "Reverse one edge",
+                    "explanation": "Only after saving next do we point current backward.",
                     "required": true
                   }
                 ]
               }
             },
             {
-              "id": "move",
-              "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Think in two regions: reversed prefix and untouched suffix. Save the bridge before you redirect it. Takeaway: previous node + current node + saved next node.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "previous node + current node + saved next node",
-                      "required": true
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
-              "placeholder": "",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Iterative linked-list reversal. Trigger: reverse a single-successor chain in place",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Iterative linked-list reversal",
-                      "required": true
-                    },
-                    {
-                      "id": "trigger",
-                      "text": "reverse a single-successor chain in place",
-                      "required": true
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "id": "transfer",
-              "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
-              "placeholder": "",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "The same save-before-mutate discipline appears in tree rotations, graph rewiring, and any pointer-heavy mutation. Takeaway: capture the next reachable state before rewriting the current edge.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "capture the next reachable state before rewriting the current edge",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Save `next`, reverse the link, then advance both pointers."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Which line must happen before `cur.next = prev`? Answer: `nxt = cur.next`.",
+                "text": "Which value must be saved before `current.next` is changed? Answer: `current.next`.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "`nxt = cur.next`.",
+                      "text": "`current.next`.",
                       "required": true
                     }
                   ]
@@ -616,7 +579,7 @@
     },
     {
       "id": "domain-4-module-2-stack-queue",
-      "title": "Choose LIFO/FIFO from the order policy",
+      "title": "Stacks and queues",
       "order": 2,
       "task_ids": [
         "4.2"
@@ -632,7 +595,7 @@
       "nodes": [
         {
           "id": "domain-4-stack-lifo",
-          "title": "When the newest unresolved thing must close first, use a stack",
+          "title": "Stacks",
           "concept_ids": [
             "dsa.stack.lifo"
           ],
@@ -643,129 +606,148 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "A parser reads nested delimiters or nested transaction scopes. You are learning to recognize LIFO structure from 'most recent unresolved item closes next'.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "A parser reads nested delimiters or nested transaction scopes.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to recognize LIFO structure from 'most recent unresolved item closes next'",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "A parser reads `([{}])`. Every closing delimiter must match the most recently opened delimiter that has not been closed yet."
               }
             },
             {
-              "id": "bad",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A stack is last in, first out (LIFO). Push new unresolved items on top; pop the newest item first."
+              }
+            },
+            {
+              "id": "trace",
               "kind": "mental_model",
-              "label": "WATCH THE OBVIOUS MOVE",
+              "label": "TRACE",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A queue would match the oldest unresolved opener first, which breaks nested structure. Takeaway: closure order is the reverse of opening order.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pain",
-                      "text": "closure order is the reverse of opening order",
-                      "required": true
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "char",
+                    "label": "Read"
+                  },
+                  {
+                    "id": "action",
+                    "label": "Action"
+                  },
+                  {
+                    "id": "stack",
+                    "label": "Stack after action"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "a",
+                    "cells": {
+                      "char": "(",
+                      "action": "push (",
+                      "stack": "[(]"
                     }
-                  ]
-                }
+                  },
+                  {
+                    "id": "b",
+                    "cells": {
+                      "char": "[",
+                      "action": "push [",
+                      "stack": "[(, []"
+                    }
+                  },
+                  {
+                    "id": "c",
+                    "cells": {
+                      "char": "{",
+                      "action": "push {",
+                      "stack": "[(, [, {]"
+                    }
+                  },
+                  {
+                    "id": "d",
+                    "cells": {
+                      "char": "}",
+                      "action": "pop {",
+                      "stack": "[(, []"
+                    }
+                  },
+                  {
+                    "id": "e",
+                    "cells": {
+                      "char": "]",
+                      "action": "pop [",
+                      "stack": "[(]"
+                    }
+                  },
+                  {
+                    "id": "f",
+                    "cells": {
+                      "char": ")",
+                      "action": "pop (",
+                      "stack": "[]"
+                    }
+                  }
+                ]
               }
             },
             {
-              "id": "move",
-              "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Push each opener. On a closer, inspect/pop the most recent unresolved opener. Takeaway: the stack of unresolved nested items in opening order.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "the stack of unresolved nested items in opening order",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Use a stack when the newest unresolved item must be handled next: nested delimiters, undo history, or depth-first work."
               }
             },
             {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
+              "id": "contrast",
+              "kind": "not_this",
+              "label": "NOT A QUEUE",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Stack / LIFO. Trigger: nested structure, undo, expression evaluation, or nearest unresolved predecessor",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Stack / LIFO",
-                      "required": true
-                    },
-                    {
-                      "id": "trigger",
-                      "text": "nested structure, undo, expression evaluation, or nearest unresolved predecessor",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "A queue removes the oldest waiting item first. That is the opposite order from a stack."
               }
             },
             {
-              "id": "transfer",
-              "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Parentheses, editor undo, nested transactions, and DFS call state all rely on last-in-first-out behavior. Takeaway: the latest unresolved item is the next one that matters.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "the latest unresolved item is the next one that matters",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Newest item out first → stack."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "For nested brackets, which opener should `]` try to match first? Answer: The most recently opened unresolved bracket.",
+                "text": "Undo should remove the oldest edit or the newest edit? Answer: The newest edit.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "The most recently opened unresolved bracket.",
+                      "text": "The newest edit.",
                       "required": true
                     }
                   ]
@@ -786,7 +768,7 @@
         },
         {
           "id": "domain-4-queue-fifo",
-          "title": "If arrival order is the policy, do not accidentally build a stack",
+          "title": "Queues",
           "concept_ids": [
             "dsa.queue.fifo"
           ],
@@ -799,129 +781,117 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Background jobs must be handled in the same order they were accepted. You are learning to recognize FIFO state when the oldest waiting item should be processed next.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "Background jobs must be handled in the same order they were accepted.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to recognize FIFO state when the oldest waiting item should be processed next",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Files A, B, and C are accepted in that order. A background uploader must process them in the same order they arrived."
               }
             },
             {
-              "id": "bad",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A queue is first in, first out (FIFO). Add new work at the back and remove the oldest waiting work from the front."
+              }
+            },
+            {
+              "id": "trace",
               "kind": "mental_model",
-              "label": "WATCH THE OBVIOUS MOVE",
+              "label": "TRACE",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Popping the most recently added job reverses service order and can starve older work. Takeaway: the data structure's removal order contradicts the scheduling policy.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pain",
-                      "text": "the data structure's removal order contradicts the scheduling policy",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "enqueue A → `[A]`",
+                  "enqueue B → `[A, B]`",
+                  "enqueue C → `[A, B, C]`",
+                  "dequeue → `A`"
+                ]
               }
             },
             {
-              "id": "move",
+              "id": "python",
               "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "label": "PYTHON",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Enqueue new jobs at the back and dequeue from the front. Takeaway: waiting items ordered by arrival time.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "waiting items ordered by arrival time",
-                      "required": true
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
-              "placeholder": "",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Queue / FIFO. Trigger: first-come-first-served processing or breadth-first frontier expansion",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Queue / FIFO",
-                      "required": true
+                "type": "code_file",
+                "filename": "queue.py",
+                "language": "python",
+                "code": "from collections import deque\n\njobs = deque()\njobs.append(\"A\")\njobs.append(\"B\")\nfirst = jobs.popleft()\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "append",
+                    "anchor": {
+                      "line": 4,
+                      "text": "jobs.append(\"A\")",
+                      "occurrence": 1
                     },
-                    {
-                      "id": "trigger",
-                      "text": "first-come-first-served processing or breadth-first frontier expansion",
-                      "required": true
-                    }
-                  ]
-                }
+                    "title": "Add at the right",
+                    "explanation": "New work joins the back of the queue.",
+                    "required": true
+                  },
+                  {
+                    "id": "popleft",
+                    "anchor": {
+                      "line": 6,
+                      "text": "first = jobs.popleft()",
+                      "occurrence": 1
+                    },
+                    "title": "Remove from the left",
+                    "explanation": "The oldest queued item is processed first.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "transfer",
+              "id": "why-deque",
               "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "label": "WHY `deque`",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Job scheduling, message buffering, BFS levels, and printer queues all share oldest-first removal. Takeaway: the earliest unresolved arrival is processed next.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "the earliest unresolved arrival is processed next",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Python `deque` supports appends and pops from either end with approximately O(1) performance. Removing index 0 from a list requires O(n) memory movement."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Oldest item out first → queue."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "If a job arrived first, should a newer job leave the queue before it? Answer: No.",
+                "text": "For queued `[A, B, C]`, which item should be processed first? Answer: `A`.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "No.",
+                      "text": "`A`.",
                       "required": true
                     }
                   ]
@@ -942,7 +912,7 @@
         },
         {
           "id": "domain-4-monotonic-stack",
-          "title": "Keep only the unresolved candidates that a future value can still matter to",
+          "title": "Monotonic stack",
           "concept_ids": [
             "dsa.stack.monotonic"
           ],
@@ -955,129 +925,107 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "For each latency sample, find the next later sample that is higher. You are learning to avoid rescanning the future by keeping a stack of unresolved positions in monotonic order.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "For each latency sample, find the next later sample that is higher.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to avoid rescanning the future by keeping a stack of unresolved positions in monotonic order",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "For readings `[2, 1, 5, 3, 6]`, find the first later reading that is strictly larger for each position. Repeatedly scanning the remaining suffix would redo work."
               }
             },
             {
-              "id": "bad",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A monotonic stack keeps unresolved positions in sorted value order. For next-greater problems, a decreasing stack lets a new larger value resolve smaller values at the top."
+              }
+            },
+            {
+              "id": "step-1",
               "kind": "mental_model",
-              "label": "WATCH THE OBVIOUS MOVE",
+              "label": "STEP 1",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "For every sample, scanning forward until a higher value appears can become O(n²). Takeaway: many positions repeatedly inspect the same future samples.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pain",
-                      "text": "many positions repeatedly inspect the same future samples",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Read `2` → stack `[2]`.",
+                  "Read `1` → `1` is not greater than `2`; stack `[2, 1]`."
+                ]
               }
             },
             {
-              "id": "move",
-              "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Keep unresolved indices whose answer has not appeared yet. When a new higher value arrives, pop every smaller unresolved sample it resolves. Takeaway: a monotonic stack of unresolved candidates.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "a monotonic stack of unresolved candidates",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Read `5`.",
+                  "`5 > 1` → next greater for `1` is `5`; pop `1`.",
+                  "`5 > 2` → next greater for `2` is `5`; pop `2`.",
+                  "Push `5` → stack `[5]`."
+                ]
               }
             },
             {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
+              "id": "step-3",
+              "kind": "mental_model",
+              "label": "STEP 3",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Monotonic stack. Trigger: next greater/smaller, previous greater/smaller, or nearest boundary where new items resolve older candidates",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Monotonic stack",
-                      "required": true
-                    },
-                    {
-                      "id": "trigger",
-                      "text": "next greater/smaller, previous greater/smaller, or nearest boundary where new items resolve older candidates",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Read `3` → stack `[5, 3]`.",
+                  "Read `6` → resolve `3` with `6`, then resolve `5` with `6`."
+                ]
               }
             },
             {
-              "id": "transfer",
-              "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Next higher metric, stock-span style questions, histogram boundaries, and warmer-day problems share this unresolved-candidate skeleton. Takeaway: one new value can resolve a suffix of previously unresolved candidates.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "one new value can resolve a suffix of previously unresolved candidates",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Use a monotonic stack when each item waits for the next or previous item that is larger or smaller, and unresolved candidates can be discarded once a better boundary arrives."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Keep only unresolved candidates that can still matter to a future value."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "When a new value is higher than the stack top, what can you do with that top? Answer: Pop it — the current value is its next higher resolver.",
+                "text": "When reading `5` after stack values `[2, 1]`, which values are resolved? Answer: `1` and `2`.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "Pop it — the current value is its next higher resolver.",
+                      "text": "`1` and `2`.",
                       "required": true
                     }
                   ]
@@ -1087,12 +1035,12 @@
           ],
           "source_refs": [
             {
-              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-            },
-            {
               "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
               "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
             }
           ]
         }
@@ -1100,7 +1048,7 @@
     },
     {
       "id": "domain-4-module-3-heaps",
-      "title": "Keep only the priority frontier you actually need",
+      "title": "Heaps",
       "order": 3,
       "task_ids": [
         "4.3"
@@ -1116,7 +1064,7 @@
       "nodes": [
         {
           "id": "domain-4-heap-invariant",
-          "title": "Need the next most important item repeatedly? Keep only the frontier ordered",
+          "title": "Heaps",
           "concept_ids": [
             "dsa.heap.invariant"
           ],
@@ -1127,129 +1075,141 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "A retry scheduler repeatedly needs the job with the earliest next-attempt timestamp. You are learning to recognize when a heap is enough because only the current minimum/maximum matters.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "A retry scheduler repeatedly needs the job with the earliest next-attempt timestamp.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to recognize when a heap is enough because only the current minimum/maximum matters",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "A simulator receives future events continuously and repeatedly needs the event with the earliest timestamp. Example timestamps arrive as `20`, `5`, and `12`."
               }
             },
             {
-              "id": "bad",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A priority queue returns the item with the best priority. A min-heap is one implementation: the smallest item is kept at the root, while the rest of the structure is only partially ordered."
+              }
+            },
+            {
+              "id": "example",
               "kind": "mental_model",
-              "label": "WATCH THE OBVIOUS MOVE",
+              "label": "EXAMPLE",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Sorting the entire waiting list after every insertion maintains far more order than the scheduler actually uses. Takeaway: full ordering is recomputed when only one frontier item is requested.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pain",
-                      "text": "full ordering is recomputed when only one frontier item is requested",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Push `20`, `5`, `12` into a min-heap.",
+                  "The root is `5` because it is the smallest timestamp.",
+                  "Pop `5`; the heap restores its invariant so the next smallest item becomes the root."
+                ]
               }
             },
             {
-              "id": "move",
+              "id": "python",
               "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "label": "PYTHON",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Maintain a min-heap keyed by next-attempt time. Insertions and removals update only enough structure to preserve the minimum at the top. Takeaway: a partially ordered collection whose root is the next priority item.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "a partially ordered collection whose root is the next priority item",
-                      "required": true
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
-              "placeholder": "",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Priority queue / heap. Trigger: repeated insert + retrieve/remove current min or max",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Priority queue / heap",
-                      "required": true
+                "type": "code_file",
+                "filename": "events.py",
+                "language": "python",
+                "code": "import heapq\n\nevents = []\nheapq.heappush(events, 20)\nheapq.heappush(events, 5)\nheapq.heappush(events, 12)\nnext_event = heapq.heappop(events)\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "push",
+                    "anchor": {
+                      "line": 4,
+                      "text": "heapq.heappush(events, 20)",
+                      "occurrence": 1
                     },
-                    {
-                      "id": "trigger",
-                      "text": "repeated insert + retrieve/remove current min or max",
-                      "required": true
-                    }
-                  ]
-                }
+                    "title": "Insert while keeping the heap invariant",
+                    "explanation": "The heap reorganizes only as much as needed.",
+                    "required": true
+                  },
+                  {
+                    "id": "pop",
+                    "anchor": {
+                      "line": 7,
+                      "text": "next_event = heapq.heappop(events)",
+                      "occurrence": 1
+                    },
+                    "title": "Remove the smallest item",
+                    "explanation": "Python's `heapq` min-heap returns the smallest item.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "transfer",
+              "id": "contrast",
               "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "label": "QUEUE VS HEAP",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "structure",
+                    "label": "Structure"
+                  },
+                  {
+                    "id": "next",
+                    "label": "Next item"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "queue",
+                    "cells": {
+                      "structure": "Queue",
+                      "next": "Oldest arrival"
+                    }
+                  },
+                  {
+                    "id": "heap",
+                    "cells": {
+                      "structure": "Min-heap priority queue",
+                      "next": "Smallest priority"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Schedulers, timers, merge frontiers, and best-first searches all need the next priority candidate, not a fully sorted array. Takeaway: maintain only enough order to expose the current priority frontier.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "maintain only enough order to expose the current priority frontier",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Need the current minimum or maximum repeatedly while items change → consider a heap."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "If you only need the minimum repeatedly, do you need the whole collection globally sorted? Answer: No — a heap maintains enough order to expose the minimum.",
+                "text": "In Python's min-heap, which item is at `heap[0]`? Answer: The smallest item.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "No — a heap maintains enough order to expose the minimum.",
+                      "text": "The smallest item.",
                       "required": true
                     }
                   ]
@@ -1274,17 +1234,17 @@
           "glossary": [
             {
               "term": "priority queue",
-              "definition": "An interface that repeatedly inserts items and retrieves/removes the item with best priority."
+              "definition": "A collection that returns the item with the best priority rather than the oldest item."
             },
             {
               "term": "heap invariant",
-              "definition": "A parent/child ordering rule that keeps the best-priority item at the root."
+              "definition": "An ordering rule that keeps the best-priority item at the root."
             }
           ]
         },
         {
           "id": "domain-4-heap-top-k",
-          "title": "Top 20 from millions? Keep 20, not millions",
+          "title": "Top K",
           "concept_ids": [
             "dsa.heap.top_k"
           ],
@@ -1297,129 +1257,107 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "From millions of request latencies, keep the 20 slowest values seen so far. You are learning to use a bounded heap so memory and maintenance depend on K rather than n.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "From millions of request latencies, keep the 20 slowest values seen so far.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to use a bounded heap so memory and maintenance depend on K rather than n",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Scores arrive as `[8, 3, 12, 5, 10]`. Keep only the `K = 3` largest scores without sorting every value."
               }
             },
             {
-              "id": "bad",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For the K largest values, keep a min-heap of at most K items. Its root is the smallest value currently inside the top K, so the root acts as the cutoff."
+              }
+            },
+            {
+              "id": "step-1",
               "kind": "mental_model",
-              "label": "WATCH THE OBVIOUS MOVE",
+              "label": "STEP 1",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Sorting all n values costs O(n log n) and stores everything even though the output contains only K items. Takeaway: the algorithm maintains far more candidates than the final answer can contain.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pain",
-                      "text": "the algorithm maintains far more candidates than the final answer can contain",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "After `8, 3, 12`, the kept values are `{3, 8, 12}`.",
+                  "Cutoff = `3`."
+                ]
               }
             },
             {
-              "id": "move",
-              "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Keep a min-heap of size K containing the current K largest values. The smallest of those K is the only one threatened by a new larger value. Takeaway: only the current best K candidates.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "only the current best K candidates",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Read `5`.",
+                  "`5 > 3`, so `5` enters and `3` leaves.",
+                  "Kept values: `{5, 8, 12}`."
+                ]
               }
             },
             {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
+              "id": "step-3",
+              "kind": "mental_model",
+              "label": "STEP 3",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Bounded top-K heap. Trigger: streaming/large n + only K extreme items are needed",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Bounded top-K heap",
-                      "required": true
-                    },
-                    {
-                      "id": "trigger",
-                      "text": "streaming/large n + only K extreme items are needed",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Read `10`.",
+                  "`10 > 5`, so `10` enters and `5` leaves.",
+                  "Final top 3: `{8, 10, 12}`."
+                ]
               }
             },
             {
-              "id": "transfer",
-              "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Top slow endpoints, largest files, best scores, and most expensive queries all use the same bounded-candidate idea. Takeaway: discard any item that cannot enter the final top K.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "discard any item that cannot enter the final top K",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Use a bounded heap when K is much smaller than the total number of items and only the top or bottom K matter."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For K largest values, the min-heap root is the current entry cutoff."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "For K largest values, why use a min-heap rather than max-heap of all n? Answer: The heap root is the weakest member of the current top K, so it is easy to evict.",
+                "text": "Current top-3 heap represents `{8, 10, 12}`. Should score `7` enter? Answer: No.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "The heap root is the weakest member of the current top K, so it is easy to evict.",
+                      "text": "No.",
                       "required": true
                     }
                   ]
@@ -1440,7 +1378,7 @@
         },
         {
           "id": "domain-4-heap-kway",
-          "title": "Merge many sorted streams by comparing only their current frontiers",
+          "title": "Merge sorted streams",
           "concept_ids": [
             "dsa.heap.kway_merge"
           ],
@@ -1453,129 +1391,107 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Eight log shards are individually timestamp-sorted. Produce one global timestamp-sorted stream. You are learning to reuse each stream's internal order instead of loading and re-sorting everything.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "Eight log shards are individually timestamp-sorted. Produce one global timestamp-sorted stream.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to reuse each stream's internal order instead of loading and re-sorting everything",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Three streams are already sorted: A=`[1, 4, 9]`, B=`[2, 6]`, C=`[3, 7]`. Produce one sorted output without loading and re-sorting every item together."
               }
             },
             {
-              "id": "bad",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Because each stream is sorted, only its current front item can be the next global output. A min-heap can compare one frontier item from each stream."
+              }
+            },
+            {
+              "id": "step-1",
               "kind": "mental_model",
-              "label": "WATCH THE OBVIOUS MOVE",
+              "label": "STEP 1",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Concatenating and sorting all records throws away the fact that each shard already did most of the ordering work. Takeaway: existing sorted structure is discarded and rebuilt globally.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pain",
-                      "text": "existing sorted structure is discarded and rebuilt globally",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Heap frontiers: `1(A), 2(B), 3(C)`.",
+                  "Pop `1(A)` → output `[1]`.",
+                  "Push A's next value `4`."
+                ]
               }
             },
             {
-              "id": "move",
-              "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Put the first record from each shard in a min-heap. Emit the earliest, then push only the next record from that same shard. Takeaway: one current frontier item per sorted stream.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "one current frontier item per sorted stream",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Heap frontiers: `2(B), 3(C), 4(A)`.",
+                  "Pop `2(B)` → output `[1, 2]`.",
+                  "Push B's next value `6`."
+                ]
               }
             },
             {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
+              "id": "step-3",
+              "kind": "mental_model",
+              "label": "STEP 3",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "K-way merge with a heap. Trigger: merge multiple individually sorted sequences while keeping memory near the number of streams",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "K-way merge with a heap",
-                      "required": true
-                    },
-                    {
-                      "id": "trigger",
-                      "text": "merge multiple individually sorted sequences while keeping memory near the number of streams",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Continue the same rule.",
+                  "Final output: `[1, 2, 3, 4, 6, 7, 9]`."
+                ]
               }
             },
             {
-              "id": "transfer",
-              "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Merging index runs, changelogs, sorted files, or database result streams has the same frontier-only structure. Takeaway: only each sorted stream's current front can possibly be globally next.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "only each sorted stream's current front can possibly be globally next",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Use k-way heap merge when several inputs are already sorted and should be streamed into one sorted output."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Keep one current frontier per sorted input; after popping one, advance only that input."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "After emitting a record from shard 3, which new item do you push? Answer: The next record from shard 3 only.",
+                "text": "After popping a value from stream B, which stream supplies the replacement frontier? Answer: Stream B.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "The next record from shard 3 only.",
+                      "text": "Stream B.",
                       "required": true
                     }
                   ]

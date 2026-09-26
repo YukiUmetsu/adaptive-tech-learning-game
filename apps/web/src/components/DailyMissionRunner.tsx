@@ -32,6 +32,7 @@ import { flushAuxiliary, loadServerDiscovery } from "../state/syncAuxiliary";
 import { useLearningDomain } from "../hooks/useLearningDomain";
 import InlineText from "./InlineText";
 import KnowledgeCard from "./KnowledgeCard";
+import QuestionPrompt from "./QuestionPrompt";
 
 interface DailyMissionRunnerProps {
   trackId: string;
@@ -711,9 +712,11 @@ function DailyPracticeReview({
             const attempt = attemptFor(question.id);
             return (
               <li key={question.id} className="daily-review-question">
-                <p className="daily-review-prompt">
-                  <InlineText text={question.prompt} />
-                </p>
+                <QuestionPrompt
+                  text={question.prompt}
+                  level={3}
+                  className="daily-review-prompt"
+                />
                 <p className="muted daily-review-meta">
                   {question.assessment_mode.replace(/_/g, " ")}
                   {attempt

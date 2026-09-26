@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0.0",
-  "content_version": "dsa-learning-2026-09-26-v5",
+  "content_version": "dsa-learning-2026-09-26-v12",
   "certification_id": "cs-dsa",
   "certification_version": "dsa-v1",
-  "exam_guide_revision": "Reviewed v5, 2026-09-26. This is a practical Data Structures & Algorithms track built around developer problems, code, performance, state, transfer, and pattern recognition.",
+  "exam_guide_revision": "Editorial and factual review 2026-09-26 using docs/16-content-audit.md. Problems and setup are visible immediately; every node is self-contained at entry.",
   "domain": {
     "id": "domain-5",
     "name": "Binary Search, Sorting & Ordered Reasoning",
@@ -11,8 +11,8 @@
   },
   "learning_design": {
     "progress_label": "Pattern Vision",
-    "unlock_rule": "All learning reveals are required. Each node moves quickly through a concrete problem, the obvious failure/waste, the maintained state or invariant that fixes it, the pattern name, a different real-world transfer, and one quick check.",
-    "mastery_note": "The goal is not to enjoy studying algorithms. The goal is to recognize the structure fast enough that an unfamiliar problem starts to look like a problem you have already solved."
+    "unlock_rule": "Problem context and example data stay visible. Progressive reveal is used only for answers or decisions. Each node defines the idea before asking the learner to use it.",
+    "mastery_note": "Recognize the structure, understand why the method works, and know when a similar-looking method does not fit."
   },
   "source_refs": [
     {
@@ -47,19 +47,19 @@
   "glossary": [
     {
       "term": "lower bound",
-      "definition": "The first position where a value or monotonic condition reaches the requested threshold."
+      "definition": "The first position whose value is greater than or equal to the target."
     },
     {
-      "term": "feasibility predicate",
-      "definition": "A boolean test that says whether a candidate answer satisfies the required constraint."
+      "term": "predicate",
+      "definition": "A test that returns true or false for one candidate."
     },
     {
       "term": "stable sort",
-      "definition": "A sort that preserves relative order among records with equal sort keys."
+      "definition": "A sort that keeps the original order of records whose sort keys are equal."
     },
     {
       "term": "sort key",
-      "definition": "The value extracted from each record that determines its ordering."
+      "definition": "The value used to decide a record's position in sorted order."
     }
   ],
   "coverage": {
@@ -81,13 +81,13 @@
     ],
     "module_count": 3,
     "knowledge_node_count": 9,
-    "prompt_count": 54
+    "prompt_count": 66
   },
-  "authoring_notes": "Anti-boring rule set: no optional reveals; no definition-first nodes; no university-course voice; no fake corporate narrative; start with code/data/workload; expose the waste or bug; name the useful state; then name the pattern; finish with transfer.",
+  "authoring_notes": "Audited against docs/16-content-audit.md: concrete context first; title/topic defined before use; one new idea per sentence where practical; short worked examples immediately follow abstract rules; technical terms are defined before reuse; similar concepts are explicitly differentiated; multi-step behavior is split into separate prompts; no opening depends on remembering an earlier card; no 'you are learning to' meta-prose; first problem/setup is never hidden.",
   "modules": [
     {
       "id": "domain-5-module-1-binary",
-      "title": "Exploit ordered search space",
+      "title": "Binary search",
       "order": 1,
       "task_ids": [
         "5.1"
@@ -101,7 +101,7 @@
       "nodes": [
         {
           "id": "domain-5-binary-exact",
-          "title": "Sorted data lets one comparison delete half the candidates",
+          "title": "Exact search",
           "concept_ids": [
             "dsa.binary.exact"
           ],
@@ -112,129 +112,131 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "A sorted list of sequence numbers must locate exact ID 42017 or report absent. You are learning to use sorted order as proof that an entire half cannot contain the target.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "A sorted list of sequence numbers must locate exact ID 42017 or report absent.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to use sorted order as proof that an entire half cannot contain the target",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "A sorted index is `[2, 5, 8, 12, 19]`. Find the index of target `12`, or return `-1` if it is absent."
               }
             },
             {
-              "id": "bad",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Binary search keeps a candidate interval in sorted data. Compare the target with the middle value, then discard the half that cannot contain the target."
+              }
+            },
+            {
+              "id": "step-1",
               "kind": "mental_model",
-              "label": "WATCH THE OBVIOUS MOVE",
+              "label": "STEP 1",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "A linear scan works but ignores the strongest structural guarantee in the input. Takeaway: every candidate is inspected even though order can rule out many at once.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pain",
-                      "text": "every candidate is inspected even though order can rule out many at once",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Candidate indexes: `0..4`",
+                  "mid = `2`, value = `8`",
+                  "`12 > 8` → discard indexes `0..2`."
+                ]
               }
             },
             {
-              "id": "move",
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Candidate indexes: `3..4`",
+                  "mid = `3`, value = `12`",
+                  "Target found at index `3`."
+                ]
+              }
+            },
+            {
+              "id": "code",
               "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "label": "CODE",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Compare target with the midpoint. Smaller target → discard right half; larger target → discard left half. Takeaway: the candidate interval that could still contain the target.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "the candidate interval that could still contain the target",
-                      "required": true
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
-              "placeholder": "",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Exact binary search. Trigger: ordered search space + exact key lookup",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Exact binary search",
-                      "required": true
+                "type": "code_file",
+                "filename": "binary_search.py",
+                "language": "python",
+                "code": "def binary_search(nums, target):\n    left, right = 0, len(nums) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if nums[mid] == target:\n            return mid\n        if nums[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "mid",
+                    "anchor": {
+                      "line": 4,
+                      "text": "mid = (left + right) // 2",
+                      "occurrence": 1
                     },
-                    {
-                      "id": "trigger",
-                      "text": "ordered search space + exact key lookup",
-                      "required": true
-                    }
-                  ]
-                }
+                    "title": "Check the middle candidate",
+                    "explanation": "Sorted order lets one comparison discard a whole side.",
+                    "required": true
+                  },
+                  {
+                    "id": "move",
+                    "anchor": {
+                      "line": 8,
+                      "text": "left = mid + 1",
+                      "occurrence": 1
+                    },
+                    "title": "Remove mid and everything left of it",
+                    "explanation": "Those values are too small.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "transfer",
-              "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Sorted timestamps, version numbers, IDs, and offsets all share the same half-elimination structure. Takeaway: midpoint comparison proves one half impossible.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "midpoint comparison proves one half impossible",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Use exact binary search when data is sorted and the question asks whether one exact key is present or where it is."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Compare at the middle; discard the impossible half."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "If `values[mid] < target`, which side is impossible? Answer: Mid and everything left of mid.",
+                "text": "For `[2, 5, 8, 12, 19]`, what index contains `12`? Answer: `3`.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "Mid and everything left of mid.",
+                      "text": "`3`.",
                       "required": true
                     }
                   ]
@@ -255,13 +257,13 @@
           "glossary": [
             {
               "term": "candidate interval",
-              "definition": "The portion of the ordered search space that could still contain the answer."
+              "definition": "The part of the sorted search space that could still contain the answer."
             }
           ]
         },
         {
           "id": "domain-5-binary-progress",
-          "title": "Most binary-search bugs are not 'binary search' bugs — they are interval bugs",
+          "title": "Search progress",
           "concept_ids": [
             "dsa.binary.progress"
           ],
@@ -274,147 +276,94 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Your search sometimes hangs on two remaining elements. You are learning to define one interval convention and make every update strictly shrink it.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "Your search sometimes hangs on two remaining elements.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to define one interval convention and make every update strictly shrink it",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Search sorted values `[2, 9]` for target `9` using an inclusive interval `[left, right]`. Start with `left = 0`, `right = 1`, so `mid = 0`."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Every binary-search update must make the candidate interval smaller. With an inclusive interval, a checked middle index must be excluded from the next interval when it is not the answer."
               }
             },
             {
               "id": "bad",
               "kind": "mental_model",
-              "label": "THE BUG HIDES IN ONE BOUNDARY UPDATE",
+              "label": "BAD UPDATE",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "code_file",
-                "filename": "binary_search_bug.py",
-                "language": "python",
-                "code": "while left <= right:\n    mid = (left + right) // 2\n    if values[mid] < target:\n        left = mid\n    else:\n        right = mid - 1\n",
-                "line_numbers": true,
-                "annotations": [
-                  {
-                    "id": "stuck",
-                    "anchor": {
-                      "line": 4,
-                      "text": "left = mid",
-                      "occurrence": 1
-                    },
-                    "title": "Can repeat the same interval",
-                    "explanation": "With two elements, mid can equal left.",
-                    "required": true
-                  },
-                  {
-                    "id": "right",
-                    "anchor": {
-                      "line": 6,
-                      "text": "right = mid - 1",
-                      "occurrence": 1
-                    },
-                    "title": "This side removes mid",
-                    "explanation": "The interval strictly shrinks here.",
-                    "required": true
-                  }
+                "type": "bullets",
+                "items": [
+                  "`mid = 0`, value = `2`, target is larger.",
+                  "If code sets `left = mid`, then `left` stays `0`.",
+                  "Next loop: `left = 0`, `right = 1`, `mid = 0` again.",
+                  "The same interval repeats."
                 ]
               }
             },
             {
-              "id": "move",
-              "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "id": "good",
+              "kind": "mental_model",
+              "label": "GOOD UPDATE",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Pick inclusive `[left,right]` or half-open `[left,right)` and keep the loop condition/update math consistent. Proven-impossible candidates must actually leave the interval. Takeaway: interval semantics + a strict progress rule.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "interval semantics + a strict progress rule",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Set `left = mid + 1`.",
+                  "New interval is `[1, 1]`.",
+                  "Now `mid = 1`, value = `9`, so the target is found."
+                ]
               }
             },
             {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Binary-search boundary discipline. Trigger: off-by-one, infinite-loop, or missed-edge bugs around midpoint updates",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Binary-search boundary discipline",
-                      "required": true
-                    },
-                    {
-                      "id": "trigger",
-                      "text": "off-by-one, infinite-loop, or missed-edge bugs around midpoint updates",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Whenever you write binary search, choose an interval convention first and verify that every non-terminal branch strictly shrinks it."
               }
             },
             {
-              "id": "transfer",
-              "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "The same discipline appears in answer-space binary search: the math is less about memorizing a template and more about preserving a boundary meaning. Takeaway: every boundary update must preserve the candidate invariant and make progress.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "every boundary update must preserve the candidate invariant and make progress",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "A checked `mid` that is not the answer must leave the next candidate interval."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "With inclusive bounds and floor mid, what replaces `left = mid` when mid is too small? Answer: `left = mid + 1`.",
+                "text": "With inclusive `[left, right]`, target is larger than `nums[mid]`. What should `left` become? Answer: `mid + 1`.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "`left = mid + 1`.",
+                      "text": "`mid + 1`.",
                       "required": true
                     }
                   ]
@@ -435,7 +384,7 @@
         },
         {
           "id": "domain-5-binary-boundary",
-          "title": "Sometimes you do not want a match — you want the exact place where behavior changes",
+          "title": "Boundary search",
           "concept_ids": [
             "dsa.binary.boundary",
             "dsa.binary.progress"
@@ -449,129 +398,140 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "A sorted timestamp list may not contain 10:30 exactly. You need the first record at or after 10:30. You are learning to search for a boundary such as first `>= x` rather than stopping on any equality.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "A sorted timestamp list may not contain 10:30 exactly. You need the first record at or after 10:30.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to search for a boundary such as first `>= x` rather than stopping on any equality",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Sorted timestamps are `[10, 20, 20, 30]`. A request may not match exactly. Return the first index whose timestamp is greater than or equal to the requested value."
               }
             },
             {
-              "id": "bad",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A boundary search looks for a transition position instead of any exact match. The lower bound is the first position where the value is `>= target`."
+              }
+            },
+            {
+              "id": "examples",
               "kind": "mental_model",
-              "label": "WATCH THE OBVIOUS MOVE",
+              "label": "EXAMPLES",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Exact-match binary search can correctly report 'not found' even though the requested insertion/boundary position exists. Takeaway: the search target is a transition position, not necessarily an existing equal value.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pain",
-                      "text": "the search target is a transition position, not necessarily an existing equal value",
-                      "required": true
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "target",
+                    "label": "Target"
+                  },
+                  {
+                    "id": "index",
+                    "label": "First index >= target"
+                  },
+                  {
+                    "id": "value",
+                    "label": "Value"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "t20",
+                    "cells": {
+                      "target": "20",
+                      "index": "1",
+                      "value": "20"
                     }
-                  ]
-                }
+                  },
+                  {
+                    "id": "t25",
+                    "cells": {
+                      "target": "25",
+                      "index": "3",
+                      "value": "30"
+                    }
+                  },
+                  {
+                    "id": "t31",
+                    "cells": {
+                      "target": "31",
+                      "index": "4",
+                      "value": "insertion after the list"
+                    }
+                  }
+                ]
               }
             },
             {
-              "id": "move",
+              "id": "python",
               "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "label": "PYTHON",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Define predicate `timestamp >= requested`. Find the first index where it becomes true. Takeaway: the first true / lower-bound transition.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "the first true / lower-bound transition",
-                      "required": true
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
-              "placeholder": "",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Boundary binary search / lower bound. Trigger: first at least, first greater, last at most, insertion point, first compatible",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Boundary binary search / lower bound",
-                      "required": true
+                "type": "code_file",
+                "filename": "lower_bound.py",
+                "language": "python",
+                "code": "from bisect import bisect_left\n\nvalues = [10, 20, 20, 30]\ni = bisect_left(values, 20)\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "bisect",
+                    "anchor": {
+                      "line": 4,
+                      "text": "i = bisect_left(values, 20)",
+                      "occurrence": 1
                     },
-                    {
-                      "id": "trigger",
-                      "text": "first at least, first greater, last at most, insertion point, first compatible",
-                      "required": true
-                    }
-                  ]
-                }
+                    "title": "Find the left insertion boundary",
+                    "explanation": "For an existing value, `bisect_left` returns a position before equal entries.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "transfer",
-              "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "First compatible release and first capacity meeting a threshold have the same first-true boundary shape. Takeaway: search for the transition in an ordered boolean predicate.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "search for the transition in an ordered boolean predicate",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Use boundary search for first `>= x`, first `> x`, first true, last false, or an insertion position. Do not stop at an arbitrary equal value when the contract asks for the first one."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Exact search asks 'is x here?'; boundary search asks 'where does the condition change?'"
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "If mid satisfies the condition, can you always stop? Answer: No — an earlier satisfying position may still exist.",
+                "text": "For `[10, 20, 20, 30]`, what is the first index with value `>= 20`? Answer: `1`.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "No — an earlier satisfying position may still exist.",
+                      "text": "`1`.",
                       "required": true
                     }
                   ]
@@ -594,7 +554,7 @@
     },
     {
       "id": "domain-5-module-2-answer-space",
-      "title": "Search thresholds only when the predicate is monotonic",
+      "title": "Search an answer",
       "order": 2,
       "task_ids": [
         "5.2"
@@ -610,7 +570,7 @@
       "nodes": [
         {
           "id": "domain-5-answer-monotonic",
-          "title": "Binary search can search answers, not just arrays",
+          "title": "Search an answer",
           "concept_ids": [
             "dsa.binary.answer_space"
           ],
@@ -621,129 +581,108 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "A batch can use 1..10,000 workers. `finishes_on_time(w)` is false for small w and stays true after enough workers. You are learning to binary-search the smallest feasible answer when feasibility is monotonic.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "A batch can use 1..10,000 workers. `finishes_on_time(w)` is false for small w and stays true after enough workers.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to binary-search the smallest feasible answer when feasibility is monotonic",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "A simulator can test worker counts from `1` through `8`. Counts `1..5` miss the deadline; counts `6..8` meet it. Find the smallest worker count that passes."
               }
             },
             {
-              "id": "bad",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Binary search can search candidate answers, not only array indexes. This works when a boolean test changes in one direction, such as `False ... False, True ... True`."
+              }
+            },
+            {
+              "id": "step-1",
               "kind": "mental_model",
-              "label": "WATCH THE OBVIOUS MOVE",
+              "label": "STEP 1",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Trying every worker count from 1 upward works but ignores the false...false,true...true structure. Takeaway: a large ordered answer range is checked one candidate at a time.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pain",
-                      "text": "a large ordered answer range is checked one candidate at a time",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Search candidates `1..8`.",
+                  "Try `4` → false.",
+                  "The minimum passing answer must be greater than `4`."
+                ]
               }
             },
             {
-              "id": "move",
-              "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Search worker count itself. Mid fails → answer must be larger. Mid succeeds → keep it as a candidate and search smaller. Takeaway: an ordered answer interval with a monotonic feasibility predicate.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "an ordered answer interval with a monotonic feasibility predicate",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Search candidates `5..8`.",
+                  "Try `6` → true.",
+                  "Keep `6` as a possible answer and search smaller candidates."
+                ]
               }
             },
             {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
+              "id": "step-3",
+              "kind": "mental_model",
+              "label": "STEP 3",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Binary search on answer space. Trigger: find minimum/maximum numeric answer and feasibility changes only once",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Binary search on answer space",
-                      "required": true
-                    },
-                    {
-                      "id": "trigger",
-                      "text": "find minimum/maximum numeric answer and feasibility changes only once",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Try `5` → false.",
+                  "Boundary is between `5` and `6`.",
+                  "Minimum passing count = `6`."
+                ]
               }
             },
             {
-              "id": "transfer",
-              "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Minimum capacity, minimum rate limit, smallest batch size, and threshold version can all have this structure. Takeaway: the ordered answer domain has one feasibility transition.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "the ordered answer domain has one feasibility transition",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Use answer-space binary search when you can cheaply test a candidate and the pass/fail result is monotonic across the ordered candidates."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Find the boundary between failing and passing candidate answers."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "What are you binary-searching here: the input array or worker count? Answer: The worker-count answer space.",
+                "text": "If candidates `1..5` fail and `6..8` pass, what is the first true candidate? Answer: `6`.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "The worker-count answer space.",
+                      "text": "`6`.",
                       "required": true
                     }
                   ]
@@ -760,7 +699,7 @@
         },
         {
           "id": "domain-5-answer-predicate",
-          "title": "A numeric answer does NOT automatically make binary search legal",
+          "title": "Monotonic condition",
           "concept_ids": [
             "dsa.binary.answer_space",
             "dsa.binary.boundary"
@@ -774,129 +713,116 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Throughput improves as concurrency rises, then drops from contention, then improves again. You are learning to prove monotonicity before using answer-space binary search.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "Throughput improves as concurrency rises, then drops from contention, then improves again.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to prove monotonicity before using answer-space binary search",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "A team wants to binary-search a concurrency limit. Measurements are: `4=pass, 5=pass, 6=pass, 7=fail, 8=pass`. Decide whether half-elimination is safe."
               }
             },
             {
-              "id": "bad",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A predicate is monotonic when its boolean result changes at most once across the ordered search range. For first-true search, the shape must be `False ... False, True ... True`."
+              }
+            },
+            {
+              "id": "compare",
               "kind": "mental_model",
-              "label": "WATCH THE OBVIOUS MOVE",
+              "label": "SAFE VS UNSAFE",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "If `meets_target(limit)` flips true→false→true, one midpoint result cannot safely eliminate an entire half. Takeaway: the feasibility predicate has more than one transition.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pain",
-                      "text": "the feasibility predicate has more than one transition",
-                      "required": true
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "case",
+                    "label": "Case"
+                  },
+                  {
+                    "id": "pattern",
+                    "label": "Pattern"
+                  },
+                  {
+                    "id": "binary",
+                    "label": "Binary search?"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "safe",
+                    "cells": {
+                      "case": "Capacity threshold",
+                      "pattern": "F F F T T T",
+                      "binary": "Yes"
                     }
-                  ]
-                }
+                  },
+                  {
+                    "id": "unsafe",
+                    "cells": {
+                      "case": "Measured concurrency",
+                      "pattern": "T T T F T",
+                      "binary": "No"
+                    }
+                  }
+                ]
               }
             },
             {
-              "id": "move",
-              "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "id": "why",
+              "kind": "not_this",
+              "label": "WHY THE UNSAFE CASE FAILS",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Write the true/false sequence you are assuming. Binary search needs one directional transition such as false...false,true...true. Takeaway: a proven monotonic predicate.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "a proven monotonic predicate",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "At `7`, a failure does not prove that all larger values fail because `8` passes. One comparison therefore cannot safely discard an entire side."
               }
             },
             {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Monotonic-feasibility proof. Trigger: you are tempted to binary-search a threshold or numeric configuration",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Monotonic-feasibility proof",
-                      "required": true
-                    },
-                    {
-                      "id": "trigger",
-                      "text": "you are tempted to binary-search a threshold or numeric configuration",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Prove or establish the monotonic relationship before binary-searching a numeric answer."
               }
             },
             {
-              "id": "transfer",
-              "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Capacity often behaves monotonically in simplified models; real concurrency can fail this assumption because contention changes behavior. Takeaway: half-elimination requires a one-transition predicate.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "half-elimination requires a one-transition predicate",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Numeric range alone is not enough. The pass/fail predicate must have one ordered transition."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Can standard boundary binary search safely use `T,T,F,T` over increasing x? Answer: No — the predicate is non-monotonic.",
+                "text": "Pattern `F F T T T`: monotonic for first-true search? Answer: Yes.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "No — the predicate is non-monotonic.",
+                      "text": "Yes.",
                       "required": true
                     }
                   ]
@@ -913,7 +839,7 @@
         },
         {
           "id": "domain-5-answer-boundaries",
-          "title": "Finding the transition is not enough — return the side the product asked for",
+          "title": "Choose the boundary",
           "concept_ids": [
             "dsa.binary.answer_space",
             "dsa.binary.progress"
@@ -927,124 +853,123 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "You know worker counts switch from failing to passing. The product wants the cheapest passing count. You are learning to distinguish first true, last false, first greater, and neighboring boundary answers.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "You know worker counts switch from failing to passing. The product wants the cheapest passing count.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to distinguish first true, last false, first greater, and neighboring boundary answers",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "A monotonic worker test is `False ... False, True ... True`. The product asks for the cheapest worker count that meets the deadline."
               }
             },
             {
-              "id": "bad",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Finding the transition is only part of the job. The requested output decides which side of the transition to return."
+              }
+            },
+            {
+              "id": "compare",
               "kind": "mental_model",
-              "label": "WATCH THE OBVIOUS MOVE",
+              "label": "BOUNDARY GOALS",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Returning the last failing count is only one away from the right answer — and still wrong. Takeaway: the search locates the region but returns the wrong side of the boundary.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pain",
-                      "text": "the search locates the region but returns the wrong side of the boundary",
-                      "required": true
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "request",
+                    "label": "Product request"
+                  },
+                  {
+                    "id": "goal",
+                    "label": "Search goal"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "firsttrue",
+                    "cells": {
+                      "request": "Cheapest passing count",
+                      "goal": "First true"
                     }
-                  ]
-                }
+                  },
+                  {
+                    "id": "lastfalse",
+                    "cells": {
+                      "request": "Largest count that still fails",
+                      "goal": "Last false"
+                    }
+                  },
+                  {
+                    "id": "firstgreater",
+                    "cells": {
+                      "request": "First value strictly greater than x",
+                      "goal": "First > x"
+                    }
+                  },
+                  {
+                    "id": "firstge",
+                    "cells": {
+                      "request": "Insertion before equal values",
+                      "goal": "First >= x"
+                    }
+                  }
+                ]
               }
             },
             {
-              "id": "move",
+              "id": "example",
               "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "label": "EXAMPLE",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Translate the requirement into one exact boundary phrase before coding: 'minimum passing' = first true. Takeaway: which side of the transition the contract wants.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "which side of the transition the contract wants",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Counts `1..5` fail.",
+                  "Counts `6..8` pass.",
+                  "Cheapest passing count → return `6`, the first true value."
+                ]
               }
             },
             {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Boundary-side contract. Trigger: minimum feasible / maximum infeasible / first greater / last less terminology",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Boundary-side contract",
-                      "required": true
-                    },
-                    {
-                      "id": "trigger",
-                      "text": "minimum feasible / maximum infeasible / first greater / last less terminology",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Write the exact boundary requested before coding the search updates."
               }
             },
             {
-              "id": "transfer",
-              "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "First compatible release versus latest incompatible release use the same transition but opposite boundary answers. Takeaway: same transition, different requested side.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "same transition, different requested side",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Search for the side the output asks for, not merely 'the transition'."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Minimum worker count that meets deadline = first true or last false? Answer: First true.",
+                "text": "Minimum worker count that meets the deadline: first true or last false? Answer: First true.",
                 "progressive_reveal": {
                   "spans": [
                     {
@@ -1072,7 +997,7 @@
     },
     {
       "id": "domain-5-module-3-sorting",
-      "title": "Use sorting to expose useful structure",
+      "title": "Sorting",
       "order": 3,
       "task_ids": [
         "5.3"
@@ -1088,7 +1013,7 @@
       "nodes": [
         {
           "id": "domain-5-sort-preprocess",
-          "title": "Sorting is worth paying for when it turns a global mess into local neighbors",
+          "title": "Sort then scan",
           "concept_ids": [
             "dsa.sort.preprocess"
           ],
@@ -1099,129 +1024,121 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Records may be reordered and you need to group equal customer IDs. You are learning to use sorting as preprocessing when order exposes adjacency, grouping, or a simple scan.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "Records may be reordered and you need to group equal customer IDs.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to use sorting as preprocessing when order exposes adjacency, grouping, or a simple scan",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Customer IDs arrive as `[B, A, C, A, B]`. The batch may be reordered, and you need to process each customer group once."
               }
             },
             {
-              "id": "bad",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sorting can be useful preprocessing. It costs work up front but can place related records next to each other, turning a scattered grouping problem into one sequential scan."
+              }
+            },
+            {
+              "id": "example",
               "kind": "mental_model",
-              "label": "WATCH THE OBVIOUS MOVE",
+              "label": "EXAMPLE",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Repeatedly searching the whole unsorted collection for each customer's matching records can duplicate work. Takeaway: related values are scattered, so every group requires global searching.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pain",
-                      "text": "related values are scattered, so every group requires global searching",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Before: `[B, A, C, A, B]`",
+                  "Sort by customer ID: `[A, A, B, B, C]`",
+                  "Equal IDs are now adjacent.",
+                  "One scan can identify the A group, then B, then C."
+                ]
               }
             },
             {
-              "id": "move",
-              "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
-              "placeholder": "",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Sort once by customer ID. Equal IDs become adjacent; one scan can identify group boundaries. Takeaway: ordered adjacency created by preprocessing.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "ordered adjacency created by preprocessing",
-                      "required": true
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
-              "placeholder": "",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Sort → scan. Trigger: reordering is allowed and order makes matching/grouping/merging local",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Sort → scan",
-                      "required": true
-                    },
-                    {
-                      "id": "trigger",
-                      "text": "reordering is allowed and order makes matching/grouping/merging local",
-                      "required": true
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "id": "transfer",
+              "id": "compare",
               "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "label": "SORT OR HASH?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "need",
+                    "label": "Need"
+                  },
+                  {
+                    "id": "choice",
+                    "label": "Typical choice"
+                  },
+                  {
+                    "id": "why",
+                    "label": "Why"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "duplicate",
+                    "cells": {
+                      "need": "Only detect whether any duplicate exists; extra memory allowed",
+                      "choice": "Set",
+                      "why": "No need to pay for ordering"
+                    }
+                  },
+                  {
+                    "id": "groups",
+                    "cells": {
+                      "need": "Need ordered adjacent groups and reordering is allowed",
+                      "choice": "Sort then scan",
+                      "why": "Sorting creates useful adjacency"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Interval merging, duplicate grouping, sweep-line scans, and ordered comparisons often start by buying useful adjacency with a sort. Takeaway: sort once to make future relationships local.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "sort once to make future relationships local",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Sort first when reordering is allowed and sorted order makes later comparisons, grouping, merging, or scanning simpler."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Pay for a sort only when the order it creates is useful afterward."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Should you sort if the required output is the original arrival order and no metadata is preserved? Answer: No — that would violate the output contract.",
+                "text": "If original arrival order must be preserved and you do not store original positions, is sorting safe? Answer: No.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "No — that would violate the output contract.",
+                      "text": "No.",
                       "required": true
                     }
                   ]
@@ -1246,7 +1163,7 @@
         },
         {
           "id": "domain-5-sort-key",
-          "title": "Sorting the right field but losing the record is still wrong",
+          "title": "Sort keys",
           "concept_ids": [
             "dsa.sort.key_contract"
           ],
@@ -1259,129 +1176,105 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Jobs must be output by deadline, but the result still needs each job ID and payload. You are learning to choose a sort key from the contract while preserving the full record identity.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "Jobs must be output by deadline, but the result still needs each job ID and payload.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to choose a sort key from the contract while preserving the full record identity",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Jobs are records such as `{id: 'A', deadline: 30, payload: ...}`. Return job IDs ordered by deadline. The ID and payload must stay attached to the correct deadline."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A sort key is the value used to compare records. Sort the full records by that key instead of extracting and sorting detached key values."
               }
             },
             {
               "id": "bad",
-              "kind": "mental_model",
-              "label": "WATCH THE OBVIOUS MOVE",
+              "kind": "not_this",
+              "label": "BAD TRANSFORMATION",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Extracting only deadlines, sorting them, and discarding job IDs produces an ordered list you can no longer map back correctly. Takeaway: the ordering key was preserved but output metadata was destroyed.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pain",
-                      "text": "the ordering key was preserved but output metadata was destroyed",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Extract deadlines only: `[30, 10, 20]`.",
+                  "Sort them: `[10, 20, 30]`.",
+                  "The ordering survives, but the connection to job IDs is gone."
+                ]
               }
             },
             {
-              "id": "move",
+              "id": "code",
               "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "label": "PYTHON",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Sort records by a key such as deadline, not detached key values unless you also preserve identity. Takeaway: full records ordered by the contract-relevant key.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "full records ordered by the contract-relevant key",
-                      "required": true
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
-              "placeholder": "",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Keyed sorting. Trigger: records have many fields but only some determine order",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Keyed sorting",
-                      "required": true
+                "type": "code_file",
+                "filename": "sort_jobs.py",
+                "language": "python",
+                "code": "jobs = [\n    {\"id\": \"A\", \"deadline\": 30},\n    {\"id\": \"B\", \"deadline\": 10},\n    {\"id\": \"C\", \"deadline\": 20},\n]\n\nordered = sorted(jobs, key=lambda job: job[\"deadline\"])\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "key",
+                    "anchor": {
+                      "line": 7,
+                      "text": "key=lambda job: job[\"deadline\"]",
+                      "occurrence": 1
                     },
-                    {
-                      "id": "trigger",
-                      "text": "records have many fields but only some determine order",
-                      "required": true
-                    }
-                  ]
-                }
+                    "title": "Sort by deadline",
+                    "explanation": "The entire record moves while deadline controls ordering.",
+                    "required": true
+                  }
+                ]
               }
             },
             {
-              "id": "transfer",
-              "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Sort API results by timestamp while keeping IDs, or jobs by priority while preserving payloads. Takeaway: order by one field without losing the rest of the record.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "order by one field without losing the rest of the record",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Use a key function when records contain many fields but one field, or a computed value, determines the requested order."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sort the records; use the key only to decide their order."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Need output job IDs ordered by deadline. What should be sorted? Answer: The records (or key+record pairs), not detached deadline values alone.",
+                "text": "Need job IDs ordered by deadline. Should you sort detached deadlines alone? Answer: No.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "The records (or key+record pairs), not detached deadline values alone.",
+                      "text": "No.",
                       "required": true
                     }
                   ]
@@ -1402,7 +1295,7 @@
         },
         {
           "id": "domain-5-sort-stable-merge",
-          "title": "Stable sort preserves tie history; merge preserves work already done",
+          "title": "Stable sort and merge",
           "concept_ids": [
             "dsa.sort.stability",
             "dsa.ordered.merge"
@@ -1416,129 +1309,107 @@
           },
           "prompts": [
             {
-              "id": "start",
+              "id": "problem",
               "kind": "what",
-              "label": "START WITH A REAL PROBLEM",
+              "label": "PROBLEM",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Equal-priority jobs should remain in arrival order, and two changelog feeds are already timestamp-sorted. You are learning to recognize when existing relative order and existing sorted order are useful information.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "scenario",
-                      "text": "Equal-priority jobs should remain in arrival order, and two changelog feeds are already timestamp-sorted.",
-                      "required": true
-                    },
-                    {
-                      "id": "skill",
-                      "text": "You are learning to recognize when existing relative order and existing sorted order are useful information",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Two forms of existing order can be useful. First, equal-priority jobs should keep their arrival order. Second, two changelog feeds are already sorted by timestamp and need one combined sorted output."
               }
             },
             {
-              "id": "bad",
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A stable sort preserves the original relative order of records with equal keys. An ordered merge reuses the order already present in sorted inputs instead of sorting everything again."
+              }
+            },
+            {
+              "id": "stable",
               "kind": "mental_model",
-              "label": "WATCH THE OBVIOUS MOVE",
+              "label": "STABLE SORT",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "An unstable tie reorder can break fairness, while concatenating and re-sorting two sorted feeds discards ordering work they already contain. Takeaway: useful prior order is thrown away.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pain",
-                      "text": "useful prior order is thrown away",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Arrival order: `A(priority 2), B(priority 1), C(priority 2)`",
+                  "Stable sort by priority:",
+                  "`B(priority 1), A(priority 2), C(priority 2)`",
+                  "A still comes before C because their priority keys are equal."
+                ]
               }
             },
             {
-              "id": "move",
-              "kind": "action",
-              "label": "WHAT CHANGES EVERYTHING",
+              "id": "merge",
+              "kind": "mental_model",
+              "label": "ORDERED MERGE",
               "placeholder": "",
               "required": true,
               "reveal": {
-                "type": "text",
-                "text": "Use stable sort when ties should preserve earlier order. Use ordered merge when inputs are already sorted. Takeaway: tie order / one frontier from each sorted input.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "state",
-                      "text": "tie order / one frontier from each sorted input",
-                      "required": true
-                    }
-                  ]
-                }
+                "type": "bullets",
+                "items": [
+                  "Feed A: `[1, 4, 9]`",
+                  "Feed B: `[2, 6, 8]`",
+                  "Only the two current front values can be globally next.",
+                  "Choose the smaller front, advance that feed, and repeat.",
+                  "Merged: `[1, 2, 4, 6, 8, 9]`"
+                ]
               }
             },
             {
-              "id": "pattern",
-              "kind": "what",
-              "label": "THIS IS THE PATTERN",
-              "placeholder": "",
-              "required": true,
-              "reveal": {
-                "type": "text",
-                "text": "Stable ordering + ordered merge. Trigger: ties have semantic order or sorted inputs should be combined without full resort",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "pattern-name",
-                      "text": "Stable ordering + ordered merge",
-                      "required": true
-                    },
-                    {
-                      "id": "trigger",
-                      "text": "ties have semantic order or sorted inputs should be combined without full resort",
-                      "required": true
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "id": "transfer",
+              "id": "python-note",
               "kind": "connects_to",
-              "label": "SAME SKELETON, DIFFERENT JOB",
+              "label": "PYTHON",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Priority-then-arrival queues and merging timestamped shards both reward preserving earlier ordering guarantees. Takeaway: reuse order already present instead of destroying and rebuilding it.",
-                "progressive_reveal": {
-                  "spans": [
-                    {
-                      "id": "same-skeleton",
-                      "text": "reuse order already present instead of destroying and rebuilding it",
-                      "required": true
-                    }
-                  ]
-                }
+                "text": "Python's built-in sorting is stable, so equal-key records retain their original relative order."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Require stability when tie order has meaning. Use ordered merge when inputs are already sorted and should be combined without a full re-sort."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Preserve useful order that the data already gives you."
               }
             },
             {
               "id": "check",
               "kind": "action",
-              "label": "QUICK CHECK",
+              "label": "CHECK",
               "placeholder": "",
               "required": true,
               "reveal": {
                 "type": "text",
-                "text": "Two sorted feeds: what records can possibly be globally next? Answer: Only the current front record from each feed.",
+                "text": "Two sorted feeds are being merged. Which items can be the next global output? Answer: Only the current front item from each feed.",
                 "progressive_reveal": {
                   "spans": [
                     {
                       "id": "answer",
-                      "text": "Only the current front record from each feed.",
+                      "text": "Only the current front item from each feed.",
                       "required": true
                     }
                   ]

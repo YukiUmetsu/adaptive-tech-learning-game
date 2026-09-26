@@ -11,6 +11,7 @@ import type {
 } from "../api/types";
 import ExamInteraction from "../components/ExamInteraction";
 import InlineText from "../components/InlineText";
+import QuestionPrompt from "../components/QuestionPrompt";
 import { formatCanonicalAnswer, labelIndex } from "../lib/canonicalAnswer";
 import {
   answeredCount,
@@ -376,9 +377,11 @@ export default function PracticeTestPage() {
         {question.instruction ? (
           <p className="question-instruction">{question.instruction}</p>
         ) : null}
-        <h2 className="practice-test-prompt">
-          <InlineText text={question.prompt} />
-        </h2>
+        <QuestionPrompt
+          text={question.prompt}
+          level={2}
+          className="practice-test-prompt"
+        />
 
         <ExamInteraction
           question={question}
@@ -620,9 +623,11 @@ function PracticeTestItemReview({ item }: { item: PracticeTestItemResult }) {
       {item.instruction ? (
         <p className="question-instruction">{item.instruction}</p>
       ) : null}
-      <h3 className="practice-test-prompt">
-        <InlineText text={item.prompt} />
-      </h3>
+      <QuestionPrompt
+        text={item.prompt}
+        level={3}
+        className="practice-test-prompt"
+      />
 
       {choices.length > 0 ? (
         <ul className="item-list choice-list review-choice-list">

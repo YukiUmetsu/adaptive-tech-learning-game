@@ -11,7 +11,7 @@
     "id": "dsa-v1",
     "exam_code": "DSA-PATTERNS",
     "effective_date": "2026-09-26",
-    "content_version": "dsa-content-2026-09-26-v5",
+    "content_version": "dsa-content-2026-09-26-v6",
     "domains": [
       {
         "id": "domain-1",
@@ -151,7 +151,7 @@
   "questions": [
     {
       "id": "dsa5-exact-search-001",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.1",
@@ -240,7 +240,7 @@
     },
     {
       "id": "dsa5-exact-trace-002",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.1",
@@ -329,54 +329,32 @@
     },
     {
       "id": "dsa5-progress-fault-003",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.1",
       "assessment_mode": "application",
       "interaction_type": "spot_the_fault",
-      "difficulty_prior": 0.6,
-      "prompt": "The search uses an inclusive interval `[left, right]` and `mid = (left + right) // 2`. Flag the update that can fail to shrink the interval when `mid == left`.",
+      "difficulty_prior": 0.56,
+      "prompt": "This inclusive binary search can repeat the same midpoint forever. Flag the update that fails to guarantee progress.\n\n```python\ndef contains(values, target):\n    left, right = 0, len(values) - 1\n\n    while left <= right:\n        mid = (left + right) // 2\n\n        if values[mid] < target:\n            left = mid\n        elif values[mid] > target:\n            right = mid - 1\n        else:\n            return True\n\n    return False\n```",
       "concepts": [
         {
           "concept_id": "dsa.binary.progress",
           "weight": 1.0
         }
       ],
-      "explanation": "`left = mid` may leave the left boundary unchanged. If `values[mid] < target`, mid is already ruled out, so `left = mid + 1` is the progress-preserving update.",
+      "explanation": "When `mid == left`, `left = mid` does not shrink the interval. Use `left = mid + 1`.",
       "blueprint_skill_ids": [
         "5.1.02"
       ],
       "difficulty_label": "medium",
       "hints": [
-        "Try a two-element interval."
+        "Every unsuccessful comparison must remove at least one candidate."
       ],
       "error_codes": [
         {
-          "code": "fault_missed",
-          "description": "The non-progressing boundary update was not identified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.progress"
-            ],
-            "node_id": "domain-5-binary-progress",
-            "preferred_stage": "diagnose",
-            "preferred_family_id": "dsa.binary.boundary_invariant",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "fault_false_positive",
-          "description": "A valid binary-search step was incorrectly flagged.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.progress"
-            ],
-            "node_id": "domain-5-binary-progress",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.binary.boundary_invariant",
-            "min_scaffold_level": 3
-          }
+          "code": "spot_the_fault_incorrect",
+          "description": "The selected line is not the one that breaks the algorithm."
         }
       ],
       "source_refs": [
@@ -401,33 +379,34 @@
         "type": "spot_the_fault",
         "elements": [
           {
-            "id": "loop",
-            "label": "`while left <= right:`"
-          },
-          {
-            "id": "mid",
-            "label": "`mid = (left + right) // 2`"
-          },
-          {
-            "id": "bad",
-            "label": "`if values[mid] < target: left = mid`"
+            "id": "left",
+            "label": "`left = mid`"
           },
           {
             "id": "right",
-            "label": "`else: right = mid - 1`"
+            "label": "`right = mid - 1`"
+          },
+          {
+            "id": "yes",
+            "label": "`return True`"
+          },
+          {
+            "id": "no",
+            "label": "`return False`"
           }
         ]
       },
       "canonical_answer": {
         "type": "spot_the_fault",
         "faulty_ids": [
-          "bad"
+          "left"
         ]
-      }
+      },
+      "choice_feedback": {}
     },
     {
       "id": "dsa5-boundary-choice-004",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.1",
@@ -512,7 +491,7 @@
     },
     {
       "id": "dsa5-boundary-evidence-005",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.1",
@@ -611,7 +590,7 @@
     },
     {
       "id": "dsa5-boundary-classify-006",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.1",
@@ -728,7 +707,7 @@
     },
     {
       "id": "dsa5-boundary-reconstruct-007",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.1",
@@ -885,39 +864,36 @@
     },
     {
       "id": "dsa5-bisect-transfer-008",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.1",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.7,
-      "prompt": "A sorted cache key list does not contain key 55. You need the insertion index that keeps the list sorted and places a new 55 BEFORE any existing equal 55 values. Which semantic goal is this?",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.68,
+      "prompt": "Implement `lower_bound(values, target)`: return the first index whose value is `>= target`. Return `len(values)` if none exists.",
       "concepts": [
         {
           "concept_id": "dsa.binary.boundary",
-          "weight": 1.0
+          "weight": 0.75
+        },
+        {
+          "concept_id": "dsa.binary.progress",
+          "weight": 0.25
         }
       ],
-      "explanation": "This is lower-bound / left insertion-point behavior: the first position where an existing key is not less than 55.",
+      "explanation": "If `values[mid] < target`, discard through mid. Otherwise keep mid as a possible first answer by moving right to mid.",
       "blueprint_skill_ids": [
         "5.1.03"
       ],
       "difficulty_label": "hard",
-      "hints": [],
+      "hints": [
+        "A qualifying midpoint might be the first one, so do not discard it."
+      ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected search goal does not match left-insertion/lower-bound behavior.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.boundary"
-            ],
-            "node_id": "domain-5-binary-boundary",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.binary.first_true",
-            "min_scaffold_level": 2
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -928,47 +904,89 @@
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 0,
+        "scaffold_level": 1,
         "family_id": "dsa.binary.first_true",
         "transfer_group_id": "first_satisfying_boundary",
         "surface_context": "cache_key_insertion",
         "challenge_group_id": "d5-binary-01"
       },
-      "choice_feedback": {
-        "lower": "Correct: first position with key >= 55.",
-        "exact": "An exact match may not exist, but an insertion point always can.",
-        "upper": "Upper-bound behavior would place the new key after existing equal keys.",
-        "linear": "A linear scan can compute it but does not exploit the ordered search structure."
-      },
+      "choice_feedback": {},
       "interaction": {
-        "type": "multiple_choice",
-        "choices": [
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "lower_bound",
+        "starter_code": "def lower_bound(values, target):\n    left = 0\n    right = len(values)\n\n    while left < right:\n        # Preserve the first qualifying position inside [left, right).\n        pass\n\n    return left\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
           {
-            "id": "lower",
-            "label": "Lower bound: first index with existing key `>= 55`"
+            "type": "call",
+            "args": [
+              [
+                1,
+                3,
+                3,
+                7
+              ],
+              3
+            ],
+            "expected": 1
           },
           {
-            "id": "exact",
-            "label": "Exact match only"
+            "type": "call",
+            "args": [
+              [
+                1,
+                3,
+                3,
+                7
+              ],
+              4
+            ],
+            "expected": 3
           },
           {
-            "id": "upper",
-            "label": "Upper bound: first index with existing key `> 55`"
+            "type": "call",
+            "args": [
+              [
+                1,
+                3,
+                3,
+                7
+              ],
+              0
+            ],
+            "expected": 0
           },
           {
-            "id": "linear",
-            "label": "A required full linear scan"
+            "type": "call",
+            "args": [
+              [
+                1,
+                3,
+                3,
+                7
+              ],
+              9
+            ],
+            "expected": 4
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              5
+            ],
+            "expected": 0
           }
         ]
       },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "lower"
-      }
+      "instruction": "Write the function, run the tests, then submit."
     },
     {
       "id": "dsa5-answer-space-choice-009",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.2",
@@ -1053,7 +1071,7 @@
     },
     {
       "id": "dsa5-monotonic-evidence-010",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.2",
@@ -1149,7 +1167,7 @@
     },
     {
       "id": "dsa5-nonmonotonic-fault-011",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.2",
@@ -1243,7 +1261,7 @@
     },
     {
       "id": "dsa5-firsttrue-vs-lastfalse-012",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.2",
@@ -1355,7 +1373,7 @@
     },
     {
       "id": "dsa5-answer-trace-013",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.2",
@@ -1449,7 +1467,7 @@
     },
     {
       "id": "dsa5-answer-reconstruct-014",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.2",
@@ -1603,7 +1621,7 @@
     },
     {
       "id": "dsa5-worker-transfer-015",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.2",
@@ -1687,7 +1705,7 @@
     },
     {
       "id": "dsa5-answer-space-nonexample-016",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.2",
@@ -1771,7 +1789,7 @@
     },
     {
       "id": "dsa5-sort-preprocess-017",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.3",
@@ -1860,7 +1878,7 @@
     },
     {
       "id": "dsa5-sort-contract-fault-018",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.3",
@@ -1958,7 +1976,7 @@
     },
     {
       "id": "dsa5-sort-key-classify-019",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.3",
@@ -2072,7 +2090,7 @@
     },
     {
       "id": "dsa5-stable-sort-020",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.3",
@@ -2157,7 +2175,7 @@
     },
     {
       "id": "dsa5-merge-order-021",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.3",
@@ -2246,7 +2264,7 @@
     },
     {
       "id": "dsa5-sort-vs-hash-022",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.3",
@@ -2342,7 +2360,7 @@
     },
     {
       "id": "dsa5-merge-evidence-023",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.3",
@@ -2437,43 +2455,32 @@
     },
     {
       "id": "dsa5-sort-transfer-024",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.3",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.73,
-      "prompt": "Two changelog files are each sorted by timestamp and too large to combine and fully resort comfortably. You need one sorted output while preserving all entries. Which design best fits?",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.64,
+      "prompt": "Implement `merge_sorted(a, b)` in O(len(a)+len(b)) time. Both inputs are already sorted; do not concatenate and sort again.",
       "concepts": [
         {
           "concept_id": "dsa.ordered.merge",
-          "weight": 0.8
-        },
-        {
-          "concept_id": "dsa.sort.preprocess",
-          "weight": 0.2
+          "weight": 1.0
         }
       ],
-      "explanation": "Since both inputs are already sorted, a two-way merge compares only their frontiers and emits each record once. Resorting the combined input repeats ordering work that is already available.",
+      "explanation": "The next global output must be one of the two current frontier items, so advance only the side you emit.",
       "blueprint_skill_ids": [
         "5.3.03"
       ],
-      "difficulty_label": "hard",
-      "hints": [],
+      "difficulty_label": "medium",
+      "hints": [
+        "After the main loop, extend with both remaining suffixes."
+      ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected approach does not best reuse the existing sorted-order structure.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.ordered.merge"
-            ],
-            "node_id": "domain-5-sort-stable-merge",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.ordered.merge",
-            "min_scaffold_level": 2
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -2488,43 +2495,95 @@
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 0,
+        "scaffold_level": 1,
         "family_id": "dsa.ordered.merge",
         "transfer_group_id": "sorted_frontier_merge",
         "surface_context": "changelog_merge",
         "challenge_group_id": "d5-sort-01"
       },
-      "choice_feedback": {
-        "merge": "Correct: reuse the order already present in both inputs.",
-        "concat": "Concatenation alone is not globally sorted unless all of one file precedes all of the other.",
-        "resort": "It works, but throws away the benefit of already-sorted inputs.",
-        "heapall": "Loading all records into a heap still stores all records and is unnecessary for two sorted streams."
-      },
+      "choice_feedback": {},
       "interaction": {
-        "type": "multiple_choice",
-        "choices": [
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "merge_sorted",
+        "starter_code": "def merge_sorted(a, b):\n    i = 0\n    j = 0\n    merged = []\n\n    while i < len(a) and j < len(b):\n        # Emit the smaller current frontier item.\n        pass\n\n    # Append any remaining suffix.\n    return merged\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
           {
-            "id": "merge",
-            "label": "Stream both files and repeatedly emit the earlier of the two current frontier records"
+            "type": "call",
+            "args": [
+              [
+                1,
+                4,
+                9
+              ],
+              [
+                2,
+                3,
+                10
+              ]
+            ],
+            "expected": [
+              1,
+              2,
+              3,
+              4,
+              9,
+              10
+            ]
           },
           {
-            "id": "concat",
-            "label": "Concatenate the files without comparing timestamps"
+            "type": "call",
+            "args": [
+              [],
+              [
+                1,
+                2
+              ]
+            ],
+            "expected": [
+              1,
+              2
+            ]
           },
           {
-            "id": "resort",
-            "label": "Load all records from both files and sort the combined collection from scratch"
+            "type": "call",
+            "args": [
+              [
+                1,
+                2
+              ],
+              []
+            ],
+            "expected": [
+              1,
+              2
+            ]
           },
           {
-            "id": "heapall",
-            "label": "Load every record into one heap before producing output"
+            "type": "call",
+            "args": [
+              [
+                1,
+                1
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "expected": [
+              1,
+              1,
+              1,
+              1
+            ]
           }
         ]
       },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "merge"
-      }
+      "instruction": "Write the function, run the tests, then submit."
     }
   ]
 }

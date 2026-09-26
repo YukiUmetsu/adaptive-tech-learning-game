@@ -19,6 +19,7 @@ import FeedbackPanel from "./FeedbackPanel";
 import InlineText from "./InlineText";
 import KnowledgeCard from "./KnowledgeCard";
 import QuestionCard from "./QuestionCard";
+import QuestionPrompt from "./QuestionPrompt";
 import QuizCompletionSummary from "./QuizCompletionSummary";
 
 interface ChallengeRunnerProps {
@@ -135,9 +136,11 @@ function ChallengeQuestionStage({
 
   return (
     <>
-      <h2 className="challenge-stage-prompt">
-        <InlineText text={question.prompt} />
-      </h2>
+      <QuestionPrompt
+        text={question.prompt}
+        level={2}
+        className="challenge-stage-prompt"
+      />
       <QuestionCard
         key={question.id}
         question={question}

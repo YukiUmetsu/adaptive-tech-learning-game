@@ -11,7 +11,7 @@
     "id": "dsa-v1",
     "exam_code": "DSA-PATTERNS",
     "effective_date": "2026-09-26",
-    "content_version": "dsa-content-2026-09-26-v5",
+    "content_version": "dsa-content-2026-09-26-v6",
     "domains": [
       {
         "id": "domain-1",
@@ -156,7 +156,7 @@
   "questions": [
     {
       "id": "dsa4-unlink-choice-001",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.1",
@@ -245,54 +245,32 @@
     },
     {
       "id": "dsa4-lost-suffix-fault-002",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.1",
       "assessment_mode": "application",
       "interaction_type": "spot_the_fault",
-      "difficulty_prior": 0.58,
-      "prompt": "While reversing a singly linked list, flag the update order that can make the unprocessed suffix unreachable.",
+      "difficulty_prior": 0.57,
+      "prompt": "This linked-list reversal loses the unprocessed suffix. Flag the line where traversal starts following the already-reversed edge.\n\n```python\ndef reverse(head):\n    prev = None\n    cur = head\n\n    while cur:\n        cur.next = prev\n        cur = cur.next\n        prev = cur\n\n    return prev\n```",
       "concepts": [
         {
           "concept_id": "dsa.linked.reverse",
           "weight": 1.0
         }
       ],
-      "explanation": "You must save `cur.next` before overwriting it. If `cur.next = prev` happens first, the original forward link is lost unless it was already saved elsewhere.",
+      "explanation": "Save the original successor before changing `cur.next`; otherwise the rest of the list becomes unreachable.",
       "blueprint_skill_ids": [
         "4.1.03"
       ],
       "difficulty_label": "medium",
       "hints": [
-        "Ask when the only reference to the rest of the list disappears."
+        "Which reference still points to the not-yet-processed suffix?"
       ],
       "error_codes": [
         {
-          "code": "fault_missed",
-          "description": "The update that can lose the unprocessed suffix was not identified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.linked.reverse"
-            ],
-            "node_id": "domain-4-linked-reverse",
-            "preferred_stage": "diagnose",
-            "preferred_family_id": "dsa.linked.reverse",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "fault_false_positive",
-          "description": "A valid reversal-state update was incorrectly flagged.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.linked.reverse"
-            ],
-            "node_id": "domain-4-linked-reverse",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.linked.reverse",
-            "min_scaffold_level": 3
-          }
+          "code": "spot_the_fault_incorrect",
+          "description": "The selected line is not the one that breaks the algorithm."
         }
       ],
       "source_refs": [
@@ -317,33 +295,34 @@
         "type": "spot_the_fault",
         "elements": [
           {
-            "id": "bad",
-            "label": "Set `cur.next = prev` before saving the original `cur.next`"
+            "id": "rewire",
+            "label": "`cur.next = prev`"
           },
           {
-            "id": "save",
-            "label": "Save the original next node before rewiring"
+            "id": "advance",
+            "label": "`cur = cur.next` after `cur.next` was overwritten"
           },
           {
-            "id": "move_prev",
-            "label": "Move `prev` to the current node after rewiring"
+            "id": "prev",
+            "label": "`prev = cur`"
           },
           {
-            "id": "move_cur",
-            "label": "Advance `cur` using the saved next-node reference"
+            "id": "return",
+            "label": "`return prev`"
           }
         ]
       },
       "canonical_answer": {
         "type": "spot_the_fault",
         "faulty_ids": [
-          "bad"
+          "advance"
         ]
-      }
+      },
+      "choice_feedback": {}
     },
     {
       "id": "dsa4-reverse-order-003",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.1",
@@ -427,7 +406,7 @@
     },
     {
       "id": "dsa4-sentinel-choice-004",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.1",
@@ -516,7 +495,7 @@
     },
     {
       "id": "dsa4-linked-tradeoff-005",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.1",
@@ -630,7 +609,7 @@
     },
     {
       "id": "dsa4-sentinel-fault-006",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.1",
@@ -723,7 +702,7 @@
     },
     {
       "id": "dsa4-linked-evidence-007",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.1",
@@ -822,7 +801,7 @@
     },
     {
       "id": "dsa4-linked-transfer-008",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.1",
@@ -905,7 +884,7 @@
     },
     {
       "id": "dsa4-stack-delimiter-009",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.2",
@@ -990,7 +969,7 @@
     },
     {
       "id": "dsa4-stack-trace-010",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.2",
@@ -1084,7 +1063,7 @@
     },
     {
       "id": "dsa4-queue-choice-011",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.2",
@@ -1173,7 +1152,7 @@
     },
     {
       "id": "dsa4-order-semantics-classify-012",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.2",
@@ -1298,7 +1277,7 @@
     },
     {
       "id": "dsa4-deque-evidence-013",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.2",
@@ -1393,7 +1372,7 @@
     },
     {
       "id": "dsa4-monotonic-choice-014",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.2",
@@ -1478,7 +1457,7 @@
     },
     {
       "id": "dsa4-monotonic-fault-015",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.2",
@@ -1571,45 +1550,33 @@
     },
     {
       "id": "dsa4-stack-queue-transfer-016",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.2",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.66,
-      "prompt": "An editor needs a structure for 'Undo' so the most recently committed edit is undone first. A separate background uploader must process files in the order they were queued. Which pairing is correct?",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.62,
+      "prompt": "Implement `valid_brackets(text)` for `()`, `[]`, and `{}`. Nested scopes must close in LIFO order.",
       "concepts": [
         {
           "concept_id": "dsa.stack.lifo",
-          "weight": 0.5
-        },
-        {
-          "concept_id": "dsa.queue.fifo",
-          "weight": 0.5
+          "weight": 1.0
         }
       ],
-      "explanation": "Undo is LIFO because the latest action is reversed first. The uploader is FIFO because the oldest waiting file should be processed first.",
+      "explanation": "The newest unmatched opener must close first, which is exactly stack/LIFO behavior.",
       "blueprint_skill_ids": [
         "4.2.01",
         "4.2.02"
       ],
       "difficulty_label": "medium",
-      "hints": [],
+      "hints": [
+        "For a closer, compare with the stack top before popping."
+      ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected pairing does not match the required LIFO/FIFO semantics.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.stack.lifo",
-              "dsa.queue.fifo"
-            ],
-            "node_id": "domain-4-stack-lifo",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.order_semantics",
-            "min_scaffold_level": 2
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -1624,47 +1591,64 @@
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 0,
+        "scaffold_level": 1,
         "family_id": "dsa.order_semantics",
         "transfer_group_id": "lifo_fifo_priority",
         "surface_context": "editor_and_uploader",
         "challenge_group_id": "d4-stackqueue-01"
       },
-      "choice_feedback": {
-        "correct": "Correct: newest edit first, oldest queued upload first.",
-        "bothqueue": "Undo would reverse the wrong edit order.",
-        "bothstack": "The uploader would favor the newest file rather than arrival order.",
-        "swap": "The two semantics are reversed."
-      },
+      "choice_feedback": {},
       "interaction": {
-        "type": "multiple_choice",
-        "choices": [
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "valid_brackets",
+        "starter_code": "def valid_brackets(text):\n    pairs = {\")\": \"(\", \"]\": \"[\", \"}\": \"{\"}\n    stack = []\n\n    for ch in text:\n        # Push openers; each closer must match the newest opener.\n        pass\n\n    return not stack\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
           {
-            "id": "correct",
-            "label": "Undo → stack; uploader → queue"
+            "type": "call",
+            "args": [
+              "()[]{}"
+            ],
+            "expected": true
           },
           {
-            "id": "bothqueue",
-            "label": "Undo → queue; uploader → queue"
+            "type": "call",
+            "args": [
+              "([{}])"
+            ],
+            "expected": true
           },
           {
-            "id": "bothstack",
-            "label": "Undo → stack; uploader → stack"
+            "type": "call",
+            "args": [
+              "([)]"
+            ],
+            "expected": false
           },
           {
-            "id": "swap",
-            "label": "Undo → queue; uploader → stack"
+            "type": "call",
+            "args": [
+              "("
+            ],
+            "expected": false
+          },
+          {
+            "type": "call",
+            "args": [
+              ""
+            ],
+            "expected": true
           }
         ]
       },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "correct"
-      }
+      "instruction": "Write the function, run the tests, then submit."
     },
     {
       "id": "dsa4-heap-choice-017",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.3",
@@ -1753,7 +1737,7 @@
     },
     {
       "id": "dsa4-heap-invariant-018",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.3",
@@ -1842,7 +1826,7 @@
     },
     {
       "id": "dsa4-order-structure-classify-019",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.3",
@@ -1968,7 +1952,7 @@
     },
     {
       "id": "dsa4-topk-choice-020",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.3",
@@ -2057,7 +2041,7 @@
     },
     {
       "id": "dsa4-topk-cutoff-021",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.3",
@@ -2160,7 +2144,7 @@
     },
     {
       "id": "dsa4-kway-order-022",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.3",
@@ -2253,7 +2237,7 @@
     },
     {
       "id": "dsa4-kway-fault-023",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.3",
@@ -2347,43 +2331,32 @@
     },
     {
       "id": "dsa4-heap-transfer-024",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-4",
       "task_id": "4.3",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.74,
-      "prompt": "Eight audit files are each already sorted by timestamp and are too large to load fully into memory. You need one globally timestamp-sorted output stream. Which design best fits?",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.72,
+      "prompt": "Implement `merge_k_sorted(streams)`. Each input list is sorted. Return one sorted list while keeping only one frontier item per non-empty stream in the heap.",
       "concepts": [
         {
           "concept_id": "dsa.heap.kway_merge",
-          "weight": 0.8
-        },
-        {
-          "concept_id": "dsa.heap.invariant",
-          "weight": 0.2
+          "weight": 1.0
         }
       ],
-      "explanation": "Keep one current record from each file in a min-heap keyed by timestamp. Pop the earliest, emit it, and refill only from that file. Memory is proportional to the number of streams rather than total remaining records.",
+      "explanation": "The heap stores only each stream's next candidate. Popping one item reveals one new candidate from that same stream.",
       "blueprint_skill_ids": [
         "4.3.03"
       ],
       "difficulty_label": "hard",
-      "hints": [],
+      "hints": [
+        "After popping, push the next item from the same stream if it exists."
+      ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected approach does not preserve full global sort order under the streaming-memory constraint.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.heap.kway_merge"
-            ],
-            "node_id": "domain-4-heap-kway",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.heap.kway_merge",
-            "min_scaffold_level": 2
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -2398,43 +2371,101 @@
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 0,
+        "scaffold_level": 1,
         "family_id": "dsa.heap.kway_merge",
         "transfer_group_id": "sorted_frontier_merge",
         "surface_context": "audit_file_merge",
         "challenge_group_id": "d4-heap-01"
       },
-      "choice_feedback": {
-        "frontier": "Correct: only one frontier per sorted file is required in memory.",
-        "all": "Loading everything defeats the streaming-memory constraint.",
-        "queue": "FIFO across files does not guarantee global timestamp order.",
-        "topk": "A bounded top-K heap would discard records instead of emitting the full merged stream."
-      },
+      "choice_feedback": {},
       "interaction": {
-        "type": "multiple_choice",
-        "choices": [
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "merge_k_sorted",
+        "starter_code": "import heapq\n\n\ndef merge_k_sorted(streams):\n    heap = []\n    result = []\n\n    for stream_index, stream in enumerate(streams):\n        if stream:\n            heapq.heappush(heap, (stream[0], stream_index, 0))\n\n    while heap:\n        # Pop the smallest frontier, emit it, then advance only that stream.\n        pass\n\n    return result\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
           {
-            "id": "frontier",
-            "label": "Min-heap containing one current frontier record per file"
+            "type": "call",
+            "args": [
+              [
+                [
+                  1,
+                  4,
+                  9
+                ],
+                [
+                  2,
+                  3,
+                  10
+                ],
+                [
+                  5,
+                  6
+                ]
+              ]
+            ],
+            "expected": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              9,
+              10
+            ]
           },
           {
-            "id": "all",
-            "label": "Load every remaining record from all files, concatenate, then sort"
+            "type": "call",
+            "args": [
+              [
+                [],
+                [
+                  1,
+                  2
+                ],
+                []
+              ]
+            ],
+            "expected": [
+              1,
+              2
+            ]
           },
           {
-            "id": "queue",
-            "label": "Round-robin FIFO queue across files regardless of timestamp"
+            "type": "call",
+            "args": [
+              []
+            ],
+            "expected": []
           },
           {
-            "id": "topk",
-            "label": "Keep only the 100 earliest records and discard the rest"
+            "type": "call",
+            "args": [
+              [
+                [
+                  1
+                ],
+                [
+                  1
+                ],
+                [
+                  1
+                ]
+              ]
+            ],
+            "expected": [
+              1,
+              1,
+              1
+            ]
           }
         ]
       },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "frontier"
-      }
+      "instruction": "Write the function, run the tests, then submit."
     }
   ]
 }

@@ -11,7 +11,7 @@
     "id": "dsa-v1",
     "exam_code": "DSA-PATTERNS",
     "effective_date": "2026-09-26",
-    "content_version": "dsa-content-2026-09-26-v5",
+    "content_version": "dsa-content-2026-09-26-v6",
     "domains": [
       {
         "id": "domain-1",
@@ -156,7 +156,7 @@
   "questions": [
     {
       "id": "dsa6-base-case-001",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.1",
@@ -245,54 +245,32 @@
     },
     {
       "id": "dsa6-recursion-progress-fault-002",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.1",
       "assessment_mode": "application",
       "interaction_type": "spot_the_fault",
-      "difficulty_prior": 0.58,
-      "prompt": "A recursive tree function should process smaller child subtrees. Flag the call that fails to make structural progress.",
+      "difficulty_prior": 0.5,
+      "prompt": "A recursive node counter must recurse into smaller child subtrees. Flag the call that never makes structural progress.\n\n```python\ndef count_nodes(node):\n    if node is None:\n        return 0\n\n    return 1 + count_nodes(node) + count_nodes(node.right)\n```",
       "concepts": [
         {
           "concept_id": "dsa.recursion.base_case",
           "weight": 1.0
         }
       ],
-      "explanation": "Calling the function again on the same node does not move toward the base case and can recurse forever. Calls should move to child subtrees or another provably smaller state.",
+      "explanation": "Calling the function on the same non-empty node repeats the identical subproblem forever. Recurse on child nodes.",
       "blueprint_skill_ids": [
         "6.1.01"
       ],
       "difficulty_label": "medium",
       "hints": [
-        "Which call receives the same problem again?"
+        "Every recursive call must move to a smaller subtree."
       ],
       "error_codes": [
         {
-          "code": "fault_missed",
-          "description": "The non-progressing recursive call was not identified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.recursion.base_case"
-            ],
-            "node_id": "domain-6-recursion-contract",
-            "preferred_stage": "diagnose",
-            "preferred_family_id": "dsa.recursion.tree_contract",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "fault_false_positive",
-          "description": "A recursive call on a smaller subtree was incorrectly flagged.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.recursion.base_case"
-            ],
-            "node_id": "domain-6-recursion-contract",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.recursion.tree_contract",
-            "min_scaffold_level": 3
-          }
+          "code": "spot_the_fault_incorrect",
+          "description": "The selected line is not the one that breaks the algorithm."
         }
       ],
       "source_refs": [
@@ -314,32 +292,33 @@
         "elements": [
           {
             "id": "base",
-            "label": "Return for `node is None`"
+            "label": "`if node is None: return 0`"
           },
           {
-            "id": "left",
-            "label": "Call the function on `node.left`"
-          },
-          {
-            "id": "bad",
-            "label": "Call the function again on the unchanged `node`"
+            "id": "same",
+            "label": "`count_nodes(node)`"
           },
           {
             "id": "right",
-            "label": "Call the function on `node.right`"
+            "label": "`count_nodes(node.right)`"
+          },
+          {
+            "id": "one",
+            "label": "`1 + ...` for the current node"
           }
         ]
       },
       "canonical_answer": {
         "type": "spot_the_fault",
         "faulty_ids": [
-          "bad"
+          "same"
         ]
-      }
+      },
+      "choice_feedback": {}
     },
     {
       "id": "dsa6-combine-order-003",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.1",
@@ -432,7 +411,7 @@
     },
     {
       "id": "dsa6-return-state-choice-004",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.1",
@@ -517,7 +496,7 @@
     },
     {
       "id": "dsa6-return-state-classify-005",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.1",
@@ -635,44 +614,37 @@
     },
     {
       "id": "dsa6-directory-transfer-006",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.1",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.68,
-      "prompt": "A directory tree node stores the byte sizes of files directly in that directory and references child directories. You need total bytes under every directory. What should `total_bytes(dir)` return to its parent?",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.59,
+      "prompt": "A tree is `[value, left, right]`, with `None` for an empty child. Implement `tree_height(tree)`: empty height 0, leaf height 1.",
       "concepts": [
         {
-          "concept_id": "dsa.recursion.decompose_combine",
-          "weight": 0.45
+          "concept_id": "dsa.tree.return_state",
+          "weight": 0.75
         },
         {
-          "concept_id": "dsa.tree.return_state",
-          "weight": 0.55
+          "concept_id": "dsa.recursion.decompose_combine",
+          "weight": 0.25
         }
       ],
-      "explanation": "Each child should return one number: total bytes in its subtree. The parent adds its direct file bytes and all child totals.",
+      "explanation": "Each child returns one number: its subtree height. The parent returns one plus the larger child height.",
       "blueprint_skill_ids": [
         "6.1.02",
         "6.1.03"
       ],
-      "difficulty_label": "hard",
-      "hints": [],
+      "difficulty_label": "medium",
+      "hints": [
+        "Use `1 + max(tree_height(left), tree_height(right))`."
+      ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected child return state does not directly support hierarchical byte aggregation.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.tree.return_state"
-            ],
-            "node_id": "domain-6-tree-return-state",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.tree.return_state",
-            "min_scaffold_level": 2
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -683,47 +655,70 @@
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 0,
+        "scaffold_level": 1,
         "family_id": "dsa.tree.return_state",
         "transfer_group_id": "hierarchical_combine",
         "surface_context": "directory_size_aggregation",
         "challenge_group_id": "d6-recursion-01"
       },
-      "choice_feedback": {
-        "total": "Correct: the parent needs exactly the child's subtree byte total.",
-        "files": "Only direct child file sizes omit nested descendants.",
-        "allpaths": "Enumerating all paths is unnecessary for a numeric aggregate.",
-        "depth": "Depth does not determine subtree byte size."
-      },
+      "choice_feedback": {},
       "interaction": {
-        "type": "multiple_choice",
-        "choices": [
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "tree_height",
+        "starter_code": "def tree_height(tree):\n    if tree is None:\n        return 0\n\n    value, left, right = tree\n\n    # Ask each child for exactly the state the parent needs.\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
           {
-            "id": "total",
-            "label": "One number: total bytes in that child's directory subtree"
+            "type": "call",
+            "args": [
+              null
+            ],
+            "expected": 0
           },
           {
-            "id": "files",
-            "label": "Only the child directory's direct file list"
+            "type": "call",
+            "args": [
+              [
+                1,
+                null,
+                null
+              ]
+            ],
+            "expected": 1
           },
           {
-            "id": "allpaths",
-            "label": "Every file path below the child"
-          },
-          {
-            "id": "depth",
-            "label": "Only the child's depth"
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  null,
+                  null
+                ],
+                [
+                  3,
+                  [
+                    4,
+                    null,
+                    null
+                  ],
+                  null
+                ]
+              ]
+            ],
+            "expected": 3
           }
         ]
       },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "total"
-      }
+      "instruction": "Write the function, run the tests, then submit."
     },
     {
       "id": "dsa6-recursion-reconstruct-007",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.1",
@@ -889,7 +884,7 @@
     },
     {
       "id": "dsa6-recursion-evidence-008",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.1",
@@ -984,7 +979,7 @@
     },
     {
       "id": "dsa6-traversal-classify-009",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.2",
@@ -1094,7 +1089,7 @@
     },
     {
       "id": "dsa6-postorder-choice-010",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.2",
@@ -1179,7 +1174,7 @@
     },
     {
       "id": "dsa6-bfs-choice-011",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.2",
@@ -1264,7 +1259,7 @@
     },
     {
       "id": "dsa6-bfs-order-012",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.2",
@@ -1353,7 +1348,7 @@
     },
     {
       "id": "dsa6-bst-search-013",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.2",
@@ -1442,7 +1437,7 @@
     },
     {
       "id": "dsa6-bst-complexity-fault-014",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.2",
@@ -1539,7 +1534,7 @@
     },
     {
       "id": "dsa6-tree-pattern-classify-015",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.2",
@@ -1671,39 +1666,32 @@
     },
     {
       "id": "dsa6-tree-transfer-016",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.2",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.7,
-      "prompt": "A UI component hierarchy needs a report grouped by nesting depth: root component, then all direct children, then all grandchildren. Which state/strategy best matches the output?",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.62,
+      "prompt": "A tree is `[value, left, right]`, with `None` for an empty child. Implement `level_order(tree)` and return values in breadth-first order.",
       "concepts": [
         {
           "concept_id": "dsa.tree.bfs_levels",
           "weight": 1.0
         }
       ],
-      "explanation": "A FIFO level-order traversal directly preserves distance from the root, so components can be emitted depth by depth.",
+      "explanation": "A FIFO queue visits all nodes at shallower depths before deeper nodes.",
       "blueprint_skill_ids": [
         "6.2.02"
       ],
-      "difficulty_label": "hard",
-      "hints": [],
+      "difficulty_label": "medium",
+      "hints": [
+        "Use `popleft()` and enqueue non-None children."
+      ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected strategy does not directly preserve root-distance grouping.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.tree.bfs_levels"
-            ],
-            "node_id": "domain-6-tree-bfs",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.tree.bfs_levels",
-            "min_scaffold_level": 2
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -1714,47 +1702,82 @@
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 0,
+        "scaffold_level": 1,
         "family_id": "dsa.tree.bfs_levels",
         "transfer_group_id": "tree_depth_frontier",
         "surface_context": "ui_component_depths",
         "challenge_group_id": "d6-tree-01"
       },
-      "choice_feedback": {
-        "bfs": "Correct: the queue frontier naturally processes one depth before the next.",
-        "post": "Postorder groups by dependency completion, not root distance.",
-        "in": "Inorder does not represent general hierarchy depth.",
-        "bst": "There is no key-order invariant to exploit."
-      },
+      "choice_feedback": {},
       "interaction": {
-        "type": "multiple_choice",
-        "choices": [
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "level_order",
+        "starter_code": "from collections import deque\n\n\ndef level_order(tree):\n    if tree is None:\n        return []\n\n    queue = deque([tree])\n    result = []\n\n    while queue:\n        # Remove the oldest frontier node and enqueue its children.\n        pass\n\n    return result\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
           {
-            "id": "bfs",
-            "label": "FIFO breadth-first traversal carrying depth"
+            "type": "call",
+            "args": [
+              null
+            ],
+            "expected": []
           },
           {
-            "id": "post",
-            "label": "Postorder depth-first traversal"
+            "type": "call",
+            "args": [
+              [
+                1,
+                null,
+                null
+              ]
+            ],
+            "expected": [
+              1
+            ]
           },
           {
-            "id": "in",
-            "label": "Inorder traversal"
-          },
-          {
-            "id": "bst",
-            "label": "BST key search"
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  [
+                    4,
+                    null,
+                    null
+                  ],
+                  null
+                ],
+                [
+                  3,
+                  null,
+                  [
+                    5,
+                    null,
+                    null
+                  ]
+                ]
+              ]
+            ],
+            "expected": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ]
           }
         ]
       },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "bfs"
-      }
+      "instruction": "Write the function, run the tests, then submit."
     },
     {
       "id": "dsa6-trie-choice-017",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.3",
@@ -1843,7 +1866,7 @@
     },
     {
       "id": "dsa6-trie-terminal-018",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.3",
@@ -1932,7 +1955,7 @@
     },
     {
       "id": "dsa6-trie-fault-019",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.3",
@@ -2026,7 +2049,7 @@
     },
     {
       "id": "dsa6-trie-prefix-order-020",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.3",
@@ -2119,7 +2142,7 @@
     },
     {
       "id": "dsa6-trie-hash-classify-021",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.3",
@@ -2240,7 +2263,7 @@
     },
     {
       "id": "dsa6-trie-evidence-022",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.3",
@@ -2345,7 +2368,7 @@
     },
     {
       "id": "dsa6-trie-prefix-transfer-023",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.3",
@@ -2436,7 +2459,7 @@
     },
     {
       "id": "dsa6-trie-terminal-transfer-024",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.3",

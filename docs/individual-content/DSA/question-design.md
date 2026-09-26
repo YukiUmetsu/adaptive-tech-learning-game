@@ -304,6 +304,36 @@ Good:
 
 Feedback should improve the **discrimination rule**.
 
+## Code presentation and interview-value gate
+
+### Code must be structured, never flattened into prose
+
+If a question depends on reading source code, author the code as a fenced block
+inside the prompt. The question UI renders fenced code with preserved whitespace
+and syntax highlighting. Inline backticks are only for short identifiers or
+expressions.
+
+### Every scored DSA question must help with interview problem solving
+
+Before publishing, ask:
+
+1. Does this train pattern recognition, algorithm choice, tracing, debugging,
+   implementation, edge cases, complexity, maintained-state design, or transfer?
+2. Could the learner plausibly use this skill while solving a coding-interview
+   problem?
+3. Does the answer depend on algorithmic reasoning rather than academic wording?
+4. Would a code-reading, tracing, debugging, or implementation task test the
+   same idea more directly?
+
+Reject or rewrite questions that only test definitions, generic proof
+terminology, or mechanical Big-O recall without connecting the concept to an
+algorithmic decision.
+
+Invariants remain useful when they explain a real algorithm: why a binary-search
+boundary is safe to discard, what a sliding window represents, what a heap root
+guarantees, or what state a traversal has already processed. Do not spend scored
+question budget on generic accumulator-loop invariants.
+
 ## 7. Recommended initial family coverage
 
 A mature family should contain roughly:

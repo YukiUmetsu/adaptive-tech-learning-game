@@ -11,7 +11,7 @@
     "id": "dsa-v1",
     "exam_code": "DSA-PATTERNS",
     "effective_date": "2026-09-26",
-    "content_version": "dsa-content-2026-09-26-v5",
+    "content_version": "dsa-content-2026-09-26-v6",
     "domains": [
       {
         "id": "domain-1",
@@ -151,7 +151,7 @@
   "questions": [
     {
       "id": "dsa3-opposing-choice-001",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.1",
@@ -240,7 +240,7 @@
     },
     {
       "id": "dsa3-opposing-trace-002",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.1",
@@ -318,7 +318,7 @@
     },
     {
       "id": "dsa3-read-write-choice-003",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.1",
@@ -403,7 +403,7 @@
     },
     {
       "id": "dsa3-read-write-fault-004",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.1",
@@ -497,7 +497,7 @@
     },
     {
       "id": "dsa3-fast-slow-choice-005",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.1",
@@ -582,7 +582,7 @@
     },
     {
       "id": "dsa3-pointer-family-classify-006",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.1",
@@ -709,7 +709,7 @@
     },
     {
       "id": "dsa3-fast-slow-evidence-007",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.1",
@@ -804,39 +804,32 @@
     },
     {
       "id": "dsa3-read-write-transfer-008",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.1",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.7,
-      "prompt": "A mutable sorted array may contain duplicate IDs. Replace it IN PLACE with one copy of each ID, preserve sorted order, and return the new logical length. Which design best fits?",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.64,
+      "prompt": "Implement `compact_unique(values)` for a sorted list. Return the unique values in sorted order using a read/write scan; do not use a set.",
       "concepts": [
         {
           "concept_id": "dsa.two_pointers.read_write",
           "weight": 1.0
         }
       ],
-      "explanation": "Because equal IDs are adjacent, a read pointer can scan once while a write pointer advances only when a new distinct ID is accepted. This preserves stable sorted order with O(1) extra state.",
+      "explanation": "The read pointer scans; the write pointer marks the next slot in the compacted prefix.",
       "blueprint_skill_ids": [
         "3.1.02"
       ],
-      "difficulty_label": "hard",
-      "hints": [],
+      "difficulty_label": "medium",
+      "hints": [
+        "Compare against `values[write - 1]`."
+      ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected approach does not best satisfy stable in-place deduplication.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.two_pointers.read_write"
-            ],
-            "node_id": "domain-3-read-write",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.two_pointers.read_write",
-            "min_scaffold_level": 2
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -851,47 +844,81 @@
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 0,
+        "scaffold_level": 1,
         "family_id": "dsa.two_pointers.read_write",
         "transfer_group_id": "stable_in_place_compaction",
         "surface_context": "sorted_id_dedup",
         "challenge_group_id": "d3-pointers-01"
       },
-      "choice_feedback": {
-        "rw": "Correct: it uses sorted adjacency and compacts unique IDs in place.",
-        "set": "A set finds uniqueness but does not by itself satisfy stable in-place array compaction.",
-        "resort": "The input is already sorted; copying and resorting adds unnecessary work and space.",
-        "ends": "Swapping from opposite ends can destroy stable ordering."
-      },
+      "choice_feedback": {},
       "interaction": {
-        "type": "multiple_choice",
-        "choices": [
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "compact_unique",
+        "starter_code": "def compact_unique(values):\n    if not values:\n        return []\n\n    write = 1\n\n    for read in range(1, len(values)):\n        # Keep only the first copy of each value.\n        pass\n\n    return values[:write]\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
           {
-            "id": "rw",
-            "label": "Read every ID; write only when the current ID differs from the last kept ID"
+            "type": "call",
+            "args": [
+              [
+                1,
+                1,
+                2,
+                2,
+                3
+              ]
+            ],
+            "expected": [
+              1,
+              2,
+              3
+            ]
           },
           {
-            "id": "set",
-            "label": "Convert the array to a set and return the set size"
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ]
+            ],
+            "expected": [
+              1,
+              2,
+              3
+            ]
           },
           {
-            "id": "resort",
-            "label": "Copy the array, remove duplicates, then sort the copy again"
+            "type": "call",
+            "args": [
+              [
+                4,
+                4,
+                4
+              ]
+            ],
+            "expected": [
+              4
+            ]
           },
           {
-            "id": "ends",
-            "label": "Swap duplicate values with items from the right end"
+            "type": "call",
+            "args": [
+              []
+            ],
+            "expected": []
           }
         ]
       },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "rw"
-      }
+      "instruction": "Write the function, run the tests, then submit."
     },
     {
       "id": "dsa3-fixed-window-choice-009",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.2",
@@ -980,7 +1007,7 @@
     },
     {
       "id": "dsa3-fixed-window-trace-010",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.2",
@@ -1081,54 +1108,32 @@
     },
     {
       "id": "dsa3-window-state-fault-011",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.2",
       "assessment_mode": "application",
       "interaction_type": "spot_the_fault",
-      "difficulty_prior": 0.57,
-      "prompt": "A rolling sum should always represent exactly the current `k` items. Flag the update that breaks that invariant.",
+      "difficulty_prior": 0.55,
+      "prompt": "This should compute the maximum sum of every contiguous window of size `k`. Flag the missing state update.\n\n```python\ndef max_sum_k(values, k):\n    total = sum(values[:k])\n    best = total\n\n    for right in range(k, len(values)):\n        total += values[right]\n        best = max(best, total)\n\n    return best\n```",
       "concepts": [
         {
           "concept_id": "dsa.window.fixed",
           "weight": 1.0
         }
       ],
-      "explanation": "When the right boundary advances, one old item leaves the fixed-size window. Adding the incoming item without removing the outgoing item makes the maintained sum describe more than k items.",
+      "explanation": "After adding the entering item, subtract `values[right-k]` so `total` still represents exactly k items.",
       "blueprint_skill_ids": [
         "3.2.01"
       ],
       "difficulty_label": "medium",
       "hints": [
-        "Ask whether the state still represents exactly k elements after moving the window."
+        "A fixed window has one entering and one leaving item."
       ],
       "error_codes": [
         {
-          "code": "fault_missed",
-          "description": "The stale outgoing-item state was not identified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.window.fixed"
-            ],
-            "node_id": "domain-3-fixed-window",
-            "preferred_stage": "diagnose",
-            "preferred_family_id": "dsa.sliding_window.fixed",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "fault_false_positive",
-          "description": "A valid rolling-window step was incorrectly flagged.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.window.fixed"
-            ],
-            "node_id": "domain-3-fixed-window",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.sliding_window.fixed",
-            "min_scaffold_level": 3
-          }
+          "code": "spot_the_fault_incorrect",
+          "description": "The selected line is not the one that breaks the algorithm."
         }
       ],
       "source_refs": [
@@ -1149,33 +1154,34 @@
         "type": "spot_the_fault",
         "elements": [
           {
-            "id": "init",
-            "label": "Initialize the sum from the first k values"
+            "id": "add",
+            "label": "`total += values[right]`"
           },
           {
-            "id": "enter",
-            "label": "Add the new rightmost value"
+            "id": "remove",
+            "label": "No update removes the item that just left the k-sized window"
           },
           {
-            "id": "bad",
-            "label": "Keep the old leftmost value in the sum after the window moves"
+            "id": "best",
+            "label": "`best = max(best, total)`"
           },
           {
-            "id": "record",
-            "label": "Compare the updated window state with the best result"
+            "id": "return",
+            "label": "`return best`"
           }
         ]
       },
       "canonical_answer": {
         "type": "spot_the_fault",
         "faulty_ids": [
-          "bad"
+          "remove"
         ]
-      }
+      },
+      "choice_feedback": {}
     },
     {
       "id": "dsa3-variable-window-choice-012",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.2",
@@ -1260,7 +1266,7 @@
     },
     {
       "id": "dsa3-variable-window-evidence-013",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.2",
@@ -1355,7 +1361,7 @@
     },
     {
       "id": "dsa3-window-pattern-classify-014",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.2",
@@ -1487,7 +1493,7 @@
     },
     {
       "id": "dsa3-signed-window-fault-015",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.2",
@@ -1575,45 +1581,33 @@
     },
     {
       "id": "dsa3-window-transfer-016",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.2",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.73,
-      "prompt": "A file contains positive request sizes in arrival order. Find the longest contiguous run whose total size is at most 8 MiB. Which approach best preserves arrival contiguity and avoids restarting the sum for every start position?",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.68,
+      "prompt": "Values are non-negative. Implement `longest_under_limit(values, limit)`: return the longest contiguous length whose sum is at most `limit`.",
       "concepts": [
         {
           "concept_id": "dsa.window.variable",
-          "weight": 0.8
-        },
-        {
-          "concept_id": "dsa.window.discrimination",
-          "weight": 0.2
+          "weight": 1.0
         }
       ],
-      "explanation": "Because sizes are positive, expanding right can only increase the total and moving left can only decrease it. Maintain one contiguous active range and shrink only when it exceeds the budget.",
+      "explanation": "With non-negative values, moving left forward can only reduce the sum, so invalid windows can be repaired monotonically.",
       "blueprint_skill_ids": [
         "3.2.02",
         "3.2.03"
       ],
       "difficulty_label": "hard",
-      "hints": [],
+      "hints": [
+        "While `total > limit`, remove `values[left]` and increment `left`."
+      ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected approach does not best exploit positive-size monotonicity while preserving contiguity.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.window.variable",
-              "dsa.window.discrimination"
-            ],
-            "node_id": "domain-3-variable-window",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.sliding_window.variable",
-            "min_scaffold_level": 2
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -1628,47 +1622,85 @@
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 0,
+        "scaffold_level": 1,
         "family_id": "dsa.sliding_window.variable",
         "transfer_group_id": "moving_contiguous_range",
         "surface_context": "request_size_budget",
         "challenge_group_id": "d3-window-01"
       },
-      "choice_feedback": {
-        "window": "Correct: positive sizes give the monotonic repair rule the window needs.",
-        "sort": "Sorting destroys arrival contiguity.",
-        "prefix": "Prefix sums can measure a chosen range, but they do not by themselves choose the longest valid moving range as directly as the monotonic window.",
-        "freq": "A frequency map discards positional contiguity."
-      },
+      "choice_feedback": {},
       "interaction": {
-        "type": "multiple_choice",
-        "choices": [
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "longest_under_limit",
+        "starter_code": "def longest_under_limit(values, limit):\n    left = 0\n    total = 0\n    best = 0\n\n    for right, value in enumerate(values):\n        total += value\n\n        # Shrink only until the window is valid again.\n        pass\n\n    return best\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
           {
-            "id": "window",
-            "label": "Expand right, maintain the byte total, and shrink left while the budget is exceeded"
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                1,
+                1,
+                1
+              ],
+              4
+            ],
+            "expected": 3
           },
           {
-            "id": "sort",
-            "label": "Sort request sizes and take the smallest requests until the budget is full"
+            "type": "call",
+            "args": [
+              [
+                1,
+                1,
+                1
+              ],
+              2
+            ],
+            "expected": 2
           },
           {
-            "id": "prefix",
-            "label": "Use only a prefix array and independently test every possible start/end pair"
+            "type": "call",
+            "args": [
+              [
+                5
+              ],
+              4
+            ],
+            "expected": 0
           },
           {
-            "id": "freq",
-            "label": "Count each request size in a frequency map"
+            "type": "call",
+            "args": [
+              [],
+              10
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                2,
+                2
+              ],
+              6
+            ],
+            "expected": 3
           }
         ]
       },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "window"
-      }
+      "instruction": "Write the function, run the tests, then submit."
     },
     {
       "id": "dsa3-interval-order-017",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.3",
@@ -1761,7 +1793,7 @@
     },
     {
       "id": "dsa3-interval-merge-result-018",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.3",
@@ -1850,7 +1882,7 @@
     },
     {
       "id": "dsa3-interval-unsorted-fault-019",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.3",
@@ -1948,7 +1980,7 @@
     },
     {
       "id": "dsa3-half-open-endpoints-020",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.3",
@@ -2031,7 +2063,7 @@
     },
     {
       "id": "dsa3-interval-evidence-021",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.3",
@@ -2130,7 +2162,7 @@
     },
     {
       "id": "dsa3-interval-contract-choice-022",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.3",
@@ -2222,7 +2254,7 @@
     },
     {
       "id": "dsa3-endpoint-classify-023",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.3",
@@ -2328,7 +2360,7 @@
     },
     {
       "id": "dsa3-interval-transfer-024",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-3",
       "task_id": "3.3",

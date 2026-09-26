@@ -11,7 +11,7 @@
     "id": "dsa-v1",
     "exam_code": "DSA-PATTERNS",
     "effective_date": "2026-09-26",
-    "content_version": "dsa-content-2026-09-26-v5",
+    "content_version": "dsa-content-2026-09-26-v6",
     "domains": [
       {
         "id": "domain-1",
@@ -156,7 +156,7 @@
   "questions": [
     {
       "id": "dsa7-graph-model-001",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.1",
@@ -245,54 +245,36 @@
     },
     {
       "id": "dsa7-visited-fault-002",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.1",
       "assessment_mode": "application",
       "interaction_type": "spot_the_fault",
-      "difficulty_prior": 0.56,
-      "prompt": "A traversal explores a graph that may contain cycles. Flag the design that can repeatedly revisit the same cycle forever.",
+      "difficulty_prior": 0.55,
+      "prompt": "This DFS can recurse forever on a directed cycle such as `A → B → A`. Flag the line that records visited state too late.\n\n```python\ndef dfs(node):\n    if node in seen:\n        return\n\n    for nxt in graph[node]:\n        dfs(nxt)\n\n    seen.add(node)\n```",
       "concepts": [
         {
           "concept_id": "dsa.graph.model_visited",
-          "weight": 1.0
+          "weight": 0.6
+        },
+        {
+          "concept_id": "dsa.graph.cycle_state",
+          "weight": 0.4
         }
       ],
-      "explanation": "Without discovery/visited state, traversing a cycle can enqueue or recurse into the same vertices repeatedly.",
+      "explanation": "Mark a node discovered before recursing into neighbors. Otherwise a back edge can re-enter the still-active node.",
       "blueprint_skill_ids": [
         "7.1.01"
       ],
       "difficulty_label": "medium",
       "hints": [
-        "Imagine A→B→C→A."
+        "What happens when B reaches A before the first call to A finishes?"
       ],
       "error_codes": [
         {
-          "code": "fault_missed",
-          "description": "The missing visited/discovery guard was not identified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.graph.model_visited"
-            ],
-            "node_id": "domain-7-graph-model",
-            "preferred_stage": "diagnose",
-            "preferred_family_id": "dsa.graph.model",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "fault_false_positive",
-          "description": "A valid graph-traversal step was incorrectly flagged.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.graph.model_visited"
-            ],
-            "node_id": "domain-7-graph-model",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.graph.model",
-            "min_scaffold_level": 3
-          }
+          "code": "spot_the_fault_incorrect",
+          "description": "The selected line is not the one that breaks the algorithm."
         }
       ],
       "source_refs": [
@@ -317,33 +299,30 @@
         "type": "spot_the_fault",
         "elements": [
           {
-            "id": "frontier",
-            "label": "Keep a frontier of discovered work"
+            "id": "guard",
+            "label": "`if node in seen: return`"
           },
           {
-            "id": "bad",
-            "label": "Follow every outgoing edge without recording whether the destination was already discovered"
+            "id": "call",
+            "label": "`dfs(nxt)`"
           },
           {
-            "id": "neighbors",
-            "label": "Read each processed vertex's outgoing neighbors"
-          },
-          {
-            "id": "finish",
-            "label": "Stop when the frontier is empty"
+            "id": "late",
+            "label": "`seen.add(node)` after exploring neighbors"
           }
         ]
       },
       "canonical_answer": {
         "type": "spot_the_fault",
         "faulty_ids": [
-          "bad"
+          "late"
         ]
-      }
+      },
+      "choice_feedback": {}
     },
     {
       "id": "dsa7-bfs-choice-003",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.1",
@@ -432,7 +411,7 @@
     },
     {
       "id": "dsa7-bfs-order-004",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.1",
@@ -521,7 +500,7 @@
     },
     {
       "id": "dsa7-dfs-cycle-choice-005",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.1",
@@ -609,7 +588,7 @@
     },
     {
       "id": "dsa7-bfs-vs-dfs-006",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.1",
@@ -726,7 +705,7 @@
     },
     {
       "id": "dsa7-bfs-evidence-007",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.1",
@@ -821,44 +800,33 @@
     },
     {
       "id": "dsa7-traversal-transfer-008",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.1",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.69,
-      "prompt": "A security tool models account-to-account delegation as an unweighted directed graph and must report the fewest delegation steps from account A to account B. Which strategy fits?",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.67,
+      "prompt": "Implement `shortest_hops(graph, start, target)` for an unweighted directed graph. Return `-1` when unreachable.",
       "concepts": [
         {
           "concept_id": "dsa.graph.bfs_unweighted",
-          "weight": 0.8
-        },
-        {
-          "concept_id": "dsa.graph.model_visited",
-          "weight": 0.2
+          "weight": 1.0
         }
       ],
-      "explanation": "The objective is minimum edge count, so BFS with visited/discovered state is the direct fit.",
+      "explanation": "BFS expands in layers. Mark neighbors seen when enqueuing them so the first discovered distance is the fewest hops.",
       "blueprint_skill_ids": [
         "7.1.01",
         "7.1.02"
       ],
       "difficulty_label": "hard",
-      "hints": [],
+      "hints": [
+        "Enqueue unseen neighbors with `distance + 1`."
+      ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected strategy does not most directly compute minimum unweighted delegation hops.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.graph.bfs_unweighted"
-            ],
-            "node_id": "domain-7-bfs",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.graph.bfs_unweighted",
-            "min_scaffold_level": 2
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -869,47 +837,78 @@
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 0,
+        "scaffold_level": 1,
         "family_id": "dsa.graph.bfs_unweighted",
         "transfer_group_id": "equal_cost_frontier",
         "surface_context": "delegation_hops",
         "challenge_group_id": "d7-traversal-01"
       },
-      "choice_feedback": {
-        "bfs": "Correct: each delegation edge contributes one step.",
-        "dfs": "DFS may encounter a longer path first.",
-        "uf": "Union-find can answer connectivity but not directed shortest-hop path length.",
-        "dijkstra": "It works with unit weights but adds unnecessary priority machinery."
-      },
+      "choice_feedback": {},
       "interaction": {
-        "type": "multiple_choice",
-        "choices": [
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "shortest_hops",
+        "starter_code": "from collections import deque\n\n\ndef shortest_hops(graph, start, target):\n    queue = deque([(start, 0)])\n    seen = {start}\n\n    while queue:\n        node, distance = queue.popleft()\n\n        # BFS discovers nodes in nondecreasing hop count.\n        pass\n\n    return -1\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
           {
-            "id": "bfs",
-            "label": "BFS from A with discovered/visited state"
+            "type": "call",
+            "args": [
+              {
+                "A": [
+                  "B",
+                  "C"
+                ],
+                "B": [
+                  "D"
+                ],
+                "C": [
+                  "D"
+                ],
+                "D": []
+              },
+              "A",
+              "D"
+            ],
+            "expected": 2
           },
           {
-            "id": "dfs",
-            "label": "DFS and stop at the first path to B"
+            "type": "call",
+            "args": [
+              {
+                "A": [
+                  "B"
+                ],
+                "B": [
+                  "A"
+                ],
+                "C": []
+              },
+              "A",
+              "C"
+            ],
+            "expected": -1
           },
           {
-            "id": "uf",
-            "label": "Union-find only"
-          },
-          {
-            "id": "dijkstra",
-            "label": "Dijkstra despite every edge having equal cost"
+            "type": "call",
+            "args": [
+              {
+                "A": []
+              },
+              "A",
+              "A"
+            ],
+            "expected": 0
           }
         ]
       },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "bfs"
-      }
+      "instruction": "Write the function, run the tests, then submit."
     },
     {
       "id": "dsa7-topo-choice-009",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.2",
@@ -998,7 +997,7 @@
     },
     {
       "id": "dsa7-topo-cycle-fault-010",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.2",
@@ -1097,7 +1096,7 @@
     },
     {
       "id": "dsa7-topo-order-011",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.2",
@@ -1176,7 +1175,7 @@
     },
     {
       "id": "dsa7-union-find-choice-012",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.2",
@@ -1261,7 +1260,7 @@
     },
     {
       "id": "dsa7-union-find-limit-013",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.2",
@@ -1345,7 +1344,7 @@
     },
     {
       "id": "dsa7-algorithm-classify-014",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.2",
@@ -1471,7 +1470,7 @@
     },
     {
       "id": "dsa7-topo-evidence-015",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.2",
@@ -1566,7 +1565,7 @@
     },
     {
       "id": "dsa7-connectivity-transfer-016",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.2",
@@ -1654,7 +1653,7 @@
     },
     {
       "id": "dsa7-dijkstra-choice-017",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.3",
@@ -1743,7 +1742,7 @@
     },
     {
       "id": "dsa7-negative-fault-018",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.3",
@@ -1841,7 +1840,7 @@
     },
     {
       "id": "dsa7-relax-choice-019",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.3",
@@ -1930,7 +1929,7 @@
     },
     {
       "id": "dsa7-relax-evidence-020",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.3",
@@ -2025,7 +2024,7 @@
     },
     {
       "id": "dsa7-predecessor-choice-021",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.3",
@@ -2109,7 +2108,7 @@
     },
     {
       "id": "dsa7-stale-entry-022",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.3",
@@ -2201,7 +2200,7 @@
     },
     {
       "id": "dsa7-bfs-dijkstra-classify-023",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.3",
@@ -2317,45 +2316,37 @@
     },
     {
       "id": "dsa7-dijkstra-transfer-024",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-7",
       "task_id": "7.3",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.75,
-      "prompt": "A deployment planner models possible migration transitions as edges with non-negative estimated minutes. It needs the minimum total estimated migration time from state S to state T and the chosen transition sequence. Which design best fits?",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.76,
+      "prompt": "Implement `shortest_path_cost(graph, start, target)` for non-negative weights. `graph[node]` contains `[neighbor, weight]` pairs. Return `-1` when unreachable.",
       "concepts": [
         {
           "concept_id": "dsa.graph.dijkstra",
-          "weight": 0.65
+          "weight": 0.7
         },
         {
           "concept_id": "dsa.graph.relaxation",
-          "weight": 0.35
+          "weight": 0.3
         }
       ],
-      "explanation": "Dijkstra handles non-negative weighted shortest paths; successful relaxations should also update predecessors so the final transition sequence can be reconstructed.",
+      "explanation": "Dijkstra expands the unsettled node with the smallest tentative distance and relaxes an edge only when it improves the best known cost.",
       "blueprint_skill_ids": [
         "7.3.01",
         "7.3.02"
       ],
       "difficulty_label": "hard",
-      "hints": [],
+      "hints": [
+        "Skip when `distance != best.get(node)`; push improved candidate distances."
+      ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected design does not compute the minimum non-negative weighted route and preserve its path.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.graph.dijkstra",
-              "dsa.graph.relaxation"
-            ],
-            "node_id": "domain-7-relaxation",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.graph.dijkstra",
-            "min_scaffold_level": 2
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -2370,43 +2361,91 @@
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 0,
+        "scaffold_level": 1,
         "family_id": "dsa.graph.dijkstra",
         "transfer_group_id": "priority_frontier",
         "surface_context": "migration_state_route",
         "challenge_group_id": "d7-shortest-01"
       },
-      "choice_feedback": {
-        "dijkstra": "Correct: weighted nonnegative shortest path plus predecessor reconstruction.",
-        "bfs": "BFS minimizes number of transitions, not total estimated minutes.",
-        "uf": "Union-find only answers connectivity.",
-        "topo": "A topological order is a precedence ordering, not necessarily minimum weighted cost."
-      },
+      "choice_feedback": {},
       "interaction": {
-        "type": "multiple_choice",
-        "choices": [
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "shortest_path_cost",
+        "starter_code": "import heapq\n\n\ndef shortest_path_cost(graph, start, target):\n    best = {start: 0}\n    heap = [(0, start)]\n\n    while heap:\n        distance, node = heapq.heappop(heap)\n\n        # Skip stale entries, then relax outgoing edges.\n        pass\n\n    return -1\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
           {
-            "id": "dijkstra",
-            "label": "Dijkstra with distance and predecessor maps"
+            "type": "call",
+            "args": [
+              {
+                "A": [
+                  [
+                    "B",
+                    5
+                  ],
+                  [
+                    "C",
+                    1
+                  ]
+                ],
+                "B": [
+                  [
+                    "D",
+                    1
+                  ]
+                ],
+                "C": [
+                  [
+                    "B",
+                    1
+                  ],
+                  [
+                    "D",
+                    10
+                  ]
+                ],
+                "D": []
+              },
+              "A",
+              "D"
+            ],
+            "expected": 3
           },
           {
-            "id": "bfs",
-            "label": "BFS and ignore edge durations"
+            "type": "call",
+            "args": [
+              {
+                "A": [
+                  [
+                    "B",
+                    2
+                  ]
+                ],
+                "B": [],
+                "C": []
+              },
+              "A",
+              "C"
+            ],
+            "expected": -1
           },
           {
-            "id": "uf",
-            "label": "Union-find"
-          },
-          {
-            "id": "topo",
-            "label": "Topological sort only"
+            "type": "call",
+            "args": [
+              {
+                "A": []
+              },
+              "A",
+              "A"
+            ],
+            "expected": 0
           }
         ]
       },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "dijkstra"
-      }
+      "instruction": "Write the function, run the tests, then submit."
     }
   ]
 }

@@ -3,8 +3,8 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import BitsIcon from "../components/BitsIcon";
 import ChallengeRunner from "../components/ChallengeRunner";
 import FeedbackPanel from "../components/FeedbackPanel";
-import InlineText from "../components/InlineText";
 import QuestionCard from "../components/QuestionCard";
+import QuestionPrompt from "../components/QuestionPrompt";
 import QuizCompletionSummary from "../components/QuizCompletionSummary";
 import { useCatalog } from "../hooks/useCatalog";
 import { useMissionRunner } from "../hooks/useMissionRunner";
@@ -106,9 +106,7 @@ export default function MissionPage() {
             <BitsIcon className="bits-icon" /> {bits.toLocaleString()}
           </span>
         </div>
-        <h1>
-          <InlineText text={runner.question.prompt} />
-        </h1>
+        <QuestionPrompt text={runner.question.prompt} level={1} />
         <div
           className="progress"
           role="progressbar"

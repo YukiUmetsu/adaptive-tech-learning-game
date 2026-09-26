@@ -11,7 +11,7 @@
     "id": "dsa-v1",
     "exam_code": "DSA-PATTERNS",
     "effective_date": "2026-09-26",
-    "content_version": "dsa-content-2026-09-26-v5",
+    "content_version": "dsa-content-2026-09-26-v6",
     "domains": [
       {
         "id": "domain-1",
@@ -156,7 +156,7 @@
   "questions": [
     {
       "id": "dsa8-backtrack-choice-001",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.1",
@@ -245,7 +245,7 @@
     },
     {
       "id": "dsa8-backtrack-order-002",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.1",
@@ -334,58 +334,36 @@
     },
     {
       "id": "dsa8-backtrack-state-fault-003",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.1",
       "assessment_mode": "application",
       "interaction_type": "spot_the_fault",
-      "difficulty_prior": 0.59,
-      "prompt": "A backtracker appends a choice to `chosen`, recursively explores, and then immediately tries the next sibling without removing the prior choice. Flag the bug.",
+      "difficulty_prior": 0.52,
+      "prompt": "This backtracking loop leaks one branch's choice into its siblings. Flag the missing restoration step.\n\n```python\ndef search(options, chosen):\n    for option in options:\n        chosen.append(option)\n        backtrack(chosen)\n\n        # immediately continue to the next sibling\n```",
       "concepts": [
         {
-          "concept_id": "dsa.backtracking.state",
-          "weight": 0.6
+          "concept_id": "dsa.backtracking.choose_explore_undo",
+          "weight": 0.7
         },
         {
-          "concept_id": "dsa.backtracking.choose_explore_undo",
-          "weight": 0.4
+          "concept_id": "dsa.backtracking.state",
+          "weight": 0.3
         }
       ],
-      "explanation": "The prior branch's mutable state leaks into the sibling branch. The algorithm must restore state—such as popping the appended choice—before trying the next sibling.",
+      "explanation": "Backtracking requires choose → explore → undo. Otherwise later siblings inherit state from the prior branch.",
       "blueprint_skill_ids": [
         "8.1.02"
       ],
       "difficulty_label": "medium",
       "hints": [
-        "Sibling branches must start from the same parent partial candidate."
+        "What should `chosen` look like at the start of the next loop iteration?"
       ],
       "error_codes": [
         {
-          "code": "fault_missed",
-          "description": "The missing state restoration was not identified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.backtracking.state"
-            ],
-            "node_id": "domain-8-backtracking-state",
-            "preferred_stage": "diagnose",
-            "preferred_family_id": "dsa.backtracking.state",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "fault_false_positive",
-          "description": "A valid choose/explore step was incorrectly flagged.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.backtracking.choose_explore_undo"
-            ],
-            "node_id": "domain-8-backtracking-state",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.backtracking.choose_explore_undo",
-            "min_scaffold_level": 3
-          }
+          "code": "spot_the_fault_incorrect",
+          "description": "The selected line is not the one that breaks the algorithm."
         }
       ],
       "source_refs": [
@@ -406,33 +384,30 @@
         "type": "spot_the_fault",
         "elements": [
           {
-            "id": "append",
-            "label": "Append the candidate choice"
+            "id": "choose",
+            "label": "`chosen.append(option)`"
           },
           {
-            "id": "recurse",
-            "label": "Recursively explore descendants"
+            "id": "explore",
+            "label": "`backtrack(chosen)`"
           },
           {
-            "id": "bad",
-            "label": "Leave the candidate in mutable state before exploring the next sibling"
-          },
-          {
-            "id": "next",
-            "label": "Try the next candidate"
+            "id": "undo",
+            "label": "Continue to the next sibling without `chosen.pop()`"
           }
         ]
       },
       "canonical_answer": {
         "type": "spot_the_fault",
         "faulty_ids": [
-          "bad"
+          "undo"
         ]
-      }
+      },
+      "choice_feedback": {}
     },
     {
       "id": "dsa8-prune-choice-004",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.1",
@@ -517,7 +492,7 @@
     },
     {
       "id": "dsa8-prune-evidence-005",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.1",
@@ -612,7 +587,7 @@
     },
     {
       "id": "dsa8-backtrack-classify-006",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.1",
@@ -729,7 +704,7 @@
     },
     {
       "id": "dsa8-backtrack-reconstruct-007",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.1",
@@ -891,45 +866,37 @@
     },
     {
       "id": "dsa8-backtrack-transfer-008",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.1",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.72,
-      "prompt": "A policy compiler must enumerate all valid rule assignments under mutual-exclusion and prerequisite constraints, and should abandon impossible partial assignments early. Which design best matches?",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.76,
+      "prompt": "Values are distinct positive integers. Implement `combination_sum_once(values, target)`: each value may be used at most once. Return sorted combinations, and sort the outer result lexicographically.",
       "concepts": [
         {
           "concept_id": "dsa.backtracking.choose_explore_undo",
-          "weight": 0.5
+          "weight": 0.6
         },
         {
           "concept_id": "dsa.backtracking.pruning",
-          "weight": 0.5
+          "weight": 0.4
         }
       ],
-      "explanation": "This is constrained combinatorial enumeration: backtracking explores rule assignments, and safe constraint checks prune impossible partial assignments.",
+      "explanation": "Use choose/explore/undo with a start index so a value is not reused. Positive sorted values allow pruning when a candidate exceeds the remaining sum.",
       "blueprint_skill_ids": [
         "8.1.01",
         "8.1.03"
       ],
       "difficulty_label": "hard",
-      "hints": [],
+      "hints": [
+        "On success append `chosen.copy()`; recurse with `i + 1`; then pop."
+      ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected strategy does not match complete constrained assignment search.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.backtracking.choose_explore_undo",
-              "dsa.backtracking.pruning"
-            ],
-            "node_id": "domain-8-backtracking-prune",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.backtracking.pattern",
-            "min_scaffold_level": 2
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -940,47 +907,92 @@
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 0,
+        "scaffold_level": 1,
         "family_id": "dsa.backtracking.pattern",
         "transfer_group_id": "choice_tree_search",
         "surface_context": "policy_rule_assignment",
         "challenge_group_id": "d8-backtrack-01"
       },
-      "choice_feedback": {
-        "bt": "Correct: it explores all relevant assignments while pruning proven-impossible branches.",
-        "greedy": "An irreversible local rule choice can miss valid assignments.",
-        "sort": "Sorting rules does not enumerate compatibility assignments.",
-        "bfs": "Graph BFS is not the core decision structure here."
-      },
+      "choice_feedback": {},
       "interaction": {
-        "type": "multiple_choice",
-        "choices": [
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "combination_sum_once",
+        "starter_code": "def combination_sum_once(values, target):\n    values = sorted(values)\n    result = []\n\n    def backtrack(start, remaining, chosen):\n        # Positive sorted values allow safe pruning.\n        pass\n\n    backtrack(0, target, [])\n    return sorted(result)\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
           {
-            "id": "bt",
-            "label": "Backtracking with incremental constraint checks and pruning"
+            "type": "call",
+            "args": [
+              [
+                2,
+                3,
+                4,
+                5
+              ],
+              7
+            ],
+            "expected": [
+              [
+                2,
+                5
+              ],
+              [
+                3,
+                4
+              ]
+            ]
           },
           {
-            "id": "greedy",
-            "label": "Choose one currently compatible rule at each step and never revisit that choice"
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ],
+              3
+            ],
+            "expected": [
+              [
+                1,
+                2
+              ],
+              [
+                3
+              ]
+            ]
           },
           {
-            "id": "sort",
-            "label": "Generate every complete assignment first, then run the constraint checker afterward"
+            "type": "call",
+            "args": [
+              [
+                4,
+                6
+              ],
+              5
+            ],
+            "expected": []
           },
           {
-            "id": "bfs",
-            "label": "Cache only by the number of assigned rules, ignoring which constraints are active"
+            "type": "call",
+            "args": [
+              [],
+              0
+            ],
+            "expected": [
+              []
+            ]
           }
         ]
       },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "bt"
-      }
+      "instruction": "Write the function, run the tests, then submit."
     },
     {
       "id": "dsa8-greedy-safe-009",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.2",
@@ -1069,7 +1081,7 @@
     },
     {
       "id": "dsa8-interval-choice-010",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.2",
@@ -1158,7 +1170,7 @@
     },
     {
       "id": "dsa8-interval-order-011",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.2",
@@ -1246,7 +1258,7 @@
     },
     {
       "id": "dsa8-greedy-objective-fault-012",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.2",
@@ -1352,7 +1364,7 @@
     },
     {
       "id": "dsa8-greedy-counterexample-013",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.2",
@@ -1440,7 +1452,7 @@
     },
     {
       "id": "dsa8-greedy-dp-classify-014",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.2",
@@ -1563,7 +1575,7 @@
     },
     {
       "id": "dsa8-greedy-evidence-015",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.2",
@@ -1667,7 +1679,7 @@
     },
     {
       "id": "dsa8-greedy-transfer-016",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.2",
@@ -1754,7 +1766,7 @@
     },
     {
       "id": "dsa8-dp-state-choice-017",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.3",
@@ -1843,7 +1855,7 @@
     },
     {
       "id": "dsa8-dp-transition-018",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.3",
@@ -1932,7 +1944,7 @@
     },
     {
       "id": "dsa8-memo-choice-019",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.3",
@@ -2021,7 +2033,7 @@
     },
     {
       "id": "dsa8-memo-tab-classify-020",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.3",
@@ -2131,7 +2143,7 @@
     },
     {
       "id": "dsa8-dp-state-fault-021",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.3",
@@ -2229,7 +2241,7 @@
     },
     {
       "id": "dsa8-edit-distance-choice-022",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.3",
@@ -2317,7 +2329,7 @@
     },
     {
       "id": "dsa8-dp-evidence-023",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.3",
@@ -2422,45 +2434,33 @@
     },
     {
       "id": "dsa8-dp-transfer-024",
-      "content_version": "dsa-content-2026-09-26-v5",
+      "content_version": "dsa-content-2026-09-26-v6",
       "certification_version": "dsa-v1",
       "domain_id": "domain-8",
       "task_id": "8.3",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.75,
-      "prompt": "A build cache can hold 12 GiB. Each artifact is indivisible and has a size plus an estimated rebuild-time saving. You need the set with maximum total saving that fits. Which approach best matches the decision structure?",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.74,
+      "prompt": "Implement `knapsack_max_value(sizes, values, capacity)` for 0/1 selection. Each item may be used at most once.",
       "concepts": [
         {
-          "concept_id": "dsa.dp.sequence_resource",
-          "weight": 0.6
-        },
-        {
           "concept_id": "dsa.dp.state_transition",
-          "weight": 0.4
+          "weight": 1.0
         }
       ],
-      "explanation": "This is a 0/1 resource-allocation shape: each artifact is taken or skipped once, choices share a remaining-capacity constraint, and greedy value/ratio rules are not generally safe.",
+      "explanation": "With a one-dimensional 0/1 knapsack table, iterate capacity downward so the current item cannot be reused during its own update pass.",
       "blueprint_skill_ids": [
         "8.3.01",
         "8.3.03"
       ],
       "difficulty_label": "hard",
-      "hints": [],
+      "hints": [
+        "For each item, loop from `capacity` down to `size`."
+      ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected approach does not correctly model interacting indivisible choices under a capacity constraint.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.dp.sequence_resource",
-              "dsa.dp.state_transition"
-            ],
-            "node_id": "domain-8-dp-sequence-resource",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.dp.resource",
-            "min_scaffold_level": 2
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -2475,43 +2475,81 @@
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 0,
+        "scaffold_level": 1,
         "family_id": "dsa.dp.resource",
         "transfer_group_id": "reused_subproblem_state",
         "surface_context": "build_cache_optimization",
         "challenge_group_id": "d8-dp-01"
       },
-      "choice_feedback": {
-        "dp": "Correct: item index plus remaining capacity captures the reusable future subproblem.",
-        "greedy": "Highest value or ratio first is not generally optimal for indivisible 0/1 choices.",
-        "sort": "Sorting alone does not resolve interacting capacity choices.",
-        "bfs": "Unweighted graph distance is not the optimization structure."
-      },
+      "choice_feedback": {},
       "interaction": {
-        "type": "multiple_choice",
-        "choices": [
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "knapsack_max_value",
+        "starter_code": "def knapsack_max_value(sizes, values, capacity):\n    dp = [0] * (capacity + 1)\n\n    for size, value in zip(sizes, values):\n        # Update capacities in the direction that prevents reusing this item.\n        pass\n\n    return dp[capacity]\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
           {
-            "id": "dp",
-            "label": "Dynamic programming over `(artifact_index, remaining_capacity)`"
+            "type": "call",
+            "args": [
+              [
+                5,
+                5,
+                10
+              ],
+              [
+                9,
+                9,
+                10
+              ],
+              10
+            ],
+            "expected": 18
           },
           {
-            "id": "greedy",
-            "label": "Always take the highest-saving artifact that still fits"
+            "type": "call",
+            "args": [
+              [
+                2,
+                3,
+                4
+              ],
+              [
+                4,
+                5,
+                7
+              ],
+              5
+            ],
+            "expected": 9
           },
           {
-            "id": "sort",
-            "label": "Sort by artifact name and take a prefix"
+            "type": "call",
+            "args": [
+              [],
+              [],
+              10
+            ],
+            "expected": 0
           },
           {
-            "id": "bfs",
-            "label": "Run BFS over artifact IDs without modeling capacity"
+            "type": "call",
+            "args": [
+              [
+                6
+              ],
+              [
+                20
+              ],
+              5
+            ],
+            "expected": 0
           }
         ]
       },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "dp"
-      }
+      "instruction": "Write the function, run the tests, then submit."
     }
   ]
 }
