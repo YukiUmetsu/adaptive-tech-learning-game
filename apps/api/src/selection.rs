@@ -161,6 +161,9 @@ pub const fn target_len(mode: QuizMode) -> usize {
         QuizMode::TaskPractice => 0,
         QuizMode::RecommendedPractice => RECOMMENDED_PRACTICE_LEN,
         QuizMode::SectionQuiz => SECTION_QUIZ_LEN,
+        // A challenge is composed from its authored definition, never by the
+        // adaptive selector.
+        QuizMode::Challenge => 0,
     }
 }
 
@@ -658,6 +661,9 @@ pub fn select(
         // Recommended practice is anchored on a specific question and built by
         // `recommended_practice`, not by the general selector.
         QuizMode::RecommendedPractice => Vec::new(),
+        // A challenge is composed from its authored definition by the challenge
+        // service, not by the general selector.
+        QuizMode::Challenge => Vec::new(),
     }
 }
 

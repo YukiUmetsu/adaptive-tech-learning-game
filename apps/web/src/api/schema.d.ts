@@ -389,6 +389,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tracks/{track_id}/challenges/{challenge_id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Starts an authored multi-stage challenge as one mission.
+         * @description The server resolves the authored definition, enforces authored
+         *     prerequisites, freezes the referenced content, and composes the ordered
+         *     mission itself. The client never supplies question ids. Requires an
+         *     authenticated account.
+         */
+        post: operations["start_challenge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/tracks/{track_id}/daily-mission": {
         parameters: {
             query?: never;
@@ -846,6 +869,84 @@ export interface components {
             exam_code: string;
             /** @description Version identifier. */
             id: string;
+        };
+        /**
+         * @description The kind of activity an authored challenge stage runs.
+         * @enum {string}
+         */
+        ChallengeStageKind: "question" | "learning_node";
+        /**
+         * @description One learner-facing challenge stage.
+         *
+         *     References existing content by stable id. It never carries a canonical
+         *     answer; question content ships through the mission's own question payloads.
+         */
+        ChallengeStageView: {
+            /** @description Domain that owns the referenced activity, when known. */
+            domain_id?: string | null;
+            /** @description Stable stage identifier. */
+            id: string;
+            /** @description Activity kind. */
+            kind: components["schemas"]["ChallengeStageKind"];
+            /** @description Referenced knowledge node id, for learning-node stages. */
+            node_id?: string | null;
+            /**
+             * Format: int32
+             * @description 1-based presentation order.
+             */
+            order: number;
+            /** @description Referenced question id, for question stages. */
+            question_id?: string | null;
+        };
+        /** @description Request to start an authored multi-stage challenge. */
+        ChallengeStartRequest: {
+            /**
+             * Format: uuid
+             * @description Device/install context. Ownership always comes from the authenticated
+             *     user; this value is never used as an authorization proof.
+             */
+            device_id?: string | null;
+            /**
+             * @description Raw Knowledge Map discovery progress for the track, if available.
+             *
+             *     Used only to check authored challenge prerequisites; it is never learning
+             *     evidence.
+             */
+            discovery?: components["schemas"]["DomainDiscoveryInput"][];
+        };
+        /** @description Compact challenge summary for the aggregate track map. */
+        ChallengeSummaryDto: {
+            /** @description Optional concise scenario/brief. */
+            description?: string | null;
+            /**
+             * Format: int32
+             * @description Rough duration estimate in minutes.
+             */
+            estimated_minutes: number;
+            /** @description Stable challenge identifier. */
+            id: string;
+            /** @description Nodes that must be unlocked before the challenge is available. */
+            prerequisite_node_ids: string[];
+            /** @description Number of authored stages. */
+            stage_count: number;
+            /** @description Learner-facing title. */
+            title: string;
+        };
+        /** @description A learner-facing authored challenge. */
+        ChallengeView: {
+            /** @description Optional concise scenario/brief shown above every stage. */
+            description?: string | null;
+            /**
+             * Format: int32
+             * @description Rough duration estimate in minutes.
+             */
+            estimated_minutes: number;
+            /** @description Stable challenge identifier. */
+            id: string;
+            /** @description Ordered stages. */
+            stages: components["schemas"]["ChallengeStageView"][];
+            /** @description Learner-facing title. */
+            title: string;
         };
         /** @description A selectable item or category. */
         Choice: {
@@ -1724,6 +1825,7 @@ export interface components {
             certification_id: string;
             /** @description Certification version identifier. */
             certification_version: string;
+            challenge?: null | components["schemas"]["ChallengeView"];
             /** @description Immutable content version. */
             content_version: string;
             /**
@@ -2228,7 +2330,7 @@ export interface components {
          *     section quiz that concludes a learning module.
          * @enum {string}
          */
-        QuizMode: "quick_adaptive" | "domain_quiz" | "full_practice" | "task_practice" | "recommended_practice" | "section_quiz";
+        QuizMode: "quick_adaptive" | "domain_quiz" | "full_practice" | "task_practice" | "recommended_practice" | "section_quiz" | "challenge";
         /** @description A structured, explainable recommendation. */
         Recommendation: {
             /** @description Action to take. */
@@ -2828,6 +2930,13 @@ export interface components {
          *     no scored answers and no learner state.
          */
         TrackMapResponse: {
+            /**
+             * @description Authored challenges for this track, in embedded order.
+             *
+             *     Compact summaries so the hub can list them without a request per
+             *     challenge; the full stage list arrives with the issued mission.
+             */
+            challenges: components["schemas"]["ChallengeSummaryDto"][];
             /** @description Immutable learning content version. */
             content_version: string;
             /** @description Learning domains with modules, nodes, and reveals. */
@@ -3828,6 +3937,71 @@ export interface operations {
             };
             /** @description Authentication required */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    start_challenge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Learning track identifier, for example `ai-python-fluency`. */
+                track_id: string;
+                /** @description Authored challenge identifier, unique within the track. */
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChallengeStartRequest"];
+            };
+        };
+        responses: {
+            /** @description Issued challenge mission */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unknown track or challenge */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Challenge prerequisites are not met */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

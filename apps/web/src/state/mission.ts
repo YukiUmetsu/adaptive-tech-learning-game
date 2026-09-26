@@ -1,5 +1,10 @@
 import { api } from "../api/client";
-import type { CatalogResponse, MissionResponse, QuizMode } from "../api/types";
+import type {
+  CatalogResponse,
+  DomainDiscoveryInput,
+  MissionResponse,
+  QuizMode,
+} from "../api/types";
 import { getDeviceId, saveMission } from "./persistence";
 
 /** Options for issuing a mission. */
@@ -49,6 +54,62 @@ export async function startMission(
   saveMission({
     mission: result.data,
     currentIndex: 0,
+    attempts: [],
+    startedAt: new Date().toISOString(),
+    finished: false,
+  });
+
+  return result.data;
+}
+
+/** Options for starting an authored challenge. */
+export interface StartChallengeOptions {
+  certificationId: string;
+  challengeId: string;
+  /**
+   * Raw Knowledge Map discovery progress, used only to check authored
+   * prerequisites. Never learning evidence.
+   */
+  discovery?: DomainDiscoveryInput[];
+}
+
+/**
+ * Starts an authored multi-stage challenge.
+ *
+ * The server resolves the authored definition, enforces prerequisites, and
+ * composes one mission from its stages; the client never supplies question ids.
+ * The issued mission carries the challenge orchestration so the session can run
+ * and resume locally.
+ */
+export async function startChallenge(
+  options: StartChallengeOptions,
+): Promise<MissionResponse> {
+  const result = await api.POST(
+    "/v1/tracks/{track_id}/challenges/{challenge_id}/start",
+    {
+      params: {
+        path: {
+          track_id: options.certificationId,
+          challenge_id: options.challengeId,
+        },
+      },
+      body: {
+        device_id: getDeviceId(),
+        discovery: options.discovery ?? [],
+      },
+    },
+  );
+
+  if (result.error || !result.data) {
+    throw new Error(
+      `Could not start challenge (HTTP ${result.response.status})`,
+    );
+  }
+
+  saveMission({
+    mission: result.data,
+    currentIndex: 0,
+    stageIndex: 0,
     attempts: [],
     startedAt: new Date().toISOString(),
     finished: false,

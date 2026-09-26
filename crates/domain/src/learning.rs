@@ -424,6 +424,12 @@ pub enum QuizMode {
     RecommendedPractice,
     /// One adaptive question that concludes a learning module (section).
     SectionQuiz,
+    /// An authored multi-stage challenge: one ordered sequence of existing
+    /// learning-node and question activities that share one challenge identity.
+    ///
+    /// The server composes the mission from the authored definition; it never
+    /// uses the adaptive selector to fill it.
+    Challenge,
 }
 
 impl QuizMode {
@@ -436,6 +442,7 @@ impl QuizMode {
             Self::TaskPractice => "task_practice",
             Self::RecommendedPractice => "recommended_practice",
             Self::SectionQuiz => "section_quiz",
+            Self::Challenge => "challenge",
         }
     }
 
@@ -453,6 +460,9 @@ impl QuizMode {
             Self::TaskPractice => 60,
             Self::RecommendedPractice => 60,
             Self::SectionQuiz => 60,
+            // A challenge is a longer authored journey; it gets a longer TTL so
+            // a learner can return and resume it within the same session window.
+            Self::Challenge => 180,
         }
     }
 }
@@ -474,6 +484,7 @@ impl TryFrom<&str> for QuizMode {
             "task_practice" => Ok(Self::TaskPractice),
             "recommended_practice" => Ok(Self::RecommendedPractice),
             "section_quiz" => Ok(Self::SectionQuiz),
+            "challenge" => Ok(Self::Challenge),
             _ => Err(DomainError::invalid("quiz_mode", "unknown quiz mode")),
         }
     }

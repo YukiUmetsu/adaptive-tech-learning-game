@@ -26,7 +26,8 @@ use uuid::Uuid;
 use crate::auth::AuthenticatedUser;
 use crate::dto::{
     AnswerPayload, AnswerRequest, AuxiliaryEventRequest, CalibrationBucketDto, CatalogResponse,
-    CertificationDto, CertificationVersionDto, CompleteMissionResponse, ConceptDto,
+    CertificationDto, CertificationVersionDto, ChallengeStageKind, ChallengeStageView,
+    ChallengeStartRequest, ChallengeSummaryDto, ChallengeView, CompleteMissionResponse, ConceptDto,
     CyberDefenseUpgradeRequest, CyberDefenseUpgradeResponse, DailyItemCompleteRequest,
     DailyItemCompleteResponse, DailyMissionItemDto, DailyMissionItemKind, DailyMissionItemStatus,
     DailyMissionPlanType, DailyMissionRequest, DailyMissionResponse, DailyMissionStatus,
@@ -166,13 +167,34 @@ pub fn track_map(state: &AppState, track_id: &str) -> Result<TrackMapResponse, A
         .filter(|domain| domain.certification_version == track_version)
         .map(learning_domain_response)
         .collect();
+    let challenges = state
+        .content
+        .challenges_for_certification(track_id)
+        .into_iter()
+        .map(challenge_summary)
+        .collect();
 
     Ok(TrackMapResponse {
         track_id: track_id.to_owned(),
         track_version,
         content_version: bundle.version.content_version.clone(),
         domains,
+        challenges,
     })
+}
+
+/// Maps an authored challenge into its compact hub summary.
+fn challenge_summary(
+    challenge: &adaptive_learn_content::ChallengeDefinition,
+) -> ChallengeSummaryDto {
+    ChallengeSummaryDto {
+        id: challenge.id.clone(),
+        title: challenge.title.clone(),
+        description: challenge.description.clone(),
+        estimated_minutes: challenge.estimated_minutes(),
+        stage_count: challenge.stages.len(),
+        prerequisite_node_ids: challenge.prerequisite_node_ids.clone(),
+    }
 }
 
 /// Shared planner inputs assembled from content, learner state, and discovery.
@@ -419,6 +441,7 @@ fn mission_practice_source(mode: QuizMode, has_recommendation: bool) -> &'static
         QuizMode::TaskPractice => "task_practice",
         QuizMode::RecommendedPractice => "recommended_practice",
         QuizMode::SectionQuiz => "section_quiz",
+        QuizMode::Challenge => "challenge",
     }
 }
 
@@ -1899,6 +1922,9 @@ fn mission_response(state: &AppState, stored: MissionInstance) -> MissionRespons
         issued_at: stored.issued_at,
         expires_at: stored.expires_at,
         questions,
+        // Ordinary missions carry no challenge orchestration. Challenge
+        // missions attach it at issuance in `start_challenge`.
+        challenge: None,
     }
 }
 
@@ -2077,6 +2103,144 @@ async fn build_question_set(
                 .map(|question| question.task_id.clone());
             Ok((Some(domain_id), task_id, Some(module_id), ids))
         }
+        // A challenge is composed from its authored definition by
+        // `start_challenge`, not by the generic mission-issuance path.
+        QuizMode::Challenge => Err(ApiError::BadRequest(
+            "challenges must be started from their track".to_owned(),
+        )),
+    }
+}
+
+/// Starts an authored multi-stage challenge as one ordinary mission.
+///
+/// The server owns composition: it resolves the authored definition, checks
+/// authored prerequisites against the learner's discovery, freezes the
+/// referenced content version, and issues one mission whose `question_ids` are
+/// the challenge's question stages in order. The client never supplies question
+/// ids and cannot construct a challenge.
+pub async fn start_challenge(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    track_id: &str,
+    challenge_id: &str,
+    request: ChallengeStartRequest,
+) -> Result<MissionResponse, ApiError> {
+    let bundle = state
+        .content
+        .bundle_for_certification(track_id)
+        .ok_or(ApiError::NotFound)?;
+    let challenge = state
+        .content
+        .challenge(track_id, challenge_id)
+        .ok_or(ApiError::NotFound)?;
+    if challenge.certification_version != bundle.version.id {
+        return Err(ApiError::NotFound);
+    }
+
+    // Authored prerequisites reuse existing Knowledge Map unlock semantics.
+    if !challenge.prerequisite_node_ids.is_empty() {
+        let merged =
+            merged_track_discovery(state, user.id, &bundle.version.id, &request.discovery).await;
+        let derived = derive_track_discovery(state, &bundle.version.id, &merged);
+        let unmet = challenge
+            .prerequisite_node_ids
+            .iter()
+            .filter(|node_id| !derived.unlocked_node_ids.contains(*node_id))
+            .count();
+        if unmet > 0 {
+            return Err(ApiError::Conflict(
+                "challenge prerequisites are not met yet".to_owned(),
+            ));
+        }
+    }
+
+    let now = Utc::now();
+    let device_id = request.device_id.unwrap_or_else(Uuid::new_v4);
+    let mission = MissionInstance {
+        id: Uuid::new_v4(),
+        user_id: Some(user.id),
+        device_id,
+        certification_id: bundle.certification.id.clone(),
+        certification_version: bundle.version.id.clone(),
+        content_version: bundle.version.content_version.clone(),
+        mode: QuizMode::Challenge,
+        recommendation_id: None,
+        daily_mission_id: None,
+        daily_item_position: None,
+        domain_id: challenge.domain_id.clone(),
+        task_id: None,
+        module_id: None,
+        question_ids: challenge.ordered_question_ids(),
+        status: MissionStatus::Issued,
+        issued_at: now,
+        expires_at: now + Duration::minutes(QuizMode::Challenge.ttl_minutes()),
+        completed_at: None,
+    };
+    let stored = db::missions::insert(&state.pool, &mission).await?;
+
+    if let Some(device) = request.device_id {
+        if let Err(error) = db::devices::upsert(&state.pool, device, user.id).await {
+            tracing::debug!(error = %error, "could not associate device with user");
+        }
+    }
+
+    // Measurement only; failure never affects the issued challenge.
+    log_predictions_best_effort(state, Some(user), &stored, "challenge", false).await;
+
+    let mut response = mission_response(state, stored);
+    response.challenge = Some(challenge_view(state, challenge));
+    Ok(response)
+}
+
+/// Maps an authored challenge into its learner-facing orchestration view.
+fn challenge_view(
+    state: &AppState,
+    challenge: &adaptive_learn_content::ChallengeDefinition,
+) -> ChallengeView {
+    let version = &challenge.certification_version;
+    let stages = challenge
+        .ordered_stages()
+        .into_iter()
+        .map(|stage| {
+            let (kind, question_id, node_id) = match stage {
+                adaptive_learn_content::ChallengeStage::Question { question_id, .. } => (
+                    ChallengeStageKind::Question,
+                    Some(question_id.clone()),
+                    None,
+                ),
+                adaptive_learn_content::ChallengeStage::LearningNode { node_id, .. } => (
+                    ChallengeStageKind::LearningNode,
+                    None,
+                    Some(node_id.clone()),
+                ),
+            };
+            let domain_id = question_id
+                .as_deref()
+                .and_then(|id| state.content.question(version, id))
+                .map(|question| question.domain_id.clone())
+                .or_else(|| {
+                    node_id
+                        .as_deref()
+                        .and_then(|id| state.content.node_domain_id(version, id))
+                        .map(str::to_owned)
+                });
+            ChallengeStageView {
+                id: stage.id().to_owned(),
+                order: stage.order(),
+                kind,
+                question_id,
+                node_id,
+                domain_id,
+            }
+        })
+        .collect();
+
+    ChallengeView {
+        id: challenge.id.clone(),
+        title: challenge.title.clone(),
+        description: challenge.description.clone(),
+        estimated_minutes: challenge.estimated_minutes(),
+        stages,
     }
 }
 
@@ -4329,5 +4493,54 @@ mod tests {
         assert!(validate_attempt_metadata(1, 0).is_ok());
         assert!(validate_attempt_metadata(0, 0).is_err());
         assert!(validate_attempt_metadata(1, -1).is_err());
+    }
+
+    #[tokio::test]
+    async fn challenge_view_maps_stages_and_domains() {
+        use crate::auth::{Authenticator, DevVerifier};
+        use std::sync::Arc;
+
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .acquire_timeout(std::time::Duration::from_millis(50))
+            .connect_lazy("postgres://app:app@127.0.0.1:1/app")
+            .expect("lazy pool");
+        let content = Arc::new(
+            adaptive_learn_content::ContentRegistry::embedded().expect("embedded content"),
+        );
+        let state = AppState::new(
+            pool,
+            content,
+            Authenticator {
+                verifier: Arc::new(DevVerifier),
+                profile: None,
+            },
+        );
+
+        let challenge = state
+            .content
+            .challenge("ai-python-fluency", "python-fluency-zip-journey")
+            .expect("the embedded sample challenge resolves");
+        let view = challenge_view(&state, challenge);
+
+        assert_eq!(view.id, "python-fluency-zip-journey");
+        assert_eq!(view.stages.len(), 4);
+        assert_eq!(view.stages[0].kind, ChallengeStageKind::Question);
+        assert_eq!(
+            view.stages[0].question_id.as_deref(),
+            Some("py1-zip-behavior-002")
+        );
+        assert_eq!(view.stages[0].domain_id.as_deref(), Some("domain-1"));
+        assert_eq!(view.stages[2].kind, ChallengeStageKind::LearningNode);
+        assert_eq!(
+            view.stages[2].node_id.as_deref(),
+            Some("domain-1-zip_parallel")
+        );
+        assert_eq!(view.stages[2].domain_id.as_deref(), Some("domain-1"));
+        assert!(
+            view.stages
+                .windows(2)
+                .all(|pair| pair[0].order < pair[1].order),
+            "stages must be in authored order"
+        );
     }
 }

@@ -89,6 +89,10 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
             post(routes::sessions::create_study_session),
         )
         .route(
+            "/v1/tracks/{track_id}/challenges/{challenge_id}/start",
+            post(routes::challenges::start_challenge),
+        )
+        .route(
             "/v1/tracks/{track_id}/daily-mission",
             post(routes::daily_missions::get_today_daily_mission),
         )

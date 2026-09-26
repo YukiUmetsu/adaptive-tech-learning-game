@@ -45,6 +45,7 @@ import { loadTrackProgress, signalIndex } from "../state/trackProgress";
 import { refreshWallet } from "../state/wallet";
 import { shortDomainName } from "../state/domainNames";
 import { ANSWER_REWARD_RANGE } from "../state/rewards";
+import ChallengeList from "../components/ChallengeList";
 import DailyMissionRunner from "../components/DailyMissionRunner";
 
 interface Launch {
@@ -887,6 +888,12 @@ export default function CertificationDashboardPage() {
               </ul>
             </section>
           ) : null}
+
+          <ChallengeList
+            trackId={certification.id}
+            trackVersion={trackVersion ?? ""}
+            challenges={trackMap?.challenges ?? []}
+          />
         </section>
       )}
 

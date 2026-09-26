@@ -360,6 +360,107 @@ families, stages, and scaffold floors are server-side only and never sent
 pre-answer. Post-answer feedback stays short — the targeted next activity does
 the deeper repair.
 
+## Multi-stage challenges (Phase 4)
+
+A **challenge** is not a new interaction type. It is an authored, coherent
+ordered sequence of *existing* activities — quiz questions and knowledge nodes —
+that share one challenge identity and represent a larger reasoning journey:
+
+```text
+challenge definition
+        -> ordered stages (question | learning_node)
+        -> existing question / knowledge-node primitives
+        -> one ordinary mission, one runtime
+        -> local resume, normal scoring/sync, normal concept-state updates
+```
+
+Terminology stays strictly separate:
+
+```text
+challenge            != interaction type
+challenge stage      != assessment mode
+challenge stage      != pedagogy stage   (pedagogy lives on the activity)
+challenge completion != mastery
+```
+
+### Authored definition
+
+Challenges are a distinct, opt-in content type (`challenge-v1`) discovered under
+`content/**/challenges/**/*.json`, like learning domains and practice tests.
+Every field is track-agnostic; a stage references existing content by stable id
+and never introduces a subject-specific stage type. The Phase 1
+`challenge_group_id` on a referenced question is the authoring bridge: when
+present it must match the challenge id.
+
+```text
+ChallengeDefinition
+├── id, title, description
+├── certification_id, certification_version, domain_id?
+├── estimated_minutes?            # derived from stage types when absent
+├── prerequisite_node_ids?        # reuse existing node ids
+└── stages[]                      # >= 2, unique ids, contiguous order
+    ├── question      { question_id }
+    └── learning_node { node_id }
+```
+
+Validation is strict and server-side: unique challenge ids per track version,
+unique/non-contiguous stage order rejected, duplicate referenced activities
+rejected, referenced questions/nodes must resolve in the same track version, and
+declared domains/prerequisite nodes must exist. An old track with no challenges
+loads and behaves exactly as before.
+
+### Execution reuses the mission runtime
+
+`POST /v1/tracks/{track_id}/challenges/{challenge_id}/start` resolves the
+definition, enforces authored prerequisites against the learner's discovery,
+freezes the referenced content version, and issues **one** ordinary mission
+whose `question_ids` are the challenge's question stages in order. The client
+never supplies question ids and cannot construct a challenge. The mission
+response carries the learner-safe stage list (`ChallengeView`) so the session
+can run and resume locally.
+
+There is no separate execution engine:
+
+- question stages use the existing local scorer, pending-event outbox, and
+  single `/v1/sync` reconciliation;
+- learning-node stages use the existing Knowledge Map card and local discovery
+  progress, and create no scored evidence;
+- retries, attempt numbering, event ids, stale-content handling, and review are
+  unchanged.
+
+A track-neutral `challenge` quiz mode gives challenge missions a longer TTL. No
+new interaction type is added.
+
+### Local resume
+
+Progress is one ordered stage index persisted with the existing local mission
+state, so `start -> stage 1 -> navigate away -> return -> resume at stage 2`
+works with **no per-stage request**. Question stages keep their own question
+index derived from the stage list, so interleaved node stages never consume a
+question. Multi-device challenge progress remains device-local, which matches
+the current mission model; accepted learning events stay the authoritative
+evidence.
+
+### Bounded adaptation
+
+A challenge is authored as a deterministic sequence; the general adaptive
+selector never fills or reorders it. Phase 2 and Phase 3 still apply *around*
+it: a challenge question is scored normally, produces normal structured errors,
+and its error can drive targeted remediation on the next recommendation or
+session. In-challenge adaptive candidate selection and in-challenge remediation
+insertion are deferred; the authored stage order is preserved.
+
+### Rewards and safety
+
+Per-question rewards are unchanged and there is no challenge completion bonus in
+this phase, so retries cannot farm a new reward. Challenge completion is a
+local/visual milestone, not mastery: concept state still comes only from
+accepted scored evidence. Full Practice and authored fixed practice tests are
+untouched, and Daily Missions remain immutable once generated. The learner-safe
+question boundary is preserved — canonical answers ship only through the
+ordinary study-mission payload, and the challenge view contains only stage
+references.
+
 ## Interaction features
 
 Record:

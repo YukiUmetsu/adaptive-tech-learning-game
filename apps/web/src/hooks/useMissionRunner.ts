@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import type {
   AnswerPayload,
+  ChallengeStageView,
+  ChallengeView,
   FeedbackResponse,
   MissionResponse,
   StudyQuestionView,
@@ -63,8 +65,16 @@ export interface MissionRunner {
   phase: RunnerPhase;
   mission: MissionResponse | null;
   question: StudyQuestionView | null;
+  /** Index of the current question within the mission's question list. */
   currentIndex: number;
+  /** Total steps: question count for ordinary missions, stage count for a challenge. */
   total: number;
+  /** Authored challenge orchestration, when this is a challenge mission. */
+  challenge: ChallengeView | null;
+  /** Current challenge stage, when this is a challenge mission. */
+  currentStage: ChallengeStageView | null;
+  /** Index of the current challenge stage. */
+  stageIndex: number;
   attempts: AttemptRecord[];
   feedback: FeedbackResponse | null;
   lastAnswer: AnswerPayload | null;
@@ -102,7 +112,23 @@ export function useMissionRunner(missionId: string): MissionRunner {
   }));
   const completed = useRef(false);
 
-  const question = progress?.mission.questions[progress.currentIndex] ?? null;
+  // A challenge mission runs one ordered stage list that interleaves question
+  // and learning-node stages. The question list holds only the question stages,
+  // so the current question is derived from the stage index.
+  const challenge = progress?.mission.challenge ?? null;
+  const stages = challenge?.stages ?? null;
+  const stageIndex = progress?.stageIndex ?? 0;
+  const currentStage = stages ? (stages[stageIndex] ?? null) : null;
+  const questionIndex = stages
+    ? questionIndexForStage(stages, stageIndex)
+    : (progress?.currentIndex ?? 0);
+  // Only a question stage has a current question; a learning-node stage has
+  // none, so submission stays disabled.
+  const question =
+    stages && currentStage?.kind !== "question"
+      ? null
+      : (progress?.mission.questions[questionIndex] ?? null);
+  const total = stages ? stages.length : (progress?.mission.questions.length ?? 0);
   const timer = useQuestionTimer(question?.id ?? "none", phase === "answering");
 
   // Beginning meaningful question interaction is a semantic boundary that
@@ -453,6 +479,25 @@ export function useMissionRunner(missionId: string): MissionRunner {
     }
 
     recordStudyActivity("mission_next");
+
+    // A challenge advances one stage at a time, whether the stage was a
+    // question or a learning node.
+    const challengeStages = progress.mission.challenge?.stages;
+    if (challengeStages && challengeStages.length > 0) {
+      const current = progress.stageIndex ?? 0;
+      if (current < challengeStages.length - 1) {
+        persist({ ...progress, stageIndex: current + 1 });
+        setFeedback(null);
+        setLastAnswer(null);
+        setError(null);
+        setPhase("answering");
+        return;
+      }
+      persist({ ...progress, finished: true });
+      setPhase("summary");
+      return;
+    }
+
     if (progress.currentIndex < progress.mission.questions.length - 1) {
       persist({ ...progress, currentIndex: progress.currentIndex + 1 });
       setFeedback(null);
@@ -470,8 +515,11 @@ export function useMissionRunner(missionId: string): MissionRunner {
     phase,
     mission: progress?.mission ?? null,
     question,
-    currentIndex: progress?.currentIndex ?? 0,
-    total: progress?.mission.questions.length ?? 0,
+    currentIndex: questionIndex,
+    total,
+    challenge,
+    currentStage,
+    stageIndex,
     attempts: progress?.attempts ?? [],
     feedback,
     lastAnswer,
@@ -483,6 +531,22 @@ export function useMissionRunner(missionId: string): MissionRunner {
     next,
     sync,
   };
+}
+
+/**
+ * Maps a challenge stage index to its question index.
+ *
+ * The mission's `questions` array contains only question stages, in authored
+ * order, so the current question is the count of question stages before the
+ * current stage.
+ */
+function questionIndexForStage(
+  stages: ChallengeStageView[],
+  stageIndex: number,
+): number {
+  return stages
+    .slice(0, stageIndex)
+    .filter((stage) => stage.kind === "question").length;
 }
 
 /**

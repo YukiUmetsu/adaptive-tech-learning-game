@@ -129,6 +129,83 @@ pub struct IssueMissionRequest {
     pub recommendation_id: Option<Uuid>,
 }
 
+/// Request to start an authored multi-stage challenge.
+#[derive(Debug, Default, Deserialize, ToSchema)]
+pub struct ChallengeStartRequest {
+    /// Device/install context. Ownership always comes from the authenticated
+    /// user; this value is never used as an authorization proof.
+    #[serde(default)]
+    pub device_id: Option<Uuid>,
+    /// Raw Knowledge Map discovery progress for the track, if available.
+    ///
+    /// Used only to check authored challenge prerequisites; it is never learning
+    /// evidence.
+    #[serde(default)]
+    pub discovery: Vec<adaptive_learn_content::DomainDiscoveryInput>,
+}
+
+/// The kind of activity an authored challenge stage runs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ChallengeStageKind {
+    /// An existing quiz question.
+    Question,
+    /// An existing knowledge node (learn/review).
+    LearningNode,
+}
+
+/// One learner-facing challenge stage.
+///
+/// References existing content by stable id. It never carries a canonical
+/// answer; question content ships through the mission's own question payloads.
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct ChallengeStageView {
+    /// Stable stage identifier.
+    pub id: String,
+    /// 1-based presentation order.
+    pub order: u32,
+    /// Activity kind.
+    pub kind: ChallengeStageKind,
+    /// Referenced question id, for question stages.
+    pub question_id: Option<String>,
+    /// Referenced knowledge node id, for learning-node stages.
+    pub node_id: Option<String>,
+    /// Domain that owns the referenced activity, when known.
+    pub domain_id: Option<String>,
+}
+
+/// A learner-facing authored challenge.
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct ChallengeView {
+    /// Stable challenge identifier.
+    pub id: String,
+    /// Learner-facing title.
+    pub title: String,
+    /// Optional concise scenario/brief shown above every stage.
+    pub description: Option<String>,
+    /// Rough duration estimate in minutes.
+    pub estimated_minutes: u32,
+    /// Ordered stages.
+    pub stages: Vec<ChallengeStageView>,
+}
+
+/// Compact challenge summary for the aggregate track map.
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct ChallengeSummaryDto {
+    /// Stable challenge identifier.
+    pub id: String,
+    /// Learner-facing title.
+    pub title: String,
+    /// Optional concise scenario/brief.
+    pub description: Option<String>,
+    /// Rough duration estimate in minutes.
+    pub estimated_minutes: u32,
+    /// Number of authored stages.
+    pub stage_count: usize,
+    /// Nodes that must be unlocked before the challenge is available.
+    pub prerequisite_node_ids: Vec<String>,
+}
+
 /// A server-issued mission with its questions.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct MissionResponse {
@@ -162,6 +239,11 @@ pub struct MissionResponse {
     /// never authoritative. Practice tests keep the answer-key-free
     /// [`QuestionView`].
     pub questions: Vec<StudyQuestionView>,
+    /// Authored challenge orchestration for a challenge mission.
+    ///
+    /// `null` for every ordinary quiz mode. The stage list is server-resolved at
+    /// issuance and drives local, resumable execution.
+    pub challenge: Option<ChallengeView>,
 }
 
 /// A learner's settled Bits balance.
@@ -793,6 +875,11 @@ pub struct TrackMapResponse {
     pub content_version: String,
     /// Learning domains with modules, nodes, and reveals.
     pub domains: Vec<LearningDomainResponse>,
+    /// Authored challenges for this track, in embedded order.
+    ///
+    /// Compact summaries so the hub can list them without a request per
+    /// challenge; the full stage list arrives with the issued mission.
+    pub challenges: Vec<ChallengeSummaryDto>,
 }
 
 /// Account-wide daily study streak.

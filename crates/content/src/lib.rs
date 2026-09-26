@@ -5,6 +5,7 @@ mod embedded {
     include!(concat!(env!("OUT_DIR"), "/embedded_content.rs"));
 }
 
+pub mod challenge;
 pub mod discovery;
 pub mod learning;
 pub mod model;
@@ -30,7 +31,13 @@ pub struct EmbeddedSource {
     pub json: &'static str,
 }
 
-pub use embedded::{EMBEDDED_LEARNING_SOURCES, EMBEDDED_PRACTICE_TEST_SOURCES, EMBEDDED_SOURCES};
+pub use challenge::{
+    CHALLENGE_SCHEMA_VERSION, ChallengeDefinition, ChallengeStage, validate_challenge,
+};
+pub use embedded::{
+    EMBEDDED_CHALLENGE_SOURCES, EMBEDDED_LEARNING_SOURCES, EMBEDDED_PRACTICE_TEST_SOURCES,
+    EMBEDDED_SOURCES,
+};
 pub use learning::*;
 pub use model::*;
 pub use practice_test::{

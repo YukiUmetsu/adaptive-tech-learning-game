@@ -78,6 +78,7 @@
 - Every task's questions must share one `content_version` (`task_content_version_mixed`).
 - **Learning ↔ bundle:** the domain exists in the version; its weight equals the blueprint weight; every node concept id exists; every module task id exists.
 - **Practice test ↔ bundle:** `exam_code` matches the certification; every item `domain_id` exists.
+- **Challenge ↔ bundle/learning:** a challenge's `certification_id`/`certification_version` resolve to a bundle; unique challenge id per track version; every question stage resolves to a question in that version; every learning-node stage and every `prerequisite_node_id` resolves in the learning map; a declared `domain_id` exists; and when a referenced question authors `challenge_group_id`, it equals the challenge id. Challenges with fewer than two stages, duplicate stage ids, or non-contiguous stage order are rejected structurally.
 - No duplicate learning domain (cert + version + domain) or practice-test id.
 - Invalid JSON is reported per file (`invalid_json`, `invalid_learning_json`, `invalid_practice_test_json`); if no bundle parses at all, `no_content`.
 
@@ -480,6 +481,36 @@ it, and the runtime ignores an error code that has no remediation.
       recommendation title) is natural and never exposes an internal code;
 - [ ] the mapping does not reveal the intended approach or answer before
       scoring.
+
+## 4.19 Multi-stage challenge audit (only when authored)
+
+Challenges are optional and opt-in; a track without them is not deficient. These
+checks apply **only** to authored `challenge-v1` definitions.
+
+- [ ] the challenge brief (title + description) is concise and states the
+      scenario without repeating every stage prompt;
+- [ ] every stage teaches or tests something distinct — no redundant
+      near-duplicate questions or repeated activity;
+- [ ] the stage order forms a coherent learning journey (for example
+      recognize → reason → trace → diagnose → construct → transfer); recognize
+      first and transfer last are good defaults, not schema laws;
+- [ ] each stage's referenced activity actually serves that role (check its
+      pedagogy `stage`, assessment mode, and scaffold level);
+- [ ] scaffolding generally fades across stages unless a review stage
+      intentionally raises support;
+- [ ] surface contexts vary where transfer is intended, and the final transfer
+      stage does not leak the family/pattern label in its prompt;
+- [ ] interaction types are varied (no long same-type runs) and the challenge is
+      a reasonable length for one sitting;
+- [ ] every stage prompt is understandable with the challenge brief but also
+      independently answerable (review/testing must not depend on hidden
+      context);
+- [ ] factual claims across the brief and every referenced activity have
+      authoritative sources, and wrong-answer feedback remains accurate;
+- [ ] every referenced question and node exists in the same track version, and
+      any `challenge_group_id` on a referenced question matches the challenge;
+- [ ] the challenge does not copy proprietary interview-question-bank text and
+      contains no answer-revealing metadata in the learner-facing brief.
 
 ---
 

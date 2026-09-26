@@ -1177,6 +1177,103 @@
         ]
       }
     },
+    "/v1/tracks/{track_id}/challenges/{challenge_id}/start": {
+      "post": {
+        "tags": [
+          "challenges"
+        ],
+        "summary": "Starts an authored multi-stage challenge as one mission.",
+        "description": "The server resolves the authored definition, enforces authored\nprerequisites, freezes the referenced content, and composes the ordered\nmission itself. The client never supplies question ids. Requires an\nauthenticated account.",
+        "operationId": "start_challenge",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `ai-python-fluency`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "challenge_id",
+            "in": "path",
+            "description": "Authored challenge identifier, unique within the track.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChallengeStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Issued challenge mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown track or challenge",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Challenge prerequisites are not met",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/tracks/{track_id}/daily-mission": {
       "post": {
         "tags": [
@@ -2580,6 +2677,167 @@
           "id": {
             "type": "string",
             "description": "Version identifier."
+          }
+        }
+      },
+      "ChallengeStageKind": {
+        "type": "string",
+        "description": "The kind of activity an authored challenge stage runs.",
+        "enum": [
+          "question",
+          "learning_node"
+        ]
+      },
+      "ChallengeStageView": {
+        "type": "object",
+        "description": "One learner-facing challenge stage.\n\nReferences existing content by stable id. It never carries a canonical\nanswer; question content ships through the mission's own question payloads.",
+        "required": [
+          "id",
+          "order",
+          "kind"
+        ],
+        "properties": {
+          "domain_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Domain that owns the referenced activity, when known."
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable stage identifier."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ChallengeStageKind",
+            "description": "Activity kind."
+          },
+          "node_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Referenced knowledge node id, for learning-node stages."
+          },
+          "order": {
+            "type": "integer",
+            "format": "int32",
+            "description": "1-based presentation order.",
+            "minimum": 0
+          },
+          "question_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Referenced question id, for question stages."
+          }
+        }
+      },
+      "ChallengeStartRequest": {
+        "type": "object",
+        "description": "Request to start an authored multi-stage challenge.",
+        "properties": {
+          "device_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Device/install context. Ownership always comes from the authenticated\nuser; this value is never used as an authorization proof."
+          },
+          "discovery": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDiscoveryInput"
+            },
+            "description": "Raw Knowledge Map discovery progress for the track, if available.\n\nUsed only to check authored challenge prerequisites; it is never learning\nevidence."
+          }
+        }
+      },
+      "ChallengeSummaryDto": {
+        "type": "object",
+        "description": "Compact challenge summary for the aggregate track map.",
+        "required": [
+          "id",
+          "title",
+          "estimated_minutes",
+          "stage_count",
+          "prerequisite_node_ids"
+        ],
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional concise scenario/brief."
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Rough duration estimate in minutes.",
+            "minimum": 0
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable challenge identifier."
+          },
+          "prerequisite_node_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Nodes that must be unlocked before the challenge is available."
+          },
+          "stage_count": {
+            "type": "integer",
+            "description": "Number of authored stages.",
+            "minimum": 0
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing title."
+          }
+        }
+      },
+      "ChallengeView": {
+        "type": "object",
+        "description": "A learner-facing authored challenge.",
+        "required": [
+          "id",
+          "title",
+          "estimated_minutes",
+          "stages"
+        ],
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional concise scenario/brief shown above every stage."
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Rough duration estimate in minutes.",
+            "minimum": 0
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable challenge identifier."
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChallengeStageView"
+            },
+            "description": "Ordered stages."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing title."
           }
         }
       },
@@ -4704,6 +4962,17 @@
             "type": "string",
             "description": "Certification version identifier."
           },
+          "challenge": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ChallengeView",
+                "description": "Authored challenge orchestration for a challenge mission.\n\n`null` for every ordinary quiz mode. The stage list is server-resolved at\nissuance and drives local, resumable execution."
+              }
+            ]
+          },
           "content_version": {
             "type": "string",
             "description": "Immutable content version."
@@ -5728,7 +5997,8 @@
           "full_practice",
           "task_practice",
           "recommended_practice",
-          "section_quiz"
+          "section_quiz",
+          "challenge"
         ]
       },
       "Recommendation": {
@@ -6873,9 +7143,17 @@
           "track_id",
           "track_version",
           "content_version",
-          "domains"
+          "domains",
+          "challenges"
         ],
         "properties": {
+          "challenges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChallengeSummaryDto"
+            },
+            "description": "Authored challenges for this track, in embedded order.\n\nCompact summaries so the hub can list them without a request per\nchallenge; the full stage list arrives with the issued mission."
+          },
           "content_version": {
             "type": "string",
             "description": "Immutable learning content version."

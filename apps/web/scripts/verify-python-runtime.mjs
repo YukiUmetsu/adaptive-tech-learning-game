@@ -38,6 +38,15 @@ if (!harness) {
   throw new Error("could not extract the Python harness");
 }
 
+const shimSource = readFileSync(
+  join(webRoot, "src", "pythonSandbox", "airflowShim.ts"),
+  "utf8",
+);
+const airflowShim = shimSource.split("String.raw`")[1]?.split("`;")[0];
+if (!airflowShim) {
+  throw new Error("could not extract the Airflow study shim");
+}
+
 const module = await import(
   pathToFileURL(join(runtimeDir, "pyodide.mjs")).href
 );
@@ -50,7 +59,7 @@ const pyodide = await module.loadPyodide({
 async function run(payload) {
   pyodide.globals.set("__verify_payload__", JSON.stringify(payload));
   const raw = await pyodide.runPythonAsync(
-    `${harness}\n_run(__verify_payload__)`,
+    `${harness}\n${airflowShim}\n_run(__verify_payload__)`,
   );
   return JSON.parse(String(raw));
 }
@@ -193,6 +202,95 @@ check(
   "matplotlib loads on a headless backend",
   String(backend).toLowerCase() === "agg",
   String(backend),
+);
+
+// The built-in Airflow study shim imports and builds a DAG with no package
+// load, network access, or PyPI. It is a sandbox built-in, not a wheel.
+const airflowDag = await run({
+  ...limits,
+  source: `
+import airflow
+from airflow import DAG
+from airflow.operators.bash import BashOperator
+from airflow.operators.empty import EmptyOperator
+from airflow.operators.python import PythonOperator
+from airflow.utils.task_group import TaskGroup
+
+
+def build():
+    with DAG("etl", schedule="@daily") as dag:
+        start = EmptyOperator(task_id="start")
+        extract = BashOperator(task_id="extract", bash_command="echo extract")
+        with TaskGroup(group_id="transform"):
+
+            def clean():
+                return "clean"
+
+            transform = PythonOperator(
+                task_id="transform", python_callable=clean
+            )
+        end = EmptyOperator(task_id="end")
+        start >> [extract, transform] >> end
+    return dag.topological_sort()
+`,
+  entrypoint: "build",
+  tests: [
+    {
+      type: "call",
+      args: [],
+      expected: ["start", "extract", "transform", "end"],
+    },
+  ],
+});
+check(
+  "airflow shim builds and orders a DAG",
+  airflowDag.status === "passed",
+  JSON.stringify(airflowDag),
+);
+
+const airflowDecorators = await run({
+  ...limits,
+  source: `
+from airflow.decorators import dag, task
+
+
+@dag(schedule="@daily")
+def pipeline():
+
+    @task
+    def begin():
+        return "begin"
+
+    @task
+    def finish():
+        return "finish"
+
+    begin() >> finish()
+
+
+def task_ids():
+    return pipeline().task_ids
+`,
+  entrypoint: "task_ids",
+  tests: [{ type: "call", args: [], expected: ["begin", "finish"] }],
+});
+check(
+  "airflow @dag/@task decorators build a DAG",
+  airflowDecorators.status === "passed",
+  JSON.stringify(airflowDecorators),
+);
+
+const airflowMarker = await run({
+  ...limits,
+  source:
+    "import airflow\n\ndef info():\n    return [airflow.__study_shim__, airflow.__version__]\n",
+  entrypoint: "info",
+  tests: [{ type: "call", args: [], expected: [true, "study-shim-1"] }],
+});
+check(
+  "airflow shim is marked and versioned",
+  airflowMarker.status === "passed",
+  JSON.stringify(airflowMarker),
 );
 
 // The harness must compare NumPy scalars without breaking JSON serialization.

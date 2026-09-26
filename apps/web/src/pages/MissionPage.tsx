@@ -1,6 +1,7 @@
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import BitsIcon from "../components/BitsIcon";
+import ChallengeRunner from "../components/ChallengeRunner";
 import FeedbackPanel from "../components/FeedbackPanel";
 import InlineText from "../components/InlineText";
 import QuestionCard from "../components/QuestionCard";
@@ -41,7 +42,25 @@ export default function MissionPage() {
     );
   }
 
-  if (runner.phase === "missing" || !runner.mission || !runner.question) {
+  if (runner.phase === "missing" || !runner.mission) {
+    return (
+      <section className="mission-page">
+        <h1>Mission unavailable</h1>
+        <p>This mission is not stored on this device.</p>
+        <p>
+          <Link to="/tracks">Back to learning tracks</Link>
+        </p>
+      </section>
+    );
+  }
+
+  // A challenge orchestrates its own ordered stages, including learning-node
+  // stages that have no question. It owns the header and summary too.
+  if (runner.mission.challenge) {
+    return <ChallengeRunner runner={runner} dailyReturnTo={dailyReturnTo} />;
+  }
+
+  if (!runner.question) {
     return (
       <section className="mission-page">
         <h1>Mission unavailable</h1>
