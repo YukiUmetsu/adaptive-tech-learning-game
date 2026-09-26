@@ -1,0 +1,1240 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "dsa-interview-learning-2026-09-26-v1",
+  "certification_id": "cs-dsa-interview",
+  "certification_version": "dsa-interview-v1",
+  "exam_guide_revision": "Not a certification. Interview-focused DS&A curriculum reviewed 2026-09-26 against MIT 6.006 linked-list and heap material, Open Data Structures linked-list material, and Python deque/heapq documentation.",
+  "domain": {
+    "id": "domain-4",
+    "name": "Linked Lists, Stacks, Queues & Heaps",
+    "weight": 0.12
+  },
+  "learning_design": {
+    "progress_label": "Data Structure Progress",
+    "unlock_rule": "Complete required reveals in order. Every structure is taught from the operation it makes cheap and a real workload before cold transfer.",
+    "mastery_note": "Discovery is not mastery. Learners should choose structures from ordering and update requirements, preserve pointer invariants, and distinguish FIFO/LIFO/priority semantics in unfamiliar scenarios."
+  },
+  "source_refs": [
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 2 notes: Linked List Sequence",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/79a07dc1cb47d76dae2ffedc701e3d2b_MIT6_006S20_lec2.pdf"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Recitation 2: Linked List Sequence",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/c08a3b63dfe5f6f6b32257d35f86ae63_MIT6_006S20_r02.pdf"
+    },
+    {
+      "title": "Open Data Structures — Linked Lists",
+      "url": "https://opendatastructures.org/newhtml/ods/latex/linkedlists.html"
+    },
+    {
+      "title": "Python documentation — collections.deque",
+      "url": "https://docs.python.org/3/library/collections.html#collections.deque"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 8: Binary Heaps",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/40d4851e550507ca14dc778b9b2266cc_MIT6_006S20_lec8.pdf"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Recitation 8: Priority Queues",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/701c2f339890cbf9c0c2a3495d007f26_MIT6_006S20_r08.pdf"
+    },
+    {
+      "title": "Python documentation — heapq",
+      "url": "https://docs.python.org/3/library/heapq.html"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "sentinel",
+      "definition": "A non-data node used to simplify boundary cases such as insertion or deletion at the logical head."
+    },
+    {
+      "term": "LIFO",
+      "definition": "Last in, first out: the most recently added unresolved item is removed first."
+    },
+    {
+      "term": "FIFO",
+      "definition": "First in, first out: the oldest waiting item is removed first."
+    },
+    {
+      "term": "priority queue",
+      "definition": "A collection ordered by priority rather than arrival order."
+    },
+    {
+      "term": "frontier",
+      "definition": "The small set of current candidates that can produce the next answer."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "4.1",
+      "4.2",
+      "4.3"
+    ],
+    "skill_ids": [
+      "4.1.01",
+      "4.1.02",
+      "4.1.03",
+      "4.2.01",
+      "4.2.02",
+      "4.2.03",
+      "4.3.01",
+      "4.3.02",
+      "4.3.03"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 31
+  },
+  "authoring_notes": "Domain 4 teaches data structures by workload semantics: reference rewiring, nested-vs-arrival ordering, and repeated priority selection. Real uses include linked free lists/work queues, parser scopes, FIFO job buffers, telemetry next-greater analysis, event scheduling, top-K observability, and merging sorted log streams.",
+  "modules": [
+    {
+      "id": "domain-4-module-1-linked",
+      "title": "Manipulate linked references safely",
+      "order": 1,
+      "task_ids": [
+        "4.1"
+      ],
+      "skill_ids": [
+        "4.1.01",
+        "4.1.02",
+        "4.1.03"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-4-linked-rewire",
+          "title": "Rewire references without losing the rest of the chain",
+          "concept_ids": [
+            "dsa.linked.rewire"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT MAKES A LINKED LIST DIFFERENT?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Each node stores an item and a reference to the next node rather than relying on contiguous array positions. Insertions and removals can be local pointer changes once the relevant node or predecessor is known.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "node-next",
+                      "text": "reference to the next node",
+                      "required": true
+                    },
+                    {
+                      "id": "local",
+                      "text": "local pointer changes",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: REMOVE AN ITEM FROM A LINKED FREE LIST",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Systems code sometimes keeps reusable objects in linked free lists. If `prev.next` points to the node being removed, reconnecting `prev.next` to `node.next` removes that node without shifting every later item.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "reconnect",
+                      "text": "reconnecting `prev.next` to `node.next`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "code",
+              "kind": "mental_model",
+              "label": "REMOVE AFTER A KNOWN PREDECESSOR",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "unlink.py",
+                "language": "python",
+                "code": "def remove_after(prev):\n    victim = prev.next\n    if victim is None:\n        return None\n    prev.next = victim.next\n    victim.next = None\n    return victim\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "save-victim",
+                    "anchor": {
+                      "line": 2,
+                      "text": "victim = prev.next",
+                      "occurrence": 1
+                    },
+                    "title": "Keep the node reference",
+                    "explanation": "Save the node being removed before changing the predecessor link.",
+                    "required": true
+                  },
+                  {
+                    "id": "bridge",
+                    "anchor": {
+                      "line": 5,
+                      "text": "prev.next = victim.next",
+                      "occurrence": 1
+                    },
+                    "title": "Bridge around the node",
+                    "explanation": "The predecessor now points directly to the removed node's successor.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "tradeoff",
+              "kind": "not_this",
+              "label": "LINKED DOES NOT MEAN FAST RANDOM ACCESS",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Linked lists make some local updates cheap, but reaching the i-th node still requires walking through earlier nodes. Choose the structure from the operations the workload needs.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "walk",
+                      "text": "requires walking through earlier nodes",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2 notes: Linked List Sequence",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/79a07dc1cb47d76dae2ffedc701e3d2b_MIT6_006S20_lec2.pdf"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Recitation 2: Linked List Sequence",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/c08a3b63dfe5f6f6b32257d35f86ae63_MIT6_006S20_r02.pdf"
+            },
+            {
+              "title": "Open Data Structures — Linked Lists",
+              "url": "https://opendatastructures.org/newhtml/ods/latex/linkedlists.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "node",
+              "definition": "A container holding an item plus one or more references to other nodes."
+            },
+            {
+              "term": "predecessor",
+              "definition": "The node immediately before another node in a linked sequence."
+            }
+          ]
+        },
+        {
+          "id": "domain-4-linked-sentinel",
+          "title": "Use a sentinel to remove head special cases",
+          "concept_ids": [
+            "dsa.linked.sentinel"
+          ],
+          "prerequisite_node_ids": [
+            "domain-4-linked-rewire"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHY USE A DUMMY HEAD?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A sentinel node is not part of the logical data. It gives the real first node a predecessor, so deleting or inserting at the logical head can use the same pointer-update shape as an interior operation.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "not-data",
+                      "text": "not part of the logical data",
+                      "required": true
+                    },
+                    {
+                      "id": "same-shape",
+                      "text": "same pointer-update shape",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: FILTER A LINKED WORK QUEUE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "When removing selected jobs from a singly linked work queue, a dummy head lets the loop always update `prev.next`, including when the first real job must be removed. That reduces branches around head replacement.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "always",
+                      "text": "always update `prev.next`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "code",
+              "kind": "mental_model",
+              "label": "ONE REMOVAL SHAPE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "remove_value.py",
+                "language": "python",
+                "code": "dummy = Node(None, head)\nprev = dummy\ncur = head\nwhile cur:\n    if should_remove(cur):\n        prev.next = cur.next\n    else:\n        prev = cur\n    cur = cur.next\nhead = dummy.next\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "dummy",
+                    "anchor": {
+                      "line": 1,
+                      "text": "dummy = Node(None, head)",
+                      "occurrence": 1
+                    },
+                    "title": "Artificial predecessor",
+                    "explanation": "Even the original head now has a predecessor.",
+                    "required": true
+                  },
+                  {
+                    "id": "return-head",
+                    "anchor": {
+                      "line": 10,
+                      "text": "head = dummy.next",
+                      "occurrence": 1
+                    },
+                    "title": "Recover the logical head",
+                    "explanation": "The first real node may have changed during filtering.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Recitation 2: Linked List Sequence",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/c08a3b63dfe5f6f6b32257d35f86ae63_MIT6_006S20_r02.pdf"
+            },
+            {
+              "title": "Open Data Structures — Linked Lists",
+              "url": "https://opendatastructures.org/newhtml/ods/latex/linkedlists.html"
+            }
+          ]
+        },
+        {
+          "id": "domain-4-linked-reverse",
+          "title": "Reverse a chain without losing the unprocessed suffix",
+          "concept_ids": [
+            "dsa.linked.reverse"
+          ],
+          "prerequisite_node_ids": [
+            "domain-4-linked-rewire"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "THE THREE REFERENCES YOU NEED",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "At each step, `prev` is the already-reversed prefix, `cur` is the node being moved, and `next_node` preserves the unprocessed suffix before `cur.next` is overwritten.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "prev",
+                      "text": "`prev` is the already-reversed prefix",
+                      "required": true
+                    },
+                    {
+                      "id": "next",
+                      "text": "`next_node` preserves the unprocessed suffix",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: RESTORE ARRIVAL ORDER AFTER PREPENDING A BATCH",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A batch may be accumulated by repeatedly prepending nodes because front insertion is cheap. If the batch later needs original arrival order, reversing the singly linked chain once restores that order without copying every payload into another container.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "prepend",
+                      "text": "repeatedly prepending nodes",
+                      "required": true
+                    },
+                    {
+                      "id": "restore",
+                      "text": "reversing the singly linked chain once restores that order",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "code",
+              "kind": "mental_model",
+              "label": "SAVE → REWIRE → ADVANCE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "reverse.py",
+                "language": "python",
+                "code": "prev = None\ncur = head\nwhile cur:\n    next_node = cur.next\n    cur.next = prev\n    prev = cur\n    cur = next_node\nhead = prev\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "save",
+                    "anchor": {
+                      "line": 4,
+                      "text": "next_node = cur.next",
+                      "occurrence": 1
+                    },
+                    "title": "Preserve the suffix first",
+                    "explanation": "After the next line, the original forward link is gone.",
+                    "required": true
+                  },
+                  {
+                    "id": "rewire",
+                    "anchor": {
+                      "line": 5,
+                      "text": "cur.next = prev",
+                      "occurrence": 1
+                    },
+                    "title": "Move current into reversed prefix",
+                    "explanation": "Current now points backward toward the prefix already processed.",
+                    "required": true
+                  },
+                  {
+                    "id": "advance",
+                    "anchor": {
+                      "line": 7,
+                      "text": "cur = next_node",
+                      "occurrence": 1
+                    },
+                    "title": "Continue with preserved suffix",
+                    "explanation": "The saved reference is what keeps the unprocessed nodes reachable.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2 notes: Linked List Sequence",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/79a07dc1cb47d76dae2ffedc701e3d2b_MIT6_006S20_lec2.pdf"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Recitation 2: Linked List Sequence",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/c08a3b63dfe5f6f6b32257d35f86ae63_MIT6_006S20_r02.pdf"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-4-module-2-stack-queue",
+      "title": "Choose stack or queue order semantics",
+      "order": 2,
+      "task_ids": [
+        "4.2"
+      ],
+      "skill_ids": [
+        "4.2.01",
+        "4.2.02",
+        "4.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-4-module-1-linked"
+      ],
+      "nodes": [
+        {
+          "id": "domain-4-stack-lifo",
+          "title": "Use a stack when the newest unresolved item closes first",
+          "concept_ids": [
+            "dsa.stack.lifo"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.48
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT DOES LIFO REPRESENT?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A stack removes the most recently added unresolved item first. That matches nested structure because the innermost unfinished context must close before its outer context.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "recent",
+                      "text": "most recently added unresolved item",
+                      "required": true
+                    },
+                    {
+                      "id": "nested",
+                      "text": "innermost unfinished context",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: VALIDATE NESTED CONFIGURATION DELIMITERS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A parser can push each opening delimiter or scope marker. When a closing delimiter arrives, it must match the newest unmatched opening delimiter at the top of the stack.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "newest",
+                      "text": "newest unmatched opening delimiter",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "comparison",
+              "kind": "not_this",
+              "label": "STACK VS QUEUE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Stack",
+                    "items": [
+                      "Newest unresolved item first",
+                      "Nested scopes / undo / call history",
+                      "Push and pop at one end"
+                    ]
+                  },
+                  {
+                    "title": "Queue",
+                    "items": [
+                      "Oldest waiting item first",
+                      "Arrival-order work processing",
+                      "Append at one end, remove at the other"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Open Data Structures — Linked Lists",
+              "url": "https://opendatastructures.org/newhtml/ods/latex/linkedlists.html"
+            },
+            {
+              "title": "Python documentation — collections.deque",
+              "url": "https://docs.python.org/3/library/collections.html#collections.deque"
+            }
+          ]
+        },
+        {
+          "id": "domain-4-queue-fifo",
+          "title": "Use a queue when arrival order should control service order",
+          "concept_ids": [
+            "dsa.queue.fifo"
+          ],
+          "prerequisite_node_ids": [
+            "domain-4-stack-lifo"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.48
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT DOES FIFO REPRESENT?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A queue removes the oldest enqueued item first. It is the natural model when waiting items should be processed in arrival order rather than newest-first or highest-priority-first.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "oldest",
+                      "text": "oldest enqueued item first",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: SIMPLE WORK DISPATCH BUFFER",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "work_queue.py",
+                "language": "python",
+                "code": "from collections import deque\npending = deque()\npending.append(job_a)\npending.append(job_b)\nnext_job = pending.popleft()\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "append",
+                    "anchor": {
+                      "line": 3,
+                      "text": "pending.append(job_a)",
+                      "occurrence": 1
+                    },
+                    "title": "Jobs join at the back",
+                    "explanation": "New arrivals do not jump ahead of already waiting jobs.",
+                    "required": true
+                  },
+                  {
+                    "id": "popleft",
+                    "anchor": {
+                      "line": 5,
+                      "text": "pending.popleft()",
+                      "occurrence": 1
+                    },
+                    "title": "Oldest job leaves first",
+                    "explanation": "This is the FIFO operation.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "implementation",
+              "kind": "not_this",
+              "label": "DON'T USE THE WRONG END OF A DYNAMIC ARRAY",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "In Python, repeatedly removing index 0 from a list shifts later elements. `collections.deque` supports efficient appends and pops from either side and is the appropriate general queue primitive.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "deque",
+                      "text": "`collections.deque`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Python documentation — collections.deque",
+              "url": "https://docs.python.org/3/library/collections.html#collections.deque"
+            },
+            {
+              "title": "Open Data Structures — Linked Lists",
+              "url": "https://opendatastructures.org/newhtml/ods/latex/linkedlists.html"
+            }
+          ]
+        },
+        {
+          "id": "domain-4-monotonic-stack",
+          "title": "Keep only unresolved candidates in a monotonic stack",
+          "concept_ids": [
+            "dsa.stack.monotonic"
+          ],
+          "prerequisite_node_ids": [
+            "domain-4-stack-lifo"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.48
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT DOES A MONOTONIC STACK REMOVE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Instead of rescanning earlier items to find the next greater or smaller value, keep unresolved candidates in monotonic order. A new value can resolve and pop multiple older candidates that it dominates.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "unresolved",
+                      "text": "unresolved candidates",
+                      "required": true
+                    },
+                    {
+                      "id": "resolve",
+                      "text": "resolve and pop multiple older candidates",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: FIRST LATER CAPACITY ABOVE EACH READING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For each telemetry reading, suppose you need the first later reading that exceeds it. Keep indices whose answer is still unknown; when a larger reading arrives, it resolves every smaller reading exposed at the stack top.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "unknown",
+                      "text": "answer is still unknown",
+                      "required": true
+                    },
+                    {
+                      "id": "larger",
+                      "text": "larger reading arrives",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "code",
+              "kind": "mental_model",
+              "label": "NEXT GREATER FRONTIER",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "next_greater.py",
+                "language": "python",
+                "code": "stack = []\nanswer = [-1] * len(values)\nfor i, value in enumerate(values):\n    while stack and values[stack[-1]] < value:\n        j = stack.pop()\n        answer[j] = i\n    stack.append(i)\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "resolve",
+                    "anchor": {
+                      "line": 4,
+                      "text": "values[stack[-1]] < value",
+                      "occurrence": 1
+                    },
+                    "title": "Current value resolves dominated candidates",
+                    "explanation": "Because those candidates have not seen a greater value earlier, the current index is their first valid answer.",
+                    "required": true
+                  },
+                  {
+                    "id": "once",
+                    "anchor": {
+                      "line": 5,
+                      "text": "j = stack.pop()",
+                      "occurrence": 1
+                    },
+                    "title": "Each index leaves once",
+                    "explanation": "Each index is pushed once and popped at most once, giving linear total stack operations.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "not-this",
+              "kind": "not_this",
+              "label": "THE STACK IS NOT 'SORTING THE INPUT'",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "The original sequence order stays intact. The stack stores only the unresolved frontier needed to answer a directional nearest/next relationship.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "frontier",
+                      "text": "unresolved frontier",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-4-module-3-heaps",
+      "title": "Select the next priority item efficiently",
+      "order": 3,
+      "task_ids": [
+        "4.3"
+      ],
+      "skill_ids": [
+        "4.3.01",
+        "4.3.02",
+        "4.3.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-4-module-2-stack-queue"
+      ],
+      "nodes": [
+        {
+          "id": "domain-4-heap-invariant",
+          "title": "Use a heap when you repeatedly need the next priority item",
+          "concept_ids": [
+            "dsa.heap.invariant"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.82
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT DOES A HEAP GUARANTEE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A heap is partially ordered, not fully sorted. In a min-heap, every parent is no greater than its children, so the smallest item is always at the root. Insert/pop operations repair that invariant along a logarithmic-height path.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "partial",
+                      "text": "partially ordered, not fully sorted",
+                      "required": true
+                    },
+                    {
+                      "id": "root",
+                      "text": "smallest item is always at the root",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: NEXT SCHEDULED EVENT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A discrete-event simulator or scheduler repeatedly inserts future events and removes the event with the earliest scheduled time. A min-priority queue directly supports that repeated 'what is next?' workload.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "next",
+                      "text": "repeated 'what is next?' workload",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "table",
+              "kind": "mental_model",
+              "label": "HEAP VS FULL SORT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "need",
+                    "label": "Need"
+                  },
+                  {
+                    "id": "fit",
+                    "label": "Natural choice"
+                  },
+                  {
+                    "id": "why",
+                    "label": "Why"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "next",
+                    "cells": {
+                      "need": "Repeated insert + extract smallest",
+                      "fit": "Min-heap",
+                      "why": "Root exposes next priority"
+                    }
+                  },
+                  {
+                    "id": "once",
+                    "cells": {
+                      "need": "One final fully sorted list",
+                      "fit": "Sort",
+                      "why": "All relative order is required"
+                    }
+                  },
+                  {
+                    "id": "fifo",
+                    "cells": {
+                      "need": "Arrival order only",
+                      "fit": "Queue",
+                      "why": "Priority comparison is unnecessary"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "need"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 8: Binary Heaps",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/40d4851e550507ca14dc778b9b2266cc_MIT6_006S20_lec8.pdf"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Recitation 8: Priority Queues",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/701c2f339890cbf9c0c2a3495d007f26_MIT6_006S20_r08.pdf"
+            },
+            {
+              "title": "Python documentation — heapq",
+              "url": "https://docs.python.org/3/library/heapq.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "priority queue",
+              "definition": "An interface that repeatedly inserts items and retrieves/removes the item with best priority."
+            },
+            {
+              "term": "heap invariant",
+              "definition": "A parent/child ordering rule that keeps the best-priority item at the root."
+            }
+          ]
+        },
+        {
+          "id": "domain-4-heap-top-k",
+          "title": "Keep only the best K items with a bounded heap",
+          "concept_ids": [
+            "dsa.heap.top_k"
+          ],
+          "prerequisite_node_ids": [
+            "domain-4-heap-invariant"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.82
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHY DOES A SIZE-K HEAP HELP?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "When K is much smaller than n, you do not need to retain or sort every item. For the K largest items, keep a min-heap of the current winners; the root is the smallest winner and therefore the cutoff to beat.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "winners",
+                      "text": "min-heap of the current winners",
+                      "required": true
+                    },
+                    {
+                      "id": "cutoff",
+                      "text": "cutoff to beat",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: TOP 100 HOTTEST ERROR KEYS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "After counts are computed, an observability pipeline may need only the 100 highest-count keys from millions of keys. A bounded heap keeps the current top 100 without fully sorting every key.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "top100",
+                      "text": "only the 100 highest-count keys",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "code",
+              "kind": "mental_model",
+              "label": "CURRENT CUTOFF AT THE ROOT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "top_k.py",
+                "language": "python",
+                "code": "heap = []\nfor score, item in items:\n    if len(heap) < k:\n        heappush(heap, (score, item))\n    elif score > heap[0][0]:\n        heapreplace(heap, (score, item))\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "fill",
+                    "anchor": {
+                      "line": 3,
+                      "text": "len(heap) < k",
+                      "occurrence": 1
+                    },
+                    "title": "Fill the winner set first",
+                    "explanation": "Before k winners exist, every item belongs provisionally.",
+                    "required": true
+                  },
+                  {
+                    "id": "cutoff",
+                    "anchor": {
+                      "line": 5,
+                      "text": "score > heap[0][0]",
+                      "occurrence": 1
+                    },
+                    "title": "Compare against the weakest winner",
+                    "explanation": "In a min-heap of the largest k values, the root is exactly the current cutoff.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when-sort",
+              "kind": "not_this",
+              "label": "WHEN FULL SORTING MAY BE SIMPLER",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "If you need almost every item in final sorted order, or K is close to n, a full sort may be simpler and competitive. The heap is most compelling when K is small relative to the stream.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "small-k",
+                      "text": "K is small relative to the stream",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 8: Binary Heaps",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/40d4851e550507ca14dc778b9b2266cc_MIT6_006S20_lec8.pdf"
+            },
+            {
+              "title": "Python documentation — heapq",
+              "url": "https://docs.python.org/3/library/heapq.html"
+            }
+          ]
+        },
+        {
+          "id": "domain-4-heap-kway",
+          "title": "Merge sorted streams by keeping only their frontiers",
+          "concept_ids": [
+            "dsa.heap.kway_merge"
+          ],
+          "prerequisite_node_ids": [
+            "domain-4-heap-invariant"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.82
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT IS THE K-WAY MERGE FRONTIER?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If each input stream is already sorted, the next global item must be one of the current first unconsumed items. Keep one frontier item per stream in a min-heap instead of loading and sorting all remaining data.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "frontier",
+                      "text": "current first unconsumed items",
+                      "required": true
+                    },
+                    {
+                      "id": "one-per",
+                      "text": "one frontier item per stream",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: MERGE TIMESTAMPED LOG FILES",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If several log files are individually sorted by timestamp, place each file's current record in a min-heap. Pop the earliest record, emit it, then push the next record from that same file.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "log",
+                      "text": "log files are individually sorted by timestamp",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "sequence",
+              "kind": "mental_model",
+              "label": "MERGE LOOP",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Push the first record from each non-empty sorted stream.",
+                  "Pop the smallest frontier record.",
+                  "Emit that record.",
+                  "Advance only the stream it came from.",
+                  "Push that stream's new frontier record if one exists.",
+                  "Repeat until the heap is empty."
+                ]
+              }
+            },
+            {
+              "id": "memory",
+              "kind": "when",
+              "label": "WHY THIS SCALES TO STREAMS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The heap holds at most one active frontier per input stream, so you do not need every remaining record in memory. Python's `heapq.merge` documents this same sorted-input streaming idea.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "one",
+                      "text": "at most one active frontier per input stream",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Python documentation — heapq",
+              "url": "https://docs.python.org/3/library/heapq.html"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 8: Binary Heaps",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/40d4851e550507ca14dc778b9b2266cc_MIT6_006S20_lec8.pdf"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

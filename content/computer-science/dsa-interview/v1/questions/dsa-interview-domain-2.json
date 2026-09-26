@@ -1,0 +1,2567 @@
+{
+  "certification": {
+    "id": "cs-dsa-interview",
+    "vendor": "Shiden Labs",
+    "name": "Data Structures & Algorithms Interview",
+    "exam_code": "DSA-INTERVIEW",
+    "official_source_url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/",
+    "last_reviewed": "2026-09-26"
+  },
+  "version": {
+    "id": "dsa-interview-v1",
+    "exam_code": "DSA-INTERVIEW",
+    "effective_date": "2026-09-26",
+    "content_version": "dsa-interview-content-2026-09-26-v1",
+    "domains": [
+      {
+        "id": "domain-1",
+        "name": "Interview Reasoning, Complexity & Correctness",
+        "weight": 0.1,
+        "tasks": []
+      },
+      {
+        "id": "domain-2",
+        "name": "Arrays, Strings, Hashing & Prefix State",
+        "weight": 0.18,
+        "tasks": [
+          {
+            "id": "2.1",
+            "name": "Preserve sequence semantics and build reusable one-pass state",
+            "question_ids": [
+              "dsa2-sequence-contract-001",
+              "dsa2-set-conversion-fault-002",
+              "dsa2-single-pass-state-003",
+              "dsa2-state-classify-004",
+              "dsa2-canonical-safe-005",
+              "dsa2-canonical-fault-006",
+              "dsa2-one-pass-order-007",
+              "dsa2-sequence-transfer-008"
+            ]
+          },
+          {
+            "id": "2.2",
+            "name": "Replace repeated search with hash-based state",
+            "question_ids": [
+              "dsa2-set-vs-map-009",
+              "dsa2-idempotency-membership-010",
+              "dsa2-frequency-011",
+              "dsa2-frequency-fault-012",
+              "dsa2-complement-reconstruct-013",
+              "dsa2-complement-why-014",
+              "dsa2-hash-state-transfer-015",
+              "dsa2-membership-frequency-diff-016"
+            ]
+          },
+          {
+            "id": "2.3",
+            "name": "Reuse cumulative prefix state across ranges",
+            "question_ids": [
+              "dsa2-prefix-build-order-017",
+              "dsa2-prefix-values-018",
+              "dsa2-range-formula-019",
+              "dsa2-range-query-transfer-020",
+              "dsa2-prefix-offbyone-021",
+              "dsa2-prefix-hash-reason-022",
+              "dsa2-prefix-zero-init-023",
+              "dsa2-prefix-transfer-024"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "domain-3",
+        "name": "Pointer, Window & Interval Patterns",
+        "weight": 0.14,
+        "tasks": []
+      },
+      {
+        "id": "domain-4",
+        "name": "Linked Lists, Stacks, Queues & Heaps",
+        "weight": 0.12,
+        "tasks": []
+      },
+      {
+        "id": "domain-5",
+        "name": "Binary Search, Sorting & Ordered Reasoning",
+        "weight": 0.1,
+        "tasks": []
+      },
+      {
+        "id": "domain-6",
+        "name": "Trees, Recursion & Tries",
+        "weight": 0.13,
+        "tasks": []
+      },
+      {
+        "id": "domain-7",
+        "name": "Graphs, Connectivity & Shortest Paths",
+        "weight": 0.13,
+        "tasks": []
+      },
+      {
+        "id": "domain-8",
+        "name": "Backtracking, Greedy & Dynamic Programming",
+        "weight": 0.1,
+        "tasks": []
+      }
+    ]
+  },
+  "concepts": [
+    {
+      "id": "dsa.sequence.order_position",
+      "name": "Sequence order and position",
+      "description": "Preserve ordering, duplicates, and index relationships when the output or later reasoning depends on position."
+    },
+    {
+      "id": "dsa.sequence.single_pass_state",
+      "name": "Single-pass sequence state",
+      "description": "Process a sequence once while maintaining only the information needed from the already-processed prefix."
+    },
+    {
+      "id": "dsa.sequence.canonical_key",
+      "name": "Canonical key",
+      "description": "Convert values that are intentionally considered equivalent into the same stable comparison or grouping key without discarding information the contract still needs."
+    },
+    {
+      "id": "dsa.hashing.membership",
+      "name": "Hash membership state",
+      "description": "Maintain a set of previously seen keys to replace repeated membership scans when only presence matters."
+    },
+    {
+      "id": "dsa.hashing.frequency",
+      "name": "Hash frequency state",
+      "description": "Maintain a key-to-count map when the number of occurrences matters rather than only presence."
+    },
+    {
+      "id": "dsa.hashing.complement",
+      "name": "Complement lookup",
+      "description": "For a target relationship such as a + b = target, compute the missing counterpart and look it up in previously maintained state."
+    },
+    {
+      "id": "dsa.prefix.range_sum",
+      "name": "Prefix range aggregation",
+      "description": "Precompute cumulative state so repeated range-sum queries can be answered from two prefix values."
+    },
+    {
+      "id": "dsa.prefix.hash_state",
+      "name": "Prefix state plus hashing",
+      "description": "Use a map or set of earlier prefix states to recognize contiguous intervals whose cumulative difference satisfies a target relation."
+    }
+  ],
+  "questions": [
+    {
+      "id": "dsa2-sequence-contract-001",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "assessment_mode": "recognition",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.38,
+      "prompt": "A log-analysis function must return the index of the FIRST failed request and must preserve duplicate records. Which requirements mean you should keep sequence semantics?",
+      "concepts": [
+        {
+          "concept_id": "dsa.sequence.order_position",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The first matching index depends on order/position, and preserving duplicate records means multiplicity matters. A membership-only set would lose both kinds of information.",
+      "blueprint_skill_ids": [
+        "2.1.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Ask what information a set would discard."
+      ],
+      "error_codes": [
+        {
+          "code": "evidence_missing_relevant",
+          "description": "A sequence requirement was missed.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.sequence.order_position"
+            ],
+            "node_id": "domain-2-sequence-semantics",
+            "preferred_stage": "recognize",
+            "preferred_family_id": "dsa.sequence.preserve_semantics",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "evidence_selected_irrelevant",
+          "description": "A requirement that does not itself require sequence semantics was selected.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.sequence.order_position"
+            ],
+            "node_id": "domain-2-sequence-semantics",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.sequence.preserve_semantics",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+        },
+        {
+          "title": "Python documentation — Set Types: set, frozenset",
+          "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+        }
+      ],
+      "pedagogy": {
+        "stage": "recognize",
+        "scaffold_level": 3,
+        "family_id": "dsa.sequence.preserve_semantics",
+        "transfer_group_id": "sequence_information_contract",
+        "surface_context": "request_log",
+        "challenge_group_id": "d2-sequence-01"
+      },
+      "instruction": "Select all relevant requirements.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          {
+            "id": "first",
+            "label": "Return the first matching index"
+          },
+          {
+            "id": "duplicates",
+            "label": "Preserve duplicate records"
+          },
+          {
+            "id": "membership",
+            "label": "Need fast membership checks later"
+          },
+          {
+            "id": "order",
+            "label": "Input order represents event order"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "first",
+          "duplicates",
+          "order"
+        ]
+      }
+    },
+    {
+      "id": "dsa2-set-conversion-fault-002",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.56,
+      "prompt": "A function must return the first index where a user ID repeats. Flag the step that destroys information required by the output.",
+      "concepts": [
+        {
+          "concept_id": "dsa.sequence.order_position",
+          "weight": 0.8
+        },
+        {
+          "concept_id": "dsa.hashing.membership",
+          "weight": 0.2
+        }
+      ],
+      "explanation": "Converting the whole sequence to a set removes positions and duplicate occurrences. A set can still be used incrementally while scanning, but replacing the input sequence with a set breaks the output contract.",
+      "blueprint_skill_ids": [
+        "2.1.01"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "The output is an index, so ask which step still preserves original positions."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The information-destroying conversion was not identified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.sequence.order_position"
+            ],
+            "node_id": "domain-2-sequence-semantics",
+            "preferred_stage": "diagnose",
+            "preferred_family_id": "dsa.sequence.preserve_semantics",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A sequence-preserving step was incorrectly flagged.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.sequence.order_position"
+            ],
+            "node_id": "domain-2-sequence-semantics",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.sequence.preserve_semantics",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+        },
+        {
+          "title": "Python documentation — Set Types: set, frozenset",
+          "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 2,
+        "family_id": "dsa.sequence.preserve_semantics",
+        "transfer_group_id": "sequence_information_contract",
+        "surface_context": "duplicate_user_ids",
+        "challenge_group_id": "d2-sequence-01"
+      },
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "scan",
+            "label": "Scan the IDs left to right"
+          },
+          {
+            "id": "seen",
+            "label": "Maintain a separate `seen` set"
+          },
+          {
+            "id": "replace",
+            "label": "Replace the input list with `set(user_ids)` before scanning"
+          },
+          {
+            "id": "return",
+            "label": "Return the current index when its ID is already in `seen`"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "replace"
+        ]
+      }
+    },
+    {
+      "id": "dsa2-single-pass-state-003",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.47,
+      "prompt": "A telemetry file should be rejected if any timestamp is smaller than the immediately previous timestamp. What is the smallest useful state for a one-pass check?",
+      "concepts": [
+        {
+          "concept_id": "dsa.sequence.single_pass_state",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Only the immediately previous timestamp is needed to check the next record. Storing or rescanning the entire processed prefix adds state/work that the property does not require.",
+      "blueprint_skill_ids": [
+        "2.1.02"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "The rule compares each record with exactly one earlier record."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected state stores the wrong information or more information than needed.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.sequence.single_pass_state"
+            ],
+            "node_id": "domain-2-single-pass-state",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.sequence.processed_prefix_state",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.sequence.processed_prefix_state",
+        "transfer_group_id": "minimal_prefix_state",
+        "surface_context": "telemetry_validation"
+      },
+      "choice_feedback": {
+        "prev": "Correct: one previous timestamp is enough.",
+        "all": "The whole prefix contains more information than the rule needs.",
+        "set": "Membership state does not preserve the previous timestamp relationship.",
+        "sorted": "Sorting would hide the ordering violation you are supposed to detect."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "prev",
+            "label": "The previous timestamp"
+          },
+          {
+            "id": "all",
+            "label": "A copy of every prior timestamp"
+          },
+          {
+            "id": "set",
+            "label": "A set of all prior timestamps"
+          },
+          {
+            "id": "sorted",
+            "label": "A sorted copy of all timestamps"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "prev"
+      }
+    },
+    {
+      "id": "dsa2-state-classify-004",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.5,
+      "prompt": "Classify each one-pass requirement by the minimum state it naturally needs.",
+      "concepts": [
+        {
+          "concept_id": "dsa.sequence.single_pass_state",
+          "weight": 0.65
+        },
+        {
+          "concept_id": "dsa.hashing.membership",
+          "weight": 0.35
+        }
+      ],
+      "explanation": "Different sequence properties need different summaries: adjacency needs the previous item, best-so-far needs one aggregate, and repeated membership needs a set of seen keys.",
+      "blueprint_skill_ids": [
+        "2.1.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Choose the smallest state that can answer the next step's question."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one requirement was matched to unsuitable state.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.sequence.single_pass_state"
+            ],
+            "node_id": "domain-2-single-pass-state",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.sequence.processed_prefix_state",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one requirement was not classified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.sequence.single_pass_state"
+            ],
+            "node_id": "domain-2-single-pass-state",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.sequence.processed_prefix_state",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "differentiate",
+        "scaffold_level": 3,
+        "family_id": "dsa.sequence.processed_prefix_state",
+        "transfer_group_id": "minimal_prefix_state",
+        "surface_context": "stream_processing"
+      },
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "adjacent",
+            "label": "Detect any decrease from one reading to the next"
+          },
+          {
+            "id": "max",
+            "label": "Return the largest reading seen"
+          },
+          {
+            "id": "repeat",
+            "label": "Detect whether any request ID has appeared before"
+          },
+          {
+            "id": "count",
+            "label": "Count how many records have been processed"
+          }
+        ],
+        "categories": [
+          {
+            "id": "previous",
+            "label": "Previous item"
+          },
+          {
+            "id": "scalar",
+            "label": "One scalar accumulator"
+          },
+          {
+            "id": "set",
+            "label": "Set of seen keys"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "adjacent": "previous",
+          "max": "scalar",
+          "repeat": "set",
+          "count": "scalar"
+        }
+      }
+    },
+    {
+      "id": "dsa2-canonical-safe-005",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "assessment_mode": "recognition",
+      "interaction_type": "multiple_response",
+      "difficulty_prior": 0.53,
+      "prompt": "A system specification explicitly says ASCII feature tags are case-insensitive, but record order and repeated tags are meaningful. Which TWO transformations are safe for comparing individual tag values without changing the record sequence?",
+      "concepts": [
+        {
+          "concept_id": "dsa.sequence.canonical_key",
+          "weight": 0.75
+        },
+        {
+          "concept_id": "dsa.sequence.order_position",
+          "weight": 0.25
+        }
+      ],
+      "explanation": "Lowercasing each individual ASCII tag is allowed by the stated equivalence. Keeping the sequence intact preserves order and duplicates. Sorting or deduplicating the record list would erase information the contract says matters.",
+      "blueprint_skill_ids": [
+        "2.1.01",
+        "2.1.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "The contract permits a change to each tag's case, not a change to list order or multiplicity."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_response_incomplete",
+          "description": "One safe contract-preserving choice was omitted.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.sequence.canonical_key"
+            ],
+            "node_id": "domain-2-canonical-key",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.sequence.canonicalization",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "multiple_response_extra",
+          "description": "Too many transformations were selected.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.sequence.order_position"
+            ],
+            "node_id": "domain-2-sequence-semantics",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.sequence.preserve_semantics",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "multiple_response_incorrect",
+          "description": "A transformation that changes required order or multiplicity was selected.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.sequence.canonical_key",
+              "dsa.sequence.order_position"
+            ],
+            "node_id": "domain-2-canonical-key",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.sequence.canonicalization",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+        },
+        {
+          "title": "Python documentation — Mapping Types: dict",
+          "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+        }
+      ],
+      "pedagogy": {
+        "stage": "differentiate",
+        "scaffold_level": 2,
+        "family_id": "dsa.sequence.canonicalization",
+        "transfer_group_id": "contract_driven_canonicalization",
+        "surface_context": "feature_tags"
+      },
+      "instruction": "Choose TWO.",
+      "interaction": {
+        "type": "multiple_response",
+        "choices": [
+          {
+            "id": "lower",
+            "label": "Lowercase each ASCII tag before comparing it"
+          },
+          {
+            "id": "keep",
+            "label": "Keep the original tag sequence and duplicates"
+          },
+          {
+            "id": "sort",
+            "label": "Sort all tags before processing"
+          },
+          {
+            "id": "dedupe",
+            "label": "Remove repeated tags before processing"
+          }
+        ],
+        "required_selections": 2
+      },
+      "canonical_answer": {
+        "type": "multiple_response",
+        "choice_ids": [
+          "lower",
+          "keep"
+        ]
+      }
+    },
+    {
+      "id": "dsa2-canonical-fault-006",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.6,
+      "prompt": "Two request paths are equivalent only if their segments appear in the same order. Flag the proposed canonicalization that can merge distinct paths.",
+      "concepts": [
+        {
+          "concept_id": "dsa.sequence.canonical_key",
+          "weight": 0.65
+        },
+        {
+          "concept_id": "dsa.sequence.order_position",
+          "weight": 0.35
+        }
+      ],
+      "explanation": "Sorting path segments would make `/api/users/admin` and `/admin/api/users` share a key even though order is part of the path meaning. Canonicalization must preserve every distinction the contract still cares about.",
+      "blueprint_skill_ids": [
+        "2.1.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Ask whether the transformation preserves the meaning of segment order."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The order-destroying canonicalization was not identified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.sequence.canonical_key",
+              "dsa.sequence.order_position"
+            ],
+            "node_id": "domain-2-canonical-key",
+            "preferred_stage": "diagnose",
+            "preferred_family_id": "dsa.sequence.canonicalization",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A contract-preserving step was incorrectly flagged.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.sequence.canonical_key"
+            ],
+            "node_id": "domain-2-canonical-key",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.sequence.canonicalization",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 1,
+        "family_id": "dsa.sequence.canonicalization",
+        "transfer_group_id": "contract_driven_canonicalization",
+        "surface_context": "request_paths"
+      },
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "split",
+            "label": "Split the path into segments"
+          },
+          {
+            "id": "sort",
+            "label": "Sort the segments alphabetically before creating the key"
+          },
+          {
+            "id": "preserve",
+            "label": "Keep segment order in the key"
+          },
+          {
+            "id": "compare",
+            "label": "Compare the resulting keys"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "sort"
+        ]
+      }
+    },
+    {
+      "id": "dsa2-one-pass-order-007",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.49,
+      "prompt": "Order the steps for designing a one-pass sequence solution.",
+      "concepts": [
+        {
+          "concept_id": "dsa.sequence.single_pass_state",
+          "weight": 0.7
+        },
+        {
+          "concept_id": "dsa.sequence.order_position",
+          "weight": 0.3
+        }
+      ],
+      "explanation": "A sound one-pass design starts from the required relationship, identifies the exact fact the next item needs from the processed prefix, initializes that state, then scans while updating it.",
+      "blueprint_skill_ids": [
+        "2.1.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Choose the state only after you know what the next item needs to know."
+      ],
+      "error_codes": [
+        {
+          "code": "ordering_invalid_sequence",
+          "description": "The one-pass design steps are out of order.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.sequence.single_pass_state"
+            ],
+            "node_id": "domain-2-single-pass-state",
+            "preferred_stage": "construct",
+            "preferred_family_id": "dsa.sequence.processed_prefix_state",
+            "min_scaffold_level": 4
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 4,
+        "family_id": "dsa.sequence.processed_prefix_state",
+        "transfer_group_id": "minimal_prefix_state",
+        "surface_context": "generic_sequence",
+        "challenge_group_id": "d2-sequence-01"
+      },
+      "interaction": {
+        "type": "ordering",
+        "items": [
+          {
+            "id": "contract",
+            "label": "State the relationship/output the scan must preserve"
+          },
+          {
+            "id": "need",
+            "label": "Identify what each new item needs from the processed prefix"
+          },
+          {
+            "id": "init",
+            "label": "Initialize the minimum state that represents that information"
+          },
+          {
+            "id": "scan",
+            "label": "Process each item and update the state"
+          },
+          {
+            "id": "check",
+            "label": "Test empty/minimum input and a normal case"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "ordering",
+        "ordered_ids": [
+          "contract",
+          "need",
+          "init",
+          "scan",
+          "check"
+        ]
+      }
+    },
+    {
+      "id": "dsa2-sequence-transfer-008",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.1",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.66,
+      "prompt": "A deployment audit must report the FIRST service whose version decreases relative to the immediately previous service in the file. Which approach best matches the contract?",
+      "concepts": [
+        {
+          "concept_id": "dsa.sequence.order_position",
+          "weight": 0.45
+        },
+        {
+          "concept_id": "dsa.sequence.single_pass_state",
+          "weight": 0.55
+        }
+      ],
+      "explanation": "The contract depends on original order and adjacent comparison. A one-pass scan with the previous version preserves both and can return the first violating index immediately.",
+      "blueprint_skill_ids": [
+        "2.1.01",
+        "2.1.02"
+      ],
+      "difficulty_label": "hard",
+      "hints": [],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected approach does not preserve the positional relationship required by the contract.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.sequence.order_position",
+              "dsa.sequence.single_pass_state"
+            ],
+            "node_id": "domain-2-single-pass-state",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.sequence.processed_prefix_state",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0,
+        "family_id": "dsa.sequence.processed_prefix_state",
+        "transfer_group_id": "minimal_prefix_state",
+        "surface_context": "deployment_audit",
+        "challenge_group_id": "d2-sequence-01"
+      },
+      "choice_feedback": {
+        "scan": "Correct: it preserves order and keeps exactly the adjacent state needed.",
+        "sort": "Sorting hides the original ordering violation.",
+        "set": "A set loses both position and adjacency.",
+        "freq": "Frequency counts do not capture adjacent decreases."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "scan",
+            "label": "Scan in file order while keeping the previous version and current index"
+          },
+          {
+            "id": "sort",
+            "label": "Sort services by version first, then compare neighbors"
+          },
+          {
+            "id": "set",
+            "label": "Put all versions in a set and check its size"
+          },
+          {
+            "id": "freq",
+            "label": "Count each version in a frequency map"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "scan"
+      }
+    },
+    {
+      "id": "dsa2-set-vs-map-009",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.2",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.42,
+      "prompt": "Choose the minimum natural hash state for each requirement.",
+      "concepts": [
+        {
+          "concept_id": "dsa.hashing.membership",
+          "weight": 0.45
+        },
+        {
+          "concept_id": "dsa.hashing.frequency",
+          "weight": 0.55
+        }
+      ],
+      "explanation": "A set is enough for yes/no membership. Counts and attached metadata require a key-to-value map.",
+      "blueprint_skill_ids": [
+        "2.2.01",
+        "2.2.02"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Ask whether each key needs an attached value."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one requirement was matched to the wrong hash-state shape.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.hashing.membership",
+              "dsa.hashing.frequency"
+            ],
+            "node_id": "domain-2-hash-membership",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.hashing.choose_state",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one requirement was not classified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.hashing.membership",
+              "dsa.hashing.frequency"
+            ],
+            "node_id": "domain-2-hash-membership",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.hashing.choose_state",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        },
+        {
+          "title": "Python documentation — Set Types: set, frozenset",
+          "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+        },
+        {
+          "title": "Python documentation — Mapping Types: dict",
+          "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+        }
+      ],
+      "pedagogy": {
+        "stage": "differentiate",
+        "scaffold_level": 3,
+        "family_id": "dsa.hashing.choose_state",
+        "transfer_group_id": "set_vs_map",
+        "surface_context": "service_events",
+        "challenge_group_id": "d2-hash-01"
+      },
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "seen",
+            "label": "Has request ID X appeared before?"
+          },
+          {
+            "id": "count",
+            "label": "How many 500 responses occurred?"
+          },
+          {
+            "id": "index",
+            "label": "At which earlier index was key X first seen?"
+          },
+          {
+            "id": "blocked",
+            "label": "Is user ID X in the blocked-ID collection?"
+          }
+        ],
+        "categories": [
+          {
+            "id": "set",
+            "label": "Set"
+          },
+          {
+            "id": "map",
+            "label": "Map"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "seen": "set",
+          "count": "map",
+          "index": "map",
+          "blocked": "set"
+        }
+      }
+    },
+    {
+      "id": "dsa2-idempotency-membership-010",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.2",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.52,
+      "prompt": "A batch consumer only needs to skip request IDs it has already processed during this run. It does not need counts or original indices. Which state is the best fit?",
+      "concepts": [
+        {
+          "concept_id": "dsa.hashing.membership",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The repeated question is presence-only: has this key been seen? A set represents that information directly. A map would work but stores an unnecessary value.",
+      "blueprint_skill_ids": [
+        "2.2.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Choose the state that stores exactly the required information."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected state is not the minimum direct representation of membership.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.hashing.membership"
+            ],
+            "node_id": "domain-2-hash-membership",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.hashing.membership_state",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        },
+        {
+          "title": "Python documentation — Set Types: set, frozenset",
+          "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.hashing.membership_state",
+        "transfer_group_id": "repeated_membership",
+        "surface_context": "batch_idempotency",
+        "challenge_group_id": "d2-hash-01"
+      },
+      "choice_feedback": {
+        "set": "Correct: membership is the only information needed.",
+        "mapcount": "Counts are extra state not required by this contract.",
+        "sorted": "Sorting all prior IDs does not match a streaming one-pass membership need.",
+        "list": "A list preserves history but requires repeated scans for membership."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "set",
+            "label": "A set of processed request IDs"
+          },
+          {
+            "id": "mapcount",
+            "label": "A map from request ID to occurrence count"
+          },
+          {
+            "id": "sorted",
+            "label": "A sorted copy of every request ID processed so far"
+          },
+          {
+            "id": "list",
+            "label": "A list of every processed request ID, scanned on each lookup"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "set"
+      }
+    },
+    {
+      "id": "dsa2-frequency-011",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.2",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.48,
+      "prompt": "A log summary must output how many responses occurred for every HTTP status code. Which maintained state directly matches the output?",
+      "concepts": [
+        {
+          "concept_id": "dsa.hashing.frequency",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The output is key → count, so a frequency map is the direct state. A set cannot distinguish one occurrence from many.",
+      "blueprint_skill_ids": [
+        "2.2.02"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "The output needs a number attached to each status code."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected state does not directly preserve the required per-key counts.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.hashing.frequency"
+            ],
+            "node_id": "domain-2-hash-frequency",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.hashing.frequency_state",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        },
+        {
+          "title": "Python documentation — Mapping Types: dict",
+          "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.hashing.frequency_state",
+        "transfer_group_id": "count_by_key",
+        "surface_context": "http_statuses",
+        "challenge_group_id": "d2-hash-01"
+      },
+      "choice_feedback": {
+        "freq": "Correct: the map's value is exactly the required count.",
+        "set": "A set only records whether a status occurred.",
+        "last": "The last index does not tell you the total count.",
+        "sort": "Sorting can group equal statuses, but a frequency map matches the one-pass output directly."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "freq",
+            "label": "Map each status code to its running count"
+          },
+          {
+            "id": "set",
+            "label": "Store only the unique status codes in a set"
+          },
+          {
+            "id": "last",
+            "label": "Map each status code only to its last index"
+          },
+          {
+            "id": "sort",
+            "label": "Store all statuses and defer all counting until after sorting"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "freq"
+      }
+    },
+    {
+      "id": "dsa2-frequency-fault-012",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.2",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.58,
+      "prompt": "A function must return the MOST FREQUENT error code. Flag the state update that loses information required by the result.",
+      "concepts": [
+        {
+          "concept_id": "dsa.hashing.frequency",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Replacing the count with a boolean only remembers presence. The result depends on relative counts, so each occurrence must increment a numeric frequency.",
+      "blueprint_skill_ids": [
+        "2.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Presence and frequency answer different questions."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The presence-only update was not identified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.hashing.frequency"
+            ],
+            "node_id": "domain-2-hash-frequency",
+            "preferred_stage": "diagnose",
+            "preferred_family_id": "dsa.hashing.frequency_state",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A valid frequency-counting step was incorrectly flagged.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.hashing.frequency"
+            ],
+            "node_id": "domain-2-hash-frequency",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.hashing.frequency_state",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        },
+        {
+          "title": "Python documentation — Mapping Types: dict",
+          "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 2,
+        "family_id": "dsa.hashing.frequency_state",
+        "transfer_group_id": "count_by_key",
+        "surface_context": "error_codes"
+      },
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "map",
+            "label": "Create state keyed by error code"
+          },
+          {
+            "id": "bool",
+            "label": "On every occurrence, set `state[code] = True`"
+          },
+          {
+            "id": "scan",
+            "label": "Process each error code once"
+          },
+          {
+            "id": "best",
+            "label": "Track or compute the key with the largest count"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "bool"
+        ]
+      }
+    },
+    {
+      "id": "dsa2-complement-reconstruct-013",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.2",
+      "assessment_mode": "structural_reconstruction",
+      "interaction_type": "reconstruction",
+      "difficulty_prior": 0.61,
+      "prompt": "Rebuild the one-pass complement-lookup reasoning for finding ONE pair of values whose sum is `target`.",
+      "concepts": [
+        {
+          "concept_id": "dsa.hashing.complement",
+          "weight": 0.8
+        },
+        {
+          "concept_id": "dsa.hashing.membership",
+          "weight": 0.2
+        }
+      ],
+      "explanation": "The current value determines the needed complement. Look up that complement among earlier values before storing the current value for future iterations.",
+      "blueprint_skill_ids": [
+        "2.2.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Compute the missing counterpart from the current value before deciding what to store."
+      ],
+      "error_codes": [
+        {
+          "code": "reconstruction_unfilled_slot",
+          "description": "At least one complement-lookup step was left empty.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.hashing.complement"
+            ],
+            "node_id": "domain-2-hash-complement",
+            "preferred_stage": "construct",
+            "preferred_family_id": "dsa.hashing.complement_state",
+            "min_scaffold_level": 5
+          }
+        },
+        {
+          "code": "reconstruction_wrong_position",
+          "description": "At least one complement-lookup step was placed in the wrong position.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.hashing.complement"
+            ],
+            "node_id": "domain-2-hash-complement",
+            "preferred_stage": "construct",
+            "preferred_family_id": "dsa.hashing.complement_state",
+            "min_scaffold_level": 5
+          }
+        },
+        {
+          "code": "reconstruction_wrong_component",
+          "description": "A step that reintroduces repeated scanning was used.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.hashing.complement"
+            ],
+            "node_id": "domain-2-hash-complement",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.hashing.complement_state",
+            "min_scaffold_level": 4
+          }
+        },
+        {
+          "code": "reconstruction_missing_component",
+          "description": "A required complement-lookup step was omitted.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.hashing.complement"
+            ],
+            "node_id": "domain-2-hash-complement",
+            "preferred_stage": "construct",
+            "preferred_family_id": "dsa.hashing.complement_state",
+            "min_scaffold_level": 5
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        },
+        {
+          "title": "Python documentation — Mapping Types: dict",
+          "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 4,
+        "family_id": "dsa.hashing.complement_state",
+        "transfer_group_id": "target_counterpart_lookup",
+        "surface_context": "pair_sum",
+        "challenge_group_id": "d2-hash-01"
+      },
+      "interaction": {
+        "type": "reconstruction",
+        "layout": "linear",
+        "fixed_nodes": [],
+        "pieces": [
+          {
+            "id": "state",
+            "label": "Maintain earlier value → index state"
+          },
+          {
+            "id": "need",
+            "label": "Compute `need = target - value`"
+          },
+          {
+            "id": "lookup",
+            "label": "Check whether `need` is already in the state"
+          },
+          {
+            "id": "return",
+            "label": "If found, return the earlier index and current index"
+          },
+          {
+            "id": "store",
+            "label": "Otherwise store the current value/index"
+          },
+          {
+            "id": "allpairs",
+            "label": "Rescan every earlier value again"
+          }
+        ],
+        "slots": [
+          {
+            "id": "s1"
+          },
+          {
+            "id": "s2"
+          },
+          {
+            "id": "s3"
+          },
+          {
+            "id": "s4"
+          },
+          {
+            "id": "s5"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "reconstruction",
+        "placements": {
+          "s1": "state",
+          "s2": "need",
+          "s3": "lookup",
+          "s4": "return",
+          "s5": "store"
+        },
+        "edges": []
+      }
+    },
+    {
+      "id": "dsa2-complement-why-014",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.2",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.58,
+      "prompt": "Why can complement lookup replace an all-pairs scan for the relation `a + b = target` when looking for one pair?",
+      "concepts": [
+        {
+          "concept_id": "dsa.hashing.complement",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "For a fixed current value, only one counterpart value can satisfy the sum. A hash lookup asks directly whether that counterpart appeared earlier, removing the need to compare the current value with every earlier value.",
+      "blueprint_skill_ids": [
+        "2.2.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Focus on what the current value lets you compute exactly."
+      ],
+      "error_codes": [
+        {
+          "code": "evidence_missing_relevant",
+          "description": "Part of the complement-lookup justification was missed.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.hashing.complement"
+            ],
+            "node_id": "domain-2-hash-complement",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.hashing.complement_state",
+            "min_scaffold_level": 2
+          }
+        },
+        {
+          "code": "evidence_selected_irrelevant",
+          "description": "An unnecessary precondition was selected.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.hashing.complement"
+            ],
+            "node_id": "domain-2-hash-complement",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.hashing.complement_state",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 1,
+        "family_id": "dsa.hashing.complement_state",
+        "transfer_group_id": "target_counterpart_lookup",
+        "surface_context": "capacity_pairing"
+      },
+      "instruction": "Select all statements that justify the optimization.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          {
+            "id": "unique_need",
+            "label": "For current value `a`, the required counterpart is exactly `target - a`"
+          },
+          {
+            "id": "lookup",
+            "label": "Earlier values can be maintained for direct key lookup"
+          },
+          {
+            "id": "order",
+            "label": "The input must already be sorted"
+          },
+          {
+            "id": "positive",
+            "label": "All values must be positive"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "unique_need",
+          "lookup"
+        ]
+      }
+    },
+    {
+      "id": "dsa2-hash-state-transfer-015",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.2",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.68,
+      "prompt": "A service receives transaction amounts and must return the first pair of indices whose amounts exactly fill a fixed budget. Values may be unsorted and duplicates are allowed. Which state best supports a one-pass solution?",
+      "concepts": [
+        {
+          "concept_id": "dsa.hashing.complement",
+          "weight": 0.7
+        },
+        {
+          "concept_id": "dsa.hashing.frequency",
+          "weight": 0.15
+        },
+        {
+          "concept_id": "dsa.sequence.order_position",
+          "weight": 0.15
+        }
+      ],
+      "explanation": "The current amount determines the missing amount. Because the output needs indices, maintain amount → earlier index and look up the complement before storing the current item.",
+      "blueprint_skill_ids": [
+        "2.2.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected state does not preserve both complement lookup and the required index output.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.hashing.complement"
+            ],
+            "node_id": "domain-2-hash-complement",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.hashing.complement_state",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        },
+        {
+          "title": "Python documentation — Mapping Types: dict",
+          "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0,
+        "family_id": "dsa.hashing.complement_state",
+        "transfer_group_id": "target_counterpart_lookup",
+        "surface_context": "budget_pairing",
+        "challenge_group_id": "d2-hash-01"
+      },
+      "choice_feedback": {
+        "indexmap": "Correct: it stores exactly the counterpart lookup key and the output index.",
+        "set": "A set can detect the counterpart but cannot return the earlier index by itself.",
+        "freq": "Counts do not directly preserve which earlier index to return.",
+        "sorted": "Sorting can enable another strategy, but it disrupts original indices unless extra mapping is preserved."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "indexmap",
+            "label": "Map each earlier amount to an index and query `budget - current_amount`"
+          },
+          {
+            "id": "set",
+            "label": "Use only a set of earlier amounts and discard indices"
+          },
+          {
+            "id": "freq",
+            "label": "Use only a frequency map and discard indices"
+          },
+          {
+            "id": "sorted",
+            "label": "Sort the amounts in place and ignore original positions"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "indexmap"
+      }
+    },
+    {
+      "id": "dsa2-membership-frequency-diff-016",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.2",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.43,
+      "prompt": "Complete the distinction.",
+      "concepts": [
+        {
+          "concept_id": "dsa.hashing.membership",
+          "weight": 0.5
+        },
+        {
+          "concept_id": "dsa.hashing.frequency",
+          "weight": 0.5
+        }
+      ],
+      "explanation": "A set records whether a key is present. A frequency map records how many times each key has appeared.",
+      "blueprint_skill_ids": [
+        "2.2.01",
+        "2.2.02"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "One structure stores keys only; the other attaches a count."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One structure type was named incorrectly.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.hashing.membership",
+              "dsa.hashing.frequency"
+            ],
+            "node_id": "domain-2-hash-membership",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.hashing.choose_state",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "One structure type was left blank.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.hashing.membership",
+              "dsa.hashing.frequency"
+            ],
+            "node_id": "domain-2-hash-membership",
+            "preferred_stage": "recall",
+            "preferred_family_id": "dsa.hashing.choose_state",
+            "min_scaffold_level": 4
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        },
+        {
+          "title": "Python documentation — Set Types: set, frozenset",
+          "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+        },
+        {
+          "title": "Python documentation — Mapping Types: dict",
+          "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+        }
+      ],
+      "pedagogy": {
+        "stage": "differentiate",
+        "scaffold_level": 3,
+        "family_id": "dsa.hashing.choose_state",
+        "transfer_group_id": "set_vs_map",
+        "surface_context": "generic_hash_state"
+      },
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "text",
+          "template": "Use a {{presence}} when only presence matters; use a {{frequency}} when occurrence counts matter."
+        },
+        "slots": [
+          {
+            "id": "presence",
+            "label": "Presence-only structure",
+            "placeholder": "..."
+          },
+          {
+            "id": "frequency",
+            "label": "Count structure",
+            "placeholder": "..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "presence": {
+            "accepted_answers": [
+              "set",
+              "hash set",
+              "hashset"
+            ]
+          },
+          "frequency": {
+            "accepted_answers": [
+              "map",
+              "hash map",
+              "hashmap",
+              "dictionary",
+              "dict",
+              "frequency map"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "dsa2-prefix-build-order-017",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.3",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.42,
+      "prompt": "Using the convention `prefix[0] = 0`, order the steps to build prefix sums for a static numeric sequence.",
+      "concepts": [
+        {
+          "concept_id": "dsa.prefix.range_sum",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The leading zero represents the boundary before the first item. Each later prefix appends the previous cumulative total plus the next value.",
+      "blueprint_skill_ids": [
+        "2.3.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "The first stored prefix is the sum of zero items."
+      ],
+      "error_codes": [
+        {
+          "code": "ordering_invalid_sequence",
+          "description": "The prefix-construction steps are out of order.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.prefix.range_sum"
+            ],
+            "node_id": "domain-2-prefix-build",
+            "preferred_stage": "construct",
+            "preferred_family_id": "dsa.prefix.cumulative_state",
+            "min_scaffold_level": 5
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Princeton Competitive Programming — Prefix Sums",
+          "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 4,
+        "family_id": "dsa.prefix.cumulative_state",
+        "transfer_group_id": "range_aggregation",
+        "surface_context": "daily_usage",
+        "challenge_group_id": "d2-prefix-01"
+      },
+      "interaction": {
+        "type": "ordering",
+        "items": [
+          {
+            "id": "zero",
+            "label": "Start with `prefix = [0]`"
+          },
+          {
+            "id": "read",
+            "label": "Read the next value"
+          },
+          {
+            "id": "append",
+            "label": "Append `prefix[-1] + value`"
+          },
+          {
+            "id": "repeat",
+            "label": "Repeat for the remaining values"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "ordering",
+        "ordered_ids": [
+          "zero",
+          "read",
+          "append",
+          "repeat"
+        ]
+      }
+    },
+    {
+      "id": "dsa2-prefix-values-018",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.3",
+      "assessment_mode": "recall",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.48,
+      "prompt": "For `values = [3, 1, 4]` and `prefix[0] = 0`, fill the remaining prefix totals.",
+      "concepts": [
+        {
+          "concept_id": "dsa.prefix.range_sum",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The prefix totals are [0, 3, 4, 8]: each boundary stores the sum of all values before it.",
+      "blueprint_skill_ids": [
+        "2.3.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Add one value at a time to the previous cumulative total."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "At least one cumulative total is incorrect.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.prefix.range_sum"
+            ],
+            "node_id": "domain-2-prefix-build",
+            "preferred_stage": "trace",
+            "preferred_family_id": "dsa.prefix.cumulative_state",
+            "min_scaffold_level": 4
+          }
+        },
+        {
+          "code": "typed_fill_blank_incomplete",
+          "description": "At least one cumulative total is missing.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.prefix.range_sum"
+            ],
+            "node_id": "domain-2-prefix-build",
+            "preferred_stage": "trace",
+            "preferred_family_id": "dsa.prefix.cumulative_state",
+            "min_scaffold_level": 4
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Princeton Competitive Programming — Prefix Sums",
+          "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+        }
+      ],
+      "pedagogy": {
+        "stage": "trace",
+        "scaffold_level": 3,
+        "family_id": "dsa.prefix.cumulative_state",
+        "transfer_group_id": "range_aggregation",
+        "surface_context": "small_array",
+        "challenge_group_id": "d2-prefix-01"
+      },
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "text",
+          "template": "`prefix = [0, {{p1}}, {{p2}}, {{p3}}]`"
+        },
+        "slots": [
+          {
+            "id": "p1",
+            "label": "prefix[1]",
+            "placeholder": "..."
+          },
+          {
+            "id": "p2",
+            "label": "prefix[2]",
+            "placeholder": "..."
+          },
+          {
+            "id": "p3",
+            "label": "prefix[3]",
+            "placeholder": "..."
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "p1": {
+            "accepted_answers": [
+              "3"
+            ]
+          },
+          "p2": {
+            "accepted_answers": [
+              "4"
+            ]
+          },
+          "p3": {
+            "accepted_answers": [
+              "8"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "dsa2-range-formula-019",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.3",
+      "assessment_mode": "recognition",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.45,
+      "prompt": "With `prefix[i] = sum(values[0:i])`, which expression gives the sum of the half-open range `values[l:r]`?",
+      "concepts": [
+        {
+          "concept_id": "dsa.prefix.range_sum",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "`prefix[r]` contains everything before r; subtracting `prefix[l]` removes everything before l, leaving exactly values[l:r].",
+      "blueprint_skill_ids": [
+        "2.3.02"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Subtract the cumulative total before the range from the cumulative total after the range."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected expression does not match the stated half-open prefix convention.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.prefix.range_sum"
+            ],
+            "node_id": "domain-2-prefix-range-query",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.prefix.cumulative_state",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Princeton Competitive Programming — Prefix Sums",
+          "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+        }
+      ],
+      "pedagogy": {
+        "stage": "recognize",
+        "scaffold_level": 2,
+        "family_id": "dsa.prefix.cumulative_state",
+        "transfer_group_id": "range_aggregation",
+        "surface_context": "range_formula",
+        "challenge_group_id": "d2-prefix-01"
+      },
+      "choice_feedback": {
+        "correct": "Correct: the two prefix boundaries isolate [l,r).",
+        "off1": "This mixes inclusive and half-open indexing.",
+        "sum": "Adding prefix values double-counts the earlier part.",
+        "reverse": "The subtraction direction is reversed."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "correct",
+            "label": "`prefix[r] - prefix[l]`"
+          },
+          {
+            "id": "off1",
+            "label": "`prefix[r] - prefix[l - 1]`"
+          },
+          {
+            "id": "sum",
+            "label": "`prefix[r] + prefix[l]`"
+          },
+          {
+            "id": "reverse",
+            "label": "`prefix[l] - prefix[r]`"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "correct"
+      }
+    },
+    {
+      "id": "dsa2-range-query-transfer-020",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.6,
+      "prompt": "A dashboard stores 365 daily request counts. The data is loaded once, then thousands of queries ask for the total over different day ranges. Which approach best fits that workload?",
+      "concepts": [
+        {
+          "concept_id": "dsa.prefix.range_sum",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "One O(n) prefix precomputation lets each static range-sum query use two prefix values. Re-summing every requested range repeats work across thousands of queries.",
+      "blueprint_skill_ids": [
+        "2.3.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected approach does not exploit the static-data/many-range-query workload.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.prefix.range_sum"
+            ],
+            "node_id": "domain-2-prefix-range-query",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.prefix.cumulative_state",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Princeton Competitive Programming — Prefix Sums",
+          "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0,
+        "family_id": "dsa.prefix.cumulative_state",
+        "transfer_group_id": "range_aggregation",
+        "surface_context": "dashboard_metrics",
+        "challenge_group_id": "d2-prefix-01"
+      },
+      "choice_feedback": {
+        "prefix": "Correct: static data + many range sums is exactly the useful trade-off.",
+        "rescan": "This repeats the same additions across many queries.",
+        "set": "A set cannot represent cumulative sums.",
+        "sort": "Sorting destroys the day ordering and does not answer arbitrary date-range totals."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "prefix",
+            "label": "Build prefix totals once, then subtract two boundaries per query"
+          },
+          {
+            "id": "rescan",
+            "label": "Rescan and sum the requested days for every query"
+          },
+          {
+            "id": "set",
+            "label": "Store the daily counts in a set"
+          },
+          {
+            "id": "sort",
+            "label": "Sort all daily counts before answering ranges"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "prefix"
+      }
+    },
+    {
+      "id": "dsa2-prefix-offbyone-021",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.3",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.62,
+      "prompt": "The code uses `prefix[i] = sum(values[0:i])` and wants the half-open range `[l, r)`. Flag the expression with the off-by-one error.",
+      "concepts": [
+        {
+          "concept_id": "dsa.prefix.range_sum",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Under this boundary convention, the range sum is `prefix[r] - prefix[l]`. Using `prefix[l - 1]` incorrectly mixes an inclusive-prefix formula with a half-open-prefix representation.",
+      "blueprint_skill_ids": [
+        "2.3.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Check the exact meaning of prefix[l] before changing the index."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The mixed-indexing formula was not identified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.prefix.range_sum"
+            ],
+            "node_id": "domain-2-prefix-range-query",
+            "preferred_stage": "diagnose",
+            "preferred_family_id": "dsa.prefix.cumulative_state",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A correct prefix convention statement was incorrectly flagged.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.prefix.range_sum"
+            ],
+            "node_id": "domain-2-prefix-range-query",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.prefix.cumulative_state",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Princeton Competitive Programming — Prefix Sums",
+          "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 1,
+        "family_id": "dsa.prefix.cumulative_state",
+        "transfer_group_id": "range_aggregation",
+        "surface_context": "range_query_bug",
+        "challenge_group_id": "d2-prefix-01"
+      },
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "definition",
+            "label": "`prefix[i]` stores the sum of `values[0:i]`"
+          },
+          {
+            "id": "right",
+            "label": "Use `prefix[r]` as the cumulative total after the range"
+          },
+          {
+            "id": "wrong",
+            "label": "Compute `prefix[r] - prefix[l - 1]`"
+          },
+          {
+            "id": "expected",
+            "label": "The requested range is `[l, r)`"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "wrong"
+        ]
+      }
+    },
+    {
+      "id": "dsa2-prefix-hash-reason-022",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.3",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.68,
+      "prompt": "While scanning values, the current cumulative sum is `p`. Why does finding an earlier prefix equal to `p - target` prove there is a contiguous interval ending here whose sum is `target`?",
+      "concepts": [
+        {
+          "concept_id": "dsa.prefix.hash_state",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The sum between two prefix boundaries is their difference. If earlier = p - target, then p - earlier = target. The earlier boundary and current boundary therefore enclose a matching contiguous interval.",
+      "blueprint_skill_ids": [
+        "2.3.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "Write the interval sum as current_prefix - earlier_prefix."
+      ],
+      "error_codes": [
+        {
+          "code": "evidence_missing_relevant",
+          "description": "Part of the prefix-difference justification was missed.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.prefix.hash_state"
+            ],
+            "node_id": "domain-2-prefix-hash",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.prefix.repeated_state",
+            "min_scaffold_level": 2
+          }
+        },
+        {
+          "code": "evidence_selected_irrelevant",
+          "description": "An unnecessary positivity or ordering condition was selected.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.prefix.hash_state"
+            ],
+            "node_id": "domain-2-prefix-hash",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.prefix.repeated_state",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Princeton Competitive Programming — Prefix Sums",
+          "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 1,
+        "family_id": "dsa.prefix.repeated_state",
+        "transfer_group_id": "target_interval_by_prefix",
+        "surface_context": "net_delta",
+        "challenge_group_id": "d2-prefix-02"
+      },
+      "instruction": "Select all statements that justify the relation.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          {
+            "id": "difference",
+            "label": "A contiguous interval sum equals the difference of its two prefix boundaries"
+          },
+          {
+            "id": "algebra",
+            "label": "`p - (p - target) = target`"
+          },
+          {
+            "id": "positive",
+            "label": "All values must be positive"
+          },
+          {
+            "id": "sorted",
+            "label": "The sequence must be sorted"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "difference",
+          "algebra"
+        ]
+      }
+    },
+    {
+      "id": "dsa2-prefix-zero-init-023",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.65,
+      "prompt": "When COUNTING all contiguous intervals whose sum is `target`, why is the prefix-frequency map often initialized with `{0: 1}` before scanning?",
+      "concepts": [
+        {
+          "concept_id": "dsa.prefix.hash_state",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The zero prefix represents the boundary before the first element. Without it, a matching interval that begins at index 0 would not find its required earlier prefix.",
+      "blueprint_skill_ids": [
+        "2.3.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "Consider a matching interval that begins with the first value."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected reason does not explain the boundary represented by the zero prefix.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.prefix.hash_state"
+            ],
+            "node_id": "domain-2-prefix-hash",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.prefix.repeated_state",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Princeton Competitive Programming — Prefix Sums",
+          "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 1,
+        "family_id": "dsa.prefix.repeated_state",
+        "transfer_group_id": "target_interval_by_prefix",
+        "surface_context": "prefix_initialization",
+        "challenge_group_id": "d2-prefix-02"
+      },
+      "choice_feedback": {
+        "boundary": "Correct: the initial zero is a real prefix boundary before any items.",
+        "collision": "It is unrelated to hash collision handling.",
+        "sorted": "It does not sort or reorder the input.",
+        "positive": "It is needed even when values include negatives or zeros."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "boundary",
+            "label": "It represents the prefix before index 0, so intervals starting at index 0 can match"
+          },
+          {
+            "id": "collision",
+            "label": "It prevents hash collisions"
+          },
+          {
+            "id": "sorted",
+            "label": "It guarantees prefix sums remain sorted"
+          },
+          {
+            "id": "positive",
+            "label": "It forces every prefix sum to stay positive"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "boundary"
+      }
+    },
+    {
+      "id": "dsa2-prefix-transfer-024",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-2",
+      "task_id": "2.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.74,
+      "prompt": "A time-ordered stream records signed byte deltas, such as `+120, -40, -80, ...`. You need to know whether ANY contiguous time period has net change exactly `0`. Values can be positive or negative. Which structure best matches the problem?",
+      "concepts": [
+        {
+          "concept_id": "dsa.prefix.hash_state",
+          "weight": 0.8
+        },
+        {
+          "concept_id": "dsa.hashing.membership",
+          "weight": 0.2
+        }
+      ],
+      "explanation": "A zero-sum interval exists exactly when the same prefix sum occurs at two different boundaries. Maintain seen prefix sums while scanning; repeated prefix state proves the intervening contiguous period sums to zero.",
+      "blueprint_skill_ids": [
+        "2.3.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected approach does not preserve the prefix-state relation for arbitrary signed values.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.prefix.hash_state"
+            ],
+            "node_id": "domain-2-prefix-hash",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.prefix.repeated_state",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Princeton Competitive Programming — Prefix Sums",
+          "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0,
+        "family_id": "dsa.prefix.repeated_state",
+        "transfer_group_id": "target_interval_by_prefix",
+        "surface_context": "network_byte_deltas",
+        "challenge_group_id": "d2-prefix-02"
+      },
+      "choice_feedback": {
+        "prefixset": "Correct: equal prefix sums at two boundaries imply a zero-sum interval between them.",
+        "window": "With positive and negative deltas, moving one boundary does not change the sum monotonically enough for a simple variable-window rule.",
+        "sort": "Sorting destroys time contiguity.",
+        "freqvalues": "Counting individual delta values does not capture cumulative interval sums."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "prefixset",
+            "label": "Maintain the running prefix sum and a set of prefix sums seen at earlier boundaries"
+          },
+          {
+            "id": "window",
+            "label": "Use a variable window that always shrinks whenever the sum becomes positive"
+          },
+          {
+            "id": "sort",
+            "label": "Sort the deltas by value and scan adjacent entries"
+          },
+          {
+            "id": "freqvalues",
+            "label": "Count how many times each individual delta value occurs"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "prefixset"
+      }
+    }
+  ]
+}

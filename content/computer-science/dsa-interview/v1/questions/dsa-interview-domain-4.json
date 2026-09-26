@@ -1,0 +1,2440 @@
+{
+  "certification": {
+    "id": "cs-dsa-interview",
+    "vendor": "Shiden Labs",
+    "name": "Data Structures & Algorithms Interview",
+    "exam_code": "DSA-INTERVIEW",
+    "official_source_url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/",
+    "last_reviewed": "2026-09-26"
+  },
+  "version": {
+    "id": "dsa-interview-v1",
+    "exam_code": "DSA-INTERVIEW",
+    "effective_date": "2026-09-26",
+    "content_version": "dsa-interview-content-2026-09-26-v1",
+    "domains": [
+      {
+        "id": "domain-1",
+        "name": "Interview Reasoning, Complexity & Correctness",
+        "weight": 0.1,
+        "tasks": []
+      },
+      {
+        "id": "domain-2",
+        "name": "Arrays, Strings, Hashing & Prefix State",
+        "weight": 0.18,
+        "tasks": []
+      },
+      {
+        "id": "domain-3",
+        "name": "Pointer, Window & Interval Patterns",
+        "weight": 0.14,
+        "tasks": []
+      },
+      {
+        "id": "domain-4",
+        "name": "Linked Lists, Stacks, Queues & Heaps",
+        "weight": 0.12,
+        "tasks": [
+          {
+            "id": "4.1",
+            "name": "Rewire and traverse linked structures safely",
+            "question_ids": [
+              "dsa4-unlink-choice-001",
+              "dsa4-lost-suffix-fault-002",
+              "dsa4-reverse-order-003",
+              "dsa4-sentinel-choice-004",
+              "dsa4-linked-tradeoff-005",
+              "dsa4-sentinel-fault-006",
+              "dsa4-linked-evidence-007",
+              "dsa4-linked-transfer-008"
+            ]
+          },
+          {
+            "id": "4.2",
+            "name": "Use stack and queue order semantics",
+            "question_ids": [
+              "dsa4-stack-delimiter-009",
+              "dsa4-stack-trace-010",
+              "dsa4-queue-choice-011",
+              "dsa4-order-semantics-classify-012",
+              "dsa4-deque-evidence-013",
+              "dsa4-monotonic-choice-014",
+              "dsa4-monotonic-fault-015",
+              "dsa4-stack-queue-transfer-016"
+            ]
+          },
+          {
+            "id": "4.3",
+            "name": "Use priority queues for repeated best-item selection",
+            "question_ids": [
+              "dsa4-heap-choice-017",
+              "dsa4-heap-invariant-018",
+              "dsa4-order-structure-classify-019",
+              "dsa4-topk-choice-020",
+              "dsa4-topk-cutoff-021",
+              "dsa4-kway-order-022",
+              "dsa4-kway-fault-023",
+              "dsa4-heap-transfer-024"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "domain-5",
+        "name": "Binary Search, Sorting & Ordered Reasoning",
+        "weight": 0.1,
+        "tasks": []
+      },
+      {
+        "id": "domain-6",
+        "name": "Trees, Recursion & Tries",
+        "weight": 0.13,
+        "tasks": []
+      },
+      {
+        "id": "domain-7",
+        "name": "Graphs, Connectivity & Shortest Paths",
+        "weight": 0.13,
+        "tasks": []
+      },
+      {
+        "id": "domain-8",
+        "name": "Backtracking, Greedy & Dynamic Programming",
+        "weight": 0.1,
+        "tasks": []
+      }
+    ]
+  },
+  "concepts": [
+    {
+      "id": "dsa.linked.rewire",
+      "name": "Linked-node rewiring",
+      "description": "Manipulate a linked sequence by changing references while preserving access to the remaining chain."
+    },
+    {
+      "id": "dsa.linked.sentinel",
+      "name": "Sentinel / dummy node",
+      "description": "Use a non-data node to give head/interior insertion or deletion the same pointer-update shape."
+    },
+    {
+      "id": "dsa.linked.reverse",
+      "name": "Linked-list reversal state",
+      "description": "Reverse a singly linked chain while preserving the unprocessed suffix using previous, current, and next references."
+    },
+    {
+      "id": "dsa.stack.lifo",
+      "name": "Stack LIFO state",
+      "description": "Use last-in-first-out state when the newest unresolved item must be handled before older ones, especially for nested structure."
+    },
+    {
+      "id": "dsa.queue.fifo",
+      "name": "Queue FIFO state",
+      "description": "Use first-in-first-out state when processing order should match arrival order."
+    },
+    {
+      "id": "dsa.stack.monotonic",
+      "name": "Monotonic stack",
+      "description": "Maintain only unresolved candidates in monotonic order so each new item can resolve dominated prior candidates once."
+    },
+    {
+      "id": "dsa.heap.invariant",
+      "name": "Heap priority invariant",
+      "description": "Maintain a partial order where the root is always the next minimum or maximum priority item while insertion and removal restore the heap invariant."
+    },
+    {
+      "id": "dsa.heap.top_k",
+      "name": "Bounded heap for top K",
+      "description": "Keep only the best K items seen so far by storing the current cutoff at the heap root."
+    },
+    {
+      "id": "dsa.heap.kway_merge",
+      "name": "Heap-based K-way merge",
+      "description": "Merge multiple sorted streams by keeping only each stream's current frontier item in a priority queue."
+    }
+  ],
+  "questions": [
+    {
+      "id": "dsa4-unlink-choice-001",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.46,
+      "prompt": "In a singly linked list, `prev.next` is the node `victim`, and `victim.next` is its successor. You already know `prev`. Which update removes `victim` while keeping the remaining chain reachable?",
+      "concepts": [
+        {
+          "concept_id": "dsa.linked.rewire",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Set `prev.next` to `victim.next`. That bypasses victim while preserving the reference to the successor.",
+      "blueprint_skill_ids": [
+        "4.1.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "The predecessor should point where the removed node used to point."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected update does not preserve the remaining linked chain correctly.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.linked.rewire"
+            ],
+            "node_id": "domain-4-linked-rewire",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.linked.rewire",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 2 notes: Linked List Sequence",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/79a07dc1cb47d76dae2ffedc701e3d2b_MIT6_006S20_lec2.pdf"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Recitation 2: Linked List Sequence",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/c08a3b63dfe5f6f6b32257d35f86ae63_MIT6_006S20_r02.pdf"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 3,
+        "family_id": "dsa.linked.rewire",
+        "transfer_group_id": "linked_reference_rewiring",
+        "surface_context": "unlink_known_predecessor",
+        "challenge_group_id": "d4-linked-01"
+      },
+      "choice_feedback": {
+        "bridge": "Correct: the predecessor now points directly to the successor.",
+        "nullprev": "Setting the predecessor's next to None discards the entire remaining suffix.",
+        "self": "Pointing victim to itself creates a self-cycle and does not reconnect the list.",
+        "head": "Changing head is only required when the logical head itself changes."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "bridge",
+            "label": "`prev.next = victim.next`"
+          },
+          {
+            "id": "nullprev",
+            "label": "`prev.next = None`"
+          },
+          {
+            "id": "self",
+            "label": "`victim.next = victim`"
+          },
+          {
+            "id": "head",
+            "label": "`head = victim.next` regardless of victim's position"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "bridge"
+      }
+    },
+    {
+      "id": "dsa4-lost-suffix-fault-002",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.58,
+      "prompt": "While reversing a singly linked list, flag the update order that can make the unprocessed suffix unreachable.",
+      "concepts": [
+        {
+          "concept_id": "dsa.linked.reverse",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "You must save `cur.next` before overwriting it. If `cur.next = prev` happens first, the original forward link is lost unless it was already saved elsewhere.",
+      "blueprint_skill_ids": [
+        "4.1.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Ask when the only reference to the rest of the list disappears."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The update that can lose the unprocessed suffix was not identified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.linked.reverse"
+            ],
+            "node_id": "domain-4-linked-reverse",
+            "preferred_stage": "diagnose",
+            "preferred_family_id": "dsa.linked.reverse",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A valid reversal-state update was incorrectly flagged.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.linked.reverse"
+            ],
+            "node_id": "domain-4-linked-reverse",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.linked.reverse",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 2 notes: Linked List Sequence",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/79a07dc1cb47d76dae2ffedc701e3d2b_MIT6_006S20_lec2.pdf"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Recitation 2: Linked List Sequence",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/c08a3b63dfe5f6f6b32257d35f86ae63_MIT6_006S20_r02.pdf"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 2,
+        "family_id": "dsa.linked.reverse",
+        "transfer_group_id": "linked_reversal_state",
+        "surface_context": "reverse_pointer_bug",
+        "challenge_group_id": "d4-linked-01"
+      },
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "bad",
+            "label": "Set `cur.next = prev` before saving the original `cur.next`"
+          },
+          {
+            "id": "save",
+            "label": "Save the original next node before rewiring"
+          },
+          {
+            "id": "move_prev",
+            "label": "Move `prev` to the current node after rewiring"
+          },
+          {
+            "id": "move_cur",
+            "label": "Advance `cur` using the saved next-node reference"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "bad"
+        ]
+      }
+    },
+    {
+      "id": "dsa4-reverse-order-003",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.53,
+      "prompt": "Order the core updates for one iteration of iterative singly linked-list reversal.",
+      "concepts": [
+        {
+          "concept_id": "dsa.linked.reverse",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Save the next node, reverse the current link, advance prev to current, then advance current to the saved next node.",
+      "blueprint_skill_ids": [
+        "4.1.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Preserve the only forward link before changing it."
+      ],
+      "error_codes": [
+        {
+          "code": "ordering_invalid_sequence",
+          "description": "The reversal updates are out of order.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.linked.reverse"
+            ],
+            "node_id": "domain-4-linked-reverse",
+            "preferred_stage": "construct",
+            "preferred_family_id": "dsa.linked.reverse",
+            "min_scaffold_level": 5
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 2 notes: Linked List Sequence",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/79a07dc1cb47d76dae2ffedc701e3d2b_MIT6_006S20_lec2.pdf"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 4,
+        "family_id": "dsa.linked.reverse",
+        "transfer_group_id": "linked_reversal_state",
+        "surface_context": "reverse_iteration",
+        "challenge_group_id": "d4-linked-01"
+      },
+      "interaction": {
+        "type": "ordering",
+        "items": [
+          {
+            "id": "save",
+            "label": "Save `next_node = cur.next`"
+          },
+          {
+            "id": "rewire",
+            "label": "Set `cur.next = prev`"
+          },
+          {
+            "id": "prev",
+            "label": "Set `prev = cur`"
+          },
+          {
+            "id": "cur",
+            "label": "Set `cur = next_node`"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "ordering",
+        "ordered_ids": [
+          "save",
+          "rewire",
+          "prev",
+          "cur"
+        ]
+      }
+    },
+    {
+      "id": "dsa4-sentinel-choice-004",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.49,
+      "prompt": "You must remove every matching node from a singly linked list, including possibly the first node. Why can a dummy head simplify the loop?",
+      "concepts": [
+        {
+          "concept_id": "dsa.linked.sentinel",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The dummy gives the logical head a predecessor, so every removal can use `prev.next = cur.next`. The real head is recovered from `dummy.next` afterward.",
+      "blueprint_skill_ids": [
+        "4.1.02"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "The awkward case is deleting the first real node."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected reason does not capture the boundary-case simplification provided by a sentinel.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.linked.sentinel"
+            ],
+            "node_id": "domain-4-linked-sentinel",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.linked.sentinel",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Recitation 2: Linked List Sequence",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/c08a3b63dfe5f6f6b32257d35f86ae63_MIT6_006S20_r02.pdf"
+        },
+        {
+          "title": "Open Data Structures — Linked Lists",
+          "url": "https://opendatastructures.org/newhtml/ods/latex/linkedlists.html"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 3,
+        "family_id": "dsa.linked.sentinel",
+        "transfer_group_id": "sentinel_boundary_elimination",
+        "surface_context": "filter_linked_jobs",
+        "challenge_group_id": "d4-linked-01"
+      },
+      "choice_feedback": {
+        "same": "Correct: it removes the head special case from the pointer-update shape.",
+        "sort": "A sentinel does not sort the list.",
+        "random": "A sentinel does not provide random access.",
+        "cycle": "A sentinel does not detect cycles by itself."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "same",
+            "label": "It gives the first real node a predecessor, so head and interior removals use the same update"
+          },
+          {
+            "id": "sort",
+            "label": "It keeps the list automatically sorted"
+          },
+          {
+            "id": "random",
+            "label": "It makes indexed lookup O(1)"
+          },
+          {
+            "id": "cycle",
+            "label": "It automatically prevents cycles"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "same"
+      }
+    },
+    {
+      "id": "dsa4-linked-tradeoff-005",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.55,
+      "prompt": "Classify each operation by which sequence representation naturally supports it better under the stated access pattern.",
+      "concepts": [
+        {
+          "concept_id": "dsa.linked.rewire",
+          "weight": 0.6
+        },
+        {
+          "concept_id": "dsa.linked.sentinel",
+          "weight": 0.4
+        }
+      ],
+      "explanation": "Linked structures make local relinking cheap when the relevant node/reference is already known, while arrays provide constant-time indexed access. Neither representation dominates every operation.",
+      "blueprint_skill_ids": [
+        "4.1.01"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Separate 'reaching the position' from 'updating once you are there.'"
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one operation was matched to the wrong representation trade-off.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.linked.rewire"
+            ],
+            "node_id": "domain-4-linked-rewire",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.sequence.structure_tradeoff",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one operation was not classified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.linked.rewire"
+            ],
+            "node_id": "domain-4-linked-rewire",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.sequence.structure_tradeoff",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 2 notes: Linked List Sequence",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/79a07dc1cb47d76dae2ffedc701e3d2b_MIT6_006S20_lec2.pdf"
+        }
+      ],
+      "pedagogy": {
+        "stage": "differentiate",
+        "scaffold_level": 2,
+        "family_id": "dsa.sequence.structure_tradeoff",
+        "transfer_group_id": "linked_vs_array_operations",
+        "surface_context": "sequence_operation_tradeoffs"
+      },
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "index",
+            "label": "Read item at known index i repeatedly"
+          },
+          {
+            "id": "front",
+            "label": "Insert/remove at the front repeatedly"
+          },
+          {
+            "id": "knownprev",
+            "label": "Remove node after an already-known predecessor"
+          },
+          {
+            "id": "binary",
+            "label": "Binary-search by index in a contiguous sorted sequence"
+          }
+        ],
+        "categories": [
+          {
+            "id": "linked",
+            "label": "Linked representation naturally fits"
+          },
+          {
+            "id": "array",
+            "label": "Array / dynamic array naturally fits"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "index": "array",
+          "front": "linked",
+          "knownprev": "linked",
+          "binary": "array"
+        }
+      }
+    },
+    {
+      "id": "dsa4-sentinel-fault-006",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.59,
+      "prompt": "A linked-list filter uses a dummy head. Flag the step that can return a stale logical head after removals.",
+      "concepts": [
+        {
+          "concept_id": "dsa.linked.sentinel",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The logical head after filtering is `dummy.next`, not necessarily the original `head`. Returning the old head can return a node that was removed.",
+      "blueprint_skill_ids": [
+        "4.1.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "The first real node is allowed to change."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The stale-head return was not identified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.linked.sentinel"
+            ],
+            "node_id": "domain-4-linked-sentinel",
+            "preferred_stage": "diagnose",
+            "preferred_family_id": "dsa.linked.sentinel",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A valid sentinel-based filtering step was incorrectly flagged.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.linked.sentinel"
+            ],
+            "node_id": "domain-4-linked-sentinel",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.linked.sentinel",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Recitation 2: Linked List Sequence",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/c08a3b63dfe5f6f6b32257d35f86ae63_MIT6_006S20_r02.pdf"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 2,
+        "family_id": "dsa.linked.sentinel",
+        "transfer_group_id": "sentinel_boundary_elimination",
+        "surface_context": "filtered_queue_head"
+      },
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "dummy",
+            "label": "Create `dummy.next = head`"
+          },
+          {
+            "id": "filter",
+            "label": "Use `prev.next = cur.next` when removing a node"
+          },
+          {
+            "id": "bad",
+            "label": "Return the original `head` variable without resetting it from `dummy.next`"
+          },
+          {
+            "id": "advance",
+            "label": "Advance through the list until `cur is None`"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "bad"
+        ]
+      }
+    },
+    {
+      "id": "dsa4-linked-evidence-007",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.61,
+      "prompt": "A team proposes a linked list for a workload. Which facts would actually support that choice?",
+      "concepts": [
+        {
+          "concept_id": "dsa.linked.rewire",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A linked list is attractive when local insertion/removal operations dominate and the code already has the relevant node references. Frequent random indexed access points toward an array-like representation instead.",
+      "blueprint_skill_ids": [
+        "4.1.01"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Look for operations that avoid shifting or indexed traversal."
+      ],
+      "error_codes": [
+        {
+          "code": "evidence_missing_relevant",
+          "description": "A linked-list-friendly workload property was missed.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.linked.rewire"
+            ],
+            "node_id": "domain-4-linked-rewire",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.sequence.structure_tradeoff",
+            "min_scaffold_level": 2
+          }
+        },
+        {
+          "code": "evidence_selected_irrelevant",
+          "description": "An operation favoring indexed array access was selected.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.linked.rewire"
+            ],
+            "node_id": "domain-4-linked-rewire",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.sequence.structure_tradeoff",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 2 notes: Linked List Sequence",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/79a07dc1cb47d76dae2ffedc701e3d2b_MIT6_006S20_lec2.pdf"
+        },
+        {
+          "title": "Open Data Structures — Linked Lists",
+          "url": "https://opendatastructures.org/newhtml/ods/latex/linkedlists.html"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 1,
+        "family_id": "dsa.sequence.structure_tradeoff",
+        "transfer_group_id": "linked_vs_array_operations",
+        "surface_context": "workload_structure_choice"
+      },
+      "instruction": "Select all supporting facts.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          {
+            "id": "local",
+            "label": "The code frequently inserts/removes after nodes it already has references to"
+          },
+          {
+            "id": "front",
+            "label": "Front insertion/removal is common"
+          },
+          {
+            "id": "random",
+            "label": "The workload repeatedly reads arbitrary positions by numeric index"
+          },
+          {
+            "id": "binary",
+            "label": "The primary operation is binary search by index"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "local",
+          "front"
+        ]
+      }
+    },
+    {
+      "id": "dsa4-linked-transfer-008",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.1",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.69,
+      "prompt": "A producer builds a singly linked batch by PREPENDING each new message, so after arrivals A, B, C the chain is C → B → A. Before sending, the batch must be emitted in original arrival order without copying message payloads. What is the direct transformation?",
+      "concepts": [
+        {
+          "concept_id": "dsa.linked.reverse",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Prepending reverses arrival order. Reversing the links once turns C → B → A back into A → B → C without copying payload objects into another sequence.",
+      "blueprint_skill_ids": [
+        "4.1.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected operation does not directly restore the prepended batch to arrival order.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.linked.reverse"
+            ],
+            "node_id": "domain-4-linked-reverse",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.linked.reverse",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 2 notes: Linked List Sequence",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/79a07dc1cb47d76dae2ffedc701e3d2b_MIT6_006S20_lec2.pdf"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0,
+        "family_id": "dsa.linked.reverse",
+        "transfer_group_id": "linked_reversal_state",
+        "surface_context": "prepend_batch_restore_order",
+        "challenge_group_id": "d4-linked-01"
+      },
+      "choice_feedback": {
+        "reverse": "Correct: one link reversal restores the desired order.",
+        "sort": "Sorting requires a key and may not preserve original arrival semantics.",
+        "set": "A set discards ordering and possibly duplicates.",
+        "cycle": "Cycle detection does not change the list order."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "reverse",
+            "label": "Reverse the singly linked chain in place"
+          },
+          {
+            "id": "sort",
+            "label": "Sort messages by payload value"
+          },
+          {
+            "id": "set",
+            "label": "Convert the messages to a set"
+          },
+          {
+            "id": "cycle",
+            "label": "Run fast/slow cycle detection"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "reverse"
+      }
+    },
+    {
+      "id": "dsa4-stack-delimiter-009",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.43,
+      "prompt": "A configuration language allows nested `()`, `[]`, and `{}`. While scanning left to right, which structure naturally tracks unmatched opening delimiters?",
+      "concepts": [
+        {
+          "concept_id": "dsa.stack.lifo",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Nested delimiters close in reverse order of opening, so the newest unmatched opener must be checked first. That is LIFO behavior.",
+      "blueprint_skill_ids": [
+        "4.2.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "The innermost still-open scope closes first."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected structure does not model innermost-first closure.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.stack.lifo"
+            ],
+            "node_id": "domain-4-stack-lifo",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.stack.nesting",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Open Data Structures — Linked Lists",
+          "url": "https://opendatastructures.org/newhtml/ods/latex/linkedlists.html"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.stack.nesting",
+        "transfer_group_id": "nested_lifo",
+        "surface_context": "config_parser",
+        "challenge_group_id": "d4-stackqueue-01"
+      },
+      "choice_feedback": {
+        "stack": "Correct: nested scopes close in LIFO order.",
+        "queue": "FIFO would compare the closer against the oldest opener, not the innermost one.",
+        "heap": "Priority does not model nesting order.",
+        "set": "A set cannot represent the order of unmatched openers."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "stack",
+            "label": "Stack"
+          },
+          {
+            "id": "queue",
+            "label": "Queue"
+          },
+          {
+            "id": "heap",
+            "label": "Priority queue"
+          },
+          {
+            "id": "set",
+            "label": "Set"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "stack"
+      }
+    },
+    {
+      "id": "dsa4-stack-trace-010",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.47,
+      "prompt": "For the delimiter sequence `([{}])`, order these key stack events.",
+      "concepts": [
+        {
+          "concept_id": "dsa.stack.lifo",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Opening delimiters are pushed in encounter order. Closing braces pop the newest compatible opener first, unwinding the nested scopes from inside out.",
+      "blueprint_skill_ids": [
+        "4.2.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "The `{}` pair resolves before `[]`, which resolves before `()`."
+      ],
+      "error_codes": [
+        {
+          "code": "ordering_invalid_sequence",
+          "description": "The nested LIFO trace is out of order.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.stack.lifo"
+            ],
+            "node_id": "domain-4-stack-lifo",
+            "preferred_stage": "trace",
+            "preferred_family_id": "dsa.stack.nesting",
+            "min_scaffold_level": 4
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Open Data Structures — Linked Lists",
+          "url": "https://opendatastructures.org/newhtml/ods/latex/linkedlists.html"
+        }
+      ],
+      "pedagogy": {
+        "stage": "trace",
+        "scaffold_level": 3,
+        "family_id": "dsa.stack.nesting",
+        "transfer_group_id": "nested_lifo",
+        "surface_context": "delimiter_trace",
+        "challenge_group_id": "d4-stackqueue-01"
+      },
+      "interaction": {
+        "type": "ordering",
+        "items": [
+          {
+            "id": "pushp",
+            "label": "Push `(`"
+          },
+          {
+            "id": "pushb",
+            "label": "Push `[`"
+          },
+          {
+            "id": "pushc",
+            "label": "Push `{`"
+          },
+          {
+            "id": "popc",
+            "label": "Read `}` and pop `{`"
+          },
+          {
+            "id": "popb",
+            "label": "Read `]` and pop `[`"
+          },
+          {
+            "id": "popp",
+            "label": "Read `)` and pop `(`"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "ordering",
+        "ordered_ids": [
+          "pushp",
+          "pushb",
+          "pushc",
+          "popc",
+          "popb",
+          "popp"
+        ]
+      }
+    },
+    {
+      "id": "dsa4-queue-choice-011",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.42,
+      "prompt": "A simple dispatcher should process waiting jobs in the exact order they arrived. No job has higher priority than another. Which structure directly models the policy?",
+      "concepts": [
+        {
+          "concept_id": "dsa.queue.fifo",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Arrival-order service is FIFO: append new jobs at the back and remove the oldest job from the front.",
+      "blueprint_skill_ids": [
+        "4.2.02"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "No priority comparison or nesting is required."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected structure does not preserve simple arrival-order service.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.queue.fifo"
+            ],
+            "node_id": "domain-4-queue-fifo",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.queue.fifo",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Python documentation — collections.deque",
+          "url": "https://docs.python.org/3/library/collections.html#collections.deque"
+        },
+        {
+          "title": "Open Data Structures — Linked Lists",
+          "url": "https://opendatastructures.org/newhtml/ods/latex/linkedlists.html"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.queue.fifo",
+        "transfer_group_id": "arrival_order_service",
+        "surface_context": "job_dispatch",
+        "challenge_group_id": "d4-stackqueue-01"
+      },
+      "choice_feedback": {
+        "queue": "Correct: FIFO matches arrival-order service.",
+        "stack": "A stack would favor newest arrivals.",
+        "heap": "A heap would introduce a priority order not present in the contract.",
+        "set": "A set does not preserve arrival order."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "queue",
+            "label": "FIFO queue"
+          },
+          {
+            "id": "stack",
+            "label": "LIFO stack"
+          },
+          {
+            "id": "heap",
+            "label": "Priority queue"
+          },
+          {
+            "id": "set",
+            "label": "Set"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "queue"
+      }
+    },
+    {
+      "id": "dsa4-order-semantics-classify-012",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.51,
+      "prompt": "Match each workload to its dominant removal order.",
+      "concepts": [
+        {
+          "concept_id": "dsa.stack.lifo",
+          "weight": 0.4
+        },
+        {
+          "concept_id": "dsa.queue.fifo",
+          "weight": 0.4
+        },
+        {
+          "concept_id": "dsa.heap.invariant",
+          "weight": 0.2
+        }
+      ],
+      "explanation": "Nested/undo contexts are LIFO, arrival-order service is FIFO, and 'best priority next' is a priority-queue workload.",
+      "blueprint_skill_ids": [
+        "4.2.01",
+        "4.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Ask what determines the NEXT item to remove: recency, age, or priority."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one workload was matched to the wrong removal-order semantics.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.stack.lifo",
+              "dsa.queue.fifo"
+            ],
+            "node_id": "domain-4-stack-lifo",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.order_semantics",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one workload was not classified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.stack.lifo",
+              "dsa.queue.fifo"
+            ],
+            "node_id": "domain-4-stack-lifo",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.order_semantics",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Python documentation — collections.deque",
+          "url": "https://docs.python.org/3/library/collections.html#collections.deque"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 8: Binary Heaps",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/40d4851e550507ca14dc778b9b2266cc_MIT6_006S20_lec8.pdf"
+        }
+      ],
+      "pedagogy": {
+        "stage": "differentiate",
+        "scaffold_level": 2,
+        "family_id": "dsa.order_semantics",
+        "transfer_group_id": "lifo_fifo_priority",
+        "surface_context": "mixed_ordering_workloads"
+      },
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "undo",
+            "label": "Undo the most recent editor action"
+          },
+          {
+            "id": "arrival",
+            "label": "Process ordinary jobs in arrival order"
+          },
+          {
+            "id": "event",
+            "label": "Run the earliest scheduled future event"
+          },
+          {
+            "id": "nested",
+            "label": "Close the innermost parser scope"
+          }
+        ],
+        "categories": [
+          {
+            "id": "stack",
+            "label": "Stack / LIFO"
+          },
+          {
+            "id": "queue",
+            "label": "Queue / FIFO"
+          },
+          {
+            "id": "priority",
+            "label": "Priority queue"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "undo": "stack",
+          "arrival": "queue",
+          "event": "priority",
+          "nested": "stack"
+        }
+      }
+    },
+    {
+      "id": "dsa4-deque-evidence-013",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.55,
+      "prompt": "Why is a deque a better general queue primitive than repeatedly calling `list.pop(0)` in Python?",
+      "concepts": [
+        {
+          "concept_id": "dsa.queue.fifo",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Python documents deque appends/pops at either side as approximately O(1), while removing index 0 from a list shifts later elements and costs O(n).",
+      "blueprint_skill_ids": [
+        "4.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Focus on which end is removed and whether later elements must shift."
+      ],
+      "error_codes": [
+        {
+          "code": "evidence_missing_relevant",
+          "description": "A queue-implementation performance fact was missed.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.queue.fifo"
+            ],
+            "node_id": "domain-4-queue-fifo",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.queue.fifo",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "evidence_selected_irrelevant",
+          "description": "A property not provided by a deque was selected.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.queue.fifo"
+            ],
+            "node_id": "domain-4-queue-fifo",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.queue.fifo",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Python documentation — collections.deque",
+          "url": "https://docs.python.org/3/library/collections.html#collections.deque"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.queue.fifo",
+        "transfer_group_id": "arrival_order_service",
+        "surface_context": "python_queue_implementation"
+      },
+      "instruction": "Select all supporting facts.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          {
+            "id": "left",
+            "label": "`deque.popleft()` removes from the left efficiently"
+          },
+          {
+            "id": "shift",
+            "label": "Removing index 0 from a Python list requires moving later elements"
+          },
+          {
+            "id": "sort",
+            "label": "A deque keeps all elements automatically sorted"
+          },
+          {
+            "id": "priority",
+            "label": "A deque automatically removes the highest-priority element"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "left",
+          "shift"
+        ]
+      }
+    },
+    {
+      "id": "dsa4-monotonic-choice-014",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.61,
+      "prompt": "For each telemetry reading, find the FIRST later reading with a strictly larger value. Which structure avoids rescanning the suffix for every reading?",
+      "concepts": [
+        {
+          "concept_id": "dsa.stack.monotonic",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A monotonic stack stores unresolved indices. When a larger reading arrives, it resolves and pops every smaller reading exposed at the top. Each index is pushed once and popped at most once.",
+      "blueprint_skill_ids": [
+        "4.2.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "You need to remember unresolved earlier items and resolve them when a dominating later value appears."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected structure does not preserve the first-later dominance relationship.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.stack.monotonic"
+            ],
+            "node_id": "domain-4-monotonic-stack",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.stack.monotonic",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.stack.monotonic",
+        "transfer_group_id": "next_greater_frontier",
+        "surface_context": "telemetry_next_greater",
+        "challenge_group_id": "d4-stackqueue-01"
+      },
+      "choice_feedback": {
+        "mono": "Correct: it keeps only unresolved candidates in a useful order.",
+        "queue": "FIFO order alone does not identify which prior values the new value dominates.",
+        "heap": "A heap loses the sequence-local 'first later' relationship.",
+        "sort": "Sorting destroys original later/earlier position semantics."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "mono",
+            "label": "Monotonic stack of unresolved indices"
+          },
+          {
+            "id": "queue",
+            "label": "FIFO queue of every prior reading"
+          },
+          {
+            "id": "heap",
+            "label": "Heap of readings ordered only by value"
+          },
+          {
+            "id": "sort",
+            "label": "Sort all readings before scanning"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "mono"
+      }
+    },
+    {
+      "id": "dsa4-monotonic-fault-015",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.65,
+      "prompt": "A next-greater algorithm keeps unresolved indices in decreasing value order. Flag the update that can lose an unresolved candidate too early.",
+      "concepts": [
+        {
+          "concept_id": "dsa.stack.monotonic",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "An index should be popped only when the current value actually resolves its next-greater answer. Popping an unresolved index merely because a smaller value arrives would discard a candidate with no answer.",
+      "blueprint_skill_ids": [
+        "4.2.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "Every pop should have a proof that the popped item's answer is now known."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The premature pop of an unresolved candidate was not identified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.stack.monotonic"
+            ],
+            "node_id": "domain-4-monotonic-stack",
+            "preferred_stage": "diagnose",
+            "preferred_family_id": "dsa.stack.monotonic",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A valid monotonic-stack update was incorrectly flagged.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.stack.monotonic"
+            ],
+            "node_id": "domain-4-monotonic-stack",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.stack.monotonic",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 1,
+        "family_id": "dsa.stack.monotonic",
+        "transfer_group_id": "next_greater_frontier",
+        "surface_context": "monotonic_stack_bug"
+      },
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "keep",
+            "label": "Push the current index after resolving smaller stack-top values"
+          },
+          {
+            "id": "resolve",
+            "label": "Pop a top index when the current value is strictly larger and record its answer"
+          },
+          {
+            "id": "bad",
+            "label": "Pop the top index whenever the current value is smaller, even though its next-greater answer is still unknown"
+          },
+          {
+            "id": "left",
+            "label": "Leave unresolved indices on the stack when no larger value has arrived"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "bad"
+        ]
+      }
+    },
+    {
+      "id": "dsa4-stack-queue-transfer-016",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.2",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.66,
+      "prompt": "An editor needs a structure for 'Undo' so the most recently committed edit is undone first. A separate background uploader must process files in the order they were queued. Which pairing is correct?",
+      "concepts": [
+        {
+          "concept_id": "dsa.stack.lifo",
+          "weight": 0.5
+        },
+        {
+          "concept_id": "dsa.queue.fifo",
+          "weight": 0.5
+        }
+      ],
+      "explanation": "Undo is LIFO because the latest action is reversed first. The uploader is FIFO because the oldest waiting file should be processed first.",
+      "blueprint_skill_ids": [
+        "4.2.01",
+        "4.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected pairing does not match the required LIFO/FIFO semantics.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.stack.lifo",
+              "dsa.queue.fifo"
+            ],
+            "node_id": "domain-4-stack-lifo",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.order_semantics",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Python documentation — collections.deque",
+          "url": "https://docs.python.org/3/library/collections.html#collections.deque"
+        },
+        {
+          "title": "Open Data Structures — Linked Lists",
+          "url": "https://opendatastructures.org/newhtml/ods/latex/linkedlists.html"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0,
+        "family_id": "dsa.order_semantics",
+        "transfer_group_id": "lifo_fifo_priority",
+        "surface_context": "editor_and_uploader",
+        "challenge_group_id": "d4-stackqueue-01"
+      },
+      "choice_feedback": {
+        "correct": "Correct: newest edit first, oldest queued upload first.",
+        "bothqueue": "Undo would reverse the wrong edit order.",
+        "bothstack": "The uploader would favor the newest file rather than arrival order.",
+        "swap": "The two semantics are reversed."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "correct",
+            "label": "Undo → stack; uploader → queue"
+          },
+          {
+            "id": "bothqueue",
+            "label": "Undo → queue; uploader → queue"
+          },
+          {
+            "id": "bothstack",
+            "label": "Undo → stack; uploader → stack"
+          },
+          {
+            "id": "swap",
+            "label": "Undo → queue; uploader → stack"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "correct"
+      }
+    },
+    {
+      "id": "dsa4-heap-choice-017",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.48,
+      "prompt": "A simulator repeatedly schedules new future events and must always execute the event with the EARLIEST timestamp next. Which structure best matches the workload?",
+      "concepts": [
+        {
+          "concept_id": "dsa.heap.invariant",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "This is a priority-queue workload: inserts continue over time and the smallest timestamp must be extracted repeatedly. A min-heap keeps that next event at the root.",
+      "blueprint_skill_ids": [
+        "4.3.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "The next item is chosen by timestamp priority, not arrival order."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected structure does not support repeated earliest-priority extraction as directly.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.heap.invariant"
+            ],
+            "node_id": "domain-4-heap-invariant",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.heap.priority_queue",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 8: Binary Heaps",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/40d4851e550507ca14dc778b9b2266cc_MIT6_006S20_lec8.pdf"
+        },
+        {
+          "title": "Python documentation — heapq",
+          "url": "https://docs.python.org/3/library/heapq.html"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.heap.priority_queue",
+        "transfer_group_id": "repeated_priority_selection",
+        "surface_context": "event_simulation",
+        "challenge_group_id": "d4-heap-01"
+      },
+      "choice_feedback": {
+        "heap": "Correct: repeated insert + extract-min is the priority-queue interface.",
+        "queue": "FIFO can execute a later event before an earlier scheduled one.",
+        "stack": "LIFO favors newest insertion, not earliest timestamp.",
+        "set": "A plain set does not expose the minimum priority efficiently."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "heap",
+            "label": "Min-heap / min-priority queue"
+          },
+          {
+            "id": "queue",
+            "label": "FIFO queue"
+          },
+          {
+            "id": "stack",
+            "label": "LIFO stack"
+          },
+          {
+            "id": "set",
+            "label": "Unordered set"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "heap"
+      }
+    },
+    {
+      "id": "dsa4-heap-invariant-018",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "recognition",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.46,
+      "prompt": "Which statement is guaranteed by a min-heap invariant?",
+      "concepts": [
+        {
+          "concept_id": "dsa.heap.invariant",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Every parent is no greater than its children, which guarantees the minimum item is at the root. The rest of the array is not globally sorted.",
+      "blueprint_skill_ids": [
+        "4.3.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "A heap gives a partial order, not a full sorted order."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected statement is not guaranteed by the min-heap invariant.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.heap.invariant"
+            ],
+            "node_id": "domain-4-heap-invariant",
+            "preferred_stage": "recognize",
+            "preferred_family_id": "dsa.heap.priority_queue",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 8: Binary Heaps",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/40d4851e550507ca14dc778b9b2266cc_MIT6_006S20_lec8.pdf"
+        },
+        {
+          "title": "Python documentation — heapq",
+          "url": "https://docs.python.org/3/library/heapq.html"
+        }
+      ],
+      "pedagogy": {
+        "stage": "recognize",
+        "scaffold_level": 3,
+        "family_id": "dsa.heap.priority_queue",
+        "transfer_group_id": "repeated_priority_selection",
+        "surface_context": "heap_property",
+        "challenge_group_id": "d4-heap-01"
+      },
+      "choice_feedback": {
+        "root": "Correct: the root is the global minimum in a min-heap.",
+        "sorted": "Heap array order is not a globally sorted sequence.",
+        "siblings": "Siblings have no required relative order.",
+        "leaves": "Leaves are not required to contain the largest items in sorted order."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "root",
+            "label": "The root is a minimum item"
+          },
+          {
+            "id": "sorted",
+            "label": "The entire backing array is sorted ascending"
+          },
+          {
+            "id": "siblings",
+            "label": "Every left child is smaller than its right sibling"
+          },
+          {
+            "id": "leaves",
+            "label": "All leaves are larger than every internal node"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "root"
+      }
+    },
+    {
+      "id": "dsa4-order-structure-classify-019",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.55,
+      "prompt": "Match each 'next item' policy to the structure that naturally implements it.",
+      "concepts": [
+        {
+          "concept_id": "dsa.heap.invariant",
+          "weight": 0.4
+        },
+        {
+          "concept_id": "dsa.queue.fifo",
+          "weight": 0.3
+        },
+        {
+          "concept_id": "dsa.stack.lifo",
+          "weight": 0.3
+        }
+      ],
+      "explanation": "Queue chooses oldest arrival, stack chooses newest arrival, and heap/priority queue chooses by authored priority.",
+      "blueprint_skill_ids": [
+        "4.3.01"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Ignore implementation details and focus on the removal rule."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one removal policy was matched to the wrong structure.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.heap.invariant",
+              "dsa.queue.fifo",
+              "dsa.stack.lifo"
+            ],
+            "node_id": "domain-4-heap-invariant",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.order_semantics",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one removal policy was not classified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.heap.invariant",
+              "dsa.queue.fifo",
+              "dsa.stack.lifo"
+            ],
+            "node_id": "domain-4-heap-invariant",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.order_semantics",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 8: Binary Heaps",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/40d4851e550507ca14dc778b9b2266cc_MIT6_006S20_lec8.pdf"
+        },
+        {
+          "title": "Python documentation — collections.deque",
+          "url": "https://docs.python.org/3/library/collections.html#collections.deque"
+        }
+      ],
+      "pedagogy": {
+        "stage": "differentiate",
+        "scaffold_level": 2,
+        "family_id": "dsa.order_semantics",
+        "transfer_group_id": "lifo_fifo_priority",
+        "surface_context": "next_item_policies"
+      },
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "oldest",
+            "label": "Oldest waiting item first"
+          },
+          {
+            "id": "newest",
+            "label": "Newest added item first"
+          },
+          {
+            "id": "smallest",
+            "label": "Smallest deadline first"
+          },
+          {
+            "id": "highest",
+            "label": "Highest severity first"
+          }
+        ],
+        "categories": [
+          {
+            "id": "queue",
+            "label": "Queue"
+          },
+          {
+            "id": "stack",
+            "label": "Stack"
+          },
+          {
+            "id": "heap",
+            "label": "Priority queue / heap"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "oldest": "queue",
+          "newest": "stack",
+          "smallest": "heap",
+          "highest": "heap"
+        }
+      }
+    },
+    {
+      "id": "dsa4-topk-choice-020",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.59,
+      "prompt": "You have 20 million `(count, key)` pairs and need only the 100 keys with the largest counts. K=100 is tiny relative to n. Which approach best avoids sorting all n items?",
+      "concepts": [
+        {
+          "concept_id": "dsa.heap.top_k",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Keep a min-heap of the current top 100. Its root is the weakest current winner; only an item that beats that cutoff needs to replace it.",
+      "blueprint_skill_ids": [
+        "4.3.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "You only need 100 winners, not a full ordering of 20 million items."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected approach does not exploit K being much smaller than n.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.heap.top_k"
+            ],
+            "node_id": "domain-4-heap-top-k",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.heap.top_k",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Python documentation — heapq",
+          "url": "https://docs.python.org/3/library/heapq.html"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 8: Binary Heaps",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/40d4851e550507ca14dc778b9b2266cc_MIT6_006S20_lec8.pdf"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.heap.top_k",
+        "transfer_group_id": "bounded_top_k",
+        "surface_context": "observability_top_errors",
+        "challenge_group_id": "d4-heap-01"
+      },
+      "choice_feedback": {
+        "bounded": "Correct: memory stays O(k) and each accepted replacement costs O(log k).",
+        "sort": "Sorting all n items works but computes far more order than the output needs.",
+        "max": "A max-heap of all n items still stores all n items.",
+        "queue": "FIFO order is unrelated to count ranking."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "bounded",
+            "label": "Maintain a size-100 min-heap of the current largest counts"
+          },
+          {
+            "id": "sort",
+            "label": "Fully sort all 20 million pairs descending"
+          },
+          {
+            "id": "max",
+            "label": "Insert all 20 million pairs into one max-heap before extracting 100"
+          },
+          {
+            "id": "queue",
+            "label": "Keep the last 100 pairs in a FIFO queue"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "bounded"
+      }
+    },
+    {
+      "id": "dsa4-topk-cutoff-021",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.61,
+      "prompt": "You maintain a min-heap containing the current K largest scores. Why is the ROOT the correct cutoff for deciding whether a new score can enter the top K?",
+      "concepts": [
+        {
+          "concept_id": "dsa.heap.top_k",
+          "weight": 0.7
+        },
+        {
+          "concept_id": "dsa.heap.invariant",
+          "weight": 0.3
+        }
+      ],
+      "explanation": "The heap contains only current winners, and the min-heap root is the smallest winner. A new value that does not beat that weakest winner cannot belong in the top K.",
+      "blueprint_skill_ids": [
+        "4.3.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Ask what the minimum of the current winner set represents."
+      ],
+      "error_codes": [
+        {
+          "code": "evidence_missing_relevant",
+          "description": "Part of the top-K cutoff justification was missed.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.heap.top_k"
+            ],
+            "node_id": "domain-4-heap-top-k",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.heap.top_k",
+            "min_scaffold_level": 2
+          }
+        },
+        {
+          "code": "evidence_selected_irrelevant",
+          "description": "A property not guaranteed by a heap was selected.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.heap.invariant"
+            ],
+            "node_id": "domain-4-heap-invariant",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.heap.priority_queue",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 8: Binary Heaps",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/40d4851e550507ca14dc778b9b2266cc_MIT6_006S20_lec8.pdf"
+        },
+        {
+          "title": "Python documentation — heapq",
+          "url": "https://docs.python.org/3/library/heapq.html"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 1,
+        "family_id": "dsa.heap.top_k",
+        "transfer_group_id": "bounded_top_k",
+        "surface_context": "topk_cutoff"
+      },
+      "instruction": "Select all statements that justify the cutoff.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          {
+            "id": "winners",
+            "label": "The heap stores exactly the current K winners"
+          },
+          {
+            "id": "root",
+            "label": "The min-heap root is the smallest of those winners"
+          },
+          {
+            "id": "sorted",
+            "label": "Every heap element is globally sorted after the root"
+          },
+          {
+            "id": "arrival",
+            "label": "The root is always the oldest inserted winner"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "winners",
+          "root"
+        ]
+      }
+    },
+    {
+      "id": "dsa4-kway-order-022",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.61,
+      "prompt": "Order the core loop for merging K individually sorted log streams with a min-heap.",
+      "concepts": [
+        {
+          "concept_id": "dsa.heap.kway_merge",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Initialize one frontier per non-empty stream. Repeatedly pop the smallest frontier, emit it, advance only that stream, and push its new frontier.",
+      "blueprint_skill_ids": [
+        "4.3.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Only the stream that produced the popped record advances."
+      ],
+      "error_codes": [
+        {
+          "code": "ordering_invalid_sequence",
+          "description": "The K-way merge steps are out of order.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.heap.kway_merge"
+            ],
+            "node_id": "domain-4-heap-kway",
+            "preferred_stage": "construct",
+            "preferred_family_id": "dsa.heap.kway_merge",
+            "min_scaffold_level": 5
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Python documentation — heapq",
+          "url": "https://docs.python.org/3/library/heapq.html"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 8: Binary Heaps",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/40d4851e550507ca14dc778b9b2266cc_MIT6_006S20_lec8.pdf"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 4,
+        "family_id": "dsa.heap.kway_merge",
+        "transfer_group_id": "sorted_frontier_merge",
+        "surface_context": "sorted_log_streams",
+        "challenge_group_id": "d4-heap-01"
+      },
+      "interaction": {
+        "type": "ordering",
+        "items": [
+          {
+            "id": "seed",
+            "label": "Push the first item from each non-empty stream"
+          },
+          {
+            "id": "pop",
+            "label": "Pop the smallest frontier item"
+          },
+          {
+            "id": "emit",
+            "label": "Emit that item"
+          },
+          {
+            "id": "advance",
+            "label": "Advance the stream that produced it"
+          },
+          {
+            "id": "push",
+            "label": "Push that stream's next item if one exists"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "ordering",
+        "ordered_ids": [
+          "seed",
+          "pop",
+          "emit",
+          "advance",
+          "push"
+        ]
+      }
+    },
+    {
+      "id": "dsa4-kway-fault-023",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.66,
+      "prompt": "A heap-based merge of sorted log streams should keep one current frontier per stream. Flag the step that can skip records.",
+      "concepts": [
+        {
+          "concept_id": "dsa.heap.kway_merge",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "After popping one record, only its source stream should advance by one. Advancing every stream would discard frontier records from streams that were not selected.",
+      "blueprint_skill_ids": [
+        "4.3.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "The heap selected exactly one stream to consume from."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The step that skips unselected frontier records was not identified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.heap.kway_merge"
+            ],
+            "node_id": "domain-4-heap-kway",
+            "preferred_stage": "diagnose",
+            "preferred_family_id": "dsa.heap.kway_merge",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A valid K-way merge step was incorrectly flagged.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.heap.kway_merge"
+            ],
+            "node_id": "domain-4-heap-kway",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.heap.kway_merge",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Python documentation — heapq",
+          "url": "https://docs.python.org/3/library/heapq.html"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 2,
+        "family_id": "dsa.heap.kway_merge",
+        "transfer_group_id": "sorted_frontier_merge",
+        "surface_context": "log_merge_bug",
+        "challenge_group_id": "d4-heap-01"
+      },
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "seed",
+            "label": "Seed the heap with one item from each non-empty stream"
+          },
+          {
+            "id": "pop",
+            "label": "Pop the globally smallest current frontier"
+          },
+          {
+            "id": "bad",
+            "label": "After each pop, advance every input stream by one record"
+          },
+          {
+            "id": "source",
+            "label": "Push the next record only from the stream that produced the popped record"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "bad"
+        ]
+      }
+    },
+    {
+      "id": "dsa4-heap-transfer-024",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-4",
+      "task_id": "4.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.74,
+      "prompt": "Eight audit files are each already sorted by timestamp and are too large to load fully into memory. You need one globally timestamp-sorted output stream. Which design best fits?",
+      "concepts": [
+        {
+          "concept_id": "dsa.heap.kway_merge",
+          "weight": 0.8
+        },
+        {
+          "concept_id": "dsa.heap.invariant",
+          "weight": 0.2
+        }
+      ],
+      "explanation": "Keep one current record from each file in a min-heap keyed by timestamp. Pop the earliest, emit it, and refill only from that file. Memory is proportional to the number of streams rather than total remaining records.",
+      "blueprint_skill_ids": [
+        "4.3.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected approach does not preserve full global sort order under the streaming-memory constraint.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.heap.kway_merge"
+            ],
+            "node_id": "domain-4-heap-kway",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.heap.kway_merge",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Python documentation — heapq",
+          "url": "https://docs.python.org/3/library/heapq.html"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 8: Binary Heaps",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/40d4851e550507ca14dc778b9b2266cc_MIT6_006S20_lec8.pdf"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0,
+        "family_id": "dsa.heap.kway_merge",
+        "transfer_group_id": "sorted_frontier_merge",
+        "surface_context": "audit_file_merge",
+        "challenge_group_id": "d4-heap-01"
+      },
+      "choice_feedback": {
+        "frontier": "Correct: only one frontier per sorted file is required in memory.",
+        "all": "Loading everything defeats the streaming-memory constraint.",
+        "queue": "FIFO across files does not guarantee global timestamp order.",
+        "topk": "A bounded top-K heap would discard records instead of emitting the full merged stream."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "frontier",
+            "label": "Min-heap containing one current frontier record per file"
+          },
+          {
+            "id": "all",
+            "label": "Load every remaining record from all files, concatenate, then sort"
+          },
+          {
+            "id": "queue",
+            "label": "Round-robin FIFO queue across files regardless of timestamp"
+          },
+          {
+            "id": "topk",
+            "label": "Keep only the 100 earliest records and discard the rest"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "frontier"
+      }
+    }
+  ]
+}

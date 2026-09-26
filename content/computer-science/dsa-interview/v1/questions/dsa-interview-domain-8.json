@@ -1,0 +1,2517 @@
+{
+  "certification": {
+    "id": "cs-dsa-interview",
+    "vendor": "Shiden Labs",
+    "name": "Data Structures & Algorithms Interview",
+    "exam_code": "DSA-INTERVIEW",
+    "official_source_url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/",
+    "last_reviewed": "2026-09-26"
+  },
+  "version": {
+    "id": "dsa-interview-v1",
+    "exam_code": "DSA-INTERVIEW",
+    "effective_date": "2026-09-26",
+    "content_version": "dsa-interview-content-2026-09-26-v1",
+    "domains": [
+      {
+        "id": "domain-1",
+        "name": "Interview Reasoning, Complexity & Correctness",
+        "weight": 0.1,
+        "tasks": []
+      },
+      {
+        "id": "domain-2",
+        "name": "Arrays, Strings, Hashing & Prefix State",
+        "weight": 0.18,
+        "tasks": []
+      },
+      {
+        "id": "domain-3",
+        "name": "Pointer, Window & Interval Patterns",
+        "weight": 0.14,
+        "tasks": []
+      },
+      {
+        "id": "domain-4",
+        "name": "Linked Lists, Stacks, Queues & Heaps",
+        "weight": 0.12,
+        "tasks": []
+      },
+      {
+        "id": "domain-5",
+        "name": "Binary Search, Sorting & Ordered Reasoning",
+        "weight": 0.1,
+        "tasks": []
+      },
+      {
+        "id": "domain-6",
+        "name": "Trees, Recursion & Tries",
+        "weight": 0.13,
+        "tasks": []
+      },
+      {
+        "id": "domain-7",
+        "name": "Graphs, Connectivity & Shortest Paths",
+        "weight": 0.13,
+        "tasks": []
+      },
+      {
+        "id": "domain-8",
+        "name": "Backtracking, Greedy & Dynamic Programming",
+        "weight": 0.1,
+        "tasks": [
+          {
+            "id": "8.1",
+            "name": "Explore constrained choices with backtracking",
+            "question_ids": [
+              "dsa8-backtrack-choice-001",
+              "dsa8-backtrack-order-002",
+              "dsa8-backtrack-state-fault-003",
+              "dsa8-prune-choice-004",
+              "dsa8-prune-evidence-005",
+              "dsa8-backtrack-classify-006",
+              "dsa8-backtrack-reconstruct-007",
+              "dsa8-backtrack-transfer-008"
+            ]
+          },
+          {
+            "id": "8.2",
+            "name": "Use greedy choices only when they are provably safe",
+            "question_ids": [
+              "dsa8-greedy-safe-009",
+              "dsa8-interval-choice-010",
+              "dsa8-interval-order-011",
+              "dsa8-greedy-objective-fault-012",
+              "dsa8-greedy-counterexample-013",
+              "dsa8-greedy-dp-classify-014",
+              "dsa8-greedy-evidence-015",
+              "dsa8-greedy-transfer-016"
+            ]
+          },
+          {
+            "id": "8.3",
+            "name": "Design dynamic programming state and transitions",
+            "question_ids": [
+              "dsa8-dp-state-choice-017",
+              "dsa8-dp-transition-018",
+              "dsa8-memo-choice-019",
+              "dsa8-memo-tab-classify-020",
+              "dsa8-dp-state-fault-021",
+              "dsa8-edit-distance-choice-022",
+              "dsa8-dp-evidence-023",
+              "dsa8-dp-transfer-024"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "concepts": [
+    {
+      "id": "dsa.backtracking.choose_explore_undo",
+      "name": "Backtracking choose/explore/undo",
+      "description": "Explore a decision tree by making one choice, recursively exploring consequences, and undoing that choice before trying alternatives."
+    },
+    {
+      "id": "dsa.backtracking.state",
+      "name": "Backtracking state contract",
+      "description": "Maintain only the partial candidate and constraint state needed to decide what choices remain valid."
+    },
+    {
+      "id": "dsa.backtracking.pruning",
+      "name": "Backtracking pruning",
+      "description": "Stop exploring a partial candidate as soon as a constraint proves no completion below it can succeed."
+    },
+    {
+      "id": "dsa.greedy.safe_choice",
+      "name": "Greedy safe-choice reasoning",
+      "description": "Choose the locally preferred option only when a proof shows some optimal solution can start with that choice."
+    },
+    {
+      "id": "dsa.greedy.interval_scheduling",
+      "name": "Greedy interval scheduling",
+      "description": "Maximize the number of non-overlapping intervals by repeatedly choosing the compatible interval with earliest finish time."
+    },
+    {
+      "id": "dsa.greedy.discrimination",
+      "name": "Greedy versus DP discrimination",
+      "description": "Distinguish problems with a provably safe irreversible local choice from problems that require comparing multiple future consequences."
+    },
+    {
+      "id": "dsa.dp.state_transition",
+      "name": "DP state and transition",
+      "description": "Define a state that captures the information future decisions need, then express that state from smaller states."
+    },
+    {
+      "id": "dsa.dp.memoization",
+      "name": "Memoization and tabulation",
+      "description": "Compute overlapping subproblems once, either top-down on demand or bottom-up in dependency order."
+    },
+    {
+      "id": "dsa.dp.sequence_resource",
+      "name": "Sequence and resource DP",
+      "description": "Use DP for sequence alignment/editing and bounded resource-allocation problems when choices interact through remaining position or capacity."
+    }
+  ],
+  "questions": [
+    {
+      "id": "dsa8-backtrack-choice-001",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.1",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.48,
+      "prompt": "A test generator must choose one value for each of 6 parameters. Some combinations are invalid only after several choices have been made, and all valid configurations must be emitted. Which strategy best fits?",
+      "concepts": [
+        {
+          "concept_id": "dsa.backtracking.choose_explore_undo",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The solution is built from sequential choices, multiple alternatives must be explored, and partial assignments can become invalid. Backtracking matches that decision-tree structure.",
+      "blueprint_skill_ids": [
+        "8.1.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "You need all valid combinations, not one locally preferred choice."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected strategy does not match constrained enumeration over multiple alternative choices.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.backtracking.choose_explore_undo"
+            ],
+            "node_id": "domain-8-backtracking-tree",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.backtracking.choose_explore_undo",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Depth-First Search",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        },
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.backtracking.choose_explore_undo",
+        "transfer_group_id": "choice_tree_search",
+        "surface_context": "test_configuration_generation",
+        "challenge_group_id": "d8-backtrack-01"
+      },
+      "choice_feedback": {
+        "backtrack": "Correct: choose, explore, undo, then try the sibling choice.",
+        "greedy": "A single irreversible local choice can miss valid configurations.",
+        "binary": "There is no monotonic ordered answer domain.",
+        "heap": "Priority ordering does not enumerate constrained combinations."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "backtrack",
+            "label": "Backtracking over the parameter-choice tree"
+          },
+          {
+            "id": "greedy",
+            "label": "Pick the locally most common value for each parameter and never revisit it"
+          },
+          {
+            "id": "binary",
+            "label": "Binary-search the parameter values"
+          },
+          {
+            "id": "heap",
+            "label": "Store parameter values in a heap"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "backtrack"
+      }
+    },
+    {
+      "id": "dsa8-backtrack-order-002",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.1",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.5,
+      "prompt": "Order one backtracking branch before trying its sibling.",
+      "concepts": [
+        {
+          "concept_id": "dsa.backtracking.choose_explore_undo",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Choose, mutate state, explore, undo, then try the next candidate. Undo must happen before the sibling branch.",
+      "blueprint_skill_ids": [
+        "8.1.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Sibling branches should begin from the same parent state."
+      ],
+      "error_codes": [
+        {
+          "code": "ordering_invalid_sequence",
+          "description": "The backtracking branch lifecycle is out of order.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.backtracking.choose_explore_undo"
+            ],
+            "node_id": "domain-8-backtracking-state",
+            "preferred_stage": "trace",
+            "preferred_family_id": "dsa.backtracking.choose_explore_undo",
+            "min_scaffold_level": 4
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "trace",
+        "scaffold_level": 3,
+        "family_id": "dsa.backtracking.choose_explore_undo",
+        "transfer_group_id": "choice_tree_search",
+        "surface_context": "backtracking_branch_trace",
+        "challenge_group_id": "d8-backtrack-01"
+      },
+      "interaction": {
+        "type": "ordering",
+        "items": [
+          {
+            "id": "choose",
+            "label": "Choose candidate A"
+          },
+          {
+            "id": "apply",
+            "label": "Apply A to mutable state"
+          },
+          {
+            "id": "explore",
+            "label": "Explore descendants under A"
+          },
+          {
+            "id": "undo",
+            "label": "Undo A"
+          },
+          {
+            "id": "sibling",
+            "label": "Try candidate B"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "ordering",
+        "ordered_ids": [
+          "choose",
+          "apply",
+          "explore",
+          "undo",
+          "sibling"
+        ]
+      }
+    },
+    {
+      "id": "dsa8-backtrack-state-fault-003",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.59,
+      "prompt": "A backtracker appends a choice to `chosen`, recursively explores, and then immediately tries the next sibling without removing the prior choice. Flag the bug.",
+      "concepts": [
+        {
+          "concept_id": "dsa.backtracking.state",
+          "weight": 0.6
+        },
+        {
+          "concept_id": "dsa.backtracking.choose_explore_undo",
+          "weight": 0.4
+        }
+      ],
+      "explanation": "The prior branch's mutable state leaks into the sibling branch. The algorithm must restore state—such as popping the appended choice—before trying the next sibling.",
+      "blueprint_skill_ids": [
+        "8.1.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Sibling branches must start from the same parent partial candidate."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The missing state restoration was not identified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.backtracking.state"
+            ],
+            "node_id": "domain-8-backtracking-state",
+            "preferred_stage": "diagnose",
+            "preferred_family_id": "dsa.backtracking.state",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A valid choose/explore step was incorrectly flagged.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.backtracking.choose_explore_undo"
+            ],
+            "node_id": "domain-8-backtracking-state",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.backtracking.choose_explore_undo",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 2,
+        "family_id": "dsa.backtracking.state",
+        "transfer_group_id": "reversible_search_state",
+        "surface_context": "configuration_state_leak",
+        "challenge_group_id": "d8-backtrack-01"
+      },
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "append",
+            "label": "Append the candidate choice"
+          },
+          {
+            "id": "recurse",
+            "label": "Recursively explore descendants"
+          },
+          {
+            "id": "bad",
+            "label": "Leave the candidate in mutable state before exploring the next sibling"
+          },
+          {
+            "id": "next",
+            "label": "Try the next candidate"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "bad"
+        ]
+      }
+    },
+    {
+      "id": "dsa8-prune-choice-004",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.1",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.57,
+      "prompt": "A deployment configuration may request at most 16 GiB. All remaining component memory sizes are non-negative. A partial branch already requests 18 GiB. What is the correct action?",
+      "concepts": [
+        {
+          "concept_id": "dsa.backtracking.pruning",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The branch already violates a hard upper bound and future choices cannot reduce usage, so no completion can become valid. Prune it immediately.",
+      "blueprint_skill_ids": [
+        "8.1.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Can any later non-negative addition reduce 18 GiB to at most 16 GiB?"
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected action does not use the proven hard-bound failure correctly.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.backtracking.pruning"
+            ],
+            "node_id": "domain-8-backtracking-prune",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.backtracking.pruning",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.backtracking.pruning",
+        "transfer_group_id": "constraint_pruning",
+        "surface_context": "deployment_memory_constraint",
+        "challenge_group_id": "d8-backtrack-01"
+      },
+      "choice_feedback": {
+        "prune": "Correct: the branch is provably impossible.",
+        "continue": "Continuing explores states that cannot satisfy the hard bound.",
+        "greedy": "Choosing the smallest remaining item still cannot repair an already-exceeded upper bound.",
+        "restart": "Restarting the entire search is unnecessary; only this branch is invalid."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "prune",
+            "label": "Prune this branch now"
+          },
+          {
+            "id": "continue",
+            "label": "Continue all remaining choices before deciding"
+          },
+          {
+            "id": "greedy",
+            "label": "Force the smallest remaining item and keep going"
+          },
+          {
+            "id": "restart",
+            "label": "Discard the entire search and restart from the root"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "prune"
+      }
+    },
+    {
+      "id": "dsa8-prune-evidence-005",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.1",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.62,
+      "prompt": "Which facts justify pruning a branch in a constraint solver?",
+      "concepts": [
+        {
+          "concept_id": "dsa.backtracking.pruning",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Pruning requires proof that no completion below the partial state can succeed or improve enough. A branch may be tried later or ordered last without being pruned if it merely looks unpromising.",
+      "blueprint_skill_ids": [
+        "8.1.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "A safe prune must preserve correctness."
+      ],
+      "error_codes": [
+        {
+          "code": "evidence_missing_relevant",
+          "description": "A correctness-preserving prune condition was missed.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.backtracking.pruning"
+            ],
+            "node_id": "domain-8-backtracking-prune",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.backtracking.pruning",
+            "min_scaffold_level": 2
+          }
+        },
+        {
+          "code": "evidence_selected_irrelevant",
+          "description": "A heuristic or cost concern was incorrectly treated as proof of impossibility.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.backtracking.pruning"
+            ],
+            "node_id": "domain-8-backtracking-prune",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.backtracking.pruning",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 1,
+        "family_id": "dsa.backtracking.pruning",
+        "transfer_group_id": "constraint_pruning",
+        "surface_context": "constraint_solver_branch"
+      },
+      "instruction": "Select all safe-prune conditions.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          {
+            "id": "violate",
+            "label": "The partial assignment already violates a required constraint that later choices cannot repair"
+          },
+          {
+            "id": "bound",
+            "label": "A proven upper/lower bound shows this branch cannot beat the current best"
+          },
+          {
+            "id": "unlikely",
+            "label": "The branch looks unlikely based only on intuition"
+          },
+          {
+            "id": "slow",
+            "label": "The branch is expensive to evaluate"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "violate",
+          "bound"
+        ]
+      }
+    },
+    {
+      "id": "dsa8-backtrack-classify-006",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.1",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.61,
+      "prompt": "Classify each search behavior as part of correct backtracking or as a correctness risk.",
+      "concepts": [
+        {
+          "concept_id": "dsa.backtracking.choose_explore_undo",
+          "weight": 0.4
+        },
+        {
+          "concept_id": "dsa.backtracking.state",
+          "weight": 0.3
+        },
+        {
+          "concept_id": "dsa.backtracking.pruning",
+          "weight": 0.3
+        }
+      ],
+      "explanation": "Correct backtracking restores sibling state and prunes only with proof. Branch ordering heuristics are fine, but they must not silently delete possible solutions.",
+      "blueprint_skill_ids": [
+        "8.1.01",
+        "8.1.02",
+        "8.1.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Separate exploration order from correctness-preserving elimination."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one backtracking behavior was classified incorrectly.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.backtracking.choose_explore_undo",
+              "dsa.backtracking.pruning"
+            ],
+            "node_id": "domain-8-backtracking-state",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.backtracking.pattern",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one backtracking behavior was not classified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.backtracking.choose_explore_undo"
+            ],
+            "node_id": "domain-8-backtracking-tree",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.backtracking.pattern",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "differentiate",
+        "scaffold_level": 2,
+        "family_id": "dsa.backtracking.pattern",
+        "transfer_group_id": "choice_tree_search",
+        "surface_context": "backtracking_behavior"
+      },
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "undo",
+            "label": "Undo mutable state before the sibling branch"
+          },
+          {
+            "id": "proof",
+            "label": "Prune after a hard constraint proves impossibility"
+          },
+          {
+            "id": "guess",
+            "label": "Discard a branch because it merely looks unlikely"
+          },
+          {
+            "id": "snapshot",
+            "label": "Copy a complete mutable solution before later backtracking changes it"
+          }
+        ],
+        "categories": [
+          {
+            "id": "correct",
+            "label": "Correct backtracking behavior"
+          },
+          {
+            "id": "risk",
+            "label": "Correctness risk"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "undo": "correct",
+          "proof": "correct",
+          "guess": "risk",
+          "snapshot": "correct"
+        }
+      }
+    },
+    {
+      "id": "dsa8-backtrack-reconstruct-007",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.1",
+      "assessment_mode": "structural_reconstruction",
+      "interaction_type": "reconstruction",
+      "difficulty_prior": 0.67,
+      "prompt": "Reconstruct the reusable backtracking skeleton.",
+      "concepts": [
+        {
+          "concept_id": "dsa.backtracking.choose_explore_undo",
+          "weight": 0.5
+        },
+        {
+          "concept_id": "dsa.backtracking.pruning",
+          "weight": 0.3
+        },
+        {
+          "concept_id": "dsa.backtracking.state",
+          "weight": 0.2
+        }
+      ],
+      "explanation": "The reusable skeleton checks completion/invalidity, iterates candidate choices, applies one, explores recursively, and restores state before the next sibling.",
+      "blueprint_skill_ids": [
+        "8.1.01",
+        "8.1.02",
+        "8.1.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "State restoration belongs before trying another sibling."
+      ],
+      "error_codes": [
+        {
+          "code": "reconstruction_unfilled_slot",
+          "description": "At least one backtracking skeleton step was left empty.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.backtracking.choose_explore_undo"
+            ],
+            "node_id": "domain-8-backtracking-tree",
+            "preferred_stage": "construct",
+            "preferred_family_id": "dsa.backtracking.pattern",
+            "min_scaffold_level": 5
+          }
+        },
+        {
+          "code": "reconstruction_wrong_position",
+          "description": "At least one backtracking skeleton step was misplaced.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.backtracking.choose_explore_undo"
+            ],
+            "node_id": "domain-8-backtracking-state",
+            "preferred_stage": "construct",
+            "preferred_family_id": "dsa.backtracking.pattern",
+            "min_scaffold_level": 5
+          }
+        },
+        {
+          "code": "reconstruction_wrong_component",
+          "description": "A state-leaking step was selected.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.backtracking.state"
+            ],
+            "node_id": "domain-8-backtracking-state",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.backtracking.state",
+            "min_scaffold_level": 4
+          }
+        },
+        {
+          "code": "reconstruction_missing_component",
+          "description": "A required backtracking step was omitted.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.backtracking.choose_explore_undo"
+            ],
+            "node_id": "domain-8-backtracking-tree",
+            "preferred_stage": "construct",
+            "preferred_family_id": "dsa.backtracking.pattern",
+            "min_scaffold_level": 5
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 5,
+        "family_id": "dsa.backtracking.pattern",
+        "transfer_group_id": "choice_tree_search",
+        "surface_context": "backtracking_skeleton",
+        "challenge_group_id": "d8-backtrack-01"
+      },
+      "interaction": {
+        "type": "reconstruction",
+        "layout": "linear",
+        "fixed_nodes": [],
+        "pieces": [
+          {
+            "id": "check",
+            "label": "Check complete solution / provably invalid partial state"
+          },
+          {
+            "id": "loop",
+            "label": "Iterate valid candidate choices"
+          },
+          {
+            "id": "apply",
+            "label": "Apply one candidate to state"
+          },
+          {
+            "id": "recurse",
+            "label": "Explore the remaining decision problem"
+          },
+          {
+            "id": "undo",
+            "label": "Restore state before next candidate"
+          },
+          {
+            "id": "keep",
+            "label": "Keep all prior sibling state permanently"
+          }
+        ],
+        "slots": [
+          {
+            "id": "s1"
+          },
+          {
+            "id": "s2"
+          },
+          {
+            "id": "s3"
+          },
+          {
+            "id": "s4"
+          },
+          {
+            "id": "s5"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "reconstruction",
+        "placements": {
+          "s1": "check",
+          "s2": "loop",
+          "s3": "apply",
+          "s4": "recurse",
+          "s5": "undo"
+        },
+        "edges": []
+      }
+    },
+    {
+      "id": "dsa8-backtrack-transfer-008",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.1",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.72,
+      "prompt": "A policy engine must enumerate all assignments of 10 optional rules subject to mutual-exclusion and prerequisite constraints. It should stop exploring a branch immediately when a prerequisite can no longer be satisfied. Which structure best fits?",
+      "concepts": [
+        {
+          "concept_id": "dsa.backtracking.choose_explore_undo",
+          "weight": 0.5
+        },
+        {
+          "concept_id": "dsa.backtracking.pruning",
+          "weight": 0.5
+        }
+      ],
+      "explanation": "This is constrained combinatorial enumeration: backtracking explores rule assignments, and safe constraint checks prune impossible partial assignments.",
+      "blueprint_skill_ids": [
+        "8.1.01",
+        "8.1.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected strategy does not match complete constrained assignment search.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.backtracking.choose_explore_undo",
+              "dsa.backtracking.pruning"
+            ],
+            "node_id": "domain-8-backtracking-prune",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.backtracking.pattern",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0,
+        "family_id": "dsa.backtracking.pattern",
+        "transfer_group_id": "choice_tree_search",
+        "surface_context": "policy_rule_assignment",
+        "challenge_group_id": "d8-backtrack-01"
+      },
+      "choice_feedback": {
+        "bt": "Correct: it explores all relevant assignments while pruning proven-impossible branches.",
+        "greedy": "An irreversible local rule choice can miss valid assignments.",
+        "sort": "Sorting rules does not enumerate compatibility assignments.",
+        "bfs": "Graph BFS is not the core decision structure here."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "bt",
+            "label": "Backtracking with constraint-based pruning"
+          },
+          {
+            "id": "greedy",
+            "label": "Greedily enable the first compatible rule and never revisit it"
+          },
+          {
+            "id": "sort",
+            "label": "Sort rule names and take the first half"
+          },
+          {
+            "id": "bfs",
+            "label": "Run graph BFS on the rule list without modeling choices"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "bt"
+      }
+    },
+    {
+      "id": "dsa8-greedy-safe-009",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.2",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.49,
+      "prompt": "What is the strongest evidence that an irreversible greedy choice is correct?",
+      "concepts": [
+        {
+          "concept_id": "dsa.greedy.safe_choice",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A greedy choice needs a safety proof, such as showing an optimal solution can be exchanged to use that choice without worsening the objective.",
+      "blueprint_skill_ids": [
+        "8.2.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Performance on a few examples is not a correctness proof."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected evidence does not establish greedy-choice correctness.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.greedy.safe_choice"
+            ],
+            "node_id": "domain-8-greedy-safe",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.greedy.safe_choice",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.046J — Greedy Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/pages/lecture-notes/"
+        },
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "recognize",
+        "scaffold_level": 3,
+        "family_id": "dsa.greedy.safe_choice",
+        "transfer_group_id": "safe_greedy_choice",
+        "surface_context": "greedy_correctness",
+        "challenge_group_id": "d8-greedy-01"
+      },
+      "choice_feedback": {
+        "proof": "Correct: a safety/exchange argument justifies permanent commitment.",
+        "fast": "Fast runtime does not imply optimality.",
+        "examples": "Passing examples is evidence but not a general proof.",
+        "local": "Being locally largest/smallest is not sufficient by itself."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "proof",
+            "label": "A proof that some optimal solution can start with the greedy choice"
+          },
+          {
+            "id": "fast",
+            "label": "The implementation runs in O(n log n)"
+          },
+          {
+            "id": "examples",
+            "label": "The rule worked on three sample inputs"
+          },
+          {
+            "id": "local",
+            "label": "The choice is numerically largest or smallest right now"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "proof"
+      }
+    },
+    {
+      "id": "dsa8-interval-choice-010",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.2",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.52,
+      "prompt": "One test lab can run one booking at a time. Every booking counts equally, and the objective is to accept the MAXIMUM NUMBER of non-overlapping bookings. Which greedy rule is correct for the classic interval-scheduling problem?",
+      "concepts": [
+        {
+          "concept_id": "dsa.greedy.interval_scheduling",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Choose the compatible booking with earliest finish time. That leaves at least as much remaining time as any alternative first compatible booking.",
+      "blueprint_skill_ids": [
+        "8.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "The objective is number of bookings, not total duration or value."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected rule is not the proven greedy rule for maximizing the number of non-overlapping intervals.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.greedy.interval_scheduling"
+            ],
+            "node_id": "domain-8-greedy-interval",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.greedy.interval_scheduling",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.046J — Greedy Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/pages/lecture-notes/"
+        },
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.greedy.interval_scheduling",
+        "transfer_group_id": "interval_count_scheduling",
+        "surface_context": "test_lab_bookings",
+        "challenge_group_id": "d8-greedy-01"
+      },
+      "choice_feedback": {
+        "finish": "Correct: earliest finish is the safe choice for maximum interval count.",
+        "short": "Shortest duration is not generally equivalent to earliest finish.",
+        "start": "Earliest start can occupy a long interval and block many later bookings.",
+        "value": "All bookings have equal value here; highest value is not the objective."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "finish",
+            "label": "Choose the compatible booking that finishes earliest"
+          },
+          {
+            "id": "short",
+            "label": "Choose the shortest-duration booking anywhere"
+          },
+          {
+            "id": "start",
+            "label": "Choose the earliest-starting booking"
+          },
+          {
+            "id": "value",
+            "label": "Choose the booking with the highest arbitrary ID/value"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "finish"
+      }
+    },
+    {
+      "id": "dsa8-interval-order-011",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.2",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.5,
+      "prompt": "Order the high-level greedy interval-scheduling process.",
+      "concepts": [
+        {
+          "concept_id": "dsa.greedy.interval_scheduling",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Sort by finish time, take the earliest-finishing compatible interval, then continue scanning for the next interval that starts after the selected finish.",
+      "blueprint_skill_ids": [
+        "8.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "The sort key is finish time."
+      ],
+      "error_codes": [
+        {
+          "code": "ordering_invalid_sequence",
+          "description": "The interval-scheduling greedy process is out of order.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.greedy.interval_scheduling"
+            ],
+            "node_id": "domain-8-greedy-interval",
+            "preferred_stage": "construct",
+            "preferred_family_id": "dsa.greedy.interval_scheduling",
+            "min_scaffold_level": 5
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.046J — Greedy Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/pages/lecture-notes/"
+        },
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 4,
+        "family_id": "dsa.greedy.interval_scheduling",
+        "transfer_group_id": "interval_count_scheduling",
+        "surface_context": "interval_scheduling_process",
+        "challenge_group_id": "d8-greedy-01"
+      },
+      "interaction": {
+        "type": "ordering",
+        "items": [
+          {
+            "id": "sort",
+            "label": "Sort intervals by increasing finish time"
+          },
+          {
+            "id": "first",
+            "label": "Accept the earliest-finishing interval"
+          },
+          {
+            "id": "scan",
+            "label": "Scan remaining intervals in that order"
+          },
+          {
+            "id": "accept",
+            "label": "Accept an interval when its start is compatible with the last accepted finish"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "ordering",
+        "ordered_ids": [
+          "sort",
+          "first",
+          "scan",
+          "accept"
+        ]
+      }
+    },
+    {
+      "id": "dsa8-greedy-objective-fault-012",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.2",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.63,
+      "prompt": "A team reuses earliest-finish interval scheduling for jobs that now have DIFFERENT PROFITS and wants maximum total profit. Flag the reasoning error.",
+      "concepts": [
+        {
+          "concept_id": "dsa.greedy.discrimination",
+          "weight": 0.6
+        },
+        {
+          "concept_id": "dsa.greedy.interval_scheduling",
+          "weight": 0.4
+        }
+      ],
+      "explanation": "Earliest finish is optimal for maximum COUNT of equal-value non-overlapping intervals, not maximum total profit. Weighted interval scheduling changes the objective and requires different reasoning, typically DP.",
+      "blueprint_skill_ids": [
+        "8.2.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "The objective changed from count to weighted value."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The invalid transfer of the unweighted greedy proof to weighted profit was not identified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.greedy.discrimination"
+            ],
+            "node_id": "domain-8-greedy-vs-dp",
+            "preferred_stage": "diagnose",
+            "preferred_family_id": "dsa.greedy.discrimination",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A valid part of the weighted scheduling problem statement was incorrectly flagged.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.greedy.discrimination"
+            ],
+            "node_id": "domain-8-greedy-vs-dp",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.greedy.discrimination",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.046J — Greedy Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/pages/lecture-notes/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+        },
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 1,
+        "family_id": "dsa.greedy.discrimination",
+        "transfer_group_id": "greedy_vs_dp",
+        "surface_context": "weighted_bookings",
+        "challenge_group_id": "d8-greedy-01"
+      },
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "sort",
+            "label": "Represent each job as an interval with a finish time"
+          },
+          {
+            "id": "bad",
+            "label": "Assume earliest finish still maximizes total profit merely because it maximizes interval count"
+          },
+          {
+            "id": "profit",
+            "label": "Include job profit in the objective"
+          },
+          {
+            "id": "conflict",
+            "label": "Disallow overlapping jobs"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "bad"
+        ]
+      }
+    },
+    {
+      "id": "dsa8-greedy-counterexample-013",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.2",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.66,
+      "prompt": "A cache has capacity 10. Artifact A has size 10 and saves 10 minutes. Artifacts B and C each have size 5 and save 9 minutes. Why does 'take the single highest-saving artifact first' fail?",
+      "concepts": [
+        {
+          "concept_id": "dsa.greedy.discrimination",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The greedy rule picks A for value 10, but B+C fit together and save 18 minutes. A small counterexample disproves the local-choice rule for indivisible bounded selection.",
+      "blueprint_skill_ids": [
+        "8.2.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "Compare A alone with the combination B+C."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected explanation does not identify the counterexample to the greedy rule.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.greedy.discrimination"
+            ],
+            "node_id": "domain-8-greedy-vs-dp",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.greedy.discrimination",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+        },
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "differentiate",
+        "scaffold_level": 1,
+        "family_id": "dsa.greedy.discrimination",
+        "transfer_group_id": "greedy_vs_dp",
+        "surface_context": "cache_artifact_counterexample"
+      },
+      "choice_feedback": {
+        "combo": "Correct: a combination of individually smaller choices is better.",
+        "capacity": "Capacity is exactly why combinations interact; it does not make greedy safe.",
+        "sort": "Sorting does not change the counterexample.",
+        "equal": "The artifacts do not have equal values."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "combo",
+            "label": "B + C use all 10 capacity and save 18 minutes, beating A's 10"
+          },
+          {
+            "id": "capacity",
+            "label": "Capacity constraints always make greedy optimal"
+          },
+          {
+            "id": "sort",
+            "label": "Sorting A, B, C alphabetically fixes the rule"
+          },
+          {
+            "id": "equal",
+            "label": "All artifacts have equal savings"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "combo"
+      }
+    },
+    {
+      "id": "dsa8-greedy-dp-classify-014",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.2",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.63,
+      "prompt": "Classify each problem shape by the stronger clue: proof-backed greedy commitment or DP-style future trade-offs.",
+      "concepts": [
+        {
+          "concept_id": "dsa.greedy.safe_choice",
+          "weight": 0.3
+        },
+        {
+          "concept_id": "dsa.greedy.interval_scheduling",
+          "weight": 0.25
+        },
+        {
+          "concept_id": "dsa.greedy.discrimination",
+          "weight": 0.45
+        }
+      ],
+      "explanation": "Greedy is appropriate when a safe local commitment is provable. DP is the stronger clue when indivisible choices consume shared resources or weighted future alternatives must be compared.",
+      "blueprint_skill_ids": [
+        "8.2.01",
+        "8.2.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "Ask whether one local choice can be committed without future regret."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one optimization shape was matched to the wrong reasoning family.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.greedy.discrimination"
+            ],
+            "node_id": "domain-8-greedy-vs-dp",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.greedy.discrimination",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one optimization shape was not classified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.greedy.discrimination"
+            ],
+            "node_id": "domain-8-greedy-vs-dp",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.greedy.discrimination",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.046J — Greedy Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/pages/lecture-notes/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+        },
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "differentiate",
+        "scaffold_level": 1,
+        "family_id": "dsa.greedy.discrimination",
+        "transfer_group_id": "greedy_vs_dp",
+        "surface_context": "greedy_dp_problem_shapes"
+      },
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "count",
+            "label": "Maximum number of equal-value non-overlapping intervals"
+          },
+          {
+            "id": "weighted",
+            "label": "Maximum total value of non-overlapping weighted intervals"
+          },
+          {
+            "id": "knapsack",
+            "label": "Indivisible items with value under a capacity limit"
+          },
+          {
+            "id": "proof",
+            "label": "A local choice has an exchange proof showing it is always safe"
+          }
+        ],
+        "categories": [
+          {
+            "id": "greedy",
+            "label": "Greedy clue"
+          },
+          {
+            "id": "dp",
+            "label": "DP clue"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "count": "greedy",
+          "weighted": "dp",
+          "knapsack": "dp",
+          "proof": "greedy"
+        }
+      }
+    },
+    {
+      "id": "dsa8-greedy-evidence-015",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.2",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.61,
+      "prompt": "Which evidence supports an earliest-finish greedy rule for maximum COUNT of non-overlapping intervals?",
+      "concepts": [
+        {
+          "concept_id": "dsa.greedy.interval_scheduling",
+          "weight": 0.7
+        },
+        {
+          "concept_id": "dsa.greedy.safe_choice",
+          "weight": 0.3
+        }
+      ],
+      "explanation": "The earliest-finishing compatible interval leaves no less remaining time than another compatible first interval, and the objective counts each selected interval equally.",
+      "blueprint_skill_ids": [
+        "8.2.01",
+        "8.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "The proof depends on both the objective and the remaining-time argument."
+      ],
+      "error_codes": [
+        {
+          "code": "evidence_missing_relevant",
+          "description": "Part of the interval-scheduling greedy argument was missed.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.greedy.interval_scheduling"
+            ],
+            "node_id": "domain-8-greedy-interval",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.greedy.interval_scheduling",
+            "min_scaffold_level": 2
+          }
+        },
+        {
+          "code": "evidence_selected_irrelevant",
+          "description": "A property not required by the earliest-finish proof was selected.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.greedy.interval_scheduling"
+            ],
+            "node_id": "domain-8-greedy-interval",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.greedy.interval_scheduling",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.046J — Greedy Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/pages/lecture-notes/"
+        },
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 1,
+        "family_id": "dsa.greedy.interval_scheduling",
+        "transfer_group_id": "interval_count_scheduling",
+        "surface_context": "interval_greedy_proof"
+      },
+      "instruction": "Select all supporting facts.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          {
+            "id": "equal",
+            "label": "Each accepted interval contributes the same unit count to the objective"
+          },
+          {
+            "id": "finish",
+            "label": "Earlier finish leaves at least as much remaining timeline for future compatible intervals"
+          },
+          {
+            "id": "profit",
+            "label": "Intervals can have arbitrary profit and the objective is maximum total profit"
+          },
+          {
+            "id": "duration",
+            "label": "The shortest-duration interval is always the earliest-finishing interval"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "equal",
+          "finish"
+        ]
+      }
+    },
+    {
+      "id": "dsa8-greedy-transfer-016",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.2",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.71,
+      "prompt": "A CI runner can execute one job at a time during a fixed maintenance window. Every candidate job counts equally and jobs cannot overlap. The goal is to complete as many jobs as possible. Which rule fits?",
+      "concepts": [
+        {
+          "concept_id": "dsa.greedy.interval_scheduling",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "This is the classic maximum-cardinality interval scheduling objective, so earliest compatible finish is the correct greedy rule.",
+      "blueprint_skill_ids": [
+        "8.2.02"
+      ],
+      "difficulty_label": "hard",
+      "hints": [],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected rule is not the proven greedy rule for maximum equal-value interval count.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.greedy.interval_scheduling"
+            ],
+            "node_id": "domain-8-greedy-interval",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.greedy.interval_scheduling",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.046J — Greedy Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/pages/lecture-notes/"
+        },
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0,
+        "family_id": "dsa.greedy.interval_scheduling",
+        "transfer_group_id": "interval_count_scheduling",
+        "surface_context": "ci_maintenance_jobs",
+        "challenge_group_id": "d8-greedy-01"
+      },
+      "choice_feedback": {
+        "finish": "Correct: maximum equal-value interval count uses earliest finish.",
+        "start": "Earliest start can block many later jobs.",
+        "long": "Longest duration is contrary to the goal of fitting many jobs.",
+        "profit": "The problem states every job counts equally."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "finish",
+            "label": "Sort by finish time and repeatedly accept the next compatible job"
+          },
+          {
+            "id": "start",
+            "label": "Always accept the earliest-starting job"
+          },
+          {
+            "id": "long",
+            "label": "Always accept the longest-duration job"
+          },
+          {
+            "id": "profit",
+            "label": "Assign arbitrary profits and choose the largest first"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "finish"
+      }
+    },
+    {
+      "id": "dsa8-dp-state-choice-017",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.52,
+      "prompt": "For indivisible cache artifacts processed from index `i` onward with a remaining byte budget, which state most directly captures the future decision problem?",
+      "concepts": [
+        {
+          "concept_id": "dsa.dp.state_transition",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The future depends on which artifacts remain and how much capacity remains, so `(i, remaining_capacity)` is a sufficient state.",
+      "blueprint_skill_ids": [
+        "8.3.01"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Two histories should be equivalent if all future choices have the same consequences."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected state does not minimally capture the future cache-selection subproblem.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.dp.state_transition"
+            ],
+            "node_id": "domain-8-dp-state",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.dp.state",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+        },
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.dp.state",
+        "transfer_group_id": "reused_subproblem_state",
+        "surface_context": "cache_budget_state",
+        "challenge_group_id": "d8-dp-01"
+      },
+      "choice_feedback": {
+        "state": "Correct: index and remaining capacity determine future options.",
+        "value": "Current accumulated value alone does not say which items/capacity remain.",
+        "history": "The full history is more information than future decisions need.",
+        "last": "The last chosen artifact alone is insufficient."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "state",
+            "label": "`(i, remaining_capacity)`"
+          },
+          {
+            "id": "value",
+            "label": "Only total value accumulated so far"
+          },
+          {
+            "id": "history",
+            "label": "The full list of every prior choice as the DP key"
+          },
+          {
+            "id": "last",
+            "label": "Only the last artifact chosen"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "state"
+      }
+    },
+    {
+      "id": "dsa8-dp-transition-018",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.58,
+      "prompt": "State `best(i, remaining)` means maximum value obtainable from items `i..end`. Item i has size s and value v. If `s <= remaining`, which transition is correct for 0/1 selection?",
+      "concepts": [
+        {
+          "concept_id": "dsa.dp.state_transition",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The item is indivisible and usable at most once, so compare skipping it with taking it and moving to i+1 with reduced capacity.",
+      "blueprint_skill_ids": [
+        "8.3.01"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Both branches move to the next item; only the take branch reduces capacity."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected transition does not model mutually exclusive take/skip choices for a 0/1 item.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.dp.state_transition"
+            ],
+            "node_id": "domain-8-dp-state",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.dp.state",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+        },
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.dp.state",
+        "transfer_group_id": "reused_subproblem_state",
+        "surface_context": "cache_budget_transition",
+        "challenge_group_id": "d8-dp-01"
+      },
+      "choice_feedback": {
+        "correct": "Correct: `max(skip, take)` compares both future consequences.",
+        "repeat": "Keeping i after taking allows the same 0/1 item to be reused.",
+        "greedy": "Taking whenever it fits is not generally optimal.",
+        "sum": "Adding both take and skip values double-counts mutually exclusive decisions."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "correct",
+            "label": "`max(best(i+1, remaining), v + best(i+1, remaining-s))`"
+          },
+          {
+            "id": "repeat",
+            "label": "`v + best(i, remaining-s)` for every fitting item"
+          },
+          {
+            "id": "greedy",
+            "label": "Always take item i whenever it fits"
+          },
+          {
+            "id": "sum",
+            "label": "Add the skip result and take result together"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "correct"
+      }
+    },
+    {
+      "id": "dsa8-memo-choice-019",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.54,
+      "prompt": "A recursive solver reaches the same `(i, remaining_capacity)` states through many different histories. What change removes repeated recomputation without changing the recurrence?",
+      "concepts": [
+        {
+          "concept_id": "dsa.dp.memoization",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Memoization caches each state result and reuses it when the same state is reached again.",
+      "blueprint_skill_ids": [
+        "8.3.02"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "The repeated work is identical subproblem evaluation."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected change does not eliminate repeated evaluation of identical DP states.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.dp.memoization"
+            ],
+            "node_id": "domain-8-dp-memo",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.dp.memoization",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Dynamic Programming II",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-20-dynamic-programming-ii-text-justification-blackjack/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "recognize",
+        "scaffold_level": 2,
+        "family_id": "dsa.dp.memoization",
+        "transfer_group_id": "reused_subproblem_state",
+        "surface_context": "memoized_cache_selection",
+        "challenge_group_id": "d8-dp-01"
+      },
+      "choice_feedback": {
+        "memo": "Correct: cache results by DP state.",
+        "sort": "Sorting states does not stop recursive recomputation by itself.",
+        "greedy": "Changing to greedy changes the algorithm and may lose optimality.",
+        "copy": "Copying the input does not reuse state answers."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "memo",
+            "label": "Memoize results keyed by `(i, remaining_capacity)`"
+          },
+          {
+            "id": "sort",
+            "label": "Sort the recursive call stack alphabetically"
+          },
+          {
+            "id": "greedy",
+            "label": "Replace the recurrence with an irreversible greedy choice"
+          },
+          {
+            "id": "copy",
+            "label": "Copy the input list before every recursive call"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "memo"
+      }
+    },
+    {
+      "id": "dsa8-memo-tab-classify-020",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.3",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.57,
+      "prompt": "Classify each implementation description as memoization or tabulation.",
+      "concepts": [
+        {
+          "concept_id": "dsa.dp.memoization",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Memoization is top-down and demand-driven through recursive calls; tabulation explicitly fills states bottom-up in dependency order.",
+      "blueprint_skill_ids": [
+        "8.3.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Ask whether recursion requests states on demand or a table is filled deliberately."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one DP computation style was classified incorrectly.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.dp.memoization"
+            ],
+            "node_id": "domain-8-dp-memo",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.dp.memoization",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one DP computation style was not classified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.dp.memoization"
+            ],
+            "node_id": "domain-8-dp-memo",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.dp.memoization",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Dynamic Programming II",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-20-dynamic-programming-ii-text-justification-blackjack/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "differentiate",
+        "scaffold_level": 2,
+        "family_id": "dsa.dp.memoization",
+        "transfer_group_id": "dp_computation_order",
+        "surface_context": "memo_vs_tabulation"
+      },
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "cache",
+            "label": "Recursive function checks a cache before computing a state"
+          },
+          {
+            "id": "bottom",
+            "label": "Iterate states in dependency order from base cases upward"
+          },
+          {
+            "id": "ondemand",
+            "label": "Compute only states reached by recursive calls"
+          },
+          {
+            "id": "table",
+            "label": "Fill an explicit DP table row by row"
+          }
+        ],
+        "categories": [
+          {
+            "id": "memo",
+            "label": "Memoization"
+          },
+          {
+            "id": "tab",
+            "label": "Tabulation"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "cache": "memo",
+          "bottom": "tab",
+          "ondemand": "memo",
+          "table": "tab"
+        }
+      }
+    },
+    {
+      "id": "dsa8-dp-state-fault-021",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.3",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.65,
+      "prompt": "Two partial histories have the same proposed DP state, but one still has 3 GiB capacity and the other has 8 GiB. Future choices differ. Flag the state-design mistake.",
+      "concepts": [
+        {
+          "concept_id": "dsa.dp.state_transition",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A valid DP state must make histories with the same state future-equivalent. Omitting remaining capacity merges subproblems with different feasible futures.",
+      "blueprint_skill_ids": [
+        "8.3.01"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "Would the same future artifacts fit in both histories?"
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The missing capacity state dimension was not identified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.dp.state_transition"
+            ],
+            "node_id": "domain-8-dp-state",
+            "preferred_stage": "diagnose",
+            "preferred_family_id": "dsa.dp.state",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A valid DP design element was incorrectly flagged.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.dp.state_transition"
+            ],
+            "node_id": "domain-8-dp-state",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.dp.state",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+        },
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 1,
+        "family_id": "dsa.dp.state",
+        "transfer_group_id": "reused_subproblem_state",
+        "surface_context": "missing_dp_state_dimension",
+        "challenge_group_id": "d8-dp-01"
+      },
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "index",
+            "label": "Track which item index is next"
+          },
+          {
+            "id": "bad",
+            "label": "Treat states with different remaining capacities as identical"
+          },
+          {
+            "id": "base",
+            "label": "Define a base case after the last item"
+          },
+          {
+            "id": "compare",
+            "label": "Compare take and skip transitions"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "bad"
+        ]
+      }
+    },
+    {
+      "id": "dsa8-edit-distance-choice-022",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.63,
+      "prompt": "You need the minimum number of insertions, deletions, and replacements to transform one configuration string into another. Which state shape is the strongest clue?",
+      "concepts": [
+        {
+          "concept_id": "dsa.dp.sequence_resource",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "A two-sequence position state such as `(i, j)` represents the remaining suffixes. A mismatch can compare several edit consequences, which is a classic DP shape.",
+      "blueprint_skill_ids": [
+        "8.3.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "The future depends on positions in both sequences."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected approach does not model interacting sequence-edit decisions correctly.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.dp.sequence_resource"
+            ],
+            "node_id": "domain-8-dp-sequence-resource",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.dp.sequence",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Dynamic Programming II",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-20-dynamic-programming-ii-text-justification-blackjack/"
+        },
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 1,
+        "family_id": "dsa.dp.sequence",
+        "transfer_group_id": "sequence_alignment",
+        "surface_context": "configuration_edit_distance"
+      },
+      "choice_feedback": {
+        "ij": "Correct: positions in both sequences identify the subproblem.",
+        "greedy": "Fixing the first mismatch greedily can block a globally cheaper edit sequence.",
+        "heap": "Priority ordering alone does not model the two suffix positions.",
+        "hash": "Exact membership state does not capture alignment choices."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "ij",
+            "label": "DP state `(i, j)` over positions in the two strings"
+          },
+          {
+            "id": "greedy",
+            "label": "Always replace the first mismatch and never compare alternatives"
+          },
+          {
+            "id": "heap",
+            "label": "Heap of characters"
+          },
+          {
+            "id": "hash",
+            "label": "Hash set of all characters"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "ij"
+      }
+    },
+    {
+      "id": "dsa8-dp-evidence-023",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.3",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.62,
+      "prompt": "Which properties are strong evidence that dynamic programming may fit?",
+      "concepts": [
+        {
+          "concept_id": "dsa.dp.state_transition",
+          "weight": 0.5
+        },
+        {
+          "concept_id": "dsa.dp.memoization",
+          "weight": 0.5
+        }
+      ],
+      "explanation": "DP is a strong fit when the problem decomposes into smaller states, the same states recur, and each state's answer can be expressed from dependent smaller states.",
+      "blueprint_skill_ids": [
+        "8.3.01",
+        "8.3.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Look for reusable subproblems and a state recurrence."
+      ],
+      "error_codes": [
+        {
+          "code": "evidence_missing_relevant",
+          "description": "A strong dynamic-programming clue was missed.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.dp.state_transition",
+              "dsa.dp.memoization"
+            ],
+            "node_id": "domain-8-dp-state",
+            "preferred_stage": "recognize",
+            "preferred_family_id": "dsa.dp.pattern",
+            "min_scaffold_level": 2
+          }
+        },
+        {
+          "code": "evidence_selected_irrelevant",
+          "description": "A property that does not itself justify DP was selected.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.dp.state_transition"
+            ],
+            "node_id": "domain-8-dp-state",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.dp.pattern",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+        },
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "recognize",
+        "scaffold_level": 1,
+        "family_id": "dsa.dp.pattern",
+        "transfer_group_id": "reused_subproblem_state",
+        "surface_context": "dp_recognition"
+      },
+      "instruction": "Select all strong clues.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          {
+            "id": "overlap",
+            "label": "Different decision histories reach the same future subproblem"
+          },
+          {
+            "id": "recurrence",
+            "label": "A state can be expressed from smaller/dependent states"
+          },
+          {
+            "id": "sorted",
+            "label": "The input is sorted"
+          },
+          {
+            "id": "unique",
+            "label": "Every subproblem is guaranteed to occur exactly once"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "overlap",
+          "recurrence"
+        ]
+      }
+    },
+    {
+      "id": "dsa8-dp-transfer-024",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-8",
+      "task_id": "8.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.75,
+      "prompt": "A build cache can hold 12 GiB. Each artifact is indivisible and has a size plus an estimated rebuild-time saving. You need the set with maximum total saving that fits. Which approach best matches the decision structure?",
+      "concepts": [
+        {
+          "concept_id": "dsa.dp.sequence_resource",
+          "weight": 0.6
+        },
+        {
+          "concept_id": "dsa.dp.state_transition",
+          "weight": 0.4
+        }
+      ],
+      "explanation": "This is a 0/1 resource-allocation shape: each artifact is taken or skipped once, choices share a remaining-capacity constraint, and greedy value/ratio rules are not generally safe.",
+      "blueprint_skill_ids": [
+        "8.3.01",
+        "8.3.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected approach does not correctly model interacting indivisible choices under a capacity constraint.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.dp.sequence_resource",
+              "dsa.dp.state_transition"
+            ],
+            "node_id": "domain-8-dp-sequence-resource",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.dp.resource",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+        },
+        {
+          "title": "MIT Press — Introduction to Algorithms",
+          "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0,
+        "family_id": "dsa.dp.resource",
+        "transfer_group_id": "reused_subproblem_state",
+        "surface_context": "build_cache_optimization",
+        "challenge_group_id": "d8-dp-01"
+      },
+      "choice_feedback": {
+        "dp": "Correct: item index plus remaining capacity captures the reusable future subproblem.",
+        "greedy": "Highest value or ratio first is not generally optimal for indivisible 0/1 choices.",
+        "sort": "Sorting alone does not resolve interacting capacity choices.",
+        "bfs": "Unweighted graph distance is not the optimization structure."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "dp",
+            "label": "Dynamic programming over `(artifact_index, remaining_capacity)`"
+          },
+          {
+            "id": "greedy",
+            "label": "Always take the highest-saving artifact that still fits"
+          },
+          {
+            "id": "sort",
+            "label": "Sort by artifact name and take a prefix"
+          },
+          {
+            "id": "bfs",
+            "label": "Run BFS over artifact IDs without modeling capacity"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "dp"
+      }
+    }
+  ]
+}

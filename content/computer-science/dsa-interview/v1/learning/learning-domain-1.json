@@ -1,0 +1,1082 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "dsa-interview-learning-2026-09-25-v2",
+  "certification_id": "cs-dsa-interview",
+  "certification_version": "dsa-interview-v1",
+  "exam_guide_revision": "Not a certification. Interview-focused DS&A curriculum reviewed 2026-09-25 against current Microsoft and Amazon public interview guidance, MIT 6.006, and Cornell loop-invariant material.",
+  "domain": {
+    "id": "domain-1",
+    "name": "Interview Reasoning, Complexity & Correctness",
+    "weight": 0.1
+  },
+  "learning_design": {
+    "progress_label": "Reasoning Progress",
+    "unlock_rule": "Complete the required short reveals in order. Each node prepares the reasoning used by later scored practice.",
+    "mastery_note": "Discovery is not mastery. The goal is to explain the reasoning, diagnose mistakes, and apply it to unfamiliar problems without a pattern label."
+  },
+  "source_refs": [
+    {
+      "title": "Microsoft Careers — Technical interviewing",
+      "url": "https://careers.microsoft.com/v2/global/en/hiring-tips/technical-interviewing"
+    },
+    {
+      "title": "Amazon Jobs — Software development interview topics",
+      "url": "https://amazon.jobs/content/en/how-we-hire/interview-prep/software-development-topics"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms syllabus",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/syllabus/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+    },
+    {
+      "title": "Cornell CS 2112 — Loop invariants",
+      "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "baseline",
+      "definition": "A simple correct starting solution used to expose the real cost before optimizing."
+    },
+    {
+      "term": "Big O",
+      "definition": "Notation for how time or extra memory grows as the input size grows."
+    },
+    {
+      "term": "bottleneck",
+      "definition": "The operation that dominates the cost of the current approach."
+    },
+    {
+      "term": "invariant",
+      "definition": "A condition that stays true at a chosen point while an algorithm runs."
+    },
+    {
+      "term": "edge case",
+      "definition": "An input near a boundary or unusual condition that can expose hidden assumptions."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "1.1",
+      "1.2",
+      "1.3"
+    ],
+    "skill_ids": [
+      "1.1.01",
+      "1.1.02",
+      "1.1.03",
+      "1.2.01",
+      "1.2.02",
+      "1.2.03",
+      "1.3.01",
+      "1.3.02"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 8,
+    "prompt_count": 27
+  },
+  "authoring_notes": "Domain 1 is intentionally pattern-agnostic. It trains a fallback reasoning loop that later DSA domains reuse: correct baseline → count actual work → identify bottleneck → maintain an invariant → test boundaries. Examples introduce familiar algorithms only as reasoning objects, not as memorization targets.",
+  "modules": [
+    {
+      "id": "domain-1-module-1-framing",
+      "title": "Frame the problem before coding",
+      "order": 1,
+      "task_ids": [
+        "1.1"
+      ],
+      "skill_ids": [
+        "1.1.01",
+        "1.1.02",
+        "1.1.03"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-1-interview-signal",
+          "title": "Make your reasoning visible",
+          "concept_ids": [
+            "dsa.interview.signal"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.14,
+            "y": 0.16
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT ARE INTERVIEWERS TRYING TO OBSERVE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A coding interview is not only a final-answer check. Make your problem decomposition, plan, correctness reasoning, complexity trade-offs, implementation, and testing visible.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "visible-reasoning",
+                      "text": "Make your problem decomposition",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "signals",
+              "kind": "mental_model",
+              "label": "THE FIVE SIGNALS TO SHOW",
+              "placeholder": "Reveal the checklist.",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Clarify the input, output, and constraints that can change the solution.",
+                  "State a simple plan before writing code.",
+                  "Explain why the chosen operations and data structures fit.",
+                  "Write code that preserves the stated reasoning.",
+                  "Test boundaries, errors, and a normal case before saying you are done."
+                ]
+              }
+            },
+            {
+              "id": "not-memory-contest",
+              "kind": "not_this",
+              "label": "NOT A MEMORY CONTEST",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Memorized solutions are fragile when the story changes. The useful skill is applying fundamentals to a new prompt and explaining why the approach fits.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "apply-fundamentals",
+                      "text": "applying fundamentals to a new prompt",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Microsoft Careers — Technical interviewing",
+              "url": "https://careers.microsoft.com/v2/global/en/hiring-tips/technical-interviewing"
+            },
+            {
+              "title": "Amazon Jobs — Software development interview topics",
+              "url": "https://amazon.jobs/content/en/how-we-hire/interview-prep/software-development-topics"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "constraint",
+              "definition": "A rule or limit that can change which solution is correct or practical, such as input size, mutation rules, or memory limits."
+            }
+          ]
+        },
+        {
+          "id": "domain-1-correct-baseline",
+          "title": "Start with a correct baseline",
+          "concept_ids": [
+            "dsa.reasoning.correct_baseline"
+          ],
+          "prerequisite_node_ids": [
+            "domain-1-interview-signal"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.16
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT IS A BASELINE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A baseline is the simplest approach you can explain as correct, even if it is too slow for the final constraints. It gives you something concrete to analyze instead of guessing an optimization.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "baseline-simple-correct",
+                      "text": "simplest approach you can explain as correct",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "example",
+              "kind": "mental_model",
+              "label": "EXAMPLE: DUPLICATE CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "baseline.py",
+                "language": "python",
+                "code": "def has_duplicate(values):\n    for i in range(len(values)):\n        for j in range(i + 1, len(values)):\n            if values[i] == values[j]:\n                return True\n    return False\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "baseline-correct",
+                    "anchor": {
+                      "line": 2,
+                      "text": "for i in range(len(values)):",
+                      "occurrence": 1
+                    },
+                    "title": "Systematic baseline",
+                    "explanation": "The loops consider every unordered pair, so a duplicate pair cannot be skipped.",
+                    "required": true
+                  },
+                  {
+                    "id": "baseline-cost",
+                    "anchor": {
+                      "line": 3,
+                      "text": "for j in range(i + 1, len(values)):",
+                      "occurrence": 1
+                    },
+                    "title": "Cost becomes visible",
+                    "explanation": "The nested comparisons make the repeated work easy to identify before optimizing.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN SHOULD YOU USE THE BASELINE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use it when the optimal pattern is not obvious. State the correct baseline, then ask what operation repeats and whether that result can be remembered or avoided.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "what-repeats",
+                      "text": "what operation repeats",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "Amazon Jobs — Software development interview topics",
+              "url": "https://amazon.jobs/content/en/how-we-hire/interview-prep/software-development-topics"
+            }
+          ]
+        },
+        {
+          "id": "domain-1-interview-loop",
+          "title": "Use a fallback interview loop",
+          "concept_ids": [
+            "dsa.interview.workflow"
+          ],
+          "prerequisite_node_ids": [
+            "domain-1-correct-baseline"
+          ],
+          "map_position": {
+            "x": 0.7,
+            "y": 0.16
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT IS THE FALLBACK LOOP?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use the same reasoning sequence whenever a prompt feels unfamiliar. The sequence reduces the need to invent a process while you are also solving the problem.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "same-sequence",
+                      "text": "same reasoning sequence",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "sequence",
+              "kind": "mental_model",
+              "label": "RUN THIS LOOP",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Clarify: output, constraints, mutation, duplicates, no-solution behavior.",
+                  "Example: walk through one tiny case.",
+                  "Baseline: state a simple correct solution.",
+                  "Bottleneck: name the expensive repeated operation.",
+                  "Commit: state the maintained state/invariant and complexity.",
+                  "Code: implement the simplest version that preserves that reasoning.",
+                  "Test: normal, boundary, and no-solution cases."
+                ]
+              }
+            },
+            {
+              "id": "stuck",
+              "kind": "action",
+              "label": "IF YOU GET STUCK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Do not search your memory for a random pattern name. Return to the baseline and ask which operation is repeated most often.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "return-baseline",
+                      "text": "Return to the baseline",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Microsoft Careers — Technical interviewing",
+              "url": "https://careers.microsoft.com/v2/global/en/hiring-tips/technical-interviewing"
+            },
+            {
+              "title": "Amazon Jobs — Software development interview topics",
+              "url": "https://amazon.jobs/content/en/how-we-hire/interview-prep/software-development-topics"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-1-module-2-complexity",
+      "title": "Measure work and remove the bottleneck",
+      "order": 2,
+      "task_ids": [
+        "1.2"
+      ],
+      "skill_ids": [
+        "1.2.01",
+        "1.2.02",
+        "1.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-1-module-1-framing"
+      ],
+      "nodes": [
+        {
+          "id": "domain-1-big-o",
+          "title": "Use Big O as a scale filter",
+          "concept_ids": [
+            "dsa.complexity.big_o"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.14,
+            "y": 0.48
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT DOES BIG O TELL YOU?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Big O describes how resource use grows as input size grows. In interviews, first use it to reject approaches that cannot plausibly fit the stated scale.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "growth",
+                      "text": "grows as input size grows",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "table",
+              "kind": "mental_model",
+              "label": "RECOGNIZE COMMON GROWTH SHAPES",
+              "placeholder": "Reveal one row at a time.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "growth",
+                    "label": "Growth"
+                  },
+                  {
+                    "id": "shape",
+                    "label": "Typical structural clue"
+                  },
+                  {
+                    "id": "example",
+                    "label": "Example"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "o1",
+                    "cells": {
+                      "growth": "O(1)",
+                      "shape": "Amount of work does not grow with n",
+                      "example": "Read one known index"
+                    }
+                  },
+                  {
+                    "id": "ologn",
+                    "cells": {
+                      "growth": "O(log n)",
+                      "shape": "Discard a constant fraction each step",
+                      "example": "Binary search"
+                    }
+                  },
+                  {
+                    "id": "on",
+                    "cells": {
+                      "growth": "O(n)",
+                      "shape": "Process each input item a bounded number of times",
+                      "example": "Single scan"
+                    }
+                  },
+                  {
+                    "id": "onlogn",
+                    "cells": {
+                      "growth": "O(n log n)",
+                      "shape": "Linear work across logarithmic levels or comparison sorting",
+                      "example": "Merge sort"
+                    }
+                  },
+                  {
+                    "id": "on2",
+                    "cells": {
+                      "growth": "O(n²)",
+                      "shape": "For many items, scan/compare with many other items",
+                      "example": "All-pairs comparison"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "growth"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "not-stopwatch",
+              "kind": "not_this",
+              "label": "BIG O IS NOT A STOPWATCH",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Big O abstracts away constant factors and focuses on growth. Use it with the actual constraints and operations, not as a substitute for all performance reasoning.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "growth-not-clock",
+                      "text": "focuses on growth",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms syllabus",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/syllabus/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "asymptotic",
+              "definition": "Describing how growth behaves as the input becomes large, rather than measuring one specific run time."
+            }
+          ]
+        },
+        {
+          "id": "domain-1-aggregate-work",
+          "title": "Count operations, not loop shapes",
+          "concept_ids": [
+            "dsa.complexity.aggregate_work"
+          ],
+          "prerequisite_node_ids": [
+            "domain-1-big-o"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.48
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "NESTED CODE DOES NOT AUTOMATICALLY MEAN O(n²)",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Complexity depends on how many times the expensive operation can happen overall. Two pointers that only move forward may perform O(n) total moves even when the code contains a loop inside a loop.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "overall",
+                      "text": "overall",
+                      "required": true
+                    },
+                    {
+                      "id": "total-moves",
+                      "text": "O(n) total moves",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "code",
+              "kind": "mental_model",
+              "label": "TRACE TOTAL POINTER MOVES",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "two_progress_counters.py",
+                "language": "python",
+                "code": "left = 0\nright = 0\nwhile left < n and right < n:\n    if should_move_left(left, right):\n        left += 1\n    else:\n        right += 1\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "left-progress",
+                    "anchor": {
+                      "line": 5,
+                      "text": "left += 1",
+                      "occurrence": 1
+                    },
+                    "title": "Left only moves forward",
+                    "explanation": "Across the entire loop, left can increase at most n times.",
+                    "required": true
+                  },
+                  {
+                    "id": "right-progress",
+                    "anchor": {
+                      "line": 7,
+                      "text": "right += 1",
+                      "occurrence": 1
+                    },
+                    "title": "Right only moves forward",
+                    "explanation": "Across the entire loop, right can also increase at most n times.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "ASK THIS BEFORE MULTIPLYING LOOP BOUNDS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Can the inner work restart from scratch for every outer step, or does some state only move forward across the entire run?",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "restart",
+                      "text": "restart from scratch",
+                      "required": true
+                    },
+                    {
+                      "id": "move-forward",
+                      "text": "only move forward",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture Notes",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-notes/"
+            }
+          ]
+        },
+        {
+          "id": "domain-1-bottleneck",
+          "title": "Remove repeated work, not random lines",
+          "concept_ids": [
+            "dsa.optimization.from_bruteforce"
+          ],
+          "prerequisite_node_ids": [
+            "domain-1-aggregate-work"
+          ],
+          "map_position": {
+            "x": 0.7,
+            "y": 0.48
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT IS THE BOTTLENECK?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The bottleneck is the operation that dominates the baseline's cost. Optimization becomes much easier when you can name that operation precisely.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "dominates",
+                      "text": "dominates the baseline's cost",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "comparison",
+              "kind": "mental_model",
+              "label": "BASELINE → REPEATED WORK → MAINTAINED INFORMATION",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Baseline",
+                    "items": [
+                      "For each value, scan earlier values again.",
+                      "Repeated question: have I seen this value?"
+                    ]
+                  },
+                  {
+                    "title": "Improved reasoning",
+                    "items": [
+                      "Maintain the values already seen.",
+                      "Ask membership directly instead of rescanning."
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "questions",
+              "kind": "action",
+              "label": "THREE QUESTIONS TO ASK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Which operation is repeated most?",
+                  "What answer/data from earlier work would make that operation cheaper?",
+                  "What state or data structure can maintain that information correctly?"
+                ]
+              }
+            },
+            {
+              "id": "warning",
+              "kind": "not_this",
+              "label": "DO NOT OPTIMIZE BY PATTERN NAME ALONE",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "A familiar keyword is not enough. The optimization should remove a cost you can point to in the baseline.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "remove-cost",
+                      "text": "remove a cost you can point to",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "bottleneck",
+              "definition": "The operation or resource use that dominates the cost of the current approach."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-1-module-3-correctness",
+      "title": "Preserve correctness and test boundaries",
+      "order": 3,
+      "task_ids": [
+        "1.3"
+      ],
+      "skill_ids": [
+        "1.3.01",
+        "1.3.02"
+      ],
+      "prerequisite_module_ids": [
+        "domain-1-module-2-complexity"
+      ],
+      "nodes": [
+        {
+          "id": "domain-1-invariant",
+          "title": "Use an invariant and a progress rule",
+          "concept_ids": [
+            "dsa.correctness.invariant"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.24,
+            "y": 0.8
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT IS AN INVARIANT?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A loop invariant is a condition that remains true at the relevant point of every iteration. It gives you a compact way to explain why each update is safe.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "remains-true",
+                      "text": "remains true",
+                      "required": true
+                    },
+                    {
+                      "id": "safe-update",
+                      "text": "why each update is safe",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "four-checks",
+              "kind": "mental_model",
+              "label": "FOUR CHECKS FOR A LOOP",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Initialization: the invariant is true before the first iteration.",
+                  "Maintenance: one iteration preserves the invariant.",
+                  "Progress: some measure moves toward termination.",
+                  "Exit: invariant + loop exit condition imply the desired result."
+                ]
+              }
+            },
+            {
+              "id": "binary-example",
+              "kind": "connects_to",
+              "label": "EXAMPLE: BINARY-SEARCH CANDIDATE INTERVAL",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "binary_search.py",
+                "language": "python",
+                "code": "left, right = 0, len(values) - 1\nwhile left <= right:\n    mid = (left + right) // 2\n    if values[mid] == target:\n        return mid\n    if values[mid] < target:\n        left = mid + 1\n    else:\n        right = mid - 1\nreturn -1\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "candidate-region",
+                    "anchor": {
+                      "line": 1,
+                      "text": "left, right = 0, len(values) - 1",
+                      "occurrence": 1
+                    },
+                    "title": "Candidate interval",
+                    "explanation": "The invariant can be stated as: if the target is still possible, it lies inside the current interval.",
+                    "required": true
+                  },
+                  {
+                    "id": "left-progress",
+                    "anchor": {
+                      "line": 7,
+                      "text": "left = mid + 1",
+                      "occurrence": 1
+                    },
+                    "title": "Preserve + progress",
+                    "explanation": "When the midpoint is too small, mid and everything left of it can be discarded; +1 also shrinks the interval.",
+                    "required": true
+                  },
+                  {
+                    "id": "right-progress",
+                    "anchor": {
+                      "line": 9,
+                      "text": "right = mid - 1",
+                      "occurrence": 1
+                    },
+                    "title": "Symmetric update",
+                    "explanation": "When the midpoint is too large, mid and everything right of it can be discarded.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "say-it",
+              "kind": "action",
+              "label": "BEFORE YOU CODE A TRICKY LOOP",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Say what the pointers, window, frontier, stack, or table already guarantees, then say why the next update keeps that guarantee true.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "guarantee",
+                      "text": "already guarantees",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Cornell CS 2112 — Loop invariants",
+              "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "invariant",
+              "definition": "A condition that stays true at a chosen point of an algorithm and helps explain correctness."
+            }
+          ]
+        },
+        {
+          "id": "domain-1-edge-cases",
+          "title": "Use tiny cases as counterexamples",
+          "concept_ids": [
+            "dsa.correctness.edge_cases"
+          ],
+          "prerequisite_node_ids": [
+            "domain-1-invariant"
+          ],
+          "map_position": {
+            "x": 0.58,
+            "y": 0.8
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT IS AN EDGE CASE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "An edge case sits near a boundary of the input or algorithm state. Small cases are especially useful because you can trace every update and expose hidden assumptions quickly.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "boundary",
+                      "text": "boundary of the input or algorithm state",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "checklist",
+              "kind": "action",
+              "label": "THE 20-SECOND TEST SET",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Empty or minimum-size input.",
+                  "One-item input.",
+                  "Answer at the first or last possible position.",
+                  "Duplicate/equal values when they matter.",
+                  "No valid answer / missing target.",
+                  "A case that makes each branch of the update logic run."
+                ]
+              }
+            },
+            {
+              "id": "test-table",
+              "kind": "mental_model",
+              "label": "TURN ASSUMPTIONS INTO TESTS",
+              "placeholder": "Reveal the tests.",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "assumption",
+                    "label": "Assumption to challenge"
+                  },
+                  {
+                    "id": "tiny_case",
+                    "label": "Tiny test"
+                  },
+                  {
+                    "id": "bug",
+                    "label": "Bug it can expose"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "empty",
+                    "cells": {
+                      "assumption": "There is always an element",
+                      "tiny_case": "[]",
+                      "bug": "Index access before checking length"
+                    }
+                  },
+                  {
+                    "id": "single",
+                    "cells": {
+                      "assumption": "A loop always runs twice",
+                      "tiny_case": "[7]",
+                      "bug": "Bad initialization or termination"
+                    }
+                  },
+                  {
+                    "id": "absent",
+                    "cells": {
+                      "assumption": "A solution always exists",
+                      "tiny_case": "target missing",
+                      "bug": "Wrong return / infinite loop"
+                    }
+                  },
+                  {
+                    "id": "boundary",
+                    "cells": {
+                      "assumption": "Middle cases represent all cases",
+                      "tiny_case": "answer at index 0 or n-1",
+                      "bug": "Off-by-one update"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "cell",
+                  "initially_visible": {
+                    "column_ids": [
+                      "assumption"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "finish",
+              "kind": "when",
+              "label": "WHEN ARE YOU DONE?",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "After the normal example works, test at least one boundary and one failure/no-solution case before declaring the implementation complete.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "boundary-failure",
+                      "text": "one boundary and one failure/no-solution case",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Microsoft Careers — Technical interviewing",
+              "url": "https://careers.microsoft.com/v2/global/en/hiring-tips/technical-interviewing"
+            },
+            {
+              "title": "Cornell CS 2112 — Loop invariants",
+              "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "counterexample",
+              "definition": "A concrete input that disproves a claim or exposes a hidden assumption in an algorithm."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

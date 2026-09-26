@@ -1,0 +1,1220 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "dsa-interview-learning-2026-09-26-v1",
+  "certification_id": "cs-dsa-interview",
+  "certification_version": "dsa-interview-v1",
+  "exam_guide_revision": "Not a certification. Interview-focused DS&A curriculum reviewed 2026-09-26 against MIT 6.006 sequence/sorting material, Princeton sorting references, and standard cycle-detection references.",
+  "domain": {
+    "id": "domain-3",
+    "name": "Pointer, Window & Interval Patterns",
+    "weight": 0.14
+  },
+  "learning_design": {
+    "progress_label": "Pattern Progress",
+    "unlock_rule": "Complete the required short reveals in order. Each pattern is introduced through a structural rule and a real-software use before cold transfer.",
+    "mastery_note": "Discovery is not mastery. Learners should justify pointer movement, maintain window state correctly, and preserve interval semantics when the surface story changes."
+  },
+  "source_refs": [
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+    },
+    {
+      "title": "Princeton Algorithms — Sorting",
+      "url": "https://algs4.cs.princeton.edu/20sorting/"
+    },
+    {
+      "title": "Princeton Algorithms — Mergesort",
+      "url": "https://algs4.cs.princeton.edu/22mergesort/"
+    },
+    {
+      "title": "Wikipedia — Cycle detection",
+      "url": "https://en.wikipedia.org/wiki/Cycle_detection"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "two pointers",
+      "definition": "A technique that tracks two positions whose relationship helps eliminate, compact, or traverse candidate state."
+    },
+    {
+      "term": "window",
+      "definition": "One contiguous active region of a sequence whose state is maintained as boundaries move."
+    },
+    {
+      "term": "interval",
+      "definition": "A range defined by start/end boundaries and explicit endpoint semantics."
+    },
+    {
+      "term": "frontier",
+      "definition": "The current boundary between already-consolidated state and the next candidate to process."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "3.1",
+      "3.2",
+      "3.3"
+    ],
+    "skill_ids": [
+      "3.1.01",
+      "3.1.02",
+      "3.1.03",
+      "3.2.01",
+      "3.2.02",
+      "3.2.03",
+      "3.3.01",
+      "3.3.02",
+      "3.3.03"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 30
+  },
+  "authoring_notes": "Domain 3 deliberately teaches WHY each boundary move is justified. Real engineering examples include resource pairing, tombstone compaction, cycle detection in linked workflow state, rolling telemetry, trailing request windows, and maintenance-window consolidation. Domain 2 prefix-state material is explicitly contrasted with windows where signed values or arbitrary range queries change the right strategy.",
+  "modules": [
+    {
+      "id": "domain-3-module-1-pointers",
+      "title": "Use pointer relationships deliberately",
+      "order": 1,
+      "task_ids": [
+        "3.1"
+      ],
+      "skill_ids": [
+        "3.1.01",
+        "3.1.02",
+        "3.1.03"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-3-opposing-pointers",
+          "title": "Use order to discard pair candidates from both ends",
+          "concept_ids": [
+            "dsa.two_pointers.opposing"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT MAKES OPPOSING POINTERS WORK?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "When values are ordered, a comparison at the two ends can prove that many candidate pairs are impossible. Move the boundary whose change can move the pair toward the target instead of checking every pair.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "ordered",
+                      "text": "When values are ordered",
+                      "required": true
+                    },
+                    {
+                      "id": "discard",
+                      "text": "prove that many candidate pairs are impossible",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: PAIR TWO SORTED RESOURCE SIZES",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Suppose sorted job sizes must be paired to exactly fill a capacity. If the smallest + largest is too small, keeping the same smallest value with any smaller right value cannot help, so the left boundary must move. If the sum is too large, the right boundary must move.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "too-small",
+                      "text": "too small",
+                      "required": true
+                    },
+                    {
+                      "id": "too-large",
+                      "text": "too large",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "code",
+              "kind": "mental_model",
+              "label": "THE ELIMINATION LOOP",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "sorted_pair.py",
+                "language": "python",
+                "code": "left, right = 0, len(values) - 1\nwhile left < right:\n    total = values[left] + values[right]\n    if total == target:\n        return left, right\n    if total < target:\n        left += 1\n    else:\n        right -= 1\nreturn None\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "left-move",
+                    "anchor": {
+                      "line": 7,
+                      "text": "left += 1",
+                      "occurrence": 1
+                    },
+                    "title": "Too small",
+                    "explanation": "With the same left value, any smaller right value would make the sum no larger, so left can be discarded.",
+                    "required": true
+                  },
+                  {
+                    "id": "right-move",
+                    "anchor": {
+                      "line": 9,
+                      "text": "right -= 1",
+                      "occurrence": 1
+                    },
+                    "title": "Too large",
+                    "explanation": "With the same right value, any larger left value would make the sum no smaller, so right can be discarded.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "not-this",
+              "kind": "not_this",
+              "label": "ORDER IS THE REASON, NOT THE POINTERS THEMSELVES",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "On unsorted values, the same boundary moves are not justified. Either establish usable order first or choose a different strategy such as maintained lookup state.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "reason",
+                      "text": "the same boundary moves are not justified",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "candidate",
+              "definition": "A value, pair, range, or state that could still satisfy the problem until evidence rules it out."
+            }
+          ]
+        },
+        {
+          "id": "domain-3-read-write",
+          "title": "Compact a sequence with read/write pointers",
+          "concept_ids": [
+            "dsa.two_pointers.read_write"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-opposing-pointers"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT DO READ AND WRITE MEAN?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The read pointer examines each input item. The write pointer marks the next output position for an item you keep. The processed output prefix remains valid and compact.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "read",
+                      "text": "read pointer examines each input item",
+                      "required": true
+                    },
+                    {
+                      "id": "write",
+                      "text": "write pointer marks the next output position",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: COMPACT TOMBSTONED RECORDS IN PLACE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "compact.py",
+                "language": "python",
+                "code": "write = 0\nfor read in range(len(records)):\n    if not records[read].deleted:\n        records[write] = records[read]\n        write += 1\nreturn write\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "write-prefix",
+                    "anchor": {
+                      "line": 4,
+                      "text": "records[write] = records[read]",
+                      "occurrence": 1
+                    },
+                    "title": "Stable compacted prefix",
+                    "explanation": "Accepted records are copied in read order, so the prefix records[:write] contains exactly the kept records in their original relative order.",
+                    "required": true
+                  },
+                  {
+                    "id": "advance-only-kept",
+                    "anchor": {
+                      "line": 5,
+                      "text": "write += 1",
+                      "occurrence": 1
+                    },
+                    "title": "Write advances only when keeping an item",
+                    "explanation": "Discarded records do not consume output positions.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN IS THIS BETTER THAN BUILDING A NEW LIST?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use read/write compaction when the contract permits in-place mutation and preserving a compact prefix is useful. If mutation is forbidden or clarity matters more than allocation, creating a new output list may be the better engineering choice.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "contract",
+                      "text": "contract permits in-place mutation",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-3-fast-slow",
+          "title": "Use relative pointer speed to expose cycles or distance",
+          "concept_ids": [
+            "dsa.two_pointers.fast_slow"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-read-write"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT DOES FAST/SLOW TRACK?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Two traversals move through the same linked progression at different rates or with a maintained gap. Their relative position can reveal structure without storing every visited node.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "relative",
+                      "text": "relative position",
+                      "required": true
+                    },
+                    {
+                      "id": "no-store",
+                      "text": "without storing every visited node",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: DETECT A LOOP IN A LINKED WORKFLOW CHAIN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If each workflow state points to its next state, a corrupted configuration can accidentally form a cycle. A slow pointer moving one step and a fast pointer moving two steps will eventually meet if both remain inside the same finite cycle.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "cycle",
+                      "text": "will eventually meet",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "comparison",
+              "kind": "not_this",
+              "label": "FAST/SLOW VS VISITED SET",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Fast/slow",
+                    "items": [
+                      "O(1) extra pointer state",
+                      "Works when traversal follows one next link at a time",
+                      "Good for cycle/midpoint/gap relationships"
+                    ]
+                  },
+                  {
+                    "title": "Visited set",
+                    "items": [
+                      "Stores encountered identities",
+                      "Works for more general traversal shapes",
+                      "Uses O(number of visited items) extra memory"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "warning",
+              "kind": "not_this",
+              "label": "DO NOT GENERALIZE IT TO ARBITRARY GRAPHS",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "The classic fast/slow technique assumes a single deterministic next step from each current state. General graph cycle detection needs different traversal state.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "single-next",
+                      "text": "single deterministic next step",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Wikipedia — Cycle detection",
+              "url": "https://en.wikipedia.org/wiki/Cycle_detection"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-3-module-2-windows",
+      "title": "Maintain contiguous ranges incrementally",
+      "order": 2,
+      "task_ids": [
+        "3.2"
+      ],
+      "skill_ids": [
+        "3.2.01",
+        "3.2.02",
+        "3.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-3-module-1-pointers"
+      ],
+      "nodes": [
+        {
+          "id": "domain-3-fixed-window",
+          "title": "Reuse state between same-size neighboring windows",
+          "concept_ids": [
+            "dsa.window.fixed"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.48
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHY IS A FIXED WINDOW CHEAPER THAN RESUMMING EACH RANGE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Neighboring windows of the same size overlap almost completely. When the window moves one step, remove the outgoing item and add the incoming item instead of recomputing the whole range.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "overlap",
+                      "text": "overlap almost completely",
+                      "required": true
+                    },
+                    {
+                      "id": "delta",
+                      "text": "remove the outgoing item and add the incoming item",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: ROLLING TELEMETRY TOTAL",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "rolling_total.py",
+                "language": "python",
+                "code": "window = sum(readings[:k])\nbest = window\nfor right in range(k, len(readings)):\n    window += readings[right]\n    window -= readings[right - k]\n    best = max(best, window)\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "enter",
+                    "anchor": {
+                      "line": 4,
+                      "text": "window += readings[right]",
+                      "occurrence": 1
+                    },
+                    "title": "One item enters",
+                    "explanation": "The new rightmost reading was not in the previous window.",
+                    "required": true
+                  },
+                  {
+                    "id": "leave",
+                    "anchor": {
+                      "line": 5,
+                      "text": "window -= readings[right - k]",
+                      "occurrence": 1
+                    },
+                    "title": "One item leaves",
+                    "explanation": "The oldest reading is removed so the maintained state still describes exactly k readings.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "invariant",
+              "kind": "mental_model",
+              "label": "WINDOW INVARIANT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "After each update, the maintained state must describe exactly the current k contiguous items. Forgetting either the entering or leaving update breaks the invariant.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "exactly-k",
+                      "text": "exactly the current k contiguous items",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-3-variable-window",
+          "title": "Expand, then repair a variable window",
+          "concept_ids": [
+            "dsa.window.variable"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-fixed-window"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.48
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT MAKES A VARIABLE WINDOW VALID?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A variable window works when one boundary can expand the candidate and moving the other boundary can monotonically repair a violated condition. The key is not merely 'contiguous'; the repair rule must be justified.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "expand",
+                      "text": "one boundary can expand the candidate",
+                      "required": true
+                    },
+                    {
+                      "id": "repair",
+                      "text": "moving the other boundary can monotonically repair a violated condition",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: EXPIRE REQUESTS OUTSIDE A TRAILING TIME LIMIT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "recent_requests.py",
+                "language": "python",
+                "code": "left = 0\nfor right, ts in enumerate(timestamps):\n    while ts - timestamps[left] >= 60:\n        left += 1\n    recent_count = right - left + 1\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "repair",
+                    "anchor": {
+                      "line": 3,
+                      "text": "while ts - timestamps[left] >= 60:",
+                      "occurrence": 1
+                    },
+                    "title": "Repair by expiring the oldest requests",
+                    "explanation": "Because timestamps are ordered, moving left forward can only remove older requests from the active range.",
+                    "required": true
+                  },
+                  {
+                    "id": "active-range",
+                    "anchor": {
+                      "line": 5,
+                      "text": "right - left + 1",
+                      "occurrence": 1
+                    },
+                    "title": "Contiguous active range",
+                    "explanation": "The window contains exactly the requests still inside the trailing time condition.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "budget",
+              "kind": "connects_to",
+              "label": "ANOTHER REAL USE: POSITIVE-SIZE BUDGET",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If all item sizes are non-negative and a contiguous batch must stay under a byte budget, adding items cannot reduce the sum and removing items from the left cannot increase it. That monotonic relationship justifies expand/shrink repair.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "nonnegative",
+                      "text": "all item sizes are non-negative",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "warning",
+              "kind": "not_this",
+              "label": "SIGNED VALUES CAN BREAK THE REPAIR RULE",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "With arbitrary positive and negative values, shrinking from the left does not reliably move a sum toward a target. Prefix-state methods may fit those problems better.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "signed",
+                      "text": "arbitrary positive and negative values",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-3-window-discrimination",
+          "title": "Choose fixed window, variable window, or prefix state",
+          "concept_ids": [
+            "dsa.window.discrimination",
+            "dsa.window.fixed",
+            "dsa.window.variable"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-variable-window"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.48
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "ASK ABOUT THE RANGE BEFORE NAMING A PATTERN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "First ask whether the candidate is contiguous, whether neighboring candidates overlap, whether the size is fixed, and whether invalid state can be repaired by moving one boundary. Those structural facts separate window methods from prefix-state queries.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "facts",
+                      "text": "structural facts",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "table",
+              "kind": "mental_model",
+              "label": "PATTERN DUEL",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "pattern",
+                    "label": "Pattern"
+                  },
+                  {
+                    "id": "shape",
+                    "label": "Strong clue"
+                  },
+                  {
+                    "id": "real_use",
+                    "label": "Example"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "fixed",
+                    "cells": {
+                      "pattern": "Fixed window",
+                      "shape": "Every candidate is one contiguous range of size k",
+                      "real_use": "Rolling 5-minute aggregate"
+                    }
+                  },
+                  {
+                    "id": "variable",
+                    "cells": {
+                      "pattern": "Variable window",
+                      "shape": "Grow right; shrink left to restore validity",
+                      "real_use": "Trailing request window / positive-size budget"
+                    }
+                  },
+                  {
+                    "id": "prefix",
+                    "cells": {
+                      "pattern": "Prefix state",
+                      "shape": "Many static range queries or prefix-difference relation",
+                      "real_use": "Dashboard totals over arbitrary date ranges"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "pattern"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "THE DECIDING QUESTION",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If I move a boundary, can I update the state and move predictably toward validity? If yes, a window may fit. If the task instead asks many arbitrary fixed ranges, prefix state is often the stronger clue.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "decide",
+                      "text": "can I update the state and move predictably toward validity?",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-3-module-3-intervals",
+      "title": "Order and consolidate interval data",
+      "order": 3,
+      "task_ids": [
+        "3.3"
+      ],
+      "skill_ids": [
+        "3.3.01",
+        "3.3.02",
+        "3.3.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-3-module-2-windows"
+      ],
+      "nodes": [
+        {
+          "id": "domain-3-interval-sort-merge",
+          "title": "Sort intervals before merging overlap",
+          "concept_ids": [
+            "dsa.intervals.sort_merge"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.82
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHY SORT INTERVALS FIRST?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sorting by start boundary turns a global overlap problem into a local scan. After sorting, if the next interval starts after the current merged end, it cannot overlap that current merged interval.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "local",
+                      "text": "global overlap problem into a local scan",
+                      "required": true
+                    },
+                    {
+                      "id": "frontier",
+                      "text": "current merged end",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: CONSOLIDATE MAINTENANCE WINDOWS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "merge_windows.py",
+                "language": "python",
+                "code": "intervals.sort(key=lambda x: x[0])\nmerged = []\nfor start, end in intervals:\n    if not merged or start > merged[-1][1]:\n        merged.append([start, end])\n    else:\n        merged[-1][1] = max(merged[-1][1], end)\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "sort",
+                    "anchor": {
+                      "line": 1,
+                      "text": "intervals.sort",
+                      "occurrence": 1
+                    },
+                    "title": "Establish start order",
+                    "explanation": "Once starts are nondecreasing, any overlap with the processed frontier can be decided against the last merged interval.",
+                    "required": true
+                  },
+                  {
+                    "id": "merge",
+                    "anchor": {
+                      "line": 7,
+                      "text": "max(merged[-1][1], end)",
+                      "occurrence": 1
+                    },
+                    "title": "Extend the current union",
+                    "explanation": "An overlapping interval can only extend the merged end; it never moves the start backward after sorting.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "complexity",
+              "kind": "mental_model",
+              "label": "COST",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The scan is linear after sorting. The dominant cost is usually the O(n log n) comparison sort, followed by O(n) merging.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "sort-cost",
+                      "text": "O(n log n)",
+                      "required": true
+                    },
+                    {
+                      "id": "scan-cost",
+                      "text": "O(n)",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+            },
+            {
+              "title": "Princeton Algorithms — Sorting",
+              "url": "https://algs4.cs.princeton.edu/20sorting/"
+            },
+            {
+              "title": "Princeton Algorithms — Mergesort",
+              "url": "https://algs4.cs.princeton.edu/22mergesort/"
+            }
+          ]
+        },
+        {
+          "id": "domain-3-interval-endpoints",
+          "title": "Define endpoint semantics before deciding overlap",
+          "concept_ids": [
+            "dsa.intervals.endpoint_semantics"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-interval-sort-merge"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.82
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "DO TOUCHING INTERVALS OVERLAP?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "It depends on the contract. Under half-open intervals [start, end), [10, 11) and [11, 12) do not overlap. Under closed intervals [start, end], the same numeric endpoints share the point 11.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "depends",
+                      "text": "depends on the contract",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: SCHEDULING BOUNDARIES",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Calendars and reservation systems often need an explicit rule for whether one booking ending at 11:00 conflicts with another beginning at 11:00. The comparison operator in the merge/conflict logic must match that rule.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "rule",
+                      "text": "explicit rule",
+                      "required": true
+                    },
+                    {
+                      "id": "operator",
+                      "text": "comparison operator",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "table",
+              "kind": "mental_model",
+              "label": "SAME NUMBERS, DIFFERENT SEMANTICS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "semantics",
+                    "label": "Representation"
+                  },
+                  {
+                    "id": "a",
+                    "label": "A"
+                  },
+                  {
+                    "id": "b",
+                    "label": "B"
+                  },
+                  {
+                    "id": "overlap",
+                    "label": "Touch at 11 overlaps?"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "halfopen",
+                    "cells": {
+                      "semantics": "Half-open",
+                      "a": "[10,11)",
+                      "b": "[11,12)",
+                      "overlap": "No"
+                    }
+                  },
+                  {
+                    "id": "closed",
+                    "cells": {
+                      "semantics": "Closed",
+                      "a": "[10,11]",
+                      "b": "[11,12]",
+                      "overlap": "Yes"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "semantics",
+                      "a",
+                      "b"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "half-open interval",
+              "definition": "An interval [start, end) that includes the start boundary and excludes the end boundary."
+            },
+            {
+              "term": "closed interval",
+              "definition": "An interval [start, end] that includes both endpoints."
+            }
+          ]
+        },
+        {
+          "id": "domain-3-interval-contract",
+          "title": "Match interval processing to the requested output",
+          "concept_ids": [
+            "dsa.intervals.sort_merge",
+            "dsa.intervals.endpoint_semantics"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-interval-endpoints"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.82
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "MERGING IS NOT ALWAYS THE OUTPUT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sorting intervals is often useful, but the final action depends on the contract. You might need the union of ranges, a list of conflicts, free gaps, or a yes/no overlap check. Do not automatically merge away information the caller needs.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "contract",
+                      "text": "depends on the contract",
+                      "required": true
+                    },
+                    {
+                      "id": "not-auto",
+                      "text": "Do not automatically merge away information",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: DIFFERENT QUESTIONS ABOUT THE SAME BOOKINGS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Question",
+                    "items": [
+                      "Consolidate downtime windows",
+                      "Report every conflicting booking pair",
+                      "Find free gaps"
+                    ]
+                  },
+                  {
+                    "title": "What to preserve",
+                    "items": [
+                      "Union endpoints",
+                      "Original booking identities",
+                      "Boundaries between merged busy regions"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "action",
+              "kind": "action",
+              "label": "BEFORE WRITING THE MERGE LOOP",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "State the interval representation, endpoint rule, sort key, and exact output. Those four choices determine what information the scan is allowed to discard.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "four",
+                      "text": "interval representation, endpoint rule, sort key, and exact output",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

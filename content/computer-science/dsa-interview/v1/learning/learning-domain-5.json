@@ -1,0 +1,1047 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "dsa-interview-learning-2026-09-26-v1",
+  "certification_id": "cs-dsa-interview",
+  "certification_version": "dsa-interview-v1",
+  "exam_guide_revision": "Not a certification. Interview-focused DS&A curriculum reviewed 2026-09-26 against MIT 6.006 binary-search/sorting material, Python bisect/sorting documentation, and Princeton sorting material.",
+  "domain": {
+    "id": "domain-5",
+    "name": "Binary Search, Sorting & Ordered Reasoning",
+    "weight": 0.1
+  },
+  "learning_design": {
+    "progress_label": "Ordered Reasoning Progress",
+    "unlock_rule": "Complete required short reveals in order. Each ordered technique is introduced through the proof that allows candidates to be discarded.",
+    "mastery_note": "Discovery is not mastery. Learners should state the ordering invariant, boundary contract, and why a discarded region cannot contain the answer."
+  },
+  "source_refs": [
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 3 notes: Sets and Sorting",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/16d78ce4aa9f365920d109ac278c281e_MIT6_006S20_lec3.pdf"
+    },
+    {
+      "title": "Python documentation — bisect",
+      "url": "https://docs.python.org/3/library/bisect.html"
+    },
+    {
+      "title": "Python documentation — Sorting HOW TO",
+      "url": "https://docs.python.org/3/howto/sorting.html"
+    },
+    {
+      "title": "Princeton Algorithms — Sorting",
+      "url": "https://algs4.cs.princeton.edu/20sorting/"
+    },
+    {
+      "title": "Princeton Algorithms — Mergesort",
+      "url": "https://algs4.cs.princeton.edu/22mergesort/"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "lower bound",
+      "definition": "The first position where a value or monotonic condition reaches the requested threshold."
+    },
+    {
+      "term": "feasibility predicate",
+      "definition": "A boolean test that says whether a candidate answer satisfies the required constraint."
+    },
+    {
+      "term": "stable sort",
+      "definition": "A sort that preserves relative order among records with equal sort keys."
+    },
+    {
+      "term": "sort key",
+      "definition": "The value extracted from each record that determines its ordering."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "5.1",
+      "5.2",
+      "5.3"
+    ],
+    "skill_ids": [
+      "5.1.01",
+      "5.1.02",
+      "5.1.03",
+      "5.2.01",
+      "5.2.02",
+      "5.2.03",
+      "5.3.01",
+      "5.3.02",
+      "5.3.03"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 28
+  },
+  "authoring_notes": "Domain 5 emphasizes ordered reasoning rather than memorized binary-search templates. Real uses include timestamp/version lookup, first-compatible release search, minimum capacity/worker-count search, deadline ordering, stable priority processing, and merging sorted changelog feeds.",
+  "modules": [
+    {
+      "id": "domain-5-module-1-binary",
+      "title": "Search ordered data safely",
+      "order": 1,
+      "task_ids": [
+        "5.1"
+      ],
+      "skill_ids": [
+        "5.1.01",
+        "5.1.02",
+        "5.1.03"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-5-binary-exact",
+          "title": "Use sorted order to eliminate half the candidates",
+          "concept_ids": [
+            "dsa.binary.exact"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHY DOES BINARY SEARCH NEED ORDER?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "At a midpoint, sorted order tells you which half cannot contain the target. If the midpoint value is too small, every earlier value is also too small; if it is too large, every later value is also too large.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "half",
+                      "text": "which half cannot contain the target",
+                      "required": true
+                    },
+                    {
+                      "id": "proof",
+                      "text": "every earlier value is also too small",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: FIND AN EXACT TIMESTAMP OR VERSION IN A SORTED INDEX",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A service may keep sorted timestamps, release versions, or sequence numbers. When the exact key is needed, binary search avoids scanning every record and can locate or reject the key in logarithmic comparisons.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "index",
+                      "text": "sorted timestamps, release versions, or sequence numbers",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "code",
+              "kind": "mental_model",
+              "label": "EXACT-MATCH LOOP",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "binary_search.py",
+                "language": "python",
+                "code": "left, right = 0, len(values) - 1\nwhile left <= right:\n    mid = (left + right) // 2\n    if values[mid] == target:\n        return mid\n    if values[mid] < target:\n        left = mid + 1\n    else:\n        right = mid - 1\nreturn -1\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "discard-left",
+                    "anchor": {
+                      "line": 7,
+                      "text": "left = mid + 1",
+                      "occurrence": 1
+                    },
+                    "title": "Discard proven-too-small candidates",
+                    "explanation": "Because the sequence is sorted, target cannot be at mid or anywhere left of mid.",
+                    "required": true
+                  },
+                  {
+                    "id": "discard-right",
+                    "anchor": {
+                      "line": 9,
+                      "text": "right = mid - 1",
+                      "occurrence": 1
+                    },
+                    "title": "Discard proven-too-large candidates",
+                    "explanation": "The symmetric argument removes mid and everything to its right.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "Python documentation — bisect",
+              "url": "https://docs.python.org/3/library/bisect.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "candidate interval",
+              "definition": "The portion of the ordered search space that could still contain the answer."
+            }
+          ]
+        },
+        {
+          "id": "domain-5-binary-progress",
+          "title": "Define the interval convention and make it shrink",
+          "concept_ids": [
+            "dsa.binary.progress"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-binary-exact"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "MOST BINARY-SEARCH BUGS ARE BOUNDARY BUGS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choose one interval convention, such as inclusive `[left, right]` or half-open `[left, right)`, and make every loop condition and update consistent with it. Every non-terminal iteration must strictly shrink the candidate region.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "convention",
+                      "text": "Choose one interval convention",
+                      "required": true
+                    },
+                    {
+                      "id": "shrink",
+                      "text": "strictly shrink the candidate region",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: FIRST RECORD AT OR AFTER A REQUESTED TIME",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A log index often needs insertion-point behavior: find the first timestamp that is not less than the requested time, even if no record has that exact timestamp. That requires a boundary search rather than only exact-match search.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "first",
+                      "text": "first timestamp that is not less than the requested time",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "fault",
+              "kind": "not_this",
+              "label": "NO-PROGRESS UPDATE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "With an inclusive interval and `mid = (left + right) // 2`, writing `left = mid` when mid is too small can leave left unchanged when `mid == left`. `left = mid + 1` removes the midpoint and guarantees progress.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "stuck",
+                      "text": "leave left unchanged",
+                      "required": true
+                    },
+                    {
+                      "id": "plus1",
+                      "text": "`left = mid + 1`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "Python documentation — bisect",
+              "url": "https://docs.python.org/3/library/bisect.html"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-binary-boundary",
+          "title": "Search for the first true boundary",
+          "concept_ids": [
+            "dsa.binary.boundary",
+            "dsa.binary.progress"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-binary-progress"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT CHANGES IN A BOUNDARY SEARCH?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Instead of stopping at any matching item, keep searching for the boundary: the first index where a monotonic condition becomes true, or the last index where it remains false/true depending on the chosen formulation.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "boundary",
+                      "text": "keep searching for the boundary",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: FIRST COMPATIBLE RELEASE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Suppose release versions are ordered and compatibility becomes true from some version onward. The goal is not 'find a compatible version'; it is 'find the first compatible version.' That is a first-true boundary.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "first-compatible",
+                      "text": "first compatible version",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "table",
+              "kind": "mental_model",
+              "label": "EXACT MATCH VS BOUNDARY",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "goal",
+                    "label": "Goal"
+                  },
+                  {
+                    "id": "stop",
+                    "label": "When equality/true appears"
+                  },
+                  {
+                    "id": "result",
+                    "label": "Result"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "exact",
+                    "cells": {
+                      "goal": "Find any exact key",
+                      "stop": "Can stop immediately",
+                      "result": "Matching index or absent"
+                    }
+                  },
+                  {
+                    "id": "firsttrue",
+                    "cells": {
+                      "goal": "Find first true / lower boundary",
+                      "stop": "Record/keep candidate and continue left",
+                      "result": "Earliest satisfying position"
+                    }
+                  }
+                ],
+                "progressive_reveal": {
+                  "mode": "row",
+                  "initially_visible": {
+                    "column_ids": [
+                      "goal"
+                    ],
+                    "row_ids": [],
+                    "cell_ids": []
+                  }
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Python documentation — bisect",
+              "url": "https://docs.python.org/3/library/bisect.html"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-5-module-2-answer-space",
+      "title": "Search monotonic answer spaces",
+      "order": 2,
+      "task_ids": [
+        "5.2"
+      ],
+      "skill_ids": [
+        "5.2.01",
+        "5.2.02",
+        "5.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-5-module-1-binary"
+      ],
+      "nodes": [
+        {
+          "id": "domain-5-answer-monotonic",
+          "title": "Binary-search a monotonic feasibility boundary",
+          "concept_ids": [
+            "dsa.binary.answer_space"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.16,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT MAKES ANSWER-SPACE SEARCH POSSIBLE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "You do not need a sorted array. You need an ordered candidate answer domain and a predicate whose truth changes monotonically across that domain, such as `False, False, ..., True, True`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "domain",
+                      "text": "ordered candidate answer domain",
+                      "required": true
+                    },
+                    {
+                      "id": "predicate",
+                      "text": "truth changes monotonically",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: MINIMUM CAPACITY THAT MEETS AN SLA",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Suppose `feasible(capacity)` simulates whether a workload can finish within an SLA. If every capacity above a feasible one is also feasible, search capacities for the smallest feasible value instead of testing every integer.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "sla",
+                      "text": "smallest feasible value",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "sequence",
+              "kind": "mental_model",
+              "label": "THE REASONING CHAIN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Define the candidate answer range.",
+                  "Write a feasibility predicate.",
+                  "Prove the predicate is monotonic over that range.",
+                  "Binary-search the false/true boundary.",
+                  "Return the smallest feasible or largest infeasible value required by the contract."
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-answer-predicate",
+          "title": "Prove the predicate before searching it",
+          "concept_ids": [
+            "dsa.binary.answer_space",
+            "dsa.binary.boundary"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-answer-monotonic"
+          ],
+          "map_position": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "A BOOLEAN FUNCTION IS NOT ENOUGH",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Binary search is valid only if the feasibility results form one transition across the ordered domain. If truth can flip back and forth, discarding half the answer space is not justified.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "transition",
+                      "text": "one transition",
+                      "required": true
+                    },
+                    {
+                      "id": "flip",
+                      "text": "flip back and forth",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: CONCURRENCY LIMIT FOR A THROUGHPUT TARGET",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If increasing an idealized concurrency limit can never reduce whether a throughput target is achievable under the model, `meets_target(limit)` may be monotonic. If contention makes higher limits sometimes worse, that assumption fails and binary search needs rethinking.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "assumption",
+                      "text": "If contention makes higher limits sometimes worse",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "questions",
+              "kind": "action",
+              "label": "THREE THINGS TO WRITE DOWN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "What is the ordered candidate answer?",
+                  "What exactly does `feasible(x)` mean?",
+                  "Why does feasibility, once reached, stay reached (or once lost, stay lost)?"
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-answer-boundaries",
+          "title": "Return the correct side of the feasibility boundary",
+          "concept_ids": [
+            "dsa.binary.answer_space",
+            "dsa.binary.progress"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-answer-predicate"
+          ],
+          "map_position": {
+            "x": 0.82,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "MINIMUM FEASIBLE VS MAXIMUM INFEASIBLE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A boundary search is only complete when you know which side the product/question wants. `False...True` can support 'first true' or 'last false'; those are adjacent but different answers.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "side",
+                      "text": "which side",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: SMALLEST WORKER COUNT THAT MEETS A DEADLINE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If worker counts 1..W are ordered and `finishes_on_time(w)` is monotonic, the operational question might be the minimum worker count that passes. Returning the largest failing worker count would be off by one even though the search found the same transition.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "minimum",
+                      "text": "minimum worker count that passes",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "not-this",
+              "kind": "not_this",
+              "label": "DO NOT HIDE THE CONTRACT IN A TEMPLATE",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Memorized binary-search templates are dangerous if you cannot state what the interval means and which boundary the loop is converging toward.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "meaning",
+                      "text": "what the interval means",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "Python documentation — bisect",
+              "url": "https://docs.python.org/3/library/bisect.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-5-module-3-sorting",
+      "title": "Use ordering as a deliberate preprocessing tool",
+      "order": 3,
+      "task_ids": [
+        "5.3"
+      ],
+      "skill_ids": [
+        "5.3.01",
+        "5.3.02",
+        "5.3.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-5-module-2-answer-space"
+      ],
+      "nodes": [
+        {
+          "id": "domain-5-sort-preprocess",
+          "title": "Sort when order turns repeated global work into a simple scan",
+          "concept_ids": [
+            "dsa.sort.preprocess"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.14,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "SORTING IS A PREPROCESSING TRADE-OFF",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sorting costs time up front, usually O(n log n) for comparison sorting, but can expose adjacency, grouping, monotonicity, and merge structure that makes the remaining work much simpler.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "upfront",
+                      "text": "costs time up front",
+                      "required": true
+                    },
+                    {
+                      "id": "expose",
+                      "text": "expose adjacency, grouping, monotonicity, and merge structure",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: SORT AUDIT RECORDS BEFORE COALESCING EQUAL KEYS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If records can be reordered and the task is to group equal keys, sorting by key places equal records together so one scan can form groups. If original arrival order is part of the output, preserve that metadata or use a different approach.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "together",
+                      "text": "places equal records together",
+                      "required": true
+                    },
+                    {
+                      "id": "metadata",
+                      "text": "preserve that metadata",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "comparison",
+              "kind": "mental_model",
+              "label": "WHEN TO PAY FOR SORTING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Sorting often helps",
+                    "items": [
+                      "Need adjacency between equal/nearby values",
+                      "Need a merge/sweep in ordered order",
+                      "Can reorder or preserve original metadata separately"
+                    ]
+                  },
+                  {
+                    "title": "Sorting may be wrong/overkill",
+                    "items": [
+                      "Original order is the result",
+                      "One-pass hash state directly answers the query",
+                      "Only a tiny top-K is needed from huge n"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3 notes: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/16d78ce4aa9f365920d109ac278c281e_MIT6_006S20_lec3.pdf"
+            },
+            {
+              "title": "Princeton Algorithms — Sorting",
+              "url": "https://algs4.cs.princeton.edu/20sorting/"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-sort-key",
+          "title": "Sort by the key the contract actually cares about",
+          "concept_ids": [
+            "dsa.sort.key_contract"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-sort-preprocess"
+          ],
+          "map_position": {
+            "x": 0.47,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT IS THE ORDERING KEY?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The sort key defines the order. Choose it from the problem contract, not from whatever field is easiest to compare. Preserve record identity and other output metadata alongside the key.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "key",
+                      "text": "defines the order",
+                      "required": true
+                    },
+                    {
+                      "id": "contract",
+                      "text": "problem contract",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: ORDER JOBS BY DEADLINE WHILE KEEPING JOB ID",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sorting `(deadline, job_id, payload)` records by deadline can support deadline-ordered processing without losing the job identity needed later. Sorting only detached deadlines would throw away required output information.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "identity",
+                      "text": "without losing the job identity",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "warning",
+              "kind": "not_this",
+              "label": "A COMPARATOR MUST DEFINE A CONSISTENT ORDER",
+              "placeholder": "",
+              "required": false,
+              "reveal": {
+                "type": "text",
+                "text": "Comparison logic should behave like a consistent ordering. Contradictory comparisons can make sorting behavior meaningless. Prefer explicit keys when possible.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "consistent",
+                      "text": "consistent ordering",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Python documentation — Sorting HOW TO",
+              "url": "https://docs.python.org/3/howto/sorting.html"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-sort-stable-merge",
+          "title": "Use stable sorting and ordered merge when tie/history order matters",
+          "concept_ids": [
+            "dsa.sort.stability",
+            "dsa.ordered.merge"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-sort-key"
+          ],
+          "map_position": {
+            "x": 0.8,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "what",
+              "kind": "what",
+              "label": "WHAT DOES STABLE SORT MEAN?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A stable sort preserves the relative order of records whose sort keys compare equal. That matters when earlier ordering already encodes a secondary priority or arrival sequence.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "stable",
+                      "text": "preserves the relative order",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "real-use",
+              "kind": "connects_to",
+              "label": "REAL USE: PRIORITY THEN ARRIVAL ORDER",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If records are already in arrival order and you stably sort by priority, equal-priority records remain in arrival order. Python's sorting is stable, so multi-pass sorting can deliberately preserve earlier tie ordering.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "arrival",
+                      "text": "equal-priority records remain in arrival order",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "merge",
+              "kind": "connects_to",
+              "label": "REAL USE: MERGE TWO SORTED CHANGELOGS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If two changelog feeds are individually timestamp-sorted, compare only their front items. Emit the earlier one and advance that feed. This ordered frontier reasoning merges both in linear total work without resorting the combined data.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "front",
+                      "text": "compare only their front items",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "code",
+              "kind": "mental_model",
+              "label": "TWO-WAY ORDERED MERGE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "merge_sorted.py",
+                "language": "python",
+                "code": "i = j = 0\nout = []\nwhile i < len(a) and j < len(b):\n    if a[i].ts <= b[j].ts:\n        out.append(a[i]); i += 1\n    else:\n        out.append(b[j]); j += 1\nout.extend(a[i:])\nout.extend(b[j:])\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "frontier",
+                    "anchor": {
+                      "line": 4,
+                      "text": "a[i].ts <= b[j].ts",
+                      "occurrence": 1
+                    },
+                    "title": "Only the two frontiers can be next",
+                    "explanation": "Because each input is sorted, nothing behind a frontier can precede that frontier.",
+                    "required": true
+                  },
+                  {
+                    "id": "stable-left",
+                    "anchor": {
+                      "line": 5,
+                      "text": "out.append(a[i]); i += 1",
+                      "occurrence": 1
+                    },
+                    "title": "Tie behavior is explicit",
+                    "explanation": "Using <= chooses from a first on equal timestamps, which defines a deterministic tie policy.",
+                    "required": true
+                  }
+                ]
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Python documentation — Sorting HOW TO",
+              "url": "https://docs.python.org/3/howto/sorting.html"
+            },
+            {
+              "title": "Princeton Algorithms — Mergesort",
+              "url": "https://algs4.cs.princeton.edu/22mergesort/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

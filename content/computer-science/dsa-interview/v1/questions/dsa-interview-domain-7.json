@@ -1,0 +1,2412 @@
+{
+  "certification": {
+    "id": "cs-dsa-interview",
+    "vendor": "Shiden Labs",
+    "name": "Data Structures & Algorithms Interview",
+    "exam_code": "DSA-INTERVIEW",
+    "official_source_url": "https://algs4.cs.princeton.edu/40graphs/",
+    "last_reviewed": "2026-09-26"
+  },
+  "version": {
+    "id": "dsa-interview-v1",
+    "exam_code": "DSA-INTERVIEW",
+    "effective_date": "2026-09-26",
+    "content_version": "dsa-interview-content-2026-09-26-v1",
+    "domains": [
+      {
+        "id": "domain-1",
+        "name": "Interview Reasoning, Complexity & Correctness",
+        "weight": 0.1,
+        "tasks": []
+      },
+      {
+        "id": "domain-2",
+        "name": "Arrays, Strings, Hashing & Prefix State",
+        "weight": 0.18,
+        "tasks": []
+      },
+      {
+        "id": "domain-3",
+        "name": "Pointer, Window & Interval Patterns",
+        "weight": 0.14,
+        "tasks": []
+      },
+      {
+        "id": "domain-4",
+        "name": "Linked Lists, Stacks, Queues & Heaps",
+        "weight": 0.12,
+        "tasks": []
+      },
+      {
+        "id": "domain-5",
+        "name": "Binary Search, Sorting & Ordered Reasoning",
+        "weight": 0.1,
+        "tasks": []
+      },
+      {
+        "id": "domain-6",
+        "name": "Trees, Recursion & Tries",
+        "weight": 0.13,
+        "tasks": []
+      },
+      {
+        "id": "domain-7",
+        "name": "Graphs, Connectivity & Shortest Paths",
+        "weight": 0.13,
+        "tasks": [
+          {
+            "id": "7.1",
+            "name": "Traverse graph structure and shortest-hop relationships",
+            "question_ids": [
+              "dsa7-graph-model-001",
+              "dsa7-visited-fault-002",
+              "dsa7-bfs-choice-003",
+              "dsa7-bfs-order-004",
+              "dsa7-dfs-cycle-choice-005",
+              "dsa7-bfs-vs-dfs-006",
+              "dsa7-bfs-evidence-007",
+              "dsa7-traversal-transfer-008"
+            ]
+          },
+          {
+            "id": "7.2",
+            "name": "Reason about dependencies and dynamic connectivity",
+            "question_ids": [
+              "dsa7-topo-choice-009",
+              "dsa7-topo-cycle-fault-010",
+              "dsa7-topo-order-011",
+              "dsa7-union-find-choice-012",
+              "dsa7-union-find-limit-013",
+              "dsa7-algorithm-classify-014",
+              "dsa7-topo-evidence-015",
+              "dsa7-connectivity-transfer-016"
+            ]
+          },
+          {
+            "id": "7.3",
+            "name": "Compute weighted shortest paths safely",
+            "question_ids": [
+              "dsa7-dijkstra-choice-017",
+              "dsa7-negative-fault-018",
+              "dsa7-relax-choice-019",
+              "dsa7-relax-evidence-020",
+              "dsa7-predecessor-choice-021",
+              "dsa7-stale-entry-022",
+              "dsa7-bfs-dijkstra-classify-023",
+              "dsa7-dijkstra-transfer-024"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "domain-8",
+        "name": "Backtracking, Greedy & Dynamic Programming",
+        "weight": 0.1,
+        "tasks": []
+      }
+    ]
+  },
+  "concepts": [
+    {
+      "id": "dsa.graph.model_visited",
+      "name": "Graph model and visited state",
+      "description": "Represent entities as vertices and relationships as edges, and track visited/discovered state so cycles do not cause repeated traversal."
+    },
+    {
+      "id": "dsa.graph.bfs_unweighted",
+      "name": "BFS shortest path in unweighted graphs",
+      "description": "Use a FIFO frontier to discover vertices in nondecreasing number of edges from the source."
+    },
+    {
+      "id": "dsa.graph.dfs_structure",
+      "name": "DFS structural traversal",
+      "description": "Explore one branch deeply before backtracking to reveal reachability, components, and recursive dependency structure."
+    },
+    {
+      "id": "dsa.graph.cycle_state",
+      "name": "Directed-cycle traversal state",
+      "description": "Distinguish currently active traversal state from fully finished state when detecting back edges in directed graphs."
+    },
+    {
+      "id": "dsa.graph.topological",
+      "name": "Topological dependency order",
+      "description": "Order a directed acyclic graph so every prerequisite appears before the work that depends on it."
+    },
+    {
+      "id": "dsa.graph.union_find",
+      "name": "Disjoint-set connectivity",
+      "description": "Maintain dynamic connected components under edge additions using find/union operations."
+    },
+    {
+      "id": "dsa.graph.algorithm_choice",
+      "name": "Graph algorithm discrimination",
+      "description": "Choose traversal, topological ordering, union-find, or shortest-path methods from graph direction, weight, and query shape."
+    },
+    {
+      "id": "dsa.graph.dijkstra",
+      "name": "Dijkstra for non-negative weighted paths",
+      "description": "Repeatedly finalize the unsettled vertex with smallest tentative distance and relax outgoing non-negative edges."
+    },
+    {
+      "id": "dsa.graph.relaxation",
+      "name": "Shortest-path relaxation",
+      "description": "Improve a tentative distance when reaching a vertex through a shorter known path and retain predecessor state when path reconstruction is required."
+    }
+  ],
+  "questions": [
+    {
+      "id": "dsa7-graph-model-001",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.1",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.44,
+      "prompt": "A microservice may call several downstream services, and a downstream service may be shared by many callers. What data model best captures these relationships?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.model_visited",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The structure is many-to-many rather than a single sequence or strict tree, so vertices plus directed edges form the natural model.",
+      "blueprint_skill_ids": [
+        "7.1.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "The same downstream service can have multiple incoming relationships."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected model does not naturally represent shared many-to-many dependencies.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.model_visited"
+            ],
+            "node_id": "domain-7-graph-model",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.graph.model",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Princeton Algorithms — Graphs",
+          "url": "https://algs4.cs.princeton.edu/40graphs/"
+        },
+        {
+          "title": "Princeton Algorithms — Directed Graphs",
+          "url": "https://algs4.cs.princeton.edu/42digraph/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "recognize",
+        "scaffold_level": 3,
+        "family_id": "dsa.graph.model",
+        "transfer_group_id": "graph_structure_recognition",
+        "surface_context": "service_dependencies",
+        "challenge_group_id": "d7-traversal-01"
+      },
+      "choice_feedback": {
+        "graph": "Correct: shared downstream dependencies make this a graph.",
+        "list": "A single list cannot represent branching/shared dependencies naturally.",
+        "tree": "A strict tree would require every non-root node to have exactly one parent.",
+        "heap": "Priority ordering is not the relationship being modeled."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "graph",
+            "label": "Directed graph"
+          },
+          {
+            "id": "list",
+            "label": "Single linked list"
+          },
+          {
+            "id": "tree",
+            "label": "Strict rooted tree"
+          },
+          {
+            "id": "heap",
+            "label": "Binary heap"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "graph"
+      }
+    },
+    {
+      "id": "dsa7-visited-fault-002",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.1",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.56,
+      "prompt": "A traversal explores a graph that may contain cycles. Flag the design that can repeatedly revisit the same cycle forever.",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.model_visited",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Without discovery/visited state, traversing a cycle can enqueue or recurse into the same vertices repeatedly.",
+      "blueprint_skill_ids": [
+        "7.1.01"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Imagine A→B→C→A."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The missing visited/discovery guard was not identified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.model_visited"
+            ],
+            "node_id": "domain-7-graph-model",
+            "preferred_stage": "diagnose",
+            "preferred_family_id": "dsa.graph.model",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A valid graph-traversal step was incorrectly flagged.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.model_visited"
+            ],
+            "node_id": "domain-7-graph-model",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.graph.model",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Breadth-First Search",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Depth-First Search",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 2,
+        "family_id": "dsa.graph.model",
+        "transfer_group_id": "graph_structure_recognition",
+        "surface_context": "cyclic_service_graph",
+        "challenge_group_id": "d7-traversal-01"
+      },
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "frontier",
+            "label": "Keep a frontier of discovered work"
+          },
+          {
+            "id": "bad",
+            "label": "Follow every outgoing edge without recording whether the destination was already discovered"
+          },
+          {
+            "id": "neighbors",
+            "label": "Read each processed vertex's outgoing neighbors"
+          },
+          {
+            "id": "finish",
+            "label": "Stop when the frontier is empty"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "bad"
+        ]
+      }
+    },
+    {
+      "id": "dsa7-bfs-choice-003",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.1",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.48,
+      "prompt": "Every service-to-service edge counts as one hop. You need the minimum number of hops from gateway G to service X. Which method directly matches the objective?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.bfs_unweighted",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "With equal edge cost, BFS discovers vertices in nondecreasing hop count and therefore finds a shortest-hop path.",
+      "blueprint_skill_ids": [
+        "7.1.02"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "All edges have the same unit cost."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected method does not most directly exploit equal edge cost for minimum-hop distance.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.bfs_unweighted"
+            ],
+            "node_id": "domain-7-bfs",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.graph.bfs_unweighted",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Breadth-First Search",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        },
+        {
+          "title": "Princeton Algorithms — Graphs",
+          "url": "https://algs4.cs.princeton.edu/40graphs/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.graph.bfs_unweighted",
+        "transfer_group_id": "equal_cost_frontier",
+        "surface_context": "service_hop_count",
+        "challenge_group_id": "d7-traversal-01"
+      },
+      "choice_feedback": {
+        "bfs": "Correct: FIFO levels correspond to hop count.",
+        "dfs": "DFS can find a path but not necessarily the minimum-hop one first.",
+        "dijkstra": "Dijkstra works with nonnegative weights but is unnecessary when all weights are equal.",
+        "topo": "A dependency order does not compute shortest hop count."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "bfs",
+            "label": "Breadth-first search"
+          },
+          {
+            "id": "dfs",
+            "label": "Depth-first search and stop at the first path"
+          },
+          {
+            "id": "dijkstra",
+            "label": "Dijkstra with a priority queue"
+          },
+          {
+            "id": "topo",
+            "label": "Topological sort"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "bfs"
+      }
+    },
+    {
+      "id": "dsa7-bfs-order-004",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.1",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.51,
+      "prompt": "Graph edges are A→B, A→C, B→D, C→E. Assume neighbors are processed alphabetically. Order BFS visitation from A.",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.bfs_unweighted",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "BFS visits A, then depth-1 vertices B and C, then depth-2 vertices D and E.",
+      "blueprint_skill_ids": [
+        "7.1.02"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Finish the current hop distance before the next."
+      ],
+      "error_codes": [
+        {
+          "code": "ordering_invalid_sequence",
+          "description": "The BFS level-order visitation is incorrect.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.bfs_unweighted"
+            ],
+            "node_id": "domain-7-bfs",
+            "preferred_stage": "trace",
+            "preferred_family_id": "dsa.graph.bfs_unweighted",
+            "min_scaffold_level": 4
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Breadth-First Search",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "trace",
+        "scaffold_level": 3,
+        "family_id": "dsa.graph.bfs_unweighted",
+        "transfer_group_id": "equal_cost_frontier",
+        "surface_context": "bfs_trace",
+        "challenge_group_id": "d7-traversal-01"
+      },
+      "interaction": {
+        "type": "ordering",
+        "items": [
+          {
+            "id": "a",
+            "label": "A"
+          },
+          {
+            "id": "b",
+            "label": "B"
+          },
+          {
+            "id": "c",
+            "label": "C"
+          },
+          {
+            "id": "d",
+            "label": "D"
+          },
+          {
+            "id": "e",
+            "label": "E"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "ordering",
+        "ordered_ids": [
+          "a",
+          "b",
+          "c",
+          "d",
+          "e"
+        ]
+      }
+    },
+    {
+      "id": "dsa7-dfs-cycle-choice-005",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.1",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.59,
+      "prompt": "While detecting a cycle in a directed dependency graph with DFS, which event is direct evidence of a cycle?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.cycle_state",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "An edge to a vertex still active on the current DFS path is a back edge and proves a directed cycle.",
+      "blueprint_skill_ids": [
+        "7.1.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Previously visited and currently active are different states."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected event does not correctly identify a directed DFS back-edge cycle.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.cycle_state"
+            ],
+            "node_id": "domain-7-dfs",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.graph.dfs_cycle",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Depth-First Search",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        },
+        {
+          "title": "Princeton Algorithms — Directed Graphs",
+          "url": "https://algs4.cs.princeton.edu/42digraph/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.graph.dfs_cycle",
+        "transfer_group_id": "directed_cycle_state",
+        "surface_context": "module_import_cycle"
+      },
+      "choice_feedback": {
+        "active": "Correct: reaching an active ancestor closes a directed cycle.",
+        "finished": "A finished vertex may belong to a completed branch and does not itself prove a cycle.",
+        "new": "A new vertex is ordinary traversal progress.",
+        "degree": "Out-degree alone does not imply a cycle."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "active",
+            "label": "An edge reaches a vertex currently active on the DFS recursion path"
+          },
+          {
+            "id": "finished",
+            "label": "An edge reaches any vertex that was visited at some time in the past"
+          },
+          {
+            "id": "new",
+            "label": "An edge reaches a never-seen vertex"
+          },
+          {
+            "id": "degree",
+            "label": "A vertex has more than one outgoing edge"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "active"
+      }
+    },
+    {
+      "id": "dsa7-bfs-vs-dfs-006",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.1",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.57,
+      "prompt": "Classify each graph requirement by the stronger default traversal clue.",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.bfs_unweighted",
+          "weight": 0.5
+        },
+        {
+          "concept_id": "dsa.graph.dfs_structure",
+          "weight": 0.5
+        }
+      ],
+      "explanation": "BFS is the strong clue for shortest hop layers; DFS is natural for deep structural exploration and recursion-path reasoning.",
+      "blueprint_skill_ids": [
+        "7.1.02",
+        "7.1.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Ask whether the result is about minimum edge distance or depth-first structure."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one traversal requirement was matched to the wrong default pattern.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.bfs_unweighted",
+              "dsa.graph.dfs_structure"
+            ],
+            "node_id": "domain-7-bfs",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.graph.traversal_choice",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one traversal requirement was not classified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.bfs_unweighted",
+              "dsa.graph.dfs_structure"
+            ],
+            "node_id": "domain-7-bfs",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.graph.traversal_choice",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Breadth-First Search",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Depth-First Search",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "differentiate",
+        "scaffold_level": 2,
+        "family_id": "dsa.graph.traversal_choice",
+        "transfer_group_id": "graph_traversal_discrimination",
+        "surface_context": "mixed_traversal_requirements"
+      },
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "hops",
+            "label": "Minimum number of unweighted edges from source"
+          },
+          {
+            "id": "levels",
+            "label": "All vertices grouped by hop distance"
+          },
+          {
+            "id": "cycle",
+            "label": "Directed cycle detection using active recursion state"
+          },
+          {
+            "id": "deep",
+            "label": "Explore one dependency branch fully before backtracking"
+          }
+        ],
+        "categories": [
+          {
+            "id": "bfs",
+            "label": "BFS clue"
+          },
+          {
+            "id": "dfs",
+            "label": "DFS clue"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "hops": "bfs",
+          "levels": "bfs",
+          "cycle": "dfs",
+          "deep": "dfs"
+        }
+      }
+    },
+    {
+      "id": "dsa7-bfs-evidence-007",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.1",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.61,
+      "prompt": "Which facts justify using BFS to compute the minimum number of dependency hops?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.bfs_unweighted",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "BFS needs equal/unit edge cost for hop-count optimality, and FIFO frontier order processes all distance-d vertices before distance d+1.",
+      "blueprint_skill_ids": [
+        "7.1.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Why is first discovery optimal?"
+      ],
+      "error_codes": [
+        {
+          "code": "evidence_missing_relevant",
+          "description": "Part of the BFS shortest-hop justification was missed.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.bfs_unweighted"
+            ],
+            "node_id": "domain-7-bfs",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.graph.bfs_unweighted",
+            "min_scaffold_level": 2
+          }
+        },
+        {
+          "code": "evidence_selected_irrelevant",
+          "description": "An unnecessary or incompatible graph property was selected.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.bfs_unweighted"
+            ],
+            "node_id": "domain-7-bfs",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.graph.bfs_unweighted",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Breadth-First Search",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 1,
+        "family_id": "dsa.graph.bfs_unweighted",
+        "transfer_group_id": "equal_cost_frontier",
+        "surface_context": "dependency_hops"
+      },
+      "instruction": "Select all supporting facts.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          {
+            "id": "equal",
+            "label": "Each dependency edge counts as exactly one hop"
+          },
+          {
+            "id": "fifo",
+            "label": "FIFO frontier processes smaller hop distances first"
+          },
+          {
+            "id": "negative",
+            "label": "Edges may have negative cost"
+          },
+          {
+            "id": "dag",
+            "label": "The graph must be acyclic"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "equal",
+          "fifo"
+        ]
+      }
+    },
+    {
+      "id": "dsa7-traversal-transfer-008",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.1",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.69,
+      "prompt": "A security tool models account-to-account delegation as an unweighted directed graph and must report the fewest delegation steps from account A to account B. Which strategy fits?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.bfs_unweighted",
+          "weight": 0.8
+        },
+        {
+          "concept_id": "dsa.graph.model_visited",
+          "weight": 0.2
+        }
+      ],
+      "explanation": "The objective is minimum edge count, so BFS with visited/discovered state is the direct fit.",
+      "blueprint_skill_ids": [
+        "7.1.01",
+        "7.1.02"
+      ],
+      "difficulty_label": "hard",
+      "hints": [],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected strategy does not most directly compute minimum unweighted delegation hops.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.bfs_unweighted"
+            ],
+            "node_id": "domain-7-bfs",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.graph.bfs_unweighted",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Breadth-First Search",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0,
+        "family_id": "dsa.graph.bfs_unweighted",
+        "transfer_group_id": "equal_cost_frontier",
+        "surface_context": "delegation_hops",
+        "challenge_group_id": "d7-traversal-01"
+      },
+      "choice_feedback": {
+        "bfs": "Correct: each delegation edge contributes one step.",
+        "dfs": "DFS may encounter a longer path first.",
+        "uf": "Union-find can answer connectivity but not directed shortest-hop path length.",
+        "dijkstra": "It works with unit weights but adds unnecessary priority machinery."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "bfs",
+            "label": "BFS from A with discovered/visited state"
+          },
+          {
+            "id": "dfs",
+            "label": "DFS and stop at the first path to B"
+          },
+          {
+            "id": "uf",
+            "label": "Union-find only"
+          },
+          {
+            "id": "dijkstra",
+            "label": "Dijkstra despite every edge having equal cost"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "bfs"
+      }
+    },
+    {
+      "id": "dsa7-topo-choice-009",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.2",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.49,
+      "prompt": "A deployment plan says database migration must finish before API deploy, and API deploy must finish before smoke tests. Which graph operation produces a valid execution order?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.topological",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "These are directed prerequisite edges. If the dependency graph is acyclic, a topological order places every prerequisite before its dependent.",
+      "blueprint_skill_ids": [
+        "7.2.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "The requirement is precedence, not shortest path."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected algorithm does not directly produce prerequisite-respecting order.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.topological"
+            ],
+            "node_id": "domain-7-topological",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.graph.topological",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Princeton Algorithms — Directed Graphs",
+          "url": "https://algs4.cs.princeton.edu/42digraph/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Depth-First Search",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.graph.topological",
+        "transfer_group_id": "dependency_order",
+        "surface_context": "deployment_pipeline",
+        "challenge_group_id": "d7-deps-01"
+      },
+      "choice_feedback": {
+        "topo": "Correct: it respects prerequisite edges.",
+        "bfs": "BFS levels from one source do not necessarily satisfy all DAG prerequisites.",
+        "dijkstra": "Weights are not the objective.",
+        "uf": "Connectivity membership does not produce dependency order."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "topo",
+            "label": "Topological ordering"
+          },
+          {
+            "id": "bfs",
+            "label": "BFS from the migration task"
+          },
+          {
+            "id": "dijkstra",
+            "label": "Dijkstra"
+          },
+          {
+            "id": "uf",
+            "label": "Union-find"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "topo"
+      }
+    },
+    {
+      "id": "dsa7-topo-cycle-fault-010",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.2",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.6,
+      "prompt": "A build system claims it can produce a complete topological order even when A depends on B, B depends on C, and C depends on A. Flag the incorrect claim.",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.topological",
+          "weight": 0.6
+        },
+        {
+          "concept_id": "dsa.graph.cycle_state",
+          "weight": 0.4
+        }
+      ],
+      "explanation": "A directed cycle makes the precedence constraints contradictory: each task would need to appear before another task in the same cycle, so no complete topological order exists.",
+      "blueprint_skill_ids": [
+        "7.2.01"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Try placing A, B, and C in any linear order while respecting all three edges."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The impossible-cycle topological-order claim was not identified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.topological",
+              "dsa.graph.cycle_state"
+            ],
+            "node_id": "domain-7-topological",
+            "preferred_stage": "diagnose",
+            "preferred_family_id": "dsa.graph.topological",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A valid dependency-order step was incorrectly flagged.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.topological"
+            ],
+            "node_id": "domain-7-topological",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.graph.topological",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Princeton Algorithms — Directed Graphs",
+          "url": "https://algs4.cs.princeton.edu/42digraph/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 2,
+        "family_id": "dsa.graph.topological",
+        "transfer_group_id": "dependency_order",
+        "surface_context": "build_cycle",
+        "challenge_group_id": "d7-deps-01"
+      },
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "edges",
+            "label": "Model 'must happen before' as directed edges"
+          },
+          {
+            "id": "cycle",
+            "label": "Detect whether a directed cycle exists"
+          },
+          {
+            "id": "bad",
+            "label": "If a cycle exists, still return some complete ordering and call it topological"
+          },
+          {
+            "id": "valid",
+            "label": "If acyclic, return an order respecting all edges"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "bad"
+        ]
+      }
+    },
+    {
+      "id": "dsa7-topo-order-011",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.2",
+      "assessment_mode": "procedural_recall",
+      "interaction_type": "ordering",
+      "difficulty_prior": 0.52,
+      "prompt": "Dependencies are `schema → api → smoke`. Order the tasks in a valid topological sequence.",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.topological",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Every prerequisite must appear before its dependent, so schema comes before api, which comes before smoke.",
+      "blueprint_skill_ids": [
+        "7.2.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Follow each arrow as 'must come before'."
+      ],
+      "error_codes": [
+        {
+          "code": "ordering_invalid_sequence",
+          "description": "The dependency order violates at least one prerequisite edge.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.topological"
+            ],
+            "node_id": "domain-7-topological",
+            "preferred_stage": "trace",
+            "preferred_family_id": "dsa.graph.topological",
+            "min_scaffold_level": 4
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Princeton Algorithms — Directed Graphs",
+          "url": "https://algs4.cs.princeton.edu/42digraph/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "trace",
+        "scaffold_level": 3,
+        "family_id": "dsa.graph.topological",
+        "transfer_group_id": "dependency_order",
+        "surface_context": "simple_deploy_dag",
+        "challenge_group_id": "d7-deps-01"
+      },
+      "interaction": {
+        "type": "ordering",
+        "items": [
+          {
+            "id": "schema",
+            "label": "schema migration"
+          },
+          {
+            "id": "api",
+            "label": "API deploy"
+          },
+          {
+            "id": "smoke",
+            "label": "smoke tests"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "ordering",
+        "ordered_ids": [
+          "schema",
+          "api",
+          "smoke"
+        ]
+      }
+    },
+    {
+      "id": "dsa7-union-find-choice-012",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.2",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.53,
+      "prompt": "Network links are activated over time. After each activation, the system frequently asks whether device X and Y are now in the same connected component. The actual path is not needed. Which structure fits?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.union_find",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "This is dynamic connectivity under edge additions: union the endpoints of each new link and compare representatives for connectivity queries.",
+      "blueprint_skill_ids": [
+        "7.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "The operations are repeated union + same-component queries."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected method does not most directly match repeated edge-addition connectivity queries.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.union_find"
+            ],
+            "node_id": "domain-7-union-find",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.graph.union_find",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Wikipedia — Disjoint-set data structure",
+          "url": "https://en.wikipedia.org/wiki/Disjoint-set_data_structure"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.graph.union_find",
+        "transfer_group_id": "dynamic_connectivity",
+        "surface_context": "network_link_activation",
+        "challenge_group_id": "d7-deps-01"
+      },
+      "choice_feedback": {
+        "uf": "Correct: union/find directly matches the query pattern.",
+        "bfs": "Repeated BFS can answer connectivity but repeats traversal work after every link change.",
+        "dijkstra": "Weighted shortest paths are not requested.",
+        "topo": "The graph is about undirected connectivity, not prerequisite order."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "uf",
+            "label": "Disjoint-set union / union-find"
+          },
+          {
+            "id": "bfs",
+            "label": "Run a fresh BFS from X after every query"
+          },
+          {
+            "id": "dijkstra",
+            "label": "Dijkstra"
+          },
+          {
+            "id": "topo",
+            "label": "Topological sort"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "uf"
+      }
+    },
+    {
+      "id": "dsa7-union-find-limit-013",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.2",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.61,
+      "prompt": "A system uses union-find and now needs the exact shortest sequence of links from device A to device B. What is the key limitation?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.union_find",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Union-find maintains component membership, not path structure or shortest-route information. A traversal/path algorithm is needed when the route itself matters.",
+      "blueprint_skill_ids": [
+        "7.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Connected? and 'which route?' are different outputs."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected statement does not identify union-find's path-information limitation.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.union_find"
+            ],
+            "node_id": "domain-7-union-find",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.graph.union_find",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Wikipedia — Disjoint-set data structure",
+          "url": "https://en.wikipedia.org/wiki/Disjoint-set_data_structure"
+        }
+      ],
+      "pedagogy": {
+        "stage": "differentiate",
+        "scaffold_level": 1,
+        "family_id": "dsa.graph.union_find",
+        "transfer_group_id": "dynamic_connectivity",
+        "surface_context": "network_path_request"
+      },
+      "choice_feedback": {
+        "path": "Correct: union-find does not preserve the shortest path sequence.",
+        "edges": "Union-find can process edge additions.",
+        "same": "Same-component queries are exactly what it is good at.",
+        "rep": "Representatives are part of the method, not the limitation described."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "path",
+            "label": "Union-find does not directly store or return the shortest path between members"
+          },
+          {
+            "id": "edges",
+            "label": "Union-find cannot process added edges"
+          },
+          {
+            "id": "same",
+            "label": "Union-find cannot answer whether two vertices are connected"
+          },
+          {
+            "id": "rep",
+            "label": "Union-find has no representative element for a component"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "path"
+      }
+    },
+    {
+      "id": "dsa7-algorithm-classify-014",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.2",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.63,
+      "prompt": "Match each graph query to the strongest default algorithmic pattern.",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.algorithm_choice",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Algorithm choice follows the query: shortest hops→BFS, dependency order→topological, repeated connectivity under unions→union-find, weighted nonnegative shortest path→Dijkstra.",
+      "blueprint_skill_ids": [
+        "7.2.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "Focus on the requested output and edge semantics."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one graph query was matched to the wrong algorithmic pattern.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.algorithm_choice"
+            ],
+            "node_id": "domain-7-algorithm-choice",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.graph.algorithm_choice",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one graph query was not classified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.algorithm_choice"
+            ],
+            "node_id": "domain-7-algorithm-choice",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.graph.algorithm_choice",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Breadth-First Search",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Shortest Paths",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        },
+        {
+          "title": "Princeton Algorithms — Directed Graphs",
+          "url": "https://algs4.cs.princeton.edu/42digraph/"
+        },
+        {
+          "title": "Wikipedia — Disjoint-set data structure",
+          "url": "https://en.wikipedia.org/wiki/Disjoint-set_data_structure"
+        }
+      ],
+      "pedagogy": {
+        "stage": "differentiate",
+        "scaffold_level": 1,
+        "family_id": "dsa.graph.algorithm_choice",
+        "transfer_group_id": "graph_algorithm_discrimination",
+        "surface_context": "mixed_graph_queries"
+      },
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "hop",
+            "label": "Fewest unweighted edges from S to T"
+          },
+          {
+            "id": "deps",
+            "label": "Order tasks so prerequisites come first"
+          },
+          {
+            "id": "conn",
+            "label": "Many same-component queries as undirected links are added"
+          },
+          {
+            "id": "weighted",
+            "label": "Minimum total non-negative latency"
+          }
+        ],
+        "categories": [
+          {
+            "id": "bfs",
+            "label": "BFS"
+          },
+          {
+            "id": "topo",
+            "label": "Topological order"
+          },
+          {
+            "id": "uf",
+            "label": "Union-find"
+          },
+          {
+            "id": "dijkstra",
+            "label": "Dijkstra"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "hop": "bfs",
+          "deps": "topo",
+          "conn": "uf",
+          "weighted": "dijkstra"
+        }
+      }
+    },
+    {
+      "id": "dsa7-topo-evidence-015",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.2",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.61,
+      "prompt": "Which facts justify using topological ordering for a build plan?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.topological",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The edges encode prerequisite direction and the dependency graph must be acyclic for a complete topological order to exist.",
+      "blueprint_skill_ids": [
+        "7.2.01"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "What must the edges mean, and what graph property must hold?"
+      ],
+      "error_codes": [
+        {
+          "code": "evidence_missing_relevant",
+          "description": "Part of the topological-order justification was missed.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.topological"
+            ],
+            "node_id": "domain-7-topological",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.graph.topological",
+            "min_scaffold_level": 2
+          }
+        },
+        {
+          "code": "evidence_selected_irrelevant",
+          "description": "A property not required for topological ordering was selected.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.topological"
+            ],
+            "node_id": "domain-7-topological",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.graph.topological",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Princeton Algorithms — Directed Graphs",
+          "url": "https://algs4.cs.princeton.edu/42digraph/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 1,
+        "family_id": "dsa.graph.topological",
+        "transfer_group_id": "dependency_order",
+        "surface_context": "build_plan"
+      },
+      "instruction": "Select all required facts.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          {
+            "id": "directed",
+            "label": "Edges mean 'prerequisite must precede dependent'"
+          },
+          {
+            "id": "acyclic",
+            "label": "The dependency graph has no directed cycle"
+          },
+          {
+            "id": "weights",
+            "label": "Every edge has a non-negative numeric weight"
+          },
+          {
+            "id": "connected",
+            "label": "Every task must be reachable from one single root"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "directed",
+          "acyclic"
+        ]
+      }
+    },
+    {
+      "id": "dsa7-connectivity-transfer-016",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.2",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.7,
+      "prompt": "An offline batch receives pairs of employee IDs indicating newly merged access groups. After each merge it needs to answer many 'same group?' queries, but never asks for a route between employees. Which data structure best matches?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.union_find",
+          "weight": 0.8
+        },
+        {
+          "concept_id": "dsa.graph.algorithm_choice",
+          "weight": 0.2
+        }
+      ],
+      "explanation": "The workload is repeated unions plus component-membership queries, so disjoint-set union directly matches it.",
+      "blueprint_skill_ids": [
+        "7.2.02",
+        "7.2.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected strategy does not best match repeated component-union membership queries.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.union_find"
+            ],
+            "node_id": "domain-7-union-find",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.graph.union_find",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Wikipedia — Disjoint-set data structure",
+          "url": "https://en.wikipedia.org/wiki/Disjoint-set_data_structure"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0,
+        "family_id": "dsa.graph.union_find",
+        "transfer_group_id": "dynamic_connectivity",
+        "surface_context": "access_group_merge",
+        "challenge_group_id": "d7-deps-01"
+      },
+      "choice_feedback": {
+        "uf": "Correct: union/find is built for exactly these operations.",
+        "bfs": "Repeated traversal is unnecessary when only component identity is needed.",
+        "topo": "There are no prerequisite directions.",
+        "dijkstra": "No weighted route objective exists."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "uf",
+            "label": "Union-find / disjoint-set union"
+          },
+          {
+            "id": "bfs",
+            "label": "Fresh BFS for every same-group query"
+          },
+          {
+            "id": "topo",
+            "label": "Topological sorting"
+          },
+          {
+            "id": "dijkstra",
+            "label": "Dijkstra"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "uf"
+      }
+    },
+    {
+      "id": "dsa7-dijkstra-choice-017",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.51,
+      "prompt": "A service graph assigns each call edge a non-negative latency estimate. You need minimum TOTAL estimated latency from service A to service Z. Which algorithm directly matches?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.dijkstra",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Edge weights matter and are non-negative, so Dijkstra's minimum tentative-distance frontier is the direct fit.",
+      "blueprint_skill_ids": [
+        "7.3.01"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Minimum hop count and minimum weighted latency are different objectives."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected method does not directly minimize total non-negative edge weight.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.dijkstra"
+            ],
+            "node_id": "domain-7-dijkstra",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.graph.dijkstra",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Shortest Paths",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        },
+        {
+          "title": "Princeton Algorithms — Shortest Paths",
+          "url": "https://algs4.cs.princeton.edu/44sp/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.graph.dijkstra",
+        "transfer_group_id": "priority_frontier",
+        "surface_context": "service_latency_route",
+        "challenge_group_id": "d7-shortest-01"
+      },
+      "choice_feedback": {
+        "dijkstra": "Correct: it minimizes total non-negative edge weight.",
+        "bfs": "BFS minimizes number of edges, not total latency when weights differ.",
+        "topo": "A topological order alone does not solve general weighted shortest paths.",
+        "uf": "Union-find answers connectivity, not minimum route cost."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "dijkstra",
+            "label": "Dijkstra"
+          },
+          {
+            "id": "bfs",
+            "label": "BFS treating every call as equal cost"
+          },
+          {
+            "id": "topo",
+            "label": "Topological sort"
+          },
+          {
+            "id": "uf",
+            "label": "Union-find"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "dijkstra"
+      }
+    },
+    {
+      "id": "dsa7-negative-fault-018",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.3",
+      "assessment_mode": "application",
+      "interaction_type": "spot_the_fault",
+      "difficulty_prior": 0.63,
+      "prompt": "A graph contains an edge with weight -8. Flag the claim that is unsafe for standard Dijkstra.",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.dijkstra",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Dijkstra's finalization proof relies on non-negative edge weights. A negative edge can later create a cheaper path to a vertex that looked final earlier.",
+      "blueprint_skill_ids": [
+        "7.3.01"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Ask what prevents a later route from reducing an already-selected distance."
+      ],
+      "error_codes": [
+        {
+          "code": "fault_missed",
+          "description": "The invalid negative-edge Dijkstra assumption was not identified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.dijkstra"
+            ],
+            "node_id": "domain-7-dijkstra",
+            "preferred_stage": "diagnose",
+            "preferred_family_id": "dsa.graph.dijkstra",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "fault_false_positive",
+          "description": "A valid shortest-path setup step was incorrectly flagged.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.dijkstra"
+            ],
+            "node_id": "domain-7-dijkstra",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.graph.dijkstra",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Shortest Paths",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        },
+        {
+          "title": "Princeton Algorithms — Shortest Paths",
+          "url": "https://algs4.cs.princeton.edu/44sp/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 2,
+        "family_id": "dsa.graph.dijkstra",
+        "transfer_group_id": "priority_frontier",
+        "surface_context": "negative_weight_graph",
+        "challenge_group_id": "d7-shortest-01"
+      },
+      "interaction": {
+        "type": "spot_the_fault",
+        "elements": [
+          {
+            "id": "weight",
+            "label": "Read edge weights as path costs"
+          },
+          {
+            "id": "bad",
+            "label": "Use standard Dijkstra and assume the first finalized distance can never improve despite negative edges"
+          },
+          {
+            "id": "goal",
+            "label": "Seek minimum total path cost"
+          },
+          {
+            "id": "source",
+            "label": "Initialize source distance to 0"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "spot_the_fault",
+        "faulty_ids": [
+          "bad"
+        ]
+      }
+    },
+    {
+      "id": "dsa7-relax-choice-019",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.54,
+      "prompt": "Current distances are `dist[A]=4`, `dist[B]=12`. Edge A→B has weight 3. What should relaxation do?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.relaxation",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The route through A costs 4+3=7, which improves B from 12 to 7. Update B's distance and predecessor if path reconstruction is needed.",
+      "blueprint_skill_ids": [
+        "7.3.02"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Compare the current best for B with dist[A] + weight(A,B)."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected action does not apply shortest-path relaxation correctly.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.relaxation"
+            ],
+            "node_id": "domain-7-relaxation",
+            "preferred_stage": "trace",
+            "preferred_family_id": "dsa.graph.relaxation",
+            "min_scaffold_level": 4
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Shortest Paths",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        },
+        {
+          "title": "Princeton Algorithms — Shortest Paths",
+          "url": "https://algs4.cs.princeton.edu/44sp/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "trace",
+        "scaffold_level": 3,
+        "family_id": "dsa.graph.relaxation",
+        "transfer_group_id": "shortest_path_relaxation",
+        "surface_context": "relaxation_trace",
+        "challenge_group_id": "d7-shortest-01"
+      },
+      "choice_feedback": {
+        "update": "Correct: 7 is a strictly shorter known route than 12.",
+        "keep": "Keeping 12 ignores an improvement.",
+        "sum": "15 adds the wrong values.",
+        "final": "One successful relaxation does not by itself prove B is globally finalized."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "update",
+            "label": "Set `dist[B]=7` and predecessor[B]=A"
+          },
+          {
+            "id": "keep",
+            "label": "Keep `dist[B]=12`"
+          },
+          {
+            "id": "sum",
+            "label": "Set `dist[B]=15`"
+          },
+          {
+            "id": "final",
+            "label": "Set `dist[B]=7` and declare B permanently finalized immediately regardless of queue state"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "update"
+      }
+    },
+    {
+      "id": "dsa7-relax-evidence-020",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.3",
+      "assessment_mode": "application",
+      "interaction_type": "evidence_selection",
+      "difficulty_prior": 0.6,
+      "prompt": "Which facts justify replacing `dist[v]` during relaxation of edge `u→v`?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.relaxation",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The known route to u plus the edge weight produces a candidate route to v. Replace dist[v] only if that candidate is strictly better than the best known distance.",
+      "blueprint_skill_ids": [
+        "7.3.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "An update should represent a real path and improve the current best."
+      ],
+      "error_codes": [
+        {
+          "code": "evidence_missing_relevant",
+          "description": "Part of the relaxation-update condition was missed.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.relaxation"
+            ],
+            "node_id": "domain-7-relaxation",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.graph.relaxation",
+            "min_scaffold_level": 2
+          }
+        },
+        {
+          "code": "evidence_selected_irrelevant",
+          "description": "A property unrelated to relaxation correctness was selected.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.relaxation"
+            ],
+            "node_id": "domain-7-relaxation",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.graph.relaxation",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Shortest Paths",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 1,
+        "family_id": "dsa.graph.relaxation",
+        "transfer_group_id": "shortest_path_relaxation",
+        "surface_context": "route_update"
+      },
+      "instruction": "Select all required facts.",
+      "interaction": {
+        "type": "evidence_selection",
+        "evidence": [
+          {
+            "id": "path",
+            "label": "`dist[u] + weight(u,v)` is a valid candidate path cost to v"
+          },
+          {
+            "id": "better",
+            "label": "That candidate is smaller than the current `dist[v]`"
+          },
+          {
+            "id": "fifo",
+            "label": "v must be the oldest discovered vertex"
+          },
+          {
+            "id": "degree",
+            "label": "v must have smaller out-degree than u"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "evidence_selection",
+        "relevant_ids": [
+          "path",
+          "better"
+        ]
+      }
+    },
+    {
+      "id": "dsa7-predecessor-choice-021",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.57,
+      "prompt": "A shortest-path service must return the ACTUAL route, not only its total cost. What extra state should be updated when a relaxation improves vertex v?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.relaxation",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Store the predecessor that produced the improved distance. Following predecessor links backward from the destination reconstructs the chosen path.",
+      "blueprint_skill_ids": [
+        "7.3.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "You need to remember which previous vertex produced each best route."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected state does not preserve enough information to reconstruct the shortest path.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.relaxation"
+            ],
+            "node_id": "domain-7-relaxation",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.graph.relaxation",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Shortest Paths",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 2,
+        "family_id": "dsa.graph.relaxation",
+        "transfer_group_id": "shortest_path_reconstruction",
+        "surface_context": "service_route_reconstruction"
+      },
+      "choice_feedback": {
+        "prev": "Correct: predecessor state records the route tree.",
+        "degree": "Degree does not record which edge produced the shortest route.",
+        "visited": "Visited/finalized status alone cannot reconstruct the path.",
+        "sorted": "Sorting vertex IDs does not encode route choices."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "prev",
+            "label": "`predecessor[v] = u` for the successful improving edge"
+          },
+          {
+            "id": "degree",
+            "label": "Only the out-degree of v"
+          },
+          {
+            "id": "visited",
+            "label": "Only a boolean visited flag"
+          },
+          {
+            "id": "sorted",
+            "label": "A sorted list of all vertex IDs"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "prev"
+      }
+    },
+    {
+      "id": "dsa7-stale-entry-022",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.64,
+      "prompt": "A heap-based Dijkstra implementation pushes a new `(distance, vertex)` pair every time a better route is found. Why can old heap entries be ignored when their distance no longer equals the best known `dist[vertex]`?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.dijkstra",
+          "weight": 0.6
+        },
+        {
+          "concept_id": "dsa.graph.relaxation",
+          "weight": 0.4
+        }
+      ],
+      "explanation": "An older larger heap entry reflects a route that has already been improved. The distance map holds the current best known state; processing the stale larger entry cannot create a better basis than the current smaller one.",
+      "blueprint_skill_ids": [
+        "7.3.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "The heap may contain history; the distance map is the current best state."
+      ],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected reason does not explain why an outdated larger heap entry is safe to skip.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.dijkstra"
+            ],
+            "node_id": "domain-7-dijkstra-practice",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.graph.dijkstra",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Shortest Paths",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        },
+        {
+          "title": "Princeton Algorithms — Shortest Paths",
+          "url": "https://algs4.cs.princeton.edu/44sp/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "reason",
+        "scaffold_level": 1,
+        "family_id": "dsa.graph.dijkstra",
+        "transfer_group_id": "priority_frontier",
+        "surface_context": "stale_priority_entry"
+      },
+      "choice_feedback": {
+        "stale": "Correct: the outdated pair no longer represents the best known route to that vertex.",
+        "sorted": "A heap is not globally sorted.",
+        "negative": "Stale entries are not a negative-edge issue.",
+        "bfs": "FIFO properties are unrelated."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "stale",
+            "label": "The old pair represents a worse superseded route than the current distance map"
+          },
+          {
+            "id": "sorted",
+            "label": "Because every heap entry is globally sorted forever"
+          },
+          {
+            "id": "negative",
+            "label": "Because stale entries imply negative edges"
+          },
+          {
+            "id": "bfs",
+            "label": "Because the priority queue behaves like a FIFO queue"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "stale"
+      }
+    },
+    {
+      "id": "dsa7-bfs-dijkstra-classify-023",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.3",
+      "assessment_mode": "relationship_recall",
+      "interaction_type": "classification",
+      "difficulty_prior": 0.62,
+      "prompt": "Classify each shortest-path objective by the stronger default method.",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.bfs_unweighted",
+          "weight": 0.5
+        },
+        {
+          "concept_id": "dsa.graph.dijkstra",
+          "weight": 0.5
+        }
+      ],
+      "explanation": "BFS is ideal for equal/unit edge costs. Dijkstra is the standard choice for non-negative weighted edge costs.",
+      "blueprint_skill_ids": [
+        "7.3.01"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "Ask whether edge weights affect the objective."
+      ],
+      "error_codes": [
+        {
+          "code": "classification_misplaced",
+          "description": "At least one shortest-path objective was matched to the wrong frontier method.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.bfs_unweighted",
+              "dsa.graph.dijkstra"
+            ],
+            "node_id": "domain-7-algorithm-choice",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.graph.shortest_path_choice",
+            "min_scaffold_level": 3
+          }
+        },
+        {
+          "code": "classification_incomplete",
+          "description": "At least one shortest-path objective was not classified.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.bfs_unweighted",
+              "dsa.graph.dijkstra"
+            ],
+            "node_id": "domain-7-algorithm-choice",
+            "preferred_stage": "differentiate",
+            "preferred_family_id": "dsa.graph.shortest_path_choice",
+            "min_scaffold_level": 3
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Breadth-First Search",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Shortest Paths",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "differentiate",
+        "scaffold_level": 1,
+        "family_id": "dsa.graph.shortest_path_choice",
+        "transfer_group_id": "shortest_path_discrimination",
+        "surface_context": "shortest_path_objectives"
+      },
+      "interaction": {
+        "type": "classification",
+        "items": [
+          {
+            "id": "hops",
+            "label": "Fewest API calls between services; every call costs 1"
+          },
+          {
+            "id": "latency",
+            "label": "Minimum total latency with non-negative per-edge latency"
+          },
+          {
+            "id": "moves",
+            "label": "Minimum moves in a state graph where every move costs 1"
+          },
+          {
+            "id": "toll",
+            "label": "Minimum total toll where each edge has a non-negative toll"
+          }
+        ],
+        "categories": [
+          {
+            "id": "bfs",
+            "label": "BFS"
+          },
+          {
+            "id": "dijkstra",
+            "label": "Dijkstra"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "classification",
+        "placements": {
+          "hops": "bfs",
+          "latency": "dijkstra",
+          "moves": "bfs",
+          "toll": "dijkstra"
+        }
+      }
+    },
+    {
+      "id": "dsa7-dijkstra-transfer-024",
+      "content_version": "dsa-interview-content-2026-09-26-v1",
+      "certification_version": "dsa-interview-v1",
+      "domain_id": "domain-7",
+      "task_id": "7.3",
+      "assessment_mode": "application",
+      "interaction_type": "multiple_choice",
+      "difficulty_prior": 0.75,
+      "prompt": "A deployment planner models possible migration transitions as edges with non-negative estimated minutes. It needs the minimum total estimated migration time from state S to state T and the chosen transition sequence. Which design best fits?",
+      "concepts": [
+        {
+          "concept_id": "dsa.graph.dijkstra",
+          "weight": 0.65
+        },
+        {
+          "concept_id": "dsa.graph.relaxation",
+          "weight": 0.35
+        }
+      ],
+      "explanation": "Dijkstra handles non-negative weighted shortest paths; successful relaxations should also update predecessors so the final transition sequence can be reconstructed.",
+      "blueprint_skill_ids": [
+        "7.3.01",
+        "7.3.02"
+      ],
+      "difficulty_label": "hard",
+      "hints": [],
+      "error_codes": [
+        {
+          "code": "multiple_choice_incorrect",
+          "description": "The selected design does not compute the minimum non-negative weighted route and preserve its path.",
+          "remediation": {
+            "concept_ids": [
+              "dsa.graph.dijkstra",
+              "dsa.graph.relaxation"
+            ],
+            "node_id": "domain-7-relaxation",
+            "preferred_stage": "reason",
+            "preferred_family_id": "dsa.graph.dijkstra",
+            "min_scaffold_level": 2
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Shortest Paths",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+        },
+        {
+          "title": "Princeton Algorithms — Shortest Paths",
+          "url": "https://algs4.cs.princeton.edu/44sp/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0,
+        "family_id": "dsa.graph.dijkstra",
+        "transfer_group_id": "priority_frontier",
+        "surface_context": "migration_state_route",
+        "challenge_group_id": "d7-shortest-01"
+      },
+      "choice_feedback": {
+        "dijkstra": "Correct: weighted nonnegative shortest path plus predecessor reconstruction.",
+        "bfs": "BFS minimizes number of transitions, not total estimated minutes.",
+        "uf": "Union-find only answers connectivity.",
+        "topo": "A topological order is a precedence ordering, not necessarily minimum weighted cost."
+      },
+      "interaction": {
+        "type": "multiple_choice",
+        "choices": [
+          {
+            "id": "dijkstra",
+            "label": "Dijkstra with distance and predecessor maps"
+          },
+          {
+            "id": "bfs",
+            "label": "BFS and ignore edge durations"
+          },
+          {
+            "id": "uf",
+            "label": "Union-find"
+          },
+          {
+            "id": "topo",
+            "label": "Topological sort only"
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "multiple_choice",
+        "choice_id": "dijkstra"
+      }
+    }
+  ]
+}
