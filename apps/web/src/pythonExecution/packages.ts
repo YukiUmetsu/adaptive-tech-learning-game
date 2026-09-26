@@ -11,6 +11,10 @@
  * fetch a wheel from PyPI, which would widen the sandbox's network policy and
  * reintroduce arbitrary package installation. Prefer a Pyodide release that
  * ships it, or a separately reviewed vendored wheel.
+ *
+ * The Apache Airflow study shim (`src/pythonSandbox/airflowShim.ts`) is a
+ * sandbox built-in, not a package: it is never listed here and never loaded
+ * from PyPI. Content imports `airflow` without declaring it.
  */
 export const PYTHON_ALLOWED_PACKAGES = ["numpy", "pandas", "matplotlib"] as const;
 

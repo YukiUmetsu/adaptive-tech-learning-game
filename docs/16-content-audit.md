@@ -54,7 +54,7 @@
 | `typed_fill_blank` | ≥1 slot; unique id/label; every `{{slot_id}}` resolves to a slot and each slot is referenced exactly once; malformed/duplicate placeholders rejected; table columns/rows/cells complete | answers cover exactly the slots; `accepted_answers` non-empty and non-blank |
 | `multiple_choice` | ≥2 choices; unique ids | name one known choice |
 | `multiple_response` | ≥2 choices; unique ids; `required_selections` ≥2 and ≤ choices | known, non-duplicated choices; count == `required_selections` |
-| `python_code` | `language == "python"`; `entrypoint` (if set) a valid Python identifier; starter non-empty and ≤20,000 bytes; ≤4 packages from `{numpy, pandas, matplotlib}`; 1–50 tests; ≤16 args/test; serialized arg/expected ≤8,000 bytes; expected stdout ≤8,000 bytes; `raises` exception a valid identifier; call/raises tests need an entrypoint | tests valid (validated with the interaction) |
+| `python_code` | `language == "python"`; `entrypoint` (if set) a valid Python identifier; starter non-empty and ≤20,000 bytes; ≤4 packages from `{numpy, pandas, matplotlib}`; 1–50 tests; ≤16 args/test; serialized arg/expected ≤8,000 bytes; expected stdout ≤8,000 bytes; `raises` exception a valid identifier; call/raises tests need an entrypoint | tests valid (validated with the interaction); the built-in `airflow` study shim is imported without a `packages` entry |
 
 ## 1.2 Learning domains (`crates/content/src/learning.rs`)
 

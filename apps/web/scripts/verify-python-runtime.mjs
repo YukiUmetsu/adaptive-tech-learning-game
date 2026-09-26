@@ -293,6 +293,27 @@ check(
   JSON.stringify(airflowMarker),
 );
 
+// Each run re-creates the shim's context stacks, so a program that leaves a
+// DAG context open cannot leak it into the next program in the same runtime.
+await run({
+  ...limits,
+  source: "from airflow import DAG\nDAG('leaky').__enter__()\n",
+  entrypoint: "",
+  tests: [{ type: "stdout", expected: "" }],
+});
+const afterLeak = await run({
+  ...limits,
+  source:
+    "from airflow.operators.empty import EmptyOperator\n\ndef orphan():\n    return EmptyOperator(task_id='solo').dag is None\n",
+  entrypoint: "orphan",
+  tests: [{ type: "call", args: [], expected: true }],
+});
+check(
+  "a leaked DAG context does not affect the next run",
+  afterLeak.status === "passed",
+  JSON.stringify(afterLeak),
+);
+
 // The harness must compare NumPy scalars without breaking JSON serialization.
 const numpyHarness = await run({
   ...limits,
