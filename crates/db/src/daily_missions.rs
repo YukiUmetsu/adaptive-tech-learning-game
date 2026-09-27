@@ -1,8 +1,10 @@
 //! Persistence for the immutable Daily Mission snapshot and its item progress.
 //!
-//! A Daily Mission is generated once per learner/track/day and then never
-//! changes. Items and their execution configuration are stored in full so the
-//! same plan and ordering can be replayed later. Mission completion and the
+//! A Daily Mission is generated once per learner/track/day and then normally
+//! never changes. Items and their execution configuration are stored in full so
+//! the same plan and ordering can be replayed later. The single exception is a
+//! content revision that removes content a pending item needs: the service layer
+//! rebuilds the plan in place with [`replace_items`]. Mission completion and the
 //! completion reward are server-authoritative; this module never mutates
 //! concept state or learning events.
 
@@ -343,6 +345,55 @@ pub async fn create(
     find_by_id(pool, mission_id)
         .await?
         .ok_or_else(|| sqlx::Error::RowNotFound.into())
+}
+
+/// Replaces every item of an existing Daily Mission with a freshly generated
+/// plan.
+///
+/// Used only to recover a mission whose stored items can no longer be executed
+/// because the authored content changed underneath it. The mission row, day
+/// key, and reward identity are preserved so a later completion reward stays
+/// idempotent; item progress resets because it no longer maps to the new
+/// content. Returns `None` when the mission no longer exists.
+pub async fn replace_items(
+    pool: &PgPool,
+    mission_id: Uuid,
+    plan_type: &str,
+    items: &[NewDailyMissionItem<'_>],
+) -> Result<Option<StoredDailyMission>, DbError> {
+    let mut tx = pool.begin().await?;
+
+    let exists =
+        sqlx::query_scalar::<_, Uuid>("SELECT id FROM daily_missions WHERE id = $1 FOR UPDATE")
+            .bind(mission_id)
+            .fetch_optional(&mut *tx)
+            .await?;
+    if exists.is_none() {
+        tx.commit().await?;
+        return Ok(None);
+    }
+
+    sqlx::query("DELETE FROM daily_mission_items WHERE daily_mission_id = $1")
+        .bind(mission_id)
+        .execute(&mut *tx)
+        .await?;
+
+    for item in items {
+        insert_item(&mut tx, mission_id, item).await?;
+    }
+
+    sqlx::query(
+        "UPDATE daily_missions
+         SET status = 'active', completed_at = NULL, plan_type = $2
+         WHERE id = $1",
+    )
+    .bind(mission_id)
+    .bind(plan_type)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+    find_by_id(pool, mission_id).await
 }
 
 async fn insert_item(

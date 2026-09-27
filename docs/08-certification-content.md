@@ -687,7 +687,13 @@ error:
 - `/v1/sync` rejects only the stale event (its `error_code` is
   `mission_content_stale`) and keeps the rest of the batch;
 - starting a Daily Mission item replaces a stale mission with one built from
-  current content instead of resuming the unscoreable one.
+  current content instead of resuming the unscoreable one;
+- reading a Daily Mission whose plan still has a pending item that the current
+  content cannot execute (a removed knowledge node, an unknown practice
+  question, or an empty domain) rebuilds the plan from current content. The
+  mission id and day key are preserved so the completion reward stays
+  idempotent; only checklist progress resets, and recorded learning evidence is
+  untouched.
 
 The client drops the stale mission and its queued events, then starts a new
 mission. Historical mastery is never remapped onto the changed content.

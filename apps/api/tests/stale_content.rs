@@ -21,6 +21,9 @@ use uuid::Uuid;
 /// A question id that exists in no authored content.
 const GHOST_QUESTION: &str = "ghost-stale-question-001";
 
+/// A knowledge node id that exists in no authored content.
+const GHOST_NODE: &str = "ghost-stale-node-001";
+
 async fn issue_task(app: &Router, subject: &str, device: Uuid) -> Value {
     let (status, mission) = common::send_as(
         app.clone(),
@@ -187,4 +190,82 @@ async fn starting_a_daily_item_replaces_a_stale_mission() {
         .expect("load stale mission")
         .expect("stale mission row");
     assert_eq!(stale.status, MissionStatus::Completed);
+}
+
+#[tokio::test]
+async fn reading_a_daily_mission_with_removed_content_rebuilds_the_plan() {
+    let Some(pool) = common::database_pool().await else {
+        return;
+    };
+    let app = common::app_with_pool(pool.clone());
+    let registry = common::content();
+    let subject = format!("stale-daily-plan-{}", Uuid::new_v4());
+
+    let (status, daily) = common::send_as(
+        app.clone(),
+        &subject,
+        "POST",
+        "/v1/tracks/aws-soa-c03/daily-mission",
+        Some(json!({ "timezone": "UTC", "discovery": [] })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{daily}");
+    let mission_id: Uuid = daily["id"].as_str().expect("id").parse().unwrap();
+    assert!(
+        daily["items"]
+            .as_array()
+            .expect("items")
+            .iter()
+            .any(|item| item["kind"] == "learn_node"),
+        "expected a learning node item: {daily}"
+    );
+
+    // Simulate a content revision removing the node the plan referenced.
+    sqlx::query(
+        "UPDATE daily_mission_items SET node_id = $1
+         WHERE daily_mission_id = $2 AND kind IN ('learn_node', 'review_node')",
+    )
+    .bind(GHOST_NODE)
+    .bind(mission_id)
+    .execute(&pool)
+    .await
+    .expect("corrupt node ids");
+
+    let (status, refreshed) = common::send_as(
+        app.clone(),
+        &subject,
+        "POST",
+        "/v1/tracks/aws-soa-c03/daily-mission",
+        Some(json!({ "timezone": "UTC", "discovery": [] })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{refreshed}");
+
+    // The mission identity and the reward are preserved; only the plan changed.
+    assert_eq!(refreshed["id"], daily["id"], "{refreshed}");
+    assert_eq!(refreshed["reward_granted"], false, "{refreshed}");
+    assert!(
+        refreshed["items"]
+            .as_array()
+            .expect("items")
+            .iter()
+            .all(|item| item["node_id"] != GHOST_NODE),
+        "the removed node must not survive the rebuild: {refreshed}"
+    );
+    for item in refreshed["items"].as_array().expect("items") {
+        if matches!(
+            item["kind"].as_str(),
+            Some("learn_node") | Some("review_node")
+        ) {
+            let node_id = item["node_id"].as_str().expect("node id");
+            let domain_id = item["domain_id"].as_str().expect("domain id");
+            assert!(
+                registry
+                    .learning_domain("soa-c03", domain_id)
+                    .and_then(|domain| domain.node(node_id))
+                    .is_some(),
+                "rebuilt plan still references missing node {node_id}"
+            );
+        }
+    }
 }

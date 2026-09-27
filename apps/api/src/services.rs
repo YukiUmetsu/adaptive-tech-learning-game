@@ -987,6 +987,10 @@ struct GeneratedDailyItems {
 /// refreshes, and repeated requests all return the same stored snapshot. If
 /// adaptive generation fails, a standard non-adaptive plan is persisted instead
 /// and kept for the rest of the day.
+///
+/// The one exception is stale content: if a later content revision removes a
+/// knowledge node or question a pending item still needs, the plan is rebuilt
+/// from current content (see `refresh_unexecutable_daily_mission`).
 pub async fn daily_mission(
     state: &AppState,
     user: &AuthenticatedUser,
@@ -1025,10 +1029,16 @@ pub async fn daily_mission(
     if let Some(existing) =
         db::daily_missions::find_for_day(&state.pool, user.id, track_id, day_key).await?
     {
-        settle_completed_reward(state, &existing).await;
-        let current = db::daily_missions::find_by_id(&state.pool, existing.id)
-            .await?
-            .unwrap_or(existing);
+        let current = refresh_unexecutable_daily_mission(
+            state,
+            user,
+            track_id,
+            &track_version,
+            existing,
+            &request.discovery,
+        )
+        .await?;
+        settle_completed_reward(state, &current).await;
         return Ok(daily_response(&bundle.version.domains, &current));
     }
 
@@ -1039,10 +1049,16 @@ pub async fn daily_mission(
         db::daily_missions::find_latest_for_user_track(&state.pool, user.id, track_id).await?
     {
         if day_key <= latest.day_key {
-            settle_completed_reward(state, &latest).await;
-            let current = db::daily_missions::find_by_id(&state.pool, latest.id)
-                .await?
-                .unwrap_or(latest);
+            let current = refresh_unexecutable_daily_mission(
+                state,
+                user,
+                track_id,
+                &track_version,
+                latest,
+                &request.discovery,
+            )
+            .await?;
+            settle_completed_reward(state, &current).await;
             return Ok(daily_response(&bundle.version.domains, &current));
         }
     }
@@ -1083,6 +1099,107 @@ pub async fn daily_mission(
         .await?
         .unwrap_or(stored);
     Ok(daily_response(&bundle.version.domains, &current))
+}
+
+/// Whether every pending item of a stored Daily Mission can still be executed
+/// against the current authored content.
+///
+/// A certification revision can remove a knowledge node or a question that a
+/// stored plan references, so an item can no longer be completed. Completed
+/// items are ignored: their work is already recorded against the concept state.
+fn daily_plan_is_executable(
+    state: &AppState,
+    mission: &db::daily_missions::StoredDailyMission,
+) -> bool {
+    mission
+        .items
+        .iter()
+        .filter(|item| item.status != "completed")
+        .all(|item| match item.kind.as_str() {
+            "learn_node" | "review_node" => item.node_id.as_deref().is_some_and(|node_id| {
+                state
+                    .content
+                    .learning_domain(&mission.track_version, &item.domain_id)
+                    .and_then(|domain| domain.node(node_id))
+                    .is_some()
+            }),
+            "practice" => {
+                let ids = practice_question_ids(&item.practice_context);
+                !ids.is_empty()
+                    && ids
+                        .iter()
+                        .all(|id| state.content.question(&mission.track_version, id).is_some())
+            }
+            "domain_practice" => !state
+                .content
+                .questions_for_domain(&mission.track_version, &item.domain_id)
+                .is_empty(),
+            _ => false,
+        })
+}
+
+/// Rebuilds a stored Daily Mission when the authored content changed under it,
+/// so a plan can never strand the learner with an item that cannot be executed.
+///
+/// The plan is immutable except for this recovery: only a mission that still
+/// has a pending item the current content cannot execute is rebuilt, and only
+/// before its completion reward has settled. The mission id and day are
+/// preserved so a later completion reward stays idempotent. Recorded learning
+/// evidence is untouched; only checklist progress resets, because it no longer
+/// maps onto the new content.
+async fn refresh_unexecutable_daily_mission(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    track_id: &str,
+    track_version: &str,
+    mission: db::daily_missions::StoredDailyMission,
+    discovery: &[DomainDiscoveryInput],
+) -> Result<db::daily_missions::StoredDailyMission, ApiError> {
+    if mission.is_completed()
+        || mission.reward_settled_at.is_some()
+        || daily_plan_is_executable(state, &mission)
+    {
+        return Ok(mission);
+    }
+
+    let generated = generate_daily_items(state, user, track_id, track_version, discovery).await;
+    if generated.items.is_empty() {
+        tracing::warn!(
+            mission = %mission.id,
+            "daily mission content changed, but no replacement plan could be generated"
+        );
+        return Ok(mission);
+    }
+
+    tracing::warn!(
+        mission = %mission.id,
+        "rebuilding a daily mission whose content changed"
+    );
+    let items: Vec<db::daily_missions::NewDailyMissionItem<'_>> = generated
+        .items
+        .iter()
+        .map(|item| db::daily_missions::NewDailyMissionItem {
+            position: item.position,
+            kind: item.kind,
+            domain_id: &item.domain_id,
+            node_id: item.node_id.as_deref(),
+            title: &item.title,
+            estimated_minutes: item.estimated_minutes,
+            practice_context: item.practice_context.clone(),
+        })
+        .collect();
+    let plan_type = if generated.adaptive {
+        DailyMissionPlanType::Adaptive
+    } else {
+        DailyMissionPlanType::Standard
+    };
+
+    match db::daily_missions::replace_items(&state.pool, mission.id, plan_type.as_str(), &items)
+        .await?
+    {
+        Some(updated) => Ok(updated),
+        None => Ok(mission),
+    }
 }
 
 /// Generates items adaptively, falling back to authored track content.

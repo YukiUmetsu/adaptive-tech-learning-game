@@ -771,7 +771,10 @@ persisted server discovery ∪ fresh discovery in the current request
 so a just-revealed node does not need to wait for discovery sync before the next
 explicit planning request understands it. Daily Missions remain immutable once
 generated: newly synced discovery never regenerates today's mission, though it can
-inform tomorrow's.
+inform tomorrow's. The one exception is a content revision that removes a
+knowledge node or question a stored plan still needs: the next read rebuilds the
+plan from current content, preserving the mission id and day (see
+`08-certification-content.md`).
 
 ### Executing a recommendation
 
