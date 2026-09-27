@@ -449,7 +449,9 @@ A question is complete only when:
 - [ ] it does not create a third identical interaction type in a row;
 - [ ] it is not semantically redundant with adjacent questions;
 - [ ] it stays within intended track scope;
-- [ ] its reading burden matches the quiz mode/difficulty.
+- [ ] its reading burden matches the quiz mode/difficulty;
+- [ ] when it is a typed-code question (`typed_fill_blank` with `code`
+      content), it satisfies every typed-code requirement in §4.22.
 
 ## 4.17 Pedagogical metadata audit (only when authored)
 
@@ -581,13 +583,99 @@ For a structural comparison / transfer group, verify:
 - [ ] the view stays optional and non-blocking (no mandatory modal after every
       answer) and shows no mastery percentage.
 
+## 4.22 Typed-code fill-in questions (manual requirement)
+
+Applies to every `typed_fill_blank` question whose
+`interaction.content.type` is `code` — a standalone code template, or a `code`
+cell inside a `table`. The learner types a missing expression into real
+code, so the surrounding text carries the whole teaching load. The validator
+checks only structure, placeholders, and accepted answers; **none of the
+following is machine-checked.** Every typed-code question must, at minimum,
+provide all six.
+
+1. **What the function is supposed to accomplish.** The learner must know the
+   goal of the function they are completing, not only the shape of the
+   surrounding code. State the job in one concrete sentence.
+2. **Input/output contract.** Name the function and state what it receives and
+   what it returns, including the type/shape and the edge-case return (for
+   example, "returns `None` when no pair exists").
+3. **At least one concrete example.** Show a real input and the exact expected
+   output for it, so the contract is unambiguous and testable by hand.
+4. **Every important constraint.** State the non-obvious rules the answer must
+   satisfy — for example "the two indexes must be different", "0-based",
+   "at least two items", "do not mutate the input", "handle duplicates". A
+   constraint that the accepted answer depends on must be visible before the
+   attempt.
+5. **Enough explanation to derive the expression, without revealing it.** The
+   prompt, template context, and hints must let a learner who knows the concept
+   *derive* the missing expression, but must not print the literal accepted
+   answer (or a trivially copyable fragment of it) in the prompt, template, slot
+   `label`, or slot `placeholder`. The literal answer belongs in the scored
+   `explanation`/wrong-answer feedback, which is shown only after the attempt.
+   This is the same boundary as §4.10 and §4.15 applied to code.
+6. **Real code showing a real blank — never internal labels.** The missing
+   expression is authored as a `{{slot_id}}` placeholder in the code, and the
+   rendered line must read as genuine code with a visible blank where the
+   expression goes. Do not leave an internal slot id, a human "label", a
+   placeholder name, or a description of the blank standing in for the code, and
+   do not move the blank out of its position to a separate field. The slot
+   `label` is an accessible name only; it is never the thing displayed in the
+   code.
+
+**Worked contrast**
+
+*Good* — goal, contract, example, constraint, and a derivable-but-unrevealed
+prompt, over real code with one blank:
+
+```jsonc
+{
+  "prompt": "Complete first_two_sum so it returns the indexes of the first two values that add up to target, or None if none exist. The two indexes must be different, and each value is used at most once. Example: first_two_sum([2, 7, 11, 15], 9) returns [0, 1].",
+  "content": {
+    "type": "code",
+    "language": "python",
+    "template": "def first_two_sum(nums, target):\n    seen = {}\n    for i, num in enumerate(nums):\n        need = {{missing_value}}\n        if need in seen:\n            return [seen[need], i]\n        seen[num] = i\n    return None"
+  }
+}
+```
+
+*Bad* — none of the six required cues are present; the learner is asked to
+pattern-match, and the prompt (or hint) states the answer literally:
+
+```jsonc
+{
+  "prompt": "Complete the code.",
+  "content": {
+    "type": "code",
+    "language": "python",
+    "template": "for i, num in enumerate(nums):\n    need = target - num  # replace this line"
+  },
+  "hints": ["Use target - num."]
+}
+```
+
+**Checklist (per typed-code question)**
+
+- [ ] states in one sentence what the function accomplishes;
+- [ ] states the input and output contract, including the empty/no-answer return;
+- [ ] includes at least one concrete input → output example;
+- [ ] states every constraint the accepted answer depends on (distinct indexes,
+      bounds, immutability, duplicates, ordering);
+- [ ] the prompt/template/hints let a prepared learner derive the expression;
+- [ ] neither the prompt, template, slot `label`, nor `placeholder` prints the
+      literal accepted answer or a copyable fragment of it;
+- [ ] the literal answer appears only in the post-attempt explanation/feedback;
+- [ ] the code reads as genuine code with the blank exactly where the expression
+      belongs — no internal ids, labels, or descriptions standing in for code;
+- [ ] the slot `label` and `placeholder` describe the blank for assistive
+      technology without leaking the answer (§4.15).
+
 ---
 
 # Part 5 — Audit output format
 
 Every audit produces two sections: **Learning Material Audit** and **Questions Audit**. Each includes: summary; strengths; factual-accuracy findings and source-reference quality (link, currency, authority); coverage gaps; terminology/definition issues; confusing-concept comparisons; readability/ADHD issues; natural-English/wording issues; teach-before-test gaps; additions/removals/replacements; prioritized action list.
 
-Question audits also include: interaction-type distribution; same-type run violations; semantic duplication; scenario/troubleshooting coverage; feedback/hint quality; answer predictability (position census, content cues, blind-guess test).
+Question audits also include: interaction-type distribution; same-type run violations; semantic duplication; scenario/troubleshooting coverage; feedback/hint quality; answer predictability (position census, content cues, blind-guess test); and typed-code completeness — purpose, input/output contract, worked example, stated constraints, derivable-without-reveal prompt, and real blanks (§4.22).
 
 Report any automated-validation failure (`ContentError` code + source path) verbatim **before** the editorial findings, since it blocks content from loading at all.
 

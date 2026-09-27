@@ -106,7 +106,7 @@ export default function MissionPage() {
             <BitsIcon className="bits-icon" /> {bits.toLocaleString()}
           </span>
         </div>
-        <QuestionPrompt text={runner.question.prompt} level={1} />
+        <QuestionPrompt text={runner.question.prompt} level={1} part="lead" />
         <div
           className="progress"
           role="progressbar"

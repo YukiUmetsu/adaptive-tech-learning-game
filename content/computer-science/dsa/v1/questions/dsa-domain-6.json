@@ -4,14 +4,14 @@
     "vendor": "Shiden Labs",
     "name": "Data Structures & Algorithms",
     "exam_code": "DSA-PATTERNS",
-    "official_source_url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/",
+    "official_source_url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/",
     "last_reviewed": "2026-09-26"
   },
   "version": {
     "id": "dsa-v1",
     "exam_code": "DSA-PATTERNS",
     "effective_date": "2026-09-26",
-    "content_version": "dsa-content-2026-09-26-v6",
+    "content_version": "dsa-content-2026-09-26-v8",
     "domains": [
       {
         "id": "domain-1",
@@ -52,42 +52,42 @@
             "id": "6.1",
             "name": "Decompose recursive tree problems and return useful subtree state",
             "question_ids": [
-              "dsa6-base-case-001",
-              "dsa6-recursion-progress-fault-002",
-              "dsa6-combine-order-003",
-              "dsa6-return-state-choice-004",
-              "dsa6-return-state-classify-005",
-              "dsa6-directory-transfer-006",
-              "dsa6-recursion-reconstruct-007",
-              "dsa6-recursion-evidence-008"
+              "dsa6-tree-height-001",
+              "dsa6-count-nodes-repair-002",
+              "dsa6-tree-sum-003",
+              "dsa6-count-leaves-004",
+              "dsa6-is-balanced-005",
+              "dsa6-tree-diameter-006",
+              "dsa6-max-root-leaf-sum-007",
+              "dsa6-height-fill-008"
             ]
           },
           {
             "id": "6.2",
             "name": "Choose traversal order and exploit tree ordering",
             "question_ids": [
-              "dsa6-traversal-classify-009",
-              "dsa6-postorder-choice-010",
-              "dsa6-bfs-choice-011",
-              "dsa6-bfs-order-012",
-              "dsa6-bst-search-013",
-              "dsa6-bst-complexity-fault-014",
-              "dsa6-tree-pattern-classify-015",
-              "dsa6-tree-transfer-016"
+              "dsa6-preorder-009",
+              "dsa6-postorder-010",
+              "dsa6-level-order-011",
+              "dsa6-bst-contains-012",
+              "dsa6-validate-bst-013",
+              "dsa6-kth-smallest-bst-014",
+              "dsa6-lca-bst-015",
+              "dsa6-bfs-fill-016"
             ]
           },
           {
             "id": "6.3",
             "name": "Represent and query shared string prefixes with tries",
             "question_ids": [
-              "dsa6-trie-choice-017",
-              "dsa6-trie-terminal-018",
-              "dsa6-trie-fault-019",
-              "dsa6-trie-prefix-order-020",
-              "dsa6-trie-hash-classify-021",
-              "dsa6-trie-evidence-022",
-              "dsa6-trie-prefix-transfer-023",
-              "dsa6-trie-terminal-transfer-024"
+              "dsa6-trie-contains-017",
+              "dsa6-trie-prefix-018",
+              "dsa6-trie-terminal-repair-019",
+              "dsa6-autocomplete-020",
+              "dsa6-longest-prefix-021",
+              "dsa6-prefix-counts-022",
+              "dsa6-shortest-root-replace-023",
+              "dsa6-trie-insert-fill-024"
             ]
           }
         ]
@@ -155,518 +155,21 @@
   ],
   "questions": [
     {
-      "id": "dsa6-base-case-001",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.1",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.42,
-      "prompt": "A directory-size helper recursively returns the number of nodes in each subtree. What should the call return when the child reference is empty?",
-      "concepts": [
-        {
-          "concept_id": "dsa.recursion.base_case",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "An empty subtree contains zero nodes, so returning 0 makes the parent formula `1 + left_count + right_count` work without a special combine case.",
-      "blueprint_skill_ids": [
-        "6.1.01"
-      ],
-      "difficulty_label": "easy",
-      "hints": [
-        "Choose the identity value that contributes nothing to a node count."
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected base-case value does not fit the subtree node-count contract.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.recursion.base_case"
-            ],
-            "node_id": "domain-6-recursion-contract",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.recursion.tree_contract",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
-        },
-        {
-          "title": "MIT OpenCourseWare 6.006 — Recitation 6: Binary Trees",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/e215840fd7b0e8cb07916a65c17252b2_MIT6_006S20_r06.pdf"
-        }
-      ],
-      "pedagogy": {
-        "stage": "recognize",
-        "scaffold_level": 3,
-        "family_id": "dsa.recursion.tree_contract",
-        "transfer_group_id": "hierarchical_combine",
-        "surface_context": "tree_node_count",
-        "challenge_group_id": "d6-recursion-01"
-      },
-      "choice_feedback": {
-        "zero": "Correct: empty subtree contributes zero nodes.",
-        "one": "Returning 1 would count a missing node.",
-        "none": "None would require special arithmetic handling instead of matching the subtree-count contract.",
-        "inf": "Infinity has no useful meaning for counting nodes."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "zero",
-            "label": "0"
-          },
-          {
-            "id": "one",
-            "label": "1, treating an absent child as a real node"
-          },
-          {
-            "id": "none",
-            "label": "`None`, forcing every parent to special-case arithmetic"
-          },
-          {
-            "id": "inf",
-            "label": "A sentinel larger than any real subtree"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "zero"
-      }
-    },
-    {
-      "id": "dsa6-recursion-progress-fault-002",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.1",
-      "assessment_mode": "application",
-      "interaction_type": "spot_the_fault",
-      "difficulty_prior": 0.5,
-      "prompt": "A recursive node counter must recurse into smaller child subtrees. Flag the call that never makes structural progress.\n\n```python\ndef count_nodes(node):\n    if node is None:\n        return 0\n\n    return 1 + count_nodes(node) + count_nodes(node.right)\n```",
-      "concepts": [
-        {
-          "concept_id": "dsa.recursion.base_case",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Calling the function on the same non-empty node repeats the identical subproblem forever. Recurse on child nodes.",
-      "blueprint_skill_ids": [
-        "6.1.01"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Every recursive call must move to a smaller subtree."
-      ],
-      "error_codes": [
-        {
-          "code": "spot_the_fault_incorrect",
-          "description": "The selected line is not the one that breaks the algorithm."
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "diagnose",
-        "scaffold_level": 2,
-        "family_id": "dsa.recursion.tree_contract",
-        "transfer_group_id": "recursive_progress",
-        "surface_context": "recursive_tree_bug",
-        "challenge_group_id": "d6-recursion-01"
-      },
-      "interaction": {
-        "type": "spot_the_fault",
-        "elements": [
-          {
-            "id": "base",
-            "label": "`if node is None: return 0`"
-          },
-          {
-            "id": "same",
-            "label": "`count_nodes(node)`"
-          },
-          {
-            "id": "right",
-            "label": "`count_nodes(node.right)`"
-          },
-          {
-            "id": "one",
-            "label": "`1 + ...` for the current node"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "spot_the_fault",
-        "faulty_ids": [
-          "same"
-        ]
-      },
-      "choice_feedback": {}
-    },
-    {
-      "id": "dsa6-combine-order-003",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.1",
-      "assessment_mode": "procedural_recall",
-      "interaction_type": "ordering",
-      "difficulty_prior": 0.5,
-      "prompt": "A directory node stores local bytes and child directories. Order the reasoning that defines a recursive `total_bytes(node)` helper.",
-      "concepts": [
-        {
-          "concept_id": "dsa.recursion.decompose_combine",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Define the subtree contract and base case, recursively obtain child results, then combine those child summaries with the current node.",
-      "blueprint_skill_ids": [
-        "6.1.02"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "The parent cannot combine child answers before the child calls return."
-      ],
-      "error_codes": [
-        {
-          "code": "ordering_invalid_sequence",
-          "description": "The recursive decompose/combine reasoning steps are out of order.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.recursion.decompose_combine"
-            ],
-            "node_id": "domain-6-recursion-combine",
-            "preferred_stage": "construct",
-            "preferred_family_id": "dsa.recursion.decompose_combine",
-            "min_scaffold_level": 5
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
-        },
-        {
-          "title": "MIT OpenCourseWare 6.006 — Recitation 6: Binary Trees",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/e215840fd7b0e8cb07916a65c17252b2_MIT6_006S20_r06.pdf"
-        }
-      ],
-      "pedagogy": {
-        "stage": "construct",
-        "scaffold_level": 4,
-        "family_id": "dsa.recursion.decompose_combine",
-        "transfer_group_id": "hierarchical_combine",
-        "surface_context": "subtree_aggregate",
-        "challenge_group_id": "d6-recursion-01"
-      },
-      "interaction": {
-        "type": "ordering",
-        "items": [
-          {
-            "id": "contract",
-            "label": "Define what one call returns for its subtree"
-          },
-          {
-            "id": "base",
-            "label": "Define the empty/leaf base case"
-          },
-          {
-            "id": "children",
-            "label": "Recursively obtain child-subtree results"
-          },
-          {
-            "id": "combine",
-            "label": "Combine child results with the current node"
-          },
-          {
-            "id": "return",
-            "label": "Return the combined subtree result"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "ordering",
-        "ordered_ids": [
-          "contract",
-          "base",
-          "children",
-          "combine",
-          "return"
-        ]
-      }
-    },
-    {
-      "id": "dsa6-return-state-choice-004",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.1",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.53,
-      "prompt": "To compute the HEIGHT of each subtree, what is the minimum useful value each child call should return to its parent?",
-      "concepts": [
-        {
-          "concept_id": "dsa.tree.return_state",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "The parent needs only each child's height. It can return `1 + max(left_height, right_height)` without knowing the child's full traversal history.",
-      "blueprint_skill_ids": [
-        "6.1.03"
-      ],
-      "difficulty_label": "easy",
-      "hints": [
-        "What exact child fact appears in the parent's formula?"
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected return state is not the minimal subtree summary needed for height.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.tree.return_state"
-            ],
-            "node_id": "domain-6-tree-return-state",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.tree.return_state",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 2,
-        "family_id": "dsa.tree.return_state",
-        "transfer_group_id": "subtree_summary",
-        "surface_context": "hierarchy_height",
-        "challenge_group_id": "d6-recursion-01"
-      },
-      "choice_feedback": {
-        "height": "Correct: one number per child is enough.",
-        "nodes": "The full node list contains far more state than the parent needs.",
-        "paths": "All root-to-leaf paths are unnecessary for just height.",
-        "order": "Traversal order alone does not tell the parent the child height."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "height",
-            "label": "The child's height"
-          },
-          {
-            "id": "nodes",
-            "label": "A list of every node in the child subtree"
-          },
-          {
-            "id": "paths",
-            "label": "Every root-to-leaf path in the child subtree"
-          },
-          {
-            "id": "order",
-            "label": "Only the name of the traversal order used"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "height"
-      }
-    },
-    {
-      "id": "dsa6-return-state-classify-005",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.1",
-      "assessment_mode": "relationship_recall",
-      "interaction_type": "classification",
-      "difficulty_prior": 0.58,
-      "prompt": "Four tree utilities need different child summaries. Match each parent formula to the minimal state a child call should return.",
-      "concepts": [
-        {
-          "concept_id": "dsa.tree.return_state",
-          "weight": 0.7
-        },
-        {
-          "concept_id": "dsa.recursion.decompose_combine",
-          "weight": 0.3
-        }
-      ],
-      "explanation": "The best recursive interface returns exactly what the parent formula consumes: height, sum, validity, or a richer pair only when both values are genuinely needed.",
-      "blueprint_skill_ids": [
-        "6.1.03"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Read each parent formula backward: what must each child supply?"
-      ],
-      "error_codes": [
-        {
-          "code": "classification_misplaced",
-          "description": "At least one parent computation was matched to unsuitable child return state.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.tree.return_state"
-            ],
-            "node_id": "domain-6-tree-return-state",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.tree.return_state",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "classification_incomplete",
-          "description": "At least one parent computation was not classified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.tree.return_state"
-            ],
-            "node_id": "domain-6-tree-return-state",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.tree.return_state",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "differentiate",
-        "scaffold_level": 2,
-        "family_id": "dsa.tree.return_state",
-        "transfer_group_id": "subtree_summary",
-        "surface_context": "subtree_summary_design"
-      },
-      "interaction": {
-        "type": "classification",
-        "items": [
-          {
-            "id": "height",
-            "label": "Parent returns `1 + max(left, right)`"
-          },
-          {
-            "id": "sum",
-            "label": "Parent returns `node.value + left + right`"
-          },
-          {
-            "id": "valid",
-            "label": "Parent requires both child subtrees to satisfy a property"
-          },
-          {
-            "id": "sizeheight",
-            "label": "Parent needs both subtree size and height"
-          }
-        ],
-        "categories": [
-          {
-            "id": "height_state",
-            "label": "Height number"
-          },
-          {
-            "id": "sum_state",
-            "label": "Subtree sum"
-          },
-          {
-            "id": "bool_state",
-            "label": "Boolean validity"
-          },
-          {
-            "id": "pair_state",
-            "label": "Pair: (size, height)"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "classification",
-        "placements": {
-          "height": "height_state",
-          "sum": "sum_state",
-          "valid": "bool_state",
-          "sizeheight": "pair_state"
-        }
-      }
-    },
-    {
-      "id": "dsa6-directory-transfer-006",
-      "content_version": "dsa-content-2026-09-26-v6",
+      "id": "dsa6-tree-height-001",
+      "content_version": "dsa-content-2026-09-26-v8",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.1",
       "assessment_mode": "application",
       "interaction_type": "python_code",
-      "difficulty_prior": 0.59,
-      "prompt": "A tree is `[value, left, right]`, with `None` for an empty child. Implement `tree_height(tree)`: empty height 0, leaf height 1.",
-      "concepts": [
-        {
-          "concept_id": "dsa.tree.return_state",
-          "weight": 0.75
-        },
-        {
-          "concept_id": "dsa.recursion.decompose_combine",
-          "weight": 0.25
-        }
-      ],
-      "explanation": "Each child returns one number: its subtree height. The parent returns one plus the larger child height.",
-      "blueprint_skill_ids": [
-        "6.1.02",
-        "6.1.03"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Use `1 + max(tree_height(left), tree_height(right))`."
-      ],
-      "error_codes": [
-        {
-          "code": "python_tests_failed",
-          "description": "One or more behavioral tests did not pass."
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "transfer",
-        "scaffold_level": 1,
-        "family_id": "dsa.tree.return_state",
-        "transfer_group_id": "hierarchical_combine",
-        "surface_context": "directory_size_aggregation",
-        "challenge_group_id": "d6-recursion-01"
-      },
-      "choice_feedback": {},
+      "difficulty_prior": 0.33,
+      "prompt": "A binary tree is represented as `[value, left, right]`, with `None` for an empty child. Implement `tree_height(tree)`: empty height is 0 and a leaf has height 1.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
       "interaction": {
         "type": "python_code",
         "language": "python",
         "entrypoint": "tree_height",
-        "starter_code": "def tree_height(tree):\n    if tree is None:\n        return 0\n\n    value, left, right = tree\n\n    # Ask each child for exactly the state the parent needs.\n    pass\n"
+        "starter_code": "def tree_height(tree):\n    pass\n"
       },
       "canonical_answer": {
         "type": "python_code",
@@ -714,979 +217,29 @@
           }
         ]
       },
-      "instruction": "Write the function, run the tests, then submit."
-    },
-    {
-      "id": "dsa6-recursion-reconstruct-007",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.1",
-      "assessment_mode": "structural_reconstruction",
-      "interaction_type": "reconstruction",
-      "difficulty_prior": 0.66,
-      "prompt": "A hierarchy utility is being rewritten from ad-hoc global traversal state into a recursive subtree helper. Reconstruct the reusable design process.",
       "concepts": [
         {
           "concept_id": "dsa.recursion.base_case",
-          "weight": 0.3
+          "weight": 0.35
         },
         {
           "concept_id": "dsa.recursion.decompose_combine",
-          "weight": 0.4
+          "weight": 0.3
         },
         {
           "concept_id": "dsa.tree.return_state",
-          "weight": 0.3
+          "weight": 0.35
         }
       ],
-      "explanation": "A robust recursive design starts with a subtree contract, chooses the base case, recursively solves smaller children, combines child summaries, and returns the promised state.",
+      "explanation": "An empty subtree returns 0. A non-empty subtree returns one plus the larger child height.",
       "blueprint_skill_ids": [
         "6.1.01",
-        "6.1.02",
-        "6.1.03"
-      ],
-      "difficulty_label": "hard",
-      "hints": [
-        "The return-state contract comes before implementation details."
-      ],
-      "error_codes": [
-        {
-          "code": "reconstruction_unfilled_slot",
-          "description": "At least one recursive-design step was left empty.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.recursion.decompose_combine"
-            ],
-            "node_id": "domain-6-recursion-combine",
-            "preferred_stage": "construct",
-            "preferred_family_id": "dsa.recursion.tree_contract",
-            "min_scaffold_level": 5
-          }
-        },
-        {
-          "code": "reconstruction_wrong_position",
-          "description": "At least one recursive-design step was placed incorrectly.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.recursion.decompose_combine"
-            ],
-            "node_id": "domain-6-recursion-combine",
-            "preferred_stage": "construct",
-            "preferred_family_id": "dsa.recursion.tree_contract",
-            "min_scaffold_level": 5
-          }
-        },
-        {
-          "code": "reconstruction_wrong_component",
-          "description": "A nonessential global-history step was selected.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.tree.return_state"
-            ],
-            "node_id": "domain-6-tree-return-state",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.tree.return_state",
-            "min_scaffold_level": 4
-          }
-        },
-        {
-          "code": "reconstruction_missing_component",
-          "description": "A required recursive-design step was omitted.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.recursion.decompose_combine"
-            ],
-            "node_id": "domain-6-recursion-combine",
-            "preferred_stage": "construct",
-            "preferred_family_id": "dsa.recursion.tree_contract",
-            "min_scaffold_level": 5
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
-        },
-        {
-          "title": "MIT OpenCourseWare 6.006 — Recitation 6: Binary Trees",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/e215840fd7b0e8cb07916a65c17252b2_MIT6_006S20_r06.pdf"
-        }
-      ],
-      "pedagogy": {
-        "stage": "construct",
-        "scaffold_level": 5,
-        "family_id": "dsa.recursion.tree_contract",
-        "transfer_group_id": "hierarchical_combine",
-        "surface_context": "recursive_design",
-        "challenge_group_id": "d6-recursion-01"
-      },
-      "interaction": {
-        "type": "reconstruction",
-        "layout": "linear",
-        "fixed_nodes": [],
-        "pieces": [
-          {
-            "id": "contract",
-            "label": "State what one call returns for its subtree"
-          },
-          {
-            "id": "base",
-            "label": "Define the base case"
-          },
-          {
-            "id": "children",
-            "label": "Call the same contract on smaller child subtrees"
-          },
-          {
-            "id": "combine",
-            "label": "Combine child results with current-node state"
-          },
-          {
-            "id": "return",
-            "label": "Return the promised subtree summary"
-          },
-          {
-            "id": "global",
-            "label": "Store the full traversal history in every call"
-          }
-        ],
-        "slots": [
-          {
-            "id": "s1"
-          },
-          {
-            "id": "s2"
-          },
-          {
-            "id": "s3"
-          },
-          {
-            "id": "s4"
-          },
-          {
-            "id": "s5"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "reconstruction",
-        "placements": {
-          "s1": "contract",
-          "s2": "base",
-          "s3": "children",
-          "s4": "combine",
-          "s5": "return"
-        },
-        "edges": []
-      }
-    },
-    {
-      "id": "dsa6-recursion-evidence-008",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.1",
-      "assessment_mode": "application",
-      "interaction_type": "evidence_selection",
-      "difficulty_prior": 0.61,
-      "prompt": "Which statements are evidence that a hierarchical problem is a good fit for recursive decompose/combine?",
-      "concepts": [
-        {
-          "concept_id": "dsa.recursion.decompose_combine",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Recursion fits naturally when child substructures have the same problem shape and their results can be combined into the parent result. Recursion is not justified merely because the data has many items.",
-      "blueprint_skill_ids": [
         "6.1.02"
       ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Look for self-similarity and composable child results."
-      ],
-      "error_codes": [
-        {
-          "code": "evidence_missing_relevant",
-          "description": "A structural recursion clue was missed.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.recursion.decompose_combine"
-            ],
-            "node_id": "domain-6-recursion-combine",
-            "preferred_stage": "recognize",
-            "preferred_family_id": "dsa.recursion.decompose_combine",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "evidence_selected_irrelevant",
-          "description": "A property that does not itself justify recursive decomposition was selected.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.recursion.decompose_combine"
-            ],
-            "node_id": "domain-6-recursion-combine",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.recursion.decompose_combine",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "recognize",
-        "scaffold_level": 2,
-        "family_id": "dsa.recursion.decompose_combine",
-        "transfer_group_id": "hierarchical_combine",
-        "surface_context": "hierarchy_problem_shape"
-      },
-      "instruction": "Select all strong structural clues.",
-      "interaction": {
-        "type": "evidence_selection",
-        "evidence": [
-          {
-            "id": "same",
-            "label": "Each child subtree has the same kind of subproblem as its parent"
-          },
-          {
-            "id": "combine",
-            "label": "The parent answer can be computed from child answers plus local state"
-          },
-          {
-            "id": "many",
-            "label": "The input simply contains many elements"
-          },
-          {
-            "id": "sorted",
-            "label": "The values happen to be sorted"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "evidence_selection",
-        "relevant_ids": [
-          "same",
-          "combine"
-        ]
-      }
-    },
-    {
-      "id": "dsa6-traversal-classify-009",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.2",
-      "assessment_mode": "relationship_recall",
-      "interaction_type": "classification",
-      "difficulty_prior": 0.5,
-      "prompt": "A resource cleaner, config propagator, and BST exporter each have a different parent/child dependency. Match each workload to the traversal order that directly satisfies it.",
-      "concepts": [
-        {
-          "concept_id": "dsa.tree.traversal_order",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Preorder applies parent context before descendants, postorder waits for child work, and inorder exposes BST keys in ordered sequence.",
-      "blueprint_skill_ids": [
-        "6.2.01"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Ask whether parent work must happen before, between, or after child work."
-      ],
-      "error_codes": [
-        {
-          "code": "classification_misplaced",
-          "description": "At least one tree task was matched to the wrong traversal dependency.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.tree.traversal_order"
-            ],
-            "node_id": "domain-6-tree-order",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.tree.traversal_order",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "classification_incomplete",
-          "description": "At least one tree task was not classified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.tree.traversal_order"
-            ],
-            "node_id": "domain-6-tree-order",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.tree.traversal_order",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
-        },
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6 notes: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/376714cc85c6c784d90eec9c575ec027_MIT6_006S20_lec6.pdf"
-        }
-      ],
-      "pedagogy": {
-        "stage": "differentiate",
-        "scaffold_level": 3,
-        "family_id": "dsa.tree.traversal_order",
-        "transfer_group_id": "tree_order_dependency",
-        "surface_context": "tree_task_ordering",
-        "challenge_group_id": "d6-tree-01"
-      },
-      "interaction": {
-        "type": "classification",
-        "items": [
-          {
-            "id": "delete",
-            "label": "Delete every child resource before deleting its parent"
-          },
-          {
-            "id": "inherit",
-            "label": "Apply parent configuration before visiting descendants"
-          },
-          {
-            "id": "bst",
-            "label": "Emit keys from a BST in ascending order"
-          }
-        ],
-        "categories": [
-          {
-            "id": "pre",
-            "label": "Preorder"
-          },
-          {
-            "id": "in",
-            "label": "Inorder"
-          },
-          {
-            "id": "post",
-            "label": "Postorder"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "classification",
-        "placements": {
-          "delete": "post",
-          "inherit": "pre",
-          "bst": "in"
-        }
-      }
-    },
-    {
-      "id": "dsa6-postorder-choice-010",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.2",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.48,
-      "prompt": "A resource tree has the rule: a parent may be deleted only after all descendants are deleted. Which traversal order naturally enforces that dependency?",
-      "concepts": [
-        {
-          "concept_id": "dsa.tree.traversal_order",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Postorder processes child subtrees before the parent, matching the deletion dependency directly.",
-      "blueprint_skill_ids": [
-        "6.2.01"
-      ],
       "difficulty_label": "easy",
       "hints": [
-        "The parent must be processed last within its subtree."
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected traversal does not naturally process descendants before their parent.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.tree.traversal_order"
-            ],
-            "node_id": "domain-6-tree-order",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.tree.postorder",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 2,
-        "family_id": "dsa.tree.postorder",
-        "transfer_group_id": "tree_order_dependency",
-        "surface_context": "resource_cleanup",
-        "challenge_group_id": "d6-tree-01"
-      },
-      "choice_feedback": {
-        "post": "Correct: descendants are handled before their parent.",
-        "pre": "Preorder would attempt the parent first.",
-        "in": "Inorder is not the dependency required here and is mainly meaningful for binary left/node/right order.",
-        "bfs": "Level order can process parents before descendants, which violates the deletion rule."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "post",
-            "label": "Postorder"
-          },
-          {
-            "id": "pre",
-            "label": "Preorder"
-          },
-          {
-            "id": "in",
-            "label": "Inorder"
-          },
-          {
-            "id": "bfs",
-            "label": "Breadth-first / level order"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "post"
-      }
-    },
-    {
-      "id": "dsa6-bfs-choice-011",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.2",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.46,
-      "prompt": "An organization tree must be grouped by management distance from the CEO: direct reports first, then their reports, and so on. Which traversal most directly produces this order?",
-      "concepts": [
-        {
-          "concept_id": "dsa.tree.bfs_levels",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Level-order BFS processes all nodes at one depth before moving to the next depth, exactly matching management distance from the root.",
-      "blueprint_skill_ids": [
-        "6.2.02"
-      ],
-      "difficulty_label": "easy",
-      "hints": [
-        "The output is grouped by number of edges from the root."
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected traversal does not directly preserve depth-layer order.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.tree.bfs_levels"
-            ],
-            "node_id": "domain-6-tree-bfs",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.tree.bfs_levels",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 9: Breadth-First Search",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 2,
-        "family_id": "dsa.tree.bfs_levels",
-        "transfer_group_id": "tree_depth_frontier",
-        "surface_context": "org_depth_levels",
-        "challenge_group_id": "d6-tree-01"
-      },
-      "choice_feedback": {
-        "bfs": "Correct: FIFO frontier order preserves depth layers.",
-        "pre": "Preorder may descend many levels before visiting another direct report.",
-        "post": "Postorder visits descendants before parents.",
-        "in": "Inorder is not a general depth-order traversal."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "bfs",
-            "label": "Breadth-first / level-order traversal"
-          },
-          {
-            "id": "pre",
-            "label": "Depth-first preorder"
-          },
-          {
-            "id": "post",
-            "label": "Depth-first postorder"
-          },
-          {
-            "id": "in",
-            "label": "Inorder"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "bfs"
-      }
-    },
-    {
-      "id": "dsa6-bfs-order-012",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.2",
-      "assessment_mode": "procedural_recall",
-      "interaction_type": "ordering",
-      "difficulty_prior": 0.52,
-      "prompt": "A root `A` has children `B` and `C`; `B` has child `D`; `C` has child `E`. Order the level-order visitation.",
-      "concepts": [
-        {
-          "concept_id": "dsa.tree.bfs_levels",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "BFS visits the root, then both depth-1 children B and C, then depth-2 nodes D and E.",
-      "blueprint_skill_ids": [
-        "6.2.02"
-      ],
-      "difficulty_label": "easy",
-      "hints": [
-        "Finish one depth before processing nodes from the next."
-      ],
-      "error_codes": [
-        {
-          "code": "ordering_invalid_sequence",
-          "description": "The level-order traversal is out of order.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.tree.bfs_levels"
-            ],
-            "node_id": "domain-6-tree-bfs",
-            "preferred_stage": "trace",
-            "preferred_family_id": "dsa.tree.bfs_levels",
-            "min_scaffold_level": 4
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 9: Breadth-First Search",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "trace",
-        "scaffold_level": 3,
-        "family_id": "dsa.tree.bfs_levels",
-        "transfer_group_id": "tree_depth_frontier",
-        "surface_context": "tree_level_trace",
-        "challenge_group_id": "d6-tree-01"
-      },
-      "interaction": {
-        "type": "ordering",
-        "items": [
-          {
-            "id": "a",
-            "label": "A"
-          },
-          {
-            "id": "b",
-            "label": "B"
-          },
-          {
-            "id": "c",
-            "label": "C"
-          },
-          {
-            "id": "d",
-            "label": "D"
-          },
-          {
-            "id": "e",
-            "label": "E"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "ordering",
-        "ordered_ids": [
-          "a",
-          "b",
-          "c",
-          "d",
-          "e"
-        ]
-      }
-    },
-    {
-      "id": "dsa6-bst-search-013",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.2",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.52,
-      "prompt": "In a BST node with key 50, the search target is 32. Under the BST ordering invariant, which subtree can still contain the target?",
-      "concepts": [
-        {
-          "concept_id": "dsa.bst.ordered_search",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Because 32 < 50, only the left subtree can contain the target under the BST invariant; the node and right subtree are ruled out.",
-      "blueprint_skill_ids": [
-        "6.2.03"
-      ],
-      "difficulty_label": "easy",
-      "hints": [
-        "Compare the target with the current node key."
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected subtree does not follow the BST ordering invariant.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.bst.ordered_search"
-            ],
-            "node_id": "domain-6-bst-search",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.bst.ordered_search",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
-        },
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6 notes: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/376714cc85c6c784d90eec9c575ec027_MIT6_006S20_lec6.pdf"
-        }
-      ],
-      "pedagogy": {
-        "stage": "recognize",
-        "scaffold_level": 3,
-        "family_id": "dsa.bst.ordered_search",
-        "transfer_group_id": "ordered_tree_elimination",
-        "surface_context": "bst_key_search",
-        "challenge_group_id": "d6-tree-01"
-      },
-      "choice_feedback": {
-        "left": "Correct: keys smaller than the node belong on the left under the stated BST invariant.",
-        "right": "The right subtree contains keys ordered after/larger than 50 under this invariant.",
-        "both": "The comparison lets you discard one subtree.",
-        "none": "A smaller target may still exist in the left subtree."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "left",
-            "label": "Left subtree"
-          },
-          {
-            "id": "right",
-            "label": "Right subtree"
-          },
-          {
-            "id": "both",
-            "label": "Both subtrees must still be searched"
-          },
-          {
-            "id": "none",
-            "label": "Neither subtree"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "left"
-      }
-    },
-    {
-      "id": "dsa6-bst-complexity-fault-014",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.2",
-      "assessment_mode": "application",
-      "interaction_type": "spot_the_fault",
-      "difficulty_prior": 0.63,
-      "prompt": "Flag the incorrect performance claim about a plain, unbalanced BST.",
-      "concepts": [
-        {
-          "concept_id": "dsa.bst.ordered_search",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "BST search is O(h), where h is tree height. If insertion order produces a chain-like tree, h can be O(n), so logarithmic search is not guaranteed without balancing.",
-      "blueprint_skill_ids": [
-        "6.2.03"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Ask whether the tree height is guaranteed logarithmic."
-      ],
-      "error_codes": [
-        {
-          "code": "fault_missed",
-          "description": "The false O(log n)-for-every-BST claim was not identified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.bst.ordered_search"
-            ],
-            "node_id": "domain-6-bst-search",
-            "preferred_stage": "diagnose",
-            "preferred_family_id": "dsa.bst.ordered_search",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "fault_false_positive",
-          "description": "A correct BST height/performance statement was incorrectly flagged.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.bst.ordered_search"
-            ],
-            "node_id": "domain-6-bst-search",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.bst.ordered_search",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
-        },
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6 notes: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/376714cc85c6c784d90eec9c575ec027_MIT6_006S20_lec6.pdf"
-        }
-      ],
-      "pedagogy": {
-        "stage": "diagnose",
-        "scaffold_level": 2,
-        "family_id": "dsa.bst.ordered_search",
-        "transfer_group_id": "ordered_tree_elimination",
-        "surface_context": "bst_height_tradeoff"
-      },
-      "interaction": {
-        "type": "spot_the_fault",
-        "elements": [
-          {
-            "id": "oh",
-            "label": "Search time is proportional to the tree height h"
-          },
-          {
-            "id": "skew",
-            "label": "A badly skewed tree can have height proportional to n"
-          },
-          {
-            "id": "bad",
-            "label": "Every BST, even unbalanced, guarantees O(log n) search"
-          },
-          {
-            "id": "balance",
-            "label": "Balancing can keep height logarithmic"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "spot_the_fault",
-        "faulty_ids": [
-          "bad"
-        ]
-      }
-    },
-    {
-      "id": "dsa6-tree-pattern-classify-015",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.2",
-      "assessment_mode": "relationship_recall",
-      "interaction_type": "classification",
-      "difficulty_prior": 0.61,
-      "prompt": "A UI/resource hierarchy exposes four different outputs. Match each output to the traversal/search pattern that naturally produces it.",
-      "concepts": [
-        {
-          "concept_id": "dsa.tree.traversal_order",
-          "weight": 0.3
-        },
-        {
-          "concept_id": "dsa.tree.bfs_levels",
-          "weight": 0.3
-        },
-        {
-          "concept_id": "dsa.bst.ordered_search",
-          "weight": 0.4
-        }
-      ],
-      "explanation": "Use postorder for children-before-parent dependencies, preorder for parent context propagation, BFS for depth layers, and BST search when key ordering eliminates a subtree.",
-      "blueprint_skill_ids": [
-        "6.2.01",
-        "6.2.02",
-        "6.2.03"
-      ],
-      "difficulty_label": "hard",
-      "hints": [
-        "Focus on the dependency or ordering property, not the data's surface story."
-      ],
-      "error_codes": [
-        {
-          "code": "classification_misplaced",
-          "description": "At least one hierarchical requirement was matched to the wrong tree strategy.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.tree.traversal_order",
-              "dsa.tree.bfs_levels",
-              "dsa.bst.ordered_search"
-            ],
-            "node_id": "domain-6-tree-order",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.tree.pattern_discrimination",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "classification_incomplete",
-          "description": "At least one hierarchical requirement was not classified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.tree.traversal_order",
-              "dsa.tree.bfs_levels",
-              "dsa.bst.ordered_search"
-            ],
-            "node_id": "domain-6-tree-order",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.tree.pattern_discrimination",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 6: Binary Trees, Part 1",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-6-binary-trees-part-1/"
-        },
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 9: Breadth-First Search",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "differentiate",
-        "scaffold_level": 1,
-        "family_id": "dsa.tree.pattern_discrimination",
-        "transfer_group_id": "tree_strategy_discrimination",
-        "surface_context": "mixed_tree_requirements"
-      },
-      "interaction": {
-        "type": "classification",
-        "items": [
-          {
-            "id": "cleanup",
-            "label": "Children must be finalized before parent"
-          },
-          {
-            "id": "inherit",
-            "label": "Parent configuration is passed down to descendants"
-          },
-          {
-            "id": "levels",
-            "label": "Output grouped by distance from root"
-          },
-          {
-            "id": "key",
-            "label": "Find key 42 in a BST"
-          }
-        ],
-        "categories": [
-          {
-            "id": "post",
-            "label": "Postorder DFS"
-          },
-          {
-            "id": "pre",
-            "label": "Preorder DFS"
-          },
-          {
-            "id": "bfs",
-            "label": "BFS / level order"
-          },
-          {
-            "id": "bst",
-            "label": "BST ordered search"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "classification",
-        "placements": {
-          "cleanup": "post",
-          "inherit": "pre",
-          "levels": "bfs",
-          "key": "bst"
-        }
-      }
-    },
-    {
-      "id": "dsa6-tree-transfer-016",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.2",
-      "assessment_mode": "application",
-      "interaction_type": "python_code",
-      "difficulty_prior": 0.62,
-      "prompt": "A tree is `[value, left, right]`, with `None` for an empty child. Implement `level_order(tree)` and return values in breadth-first order.",
-      "concepts": [
-        {
-          "concept_id": "dsa.tree.bfs_levels",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "A FIFO queue visits all nodes at shallower depths before deeper nodes.",
-      "blueprint_skill_ids": [
-        "6.2.02"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Use `popleft()` and enqueue non-None children."
+        "The recursive calls must use the left and right child subtrees.",
+        "Return only the state the parent needs: subtree height."
       ],
       "error_codes": [
         {
@@ -1696,24 +249,833 @@
       ],
       "source_refs": [
         {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 9: Breadth-First Search",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa6-count-nodes-repair-002",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.44,
+      "prompt": "Repair `count_nodes`. The recursive call on `tree` itself never makes structural progress.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "count_nodes",
+        "starter_code": "def count_nodes(tree):\n    if tree is None:\n        return 0\n\n    value, left, right = tree\n    return 1 + count_nodes(tree) + count_nodes(right)\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              null
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                null,
+                null
+              ]
+            ],
+            "expected": 1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  null,
+                  null
+                ],
+                [
+                  3,
+                  null,
+                  null
+                ]
+              ]
+            ],
+            "expected": 3
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.recursion.base_case",
+          "weight": 0.45
+        },
+        {
+          "concept_id": "dsa.recursion.decompose_combine",
+          "weight": 0.55
+        }
+      ],
+      "explanation": "Every recursive call must move to a smaller subtree. Recurse on `left` and `right`, not on the current tree again.",
+      "blueprint_skill_ids": [
+        "6.1.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "A recursive argument should be structurally smaller.",
+        "The two child variables are already available."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa6-tree-sum-003",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.39,
+      "prompt": "Implement `tree_sum(tree)` for `[value, left, right]` trees. Return the sum of every node value. Empty trees sum to 0.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "tree_sum",
+        "starter_code": "def tree_sum(tree):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              null
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5,
+                null,
+                null
+              ]
+            ],
+            "expected": 5
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  null,
+                  null
+                ],
+                [
+                  3,
+                  [
+                    4,
+                    null,
+                    null
+                  ],
+                  null
+                ]
+              ]
+            ],
+            "expected": 10
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                -1,
+                [
+                  -2,
+                  null,
+                  null
+                ],
+                [
+                  5,
+                  null,
+                  null
+                ]
+              ]
+            ],
+            "expected": 2
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.recursion.decompose_combine",
+          "weight": 0.7
+        },
+        {
+          "concept_id": "dsa.tree.return_state",
+          "weight": 0.3
+        }
+      ],
+      "explanation": "The parent answer is local value plus the two child-subtree sums.",
+      "blueprint_skill_ids": [
+        "6.1.02"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Use 0 as the empty-subtree identity.",
+        "Combine left sum, right sum, and the current value."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa6-count-leaves-004",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.48,
+      "prompt": "Implement `count_leaves(tree)`. A leaf is a non-empty node with BOTH children `None`. Return the number of leaves.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "count_leaves",
+        "starter_code": "def count_leaves(tree):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              null
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                null,
+                null
+              ]
+            ],
+            "expected": 1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  null,
+                  null
+                ],
+                [
+                  3,
+                  [
+                    4,
+                    null,
+                    null
+                  ],
+                  null
+                ]
+              ]
+            ],
+            "expected": 2
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  [
+                    3,
+                    null,
+                    null
+                  ],
+                  null
+                ],
+                null
+              ]
+            ],
+            "expected": 1
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.recursion.base_case",
+          "weight": 0.45
+        },
+        {
+          "concept_id": "dsa.recursion.decompose_combine",
+          "weight": 0.55
+        }
+      ],
+      "explanation": "The base cases distinguish empty trees from leaves. Internal nodes combine leaf counts from child subtrees.",
+      "blueprint_skill_ids": [
+        "6.1.01",
+        "6.1.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Check the leaf condition before recursing further.",
+        "An empty child is not a leaf."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa6-is-balanced-005",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.62,
+      "prompt": "Implement `is_height_balanced(tree)`. A tree is height-balanced when, at EVERY node, left and right subtree heights differ by at most 1. Target O(n) time.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "is_height_balanced",
+        "starter_code": "def is_height_balanced(tree):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              null
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  null,
+                  null
+                ],
+                [
+                  3,
+                  null,
+                  null
+                ]
+              ]
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  [
+                    3,
+                    null,
+                    null
+                  ],
+                  null
+                ],
+                null
+              ]
+            ],
+            "expected": false
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  [
+                    4,
+                    null,
+                    null
+                  ],
+                  [
+                    5,
+                    null,
+                    null
+                  ]
+                ],
+                [
+                  3,
+                  null,
+                  null
+                ]
+              ]
+            ],
+            "expected": true
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.tree.return_state",
+          "weight": 0.7
+        },
+        {
+          "concept_id": "dsa.recursion.decompose_combine",
+          "weight": 0.3
+        }
+      ],
+      "explanation": "A single DFS can return subtree height when balanced and a failure sentinel when unbalanced, avoiding repeated height recomputation.",
+      "blueprint_skill_ids": [
+        "6.1.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "The parent needs both height and whether a child already failed.",
+        "A sentinel such as `-1` can encode failure."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa6-tree-diameter-006",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.69,
+      "prompt": "Implement `tree_diameter_edges(tree)`. Return the maximum number of EDGES on any path between two nodes. The path may or may not pass through the root. Empty and single-node trees have diameter 0. Target O(n).",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "tree_diameter_edges",
+        "starter_code": "def tree_diameter_edges(tree):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              null
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                null,
+                null
+              ]
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  [
+                    4,
+                    null,
+                    null
+                  ],
+                  [
+                    5,
+                    null,
+                    null
+                  ]
+                ],
+                [
+                  3,
+                  null,
+                  null
+                ]
+              ]
+            ],
+            "expected": 3
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  [
+                    3,
+                    [
+                      4,
+                      null,
+                      null
+                    ],
+                    null
+                  ],
+                  null
+                ],
+                null
+              ]
+            ],
+            "expected": 3
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.tree.return_state",
+          "weight": 0.65
+        },
+        {
+          "concept_id": "dsa.recursion.decompose_combine",
+          "weight": 0.35
+        }
+      ],
+      "explanation": "Each subtree should return height while the traversal also tracks the best `left_height + right_height` path found so far.",
+      "blueprint_skill_ids": [
+        "6.1.02",
+        "6.1.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "Do not recompute subtree heights from scratch.",
+        "At each node, the path through that node uses both child heights."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
         }
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 1,
-        "family_id": "dsa.tree.bfs_levels",
-        "transfer_group_id": "tree_depth_frontier",
-        "surface_context": "ui_component_depths",
-        "challenge_group_id": "d6-tree-01"
-      },
-      "choice_feedback": {},
+        "scaffold_level": 0
+      }
+    },
+    {
+      "id": "dsa6-max-root-leaf-sum-007",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.6,
+      "prompt": "Implement `max_root_to_leaf_sum(tree)`. The tree is non-empty. Return the maximum sum along a path from the root to any LEAF. Node values may be negative.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
       "interaction": {
         "type": "python_code",
         "language": "python",
-        "entrypoint": "level_order",
-        "starter_code": "from collections import deque\n\n\ndef level_order(tree):\n    if tree is None:\n        return []\n\n    queue = deque([tree])\n    result = []\n\n    while queue:\n        # Remove the oldest frontier node and enqueue its children.\n        pass\n\n    return result\n"
+        "entrypoint": "max_root_to_leaf_sum",
+        "starter_code": "def max_root_to_leaf_sum(tree):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                5,
+                null,
+                null
+              ]
+            ],
+            "expected": 5
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  null,
+                  null
+                ],
+                [
+                  3,
+                  [
+                    10,
+                    null,
+                    null
+                  ],
+                  null
+                ]
+              ]
+            ],
+            "expected": 14
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                -5,
+                [
+                  -2,
+                  null,
+                  null
+                ],
+                [
+                  -3,
+                  null,
+                  null
+                ]
+              ]
+            ],
+            "expected": -7
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  5,
+                  null,
+                  null
+                ],
+                null
+              ]
+            ],
+            "expected": 6
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.tree.return_state",
+          "weight": 0.55
+        },
+        {
+          "concept_id": "dsa.recursion.base_case",
+          "weight": 0.45
+        }
+      ],
+      "explanation": "A missing child is not an alternative zero-value path; the path must end at a real leaf. Handle one-child nodes carefully.",
+      "blueprint_skill_ids": [
+        "6.1.01",
+        "6.1.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "A leaf returns its own value.",
+        "If only one child exists, the path must continue through that child."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa6-height-fill-008",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.1",
+      "assessment_mode": "application",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.43,
+      "prompt": "Complete `tree_height(tree)`. A binary tree is represented as `[value, left, right]`, and `None` means an empty child. Height is measured in NODES. Example: an empty tree has height 0, a leaf such as `[7, None, None]` has height 1, and `[1, [2, None, None], None]` has height 2. The parent height is one level above its taller child. Fill the empty-tree base case and the expression that combines the two child heights.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "def tree_height(tree):\n    if tree is None:\n        # Empty trees contain no node levels.\n        return {{empty_height}}\n\n    value, left, right = tree\n    left_height = tree_height(left)\n    right_height = tree_height(right)\n    # The current node adds one level above the taller child.\n    return {{combine}}\n"
+        },
+        "slots": [
+          {
+            "id": "empty_height",
+            "label": "empty-tree height",
+            "placeholder": "expression",
+            "width_chars": 10
+          },
+          {
+            "id": "combine",
+            "label": "height from child heights",
+            "placeholder": "expression",
+            "width_chars": 30
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "empty_height": {
+            "accepted_answers": [
+              "0"
+            ]
+          },
+          "combine": {
+            "accepted_answers": [
+              "1 + max(left_height, right_height)",
+              "1+max(left_height,right_height)",
+              "1 + max(left_height,right_height)"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.recursion.base_case",
+          "weight": 0.4
+        },
+        {
+          "concept_id": "dsa.tree.return_state",
+          "weight": 0.6
+        }
+      ],
+      "explanation": "Empty height is 0; a node contributes one level above the taller child.",
+      "blueprint_skill_ids": [
+        "6.1.01",
+        "6.1.03"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "The empty subtree contributes no node to a root-to-leaf path.",
+        "A non-empty node contributes one plus the taller child height."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more code blanks are incorrect."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 3
+      }
+    },
+    {
+      "id": "dsa6-preorder-009",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.35,
+      "prompt": "Implement `preorder_values(tree)` for `[value, left, right]` trees. Return values in root, left, right order.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "preorder_values",
+        "starter_code": "def preorder_values(tree):\n    pass\n"
       },
       "canonical_answer": {
         "type": "python_code",
@@ -1730,13 +1092,224 @@
             "args": [
               [
                 1,
-                null,
-                null
+                [
+                  2,
+                  null,
+                  null
+                ],
+                [
+                  3,
+                  null,
+                  null
+                ]
               ]
             ],
             "expected": [
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  [
+                    4,
+                    null,
+                    null
+                  ],
+                  null
+                ],
+                [
+                  3,
+                  null,
+                  null
+                ]
+              ]
+            ],
+            "expected": [
+              1,
+              2,
+              4,
+              3
+            ]
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.tree.traversal_order",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Preorder processes the current node before either child subtree.",
+      "blueprint_skill_ids": [
+        "6.2.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "For an empty tree return an empty list.",
+        "Combine `[value] + preorder(left) + preorder(right)` or equivalent."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa6-postorder-010",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.42,
+      "prompt": "Implement `postorder_values(tree)`. Return values in left, right, root order.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "postorder_values",
+        "starter_code": "def postorder_values(tree):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              null
+            ],
+            "expected": []
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  null,
+                  null
+                ],
+                [
+                  3,
+                  null,
+                  null
+                ]
+              ]
+            ],
+            "expected": [
+              2,
+              3,
               1
             ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  [
+                    4,
+                    null,
+                    null
+                  ],
+                  null
+                ],
+                [
+                  3,
+                  null,
+                  null
+                ]
+              ]
+            ],
+            "expected": [
+              4,
+              2,
+              3,
+              1
+            ]
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.tree.traversal_order",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Postorder waits until both child subtrees are processed before the parent.",
+      "blueprint_skill_ids": [
+        "6.2.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Process left and right before appending the current value.",
+        "This order is useful when parent work depends on completed children."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa6-level-order-011",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.47,
+      "prompt": "Implement `level_order(tree)`. Return node values in breadth-first order from shallowest level to deepest, left to right within each level.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "level_order",
+        "starter_code": "from collections import deque\n\n\ndef level_order(tree):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              null
+            ],
+            "expected": []
           },
           {
             "type": "call",
@@ -1770,774 +1343,1581 @@
               4,
               5
             ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                7,
+                null,
+                null
+              ]
+            ],
+            "expected": [
+              7
+            ]
           }
         ]
       },
-      "instruction": "Write the function, run the tests, then submit."
-    },
-    {
-      "id": "dsa6-trie-choice-017",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.3",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.48,
-      "prompt": "A CLI index changes occasionally but handles very frequent prefix-completion queries such as `kub...`. Which structure directly turns the typed prefix into a path/frontier for completions?",
       "concepts": [
         {
-          "concept_id": "dsa.trie.prefix_path",
+          "concept_id": "dsa.tree.bfs_levels",
           "weight": 1.0
         }
       ],
-      "explanation": "A trie consumes the prefix character by character and reaches a node whose descendants represent keys beginning with that prefix.",
+      "explanation": "A FIFO queue visits all nodes at one depth before later depths.",
       "blueprint_skill_ids": [
-        "6.3.01"
+        "6.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Enqueue the root if it exists.",
+        "When a node is removed, enqueue each non-empty child."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa6-bst-contains-012",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.43,
+      "prompt": "Implement `bst_contains(tree, target)`. The tree is a valid BST with distinct values. Return whether `target` exists without traversing both subtrees.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "bst_contains",
+        "starter_code": "def bst_contains(tree, target):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                5,
+                [
+                  3,
+                  [
+                    2,
+                    null,
+                    null
+                  ],
+                  [
+                    4,
+                    null,
+                    null
+                  ]
+                ],
+                [
+                  8,
+                  [
+                    7,
+                    null,
+                    null
+                  ],
+                  [
+                    9,
+                    null,
+                    null
+                  ]
+                ]
+              ],
+              7
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5,
+                [
+                  3,
+                  null,
+                  null
+                ],
+                [
+                  8,
+                  null,
+                  null
+                ]
+              ],
+              6
+            ],
+            "expected": false
+          },
+          {
+            "type": "call",
+            "args": [
+              null,
+              1
+            ],
+            "expected": false
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5,
+                null,
+                null
+              ],
+              5
+            ],
+            "expected": true
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.bst.ordered_search",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "BST ordering lets each comparison discard one whole subtree: smaller targets go left and larger targets go right.",
+      "blueprint_skill_ids": [
+        "6.2.03"
       ],
       "difficulty_label": "easy",
       "hints": [
-        "The query is not only exact membership; it asks for all keys sharing a beginning."
+        "Do not recursively search both children.",
+        "Compare target with the current node value."
       ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected structure does not directly represent shared prefix paths.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.trie.prefix_path"
-            ],
-            "node_id": "domain-6-trie-path",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.trie.prefix_index",
-            "min_scaffold_level": 3
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
         {
-          "title": "Princeton Algorithms — Tries",
-          "url": "https://algs4.cs.princeton.edu/52trie/"
-        },
-        {
-          "title": "Princeton Algorithms — TrieSET",
-          "url": "https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/TrieSET.html"
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
         }
       ],
       "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 2,
-        "family_id": "dsa.trie.prefix_index",
-        "transfer_group_id": "prefix_frontier",
-        "surface_context": "cli_autocomplete",
-        "challenge_group_id": "d6-trie-01"
-      },
-      "choice_feedback": {
-        "trie": "Correct: shared prefixes are explicit paths.",
-        "set": "A hash set is excellent for exact membership but does not inherently expose prefix descendants.",
-        "queue": "FIFO order does not index characters or prefixes.",
-        "heap": "Priority order is unrelated to prefix structure."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "trie",
-            "label": "Trie / prefix tree"
-          },
-          {
-            "id": "set",
-            "label": "Hash set only"
-          },
-          {
-            "id": "queue",
-            "label": "Sorted array of full commands with binary-search range logic for each prefix"
-          },
-          {
-            "id": "heap",
-            "label": "Priority queue"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "trie"
+        "stage": "construct",
+        "scaffold_level": 2
       }
     },
     {
-      "id": "dsa6-trie-terminal-018",
-      "content_version": "dsa-content-2026-09-26-v6",
+      "id": "dsa6-validate-bst-013",
+      "content_version": "dsa-content-2026-09-26-v8",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
-      "task_id": "6.3",
+      "task_id": "6.2",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.54,
-      "prompt": "A trie contains the full key `apple` but NOT the full key `app`. After walking characters `a → p → p`, what additional state determines whether `app` itself is stored?",
-      "concepts": [
-        {
-          "concept_id": "dsa.trie.terminal_marker",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "The path only proves that `app` is a prefix of at least one stored key. A terminal/value marker at the node distinguishes whether `app` is itself a complete stored key.",
-      "blueprint_skill_ids": [
-        "6.3.02"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Path existence and full-key existence are not the same fact."
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected state does not distinguish a prefix-only node from a complete stored key.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.trie.terminal_marker"
-            ],
-            "node_id": "domain-6-trie-terminal",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.trie.terminal_state",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "Princeton Algorithms — Tries",
-          "url": "https://algs4.cs.princeton.edu/52trie/"
-        },
-        {
-          "title": "Princeton Algorithms — TrieSET",
-          "url": "https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/TrieSET.html"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 2,
-        "family_id": "dsa.trie.terminal_state",
-        "transfer_group_id": "prefix_vs_complete_key",
-        "surface_context": "trie_exact_lookup",
-        "challenge_group_id": "d6-trie-01"
-      },
-      "choice_feedback": {
-        "terminal": "Correct: the terminal marker distinguishes a complete key from a prefix-only path.",
-        "children": "Having children only proves longer keys may continue from this prefix.",
-        "depth": "Depth tells key length consumed, not whether that prefix was registered as a key.",
-        "sort": "Sorting sibling edges does not indicate exact-key membership."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "terminal",
-            "label": "Whether the node is marked as terminal / has a stored value"
-          },
-          {
-            "id": "children",
-            "label": "Whether the node has any children"
-          },
-          {
-            "id": "depth",
-            "label": "The numeric depth alone"
-          },
-          {
-            "id": "sort",
-            "label": "Whether child characters are sorted"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "terminal"
-      }
-    },
-    {
-      "id": "dsa6-trie-fault-019",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.3",
-      "assessment_mode": "application",
-      "interaction_type": "spot_the_fault",
+      "interaction_type": "python_code",
       "difficulty_prior": 0.6,
-      "prompt": "A trie `contains(key)` function returns true whenever all key characters can be followed from the root. Flag the missing check.",
+      "prompt": "Implement `is_valid_bst(tree)`. Values must be STRICTLY ordered: every value in a left subtree is smaller than its ancestor and every value in a right subtree is larger. Duplicate values are invalid.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "is_valid_bst",
+        "starter_code": "def is_valid_bst(tree):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              null
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                [
+                  1,
+                  null,
+                  null
+                ],
+                [
+                  3,
+                  null,
+                  null
+                ]
+              ]
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5,
+                [
+                  1,
+                  null,
+                  null
+                ],
+                [
+                  4,
+                  [
+                    3,
+                    null,
+                    null
+                  ],
+                  [
+                    6,
+                    null,
+                    null
+                  ]
+                ]
+              ]
+            ],
+            "expected": false
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                [
+                  2,
+                  null,
+                  null
+                ],
+                null
+              ]
+            ],
+            "expected": false
+          }
+        ]
+      },
       "concepts": [
         {
-          "concept_id": "dsa.trie.terminal_marker",
+          "concept_id": "dsa.bst.ordered_search",
+          "weight": 0.6
+        },
+        {
+          "concept_id": "dsa.tree.return_state",
+          "weight": 0.4
+        }
+      ],
+      "explanation": "Checking only parent/child comparisons is insufficient. Carry the allowable `(low, high)` range inherited from every ancestor.",
+      "blueprint_skill_ids": [
+        "6.2.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Left recursion tightens the upper bound to the current value.",
+        "Right recursion tightens the lower bound."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa6-kth-smallest-bst-014",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.59,
+      "prompt": "Implement `kth_smallest_bst(tree, k)` for a valid BST with distinct values. `k` is 1-based and valid. Return the kth smallest value.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "kth_smallest_bst",
+        "starter_code": "def kth_smallest_bst(tree, k):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                [
+                  1,
+                  null,
+                  [
+                    2,
+                    null,
+                    null
+                  ]
+                ],
+                [
+                  4,
+                  null,
+                  null
+                ]
+              ],
+              1
+            ],
+            "expected": 1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5,
+                [
+                  3,
+                  [
+                    2,
+                    [
+                      1,
+                      null,
+                      null
+                    ],
+                    null
+                  ],
+                  [
+                    4,
+                    null,
+                    null
+                  ]
+                ],
+                [
+                  6,
+                  null,
+                  null
+                ]
+              ],
+              3
+            ],
+            "expected": 3
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                [
+                  1,
+                  null,
+                  null
+                ],
+                [
+                  3,
+                  null,
+                  null
+                ]
+              ],
+              3
+            ],
+            "expected": 3
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.bst.ordered_search",
+          "weight": 0.45
+        },
+        {
+          "concept_id": "dsa.tree.traversal_order",
+          "weight": 0.55
+        }
+      ],
+      "explanation": "Inorder traversal of a BST yields ascending values. Count visited nodes in inorder order until reaching k.",
+      "blueprint_skill_ids": [
+        "6.2.01",
+        "6.2.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Traversal order is left, root, right.",
+        "You may use an iterative stack or recursive counter."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa6-lca-bst-015",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.63,
+      "prompt": "Implement `lowest_common_ancestor_bst(tree, a, b)`. The tree is a valid BST with distinct values, and both values exist. Return the value of their lowest common ancestor.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "lowest_common_ancestor_bst",
+        "starter_code": "def lowest_common_ancestor_bst(tree, a, b):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                6,
+                [
+                  2,
+                  [
+                    0,
+                    null,
+                    null
+                  ],
+                  [
+                    4,
+                    [
+                      3,
+                      null,
+                      null
+                    ],
+                    [
+                      5,
+                      null,
+                      null
+                    ]
+                  ]
+                ],
+                [
+                  8,
+                  [
+                    7,
+                    null,
+                    null
+                  ],
+                  [
+                    9,
+                    null,
+                    null
+                  ]
+                ]
+              ],
+              2,
+              8
+            ],
+            "expected": 6
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                6,
+                [
+                  2,
+                  [
+                    0,
+                    null,
+                    null
+                  ],
+                  [
+                    4,
+                    [
+                      3,
+                      null,
+                      null
+                    ],
+                    [
+                      5,
+                      null,
+                      null
+                    ]
+                  ]
+                ],
+                [
+                  8,
+                  [
+                    7,
+                    null,
+                    null
+                  ],
+                  [
+                    9,
+                    null,
+                    null
+                  ]
+                ]
+              ],
+              2,
+              4
+            ],
+            "expected": 2
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                [
+                  1,
+                  null,
+                  null
+                ],
+                [
+                  3,
+                  null,
+                  null
+                ]
+              ],
+              1,
+              3
+            ],
+            "expected": 2
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.bst.ordered_search",
           "weight": 1.0
         }
       ],
-      "explanation": "Successfully walking the path proves only that the key is a prefix of some stored key. Exact containment also requires the final node to terminate a stored key.",
+      "explanation": "If both targets are smaller, move left; if both are larger, move right. Otherwise the current node is where their search paths split or one target equals the current node.",
+      "blueprint_skill_ids": [
+        "6.2.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Normalize with `lo=min(a,b)` and `hi=max(a,b)` if useful.",
+        "The first node with `lo <= value <= hi` is the answer."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0
+      }
+    },
+    {
+      "id": "dsa6-bfs-fill-016",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.2",
+      "assessment_mode": "application",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.46,
+      "prompt": "Complete `level_order(tree)`. A binary tree is `[value, left, right]` with `None` for empty children. Return node values in breadth-first order: shallowest level first, left to right within a level. Example: `[1, [2, [4,None,None], None], [3,None,None]] -> [1, 2, 3, 4]`. `queue` is a `deque` and must behave FIFO: remove the OLDEST discovered node from the front, then append each non-empty child to the back. Fill those three queue operations.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "from collections import deque\n\ndef level_order(tree):\n    if tree is None:\n        return []\n\n    queue = deque([tree])\n    out = []\n\n    while queue:\n        # BFS processes the oldest discovered node first.\n        node = {{take_front}}\n        value, left, right = node\n        out.append(value)\n\n        if left is not None:\n            # Newly discovered children join the back of the queue.\n            {{add_left}}\n        if right is not None:\n            {{add_right}}\n\n    return out\n"
+        },
+        "slots": [
+          {
+            "id": "take_front",
+            "label": "remove oldest queued node",
+            "placeholder": "expression",
+            "width_chars": 18
+          },
+          {
+            "id": "add_left",
+            "label": "enqueue left child",
+            "placeholder": "statement",
+            "width_chars": 20
+          },
+          {
+            "id": "add_right",
+            "label": "enqueue right child",
+            "placeholder": "statement",
+            "width_chars": 20
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "take_front": {
+            "accepted_answers": [
+              "queue.popleft()"
+            ]
+          },
+          "add_left": {
+            "accepted_answers": [
+              "queue.append(left)"
+            ]
+          },
+          "add_right": {
+            "accepted_answers": [
+              "queue.append(right)"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.tree.bfs_levels",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "BFS removes the oldest discovered node and appends newly discovered children to the back.",
+      "blueprint_skill_ids": [
+        "6.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "FIFO processing removes from the left side of a deque.",
+        "Discovered children are appended to the back so earlier discoveries are processed first."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more code blanks are incorrect."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 3
+      }
+    },
+    {
+      "id": "dsa6-trie-contains-017",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.4,
+      "prompt": "Implement `trie_contains(words, key)`. Build a trie from `words`, then return `True` only if `key` is stored as a COMPLETE word. A key that is only a prefix of a longer stored word must return `False`.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "trie_contains",
+        "starter_code": "class TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.terminal = False\n\n\ndef build_trie(words):\n    root = TrieNode()\n    for word in words:\n        node = root\n        for ch in word:\n            if ch not in node.children:\n                node.children[ch] = TrieNode()\n            node = node.children[ch]\n        node.terminal = True\n    return root\n\ndef trie_contains(words, key):\n    root = build_trie(words)\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                "apple",
+                "app"
+              ],
+              "app"
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "apple"
+              ],
+              "app"
+            ],
+            "expected": false
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "apple",
+                "ape"
+              ],
+              "apple"
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              "a"
+            ],
+            "expected": false
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                ""
+              ],
+              ""
+            ],
+            "expected": true
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.trie.prefix_path",
+          "weight": 0.45
+        },
+        {
+          "concept_id": "dsa.trie.terminal_marker",
+          "weight": 0.55
+        }
+      ],
+      "explanation": "Walk one child per character. Reaching the final path is not enough; the final node must also have its terminal marker set.",
+      "blueprint_skill_ids": [
+        "6.3.01",
+        "6.3.02"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Return false immediately if a character edge is missing.",
+        "After the walk, return `node.terminal`."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa6-trie-prefix-018",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.42,
+      "prompt": "Implement `trie_has_prefix(words, prefix)`. Return whether at least one stored word begins with `prefix`. The prefix itself does NOT need to be a complete word.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "trie_has_prefix",
+        "starter_code": "class TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.terminal = False\n\n\ndef build_trie(words):\n    root = TrieNode()\n    for word in words:\n        node = root\n        for ch in word:\n            if ch not in node.children:\n                node.children[ch] = TrieNode()\n            node = node.children[ch]\n        node.terminal = True\n    return root\n\ndef trie_has_prefix(words, prefix):\n    root = build_trie(words)\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                "apple",
+                "ape",
+                "bat"
+              ],
+              "ap"
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "apple"
+              ],
+              "app"
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "apple"
+              ],
+              "apple"
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "apple"
+              ],
+              "b"
+            ],
+            "expected": false
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "apple"
+              ],
+              ""
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              ""
+            ],
+            "expected": false
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.trie.prefix_path",
+          "weight": 0.7
+        },
+        {
+          "concept_id": "dsa.trie.prefix_query",
+          "weight": 0.3
+        }
+      ],
+      "explanation": "A prefix query only needs the path to exist. It does not require a terminal marker at the final prefix node.",
+      "blueprint_skill_ids": [
+        "6.3.01",
+        "6.3.03"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Walk the prefix characters from the root.",
+        "If every edge exists, the prefix exists."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa6-trie-terminal-repair-019",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.5,
+      "prompt": "Repair `trie_contains`. The buggy function returns `True` whenever all characters can be followed, so it incorrectly treats a prefix such as `app` as stored when only `apple` exists.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "trie_contains",
+        "starter_code": "class TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.terminal = False\n\n\ndef build_trie(words):\n    root = TrieNode()\n    for word in words:\n        node = root\n        for ch in word:\n            if ch not in node.children:\n                node.children[ch] = TrieNode()\n            node = node.children[ch]\n        node.terminal = True\n    return root\n\ndef trie_contains(words, key):\n    node = build_trie(words)\n\n    for ch in key:\n        if ch not in node.children:\n            return False\n        node = node.children[ch]\n\n    return True\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                "apple"
+              ],
+              "app"
+            ],
+            "expected": false
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "apple",
+                "app"
+              ],
+              "app"
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "a"
+              ],
+              "a"
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              "a"
+            ],
+            "expected": false
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.trie.terminal_marker",
+          "weight": 0.75
+        },
+        {
+          "concept_id": "dsa.trie.prefix_path",
+          "weight": 0.25
+        }
+      ],
+      "explanation": "Path existence answers a prefix query. Exact membership additionally requires the final node's terminal marker.",
       "blueprint_skill_ids": [
         "6.3.02"
       ],
       "difficulty_label": "medium",
       "hints": [
-        "Test a prefix of a longer stored key that was never inserted itself."
+        "The traversal itself is correct.",
+        "Change the final return value."
       ],
       "error_codes": [
         {
-          "code": "fault_missed",
-          "description": "The missing terminal-key check was not identified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.trie.terminal_marker"
-            ],
-            "node_id": "domain-6-trie-terminal",
-            "preferred_stage": "diagnose",
-            "preferred_family_id": "dsa.trie.terminal_state",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "fault_false_positive",
-          "description": "A valid trie path-lookup step was incorrectly flagged.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.trie.terminal_marker"
-            ],
-            "node_id": "domain-6-trie-terminal",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.trie.terminal_state",
-            "min_scaffold_level": 3
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
         {
-          "title": "Princeton Algorithms — TrieSET",
-          "url": "https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/TrieSET.html"
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
         }
       ],
       "pedagogy": {
         "stage": "diagnose",
-        "scaffold_level": 2,
-        "family_id": "dsa.trie.terminal_state",
-        "transfer_group_id": "prefix_vs_complete_key",
-        "surface_context": "trie_membership_bug",
-        "challenge_group_id": "d6-trie-01"
-      },
-      "interaction": {
-        "type": "spot_the_fault",
-        "elements": [
-          {
-            "id": "root",
-            "label": "Start from the root"
-          },
-          {
-            "id": "walk",
-            "label": "Follow one child edge for each character"
-          },
-          {
-            "id": "missing",
-            "label": "Return true immediately after the path exists, without checking terminal state"
-          },
-          {
-            "id": "absent",
-            "label": "Return false if any required child edge is missing"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "spot_the_fault",
-        "faulty_ids": [
-          "missing"
-        ]
+        "scaffold_level": 1
       }
     },
     {
-      "id": "dsa6-trie-prefix-order-020",
-      "content_version": "dsa-content-2026-09-26-v6",
+      "id": "dsa6-autocomplete-020",
+      "content_version": "dsa-content-2026-09-26-v8",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.3",
-      "assessment_mode": "procedural_recall",
-      "interaction_type": "ordering",
-      "difficulty_prior": 0.55,
-      "prompt": "A CLI autocomplete service receives prefix `kub`. Order the trie steps from prefix walk to emitting complete matching commands.",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.58,
+      "prompt": "Implement `autocomplete(words, prefix)`. Build a trie, walk to the prefix node, then return every stored word beginning with `prefix` in lexicographic order.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "autocomplete",
+        "starter_code": "class TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.terminal = False\n\n\ndef build_trie(words):\n    root = TrieNode()\n    for word in words:\n        node = root\n        for ch in word:\n            if ch not in node.children:\n                node.children[ch] = TrieNode()\n            node = node.children[ch]\n        node.terminal = True\n    return root\n\ndef autocomplete(words, prefix):\n    root = build_trie(words)\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                "dog",
+                "door",
+                "dot",
+                "cat"
+              ],
+              "do"
+            ],
+            "expected": [
+              "dog",
+              "door",
+              "dot"
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "app",
+                "apple",
+                "ape"
+              ],
+              "app"
+            ],
+            "expected": [
+              "app",
+              "apple"
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "b",
+                "a",
+                "aa"
+              ],
+              ""
+            ],
+            "expected": [
+              "a",
+              "aa",
+              "b"
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "cat"
+              ],
+              "x"
+            ],
+            "expected": []
+          }
+        ]
+      },
       "concepts": [
         {
           "concept_id": "dsa.trie.prefix_query",
           "weight": 0.65
         },
         {
+          "concept_id": "dsa.trie.terminal_marker",
+          "weight": 0.2
+        },
+        {
           "concept_id": "dsa.trie.prefix_path",
-          "weight": 0.35
+          "weight": 0.15
         }
       ],
-      "explanation": "First walk the prefix. If the path exists, use that node as the frontier and enumerate terminal descendants while carrying the accumulated suffix.",
+      "explanation": "First walk only the prefix. Then DFS from that node; a terminal node emits the accumulated characters as one complete word.",
       "blueprint_skill_ids": [
-        "6.3.01",
         "6.3.03"
       ],
       "difficulty_label": "medium",
       "hints": [
-        "Do not search unrelated branches before locating the prefix node."
+        "Sort child characters during DFS for lexicographic output.",
+        "If the prefix path is missing, return an empty list."
       ],
       "error_codes": [
         {
-          "code": "ordering_invalid_sequence",
-          "description": "The trie prefix-query steps are out of order.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.trie.prefix_query"
-            ],
-            "node_id": "domain-6-trie-prefix-query",
-            "preferred_stage": "construct",
-            "preferred_family_id": "dsa.trie.prefix_index",
-            "min_scaffold_level": 5
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
         {
-          "title": "Princeton Algorithms — Tries",
-          "url": "https://algs4.cs.princeton.edu/52trie/"
-        },
-        {
-          "title": "Princeton Algorithms — TrieSET",
-          "url": "https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/TrieSET.html"
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
         }
       ],
       "pedagogy": {
         "stage": "construct",
-        "scaffold_level": 4,
-        "family_id": "dsa.trie.prefix_index",
-        "transfer_group_id": "prefix_frontier",
-        "surface_context": "autocomplete_process",
-        "challenge_group_id": "d6-trie-01"
-      },
-      "interaction": {
-        "type": "ordering",
-        "items": [
-          {
-            "id": "walk",
-            "label": "Walk the prefix characters from the root"
-          },
-          {
-            "id": "missing",
-            "label": "If the prefix path is missing, return no suggestions"
-          },
-          {
-            "id": "frontier",
-            "label": "Treat the reached prefix node as the search frontier"
-          },
-          {
-            "id": "desc",
-            "label": "Traverse descendants and emit terminal keys"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "ordering",
-        "ordered_ids": [
-          "walk",
-          "missing",
-          "frontier",
-          "desc"
-        ]
+        "scaffold_level": 1
       }
     },
     {
-      "id": "dsa6-trie-hash-classify-021",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.3",
-      "assessment_mode": "relationship_recall",
-      "interaction_type": "classification",
-      "difficulty_prior": 0.58,
-      "prompt": "A developer tool stores both opaque session IDs and command names. Match exact-key workloads versus prefix workloads to the structure that directly supports the query.",
-      "concepts": [
-        {
-          "concept_id": "dsa.trie.prefix_path",
-          "weight": 0.5
-        },
-        {
-          "concept_id": "dsa.trie.prefix_query",
-          "weight": 0.3
-        },
-        {
-          "concept_id": "dsa.trie.terminal_marker",
-          "weight": 0.2
-        }
-      ],
-      "explanation": "Hash state is natural for exact membership; tries are natural when the operation depends on character prefixes or longest-prefix behavior.",
-      "blueprint_skill_ids": [
-        "6.3.01",
-        "6.3.03"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Ask whether the query is exact equality or shared-prefix structure."
-      ],
-      "error_codes": [
-        {
-          "code": "classification_misplaced",
-          "description": "At least one string-query shape was matched to the wrong index family.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.trie.prefix_path",
-              "dsa.trie.prefix_query"
-            ],
-            "node_id": "domain-6-trie-path",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.trie.pattern_discrimination",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "classification_incomplete",
-          "description": "At least one string-query shape was not classified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.trie.prefix_path",
-              "dsa.trie.prefix_query"
-            ],
-            "node_id": "domain-6-trie-path",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.trie.pattern_discrimination",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "Princeton Algorithms — Tries",
-          "url": "https://algs4.cs.princeton.edu/52trie/"
-        },
-        {
-          "title": "Princeton Algorithms — TrieSET",
-          "url": "https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/TrieSET.html"
-        }
-      ],
-      "pedagogy": {
-        "stage": "differentiate",
-        "scaffold_level": 2,
-        "family_id": "dsa.trie.pattern_discrimination",
-        "transfer_group_id": "exact_vs_prefix_lookup",
-        "surface_context": "string_index_requirements"
-      },
-      "interaction": {
-        "type": "classification",
-        "items": [
-          {
-            "id": "exact",
-            "label": "Does this exact opaque token exist?"
-          },
-          {
-            "id": "autocomplete",
-            "label": "List commands beginning with `kub`"
-          },
-          {
-            "id": "longest",
-            "label": "Find the longest stored prefix matching the beginning of a query"
-          },
-          {
-            "id": "exact2",
-            "label": "Map exact session ID to a payload"
-          }
-        ],
-        "categories": [
-          {
-            "id": "hash",
-            "label": "Hash set/map is the direct fit"
-          },
-          {
-            "id": "trie",
-            "label": "Trie/prefix index is the direct fit"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "classification",
-        "placements": {
-          "exact": "hash",
-          "autocomplete": "trie",
-          "longest": "trie",
-          "exact2": "hash"
-        }
-      }
-    },
-    {
-      "id": "dsa6-trie-evidence-022",
-      "content_version": "dsa-content-2026-09-26-v6",
+      "id": "dsa6-longest-prefix-021",
+      "content_version": "dsa-content-2026-09-26-v8",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.3",
       "assessment_mode": "application",
-      "interaction_type": "evidence_selection",
-      "difficulty_prior": 0.61,
-      "prompt": "A CLI has tens of thousands of commands with heavily shared prefixes and frequent autocomplete requests. Which properties specifically support using a trie-style index?",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.62,
+      "prompt": "Implement `longest_stored_prefix(words, query)`. Return the longest COMPLETE stored word that is a prefix of `query`, or `\"\"` if none exists.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "longest_stored_prefix",
+        "starter_code": "class TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.terminal = False\n\n\ndef build_trie(words):\n    root = TrieNode()\n    for word in words:\n        node = root\n        for ch in word:\n            if ch not in node.children:\n                node.children[ch] = TrieNode()\n            node = node.children[ch]\n        node.terminal = True\n    return root\n\ndef longest_stored_prefix(words, query):\n    root = build_trie(words)\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                "a",
+                "app",
+                "apple",
+                "bat"
+              ],
+              "applepie"
+            ],
+            "expected": "apple"
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "a",
+                "app",
+                "apple"
+              ],
+              "application"
+            ],
+            "expected": "app"
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "car",
+                "cat"
+              ],
+              "dog"
+            ],
+            "expected": ""
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                ""
+              ],
+              "anything"
+            ],
+            "expected": ""
+          }
+        ]
+      },
       "concepts": [
         {
-          "concept_id": "dsa.trie.prefix_path",
-          "weight": 0.6
+          "concept_id": "dsa.trie.prefix_query",
+          "weight": 0.65
         },
         {
-          "concept_id": "dsa.trie.prefix_query",
-          "weight": 0.4
+          "concept_id": "dsa.trie.terminal_marker",
+          "weight": 0.35
         }
       ],
-      "explanation": "Tries exploit shared character prefixes and support operations such as keys-with-prefix or longest-prefix-style queries. They are not automatically the smallest-memory structure for every alphabet/workload.",
+      "explanation": "Walk the query from the trie root and remember the deepest position whose node is terminal. Stop when the next character edge is missing.",
       "blueprint_skill_ids": [
-        "6.3.01",
+        "6.3.02",
         "6.3.03"
       ],
       "difficulty_label": "medium",
       "hints": [
-        "Choose properties specifically related to prefixes."
+        "A traversed path is not automatically a stored key.",
+        "Update the best answer only at terminal nodes."
       ],
       "error_codes": [
         {
-          "code": "evidence_missing_relevant",
-          "description": "A prefix-index workload property was missed.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.trie.prefix_path",
-              "dsa.trie.prefix_query"
-            ],
-            "node_id": "domain-6-trie-path",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.trie.prefix_index",
-            "min_scaffold_level": 2
-          }
-        },
-        {
-          "code": "evidence_selected_irrelevant",
-          "description": "A property not guaranteed by or relevant to a trie was selected.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.trie.prefix_path"
-            ],
-            "node_id": "domain-6-trie-path",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.trie.pattern_discrimination",
-            "min_scaffold_level": 2
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
         {
-          "title": "Princeton Algorithms — Tries",
-          "url": "https://algs4.cs.princeton.edu/52trie/"
-        },
-        {
-          "title": "Princeton Algorithms — TrieSET",
-          "url": "https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/TrieSET.html"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 1,
-        "family_id": "dsa.trie.prefix_index",
-        "transfer_group_id": "prefix_frontier",
-        "surface_context": "command_index_design"
-      },
-      "instruction": "Select all supporting properties.",
-      "interaction": {
-        "type": "evidence_selection",
-        "evidence": [
-          {
-            "id": "shared",
-            "label": "Many stored commands share prefixes"
-          },
-          {
-            "id": "queries",
-            "label": "The product frequently asks for prefix completions"
-          },
-          {
-            "id": "smallest",
-            "label": "A trie is guaranteed to use less memory than every hash-table representation"
-          },
-          {
-            "id": "priority",
-            "label": "The next command is chosen by numeric priority"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "evidence_selection",
-        "relevant_ids": [
-          "shared",
-          "queries"
-        ]
-      }
-    },
-    {
-      "id": "dsa6-trie-prefix-transfer-023",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-6",
-      "task_id": "6.3",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.69,
-      "prompt": "A routing table repeatedly asks for the LONGEST stored prefix matching the beginning of an address-like key. Which structural idea best matches the query?",
-      "concepts": [
-        {
-          "concept_id": "dsa.trie.prefix_query",
-          "weight": 0.8
-        },
-        {
-          "concept_id": "dsa.trie.terminal_marker",
-          "weight": 0.2
-        }
-      ],
-      "explanation": "Walk the query along a prefix index while remembering the deepest terminal/value-bearing node encountered. That node represents the longest stored prefix that matches the query start.",
-      "blueprint_skill_ids": [
-        "6.3.03"
-      ],
-      "difficulty_label": "hard",
-      "hints": [],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected approach does not directly model longest stored prefix matching.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.trie.prefix_query"
-            ],
-            "node_id": "domain-6-trie-prefix-query",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.trie.prefix_index",
-            "min_scaffold_level": 2
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "Princeton Algorithms — Tries",
-          "url": "https://algs4.cs.princeton.edu/52trie/"
-        },
-        {
-          "title": "Princeton Algorithms — TrieSET",
-          "url": "https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/TrieSET.html"
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
         }
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 0,
-        "family_id": "dsa.trie.prefix_index",
-        "transfer_group_id": "prefix_frontier",
-        "surface_context": "routing_prefix_match",
-        "challenge_group_id": "d6-trie-01"
-      },
-      "choice_feedback": {
-        "trie": "Correct: path traversal plus terminal markers naturally tracks longest stored prefix.",
-        "hash": "Exact hash lookup does not directly find the longest matching prefix without probing candidate prefix lengths separately.",
-        "queue": "FIFO order does not encode prefix structure.",
-        "heap": "Priority does not represent character-prefix matching."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "trie",
-            "label": "Walk a trie/prefix index and remember the deepest terminal match"
-          },
-          {
-            "id": "hash",
-            "label": "Use one exact hash lookup on the entire query only"
-          },
-          {
-            "id": "queue",
-            "label": "Put all routes in arrival-order queue"
-          },
-          {
-            "id": "heap",
-            "label": "Put route strings in a min-heap"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "trie"
+        "scaffold_level": 1
       }
     },
     {
-      "id": "dsa6-trie-terminal-transfer-024",
-      "content_version": "dsa-content-2026-09-26-v6",
+      "id": "dsa6-prefix-counts-022",
+      "content_version": "dsa-content-2026-09-26-v8",
       "certification_version": "dsa-v1",
       "domain_id": "domain-6",
       "task_id": "6.3",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.71,
-      "prompt": "A command trie stores `deploy-prod` and `deploy`, and the user types exactly `deploy`. What information lets the system distinguish 'deploy is a complete command' from 'deploy is only a prefix of deploy-prod'?",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.64,
+      "prompt": "Implement `count_prefix_queries(words, prefixes)`. Build ONE trie from `words`, storing enough state at each node to answer how many stored words begin with each prefix. Return counts in the same order as `prefixes`.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "count_prefix_queries",
+        "starter_code": "class TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.prefix_count = 0\n\n\ndef count_prefix_queries(words, prefixes):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                "apple",
+                "app",
+                "ape",
+                "bat"
+              ],
+              [
+                "a",
+                "ap",
+                "app",
+                "b",
+                "x"
+              ]
+            ],
+            "expected": [
+              3,
+              3,
+              2,
+              1,
+              0
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "a",
+                "ab",
+                "abc"
+              ],
+              [
+                "",
+                "a",
+                "ab",
+                "abc",
+                "abcd"
+              ]
+            ],
+            "expected": [
+              3,
+              3,
+              2,
+              1,
+              0
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              [
+                "",
+                "a"
+              ]
+            ],
+            "expected": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
       "concepts": [
         {
-          "concept_id": "dsa.trie.terminal_marker",
-          "weight": 1.0
+          "concept_id": "dsa.trie.prefix_path",
+          "weight": 0.45
+        },
+        {
+          "concept_id": "dsa.trie.prefix_query",
+          "weight": 0.55
         }
       ],
-      "explanation": "The node reached after consuming `deploy` must carry terminal/value state indicating that a complete key ends there. Child existence only shows that longer keys continue from the same prefix.",
+      "explanation": "Increment a node's prefix count whenever an inserted word passes through that node. Then each query walks only its prefix and reads the stored count.",
       "blueprint_skill_ids": [
+        "6.3.01",
+        "6.3.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "The root can store the total word count for the empty prefix.",
+        "Do not scan all words separately for every query."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0
+      }
+    },
+    {
+      "id": "dsa6-shortest-root-replace-023",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.68,
+      "prompt": "Implement `replace_with_shortest_root(roots, words)`. For each word, if one or more stored roots are prefixes of it, replace the word with the SHORTEST such root. Otherwise keep the word. Return the transformed list.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "replace_with_shortest_root",
+        "starter_code": "class TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.terminal = False\n\n\ndef build_trie(words):\n    root = TrieNode()\n    for word in words:\n        node = root\n        for ch in word:\n            if ch not in node.children:\n                node.children[ch] = TrieNode()\n            node = node.children[ch]\n        node.terminal = True\n    return root\n\ndef replace_with_shortest_root(roots, words):\n    root = build_trie(roots)\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                "cat",
+                "bat",
+                "rat"
+              ],
+              [
+                "the",
+                "cattle",
+                "was",
+                "rattled",
+                "by",
+                "battery"
+              ]
+            ],
+            "expected": [
+              "the",
+              "cat",
+              "was",
+              "rat",
+              "by",
+              "bat"
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "a",
+                "aa"
+              ],
+              [
+                "aaa",
+                "b"
+              ]
+            ],
+            "expected": [
+              "a",
+              "b"
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              [
+                "hello"
+              ]
+            ],
+            "expected": [
+              "hello"
+            ]
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.trie.prefix_query",
+          "weight": 0.55
+        },
+        {
+          "concept_id": "dsa.trie.terminal_marker",
+          "weight": 0.45
+        }
+      ],
+      "explanation": "Walk each word character by character. The first terminal trie node encountered is the shortest stored root, so the search can stop immediately.",
+      "blueprint_skill_ids": [
+        "6.3.02",
+        "6.3.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "Check `terminal` after every character step.",
+        "If the path breaks before a terminal node, keep the original word."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0
+      }
+    },
+    {
+      "id": "dsa6-trie-insert-fill-024",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-6",
+      "task_id": "6.3",
+      "assessment_mode": "application",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.47,
+      "prompt": "Complete trie insertion. Each `TrieNode` has a `children` dictionary mapping one character to the next node and a `terminal` flag that is True only when a COMPLETE stored word ends there. Example: to insert `\"cat\"`, start at the root, follow/create the `c` child, then `a`, then `t`, and finally mark only the node after `t` as terminal. Shared prefixes must reuse existing child nodes instead of replacing them. Fill the child creation, path advance, and final terminal update.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "class TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.terminal = False\n\n\ndef insert(root, word):\n    node = root\n    for ch in word:\n        if ch not in node.children:\n            # Create exactly the missing edge for this character.\n            {{create_child}}\n        # Continue insertion from the child reached by this character.\n        node = {{advance}}\n\n    # The path now represents all characters in the complete word.\n    {{mark_terminal}}\n"
+        },
+        "slots": [
+          {
+            "id": "create_child",
+            "label": "create missing character node",
+            "placeholder": "statement",
+            "width_chars": 32
+          },
+          {
+            "id": "advance",
+            "label": "follow character edge",
+            "placeholder": "expression",
+            "width_chars": 24
+          },
+          {
+            "id": "mark_terminal",
+            "label": "mark complete word",
+            "placeholder": "statement",
+            "width_chars": 22
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "create_child": {
+            "accepted_answers": [
+              "node.children[ch] = TrieNode()",
+              "node.children[ch]=TrieNode()"
+            ]
+          },
+          "advance": {
+            "accepted_answers": [
+              "node.children[ch]"
+            ]
+          },
+          "mark_terminal": {
+            "accepted_answers": [
+              "node.terminal = True",
+              "node.terminal=True"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.trie.prefix_path",
+          "weight": 0.55
+        },
+        {
+          "concept_id": "dsa.trie.terminal_marker",
+          "weight": 0.45
+        }
+      ],
+      "explanation": "Each character follows or creates one trie edge. The terminal marker is set only after all characters of the key have been consumed.",
+      "blueprint_skill_ids": [
+        "6.3.01",
         "6.3.02"
       ],
-      "difficulty_label": "hard",
-      "hints": [],
+      "difficulty_label": "medium",
+      "hints": [
+        "Create a new TrieNode only when the current character edge does not already exist.",
+        "After processing all characters, mark the node you ended on as a complete key."
+      ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected information does not distinguish a complete key from a prefix-only node.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.trie.terminal_marker"
-            ],
-            "node_id": "domain-6-trie-terminal",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.trie.terminal_state",
-            "min_scaffold_level": 2
-          }
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more code blanks are incorrect."
         }
       ],
       "source_refs": [
         {
-          "title": "Princeton Algorithms — TrieSET",
-          "url": "https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/TrieSET.html"
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
         }
       ],
       "pedagogy": {
-        "stage": "transfer",
-        "scaffold_level": 0,
-        "family_id": "dsa.trie.terminal_state",
-        "transfer_group_id": "prefix_vs_complete_key",
-        "surface_context": "command_registry",
-        "challenge_group_id": "d6-trie-01"
-      },
-      "choice_feedback": {
-        "terminal": "Correct: a terminal marker/value distinguishes complete-key registration.",
-        "children": "Children show longer commands exist but do not prove the shorter key itself is registered.",
-        "depth": "Depth only equals consumed key length.",
-        "alpha": "Alphabet size does not determine whether this node ends a stored key."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "terminal",
-            "label": "Terminal/value marker on the `deploy` node"
-          },
-          {
-            "id": "children",
-            "label": "Whether `deploy` has child nodes"
-          },
-          {
-            "id": "depth",
-            "label": "The node depth alone"
-          },
-          {
-            "id": "alpha",
-            "label": "The alphabet size used by the trie"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "terminal"
+        "stage": "construct",
+        "scaffold_level": 3
       }
     }
   ]

@@ -4,14 +4,14 @@
     "vendor": "Shiden Labs",
     "name": "Data Structures & Algorithms",
     "exam_code": "DSA-PATTERNS",
-    "official_source_url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/",
+    "official_source_url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/",
     "last_reviewed": "2026-09-26"
   },
   "version": {
     "id": "dsa-v1",
     "exam_code": "DSA-PATTERNS",
     "effective_date": "2026-09-26",
-    "content_version": "dsa-content-2026-09-26-v6",
+    "content_version": "dsa-content-2026-09-26-v8",
     "domains": [
       {
         "id": "domain-1",
@@ -46,42 +46,42 @@
             "id": "5.1",
             "name": "Search ordered data with explicit boundaries",
             "question_ids": [
-              "dsa5-exact-search-001",
-              "dsa5-exact-trace-002",
-              "dsa5-progress-fault-003",
-              "dsa5-boundary-choice-004",
-              "dsa5-boundary-evidence-005",
-              "dsa5-boundary-classify-006",
-              "dsa5-boundary-reconstruct-007",
-              "dsa5-bisect-transfer-008"
+              "dsa5-binary-search-001",
+              "dsa5-binary-progress-repair-002",
+              "dsa5-lower-bound-003",
+              "dsa5-upper-bound-004",
+              "dsa5-first-last-range-005",
+              "dsa5-search-rotated-006",
+              "dsa5-insert-position-007",
+              "dsa5-boundary-fill-008"
             ]
           },
           {
             "id": "5.2",
             "name": "Search monotonic boundaries and answer spaces",
             "question_ids": [
-              "dsa5-answer-space-choice-009",
-              "dsa5-monotonic-evidence-010",
-              "dsa5-nonmonotonic-fault-011",
-              "dsa5-firsttrue-vs-lastfalse-012",
-              "dsa5-answer-trace-013",
-              "dsa5-answer-reconstruct-014",
-              "dsa5-worker-transfer-015",
-              "dsa5-answer-space-nonexample-016"
+              "dsa5-integer-sqrt-009",
+              "dsa5-min-eating-speed-010",
+              "dsa5-ship-capacity-011",
+              "dsa5-smallest-divisor-012",
+              "dsa5-split-largest-sum-013",
+              "dsa5-answer-space-repair-014",
+              "dsa5-min-days-bouquets-015",
+              "dsa5-answer-boundary-fill-016"
             ]
           },
           {
             "id": "5.3",
             "name": "Use sorting and ordered scans deliberately",
             "question_ids": [
-              "dsa5-sort-preprocess-017",
-              "dsa5-sort-contract-fault-018",
-              "dsa5-sort-key-classify-019",
-              "dsa5-stable-sort-020",
-              "dsa5-merge-order-021",
-              "dsa5-sort-vs-hash-022",
-              "dsa5-merge-evidence-023",
-              "dsa5-sort-transfer-024"
+              "dsa5-merge-sorted-017",
+              "dsa5-merge-sort-018",
+              "dsa5-stable-priority-019",
+              "dsa5-sort-records-repair-020",
+              "dsa5-min-abs-difference-021",
+              "dsa5-count-inversions-022",
+              "dsa5-intersect-sorted-023",
+              "dsa5-merge-fill-024"
             ]
           }
         ]
@@ -150,772 +150,21 @@
   ],
   "questions": [
     {
-      "id": "dsa5-exact-search-001",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.1",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.43,
-      "prompt": "A sorted array contains monotonically increasing sequence numbers. You need the index of sequence number 42017 or `-1` if absent. Which approach best uses the existing order?",
-      "concepts": [
-        {
-          "concept_id": "dsa.binary.exact",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Exact binary search compares the midpoint and discards the half proven unable to contain the target, giving logarithmic comparisons.",
-      "blueprint_skill_ids": [
-        "5.1.01"
-      ],
-      "difficulty_label": "easy",
-      "hints": [
-        "The data is already sorted, and the query asks for one exact key."
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected approach does not best exploit the existing sorted order for one exact lookup.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.exact"
-            ],
-            "node_id": "domain-5-binary-exact",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.binary.exact",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        },
-        {
-          "title": "Python documentation — bisect",
-          "url": "https://docs.python.org/3/library/bisect.html"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 2,
-        "family_id": "dsa.binary.exact",
-        "transfer_group_id": "ordered_exact_lookup",
-        "surface_context": "sequence_number_lookup",
-        "challenge_group_id": "d5-binary-01"
-      },
-      "choice_feedback": {
-        "binary": "Correct: sorted order justifies halving the candidate interval.",
-        "linear": "Linear scan works but ignores the ordering information.",
-        "sort": "The data is already sorted; sorting again adds unnecessary work.",
-        "hash": "A hash map could help repeated exact lookups if built ahead of time, but for this one lookup the sorted structure already supports logarithmic search without extra O(n) state."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "binary",
-            "label": "Binary search the sorted sequence numbers"
-          },
-          {
-            "id": "linear",
-            "label": "Scan from index 0 until the target appears"
-          },
-          {
-            "id": "sort",
-            "label": "Sort the already-sorted array again, then scan"
-          },
-          {
-            "id": "hash",
-            "label": "Build a new hash map of every value to index before this one lookup"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "binary"
-      }
-    },
-    {
-      "id": "dsa5-exact-trace-002",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.1",
-      "assessment_mode": "procedural_recall",
-      "interaction_type": "ordering",
-      "difficulty_prior": 0.48,
-      "prompt": "A sorted sequence-number index contains `[2,5,8,12,19]`. Order the inclusive binary-search states while looking up sequence 12.",
-      "concepts": [
-        {
-          "concept_id": "dsa.binary.exact",
-          "weight": 0.7
-        },
-        {
-          "concept_id": "dsa.binary.progress",
-          "weight": 0.3
-        }
-      ],
-      "explanation": "Midpoint 2 has value 8, so the target must be to the right. The candidate interval becomes [3,4], and midpoint 3 matches 12.",
-      "blueprint_skill_ids": [
-        "5.1.01"
-      ],
-      "difficulty_label": "easy",
-      "hints": [
-        "Start with [0,4]. The first midpoint is index 2."
-      ],
-      "error_codes": [
-        {
-          "code": "ordering_invalid_sequence",
-          "description": "The binary-search trace is out of order.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.exact",
-              "dsa.binary.progress"
-            ],
-            "node_id": "domain-5-binary-exact",
-            "preferred_stage": "trace",
-            "preferred_family_id": "dsa.binary.exact",
-            "min_scaffold_level": 4
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "trace",
-        "scaffold_level": 3,
-        "family_id": "dsa.binary.exact",
-        "transfer_group_id": "ordered_exact_lookup",
-        "surface_context": "binary_trace",
-        "challenge_group_id": "d5-binary-01"
-      },
-      "interaction": {
-        "type": "ordering",
-        "items": [
-          {
-            "id": "start",
-            "label": "`left=0, right=4`"
-          },
-          {
-            "id": "mid2",
-            "label": "`mid=2`, value 8 is too small"
-          },
-          {
-            "id": "move",
-            "label": "`left=3, right=4`"
-          },
-          {
-            "id": "mid3",
-            "label": "`mid=3`, value 12 matches"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "ordering",
-        "ordered_ids": [
-          "start",
-          "mid2",
-          "move",
-          "mid3"
-        ]
-      }
-    },
-    {
-      "id": "dsa5-progress-fault-003",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.1",
-      "assessment_mode": "application",
-      "interaction_type": "spot_the_fault",
-      "difficulty_prior": 0.56,
-      "prompt": "This inclusive binary search can repeat the same midpoint forever. Flag the update that fails to guarantee progress.\n\n```python\ndef contains(values, target):\n    left, right = 0, len(values) - 1\n\n    while left <= right:\n        mid = (left + right) // 2\n\n        if values[mid] < target:\n            left = mid\n        elif values[mid] > target:\n            right = mid - 1\n        else:\n            return True\n\n    return False\n```",
-      "concepts": [
-        {
-          "concept_id": "dsa.binary.progress",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "When `mid == left`, `left = mid` does not shrink the interval. Use `left = mid + 1`.",
-      "blueprint_skill_ids": [
-        "5.1.02"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Every unsuccessful comparison must remove at least one candidate."
-      ],
-      "error_codes": [
-        {
-          "code": "spot_the_fault_incorrect",
-          "description": "The selected line is not the one that breaks the algorithm."
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        },
-        {
-          "title": "Python documentation — bisect",
-          "url": "https://docs.python.org/3/library/bisect.html"
-        }
-      ],
-      "pedagogy": {
-        "stage": "diagnose",
-        "scaffold_level": 2,
-        "family_id": "dsa.binary.boundary_invariant",
-        "transfer_group_id": "binary_progress",
-        "surface_context": "inclusive_boundary_bug",
-        "challenge_group_id": "d5-binary-01"
-      },
-      "interaction": {
-        "type": "spot_the_fault",
-        "elements": [
-          {
-            "id": "left",
-            "label": "`left = mid`"
-          },
-          {
-            "id": "right",
-            "label": "`right = mid - 1`"
-          },
-          {
-            "id": "yes",
-            "label": "`return True`"
-          },
-          {
-            "id": "no",
-            "label": "`return False`"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "spot_the_fault",
-        "faulty_ids": [
-          "left"
-        ]
-      },
-      "choice_feedback": {}
-    },
-    {
-      "id": "dsa5-boundary-choice-004",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.1",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.55,
-      "prompt": "A sorted timestamp array may not contain the requested timestamp exactly. You need the FIRST index whose timestamp is `>= requested`. Which search goal matches the contract?",
-      "concepts": [
-        {
-          "concept_id": "dsa.binary.boundary",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "This is a lower-bound / first-true search: find the earliest position where `timestamp >= requested` becomes true.",
-      "blueprint_skill_ids": [
-        "5.1.03"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "The answer can be an insertion point even without an exact match."
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected search target does not match the first-at-or-after boundary contract.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.boundary"
-            ],
-            "node_id": "domain-5-binary-boundary",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.binary.first_true",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "Python documentation — bisect",
-          "url": "https://docs.python.org/3/library/bisect.html"
-        }
-      ],
-      "pedagogy": {
-        "stage": "recognize",
-        "scaffold_level": 2,
-        "family_id": "dsa.binary.first_true",
-        "transfer_group_id": "first_satisfying_boundary",
-        "surface_context": "log_seek",
-        "challenge_group_id": "d5-binary-01"
-      },
-      "choice_feedback": {
-        "first": "Correct: the requirement is an earliest satisfying boundary.",
-        "any": "Any matching timestamp is insufficient when duplicates exist or no exact match exists.",
-        "last": "The contract asks for the first timestamp at/after the request, not the last.",
-        "linear": "A linear scan can work but does not use the sorted structure efficiently."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "first",
-            "label": "Find the first index where `timestamps[i] >= requested`"
-          },
-          {
-            "id": "any",
-            "label": "Find any index where `timestamps[i] == requested`"
-          },
-          {
-            "id": "last",
-            "label": "Find the last index where `timestamps[i] <= requested`"
-          },
-          {
-            "id": "linear",
-            "label": "Ignore the order and scan every timestamp"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "first"
-      }
-    },
-    {
-      "id": "dsa5-boundary-evidence-005",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.1",
-      "assessment_mode": "application",
-      "interaction_type": "evidence_selection",
-      "difficulty_prior": 0.6,
-      "prompt": "In a sorted release list, compatibility is `False` for older releases and `True` from some release onward. Why can binary search find the FIRST compatible release?",
-      "concepts": [
-        {
-          "concept_id": "dsa.binary.boundary",
-          "weight": 0.7
-        },
-        {
-          "concept_id": "dsa.binary.progress",
-          "weight": 0.3
-        }
-      ],
-      "explanation": "The predicate is monotonic across ordered releases. A true midpoint is a candidate but there may be an earlier true release, while a false midpoint proves every earlier release is false.",
-      "blueprint_skill_ids": [
-        "5.1.03"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "The important property is one false→true transition."
-      ],
-      "error_codes": [
-        {
-          "code": "evidence_missing_relevant",
-          "description": "Part of the first-true justification was missed.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.boundary"
-            ],
-            "node_id": "domain-5-binary-boundary",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.binary.first_true",
-            "min_scaffold_level": 2
-          }
-        },
-        {
-          "code": "evidence_selected_irrelevant",
-          "description": "A non-required property was selected.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.boundary"
-            ],
-            "node_id": "domain-5-binary-boundary",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.binary.first_true",
-            "min_scaffold_level": 2
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 1,
-        "family_id": "dsa.binary.first_true",
-        "transfer_group_id": "first_satisfying_boundary",
-        "surface_context": "release_compatibility"
-      },
-      "instruction": "Select all statements that justify the search.",
-      "interaction": {
-        "type": "evidence_selection",
-        "evidence": [
-          {
-            "id": "mono",
-            "label": "Compatibility changes at most once from false to true across the ordered releases"
-          },
-          {
-            "id": "left",
-            "label": "When mid is true, an earlier true release may still exist"
-          },
-          {
-            "id": "random",
-            "label": "Compatibility can flip true/false arbitrarily"
-          },
-          {
-            "id": "unique",
-            "label": "Every release must have a unique feature set"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "evidence_selection",
-        "relevant_ids": [
-          "mono",
-          "left"
-        ]
-      }
-    },
-    {
-      "id": "dsa5-boundary-classify-006",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.1",
-      "assessment_mode": "relationship_recall",
-      "interaction_type": "classification",
-      "difficulty_prior": 0.58,
-      "prompt": "A release service and timestamp index need different ordered-search semantics. Classify each request as exact lookup or boundary lookup.",
-      "concepts": [
-        {
-          "concept_id": "dsa.binary.exact",
-          "weight": 0.34
-        },
-        {
-          "concept_id": "dsa.binary.boundary",
-          "weight": 0.66
-        }
-      ],
-      "explanation": "Exact search finds a matching key. Boundary search finds an insertion/transition position such as first >= x or last <= x.",
-      "blueprint_skill_ids": [
-        "5.1.01",
-        "5.1.03"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Ask whether an exact match is required or whether a boundary/insertion position is the answer."
-      ],
-      "error_codes": [
-        {
-          "code": "classification_misplaced",
-          "description": "At least one search requirement was matched to the wrong search goal.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.exact",
-              "dsa.binary.boundary"
-            ],
-            "node_id": "domain-5-binary-boundary",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.binary.search_goal",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "classification_incomplete",
-          "description": "At least one search requirement was not classified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.exact",
-              "dsa.binary.boundary"
-            ],
-            "node_id": "domain-5-binary-boundary",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.binary.search_goal",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "Python documentation — bisect",
-          "url": "https://docs.python.org/3/library/bisect.html"
-        },
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "differentiate",
-        "scaffold_level": 2,
-        "family_id": "dsa.binary.search_goal",
-        "transfer_group_id": "exact_vs_boundary",
-        "surface_context": "ordered_lookup_goals"
-      },
-      "interaction": {
-        "type": "classification",
-        "items": [
-          {
-            "id": "version",
-            "label": "Find version exactly `2.4.7` or absent"
-          },
-          {
-            "id": "after",
-            "label": "First timestamp at or after 10:30"
-          },
-          {
-            "id": "firsttrue",
-            "label": "First release where compatibility becomes true"
-          },
-          {
-            "id": "userid",
-            "label": "Find exact sorted numeric user ID or absent"
-          }
-        ],
-        "categories": [
-          {
-            "id": "exact",
-            "label": "Exact-match binary search"
-          },
-          {
-            "id": "boundary",
-            "label": "Boundary binary search"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "classification",
-        "placements": {
-          "version": "exact",
-          "after": "boundary",
-          "firsttrue": "boundary",
-          "userid": "exact"
-        }
-      }
-    },
-    {
-      "id": "dsa5-boundary-reconstruct-007",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.1",
-      "assessment_mode": "structural_reconstruction",
-      "interaction_type": "reconstruction",
-      "difficulty_prior": 0.64,
-      "prompt": "A compatibility list is `False...False, True...True`, and the API must return the first compatible release. Rebuild the first-true search reasoning.",
-      "concepts": [
-        {
-          "concept_id": "dsa.binary.boundary",
-          "weight": 0.6
-        },
-        {
-          "concept_id": "dsa.binary.progress",
-          "weight": 0.4
-        }
-      ],
-      "explanation": "Define the false/true invariant, inspect mid, keep searching left when mid is true, discard mid and move right when mid is false, then return the first remaining true boundary.",
-      "blueprint_skill_ids": [
-        "5.1.02",
-        "5.1.03"
-      ],
-      "difficulty_label": "hard",
-      "hints": [
-        "A true midpoint is not necessarily the earliest true answer."
-      ],
-      "error_codes": [
-        {
-          "code": "reconstruction_unfilled_slot",
-          "description": "At least one boundary-search step was left empty.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.boundary"
-            ],
-            "node_id": "domain-5-binary-boundary",
-            "preferred_stage": "construct",
-            "preferred_family_id": "dsa.binary.first_true",
-            "min_scaffold_level": 5
-          }
-        },
-        {
-          "code": "reconstruction_wrong_position",
-          "description": "At least one boundary-search step was placed incorrectly.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.boundary"
-            ],
-            "node_id": "domain-5-binary-boundary",
-            "preferred_stage": "construct",
-            "preferred_family_id": "dsa.binary.first_true",
-            "min_scaffold_level": 5
-          }
-        },
-        {
-          "code": "reconstruction_wrong_component",
-          "description": "A step that stops too early or violates boundary search was selected.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.boundary"
-            ],
-            "node_id": "domain-5-binary-boundary",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.binary.first_true",
-            "min_scaffold_level": 4
-          }
-        },
-        {
-          "code": "reconstruction_missing_component",
-          "description": "A required boundary-search step was omitted.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.boundary"
-            ],
-            "node_id": "domain-5-binary-boundary",
-            "preferred_stage": "construct",
-            "preferred_family_id": "dsa.binary.first_true",
-            "min_scaffold_level": 5
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "construct",
-        "scaffold_level": 4,
-        "family_id": "dsa.binary.first_true",
-        "transfer_group_id": "first_satisfying_boundary",
-        "surface_context": "first_true_template",
-        "challenge_group_id": "d5-binary-01"
-      },
-      "interaction": {
-        "type": "reconstruction",
-        "layout": "linear",
-        "fixed_nodes": [],
-        "pieces": [
-          {
-            "id": "define",
-            "label": "Define ordered domain and monotonic predicate"
-          },
-          {
-            "id": "mid",
-            "label": "Evaluate the midpoint predicate"
-          },
-          {
-            "id": "trueleft",
-            "label": "If true, keep mid as a candidate and search left"
-          },
-          {
-            "id": "falseright",
-            "label": "If false, discard mid and search right"
-          },
-          {
-            "id": "return",
-            "label": "Return the first true boundary"
-          },
-          {
-            "id": "stopany",
-            "label": "Stop at the first true midpoint you happen to see"
-          }
-        ],
-        "slots": [
-          {
-            "id": "s1"
-          },
-          {
-            "id": "s2"
-          },
-          {
-            "id": "s3"
-          },
-          {
-            "id": "s4"
-          },
-          {
-            "id": "s5"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "reconstruction",
-        "placements": {
-          "s1": "define",
-          "s2": "mid",
-          "s3": "trueleft",
-          "s4": "falseright",
-          "s5": "return"
-        },
-        "edges": []
-      }
-    },
-    {
-      "id": "dsa5-bisect-transfer-008",
-      "content_version": "dsa-content-2026-09-26-v6",
+      "id": "dsa5-binary-search-001",
+      "content_version": "dsa-content-2026-09-26-v8",
       "certification_version": "dsa-v1",
       "domain_id": "domain-5",
       "task_id": "5.1",
       "assessment_mode": "application",
       "interaction_type": "python_code",
-      "difficulty_prior": 0.68,
-      "prompt": "Implement `lower_bound(values, target)`: return the first index whose value is `>= target`. Return `len(values)` if none exists.",
-      "concepts": [
-        {
-          "concept_id": "dsa.binary.boundary",
-          "weight": 0.75
-        },
-        {
-          "concept_id": "dsa.binary.progress",
-          "weight": 0.25
-        }
-      ],
-      "explanation": "If `values[mid] < target`, discard through mid. Otherwise keep mid as a possible first answer by moving right to mid.",
-      "blueprint_skill_ids": [
-        "5.1.03"
-      ],
-      "difficulty_label": "hard",
-      "hints": [
-        "A qualifying midpoint might be the first one, so do not discard it."
-      ],
-      "error_codes": [
-        {
-          "code": "python_tests_failed",
-          "description": "One or more behavioral tests did not pass."
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "Python documentation — bisect",
-          "url": "https://docs.python.org/3/library/bisect.html"
-        }
-      ],
-      "pedagogy": {
-        "stage": "transfer",
-        "scaffold_level": 1,
-        "family_id": "dsa.binary.first_true",
-        "transfer_group_id": "first_satisfying_boundary",
-        "surface_context": "cache_key_insertion",
-        "challenge_group_id": "d5-binary-01"
-      },
-      "choice_feedback": {},
+      "difficulty_prior": 0.33,
+      "prompt": "Implement `binary_search(values, target)`. `values` is sorted ascending. Return any index containing `target`, or `-1` if it is absent.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
       "interaction": {
         "type": "python_code",
         "language": "python",
-        "entrypoint": "lower_bound",
-        "starter_code": "def lower_bound(values, target):\n    left = 0\n    right = len(values)\n\n    while left < right:\n        # Preserve the first qualifying position inside [left, right).\n        pass\n\n    return left\n"
+        "entrypoint": "binary_search",
+        "starter_code": "def binary_search(values, target):\n    pass\n"
       },
       "canonical_answer": {
         "type": "python_code",
@@ -926,8 +175,128 @@
               [
                 1,
                 3,
+                5,
+                7,
+                9
+              ],
+              5
+            ],
+            "expected": 2
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
                 3,
-                7
+                5,
+                7,
+                9
+              ],
+              1
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                3,
+                5,
+                7,
+                9
+              ],
+              9
+            ],
+            "expected": 4
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                3,
+                5,
+                7,
+                9
+              ],
+              4
+            ],
+            "expected": -1
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              4
+            ],
+            "expected": -1
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.binary.exact",
+          "weight": 0.65
+        },
+        {
+          "concept_id": "dsa.binary.progress",
+          "weight": 0.35
+        }
+      ],
+      "explanation": "Compare the midpoint and discard the half that cannot contain the target. Every non-match update must shrink the candidate interval.",
+      "blueprint_skill_ids": [
+        "5.1.01"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Use an inclusive `[left, right]` interval.",
+        "Move past `mid` after a failed comparison."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa5-binary-progress-repair-002",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.44,
+      "prompt": "Repair `binary_search`. The current update can repeat the same midpoint forever when `mid == left`.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "binary_search",
+        "starter_code": "def binary_search(values, target):\n    left = 0\n    right = len(values) - 1\n\n    while left <= right:\n        mid = (left + right) // 2\n        if values[mid] == target:\n            return mid\n        if values[mid] < target:\n            left = mid\n        else:\n            right = mid - 1\n\n    return -1\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                3
               ],
               3
             ],
@@ -938,9 +307,20 @@
             "args": [
               [
                 1,
+                3
+              ],
+              2
+            ],
+            "expected": -1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
                 3,
-                3,
-                7
+                4
               ],
               4
             ],
@@ -949,13 +329,106 @@
           {
             "type": "call",
             "args": [
+              [],
+              1
+            ],
+            "expected": -1
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.binary.progress",
+          "weight": 0.75
+        },
+        {
+          "concept_id": "dsa.binary.exact",
+          "weight": 0.25
+        }
+      ],
+      "explanation": "When `values[mid] < target`, index `mid` is proven impossible, so `left` must become `mid + 1` to preserve correctness and guarantee progress.",
+      "blueprint_skill_ids": [
+        "5.1.01",
+        "5.1.03"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Try a two-element interval.",
+        "A rejected midpoint must leave the candidate range."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa5-lower-bound-003",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.49,
+      "prompt": "Implement `lower_bound(values, target)`. Return the first index whose value is `>= target`. Return `len(values)` if no such index exists.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "lower_bound",
+        "starter_code": "def lower_bound(values, target):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
               [
-                1,
-                3,
-                3,
-                7
+                10,
+                20,
+                20,
+                30
               ],
-              0
+              20
+            ],
+            "expected": 1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                10,
+                20,
+                20,
+                30
+              ],
+              25
+            ],
+            "expected": 3
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                10,
+                20,
+                20,
+                30
+              ],
+              5
             ],
             "expected": 0
           },
@@ -963,12 +436,12 @@
             "type": "call",
             "args": [
               [
-                1,
-                3,
-                3,
-                7
+                10,
+                20,
+                20,
+                30
               ],
-              9
+              40
             ],
             "expected": 4
           },
@@ -982,1500 +455,25 @@
           }
         ]
       },
-      "instruction": "Write the function, run the tests, then submit."
-    },
-    {
-      "id": "dsa5-answer-space-choice-009",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.2",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.52,
-      "prompt": "A simulator guarantees that once a worker count finishes on time, every larger count also finishes on time. You need the minimum passing count from 1..10,000. Which approach uses that guarantee most directly?",
-      "concepts": [
-        {
-          "concept_id": "dsa.binary.answer_space",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "The candidate answers are ordered worker counts and the predicate is monotonic false→true, so binary search can find the first true worker count.",
-      "blueprint_skill_ids": [
-        "5.2.01"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "You are searching answer values, not positions in an existing sorted array."
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected strategy does not exploit monotonic feasibility over the ordered answer space.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.answer_space"
-            ],
-            "node_id": "domain-5-answer-monotonic",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.binary.answer_space",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "recognize",
-        "scaffold_level": 2,
-        "family_id": "dsa.binary.answer_space",
-        "transfer_group_id": "minimum_feasible",
-        "surface_context": "worker_count_sla",
-        "challenge_group_id": "d5-answer-01"
-      },
-      "choice_feedback": {
-        "binary": "Correct: monotonic feasibility makes the first passing count a searchable boundary.",
-        "linear": "Linear trial works but ignores the monotonic answer structure.",
-        "sort": "There is no unsorted input list to sort.",
-        "random": "Random probing does not guarantee the minimum passing value."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "binary",
-            "label": "Binary-search worker counts for the first passing result"
-          },
-          {
-            "id": "linear",
-            "label": "Test worker counts 1,2,3,... until the first pass"
-          },
-          {
-            "id": "sort",
-            "label": "Precompute every simulator result, then sort the `(count,result)` pairs"
-          },
-          {
-            "id": "random",
-            "label": "Probe counts adaptively but without preserving a known true/false boundary"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "binary"
-      }
-    },
-    {
-      "id": "dsa5-monotonic-evidence-010",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.2",
-      "assessment_mode": "application",
-      "interaction_type": "evidence_selection",
-      "difficulty_prior": 0.6,
-      "prompt": "A storage estimator wants to binary-search the smallest capacity that passes `feasible(capacity)`. Which facts make that half-elimination logically safe?",
-      "concepts": [
-        {
-          "concept_id": "dsa.binary.answer_space",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "You need an ordered candidate domain and a monotonic feasibility predicate. The predicate may be expensive, but without monotonicity there is no proof that half the candidate capacities can be discarded.",
-      "blueprint_skill_ids": [
-        "5.2.01",
-        "5.2.02"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "What lets a midpoint result rule out an entire half of candidate answers?"
-      ],
-      "error_codes": [
-        {
-          "code": "evidence_missing_relevant",
-          "description": "A required answer-space property was missed.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.answer_space"
-            ],
-            "node_id": "domain-5-answer-predicate",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.binary.answer_space",
-            "min_scaffold_level": 2
-          }
-        },
-        {
-          "code": "evidence_selected_irrelevant",
-          "description": "A non-required implementation detail was selected.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.answer_space"
-            ],
-            "node_id": "domain-5-answer-predicate",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.binary.answer_space",
-            "min_scaffold_level": 2
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 1,
-        "family_id": "dsa.binary.answer_space",
-        "transfer_group_id": "minimum_feasible",
-        "surface_context": "capacity_planning"
-      },
-      "instruction": "Select all required facts.",
-      "interaction": {
-        "type": "evidence_selection",
-        "evidence": [
-          {
-            "id": "ordered",
-            "label": "Candidate capacity values have a meaningful order"
-          },
-          {
-            "id": "mono",
-            "label": "Feasibility changes monotonically across that order"
-          },
-          {
-            "id": "cheap",
-            "label": "The predicate must be O(1)"
-          },
-          {
-            "id": "sortedinput",
-            "label": "There must be a sorted input array containing every candidate capacity"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "evidence_selection",
-        "relevant_ids": [
-          "ordered",
-          "mono"
-        ]
-      }
-    },
-    {
-      "id": "dsa5-nonmonotonic-fault-011",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.2",
-      "assessment_mode": "application",
-      "interaction_type": "spot_the_fault",
-      "difficulty_prior": 0.67,
-      "prompt": "A team wants to binary-search a concurrency limit. Measurements show limits 4,5,6 meet the throughput target, 7 fails because of contention, and 8 meets it again. Flag the reasoning error.",
-      "concepts": [
-        {
-          "concept_id": "dsa.binary.answer_space",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "The observed predicate is not monotonic: true at 6, false at 7, true again at 8. Binary search cannot safely discard half the limits based on one midpoint result under that model.",
-      "blueprint_skill_ids": [
-        "5.2.02"
-      ],
-      "difficulty_label": "hard",
-      "hints": [
-        "Write the true/false sequence across increasing limits."
-      ],
-      "error_codes": [
-        {
-          "code": "fault_missed",
-          "description": "The broken monotonicity assumption was not identified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.answer_space"
-            ],
-            "node_id": "domain-5-answer-predicate",
-            "preferred_stage": "diagnose",
-            "preferred_family_id": "dsa.binary.answer_space",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "fault_false_positive",
-          "description": "A valid part of the search setup was incorrectly flagged.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.answer_space"
-            ],
-            "node_id": "domain-5-answer-predicate",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.binary.answer_space",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "diagnose",
-        "scaffold_level": 1,
-        "family_id": "dsa.binary.answer_space",
-        "transfer_group_id": "minimum_feasible",
-        "surface_context": "concurrency_contention",
-        "challenge_group_id": "d5-answer-01"
-      },
-      "interaction": {
-        "type": "spot_the_fault",
-        "elements": [
-          {
-            "id": "domain",
-            "label": "Candidate limits are ordered integers"
-          },
-          {
-            "id": "bad",
-            "label": "Assume the measured `meets_target(limit)` predicate is monotonic"
-          },
-          {
-            "id": "test",
-            "label": "Evaluate a candidate limit"
-          },
-          {
-            "id": "goal",
-            "label": "Seek a minimum acceptable limit"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "spot_the_fault",
-        "faulty_ids": [
-          "bad"
-        ]
-      }
-    },
-    {
-      "id": "dsa5-firsttrue-vs-lastfalse-012",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.2",
-      "assessment_mode": "relationship_recall",
-      "interaction_type": "classification",
-      "difficulty_prior": 0.58,
-      "prompt": "A monotonic predicate over integer x is `False...False, True...True`. Classify each product question by which side of the boundary it asks for.",
       "concepts": [
         {
           "concept_id": "dsa.binary.boundary",
-          "weight": 0.5
+          "weight": 0.75
         },
         {
-          "concept_id": "dsa.binary.answer_space",
-          "weight": 0.5
+          "concept_id": "dsa.binary.progress",
+          "weight": 0.25
         }
       ],
-      "explanation": "Minimum passing value is first true; maximum value that still fails is last false. They are adjacent but represent different contracts.",
+      "explanation": "Boundary search keeps the first possible answer instead of returning on equality. A half-open interval `[left, right)` is especially convenient.",
       "blueprint_skill_ids": [
-        "5.2.03"
+        "5.1.02",
+        "5.1.03"
       ],
       "difficulty_label": "medium",
       "hints": [
-        "Translate the wording into 'first true' or 'last false.'"
-      ],
-      "error_codes": [
-        {
-          "code": "classification_misplaced",
-          "description": "At least one boundary-side requirement was classified incorrectly.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.boundary",
-              "dsa.binary.answer_space"
-            ],
-            "node_id": "domain-5-answer-boundaries",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.binary.answer_boundary",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "classification_incomplete",
-          "description": "At least one boundary-side requirement was not classified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.boundary",
-              "dsa.binary.answer_space"
-            ],
-            "node_id": "domain-5-answer-boundaries",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.binary.answer_boundary",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "differentiate",
-        "scaffold_level": 2,
-        "family_id": "dsa.binary.answer_boundary",
-        "transfer_group_id": "boundary_side_contract",
-        "surface_context": "feasibility_boundary"
-      },
-      "interaction": {
-        "type": "classification",
-        "items": [
-          {
-            "id": "minworkers",
-            "label": "Smallest worker count that meets the deadline"
-          },
-          {
-            "id": "maxfail",
-            "label": "Largest payload size that still violates the limit"
-          },
-          {
-            "id": "mincapacity",
-            "label": "Minimum capacity that can process the batch"
-          },
-          {
-            "id": "lastbadver",
-            "label": "Latest release that is still incompatible"
-          }
-        ],
-        "categories": [
-          {
-            "id": "firsttrue",
-            "label": "First true"
-          },
-          {
-            "id": "lastfalse",
-            "label": "Last false"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "classification",
-        "placements": {
-          "minworkers": "firsttrue",
-          "maxfail": "lastfalse",
-          "mincapacity": "firsttrue",
-          "lastbadver": "lastfalse"
-        }
-      }
-    },
-    {
-      "id": "dsa5-answer-trace-013",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.2",
-      "assessment_mode": "procedural_recall",
-      "interaction_type": "ordering",
-      "difficulty_prior": 0.6,
-      "prompt": "A monotonic predicate over capacities 1..8 is false for 1..5 and true for 6..8. Order these first-true search observations.",
-      "concepts": [
-        {
-          "concept_id": "dsa.binary.answer_space",
-          "weight": 0.6
-        },
-        {
-          "concept_id": "dsa.binary.boundary",
-          "weight": 0.4
-        }
-      ],
-      "explanation": "The search narrows toward the transition and ultimately returns 6, the smallest true capacity.",
-      "blueprint_skill_ids": [
-        "5.2.01",
-        "5.2.03"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "The final answer is the first capacity in the true region."
-      ],
-      "error_codes": [
-        {
-          "code": "ordering_invalid_sequence",
-          "description": "The first-true answer-space trace is out of order.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.answer_space"
-            ],
-            "node_id": "domain-5-answer-monotonic",
-            "preferred_stage": "trace",
-            "preferred_family_id": "dsa.binary.answer_space",
-            "min_scaffold_level": 4
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "trace",
-        "scaffold_level": 2,
-        "family_id": "dsa.binary.answer_space",
-        "transfer_group_id": "minimum_feasible",
-        "surface_context": "capacity_trace",
-        "challenge_group_id": "d5-answer-01"
-      },
-      "interaction": {
-        "type": "ordering",
-        "items": [
-          {
-            "id": "domain",
-            "label": "Candidate domain is capacities 1..8"
-          },
-          {
-            "id": "mid4",
-            "label": "Test 4 → false, so the answer is larger"
-          },
-          {
-            "id": "mid6",
-            "label": "Test 6 → true, so 6 is a candidate and earlier values may still work"
-          },
-          {
-            "id": "test5",
-            "label": "Test 5 → false"
-          },
-          {
-            "id": "return6",
-            "label": "Return 6 as the first true capacity"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "ordering",
-        "ordered_ids": [
-          "domain",
-          "mid4",
-          "mid6",
-          "test5",
-          "return6"
-        ]
-      }
-    },
-    {
-      "id": "dsa5-answer-reconstruct-014",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.2",
-      "assessment_mode": "structural_reconstruction",
-      "interaction_type": "reconstruction",
-      "difficulty_prior": 0.67,
-      "prompt": "A job simulator can test any worker count and the team wants the minimum feasible count. Reconstruct what must be established before using answer-space binary search.",
-      "concepts": [
-        {
-          "concept_id": "dsa.binary.answer_space",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Answer-space search needs more than a loop: define candidates, define feasibility, prove monotonicity, choose the requested boundary, then search it.",
-      "blueprint_skill_ids": [
-        "5.2.01",
-        "5.2.02",
-        "5.2.03"
-      ],
-      "difficulty_label": "hard",
-      "hints": [
-        "The proof of monotonicity must happen before relying on binary search."
-      ],
-      "error_codes": [
-        {
-          "code": "reconstruction_unfilled_slot",
-          "description": "At least one answer-space design step was left empty.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.answer_space"
-            ],
-            "node_id": "domain-5-answer-predicate",
-            "preferred_stage": "construct",
-            "preferred_family_id": "dsa.binary.answer_space",
-            "min_scaffold_level": 5
-          }
-        },
-        {
-          "code": "reconstruction_wrong_position",
-          "description": "At least one answer-space design step was placed incorrectly.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.answer_space"
-            ],
-            "node_id": "domain-5-answer-predicate",
-            "preferred_stage": "construct",
-            "preferred_family_id": "dsa.binary.answer_space",
-            "min_scaffold_level": 5
-          }
-        },
-        {
-          "code": "reconstruction_wrong_component",
-          "description": "A numeric-answer shortcut without monotonic proof was selected.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.answer_space"
-            ],
-            "node_id": "domain-5-answer-predicate",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.binary.answer_space",
-            "min_scaffold_level": 4
-          }
-        },
-        {
-          "code": "reconstruction_missing_component",
-          "description": "A required answer-space design step was omitted.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.answer_space"
-            ],
-            "node_id": "domain-5-answer-predicate",
-            "preferred_stage": "construct",
-            "preferred_family_id": "dsa.binary.answer_space",
-            "min_scaffold_level": 5
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "construct",
-        "scaffold_level": 4,
-        "family_id": "dsa.binary.answer_space",
-        "transfer_group_id": "minimum_feasible",
-        "surface_context": "answer_space_design",
-        "challenge_group_id": "d5-answer-01"
-      },
-      "interaction": {
-        "type": "reconstruction",
-        "layout": "linear",
-        "fixed_nodes": [],
-        "pieces": [
-          {
-            "id": "domain",
-            "label": "Define the ordered candidate answer domain"
-          },
-          {
-            "id": "predicate",
-            "label": "Define `feasible(x)` precisely"
-          },
-          {
-            "id": "proof",
-            "label": "Prove feasibility is monotonic"
-          },
-          {
-            "id": "side",
-            "label": "Decide whether the contract wants first true / last false / another boundary"
-          },
-          {
-            "id": "search",
-            "label": "Run the boundary binary search"
-          },
-          {
-            "id": "guess",
-            "label": "Use binary search because the answer is numeric"
-          }
-        ],
-        "slots": [
-          {
-            "id": "s1"
-          },
-          {
-            "id": "s2"
-          },
-          {
-            "id": "s3"
-          },
-          {
-            "id": "s4"
-          },
-          {
-            "id": "s5"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "reconstruction",
-        "placements": {
-          "s1": "domain",
-          "s2": "predicate",
-          "s3": "proof",
-          "s4": "side",
-          "s5": "search"
-        },
-        "edges": []
-      }
-    },
-    {
-      "id": "dsa5-worker-transfer-015",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.2",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.72,
-      "prompt": "A batch of fixed jobs must finish within 30 minutes. In the simplified model, adding workers never makes completion slower. You can test any worker count with a simulator. You need the CHEAPEST worker count that meets the deadline. What is the structural strategy?",
-      "concepts": [
-        {
-          "concept_id": "dsa.binary.answer_space",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Cost increases with worker count, and the feasibility predicate is monotonic under the stated model. Search for the first worker count whose simulation finishes by the deadline.",
-      "blueprint_skill_ids": [
-        "5.2.01",
-        "5.2.03"
-      ],
-      "difficulty_label": "hard",
-      "hints": [],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected approach does not find the minimum feasible worker count.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.answer_space"
-            ],
-            "node_id": "domain-5-answer-boundaries",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.binary.answer_space",
-            "min_scaffold_level": 2
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "transfer",
-        "scaffold_level": 0,
-        "family_id": "dsa.binary.answer_space",
-        "transfer_group_id": "minimum_feasible",
-        "surface_context": "batch_worker_sizing",
-        "challenge_group_id": "d5-answer-01"
-      },
-      "choice_feedback": {
-        "firsttrue": "Correct: the cheapest passing count is the first true boundary.",
-        "max": "The maximum passing count satisfies the SLA but not the cheapest-count requirement.",
-        "random": "Random search cannot guarantee the smallest passing count.",
-        "sortjobs": "Sorting jobs does not itself search the worker-count answer domain."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "firsttrue",
-            "label": "Binary-search worker count for the first `finishes_within_30m(count)` that is true"
-          },
-          {
-            "id": "max",
-            "label": "Return the largest worker count that passes"
-          },
-          {
-            "id": "random",
-            "label": "Sample random worker counts until one passes"
-          },
-          {
-            "id": "sortjobs",
-            "label": "Sort the jobs and return the median worker count"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "firsttrue"
-      }
-    },
-    {
-      "id": "dsa5-answer-space-nonexample-016",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.2",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.64,
-      "prompt": "Which scenario is NOT safe for binary search on the answer under the information given?",
-      "concepts": [
-        {
-          "concept_id": "dsa.binary.answer_space",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "If performance can improve, then worsen, then improve again as a numeric setting increases, the predicate can flip more than once. That violates the monotonicity needed for binary search.",
-      "blueprint_skill_ids": [
-        "5.2.02"
-      ],
-      "difficulty_label": "hard",
-      "hints": [
-        "Look for a predicate that may flip true/false multiple times."
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected scenario does not identify the non-monotonic case.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.binary.answer_space"
-            ],
-            "node_id": "domain-5-answer-predicate",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.binary.answer_space",
-            "min_scaffold_level": 2
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "differentiate",
-        "scaffold_level": 1,
-        "family_id": "dsa.binary.answer_space",
-        "transfer_group_id": "minimum_feasible",
-        "surface_context": "answer_space_discrimination"
-      },
-      "choice_feedback": {
-        "contention": "Correct: contention can make feasibility non-monotonic.",
-        "capacity": "The statement explicitly gives monotonicity.",
-        "workers": "The statement explicitly gives monotonicity.",
-        "version": "The statement explicitly gives one compatibility transition."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "contention",
-            "label": "Tune concurrency where throughput may rise, fall, and rise again as the limit increases"
-          },
-          {
-            "id": "capacity",
-            "label": "Find the smallest capacity where all larger capacities are also feasible"
-          },
-          {
-            "id": "workers",
-            "label": "Find the smallest worker count when adding workers never makes completion slower"
-          },
-          {
-            "id": "version",
-            "label": "Find the first compatible release when all later releases are also compatible"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "contention"
-      }
-    },
-    {
-      "id": "dsa5-sort-preprocess-017",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.3",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.5,
-      "prompt": "A batch may be reordered and must process every customer-ID group once. Which preprocessing makes all records for one customer contiguous so grouping becomes one scan?",
-      "concepts": [
-        {
-          "concept_id": "dsa.sort.preprocess",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Sorting by customer ID places equal IDs together, after which one linear scan can identify group boundaries.",
-      "blueprint_skill_ids": [
-        "5.3.01"
-      ],
-      "difficulty_label": "easy",
-      "hints": [
-        "You want equal keys to become adjacent."
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected preprocessing does not expose equal-key adjacency.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.sort.preprocess"
-            ],
-            "node_id": "domain-5-sort-preprocess",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.sort.preprocess",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
-        },
-        {
-          "title": "Princeton Algorithms — Sorting",
-          "url": "https://algs4.cs.princeton.edu/20sorting/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 2,
-        "family_id": "dsa.sort.preprocess",
-        "transfer_group_id": "sort_then_scan",
-        "surface_context": "customer_grouping",
-        "challenge_group_id": "d5-sort-01"
-      },
-      "choice_feedback": {
-        "sort": "Correct: sorting exposes equal-key adjacency.",
-        "reverse": "Reversing preserves arbitrary key distribution.",
-        "queue": "FIFO order does not group equal keys.",
-        "heap": "A heap exposes only one priority frontier, not full equal-key adjacency."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "sort",
-            "label": "Sort records by customer ID, then scan adjacent equal IDs"
-          },
-          {
-            "id": "reverse",
-            "label": "Build a hash grouping directly instead of sorting; valid if O(n) extra memory is acceptable"
-          },
-          {
-            "id": "queue",
-            "label": "Repeatedly scan the unsorted records to collect one customer at a time"
-          },
-          {
-            "id": "heap",
-            "label": "Use a heap keyed by customer ID, paying heap operations for every record"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "sort"
-      }
-    },
-    {
-      "id": "dsa5-sort-contract-fault-018",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.3",
-      "assessment_mode": "application",
-      "interaction_type": "spot_the_fault",
-      "difficulty_prior": 0.6,
-      "prompt": "The output must contain job IDs ordered by deadline. Flag the proposed sorting step that loses information required by the output.",
-      "concepts": [
-        {
-          "concept_id": "dsa.sort.key_contract",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Sorting detached deadline numbers discards the job IDs needed in the result. Sort records that retain both the key and identity.",
-      "blueprint_skill_ids": [
-        "5.3.02"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "The ordering field and the output identity are different pieces of information."
-      ],
-      "error_codes": [
-        {
-          "code": "fault_missed",
-          "description": "The metadata-destroying sort step was not identified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.sort.key_contract"
-            ],
-            "node_id": "domain-5-sort-key",
-            "preferred_stage": "diagnose",
-            "preferred_family_id": "dsa.sort.key_contract",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "fault_false_positive",
-          "description": "A valid metadata-preserving sort step was incorrectly flagged.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.sort.key_contract"
-            ],
-            "node_id": "domain-5-sort-key",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.sort.key_contract",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "Python documentation — Sorting HOW TO",
-          "url": "https://docs.python.org/3/howto/sorting.html"
-        },
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "diagnose",
-        "scaffold_level": 2,
-        "family_id": "dsa.sort.key_contract",
-        "transfer_group_id": "sort_preserve_metadata",
-        "surface_context": "deadline_jobs",
-        "challenge_group_id": "d5-sort-01"
-      },
-      "interaction": {
-        "type": "spot_the_fault",
-        "elements": [
-          {
-            "id": "records",
-            "label": "Keep `(deadline, job_id)` records"
-          },
-          {
-            "id": "bad",
-            "label": "Extract only deadlines, sort them, and discard the associated job IDs"
-          },
-          {
-            "id": "key",
-            "label": "Sort records by deadline"
-          },
-          {
-            "id": "output",
-            "label": "Read job IDs from the sorted records"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "spot_the_fault",
-        "faulty_ids": [
-          "bad"
-        ]
-      }
-    },
-    {
-      "id": "dsa5-sort-key-classify-019",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.3",
-      "assessment_mode": "relationship_recall",
-      "interaction_type": "classification",
-      "difficulty_prior": 0.55,
-      "prompt": "An admin table supports deadline, display-name, timestamp, and severity ordering. Match each requested output order to the key the sort must actually use.",
-      "concepts": [
-        {
-          "concept_id": "dsa.sort.key_contract",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "The sort key should directly encode the ordering requested by the contract while the full record preserves other metadata.",
-      "blueprint_skill_ids": [
-        "5.3.02"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Read the requested order literally."
-      ],
-      "error_codes": [
-        {
-          "code": "classification_misplaced",
-          "description": "At least one output requirement was matched to the wrong ordering key.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.sort.key_contract"
-            ],
-            "node_id": "domain-5-sort-key",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.sort.key_contract",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "classification_incomplete",
-          "description": "At least one output requirement was not classified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.sort.key_contract"
-            ],
-            "node_id": "domain-5-sort-key",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.sort.key_contract",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "Python documentation — Sorting HOW TO",
-          "url": "https://docs.python.org/3/howto/sorting.html"
-        }
-      ],
-      "pedagogy": {
-        "stage": "differentiate",
-        "scaffold_level": 2,
-        "family_id": "dsa.sort.key_contract",
-        "transfer_group_id": "sort_preserve_metadata",
-        "surface_context": "record_ordering"
-      },
-      "interaction": {
-        "type": "classification",
-        "items": [
-          {
-            "id": "deadline",
-            "label": "Jobs must appear earliest deadline first"
-          },
-          {
-            "id": "name",
-            "label": "Users must appear alphabetical by normalized display name"
-          },
-          {
-            "id": "timestamp",
-            "label": "Events must appear chronological by timestamp"
-          },
-          {
-            "id": "severity",
-            "label": "Alerts must appear highest severity first"
-          }
-        ],
-        "categories": [
-          {
-            "id": "deadline_key",
-            "label": "Deadline"
-          },
-          {
-            "id": "name_key",
-            "label": "Normalized name"
-          },
-          {
-            "id": "time_key",
-            "label": "Timestamp"
-          },
-          {
-            "id": "severity_key",
-            "label": "Severity (descending)"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "classification",
-        "placements": {
-          "deadline": "deadline_key",
-          "name": "name_key",
-          "timestamp": "time_key",
-          "severity": "severity_key"
-        }
-      }
-    },
-    {
-      "id": "dsa5-stable-sort-020",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.3",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.59,
-      "prompt": "Records are already in arrival order. You now sort them by priority, but equal-priority records must stay in arrival order. What property do you need from the sort?",
-      "concepts": [
-        {
-          "concept_id": "dsa.sort.stability",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "A stable sort preserves the relative order of equal-key records, so the earlier arrival order survives within each priority group.",
-      "blueprint_skill_ids": [
-        "5.3.03"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "The key is equal for tied records; what should happen to their existing order?"
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected property does not preserve arrival order among equal-priority records.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.sort.stability"
-            ],
-            "node_id": "domain-5-sort-stable-merge",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.sort.stability",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "Python documentation — Sorting HOW TO",
-          "url": "https://docs.python.org/3/howto/sorting.html"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 2,
-        "family_id": "dsa.sort.stability",
-        "transfer_group_id": "stable_tie_order",
-        "surface_context": "priority_arrival_order",
-        "challenge_group_id": "d5-sort-01"
-      },
-      "choice_feedback": {
-        "stable": "Correct: stability preserves prior order among ties.",
-        "heap": "A heap does not by itself guarantee the previous arrival order among equal priorities unless explicit tie data is included.",
-        "unique": "The problem explicitly allows equal priorities.",
-        "reverse": "Reversing would invert arrival order."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "stable",
-            "label": "Stable sorting"
-          },
-          {
-            "id": "heap",
-            "label": "Any heap ordering, with no tie information"
-          },
-          {
-            "id": "unique",
-            "label": "Assume all priorities are unique"
-          },
-          {
-            "id": "reverse",
-            "label": "Reverse the records before sorting"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "stable"
-      }
-    },
-    {
-      "id": "dsa5-merge-order-021",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.3",
-      "assessment_mode": "procedural_recall",
-      "interaction_type": "ordering",
-      "difficulty_prior": 0.58,
-      "prompt": "Two changelog feeds are already timestamp-sorted. Order the streaming merge steps that reuse their existing order instead of fully resorting.",
-      "concepts": [
-        {
-          "concept_id": "dsa.ordered.merge",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Compare the two front items, emit the earlier one, advance only that feed, and when one feed is exhausted append the remaining suffix of the other.",
-      "blueprint_skill_ids": [
-        "5.3.03"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Only one frontier advances per emitted item until one feed runs out."
-      ],
-      "error_codes": [
-        {
-          "code": "ordering_invalid_sequence",
-          "description": "The ordered-merge steps are out of order.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.ordered.merge"
-            ],
-            "node_id": "domain-5-sort-stable-merge",
-            "preferred_stage": "construct",
-            "preferred_family_id": "dsa.ordered.merge",
-            "min_scaffold_level": 5
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "Princeton Algorithms — Mergesort",
-          "url": "https://algs4.cs.princeton.edu/22mergesort/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "construct",
-        "scaffold_level": 4,
-        "family_id": "dsa.ordered.merge",
-        "transfer_group_id": "sorted_frontier_merge",
-        "surface_context": "two_feed_merge",
-        "challenge_group_id": "d5-sort-01"
-      },
-      "interaction": {
-        "type": "ordering",
-        "items": [
-          {
-            "id": "front",
-            "label": "Compare the current front item from each feed"
-          },
-          {
-            "id": "emit",
-            "label": "Emit the earlier item"
-          },
-          {
-            "id": "advance",
-            "label": "Advance only the feed that produced that item"
-          },
-          {
-            "id": "repeat",
-            "label": "Repeat while both feeds still have items"
-          },
-          {
-            "id": "suffix",
-            "label": "Append the remaining suffix of the non-empty feed"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "ordering",
-        "ordered_ids": [
-          "front",
-          "emit",
-          "advance",
-          "repeat",
-          "suffix"
-        ]
-      }
-    },
-    {
-      "id": "dsa5-sort-vs-hash-022",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.3",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.64,
-      "prompt": "You only need to know whether any duplicate request ID exists, original order does not matter, and you may use O(n) extra memory. Which approach usually avoids the extra O(n log n) sort cost?",
-      "concepts": [
-        {
-          "concept_id": "dsa.sort.preprocess",
-          "weight": 0.45
-        },
-        {
-          "concept_id": "dsa.sort.key_contract",
-          "weight": 0.15
-        },
-        {
-          "concept_id": "dsa.binary.exact",
-          "weight": 0.1
-        },
-        {
-          "concept_id": "dsa.ordered.merge",
-          "weight": 0.3
-        }
-      ],
-      "explanation": "A hash set can detect duplicates in expected linear time without sorting. Sorting is still valid, but it computes an order the output does not require.",
-      "blueprint_skill_ids": [
-        "5.3.01"
-      ],
-      "difficulty_label": "hard",
-      "hints": [
-        "Ask whether the output actually needs order."
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected approach does not best match the presence-only requirement under the stated memory allowance.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.sort.preprocess"
-            ],
-            "node_id": "domain-5-sort-preprocess",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.sort.preprocess",
-            "min_scaffold_level": 2
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "differentiate",
-        "scaffold_level": 1,
-        "family_id": "dsa.sort.preprocess",
-        "transfer_group_id": "sort_or_direct_state",
-        "surface_context": "duplicate_detection_tradeoff"
-      },
-      "choice_feedback": {
-        "hash": "Correct: direct membership state answers the requirement without sorting.",
-        "sort": "Sorting works, but it adds O(n log n) comparison cost when order itself is not needed.",
-        "binary": "Binary search needs an ordered structure first; sorting each time would add preprocessing.",
-        "merge": "There are not two already-sorted sequences to merge."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "hash",
-            "label": "Scan once with a hash set of seen IDs"
-          },
-          {
-            "id": "sort",
-            "label": "Sort all IDs, then compare neighbors"
-          },
-          {
-            "id": "binary",
-            "label": "Binary-search each ID in the unsorted input"
-          },
-          {
-            "id": "merge",
-            "label": "Run a two-way merge on the one unsorted sequence"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "hash"
-      }
-    },
-    {
-      "id": "dsa5-merge-evidence-023",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.3",
-      "assessment_mode": "application",
-      "interaction_type": "evidence_selection",
-      "difficulty_prior": 0.63,
-      "prompt": "Why can two sorted feeds be merged by looking only at their current front items?",
-      "concepts": [
-        {
-          "concept_id": "dsa.ordered.merge",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Because each feed is sorted, nothing behind a feed's frontier can come before that frontier. Therefore the next global item must be one of the two current front items.",
-      "blueprint_skill_ids": [
-        "5.3.03"
-      ],
-      "difficulty_label": "hard",
-      "hints": [
-        "What does sorted order prove about items hidden behind each front item?"
-      ],
-      "error_codes": [
-        {
-          "code": "evidence_missing_relevant",
-          "description": "Part of the ordered-frontier justification was missed.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.ordered.merge"
-            ],
-            "node_id": "domain-5-sort-stable-merge",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.ordered.merge",
-            "min_scaffold_level": 2
-          }
-        },
-        {
-          "code": "evidence_selected_irrelevant",
-          "description": "An unnecessary equal-length or uniqueness condition was selected.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.ordered.merge"
-            ],
-            "node_id": "domain-5-sort-stable-merge",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.ordered.merge",
-            "min_scaffold_level": 2
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "Princeton Algorithms — Mergesort",
-          "url": "https://algs4.cs.princeton.edu/22mergesort/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 1,
-        "family_id": "dsa.ordered.merge",
-        "transfer_group_id": "sorted_frontier_merge",
-        "surface_context": "ordered_feed_frontier"
-      },
-      "instruction": "Select all statements that justify the frontier rule.",
-      "interaction": {
-        "type": "evidence_selection",
-        "evidence": [
-          {
-            "id": "sorted",
-            "label": "Each feed is internally sorted"
-          },
-          {
-            "id": "front",
-            "label": "No later item in a feed can precede that feed's current frontier"
-          },
-          {
-            "id": "same",
-            "label": "Both feeds must have the same length"
-          },
-          {
-            "id": "unique",
-            "label": "Timestamps must all be unique"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "evidence_selection",
-        "relevant_ids": [
-          "sorted",
-          "front"
-        ]
-      }
-    },
-    {
-      "id": "dsa5-sort-transfer-024",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-5",
-      "task_id": "5.3",
-      "assessment_mode": "application",
-      "interaction_type": "python_code",
-      "difficulty_prior": 0.64,
-      "prompt": "Implement `merge_sorted(a, b)` in O(len(a)+len(b)) time. Both inputs are already sorted; do not concatenate and sort again.",
-      "concepts": [
-        {
-          "concept_id": "dsa.ordered.merge",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "The next global output must be one of the two current frontier items, so advance only the side you emit.",
-      "blueprint_skill_ids": [
-        "5.3.03"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "After the main loop, extend with both remaining suffixes."
+        "Do not stop at an arbitrary equal element.",
+        "When `values[mid] >= target`, keep `mid` as a possible answer by moving `right = mid`."
       ],
       "error_codes": [
         {
@@ -2485,28 +483,407 @@
       ],
       "source_refs": [
         {
-          "title": "Princeton Algorithms — Mergesort",
-          "url": "https://algs4.cs.princeton.edu/22mergesort/"
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa5-upper-bound-004",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.52,
+      "prompt": "Implement `upper_bound(values, target)`. Return the first index whose value is STRICTLY greater than `target`. Return `len(values)` if none exists.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "upper_bound",
+        "starter_code": "def upper_bound(values, target):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                10,
+                20,
+                20,
+                30
+              ],
+              20
+            ],
+            "expected": 3
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                10,
+                20,
+                20,
+                30
+              ],
+              30
+            ],
+            "expected": 4
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                10,
+                20,
+                20,
+                30
+              ],
+              5
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                10,
+                20,
+                20,
+                30
+              ],
+              25
+            ],
+            "expected": 3
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              5
+            ],
+            "expected": 0
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.binary.boundary",
+          "weight": 0.8
         },
         {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+          "concept_id": "dsa.binary.progress",
+          "weight": 0.2
+        }
+      ],
+      "explanation": "This is the boundary where `value > target` first becomes true. Equality belongs on the left side of the boundary.",
+      "blueprint_skill_ids": [
+        "5.1.02",
+        "5.1.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Use the same first-true template as lower bound.",
+        "The predicate is `values[mid] > target`."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa5-first-last-range-005",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.58,
+      "prompt": "Implement `search_range(values, target)`. `values` is sorted. Return `[first_index, last_index]` of `target`, or `[-1, -1]` if absent. Target O(log n).",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "search_range",
+        "starter_code": "def search_range(values, target):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                5,
+                7,
+                7,
+                8,
+                8,
+                10
+              ],
+              8
+            ],
+            "expected": [
+              3,
+              4
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5,
+                7,
+                7,
+                8,
+                8,
+                10
+              ],
+              6
+            ],
+            "expected": [
+              -1,
+              -1
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                2,
+                2
+              ],
+              2
+            ],
+            "expected": [
+              0,
+              2
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              1
+            ],
+            "expected": [
+              -1,
+              -1
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1
+              ],
+              1
+            ],
+            "expected": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.binary.boundary",
+          "weight": 0.85
+        },
+        {
+          "concept_id": "dsa.binary.progress",
+          "weight": 0.15
+        }
+      ],
+      "explanation": "Find the first target boundary and the first index greater than target. If target is present, the last index is `upper_bound - 1`.",
+      "blueprint_skill_ids": [
+        "5.1.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Use two boundary searches rather than expanding linearly from one match.",
+        "Verify the lower-bound index really contains the target."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa5-search-rotated-006",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.66,
+      "prompt": "Implement `search_rotated(values, target)`. `values` was sorted ascending with distinct values, then rotated at an unknown pivot. Return the target index or `-1`. Target O(log n).",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "search_rotated",
+        "starter_code": "def search_rotated(values, target):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                4,
+                5,
+                6,
+                7,
+                0,
+                1,
+                2
+              ],
+              0
+            ],
+            "expected": 4
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                4,
+                5,
+                6,
+                7,
+                0,
+                1,
+                2
+              ],
+              3
+            ],
+            "expected": -1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1
+              ],
+              1
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                1
+              ],
+              1
+            ],
+            "expected": 1
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              2
+            ],
+            "expected": -1
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.binary.exact",
+          "weight": 0.45
+        },
+        {
+          "concept_id": "dsa.binary.progress",
+          "weight": 0.35
+        },
+        {
+          "concept_id": "dsa.binary.boundary",
+          "weight": 0.2
+        }
+      ],
+      "explanation": "At every midpoint, at least one half is normally sorted. Use that ordered half to decide whether the target can be discarded with the midpoint.",
+      "blueprint_skill_ids": [
+        "5.1.01",
+        "5.1.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Identify which side is sorted before deciding where to move.",
+        "Keep updates exclusive of `mid` so the interval shrinks."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
         }
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 1,
-        "family_id": "dsa.ordered.merge",
-        "transfer_group_id": "sorted_frontier_merge",
-        "surface_context": "changelog_merge",
-        "challenge_group_id": "d5-sort-01"
-      },
-      "choice_feedback": {},
+        "scaffold_level": 0
+      }
+    },
+    {
+      "id": "dsa5-insert-position-007",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.47,
+      "prompt": "Implement `search_insert(values, target)`. Return the index of `target` if present; otherwise return the index where it should be inserted to keep the sorted order.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
       "interaction": {
         "type": "python_code",
         "language": "python",
-        "entrypoint": "merge_sorted",
-        "starter_code": "def merge_sorted(a, b):\n    i = 0\n    j = 0\n    merged = []\n\n    while i < len(a) and j < len(b):\n        # Emit the smaller current frontier item.\n        pass\n\n    # Append any remaining suffix.\n    return merged\n"
+        "entrypoint": "search_insert",
+        "starter_code": "def search_insert(values, target):\n    pass\n"
       },
       "canonical_answer": {
         "type": "python_code",
@@ -2516,13 +893,1038 @@
             "args": [
               [
                 1,
+                3,
+                5,
+                6
+              ],
+              5
+            ],
+            "expected": 2
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                3,
+                5,
+                6
+              ],
+              2
+            ],
+            "expected": 1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                3,
+                5,
+                6
+              ],
+              7
+            ],
+            "expected": 4
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                3,
+                5,
+                6
+              ],
+              0
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              3
+            ],
+            "expected": 0
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.binary.boundary",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "The insertion position is exactly the lower bound: the first index whose value is at least the target.",
+      "blueprint_skill_ids": [
+        "5.1.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "This is a boundary query, not a separate algorithm.",
+        "Return the first legal position for `target`."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa5-boundary-fill-008",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.1",
+      "assessment_mode": "application",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.51,
+      "prompt": "Complete `lower_bound(values, target)`. `values` is sorted ascending. Return the FIRST index whose value is greater than or equal to `target`; if every value is smaller, return `len(values)`. Examples: `lower_bound([10, 20, 20, 30], 20) -> 1`, `lower_bound([10, 20, 20, 30], 25) -> 3`, and target 40 returns 4. The search uses a half-open candidate interval `[left, right)`. When `values[mid] >= target`, `mid` might already be the first valid position and must remain a candidate. When `values[mid] < target`, `mid` is definitely too small and must be excluded. Fill both boundary updates.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "def lower_bound(values, target):\n    left = 0\n    right = len(values)\n\n    while left < right:\n        mid = (left + right) // 2\n        if values[mid] >= target:\n            # mid satisfies the condition, so it must stay eligible as the first answer.\n            {{keep_mid}}\n        else:\n            # mid is too small, so neither mid nor anything left of it can be the answer.\n            {{discard_mid}}\n\n    return left\n"
+        },
+        "slots": [
+          {
+            "id": "keep_mid",
+            "label": "keep satisfying midpoint",
+            "placeholder": "statement",
+            "width_chars": 18
+          },
+          {
+            "id": "discard_mid",
+            "label": "discard too-small midpoint",
+            "placeholder": "statement",
+            "width_chars": 18
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "keep_mid": {
+            "accepted_answers": [
+              "right = mid",
+              "right=mid"
+            ]
+          },
+          "discard_mid": {
+            "accepted_answers": [
+              "left = mid + 1",
+              "left=mid+1",
+              "left = mid+1"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.binary.boundary",
+          "weight": 0.7
+        },
+        {
+          "concept_id": "dsa.binary.progress",
+          "weight": 0.3
+        }
+      ],
+      "explanation": "`mid` remains a candidate when its value already satisfies the boundary. When it is too small, `mid` itself is impossible and must be discarded.",
+      "blueprint_skill_ids": [
+        "5.1.02",
+        "5.1.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "A midpoint that satisfies the boundary condition might be the answer, so keep it inside the search interval.",
+        "A midpoint that is too small cannot be the answer, so move the left boundary past it."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more code blanks are incorrect."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 3
+      }
+    },
+    {
+      "id": "dsa5-integer-sqrt-009",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.47,
+      "prompt": "Implement `integer_sqrt(n)`. Return the largest integer `x` such that `x * x <= n`. Assume `n >= 0`. Do not call `math.sqrt()`.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "integer_sqrt",
+        "starter_code": "def integer_sqrt(n):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              0
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              1
+            ],
+            "expected": 1
+          },
+          {
+            "type": "call",
+            "args": [
+              8
+            ],
+            "expected": 2
+          },
+          {
+            "type": "call",
+            "args": [
+              16
+            ],
+            "expected": 4
+          },
+          {
+            "type": "call",
+            "args": [
+              27
+            ],
+            "expected": 5
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.binary.answer_space",
+          "weight": 0.65
+        },
+        {
+          "concept_id": "dsa.binary.boundary",
+          "weight": 0.35
+        }
+      ],
+      "explanation": "The predicate `x*x <= n` is true up to one boundary and false afterward. Search for the last true integer.",
+      "blueprint_skill_ids": [
+        "5.2.01",
+        "5.2.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "This is binary search on an ordered answer domain.",
+        "Keep the best feasible candidate or use a last-true template."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa5-min-eating-speed-010",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.58,
+      "prompt": "Implement `min_eating_speed(piles, hours)`. At integer speed `k`, one pile of size `p` takes `ceil(p/k)` hours. Return the minimum positive integer speed that finishes all piles within `hours`.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "min_eating_speed",
+        "starter_code": "def min_eating_speed(piles, hours):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                6,
+                7,
+                11
+              ],
+              8
+            ],
+            "expected": 4
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                30,
+                11,
+                23,
                 4,
+                20
+              ],
+              5
+            ],
+            "expected": 30
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                30,
+                11,
+                23,
+                4,
+                20
+              ],
+              6
+            ],
+            "expected": 23
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                1,
+                1
+              ],
+              3
+            ],
+            "expected": 1
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.binary.answer_space",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Feasibility is monotonic: once a speed is fast enough, every larger speed is also fast enough. Binary-search the first feasible speed.",
+      "blueprint_skill_ids": [
+        "5.2.01",
+        "5.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Search between 1 and `max(piles)`.",
+        "Compute hours with integer ceiling division `(p + k - 1) // k`."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa5-ship-capacity-011",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.62,
+      "prompt": "Implement `min_ship_capacity(weights, days)`. Packages must be shipped in the given order. A ship with capacity `c` takes a new day before adding a package that would exceed `c`. Return the minimum capacity that ships all packages within `days`.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "min_ship_capacity",
+        "starter_code": "def min_ship_capacity(weights, days):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10
+              ],
+              5
+            ],
+            "expected": 15
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                2,
+                2,
+                4,
+                1,
+                4
+              ],
+              3
+            ],
+            "expected": 6
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3,
+                1,
+                1
+              ],
+              4
+            ],
+            "expected": 3
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5
+              ],
+              1
+            ],
+            "expected": 5
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.binary.answer_space",
+          "weight": 0.8
+        },
+        {
+          "concept_id": "dsa.binary.boundary",
+          "weight": 0.2
+        }
+      ],
+      "explanation": "A capacity smaller than the largest package is impossible; the total weight always works. Feasibility changes monotonically from false to true as capacity increases.",
+      "blueprint_skill_ids": [
+        "5.2.01",
+        "5.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Lower bound: `max(weights)`. Upper bound: `sum(weights)`.",
+        "Write a helper that counts required days for one capacity."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa5-smallest-divisor-012",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.59,
+      "prompt": "Implement `smallest_divisor(values, threshold)`. For divisor `d`, score is `sum(ceil(value / d))`. Return the smallest positive divisor whose score is at most `threshold`. Assume a solution exists.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "smallest_divisor",
+        "starter_code": "def smallest_divisor(values, threshold):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                5,
                 9
               ],
+              6
+            ],
+            "expected": 5
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                44,
+                22,
+                33,
+                11,
+                1
+              ],
+              5
+            ],
+            "expected": 44
+          },
+          {
+            "type": "call",
+            "args": [
               [
                 2,
                 3,
-                10
+                5,
+                7,
+                11
+              ],
+              11
+            ],
+            "expected": 3
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.binary.answer_space",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "As the divisor grows, every ceiling quotient stays the same or decreases, so the total score is monotonic. Search for the first passing divisor.",
+      "blueprint_skill_ids": [
+        "5.2.01",
+        "5.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Search from 1 through `max(values)`.",
+        "Use ceiling division without floating point."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa5-split-largest-sum-013",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.72,
+      "prompt": "Implement `min_largest_partition_sum(values, parts)`. `values` contains non-negative integers. Split it into exactly `parts` non-empty contiguous groups. Minimize the largest group sum.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "min_largest_partition_sum",
+        "starter_code": "def min_largest_partition_sum(values, parts):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                7,
+                2,
+                5,
+                10,
+                8
+              ],
+              2
+            ],
+            "expected": 18
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              2
+            ],
+            "expected": 9
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                4,
+                4
+              ],
+              3
+            ],
+            "expected": 4
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5,
+                5,
+                5,
+                5
+              ],
+              2
+            ],
+            "expected": 10
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.binary.answer_space",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "For a proposed maximum sum `limit`, greedily forming a new group only when necessary tells whether the array can fit in at most `parts` groups. Larger limits never make feasibility worse.",
+      "blueprint_skill_ids": [
+        "5.2.01",
+        "5.2.02"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "Search between `max(values)` and `sum(values)`.",
+        "Feasible with at most `parts` groups means you can split further, if necessary, to reach exactly `parts` because values are non-negative and groups are non-empty."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0
+      }
+    },
+    {
+      "id": "dsa5-answer-space-repair-014",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.61,
+      "prompt": "Repair `min_eating_speed`. The feasibility test is correct, but the binary-search update discards a feasible midpoint even though it might be the MINIMUM feasible answer.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "min_eating_speed",
+        "starter_code": "def min_eating_speed(piles, hours):\n    def feasible(speed):\n        used = 0\n        for pile in piles:\n            used += (pile + speed - 1) // speed\n        return used <= hours\n\n    left = 1\n    right = max(piles)\n\n    while left < right:\n        mid = (left + right) // 2\n        if feasible(mid):\n            left = mid + 1\n        else:\n            left = mid + 1\n\n    return left\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                6,
+                7,
+                11
+              ],
+              8
+            ],
+            "expected": 4
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                30,
+                11,
+                23,
+                4,
+                20
+              ],
+              6
+            ],
+            "expected": 23
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                1,
+                1
+              ],
+              3
+            ],
+            "expected": 1
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.binary.answer_space",
+          "weight": 0.55
+        },
+        {
+          "concept_id": "dsa.binary.progress",
+          "weight": 0.45
+        }
+      ],
+      "explanation": "When `mid` is feasible, it must remain in the candidate interval because it could be the first feasible speed. Move `right = mid`; only an infeasible midpoint is discarded with `left = mid + 1`.",
+      "blueprint_skill_ids": [
+        "5.2.02",
+        "5.2.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "This is first-true search.",
+        "A passing midpoint is still a possible answer."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa5-min-days-bouquets-015",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.69,
+      "prompt": "Implement `min_days_for_bouquets(bloom_day, bouquets, adjacent)`. On day `d`, flowers with `bloom_day[i] <= d` are usable. Each bouquet needs `adjacent` consecutive unused usable flowers. Return the minimum day to make `bouquets` bouquets, or `-1` if impossible.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "min_days_for_bouquets",
+        "starter_code": "def min_days_for_bouquets(bloom_day, bouquets, adjacent):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                10,
+                3,
+                10,
+                2
+              ],
+              3,
+              1
+            ],
+            "expected": 3
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                10,
+                3,
+                10,
+                2
+              ],
+              3,
+              2
+            ],
+            "expected": -1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                7,
+                7,
+                7,
+                7,
+                12,
+                7,
+                7
+              ],
+              2,
+              3
+            ],
+            "expected": 12
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3,
+                4
+              ],
+              1,
+              2
+            ],
+            "expected": 2
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.binary.answer_space",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "If bouquets are possible by day `d`, they remain possible on every later day. That gives a first-feasible-day boundary.",
+      "blueprint_skill_ids": [
+        "5.2.01",
+        "5.2.02"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "Reject immediately if `bouquets * adjacent > len(bloom_day)`.",
+        "For one day, scan consecutive bloomed flowers and reset the run when an unavailable flower appears."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0
+      }
+    },
+    {
+      "id": "dsa5-answer-boundary-fill-016",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.2",
+      "assessment_mode": "application",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.55,
+      "prompt": "Complete `first_feasible(low, high, feasible)`. The integer predicate is monotonic over the inclusive answer range: it looks like `False, False, ..., True, True`, and `high` is guaranteed feasible. Return the FIRST value for which `feasible(x)` is True. Example: if `feasible(x)` means `x >= 7` and the search range is 1 through 10, the answer must be 7. When the midpoint is feasible, it might be the first feasible value and therefore must stay in the candidate interval. When it is infeasible, the answer must be strictly to its right. Fill the two updates.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "def first_feasible(low, high, feasible):\n    while low < high:\n        mid = (low + high) // 2\n        if feasible(mid):\n            # mid could be the FIRST feasible value, so keep it in the search range.\n            {{keep}}\n        else:\n            # mid is infeasible, so the first feasible value must be strictly larger.\n            {{discard}}\n    return low\n"
+        },
+        "slots": [
+          {
+            "id": "keep",
+            "label": "keep feasible midpoint",
+            "placeholder": "statement",
+            "width_chars": 16
+          },
+          {
+            "id": "discard",
+            "label": "discard infeasible midpoint",
+            "placeholder": "statement",
+            "width_chars": 18
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "keep": {
+            "accepted_answers": [
+              "high = mid",
+              "high=mid"
+            ]
+          },
+          "discard": {
+            "accepted_answers": [
+              "low = mid + 1",
+              "low=mid+1",
+              "low = mid+1"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.binary.answer_space",
+          "weight": 0.6
+        },
+        {
+          "concept_id": "dsa.binary.progress",
+          "weight": 0.4
+        }
+      ],
+      "explanation": "A feasible midpoint may be the first feasible value, so it stays. An infeasible midpoint cannot be the answer and is discarded.",
+      "blueprint_skill_ids": [
+        "5.2.02",
+        "5.2.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "A passing midpoint remains a possible first passing value.",
+        "A failing midpoint can be discarded together with everything below it."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more code blanks are incorrect."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 3
+      }
+    },
+    {
+      "id": "dsa5-merge-sorted-017",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.38,
+      "prompt": "Implement `merge_sorted(a, b)`. Both inputs are already sorted ascending. Return one sorted list in O(len(a) + len(b)) time. Do not concatenate and sort again.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "merge_sorted",
+        "starter_code": "def merge_sorted(a, b):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                3,
+                5
+              ],
+              [
+                2,
+                4,
+                6
               ]
             ],
             "expected": [
@@ -2530,8 +1932,8 @@
               2,
               3,
               4,
-              9,
-              10
+              5,
+              6
             ]
           },
           {
@@ -2553,13 +1955,459 @@
             "args": [
               [
                 1,
-                2
+                1,
+                3
               ],
-              []
+              [
+                1,
+                2
+              ]
             ],
             "expected": [
               1,
-              2
+              1,
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              []
+            ],
+            "expected": []
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.ordered.merge",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Compare only the current frontiers. Whichever is smaller must be the next global output; advance that input and append the remaining suffix when one side ends.",
+      "blueprint_skill_ids": [
+        "5.3.03"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "Use one index per input.",
+        "Do not rescan values already emitted."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa5-merge-sort-018",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.52,
+      "prompt": "Implement `merge_sort(values)` without calling `sorted()` or `.sort()`. Return a new ascending list.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "merge_sort",
+        "starter_code": "def merge_sort(values):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                5,
+                2,
+                4,
+                1,
+                3
+              ]
+            ],
+            "expected": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                3,
+                1,
+                2
+              ]
+            ],
+            "expected": [
+              1,
+              2,
+              3,
+              3
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              []
+            ],
+            "expected": []
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                7
+              ]
+            ],
+            "expected": [
+              7
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                -1,
+                4,
+                0,
+                -2
+              ]
+            ],
+            "expected": [
+              -2,
+              -1,
+              0,
+              4
+            ]
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.sort.preprocess",
+          "weight": 0.4
+        },
+        {
+          "concept_id": "dsa.ordered.merge",
+          "weight": 0.6
+        }
+      ],
+      "explanation": "Recursively sort each half, then merge the two sorted results with a linear frontier scan.",
+      "blueprint_skill_ids": [
+        "5.3.01",
+        "5.3.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Base case: length 0 or 1.",
+        "Reuse the ordered-merge idea for the combine step."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa5-stable-priority-019",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.46,
+      "prompt": "Implement `stable_priority_order(records)`. Each record is `[id, priority]`. Return the record IDs sorted by ascending priority. When priorities tie, preserve the records' ORIGINAL relative order.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "stable_priority_order",
+        "starter_code": "def stable_priority_order(records):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                [
+                  "A",
+                  2
+                ],
+                [
+                  "B",
+                  1
+                ],
+                [
+                  "C",
+                  2
+                ],
+                [
+                  "D",
+                  1
+                ]
+              ]
+            ],
+            "expected": [
+              "B",
+              "D",
+              "A",
+              "C"
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                [
+                  "X",
+                  3
+                ],
+                [
+                  "Y",
+                  3
+                ],
+                [
+                  "Z",
+                  2
+                ]
+              ]
+            ],
+            "expected": [
+              "Z",
+              "X",
+              "Y"
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              []
+            ],
+            "expected": []
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.sort.stability",
+          "weight": 0.65
+        },
+        {
+          "concept_id": "dsa.sort.key_contract",
+          "weight": 0.35
+        }
+      ],
+      "explanation": "Python's built-in sort is stable, so sorting the original records only by priority preserves original order among equal priorities.",
+      "blueprint_skill_ids": [
+        "5.3.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Keep the entire record; do not sort detached priority values.",
+        "Use the priority field as the key."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa5-sort-records-repair-020",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.51,
+      "prompt": "Repair `ids_by_deadline`. It must return job IDs ordered by ascending deadline, breaking equal deadlines by ascending ID. The buggy code sorts only detached deadlines and loses the ID association.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "ids_by_deadline",
+        "starter_code": "def ids_by_deadline(jobs):\n    deadlines = [job[\"deadline\"] for job in jobs]\n    deadlines.sort()\n    return deadlines\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                {
+                  "id": "A",
+                  "deadline": 30
+                },
+                {
+                  "id": "B",
+                  "deadline": 10
+                },
+                {
+                  "id": "C",
+                  "deadline": 20
+                }
+              ]
+            ],
+            "expected": [
+              "B",
+              "C",
+              "A"
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                {
+                  "id": "B",
+                  "deadline": 10
+                },
+                {
+                  "id": "A",
+                  "deadline": 10
+                }
+              ]
+            ],
+            "expected": [
+              "A",
+              "B"
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              []
+            ],
+            "expected": []
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.sort.key_contract",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Sort the records themselves with a key such as `(deadline, id)`, then extract IDs. Sorting detached keys destroys metadata required by the output.",
+      "blueprint_skill_ids": [
+        "5.3.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Preserve each ID/deadline pair while sorting.",
+        "The requested tie-breaker belongs in the sort key."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa5-min-abs-difference-021",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.58,
+      "prompt": "Implement `minimum_difference_pairs(values)`. Return every pair `[a, b]` with the minimum absolute difference between any two distinct input elements. Sort each pair ascending and return pairs in lexicographic order.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "minimum_difference_pairs",
+        "starter_code": "def minimum_difference_pairs(values):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                4,
+                2,
+                1,
+                3
+              ]
+            ],
+            "expected": [
+              [
+                1,
+                2
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                3,
+                4
+              ]
             ]
           },
           {
@@ -2567,23 +2415,414 @@
             "args": [
               [
                 1,
-                1
+                3,
+                6,
+                10,
+                15
+              ]
+            ],
+            "expected": [
+              [
+                1,
+                3
+              ]
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                8,
+                -10,
+                23,
+                19,
+                -4,
+                -14,
+                27
+              ]
+            ],
+            "expected": [
+              [
+                -14,
+                -10
               ],
+              [
+                19,
+                23
+              ],
+              [
+                23,
+                27
+              ]
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                1,
+                2
+              ]
+            ],
+            "expected": [
               [
                 1,
                 1
               ]
-            ],
-            "expected": [
-              1,
-              1,
-              1,
-              1
             ]
           }
         ]
       },
-      "instruction": "Write the function, run the tests, then submit."
+      "concepts": [
+        {
+          "concept_id": "dsa.sort.preprocess",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "After sorting, the closest pair must be adjacent. Scan adjacent differences once, tracking the smallest difference and all pairs that achieve it.",
+      "blueprint_skill_ids": [
+        "5.3.01"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Sort first so potentially closest values become neighbors.",
+        "You do not need to compare every pair."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa5-count-inversions-022",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.71,
+      "prompt": "Implement `count_inversions(values)`. An inversion is a pair of indexes `i < j` with `values[i] > values[j]`. Return the count in O(n log n) time.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "count_inversions",
+        "starter_code": "def count_inversions(values):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                4,
+                1,
+                3,
+                5
+              ]
+            ],
+            "expected": 3
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5,
+                4,
+                3,
+                2,
+                1
+              ]
+            ],
+            "expected": 10
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ]
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              []
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                1,
+                1
+              ]
+            ],
+            "expected": 0
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.ordered.merge",
+          "weight": 0.55
+        },
+        {
+          "concept_id": "dsa.sort.preprocess",
+          "weight": 0.45
+        }
+      ],
+      "explanation": "During merge sort, when a right-half value is emitted before the current left-half value, it forms inversions with every unmerged left-half value.",
+      "blueprint_skill_ids": [
+        "5.3.01",
+        "5.3.03"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "Count while merging sorted halves.",
+        "If `right[j] < left[i]`, add `len(left) - i`."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0
+      }
+    },
+    {
+      "id": "dsa5-intersect-sorted-023",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.55,
+      "prompt": "Implement `intersect_sorted_unique(a, b)`. Both inputs are sorted ascending and may contain duplicates. Return sorted values present in BOTH inputs, with each value appearing once.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "intersect_sorted_unique",
+        "starter_code": "def intersect_sorted_unique(a, b):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                1,
+                2,
+                3,
+                5
+              ],
+              [
+                1,
+                2,
+                2,
+                4,
+                5
+              ]
+            ],
+            "expected": [
+              1,
+              2,
+              5
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              [
+                1,
+                2
+              ]
+            ],
+            "expected": []
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ],
+            "expected": []
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                2,
+                2
+              ],
+              [
+                2,
+                2
+              ]
+            ],
+            "expected": [
+              2
+            ]
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.ordered.merge",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "Sorted order lets two frontier pointers discard the smaller current value. On equality, emit once and advance past duplicates.",
+      "blueprint_skill_ids": [
+        "5.3.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Advance the side with the smaller frontier.",
+        "Avoid appending the same matched value twice."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa5-merge-fill-024",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-5",
+      "task_id": "5.3",
+      "assessment_mode": "application",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.45,
+      "prompt": "Complete `merge_sorted(a, b)`. Both input lists are already sorted ascending. Return one sorted list containing every input element in O(len(a) + len(b)) time. Example: `merge_sorted([1, 3, 5], [2, 4, 6]) -> [1, 2, 3, 4, 5, 6]`. While both lists still have values, compare their current frontiers. The branch shown has already appended exactly one frontier, so only the pointer belonging to THAT consumed input should advance. Fill the two pointer updates.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "def merge_sorted(a, b):\n    i = j = 0\n    out = []\n\n    while i < len(a) and j < len(b):\n        if a[i] <= b[j]:\n            out.append(a[i])\n            # Only a[i] was consumed in this branch.\n            {{advance_a}}\n        else:\n            out.append(b[j])\n            # Only b[j] was consumed in this branch.\n            {{advance_b}}\n\n    out.extend(a[i:])\n    out.extend(b[j:])\n    return out\n"
+        },
+        "slots": [
+          {
+            "id": "advance_a",
+            "label": "advance first-list pointer",
+            "placeholder": "statement",
+            "width_chars": 12
+          },
+          {
+            "id": "advance_b",
+            "label": "advance second-list pointer",
+            "placeholder": "statement",
+            "width_chars": 12
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "advance_a": {
+            "accepted_answers": [
+              "i += 1",
+              "i=i+1",
+              "i = i + 1"
+            ]
+          },
+          "advance_b": {
+            "accepted_answers": [
+              "j += 1",
+              "j=j+1",
+              "j = j + 1"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.ordered.merge",
+          "weight": 1.0
+        }
+      ],
+      "explanation": "After emitting one frontier, advance only the input that supplied it. The other frontier still has not been consumed.",
+      "blueprint_skill_ids": [
+        "5.3.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Appending `a[i]` consumes one element from a and none from b.",
+        "Appending `b[j]` consumes one element from b and none from a."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more code blanks are incorrect."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 3
+      }
     }
   ]
 }

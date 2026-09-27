@@ -1,0 +1,55 @@
+{
+  "schema_version": "family-guide-v1",
+  "certification_id": "cs-dsa",
+  "certification_version": "dsa-v1",
+  "family_id": "dsa.prefix.state_count",
+  "title": "Prefix State Lookup and Counting",
+  "summary": "While scanning cumulative state, use earlier prefix values as searchable history so a relationship between two prefixes represents a contiguous range.",
+  "recognition_signals": [
+    "the goal concerns contiguous ranges with an exact target relation",
+    "negative values make monotonic window shrinking unreliable",
+    "the current cumulative state can determine which earlier cumulative state is needed"
+  ],
+  "core_rules": [
+    "A range from an earlier boundary to the current boundary is represented by the difference between their prefix states.",
+    "Initialize the empty prefix when ranges beginning at index zero must count.",
+    "Store frequency for counting, earliest index for longest-length queries, or simple presence for existence queries."
+  ],
+  "structural_steps": [
+    "initialize the empty-prefix state",
+    "update the running prefix at each item",
+    "derive the earlier prefix state required by the target",
+    "read the appropriate metadata for that prefix",
+    "record the current prefix for future ranges"
+  ],
+  "common_confusions": [
+    {
+      "other_family_id": "dsa.prefix.aggregate",
+      "distinction": "Prefix aggregate assumes range boundaries are given. Prefix-state lookup discovers qualifying boundaries by searching previous cumulative states."
+    },
+    {
+      "other_family_id": "dsa.sliding_window.variable",
+      "distinction": "Sliding windows need a monotonic repair rule. Prefix-state lookup remains valid with signed values because it uses an exact algebraic relation instead of monotonic shrinking."
+    }
+  ],
+  "example_contexts": [
+    {
+      "context_id": "subarray_sum_count",
+      "label": "Count target-sum subarrays"
+    },
+    {
+      "context_id": "zero_sum_range",
+      "label": "Zero-sum range detection"
+    },
+    {
+      "context_id": "longest_target_sum_range",
+      "label": "Longest target-sum range"
+    }
+  ],
+  "source_refs": [
+    {
+      "title": "MIT OpenCourseWare 6.006 Introduction to Algorithms",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/"
+    }
+  ]
+}

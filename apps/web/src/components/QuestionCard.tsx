@@ -21,6 +21,7 @@ import MultipleChoiceInteraction from "./MultipleChoiceInteraction";
 import MultipleResponseInteraction from "./MultipleResponseInteraction";
 import NodeConnectionInteraction from "./NodeConnectionInteraction";
 import OrderingInteraction from "./OrderingInteraction";
+import QuestionPrompt from "./QuestionPrompt";
 import ReconstructionInteraction from "./ReconstructionInteraction";
 import SpotTheFaultInteraction from "./SpotTheFaultInteraction";
 import TwoDimensionalPlacementInteraction from "./TwoDimensionalPlacementInteraction";
@@ -220,6 +221,14 @@ export default function QuestionCard({
       ? toRuntimeTests(canonicalAnswer.tests)
       : [];
 
+  // Typed-code prompts open with a short task sentence that stays in the
+  // mission header; the contract, example, and constraint prose belongs beside
+  // the code it describes instead of in one unreadable heading.
+  const showsPromptDetails =
+    question.interaction.type === "python_code" ||
+    (question.interaction.type === "typed_fill_blank" &&
+      question.interaction.content.type === "code");
+
   // If the isolated runtime cannot start, let the learner continue instead of
   // being stuck on this question. It is recorded as a zero-pass attempt, which
   // is the lowest reward tier, so it cannot be abused to gain progress.
@@ -233,6 +242,9 @@ export default function QuestionCard({
     <section className="question" aria-label={question.prompt}>
       {question.instruction ? (
         <p className="question-instruction">{question.instruction}</p>
+      ) : null}
+      {showsPromptDetails ? (
+        <QuestionPrompt text={question.prompt} part="details" />
       ) : null}
       {question.interaction.type === "classification" ? (
         <ClassificationInteraction

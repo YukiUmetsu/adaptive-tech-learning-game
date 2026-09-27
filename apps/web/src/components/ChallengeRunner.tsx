@@ -140,6 +140,7 @@ function ChallengeQuestionStage({
         text={question.prompt}
         level={2}
         className="challenge-stage-prompt"
+        part="lead"
       />
       <QuestionCard
         key={question.id}

@@ -4,14 +4,14 @@
     "vendor": "Shiden Labs",
     "name": "Data Structures & Algorithms",
     "exam_code": "DSA-PATTERNS",
-    "official_source_url": "https://careers.microsoft.com/v2/global/en/hiring-tips/technical-problem solving",
+    "official_source_url": "https://careers.microsoft.com/v2/global/en/hiring-tips/technical-problem-solving",
     "last_reviewed": "2026-09-26"
   },
   "version": {
     "id": "dsa-v1",
     "exam_code": "DSA-PATTERNS",
-    "effective_date": "2026-09-25",
-    "content_version": "dsa-content-2026-09-26-v6",
+    "effective_date": "2026-09-26",
+    "content_version": "dsa-content-2026-09-26-v8",
     "domains": [
       {
         "id": "domain-1",
@@ -20,44 +20,44 @@
         "tasks": [
           {
             "id": "1.1",
-            "name": "Frame the problem and establish a correct baseline",
+            "name": "Translate requirements into correct code and establish a baseline",
             "question_ids": [
-              "dsa1-frame-evidence-001",
-              "dsa1-workflow-order-002",
-              "dsa1-baseline-choice-003",
-              "dsa1-contract-classify-004",
-              "dsa1-assumption-fault-005",
-              "dsa1-before-code-mr-006",
-              "dsa1-stuck-evidence-007",
-              "dsa1-fallback-reconstruct-008"
+              "dsa1-first-index-001",
+              "dsa1-first-index-repair-002",
+              "dsa1-count-equal-pairs-003",
+              "dsa1-pair-sum-baseline-004",
+              "dsa1-pair-sum-self-reuse-repair-005",
+              "dsa1-dedupe-preserve-order-006",
+              "dsa1-first-repeat-index-007",
+              "dsa1-pair-indices-baseline-008"
             ]
           },
           {
             "id": "1.2",
-            "name": "Analyze work and remove the bottleneck",
+            "name": "Identify repeated work and replace it with maintained state",
             "question_ids": [
-              "dsa1-linear-scan-009",
-              "dsa1-growth-classify-010",
-              "dsa1-bottleneck-evidence-011",
-              "dsa1-pointer-complexity-fault-012",
-              "dsa1-quadratic-ops-013",
-              "dsa1-nested-scan-typed-014",
-              "dsa1-optimize-order-015",
-              "dsa1-hash-bottleneck-transfer-016"
+              "dsa1-has-duplicate-fast-009",
+              "dsa1-pair-sum-fast-010",
+              "dsa1-first-repeat-fast-011",
+              "dsa1-prefix-maxes-012",
+              "dsa1-max-profit-once-013",
+              "dsa1-longest-equal-run-014",
+              "dsa1-window-at-most-limit-015",
+              "dsa1-common-value-fast-016"
             ]
           },
           {
             "id": "1.3",
-            "name": "Preserve correctness and verify the solution",
+            "name": "Repair correctness bugs, preserve invariants, and handle edge cases",
             "question_ids": [
-              "dsa1-prefix-invariant-017",
-              "dsa1-binary-progress-fault-018",
-              "dsa1-binary-update-reason-019",
-              "dsa1-binary-trace-order-020",
-              "dsa1-edge-cases-mr-021",
-              "dsa1-tests-classify-022",
-              "dsa1-invariant-proof-reconstruct-023",
-              "dsa1-invariant-transfer-024"
+              "dsa1-dedupe-repair-order-017",
+              "dsa1-profit-repair-018",
+              "dsa1-window-repair-019",
+              "dsa1-pair-indices-repair-020",
+              "dsa1-linear-search-fill-021",
+              "dsa1-pair-sum-fill-022",
+              "dsa1-window-fill-023",
+              "dsa1-equal-split-024"
             ]
           }
         ]
@@ -150,759 +150,106 @@
   ],
   "questions": [
     {
-      "id": "dsa1-frame-evidence-001",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.1",
-      "assessment_mode": "recognition",
-      "interaction_type": "evidence_selection",
-      "difficulty_prior": 0.34,
-      "prompt": "A batch deduper currently checks whether any event ID repeats. Before choosing a faster design, which missing facts could materially change the implementation?",
-      "concepts": [
-        {
-          "concept_id": "dsa.reasoning.problem_contract",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Scale, mutation rules, and memory constraints can change which optimizations are legal or worthwhile. Local variable naming does not change the algorithmic contract.",
-      "blueprint_skill_ids": [
-        "1.1.01"
-      ],
-      "difficulty_label": "easy",
-      "hints": [
-        "Ask whether the answer or implementation would change if this detail changed."
-      ],
-      "error_codes": [
-        {
-          "code": "evidence_missing_relevant",
-          "description": "At least one relevant clarification was missed.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.reasoning.problem_contract"
-            ],
-            "node_id": "domain-1-problem-contract",
-            "preferred_stage": "recognize",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "evidence_selected_irrelevant",
-          "description": "At least one irrelevant clarification was selected.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.reasoning.problem_contract"
-            ],
-            "node_id": "domain-1-problem-contract",
-            "preferred_stage": "differentiate",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "recognize",
-        "scaffold_level": 3,
-        "surface_context": "event_ids",
-        "challenge_group_id": "d1-framing-01"
-      },
-      "instruction": "Select all relevant clarifications.",
-      "interaction": {
-        "type": "evidence_selection",
-        "evidence": [
-          {
-            "id": "scale",
-            "label": "Maximum batch size / expected scale"
-          },
-          {
-            "id": "mutation",
-            "label": "Whether reordering or mutating the input is allowed"
-          },
-          {
-            "id": "memory",
-            "label": "Whether O(n) extra memory is acceptable"
-          },
-          {
-            "id": "names",
-            "label": "Whether local variables are named `seen` or `visited`"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "evidence_selection",
-        "relevant_ids": [
-          "scale",
-          "mutation",
-          "memory"
-        ]
-      }
-    },
-    {
-      "id": "dsa1-workflow-order-002",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.1",
-      "assessment_mode": "procedural_recall",
-      "interaction_type": "ordering",
-      "difficulty_prior": 0.39,
-      "prompt": "A duplicate checker is correct but too slow. Put the refactor process in an order that lets the code itself reveal the right optimization.",
-      "concepts": [
-        {
-          "concept_id": "dsa.reasoning.optimization_loop",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Preserve behavior first, make repeated work visible, decide what state removes it, then implement and attack the changed logic with targeted tests.",
-      "blueprint_skill_ids": [
-        "1.1.03"
-      ],
-      "difficulty_label": "easy",
-      "hints": [
-        "Do not optimize before you have a correct approach to analyze."
-      ],
-      "error_codes": [
-        {
-          "code": "ordering_invalid_sequence",
-          "description": "One or more workflow steps are out of order.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.reasoning.optimization_loop"
-            ],
-            "node_id": "domain-1-bottleneck-to-pattern",
-            "preferred_stage": "construct",
-            "min_scaffold_level": 5
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "construct",
-        "scaffold_level": 5,
-        "surface_context": "generic_problem_solving",
-        "challenge_group_id": "d1-framing-01"
-      },
-      "interaction": {
-        "type": "ordering",
-        "items": [
-          {
-            "id": "code",
-            "label": "Implement the optimization"
-          },
-          {
-            "id": "baseline",
-            "label": "Keep/state the simple correct baseline"
-          },
-          {
-            "id": "clarify",
-            "label": "Pin down output/constraints that must not change"
-          },
-          {
-            "id": "test",
-            "label": "Attack the new state/boundaries with tiny hostile tests"
-          },
-          {
-            "id": "example",
-            "label": "Trace one tiny input so the required behavior is concrete"
-          },
-          {
-            "id": "bottleneck",
-            "label": "Name the repeated expensive operation"
-          },
-          {
-            "id": "commit",
-            "label": "Choose maintained state; state its invariant and expected complexity"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "ordering",
-        "ordered_ids": [
-          "clarify",
-          "example",
-          "baseline",
-          "bottleneck",
-          "commit",
-          "code",
-          "test"
-        ]
-      }
-    },
-    {
-      "id": "dsa1-baseline-choice-003",
-      "content_version": "dsa-content-2026-09-26-v6",
+      "id": "dsa1-first-index-001",
+      "content_version": "dsa-content-2026-09-26-v8",
       "certification_version": "dsa-v1",
       "domain_id": "domain-1",
       "task_id": "1.1",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.43,
-      "prompt": "You inherited a duplicate detector and want a tiny, obviously correct reference implementation for differential testing before optimizing it. Which approach is the best reference baseline?",
-      "concepts": [
-        {
-          "concept_id": "dsa.reasoning.correct_baseline",
-          "weight": 0.75
-        },
-        {
-          "concept_id": "dsa.reasoning.problem_contract",
-          "weight": 0.25
-        }
-      ],
-      "explanation": "A pairwise comparison is simple and correct, so it gives you a concrete O(n²) baseline. You can then identify repeated membership/search work and optimize deliberately.",
-      "blueprint_skill_ids": [
-        "1.1.02"
-      ],
-      "difficulty_label": "easy",
-      "hints": [
-        "Choose the explanation that is obviously correct before worrying about the final optimization."
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected opening skips or weakens the correct-baseline reasoning.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.reasoning.correct_baseline"
-            ],
-            "node_id": "domain-1-bruteforce-baseline",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.reasoning.bruteforce_to_bottleneck",
-            "min_scaffold_level": 2
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 2,
-        "family_id": "dsa.reasoning.bruteforce_to_bottleneck",
-        "transfer_group_id": "remove_repeated_work",
-        "surface_context": "duplicate_detection",
-        "challenge_group_id": "d1-framing-01"
-      },
-      "choice_feedback": {
-        "pairwise": "Correct: a simple independent oracle is valuable precisely because it is easy to reason about.",
-        "sort_now": "Sorting may be a valid final approach, but mutating/reordering before checking the contract is a poor reference baseline.",
-        "binary_search": "Binary search does not apply directly to an unsorted array.",
-        "hash_magic": "A reference implementation should ideally fail differently from the optimized implementation, not share its core state logic."
-      },
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.3,
+      "prompt": "Implement `first_index(values, target)`. Return the index of the FIRST occurrence of `target`, or `-1` if it is absent. Do not mutate `values`. Example: `first_index([4, 7, 4], 4) -> 0`.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
       "interaction": {
-        "type": "multiple_choice",
-        "choices": [
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "first_index",
+        "starter_code": "def first_index(values, target):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
           {
-            "id": "pairwise",
-            "label": "Compare every distinct pair. It is O(n²), but its behavior is easy to verify."
+            "type": "call",
+            "args": [
+              [
+                4,
+                7,
+                4
+              ],
+              4
+            ],
+            "expected": 0
           },
           {
-            "id": "sort_now",
-            "label": "Sort the production input in place and compare neighbors, without first checking whether mutation/order is allowed."
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ],
+              3
+            ],
+            "expected": 2
           },
           {
-            "id": "binary_search",
-            "label": "For each value, binary-search the still-unsorted original array."
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ],
+              9
+            ],
+            "expected": -1
           },
           {
-            "id": "hash_magic",
-            "label": "Use the same hash-set optimization you are trying to verify, so both implementations share the same state/update risks."
+            "type": "call",
+            "args": [
+              [],
+              5
+            ],
+            "expected": -1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5,
+                5,
+                5
+              ],
+              5
+            ],
+            "expected": 0
           }
         ]
       },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "pairwise"
-      }
-    },
-    {
-      "id": "dsa1-contract-classify-004",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.1",
-      "assessment_mode": "relationship_recall",
-      "interaction_type": "classification",
-      "difficulty_prior": 0.46,
-      "prompt": "While redesigning a search function, classify each statement by what role it plays.",
       "concepts": [
         {
           "concept_id": "dsa.reasoning.problem_contract",
           "weight": 0.7
         },
         {
-          "concept_id": "dsa.reasoning.correct_baseline",
+          "concept_id": "dsa.correctness.edge_cases",
           "weight": 0.3
         }
       ],
-      "explanation": "A requirement is part of the problem contract, an assumption is something you must verify before relying on it, and an optimization is a proposed implementation choice.",
+      "explanation": "A left-to-right scan naturally satisfies the first-occurrence contract. Return immediately on the first match; otherwise return -1 after the scan.",
       "blueprint_skill_ids": [
-        "1.1.01",
-        "1.1.02"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Ask: was this given, merely assumed, or chosen as an implementation improvement?"
-      ],
-      "error_codes": [
-        {
-          "code": "classification_misplaced",
-          "description": "At least one statement was classified incorrectly.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.reasoning.problem_contract"
-            ],
-            "node_id": "domain-1-problem-contract",
-            "preferred_stage": "differentiate",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "classification_incomplete",
-          "description": "At least one statement was not classified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.reasoning.problem_contract"
-            ],
-            "node_id": "domain-1-problem-contract",
-            "preferred_stage": "differentiate",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "differentiate",
-        "scaffold_level": 3,
-        "surface_context": "generic_problem_solving"
-      },
-      "interaction": {
-        "type": "classification",
-        "items": [
-          {
-            "id": "none",
-            "label": "“Return -1 if the target is absent.”"
-          },
-          {
-            "id": "sorted",
-            "label": "“I think the input may already be sorted, but the contract does not say so.”"
-          },
-          {
-            "id": "set",
-            "label": "“Maintain a set so repeated exact-key lookups do not rescan prior values.”"
-          },
-          {
-            "id": "nomutate",
-            "label": "“The input must not be modified.”"
-          }
-        ],
-        "categories": [
-          {
-            "id": "requirement",
-            "label": "Requirement / contract"
-          },
-          {
-            "id": "assumption",
-            "label": "Assumption to verify"
-          },
-          {
-            "id": "optimization",
-            "label": "Optimization choice"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "classification",
-        "placements": {
-          "none": "requirement",
-          "sorted": "assumption",
-          "set": "optimization",
-          "nomutate": "requirement"
-        }
-      }
-    },
-    {
-      "id": "dsa1-assumption-fault-005",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.1",
-      "assessment_mode": "application",
-      "interaction_type": "spot_the_fault",
-      "difficulty_prior": 0.57,
-      "prompt": "The function must return the ORIGINAL indices of two matching records. Flag the reasoning step that can destroy information needed by the output.",
-      "concepts": [
-        {
-          "concept_id": "dsa.reasoning.problem_contract",
-          "weight": 0.45
-        },
-        {
-          "concept_id": "dsa.reasoning.correct_baseline",
-          "weight": 0.55
-        }
-      ],
-      "explanation": "Sorting the values without preserving original indices can destroy the mapping required by the output contract. Optimization is only valid if it preserves every required output fact.",
-      "blueprint_skill_ids": [
-        "1.1.01",
-        "1.1.02"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Check each step against the exact output contract, not only whether it makes searching easier."
-      ],
-      "error_codes": [
-        {
-          "code": "fault_missed",
-          "description": "The contract-breaking reasoning step was not identified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.reasoning.problem_contract",
-              "dsa.reasoning.correct_baseline"
-            ],
-            "node_id": "domain-1-bruteforce-baseline",
-            "preferred_stage": "diagnose",
-            "preferred_family_id": "dsa.reasoning.bruteforce_to_bottleneck",
-            "min_scaffold_level": 2
-          }
-        },
-        {
-          "code": "fault_false_positive",
-          "description": "A sound reasoning step was incorrectly flagged.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.reasoning.problem_contract"
-            ],
-            "node_id": "domain-1-problem-contract",
-            "preferred_stage": "differentiate",
-            "min_scaffold_level": 2
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "diagnose",
-        "scaffold_level": 2,
-        "family_id": "dsa.reasoning.bruteforce_to_bottleneck",
-        "surface_context": "original_index_matching"
-      },
-      "interaction": {
-        "type": "spot_the_fault",
-        "elements": [
-          {
-            "id": "contract",
-            "label": "Restate: return two original input indices."
-          },
-          {
-            "id": "example",
-            "label": "Walk through a three-item example."
-          },
-          {
-            "id": "sort",
-            "label": "Sort the values in place and discard their original positions."
-          },
-          {
-            "id": "complexity",
-            "label": "Discuss the cost of the proposed search."
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "spot_the_fault",
-        "faulty_ids": [
-          "sort"
-        ]
-      }
-    },
-    {
-      "id": "dsa1-before-code-mr-006",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.1",
-      "assessment_mode": "recognition",
-      "interaction_type": "multiple_response",
-      "difficulty_prior": 0.42,
-      "prompt": "You are about to replace a slow implementation with a faster one. Which THREE things give you the strongest footing before changing the algorithm?",
-      "concepts": [
-        {
-          "concept_id": "dsa.reasoning.problem_contract",
-          "weight": 0.6
-        },
-        {
-          "concept_id": "dsa.reasoning.optimization_loop",
-          "weight": 0.4
-        }
-      ],
-      "explanation": "Contract, a concrete example, and a trusted baseline give you something to preserve and something specific to optimize. Pattern guessing and micro-optimization do not.",
-      "blueprint_skill_ids": [
-        "1.1.01",
-        "1.1.03"
+        "1.1.01"
       ],
       "difficulty_label": "easy",
       "hints": [
-        "Prefer information that can change correctness or the algorithmic plan."
+        "Scan from index 0 upward.",
+        "The first match is already the answer."
       ],
       "error_codes": [
         {
-          "code": "multiple_response_incomplete",
-          "description": "One or more useful pre-coding steps were omitted.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.reasoning.optimization_loop"
-            ],
-            "node_id": "domain-1-bottleneck-to-pattern",
-            "preferred_stage": "recognize",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "multiple_response_extra",
-          "description": "Too many items were selected.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.reasoning.problem_contract"
-            ],
-            "node_id": "domain-1-problem-contract",
-            "preferred_stage": "differentiate",
-            "min_scaffold_level": 2
-          }
-        },
-        {
-          "code": "multiple_response_incorrect",
-          "description": "The selected set includes a low-value step or misses a core reasoning step.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.reasoning.optimization_loop"
-            ],
-            "node_id": "domain-1-bottleneck-to-pattern",
-            "preferred_stage": "differentiate",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "recognize",
-        "scaffold_level": 2,
-        "surface_context": "generic_problem_solving"
-      },
-      "instruction": "Choose THREE.",
-      "interaction": {
-        "type": "multiple_response",
-        "choices": [
-          {
-            "id": "contract",
-            "label": "The exact behavior/output the refactor must preserve"
-          },
-          {
-            "id": "tiny",
-            "label": "A tiny input with the expected behavior"
-          },
-          {
-            "id": "baseline",
-            "label": "The current correct baseline and its repeated expensive work"
-          },
-          {
-            "id": "names",
-            "label": "A favorite data structure chosen before looking at the repeated work"
-          },
-          {
-            "id": "formatting",
-            "label": "Constant-factor syntax tweaks before identifying the bottleneck"
-          }
-        ],
-        "required_selections": 3
-      },
-      "canonical_answer": {
-        "type": "multiple_response",
-        "choice_ids": [
-          "contract",
-          "tiny",
-          "baseline"
-        ]
-      }
-    },
-    {
-      "id": "dsa1-stuck-evidence-007",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.1",
-      "assessment_mode": "application",
-      "interaction_type": "evidence_selection",
-      "difficulty_prior": 0.5,
-      "prompt": "Your O(n²) implementation is correct, but the faster pattern is not obvious. Which next moves help the existing code reveal the optimization?",
-      "concepts": [
-        {
-          "concept_id": "dsa.reasoning.correct_baseline",
-          "weight": 0.4
-        },
-        {
-          "concept_id": "dsa.reasoning.optimization_loop",
-          "weight": 0.6
-        }
-      ],
-      "explanation": "The repeated operation, constraints, and a concrete trace expose what information should be maintained. Changing syntax does not change the algorithmic work.",
-      "blueprint_skill_ids": [
-        "1.1.02",
-        "1.1.03"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Choose actions that produce concrete facts about the current baseline."
-      ],
-      "error_codes": [
-        {
-          "code": "evidence_missing_relevant",
-          "description": "At least one useful reasoning move was missed.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.reasoning.optimization_loop"
-            ],
-            "node_id": "domain-1-bottleneck-to-pattern",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.reasoning.bruteforce_to_bottleneck",
-            "min_scaffold_level": 2
-          }
-        },
-        {
-          "code": "evidence_selected_irrelevant",
-          "description": "A guessing step was selected instead of evidence-producing reasoning.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.reasoning.correct_baseline"
-            ],
-            "node_id": "domain-1-bruteforce-baseline",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.reasoning.bruteforce_to_bottleneck",
-            "min_scaffold_level": 2
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 1,
-        "family_id": "dsa.reasoning.bruteforce_to_bottleneck",
-        "transfer_group_id": "remove_repeated_work",
-        "surface_context": "unfamiliar_prompt"
-      },
-      "instruction": "Select all useful next moves.",
-      "interaction": {
-        "type": "evidence_selection",
-        "evidence": [
-          {
-            "id": "repeat",
-            "label": "Name the operation the baseline repeats most often"
-          },
-          {
-            "id": "constraints",
-            "label": "Re-check scale plus memory/reordering constraints"
-          },
-          {
-            "id": "trace",
-            "label": "Trace a tiny input and write down which information gets recomputed"
-          },
-          {
-            "id": "random",
-            "label": "Rewrite the same algorithm in another syntax before identifying the bottleneck"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "evidence_selection",
-        "relevant_ids": [
-          "repeat",
-          "constraints",
-          "trace"
-        ]
-      }
-    },
-    {
-      "id": "dsa1-fallback-reconstruct-008",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.1",
-      "assessment_mode": "structural_reconstruction",
-      "interaction_type": "reconstruction",
-      "difficulty_prior": 0.56,
-      "prompt": "A dedupe service is correct but times out at scale. Rebuild the sequence that turns the trusted slow implementation into a justified fast one.",
-      "concepts": [
-        {
-          "concept_id": "dsa.reasoning.optimization_loop",
-          "weight": 0.65
-        },
-        {
-          "concept_id": "dsa.reasoning.correct_baseline",
-          "weight": 0.35
-        }
-      ],
-      "explanation": "This workflow turns a vague optimization problem into a sequence of observable decisions and is intentionally pattern-name-last.",
-      "blueprint_skill_ids": [
-        "1.1.02",
-        "1.1.03"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "The optimal pattern is intentionally not one of the required steps."
-      ],
-      "error_codes": [
-        {
-          "code": "reconstruction_wrong_position",
-          "description": "At least one reasoning step was placed in the wrong position.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.reasoning.optimization_loop"
-            ],
-            "node_id": "domain-1-bottleneck-to-pattern",
-            "preferred_stage": "construct",
-            "min_scaffold_level": 5
-          }
-        },
-        {
-          "code": "reconstruction_unfilled_slot",
-          "description": "At least one required reasoning slot was left incomplete.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.reasoning.optimization_loop"
-            ],
-            "node_id": "domain-1-bottleneck-to-pattern",
-            "preferred_stage": "construct",
-            "min_scaffold_level": 5
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -913,427 +260,107 @@
       ],
       "pedagogy": {
         "stage": "construct",
-        "scaffold_level": 4,
-        "surface_context": "generic_problem_solving",
-        "challenge_group_id": "d1-framing-01"
-      },
-      "interaction": {
-        "type": "reconstruction",
-        "layout": "linear",
-        "fixed_nodes": [],
-        "pieces": [
-          {
-            "id": "clarify",
-            "label": "Lock down the behavior/constraints"
-          },
-          {
-            "id": "example",
-            "label": "Trace one tiny concrete input"
-          },
-          {
-            "id": "baseline",
-            "label": "State the trusted correct baseline"
-          },
-          {
-            "id": "bottleneck",
-            "label": "Find the repeated expensive operation"
-          },
-          {
-            "id": "commit",
-            "label": "Choose maintained state + invariant + expected complexity"
-          },
-          {
-            "id": "code",
-            "label": "Implement the changed algorithm"
-          },
-          {
-            "id": "tests",
-            "label": "Attack the changed state/boundaries with targeted tests"
-          },
-          {
-            "id": "guess",
-            "label": "Choose a famous pattern from a keyword before understanding the repeated work"
-          }
-        ],
-        "slots": [
-          {
-            "id": "s1"
-          },
-          {
-            "id": "s2"
-          },
-          {
-            "id": "s3"
-          },
-          {
-            "id": "s4"
-          },
-          {
-            "id": "s5"
-          },
-          {
-            "id": "s6"
-          },
-          {
-            "id": "s7"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "reconstruction",
-        "placements": {
-          "s1": "clarify",
-          "s2": "example",
-          "s3": "baseline",
-          "s4": "bottleneck",
-          "s5": "commit",
-          "s6": "code",
-          "s7": "tests"
-        },
-        "edges": []
+        "scaffold_level": 2
       }
     },
     {
-      "id": "dsa1-linear-scan-009",
-      "content_version": "dsa-content-2026-09-26-v6",
+      "id": "dsa1-first-index-repair-002",
+      "content_version": "dsa-content-2026-09-26-v8",
       "certification_version": "dsa-v1",
       "domain_id": "domain-1",
-      "task_id": "1.2",
-      "assessment_mode": "recognition",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.31,
-      "prompt": "A billing pass reads each of n usage records once and adds its value to a running total. How does runtime grow with n?",
+      "task_id": "1.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.38,
+      "prompt": "Repair `first_index`. It currently misses a valid match at the final position. Keep the same contract: first matching index, or `-1` if absent.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "first_index",
+        "starter_code": "def first_index(values, target):\n    for i in range(len(values) - 1):\n        if values[i] == target:\n            return i\n    return -1\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ],
+              3
+            ],
+            "expected": 2
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                3
+              ],
+              3
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                3
+              ],
+              9
+            ],
+            "expected": -1
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              9
+            ],
+            "expected": -1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                2,
+                3
+              ],
+              2
+            ],
+            "expected": 0
+          }
+        ]
+      },
       "concepts": [
         {
-          "concept_id": "dsa.complexity.big_o",
-          "weight": 1.0
+          "concept_id": "dsa.reasoning.problem_contract",
+          "weight": 0.4
+        },
+        {
+          "concept_id": "dsa.correctness.edge_cases",
+          "weight": 0.6
         }
       ],
-      "explanation": "The loop performs a bounded amount of work for each of n values, so the time grows linearly: O(n).",
+      "explanation": "The loop must include the last valid index. `range(len(values))` safely handles ordinary and empty inputs.",
       "blueprint_skill_ids": [
-        "1.2.01"
+        "1.1.01",
+        "1.3.02"
       ],
       "difficulty_label": "easy",
       "hints": [
-        "Count how many times the addition executes as n grows."
+        "Check which indexes `range(len(values) - 1)` visits.",
+        "A one-element list is a useful counterexample."
       ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected growth rate does not match the number of operations.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.complexity.big_o"
-            ],
-            "node_id": "domain-1-growth-shapes",
-            "preferred_stage": "recognize",
-            "preferred_family_id": "dsa.reasoning.complexity_by_operation",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        },
-        {
-          "title": "MIT OpenCourseWare 6.006 — Introduction to Algorithms syllabus",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/syllabus/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "recognize",
-        "scaffold_level": 4,
-        "family_id": "dsa.reasoning.complexity_by_operation",
-        "transfer_group_id": "count_actual_work",
-        "surface_context": "array_scan",
-        "challenge_group_id": "d1-complexity-01"
-      },
-      "choice_feedback": {
-        "o1": "The number of additions grows with n.",
-        "ologn": "Nothing is halving the remaining work.",
-        "on": "Correct: one bounded-cost update per input item.",
-        "on2": "There is no all-pairs or repeated full scan."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "o1",
-            "label": "O(1)"
-          },
-          {
-            "id": "ologn",
-            "label": "O(log n)"
-          },
-          {
-            "id": "on",
-            "label": "O(n)"
-          },
-          {
-            "id": "on2",
-            "label": "O(n²)"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "on"
-      }
-    },
-    {
-      "id": "dsa1-growth-classify-010",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.2",
-      "assessment_mode": "relationship_recall",
-      "interaction_type": "classification",
-      "difficulty_prior": 0.48,
-      "prompt": "During a performance review, classify each code shape by the growth rate that will dominate as the input gets large.",
-      "concepts": [
-        {
-          "concept_id": "dsa.complexity.big_o",
-          "weight": 0.6
-        },
-        {
-          "concept_id": "dsa.complexity.aggregate_work",
-          "weight": 0.4
-        }
-      ],
-      "explanation": "Constant work is O(1); repeatedly halving a remaining quantity is O(log n); a single full scan is O(n); an all-pairs nested scan is O(n²).",
-      "blueprint_skill_ids": [
-        "1.2.01",
-        "1.2.02"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Focus on how many times the body can run as n grows."
-      ],
-      "error_codes": [
-        {
-          "code": "classification_misplaced",
-          "description": "At least one code shape was matched to the wrong growth rate.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.complexity.big_o"
-            ],
-            "node_id": "domain-1-growth-shapes",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.reasoning.complexity_by_operation",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "classification_incomplete",
-          "description": "At least one code shape was not classified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.complexity.big_o"
-            ],
-            "node_id": "domain-1-growth-shapes",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.reasoning.complexity_by_operation",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        },
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture Notes",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-notes/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "differentiate",
-        "scaffold_level": 3,
-        "family_id": "dsa.reasoning.complexity_by_operation",
-        "transfer_group_id": "count_actual_work",
-        "surface_context": "code_shapes"
-      },
-      "interaction": {
-        "type": "classification",
-        "items": [
-          {
-            "id": "index",
-            "label": "`return values[0]`"
-          },
-          {
-            "id": "halve",
-            "label": "`while n > 1: n //= 2`"
-          },
-          {
-            "id": "scan",
-            "label": "`for x in values: use(x)`"
-          },
-          {
-            "id": "pairs",
-            "label": "`for i in range(n): for j in range(n): compare(i, j)`"
-          }
-        ],
-        "categories": [
-          {
-            "id": "o1",
-            "label": "O(1)"
-          },
-          {
-            "id": "ologn",
-            "label": "O(log n)"
-          },
-          {
-            "id": "on",
-            "label": "O(n)"
-          },
-          {
-            "id": "on2",
-            "label": "O(n²)"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "classification",
-        "placements": {
-          "index": "o1",
-          "halve": "ologn",
-          "scan": "on",
-          "pairs": "on2"
-        }
-      }
-    },
-    {
-      "id": "dsa1-bottleneck-evidence-011",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.2",
-      "assessment_mode": "application",
-      "interaction_type": "evidence_selection",
-      "difficulty_prior": 0.46,
-      "prompt": "A duplicate detector compares every value with every later value. Which observations identify the actual bottleneck?",
-      "concepts": [
-        {
-          "concept_id": "dsa.optimization.from_bruteforce",
-          "weight": 0.65
-        },
-        {
-          "concept_id": "dsa.complexity.aggregate_work",
-          "weight": 0.35
-        }
-      ],
-      "explanation": "The expensive behavior is not the variable assignment or return. It is the repeated pair comparison/search: many items trigger many later comparisons.",
-      "blueprint_skill_ids": [
-        "1.2.02",
-        "1.2.03"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Ask which operation is repeated enough times to dominate the running time."
-      ],
-      "error_codes": [
-        {
-          "code": "evidence_missing_relevant",
-          "description": "Part of the repeated expensive work was missed.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.optimization.from_bruteforce"
-            ],
-            "node_id": "domain-1-bottleneck-to-pattern",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.reasoning.bruteforce_to_bottleneck",
-            "min_scaffold_level": 2
-          }
-        },
-        {
-          "code": "evidence_selected_irrelevant",
-          "description": "A low-cost operation was mistaken for the dominant bottleneck.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.complexity.aggregate_work"
-            ],
-            "node_id": "domain-1-aggregate-work",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.reasoning.complexity_by_operation",
-            "min_scaffold_level": 2
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 2,
-        "family_id": "dsa.reasoning.bruteforce_to_bottleneck",
-        "transfer_group_id": "remove_repeated_work",
-        "surface_context": "duplicate_detection",
-        "challenge_group_id": "d1-complexity-01"
-      },
-      "instruction": "Select all observations that describe the bottleneck.",
-      "interaction": {
-        "type": "evidence_selection",
-        "evidence": [
-          {
-            "id": "many_pairs",
-            "label": "For many i values, the algorithm scans many later j values"
-          },
-          {
-            "id": "comparison",
-            "label": "The equality check is repeated across many pairs"
-          },
-          {
-            "id": "assign",
-            "label": "The loop variable i is assigned a value"
-          },
-          {
-            "id": "return",
-            "label": "The function has a return statement"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "evidence_selection",
-        "relevant_ids": [
-          "many_pairs",
-          "comparison"
-        ]
-      }
-    },
-    {
-      "id": "dsa1-pointer-complexity-fault-012",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.2",
-      "assessment_mode": "application",
-      "interaction_type": "spot_the_fault",
-      "difficulty_prior": 0.58,
-      "prompt": "A reviewer made four claims about this two-pointer loop. Flag the incorrect claim.\n\n```python\nleft = 0\nfor right in range(n):\n    while left < right and invalid(left, right):\n        left += 1\n```\n\nAssume `invalid(...)` is O(1).",
-      "concepts": [
-        {
-          "concept_id": "dsa.complexity.aggregate_work",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "The inner loop is amortized across the full run because `left` never moves backward.",
-      "blueprint_skill_ids": [
-        "1.2.02"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Count total pointer moves, not syntactic nesting."
-      ],
-      "error_codes": [
-        {
-          "code": "spot_the_fault_incorrect",
-          "description": "The selected line is not the one that breaks the algorithm."
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -1344,109 +371,106 @@
       ],
       "pedagogy": {
         "stage": "diagnose",
-        "scaffold_level": 2,
-        "family_id": "dsa.reasoning.complexity_by_operation",
-        "transfer_group_id": "count_actual_work",
-        "surface_context": "two_progress_counters",
-        "challenge_group_id": "d1-complexity-01"
-      },
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa1-count-equal-pairs-003",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.4,
+      "prompt": "Implement a simple baseline for `count_equal_pairs(values)`. Count index pairs `(i, j)` where `i < j` and `values[i] == values[j]`. A quadratic solution is expected.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
       "interaction": {
-        "type": "spot_the_fault",
-        "elements": [
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "count_equal_pairs",
+        "starter_code": "def count_equal_pairs(values):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
           {
-            "id": "right",
-            "label": "`right` advances exactly n times"
+            "type": "call",
+            "args": [
+              [
+                1,
+                1,
+                1
+              ]
+            ],
+            "expected": 3
           },
           {
-            "id": "left",
-            "label": "`left` never decreases, so it advances at most n times total"
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                1,
+                2
+              ]
+            ],
+            "expected": 2
           },
           {
-            "id": "quadratic",
-            "label": "The nested `while` proves the algorithm is O(n²)"
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ]
+            ],
+            "expected": 0
           },
           {
-            "id": "total",
-            "label": "Total pointer movement is O(n)"
+            "type": "call",
+            "args": [
+              []
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                7,
+                7
+              ]
+            ],
+            "expected": 1
           }
         ]
       },
-      "canonical_answer": {
-        "type": "spot_the_fault",
-        "faulty_ids": [
-          "quadratic"
-        ]
-      },
-      "choice_feedback": {}
-    },
-    {
-      "id": "dsa1-quadratic-ops-013",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.2",
-      "assessment_mode": "recognition",
-      "interaction_type": "multiple_response",
-      "difficulty_prior": 0.52,
-      "prompt": "Which TWO code patterns can create O(n²) work when performed for each of n input items?",
       "concepts": [
         {
-          "concept_id": "dsa.complexity.big_o",
-          "weight": 0.4
+          "concept_id": "dsa.reasoning.correct_baseline",
+          "weight": 0.75
         },
         {
-          "concept_id": "dsa.complexity.aggregate_work",
-          "weight": 0.6
+          "concept_id": "dsa.complexity.big_o",
+          "weight": 0.25
         }
       ],
-      "explanation": "A full list membership scan and `list.index` are both linear in the list length; placing either inside another n-scale loop can produce quadratic work. Constant arithmetic and one pre-loop sort do not have that shape.",
+      "explanation": "A trustworthy baseline can enumerate every distinct pair with nested loops using `j = i + 1`. Its O(n²) cost is acceptable here because the goal is a clearly correct reference.",
       "blueprint_skill_ids": [
-        "1.2.01",
-        "1.2.02"
+        "1.1.02",
+        "1.2.01"
       ],
-      "difficulty_label": "medium",
+      "difficulty_label": "easy",
       "hints": [
-        "Look for an O(n)-scale operation repeated O(n) times."
+        "Use two indexes.",
+        "Starting `j` at `i + 1` avoids self-pairs and double counting."
       ],
       "error_codes": [
         {
-          "code": "multiple_response_incomplete",
-          "description": "One repeated linear operation was missed.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.complexity.aggregate_work"
-            ],
-            "node_id": "domain-1-aggregate-work",
-            "preferred_stage": "recognize",
-            "preferred_family_id": "dsa.reasoning.complexity_by_operation",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "multiple_response_extra",
-          "description": "A non-quadratic shape was selected.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.complexity.big_o"
-            ],
-            "node_id": "domain-1-growth-shapes",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.reasoning.complexity_by_operation",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "multiple_response_incorrect",
-          "description": "The selected pair does not match repeated O(n) work.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.complexity.aggregate_work"
-            ],
-            "node_id": "domain-1-aggregate-work",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.reasoning.complexity_by_operation",
-            "min_scaffold_level": 3
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -1456,72 +480,226 @@
         }
       ],
       "pedagogy": {
-        "stage": "recognize",
-        "scaffold_level": 2,
-        "family_id": "dsa.reasoning.complexity_by_operation",
-        "transfer_group_id": "count_actual_work",
-        "surface_context": "repeated_linear_search"
-      },
-      "instruction": "Choose TWO.",
-      "interaction": {
-        "type": "multiple_response",
-        "choices": [
-          {
-            "id": "membership",
-            "label": "Scanning a list for `x` inside a loop over n items"
-          },
-          {
-            "id": "index",
-            "label": "Calling a linear search for an index inside a loop over n items"
-          },
-          {
-            "id": "arithmetic",
-            "label": "Adding two integers inside a loop over n items"
-          },
-          {
-            "id": "sort_once",
-            "label": "Sorting once before a single scan"
-          }
-        ],
-        "required_selections": 2
-      },
-      "canonical_answer": {
-        "type": "multiple_response",
-        "choice_ids": [
-          "membership",
-          "index"
-        ]
+        "stage": "construct",
+        "scaffold_level": 2
       }
     },
     {
-      "id": "dsa1-nested-scan-typed-014",
-      "content_version": "dsa-content-2026-09-26-v6",
+      "id": "dsa1-pair-sum-baseline-004",
+      "content_version": "dsa-content-2026-09-26-v8",
       "certification_version": "dsa-v1",
       "domain_id": "domain-1",
-      "task_id": "1.2",
+      "task_id": "1.1",
       "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.55,
-      "prompt": "The function is correct, but it repeatedly searches the processed prefix. Which operation is the real O(n²) bottleneck?\n\n```python\ndef first_repeat(values):\n    for i, value in enumerate(values):\n        if value in values[:i]:\n            return i\n    return -1\n```",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.43,
+      "prompt": "Implement `has_pair_sum_baseline(values, target)`. Return `True` only when TWO DIFFERENT indexes contain values whose sum is `target`. Use the simplest correct pairwise solution; O(n²) is fine.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "has_pair_sum_baseline",
+        "starter_code": "def has_pair_sum_baseline(values, target):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                7,
+                11,
+                15
+              ],
+              9
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                3
+              ],
+              6
+            ],
+            "expected": false
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                3
+              ],
+              6
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                -2,
+                5,
+                7
+              ],
+              3
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              0
+            ],
+            "expected": false
+          }
+        ]
+      },
       "concepts": [
         {
-          "concept_id": "dsa.optimization.from_bruteforce",
-          "weight": 1.0
+          "concept_id": "dsa.reasoning.correct_baseline",
+          "weight": 0.8
+        },
+        {
+          "concept_id": "dsa.reasoning.problem_contract",
+          "weight": 0.2
         }
       ],
-      "explanation": "The repeated prefix search grows with i. A set of already-seen values removes that repeated work and gives O(n) expected time.",
+      "explanation": "The baseline checks each distinct pair exactly once. It is deliberately simple so later optimization has known-correct behavior to preserve.",
       "blueprint_skill_ids": [
-        "1.2.01",
-        "1.2.02"
+        "1.1.01",
+        "1.1.02"
       ],
-      "difficulty_label": "medium",
+      "difficulty_label": "easy",
       "hints": [
-        "Look for the operation whose input grows from 0 toward n items."
+        "Use `i < j` so one element cannot pair with itself.",
+        "Do not optimize yet."
       ],
       "error_codes": [
         {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected answer does not match the algorithm's actual behavior."
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa1-pair-sum-self-reuse-repair-005",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.49,
+      "prompt": "Repair this faster pair-sum function. It must use two DIFFERENT input indexes, so `has_pair_sum([3], 6)` must be `False`, while `has_pair_sum([3, 3], 6)` must be `True`.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "has_pair_sum",
+        "starter_code": "def has_pair_sum(values, target):\n    seen = set()\n\n    for value in values:\n        seen.add(value)\n        if target - value in seen:\n            return True\n\n    return False\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                3
+              ],
+              6
+            ],
+            "expected": false
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                3
+              ],
+              6
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                7,
+                11,
+                15
+              ],
+              9
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                4
+              ],
+              8
+            ],
+            "expected": false
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                -2,
+                5
+              ],
+              3
+            ],
+            "expected": true
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.correctness.invariant",
+          "weight": 0.65
+        },
+        {
+          "concept_id": "dsa.reasoning.problem_contract",
+          "weight": 0.35
+        }
+      ],
+      "explanation": "Check for the needed earlier value before inserting the current value. Then `seen` means exactly values from earlier indexes.",
+      "blueprint_skill_ids": [
+        "1.1.01",
+        "1.3.01"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Ask what `seen` should mean before each membership check.",
+        "Do the lookup before `seen.add(value)`."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -1535,171 +713,231 @@
         }
       ],
       "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 2,
-        "family_id": "dsa.reasoning.complexity_by_operation",
-        "transfer_group_id": "count_actual_work",
-        "surface_context": "nested_full_scan"
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "prefix",
-            "label": "`value in values[:i]` rebuilds/searches a growing prefix on every iteration"
-          },
-          {
-            "id": "enumerate",
-            "label": "`enumerate(values)` makes the loop quadratic"
-          },
-          {
-            "id": "return",
-            "label": "`return i` performs a linear search"
-          },
-          {
-            "id": "index",
-            "label": "Incrementing `i` costs O(n) each time"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "prefix"
-      },
-      "instruction": "Choose ONE.",
-      "choice_feedback": {
-        "prefix": "Correct. The growing prefix search is the repeated work.",
-        "enumerate": "Enumerating the input is linear by itself.",
-        "return": "Returning is constant-time control flow here.",
-        "index": "Advancing the loop index is constant time."
+        "stage": "diagnose",
+        "scaffold_level": 2
       }
     },
     {
-      "id": "dsa1-optimize-order-015",
-      "content_version": "dsa-content-2026-09-26-v6",
+      "id": "dsa1-dedupe-preserve-order-006",
+      "content_version": "dsa-content-2026-09-26-v8",
       "certification_version": "dsa-v1",
       "domain_id": "domain-1",
-      "task_id": "1.2",
-      "assessment_mode": "procedural_recall",
-      "interaction_type": "ordering",
-      "difficulty_prior": 0.55,
-      "prompt": "A correct endpoint is too slow. Put the engineering reasoning steps in the order that preserves behavior while exposing the real bottleneck.",
+      "task_id": "1.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.48,
+      "prompt": "Implement `dedupe_preserve_order(values)`. Keep only the FIRST occurrence of each value and preserve original order. Do not mutate the input. Example: `[3, 1, 3, 2, 1] -> [3, 1, 2]`.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "dedupe_preserve_order",
+        "starter_code": "def dedupe_preserve_order(values):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                1,
+                3,
+                2,
+                1
+              ]
+            ],
+            "expected": [
+              3,
+              1,
+              2
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                1,
+                1
+              ]
+            ],
+            "expected": [
+              1
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              []
+            ],
+            "expected": []
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                1
+              ]
+            ],
+            "expected": [
+              2,
+              1
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "a",
+                "b",
+                "a"
+              ]
+            ],
+            "expected": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
       "concepts": [
         {
-          "concept_id": "dsa.optimization.from_bruteforce",
-          "weight": 0.75
+          "concept_id": "dsa.reasoning.problem_contract",
+          "weight": 0.55
         },
         {
-          "concept_id": "dsa.complexity.aggregate_work",
-          "weight": 0.25
+          "concept_id": "dsa.optimization.from_bruteforce",
+          "weight": 0.45
         }
       ],
-      "explanation": "Optimization should follow the cost: establish correctness, identify the dominant repeated operation, identify reusable information, choose state/data structure, restate complexity, then re-check correctness.",
+      "explanation": "A set can answer whether a value has appeared before, but the output must be built in input order.",
       "blueprint_skill_ids": [
-        "1.2.02",
-        "1.2.03"
+        "1.1.01",
+        "1.1.03"
       ],
       "difficulty_label": "medium",
       "hints": [
-        "The data structure should be chosen after you know what operation needs to become cheaper."
+        "Use a set for membership and a list for output.",
+        "Append only when a value is new."
       ],
       "error_codes": [
         {
-          "code": "ordering_invalid_sequence",
-          "description": "The optimization reasoning steps are out of order.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.optimization.from_bruteforce"
-            ],
-            "node_id": "domain-1-bottleneck-to-pattern",
-            "preferred_stage": "construct",
-            "preferred_family_id": "dsa.reasoning.bruteforce_to_bottleneck",
-            "min_scaffold_level": 4
-          }
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
         {
           "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
           "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
         }
       ],
       "pedagogy": {
         "stage": "construct",
-        "scaffold_level": 4,
-        "family_id": "dsa.reasoning.bruteforce_to_bottleneck",
-        "transfer_group_id": "remove_repeated_work",
-        "surface_context": "generic_optimization",
-        "challenge_group_id": "d1-complexity-01"
-      },
-      "interaction": {
-        "type": "ordering",
-        "items": [
-          {
-            "id": "baseline",
-            "label": "Confirm the baseline is correct"
-          },
-          {
-            "id": "dominant",
-            "label": "Identify the dominant repeated operation"
-          },
-          {
-            "id": "reuse",
-            "label": "Ask what prior result/information could be reused"
-          },
-          {
-            "id": "state",
-            "label": "Choose maintained state or a data structure that makes that operation cheaper"
-          },
-          {
-            "id": "complexity",
-            "label": "Recalculate time/space complexity"
-          },
-          {
-            "id": "verify",
-            "label": "Verify the optimization preserves the required result"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "ordering",
-        "ordered_ids": [
-          "baseline",
-          "dominant",
-          "reuse",
-          "state",
-          "complexity",
-          "verify"
-        ]
+        "scaffold_level": 2
       }
     },
     {
-      "id": "dsa1-hash-bottleneck-transfer-016",
-      "content_version": "dsa-content-2026-09-26-v6",
+      "id": "dsa1-first-repeat-index-007",
+      "content_version": "dsa-content-2026-09-26-v8",
       "certification_version": "dsa-v1",
       "domain_id": "domain-1",
-      "task_id": "1.2",
+      "task_id": "1.1",
       "assessment_mode": "application",
       "interaction_type": "python_code",
-      "difficulty_prior": 0.62,
-      "prompt": "Implement `has_duplicate(values)` in O(n) expected time. Do not sort the input.",
+      "difficulty_prior": 0.52,
+      "prompt": "Implement `first_repeat_index(values)`. Return the FIRST index whose value has appeared earlier, or `-1` if there is no repeat. Example: `[8, 4, 6, 4, 8] -> 3`.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "first_repeat_index",
+        "starter_code": "def first_repeat_index(values):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                8,
+                4,
+                6,
+                4,
+                8
+              ]
+            ],
+            "expected": 3
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ]
+            ],
+            "expected": -1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5,
+                5
+              ]
+            ],
+            "expected": 1
+          },
+          {
+            "type": "call",
+            "args": [
+              []
+            ],
+            "expected": -1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                1,
+                2
+              ]
+            ],
+            "expected": 2
+          }
+        ]
+      },
       "concepts": [
         {
-          "concept_id": "dsa.optimization.from_bruteforce",
-          "weight": 0.7
+          "concept_id": "dsa.reasoning.problem_contract",
+          "weight": 0.45
         },
         {
-          "concept_id": "dsa.complexity.aggregate_work",
-          "weight": 0.3
+          "concept_id": "dsa.optimization.from_bruteforce",
+          "weight": 0.55
         }
       ],
-      "explanation": "Keep a set of processed values. Each value is checked once instead of rescanning the processed prefix.",
+      "explanation": "Scanning left-to-right and keeping earlier values makes the first detected repeat exactly the required index.",
       "blueprint_skill_ids": [
-        "1.2.03"
+        "1.1.01",
+        "1.1.03"
       ],
       "difficulty_label": "medium",
       "hints": [
-        "Check membership before adding the current value."
+        "Use a set of values from earlier positions.",
+        "Check before adding the current value."
       ],
       "error_codes": [
         {
@@ -1714,19 +952,150 @@
         }
       ],
       "pedagogy": {
-        "stage": "transfer",
-        "scaffold_level": 1,
-        "family_id": "dsa.reasoning.bruteforce_to_bottleneck",
-        "transfer_group_id": "remove_repeated_work",
-        "surface_context": "event_deduplication",
-        "challenge_group_id": "d1-complexity-01"
+        "stage": "construct",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa1-pair-indices-baseline-008",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.1",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.55,
+      "prompt": "Implement `pair_sum_indices_baseline(values, target)`. Return `[i, j]` for the first pair found by scanning `i` left-to-right and `j` from `i + 1` to the end. Return `[]` if no pair exists.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "pair_sum_indices_baseline",
+        "starter_code": "def pair_sum_indices_baseline(values, target):\n    pass\n"
       },
-      "choice_feedback": {},
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                7,
+                11,
+                15
+              ],
+              9
+            ],
+            "expected": [
+              0,
+              1
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                2,
+                4
+              ],
+              6
+            ],
+            "expected": [
+              1,
+              2
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                3
+              ],
+              6
+            ],
+            "expected": [
+              0,
+              1
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ],
+              100
+            ],
+            "expected": []
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              0
+            ],
+            "expected": []
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.reasoning.problem_contract",
+          "weight": 0.5
+        },
+        {
+          "concept_id": "dsa.reasoning.correct_baseline",
+          "weight": 0.5
+        }
+      ],
+      "explanation": "The point is to establish exact output semantics before optimizing. The nested-loop order defines which valid pair is considered first.",
+      "blueprint_skill_ids": [
+        "1.1.01",
+        "1.1.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Preserve original indexes.",
+        "Use `j = i + 1` so one element cannot be used twice."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa1-has-duplicate-fast-009",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.48,
+      "prompt": "Implement `has_duplicate(values)` in O(n) expected time using O(n) extra space. Do not sort or mutate the input.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
       "interaction": {
         "type": "python_code",
         "language": "python",
         "entrypoint": "has_duplicate",
-        "starter_code": "def has_duplicate(values):\n    seen = set()\n\n    for value in values:\n        # Return True as soon as value has appeared before.\n        pass\n\n    return False\n"
+        "starter_code": "def has_duplicate(values):\n    pass\n"
       },
       "canonical_answer": {
         "type": "python_code",
@@ -1769,603 +1138,40 @@
               ]
             ],
             "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "a",
+                "b",
+                "c",
+                "a"
+              ]
+            ],
+            "expected": true
           }
         ]
       },
-      "instruction": "Write the function, run the tests, then submit."
-    },
-    {
-      "id": "dsa1-prefix-invariant-017",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.3",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.61,
-      "prompt": "Assume `should_drop(...)` is O(1). Why can this still be O(n) total work even though a `while` loop is nested inside a `for` loop?\n\n```python\nleft = 0\nfor right in range(len(values)):\n    while left < right and should_drop(left, right):\n        left += 1\n```",
-      "concepts": [
-        {
-          "concept_id": "dsa.complexity.aggregate_work",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Count pointer movement across the entire run. Neither pointer moves backward, so the total number of pointer advances is O(n).",
-      "blueprint_skill_ids": [
-        "1.3.01"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "How many times can `left` increase during the entire function?"
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected answer does not match the algorithm's actual behavior."
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 2,
-        "family_id": "dsa.reasoning.invariant_progress",
-        "transfer_group_id": "processed_prefix_invariant",
-        "surface_context": "running_sum",
-        "challenge_group_id": "d1-correctness-01"
-      },
-      "choice_feedback": {
-        "aggregate": "Correct. Aggregate pointer movement is linear.",
-        "nested": "Loop nesting alone does not determine complexity when the inner loop shares monotonic state.",
-        "once": "A single right step may cause several left moves.",
-        "constant": "Each increment is O(1), but there can be O(n) increments."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "aggregate",
-            "label": "`right` moves forward n times and `left` also moves forward at most n times total"
-          },
-          {
-            "id": "nested",
-            "label": "Any nested loop is automatically O(n²)"
-          },
-          {
-            "id": "once",
-            "label": "The `while` loop can execute only once for each `right`"
-          },
-          {
-            "id": "constant",
-            "label": "Because `left += 1` makes the whole algorithm O(1)"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "aggregate"
-      },
-      "instruction": "Choose ONE."
-    },
-    {
-      "id": "dsa1-binary-progress-fault-018",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.3",
-      "assessment_mode": "application",
-      "interaction_type": "spot_the_fault",
-      "difficulty_prior": 0.68,
-      "prompt": "The input is sorted. The search uses an inclusive interval `[left, right]`. Flag the update that can fail to make progress when `mid == left`.",
-      "concepts": [
-        {
-          "concept_id": "dsa.correctness.invariant",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "`left = mid` can leave left unchanged, so the candidate interval may never shrink. When `values[mid] < target`, mid is known not to be the target, so `left = mid + 1` both preserves the candidate invariant and makes progress.",
-      "blueprint_skill_ids": [
-        "1.3.01"
-      ],
-      "difficulty_label": "hard",
-      "hints": [
-        "Try a two-element interval where mid evaluates to left."
-      ],
-      "error_codes": [
-        {
-          "code": "fault_missed",
-          "description": "The non-progressing boundary update was not identified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.correctness.invariant"
-            ],
-            "node_id": "domain-1-invariant",
-            "preferred_stage": "diagnose",
-            "preferred_family_id": "dsa.reasoning.invariant_progress",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "fault_false_positive",
-          "description": "A valid search step was incorrectly flagged.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.correctness.invariant"
-            ],
-            "node_id": "domain-1-invariant",
-            "preferred_stage": "trace",
-            "preferred_family_id": "dsa.reasoning.invariant_progress",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "Cornell CS 2112 — Loop invariants",
-          "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "diagnose",
-        "scaffold_level": 1,
-        "family_id": "dsa.reasoning.invariant_progress",
-        "transfer_group_id": "preserve_candidate_and_progress",
-        "surface_context": "binary_search",
-        "challenge_group_id": "d1-correctness-01"
-      },
-      "interaction": {
-        "type": "spot_the_fault",
-        "elements": [
-          {
-            "id": "loop",
-            "label": "`while left <= right:`"
-          },
-          {
-            "id": "mid",
-            "label": "`mid = (left + right) // 2`"
-          },
-          {
-            "id": "left",
-            "label": "`if values[mid] < target: left = mid`"
-          },
-          {
-            "id": "right",
-            "label": "`else: right = mid - 1`"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "spot_the_fault",
-        "faulty_ids": [
-          "left"
-        ]
-      }
-    },
-    {
-      "id": "dsa1-binary-update-reason-019",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.3",
-      "assessment_mode": "application",
-      "interaction_type": "multiple_choice",
-      "difficulty_prior": 0.6,
-      "prompt": "In an inclusive binary-search interval, `values[mid] < target`. Why is `left = mid + 1` the useful update?",
-      "concepts": [
-        {
-          "concept_id": "dsa.correctness.invariant",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Sorted order proves that indices through mid cannot contain the target. Moving to mid + 1 discards only impossible candidates and strictly shrinks the interval.",
-      "blueprint_skill_ids": [
-        "1.3.01"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "The update must satisfy two jobs: preserve possible answers and make the interval smaller."
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_choice_incorrect",
-          "description": "The selected reason does not capture both invariant preservation and progress.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.correctness.invariant"
-            ],
-            "node_id": "domain-1-invariant",
-            "preferred_stage": "reason",
-            "preferred_family_id": "dsa.reasoning.invariant_progress",
-            "min_scaffold_level": 2
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "Cornell CS 2112 — Loop invariants",
-          "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "reason",
-        "scaffold_level": 1,
-        "family_id": "dsa.reasoning.invariant_progress",
-        "transfer_group_id": "preserve_candidate_and_progress",
-        "surface_context": "binary_search",
-        "challenge_group_id": "d1-correctness-01"
-      },
-      "choice_feedback": {
-        "both": "Correct: the update is justified by sorted order and also guarantees progress.",
-        "style": "This is a correctness/progress requirement, not a style preference.",
-        "skip": "The midpoint is not skipped arbitrarily; it has been proven too small.",
-        "runtime": "It does not make the loop constant time."
-      },
-      "interaction": {
-        "type": "multiple_choice",
-        "choices": [
-          {
-            "id": "both",
-            "label": "It removes only candidates proven too small and guarantees the interval shrinks"
-          },
-          {
-            "id": "style",
-            "label": "It is only the conventional coding style for binary search"
-          },
-          {
-            "id": "skip",
-            "label": "It skips an arbitrary midpoint to make the code faster"
-          },
-          {
-            "id": "runtime",
-            "label": "It makes the remaining loop O(1)"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "multiple_choice",
-        "choice_id": "both"
-      }
-    },
-    {
-      "id": "dsa1-binary-trace-order-020",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.3",
-      "assessment_mode": "procedural_recall",
-      "interaction_type": "ordering",
-      "difficulty_prior": 0.61,
-      "prompt": "A sorted version index contains `[2, 5, 8, 12, 19]`. A lookup for version key 12 uses inclusive binary search. Order the states the search visits.",
-      "concepts": [
-        {
-          "concept_id": "dsa.correctness.invariant",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "The first midpoint is index 2 with value 8, so the target must be to the right. The interval becomes [3,4]; midpoint 3 is value 12, so the search succeeds.",
-      "blueprint_skill_ids": [
-        "1.3.01"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Compute the midpoint of [0,4], apply the comparison, then compute the midpoint of the remaining interval."
-      ],
-      "error_codes": [
-        {
-          "code": "ordering_invalid_sequence",
-          "description": "The candidate interval trace is out of order.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.correctness.invariant"
-            ],
-            "node_id": "domain-1-invariant",
-            "preferred_stage": "trace",
-            "preferred_family_id": "dsa.reasoning.invariant_progress",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "Cornell CS 2112 — Loop invariants",
-          "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "trace",
-        "scaffold_level": 2,
-        "family_id": "dsa.reasoning.invariant_progress",
-        "transfer_group_id": "preserve_candidate_and_progress",
-        "surface_context": "binary_search",
-        "challenge_group_id": "d1-correctness-01"
-      },
-      "interaction": {
-        "type": "ordering",
-        "items": [
-          {
-            "id": "start",
-            "label": "`left=0, right=4`"
-          },
-          {
-            "id": "mid2",
-            "label": "`mid=2`, value 8 is too small"
-          },
-          {
-            "id": "move",
-            "label": "`left=3, right=4`"
-          },
-          {
-            "id": "mid3",
-            "label": "`mid=3`, value 12 matches"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "ordering",
-        "ordered_ids": [
-          "start",
-          "mid2",
-          "move",
-          "mid3"
-        ]
-      }
-    },
-    {
-      "id": "dsa1-edge-cases-mr-021",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.3",
-      "assessment_mode": "recognition",
-      "interaction_type": "multiple_response",
-      "difficulty_prior": 0.44,
-      "prompt": "A function returns the first index of `target` in a list, or `-1` if absent. Which FOUR tests give strong boundary/no-solution coverage?",
-      "concepts": [
-        {
-          "concept_id": "dsa.correctness.edge_cases",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Empty input, a match at the first position, duplicate matches, and an absent target probe distinct boundary or contract behaviors. A typical middle match is useful too, but it is the normal case rather than one of the requested boundary/no-solution cases.",
-      "blueprint_skill_ids": [
-        "1.3.02"
-      ],
-      "difficulty_label": "easy",
-      "hints": [
-        "Look for minimum size, boundary position, duplicate behavior, and no-solution behavior."
-      ],
-      "error_codes": [
-        {
-          "code": "multiple_response_incomplete",
-          "description": "One boundary/no-solution test was omitted.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.correctness.edge_cases"
-            ],
-            "node_id": "domain-1-counterexamples",
-            "preferred_stage": "recognize",
-            "preferred_family_id": "dsa.reasoning.invariant_progress",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "multiple_response_extra",
-          "description": "A non-boundary item was selected.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.correctness.edge_cases"
-            ],
-            "node_id": "domain-1-counterexamples",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.reasoning.invariant_progress",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "multiple_response_incorrect",
-          "description": "The selected set does not cover the requested boundary/no-solution behaviors.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.correctness.edge_cases"
-            ],
-            "node_id": "domain-1-counterexamples",
-            "preferred_stage": "differentiate",
-            "preferred_family_id": "dsa.reasoning.invariant_progress",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "recognize",
-        "scaffold_level": 3,
-        "family_id": "dsa.reasoning.invariant_progress",
-        "transfer_group_id": "boundary_case_testing",
-        "surface_context": "first_index"
-      },
-      "instruction": "Choose FOUR.",
-      "interaction": {
-        "type": "multiple_response",
-        "choices": [
-          {
-            "id": "empty",
-            "label": "Empty list"
-          },
-          {
-            "id": "first",
-            "label": "Target at index 0"
-          },
-          {
-            "id": "dupes",
-            "label": "Target appears more than once"
-          },
-          {
-            "id": "absent",
-            "label": "Target is absent"
-          },
-          {
-            "id": "middle",
-            "label": "Ordinary match near the middle"
-          },
-          {
-            "id": "name",
-            "label": "Rename the function before testing"
-          }
-        ],
-        "required_selections": 4
-      },
-      "canonical_answer": {
-        "type": "multiple_response",
-        "choice_ids": [
-          "empty",
-          "first",
-          "dupes",
-          "absent"
-        ]
-      }
-    },
-    {
-      "id": "dsa1-tests-classify-022",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.3",
-      "assessment_mode": "relationship_recall",
-      "interaction_type": "classification",
-      "difficulty_prior": 0.47,
-      "prompt": "A search helper just had a boundary bug fixed. Match each small regression test to the failure mode it is mainly trying to catch.",
-      "concepts": [
-        {
-          "concept_id": "dsa.correctness.edge_cases",
-          "weight": 1.0
-        }
-      ],
-      "explanation": "Boundary tests probe minimal/extreme positions, normal tests probe ordinary behavior, and no-solution tests verify the documented failure result.",
-      "blueprint_skill_ids": [
-        "1.3.02"
-      ],
-      "difficulty_label": "medium",
-      "hints": [
-        "Classify by the primary reason you would keep the test."
-      ],
-      "error_codes": [
-        {
-          "code": "classification_misplaced",
-          "description": "At least one test was matched to the wrong testing purpose.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.correctness.edge_cases"
-            ],
-            "node_id": "domain-1-counterexamples",
-            "preferred_stage": "differentiate",
-            "min_scaffold_level": 3
-          }
-        },
-        {
-          "code": "classification_incomplete",
-          "description": "At least one test was not classified.",
-          "remediation": {
-            "concept_ids": [
-              "dsa.correctness.edge_cases"
-            ],
-            "node_id": "domain-1-counterexamples",
-            "preferred_stage": "differentiate",
-            "min_scaffold_level": 3
-          }
-        }
-      ],
-      "source_refs": [
-        {
-          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
-          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
-        }
-      ],
-      "pedagogy": {
-        "stage": "differentiate",
-        "scaffold_level": 2,
-        "surface_context": "search_testing"
-      },
-      "interaction": {
-        "type": "classification",
-        "items": [
-          {
-            "id": "empty",
-            "label": "`values=[]`, target=4"
-          },
-          {
-            "id": "first",
-            "label": "`values=[4,7,9]`, target=4"
-          },
-          {
-            "id": "middle",
-            "label": "`values=[2,4,6,8,10]`, target=6"
-          },
-          {
-            "id": "absent",
-            "label": "`values=[2,4,6]`, target=5"
-          }
-        ],
-        "categories": [
-          {
-            "id": "boundary",
-            "label": "Boundary case"
-          },
-          {
-            "id": "normal",
-            "label": "Normal case"
-          },
-          {
-            "id": "none",
-            "label": "No-solution case"
-          }
-        ]
-      },
-      "canonical_answer": {
-        "type": "classification",
-        "placements": {
-          "empty": "boundary",
-          "first": "boundary",
-          "middle": "normal",
-          "absent": "none"
-        }
-      }
-    },
-    {
-      "id": "dsa1-invariant-proof-reconstruct-023",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.3",
-      "assessment_mode": "application",
-      "interaction_type": "python_code",
-      "difficulty_prior": 0.62,
-      "prompt": "Implement `first_duplicate_index(values)`. Return the first index whose value appeared earlier, or `-1` if every value is unique.",
       "concepts": [
         {
           "concept_id": "dsa.optimization.from_bruteforce",
           "weight": 0.7
         },
         {
-          "concept_id": "dsa.correctness.edge_cases",
+          "concept_id": "dsa.complexity.big_o",
           "weight": 0.3
         }
       ],
-      "explanation": "The processed-prefix state is the set of values already seen. Left-to-right scanning guarantees the first detected repeat is the required index.",
+      "explanation": "A set removes repeated prefix scans by maintaining exactly the membership information needed. Expected time is O(n), extra space O(n).",
       "blueprint_skill_ids": [
-        "1.3.01"
+        "1.2.01",
+        "1.2.03"
       ],
       "difficulty_label": "medium",
       "hints": [
-        "Check `value in seen` before adding it."
+        "Maintain a `seen` set.",
+        "Return as soon as a value is already present."
       ],
       "error_codes": [
         {
@@ -2381,16 +1187,25 @@
       ],
       "pedagogy": {
         "stage": "construct",
-        "scaffold_level": 4,
-        "family_id": "dsa.reasoning.invariant_progress",
-        "transfer_group_id": "preserve_candidate_and_progress",
-        "surface_context": "generic_loop"
-      },
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa1-pair-sum-fast-010",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.57,
+      "prompt": "Implement `has_pair_sum(values, target)` in O(n) expected time. Two different indexes must be used. The input may contain duplicates and negative values.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
       "interaction": {
         "type": "python_code",
         "language": "python",
-        "entrypoint": "first_duplicate_index",
-        "starter_code": "def first_duplicate_index(values):\n    seen = set()\n\n    for i, value in enumerate(values):\n        # Keep enough state to detect the first repeated value.\n        pass\n\n    return -1\n"
+        "entrypoint": "has_pair_sum",
+        "starter_code": "def has_pair_sum(values, target):\n    pass\n"
       },
       "canonical_answer": {
         "type": "python_code",
@@ -2399,12 +1214,134 @@
             "type": "call",
             "args": [
               [
-                4,
+                2,
                 7,
+                11,
+                15
+              ],
+              9
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                3
+              ],
+              6
+            ],
+            "expected": false
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                3
+              ],
+              6
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                -4,
+                1,
+                5
+              ],
+              1
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
                 4
+              ],
+              8
+            ],
+            "expected": false
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.reasoning.optimization_loop",
+          "weight": 0.45
+        },
+        {
+          "concept_id": "dsa.optimization.from_bruteforce",
+          "weight": 0.55
+        }
+      ],
+      "explanation": "For each value x, the only earlier value that can complete the pair is `target - x`. A set makes that lookup expected O(1).",
+      "blueprint_skill_ids": [
+        "1.2.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Compute the complement.",
+        "Check the complement before adding the current value."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa1-first-repeat-fast-011",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.55,
+      "prompt": "The slow `first_repeat_index` rescans `values[:i]` for every position. Rewrite it so it runs in O(n) expected time and still returns the FIRST repeated index.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "first_repeat_index",
+        "starter_code": "def first_repeat_index(values):\n    for i, value in enumerate(values):\n        if value in values[:i]:\n            return i\n    return -1\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                9,
+                2,
+                7,
+                2,
+                9
               ]
             ],
-            "expected": 2
+            "expected": 3
           },
           {
             "type": "call",
@@ -2421,8 +1358,8 @@
             "type": "call",
             "args": [
               [
-                5,
-                5
+                4,
+                4
               ]
             ],
             "expected": 1
@@ -2438,52 +1375,637 @@
             "type": "call",
             "args": [
               [
-                3,
                 1,
                 2,
+                3,
                 1,
-                3
+                2
               ]
             ],
             "expected": 3
           }
         ]
       },
-      "instruction": "Write the function, run the tests, then submit.",
-      "choice_feedback": {}
-    },
-    {
-      "id": "dsa1-invariant-transfer-024",
-      "content_version": "dsa-content-2026-09-26-v6",
-      "certification_version": "dsa-v1",
-      "domain_id": "domain-1",
-      "task_id": "1.3",
-      "assessment_mode": "application",
-      "interaction_type": "typed_fill_blank",
-      "difficulty_prior": 0.69,
-      "prompt": "Complete the one expression that preserves the contract: return the first index whose value has already appeared.",
       "concepts": [
         {
+          "concept_id": "dsa.reasoning.optimization_loop",
+          "weight": 0.5
+        },
+        {
           "concept_id": "dsa.optimization.from_bruteforce",
+          "weight": 0.5
+        }
+      ],
+      "explanation": "The repeated expensive operation is searching the growing processed prefix. Replace it with maintained membership state.",
+      "blueprint_skill_ids": [
+        "1.2.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Do not slice or rescan the processed prefix.",
+        "Keep a set of earlier values."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa1-prefix-maxes-012",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.49,
+      "prompt": "Implement `prefix_maxes(values)`. At each index, return the largest value seen from the beginning through that index. Example: `[3, 1, 5, 2] -> [3, 3, 5, 5]`.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "prefix_maxes",
+        "starter_code": "def prefix_maxes(values):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                1,
+                5,
+                2
+              ]
+            ],
+            "expected": [
+              3,
+              3,
+              5,
+              5
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                -4,
+                -2,
+                -7
+              ]
+            ],
+            "expected": [
+              -4,
+              -2,
+              -2
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5
+              ]
+            ],
+            "expected": [
+              5
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              []
+            ],
+            "expected": []
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                1,
+                1
+              ]
+            ],
+            "expected": [
+              1,
+              1,
+              1
+            ]
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.reasoning.optimization_loop",
+          "weight": 0.55
+        },
+        {
+          "concept_id": "dsa.optimization.from_bruteforce",
+          "weight": 0.45
+        }
+      ],
+      "explanation": "Each new output depends only on the current value and the best value seen so far. Maintaining that state avoids rescanning every prefix.",
+      "blueprint_skill_ids": [
+        "1.2.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Track one running maximum.",
+        "Do not recompute `max(values[:i+1])` each iteration."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 2
+      }
+    },
+    {
+      "id": "dsa1-max-profit-once-013",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.61,
+      "prompt": "Implement `max_profit_once(prices)`. You may buy once and sell once LATER. Return the maximum profit, or `0` when no profitable trade exists. Target O(n) time and O(1) extra space.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "max_profit_once",
+        "starter_code": "def max_profit_once(prices):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                7,
+                1,
+                5,
+                3,
+                6,
+                4
+              ]
+            ],
+            "expected": 5
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                7,
+                6,
+                4,
+                3,
+                1
+              ]
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                5
+              ]
+            ],
+            "expected": 3
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5
+              ]
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              []
+            ],
+            "expected": 0
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.reasoning.optimization_loop",
           "weight": 0.6
         },
         {
-          "concept_id": "dsa.correctness.edge_cases",
+          "concept_id": "dsa.complexity.big_o",
           "weight": 0.4
         }
       ],
-      "explanation": "The scan is left-to-right, so `i` is the first index where a repeated value is detected.",
+      "explanation": "For each possible sell price, the only prior state needed is the minimum price seen earlier. That turns an O(n²) pair search into one pass.",
       "blueprint_skill_ids": [
+        "1.2.01",
+        "1.2.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Track `min_price` from earlier positions.",
+        "Update best profit from the current price and the earlier minimum."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa1-longest-equal-run-014",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.54,
+      "prompt": "Implement `longest_equal_run(values)`: return the length of the longest contiguous run of the same value. Example: `[1, 1, 2, 2, 2, 1] -> 3`. Use one pass.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "longest_equal_run",
+        "starter_code": "def longest_equal_run(values):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                1,
+                2,
+                2,
+                2,
+                1
+              ]
+            ],
+            "expected": 3
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5
+              ]
+            ],
+            "expected": 1
+          },
+          {
+            "type": "call",
+            "args": [
+              []
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ]
+            ],
+            "expected": 1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                7,
+                7,
+                7,
+                7
+              ]
+            ],
+            "expected": 4
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.reasoning.optimization_loop",
+          "weight": 0.5
+        },
+        {
+          "concept_id": "dsa.complexity.big_o",
+          "weight": 0.5
+        }
+      ],
+      "explanation": "You only need the previous value, current run length, and best run length. This is a compact example of maintained one-pass state.",
+      "blueprint_skill_ids": [
+        "1.2.01",
+        "1.2.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Reset the current run when the value changes.",
+        "Handle empty input explicitly."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa1-window-at-most-limit-015",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.68,
+      "prompt": "All values are non-negative. Implement `longest_sum_at_most(values, limit)`: return the longest contiguous subarray whose sum is at most `limit`. Target O(n) time.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "longest_sum_at_most",
+        "starter_code": "def longest_sum_at_most(values, limit):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                1,
+                5,
+                1,
+                3,
+                2
+              ],
+              7
+            ],
+            "expected": 3
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                1,
+                1
+              ],
+              2
+            ],
+            "expected": 2
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5
+              ],
+              4
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              10
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                0,
+                0,
+                0
+              ],
+              0
+            ],
+            "expected": 3
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.complexity.aggregate_work",
+          "weight": 0.65
+        },
+        {
+          "concept_id": "dsa.correctness.invariant",
+          "weight": 0.35
+        }
+      ],
+      "explanation": "With non-negative values, moving the left boundary forward can only decrease the sum. Both boundaries move only forward, so total pointer movement is O(n).",
+      "blueprint_skill_ids": [
+        "1.2.02",
         "1.3.01"
       ],
       "difficulty_label": "hard",
       "hints": [
-        "The function returns an index, not the repeated value."
+        "Add the new right value.",
+        "While the sum is too large, subtract the left value and move left.",
+        "Update best after the window is valid."
       ],
       "error_codes": [
         {
-          "code": "typed_fill_blank_incorrect",
-          "description": "The filled expression does not preserve the required contract."
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        },
+        {
+          "title": "Cornell CS 2112 — Loop invariants",
+          "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa1-common-value-fast-016",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.2",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.6,
+      "prompt": "Implement `has_common_value(a, b)` in O(len(a) + len(b)) expected time. Return `True` when the lists share at least one value. Do not sort or mutate either list.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "has_common_value",
+        "starter_code": "def has_common_value(a, b):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ],
+              [
+                4,
+                5,
+                3
+              ]
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ],
+            "expected": false
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              [
+                1
+              ]
+            ],
+            "expected": false
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                "a",
+                "b"
+              ],
+              [
+                "b"
+              ]
+            ],
+            "expected": true
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                1
+              ],
+              [
+                1
+              ]
+            ],
+            "expected": true
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.optimization.from_bruteforce",
+          "weight": 0.65
+        },
+        {
+          "concept_id": "dsa.complexity.big_o",
+          "weight": 0.35
+        }
+      ],
+      "explanation": "Store membership for one list, then scan the other. This replaces repeated cross-list searching with expected O(1) membership checks.",
+      "blueprint_skill_ids": [
+        "1.2.01",
+        "1.2.03"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Build a set from one input.",
+        "Then scan the other input once."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
         }
       ],
       "source_refs": [
@@ -2494,25 +2016,691 @@
       ],
       "pedagogy": {
         "stage": "transfer",
-        "scaffold_level": 3,
-        "family_id": "dsa.reasoning.invariant_progress",
-        "transfer_group_id": "processed_prefix_invariant",
-        "surface_context": "log_processing",
-        "challenge_group_id": "d1-correctness-01"
+        "scaffold_level": 0
+      }
+    },
+    {
+      "id": "dsa1-dedupe-repair-order-017",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.55,
+      "prompt": "Repair `dedupe_preserve_order`. The current implementation removes duplicates but may change original order. Keep the first occurrence of each value in input order.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "dedupe_preserve_order",
+        "starter_code": "def dedupe_preserve_order(values):\n    return list(set(values))\n"
       },
-      "choice_feedback": {},
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                1,
+                3,
+                2,
+                1
+              ]
+            ],
+            "expected": [
+              3,
+              1,
+              2
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                1,
+                2,
+                3
+              ]
+            ],
+            "expected": [
+              2,
+              1,
+              3
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              []
+            ],
+            "expected": []
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                1,
+                1
+              ]
+            ],
+            "expected": [
+              1
+            ]
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.reasoning.problem_contract",
+          "weight": 0.55
+        },
+        {
+          "concept_id": "dsa.correctness.invariant",
+          "weight": 0.45
+        }
+      ],
+      "explanation": "The output contract includes order, so converting directly to a set is insufficient. Use a set internally for membership while building the output list left-to-right.",
+      "blueprint_skill_ids": [
+        "1.3.01",
+        "1.3.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "A data structure can be useful internally without being the right output representation.",
+        "Scan left-to-right."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        },
+        {
+          "title": "Cornell CS 2112 — Loop invariants",
+          "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa1-profit-repair-018",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.59,
+      "prompt": "Repair `max_profit_once`. The current code invents a price that never appeared, causing incorrect profits. Return the best non-negative profit with buy before sell.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "max_profit_once",
+        "starter_code": "def max_profit_once(prices):\n    min_price = 0\n    best = 0\n\n    for price in prices:\n        best = max(best, price - min_price)\n        min_price = min(min_price, price)\n\n    return best\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                7,
+                1,
+                5,
+                3,
+                6,
+                4
+              ]
+            ],
+            "expected": 5
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                7,
+                6,
+                4,
+                3,
+                1
+              ]
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                5
+              ]
+            ],
+            "expected": 3
+          },
+          {
+            "type": "call",
+            "args": [
+              []
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5
+              ]
+            ],
+            "expected": 0
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.correctness.invariant",
+          "weight": 0.6
+        },
+        {
+          "concept_id": "dsa.correctness.edge_cases",
+          "weight": 0.4
+        }
+      ],
+      "explanation": "A maintained minimum must represent an actual earlier price, or a safe sentinel such as infinity. Initializing it to 0 invents an impossible buy price.",
+      "blueprint_skill_ids": [
+        "1.3.01",
+        "1.3.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Handle empty input deliberately.",
+        "Initialize from the data or use infinity."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Cornell CS 2112 — Loop invariants",
+          "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa1-window-repair-019",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.67,
+      "prompt": "Repair `longest_sum_at_most`. Values are non-negative. The current code moves the left boundary but forgets to remove the leaving value from the maintained sum.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "longest_sum_at_most",
+        "starter_code": "def longest_sum_at_most(values, limit):\n    left = 0\n    total = 0\n    best = 0\n\n    for right, value in enumerate(values):\n        total += value\n\n        while total > limit and left <= right:\n            left += 1\n\n        best = max(best, right - left + 1)\n\n    return best\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                1,
+                5,
+                1,
+                3,
+                2
+              ],
+              7
+            ],
+            "expected": 3
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                1,
+                1
+              ],
+              2
+            ],
+            "expected": 2
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5
+              ],
+              4
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [],
+              10
+            ],
+            "expected": 0
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                0,
+                0
+              ],
+              0
+            ],
+            "expected": 2
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.correctness.invariant",
+          "weight": 0.7
+        },
+        {
+          "concept_id": "dsa.complexity.aggregate_work",
+          "weight": 0.3
+        }
+      ],
+      "explanation": "The invariant is that `total` equals the sum of `values[left:right+1]`. Subtract the leaving value before incrementing `left`.",
+      "blueprint_skill_ids": [
+        "1.3.01",
+        "1.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Write down what `total` should mean after each update.",
+        "Subtract `values[left]` before moving `left`."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Cornell CS 2112 — Loop invariants",
+          "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa1-pair-indices-repair-020",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.64,
+      "prompt": "Repair `pair_sum_indices`. Return the first pair discovered while scanning left-to-right as `[earlier_index, current_index]`. It must handle duplicates such as `[3, 3]` with target `6`.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "pair_sum_indices",
+        "starter_code": "def pair_sum_indices(values, target):\n    index_by_value = {}\n\n    for i, value in enumerate(values):\n        index_by_value[value] = i\n        needed = target - value\n\n        if needed in index_by_value:\n            return [index_by_value[needed], i]\n\n    return []\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                7,
+                11,
+                15
+              ],
+              9
+            ],
+            "expected": [
+              0,
+              1
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                2,
+                4
+              ],
+              6
+            ],
+            "expected": [
+              1,
+              2
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                3,
+                3
+              ],
+              6
+            ],
+            "expected": [
+              0,
+              1
+            ]
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ],
+              100
+            ],
+            "expected": []
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                0,
+                4,
+                3,
+                0
+              ],
+              0
+            ],
+            "expected": [
+              0,
+              3
+            ]
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.correctness.invariant",
+          "weight": 0.65
+        },
+        {
+          "concept_id": "dsa.reasoning.problem_contract",
+          "weight": 0.35
+        }
+      ],
+      "explanation": "The map should contain only earlier indexes at lookup time. Check for the complement first, then store the current value/index.",
+      "blueprint_skill_ids": [
+        "1.3.01",
+        "1.3.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "The current index cannot be its own earlier partner.",
+        "Move the assignment after the complement lookup."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        },
+        {
+          "title": "Cornell CS 2112 — Loop invariants",
+          "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "diagnose",
+        "scaffold_level": 1
+      }
+    },
+    {
+      "id": "dsa1-linear-search-fill-021",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.3",
+      "assessment_mode": "application",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.43,
+      "prompt": "Complete `first_index(values, target)`. The function must return the index of the FIRST occurrence of `target`, or `-1` if `target` does not appear. It must examine every valid list index, including the final one. Example: `first_index([4, 7, 4], 4) -> 0`; `first_index([1, 2, 3], 3) -> 2`; `first_index([], 5) -> -1`. Python `range(stop)` visits indexes from `0` through `stop - 1`. Fill the two blanks so the loop covers exactly the valid indexes and returns the matching index rather than the matching value.",
       "interaction": {
         "type": "typed_fill_blank",
         "content": {
           "type": "code",
           "language": "python",
-          "template": "def first_repeat_index(values):\n    seen = set()\n\n    for i, value in enumerate(values):\n        if value in seen:\n            return {{answer}}\n        seen.add(value)\n\n    return -1\n"
+          "template": "def first_index(values, target):\n    # range(stop) must visit every valid index: 0 through len(values) - 1.\n    for i in range({{stop}}):\n        if values[i] == target:\n            # The contract asks for the index of the first match.\n            return {{answer}}\n    return -1\n"
         },
         "slots": [
           {
-            "id": "answer",
-            "label": "Returned expression",
+            "id": "stop",
+            "label": "last-exclusive loop boundary",
             "placeholder": "expression",
+            "width_chars": 16
+          },
+          {
+            "id": "answer",
+            "label": "matching index",
+            "placeholder": "expression",
+            "width_chars": 12
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "stop": {
+            "accepted_answers": [
+              "len(values)"
+            ]
+          },
+          "answer": {
+            "accepted_answers": [
+              "i"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.correctness.edge_cases",
+          "weight": 0.6
+        },
+        {
+          "concept_id": "dsa.reasoning.problem_contract",
+          "weight": 0.4
+        }
+      ],
+      "explanation": "The legal indexes are 0 through `len(values)-1`, so `range(len(values))` visits them all. Returning `i` preserves the index contract.",
+      "blueprint_skill_ids": [
+        "1.3.02"
+      ],
+      "difficulty_label": "easy",
+      "hints": [
+        "For a list of length n, the valid indexes are 0 through n-1.",
+        "When a match is found, the required output is its index."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more code blanks are incorrect."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 3
+      }
+    },
+    {
+      "id": "dsa1-pair-sum-fill-022",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.3",
+      "assessment_mode": "application",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.56,
+      "prompt": "Complete `has_pair_sum(values, target)`. Return `True` when TWO DIFFERENT indexes contain values whose sum equals `target`; otherwise return `False`. Examples: `has_pair_sum([2, 7, 11, 15], 9) -> True` because `2 + 7 = 9`; `has_pair_sum([3], 6) -> False` because one element cannot be reused; `has_pair_sum([3, 3], 6) -> True` because the two 3s come from different indexes. During the loop, `value` is the current element and `seen` must contain only values from earlier indexes. The first blank should compute the one earlier value that would satisfy `earlier_value + value = target`. The second blank should remember the current value only AFTER the lookup, so the current index cannot match itself.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "def has_pair_sum(values, target):\n    seen = set()\n\n    for value in values:\n        # Which EARLIER value would make: earlier_value + value == target?\n        needed = {{needed}}\n        if needed in seen:\n            return True\n\n        # Make the current value available only to LATER iterations.\n        {{remember}}\n\n    return False\n"
+        },
+        "slots": [
+          {
+            "id": "needed",
+            "label": "needed earlier value",
+            "placeholder": "expression",
+            "width_chars": 18
+          },
+          {
+            "id": "remember",
+            "label": "remember current value",
+            "placeholder": "statement",
+            "width_chars": 20
+          }
+        ]
+      },
+      "canonical_answer": {
+        "type": "typed_fill_blank",
+        "answers": {
+          "needed": {
+            "accepted_answers": [
+              "target - value",
+              "target-value"
+            ]
+          },
+          "remember": {
+            "accepted_answers": [
+              "seen.add(value)"
+            ]
+          }
+        }
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.correctness.invariant",
+          "weight": 0.55
+        },
+        {
+          "concept_id": "dsa.optimization.from_bruteforce",
+          "weight": 0.45
+        }
+      ],
+      "explanation": "The complement is `target - value`. Only after the lookup should the current value become part of the processed-prefix state.",
+      "blueprint_skill_ids": [
+        "1.3.01"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Start from the equation `earlier_value + value = target` and isolate the earlier value.",
+        "Only after checking earlier values should the current value become available to future iterations."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more code blanks are incorrect."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+        },
+        {
+          "title": "Cornell CS 2112 — Loop invariants",
+          "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 3
+      }
+    },
+    {
+      "id": "dsa1-window-fill-023",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.3",
+      "assessment_mode": "application",
+      "interaction_type": "typed_fill_blank",
+      "difficulty_prior": 0.63,
+      "prompt": "Complete `longest_sum_at_most(values, limit)`. `values` contains only non-negative numbers. Return the length of the longest contiguous subarray whose sum is at most `limit`. Example: `longest_sum_at_most([2, 1, 5, 1, 3, 2], 7) -> 3` because a length-3 valid window such as `[1, 5, 1]` sums to 7. `total` must always equal the sum of the current window `values[left:right+1]`. When `total` is too large, remove the element currently at the LEFT boundary, then move that boundary one position to the right. Fill those two updates.",
+      "interaction": {
+        "type": "typed_fill_blank",
+        "content": {
+          "type": "code",
+          "language": "python",
+          "template": "def longest_sum_at_most(values, limit):\n    left = 0\n    total = 0\n    best = 0\n\n    for right, value in enumerate(values):\n        total += value\n\n        while total > limit:\n            # Remove the element that is currently at the left edge of the window.\n            total -= {{leaving}}\n            # Then move the left edge one position right.\n            {{advance}}\n\n        best = max(best, right - left + 1)\n\n    return best\n"
+        },
+        "slots": [
+          {
+            "id": "leaving",
+            "label": "value at left boundary",
+            "placeholder": "expression",
+            "width_chars": 18
+          },
+          {
+            "id": "advance",
+            "label": "advance left boundary",
+            "placeholder": "statement",
             "width_chars": 16
           }
         ]
@@ -2520,12 +2708,192 @@
       "canonical_answer": {
         "type": "typed_fill_blank",
         "answers": {
-          "answer": {
+          "leaving": {
             "accepted_answers": [
-              "i"
+              "values[left]"
+            ]
+          },
+          "advance": {
+            "accepted_answers": [
+              "left += 1",
+              "left=left+1",
+              "left = left + 1"
             ]
           }
         }
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.correctness.invariant",
+          "weight": 0.65
+        },
+        {
+          "concept_id": "dsa.complexity.aggregate_work",
+          "weight": 0.35
+        }
+      ],
+      "explanation": "Subtract the element at the current left boundary, then advance the boundary. That preserves the window-sum invariant.",
+      "blueprint_skill_ids": [
+        "1.3.01",
+        "1.2.02"
+      ],
+      "difficulty_label": "medium",
+      "hints": [
+        "Before `left` moves, subtract the value that is leaving the window.",
+        "After removing that value, advance the left boundary by one position."
+      ],
+      "error_codes": [
+        {
+          "code": "typed_fill_blank_incorrect",
+          "description": "One or more code blanks are incorrect."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "Cornell CS 2112 — Loop invariants",
+          "url": "https://www.cs.cornell.edu/courses/cs2112/2022fa/lectures/loopinv/"
+        },
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "construct",
+        "scaffold_level": 3
+      }
+    },
+    {
+      "id": "dsa1-equal-split-024",
+      "content_version": "dsa-content-2026-09-26-v8",
+      "certification_version": "dsa-v1",
+      "domain_id": "domain-1",
+      "task_id": "1.3",
+      "assessment_mode": "application",
+      "interaction_type": "python_code",
+      "difficulty_prior": 0.72,
+      "prompt": "Cold transfer: implement `first_equal_split(values)`. Return the smallest split index `i` with `1 <= i < len(values)` such that `sum(values[:i]) == sum(values[i:])`. Return `-1` if none exists. Target O(n) time.",
+      "instruction": "Write or repair the function, run the tests, then submit.",
+      "interaction": {
+        "type": "python_code",
+        "language": "python",
+        "entrypoint": "first_equal_split",
+        "starter_code": "def first_equal_split(values):\n    pass\n"
+      },
+      "canonical_answer": {
+        "type": "python_code",
+        "tests": [
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                1
+              ]
+            ],
+            "expected": 1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ]
+            ],
+            "expected": 2
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                1,
+                2,
+                4
+              ]
+            ],
+            "expected": -1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                0,
+                0
+              ]
+            ],
+            "expected": 1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                2,
+                -2,
+                0
+              ]
+            ],
+            "expected": 2
+          },
+          {
+            "type": "call",
+            "args": [
+              []
+            ],
+            "expected": -1
+          },
+          {
+            "type": "call",
+            "args": [
+              [
+                5
+              ]
+            ],
+            "expected": -1
+          }
+        ]
+      },
+      "concepts": [
+        {
+          "concept_id": "dsa.reasoning.optimization_loop",
+          "weight": 0.45
+        },
+        {
+          "concept_id": "dsa.correctness.edge_cases",
+          "weight": 0.3
+        },
+        {
+          "concept_id": "dsa.complexity.big_o",
+          "weight": 0.25
+        }
+      ],
+      "explanation": "Compute the total once, then maintain the left-side sum while scanning split points. The right sum is `total - left_sum`, so each split is checked in O(1).",
+      "blueprint_skill_ids": [
+        "1.1.03",
+        "1.2.01",
+        "1.3.02"
+      ],
+      "difficulty_label": "hard",
+      "hints": [
+        "Both sides must be non-empty.",
+        "Maintain a running left sum instead of repeatedly slicing and summing."
+      ],
+      "error_codes": [
+        {
+          "code": "python_tests_failed",
+          "description": "One or more behavioral tests did not pass."
+        }
+      ],
+      "source_refs": [
+        {
+          "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+          "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+        }
+      ],
+      "pedagogy": {
+        "stage": "transfer",
+        "scaffold_level": 0
       }
     }
   ]

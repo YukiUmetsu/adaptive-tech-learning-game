@@ -452,6 +452,34 @@ describe("QuestionCard", () => {
     ).toBeEnabled();
   });
 
+  it("shows typed-code detail prose beside the code", () => {
+    const question = base({
+      interaction_type: "typed_fill_blank",
+      prompt:
+        "Complete `range_sum(prefix, left, right)`. The range is half-open and must include left.",
+      interaction: {
+        type: "typed_fill_blank",
+        content: {
+          type: "code",
+          language: "python",
+          template: "return prefix[{{end}}] - prefix[{{start}}]",
+        },
+        slots: [
+          { id: "end", label: "Right index", placeholder: "expression" },
+          { id: "start", label: "Left index", placeholder: "expression" },
+        ],
+      },
+    });
+
+    render(<QuestionCard question={question} onSubmit={vi.fn()} />);
+
+    expect(
+      screen.getByText("The range is half-open and must include left."),
+    ).toBeInTheDocument();
+    // The lead sentence stays in the mission header, not the card.
+    expect(screen.queryByText(/^Complete/)).toBeNull();
+  });
+
   it("submits typed answers from table cells", async () => {
     const onSubmit = vi.fn();
     const question = base({
