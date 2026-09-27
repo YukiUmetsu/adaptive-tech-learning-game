@@ -1416,7 +1416,7 @@
           "learning"
         ],
         "summary": "Returns learner-family structure insights for a track.",
-        "description": "One aggregate request covers every family the learner has already\nencountered, so the Track Hub never fetches per-family or per-example state.\nAn optional `mission_id` scopes the response to a completed mission's\nfamilies so a completion summary shows only structures the finished work\ninvolved. It is post-exposure teaching content only: it never returns a\nfamily the learner has not seen, never returns families for an in-progress\nmission, and never carries a canonical answer. A track with no authored\nfamily guides returns an empty list, so old tracks are unaffected.",
+        "description": "One aggregate request covers every family the learner has already\nencountered, so the Track Hub never fetches per-family or per-example state.\nAn optional `mission_id` scopes the response to a completed mission's\nfamilies so a completion summary shows only structures the finished work\ninvolved. It is post-exposure teaching content only: it never returns a\nfamily the learner has not seen, never returns families for an in-progress\nmission, and never carries a canonical answer. A track with no authored\nfamily guides reports `has_guides: false` and an empty list, so old tracks\nare unaffected and clients can hide the patterns surface entirely.",
         "operationId": "get_track_family_insights",
         "parameters": [
           {
@@ -3962,9 +3962,14 @@
         "required": [
           "track_id",
           "track_version",
+          "has_guides",
           "insights"
         ],
         "properties": {
+          "has_guides": {
+            "type": "boolean",
+            "description": "Whether this track version authors any family guides at all.\n\nThe client uses this to hide the patterns surface entirely when a track\nhas no guides. An empty `insights` list with `has_guides: true` only means\nthe learner has not met a family yet."
+          },
           "insights": {
             "type": "array",
             "items": {

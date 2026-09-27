@@ -235,6 +235,7 @@ pub async fn family_insights(
         return Ok(FamilyInsightsResponse {
             track_id: track_id.to_owned(),
             track_version,
+            has_guides: false,
             insights: Vec::new(),
         });
     }
@@ -253,6 +254,7 @@ pub async fn family_insights(
                 return Ok(FamilyInsightsResponse {
                     track_id: track_id.to_owned(),
                     track_version,
+                    has_guides: true,
                     insights: Vec::new(),
                 });
             }
@@ -286,6 +288,7 @@ pub async fn family_insights(
     Ok(FamilyInsightsResponse {
         track_id: track_id.to_owned(),
         track_version,
+        has_guides: true,
         insights,
     })
 }
@@ -4976,6 +4979,7 @@ mod tests {
             .await
             .expect("track resolves");
         assert!(response.insights.is_empty());
+        assert!(!response.has_guides);
     }
 
     /// A minimal content registry with one pedagogy question and one guide.

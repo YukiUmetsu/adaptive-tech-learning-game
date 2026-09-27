@@ -132,6 +132,15 @@ export default function CertificationDashboardPage() {
     [practiceTestsState],
   );
 
+  // Patterns are only worth surfacing when the track authors family guides.
+  // An empty insight list with guides authored is a valid "nothing met yet"
+  // state; no guides at all means the tab would always be a dead end, so it is
+  // hidden rather than shown with a permanent empty state.
+  const familyInsights =
+    familyState.status === "loaded" && familyState.response.has_guides
+      ? familyState.response.insights
+      : null;
+
   // Publish the Daily Mission projection for the floating Focus widget when the
   // runner is not mounted. The runner owns it while the daily view is open, so
   // this never fights the learner's local progress.
@@ -691,16 +700,18 @@ export default function CertificationDashboardPage() {
           >
             <span aria-hidden="true">🎯</span> Practice
           </button>
-          <button
-            type="button"
-            aria-current={view === "patterns" ? "page" : undefined}
-            onClick={() => {
-              setView("patterns");
-              void reloadFamilies();
-            }}
-          >
-            <span aria-hidden="true">🧩</span> Patterns
-          </button>
+          {familyInsights !== null ? (
+            <button
+              type="button"
+              aria-current={view === "patterns" ? "page" : undefined}
+              onClick={() => {
+                setView("patterns");
+                void reloadFamilies();
+              }}
+            >
+              <span aria-hidden="true">🧩</span> Patterns
+            </button>
+          ) : null}
         </nav>
 
         <div className="track-hub-hud">
@@ -863,23 +874,12 @@ export default function CertificationDashboardPage() {
         ) : (
           <p role="status">Loading today&apos;s mission…</p>
         )
-      ) : view === "patterns" ? (
+      ) : view === "patterns" && familyInsights !== null ? (
         <section className="track-hub-practice-view" aria-label="Reusable patterns">
-          {!authenticated ? (
-            <FamilyInsightToolbelt trackId={certification.id} insights={[]} />
-          ) : familyState.status === "loaded" ? (
-            <FamilyInsightToolbelt
-              trackId={certification.id}
-              insights={familyState.response.insights}
-            />
-          ) : familyState.status === "error" ? (
-            <p className="muted">
-              Patterns are unavailable right now. You can still explore and
-              practice.
-            </p>
-          ) : (
-            <p role="status">Loading your patterns…</p>
-          )}
+          <FamilyInsightToolbelt
+            trackId={certification.id}
+            insights={familyInsights}
+          />
         </section>
       ) : (
         <section className="track-hub-practice-view" aria-label="Practice">

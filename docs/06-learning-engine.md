@@ -543,9 +543,10 @@ small number, so only examples the learner has already seen appear.
 
 ### Progressive, non-blocking presentation
 
-The Track Hub exposes a compact, generalized pattern browser (neutral label
-"Reusable Patterns"; a track presentation layer may supply a different label
-such as "Pattern Toolbelt"). A completed mission can surface an optional,
+The Track Hub exposes a compact, generalized pattern browser when the track
+authors family guides (neutral label "Reusable Patterns"; a track presentation
+layer may supply a different label such as "Pattern Toolbelt"). A completed
+mission can surface an optional,
 collapsed "See the structure these questions shared" teaser; that request is
 scoped to the finished mission's families, so the teaser relates to the work the
 learner actually did. The comparison itself is revealed in steps — seen examples
@@ -557,7 +558,11 @@ contexts").
 Viewing a family insight is never scored evidence and never changes concept
 state. Phase 5 adds no economy, no DB table, no per-example request, no polling,
 and no runtime LLM call. One optional aggregate request per track returns every
-unlocked insight; a track with no guides simply returns an empty list.
+unlocked insight. The response carries `has_guides`: a track with no authored
+guides reports `false` and an empty list, and the Track Hub hides the Patterns
+surface entirely rather than showing a permanently empty tab. `has_guides: true`
+with an empty list is the distinct "guides exist, nothing met yet" state, which
+keeps the browser visible with its `Patterns you meet while practicing` hint.
 
 ### Answer-leak boundary
 

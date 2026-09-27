@@ -894,6 +894,12 @@ pub struct FamilyInsightsResponse {
     pub track_id: String,
     /// Learning track version identifier.
     pub track_version: String,
+    /// Whether this track version authors any family guides at all.
+    ///
+    /// The client uses this to hide the patterns surface entirely when a track
+    /// has no guides. An empty `insights` list with `has_guides: true` only means
+    /// the learner has not met a family yet.
+    pub has_guides: bool,
     /// Insights for families the learner has already seen, in family-id order.
     pub insights: Vec<FamilyInsightDto>,
 }

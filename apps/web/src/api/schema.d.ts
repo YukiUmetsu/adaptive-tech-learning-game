@@ -471,7 +471,8 @@ export interface paths {
          *     involved. It is post-exposure teaching content only: it never returns a
          *     family the learner has not seen, never returns families for an in-progress
          *     mission, and never carries a canonical answer. A track with no authored
-         *     family guides returns an empty list, so old tracks are unaffected.
+         *     family guides reports `has_guides: false` and an empty list, so old tracks
+         *     are unaffected and clients can hide the patterns surface entirely.
          */
         get: operations["get_track_family_insights"];
         put?: never;
@@ -1489,6 +1490,14 @@ export interface components {
          *     an answer key, and families with no exposure are omitted entirely.
          */
         FamilyInsightsResponse: {
+            /**
+             * @description Whether this track version authors any family guides at all.
+             *
+             *     The client uses this to hide the patterns surface entirely when a track
+             *     has no guides. An empty `insights` list with `has_guides: true` only means
+             *     the learner has not met a family yet.
+             */
+            has_guides: boolean;
             /** @description Insights for families the learner has already seen, in family-id order. */
             insights: components["schemas"]["FamilyInsightDto"][];
             /** @description Learning track identifier. */

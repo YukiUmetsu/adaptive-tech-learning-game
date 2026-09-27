@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuthContext, type AuthContextValue } from "../auth/context";
 import { clearCatalogCache } from "../hooks/useCatalog";
+import { clearFamilyInsightsCache } from "../state/familyInsights";
 import { clearStreakCache } from "../state/streak";
 import { clearTrackMapCache } from "../state/trackMap";
 import { clearTrackProgressCache } from "../state/trackProgress";
@@ -160,6 +161,7 @@ function requestUrl(input: RequestInfo | URL): string {
 }
 
 let posted: unknown[] = [];
+let familyRequests = 0;
 
 interface MockOptions {
   map?: boolean;
@@ -168,6 +170,8 @@ interface MockOptions {
   recommendation?: boolean;
   dailyMission?: boolean;
   practiceTests?: unknown[];
+  /** Whether the track authors family guides (`has_guides`). */
+  familyGuides?: boolean;
 }
 
 function stubHub(options: MockOptions = {}) {
@@ -178,6 +182,7 @@ function stubHub(options: MockOptions = {}) {
     recommendation = false,
     dailyMission = false,
     practiceTests = [],
+    familyGuides = false,
   } = options;
 
   vi.stubGlobal(
@@ -186,6 +191,15 @@ function stubHub(options: MockOptions = {}) {
       const url = requestUrl(input);
       if (url.includes("/practice-tests")) {
         return jsonResponse({ practice_tests: practiceTests });
+      }
+      if (url.includes("/family-insights")) {
+        familyRequests += 1;
+        return jsonResponse({
+          track_id: "aws-soa-c03",
+          track_version: "soa-c03",
+          has_guides: familyGuides,
+          insights: [],
+        });
       }
       if (url.includes("/v1/certifications")) {
         return jsonResponse(catalog);
@@ -316,7 +330,9 @@ beforeEach(() => {
   clearTrackMapCache();
   clearTrackProgressCache();
   clearStreakCache();
+  clearFamilyInsightsCache();
   posted = [];
+  familyRequests = 0;
 });
 
 afterEach(() => {
@@ -356,6 +372,28 @@ describe("CertificationDashboardPage (Track Hub)", () => {
       await screen.findByRole("button", { name: /Metrics/ }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Logs/ })).toBeInTheDocument();
+  });
+
+  it("shows the Patterns tab when the track authors family guides", async () => {
+    stubHub({ familyGuides: true });
+    renderHub();
+    await ready();
+
+    expect(
+      await screen.findByRole("button", { name: /Patterns/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("hides the Patterns tab when the track authors no family guides", async () => {
+    stubHub({ familyGuides: false });
+    renderHub();
+    await ready();
+
+    // Wait for the family-insights request to settle before asserting absence.
+    await waitFor(() => expect(familyRequests).toBeGreaterThan(0));
+    expect(
+      screen.queryByRole("button", { name: /Patterns/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders the normal map when the progress endpoint fails", async () => {

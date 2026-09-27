@@ -39,6 +39,7 @@ async fn track_without_guides_returns_an_empty_insight_list() {
     assert_eq!(status, StatusCode::OK, "{body}");
     assert_eq!(body["track_id"], "aws-soa-c03");
     assert_eq!(body["track_version"], "soa-c03");
+    assert_eq!(body["has_guides"], false);
     assert_eq!(body["insights"], serde_json::json!([]));
 }
 

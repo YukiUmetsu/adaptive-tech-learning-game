@@ -95,7 +95,8 @@ pub async fn get_track_progress(
 /// involved. It is post-exposure teaching content only: it never returns a
 /// family the learner has not seen, never returns families for an in-progress
 /// mission, and never carries a canonical answer. A track with no authored
-/// family guides returns an empty list, so old tracks are unaffected.
+/// family guides reports `has_guides: false` and an empty list, so old tracks
+/// are unaffected and clients can hide the patterns surface entirely.
 #[utoipa::path(
     get,
     path = "/v1/tracks/{track_id}/family-insights",

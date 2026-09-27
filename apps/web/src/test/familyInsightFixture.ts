@@ -72,6 +72,7 @@ export function familyInsightsResponseFixture(
   return {
     track_id: "dsa-track",
     track_version: "dsa-v1",
+    has_guides: true,
     insights,
   };
 }
