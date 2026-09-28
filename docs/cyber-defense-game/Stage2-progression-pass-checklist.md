@@ -31,11 +31,14 @@ gameplay. Full details, constants, tests, and deferrals are in
 | 11 Climax requires a battle | done | `ghost7-confrontation` template + trigger; API test |
 | 12 Telemetry events | done | placed/upgraded/removed, hero, Tower, talent, rank, dossier, story |
 | 13 Tests | done | domain + API + frontend suites green |
-| 14 E2E | deferred | no authenticated Cyber Defense Playwright fixture; documented |
+| 14 E2E | done | `e2e/cyber_defense.spec.ts` (2 tests) + hermetic dev-auth Playwright config |
 
 ## Deferred (documented, not faked)
 
 - Training Center Lv3 multi-loadout system (free respec already exists; Lv3 adds
   ×1.15 hero XP instead).
 - Operation template browsing.
-- Cyber Defense Playwright E2E.
+
+The Playwright suite now covers Cyber Defense, learning, questions (practice
+tests), and Settings; the learning helper was fixed to discover real content
+bundles and current question types.

@@ -9,7 +9,11 @@ import {
   answerQuestion,
   answerRemainingCorrectly,
   expectFeedback,
+  firstTaskWithInteraction,
+  nodeConnectionDragIndices,
+  questionExplanation,
   startMission,
+  startMissionForTask,
   submitAnswer,
 } from "./helpers";
 
@@ -43,10 +47,11 @@ test("E2E 2 — incorrect attempt, explanation, and recovery", async ({
   await submitAnswer(page);
 
   await expectFeedback(page, "Not quite");
-  await expect(page.getByTestId("feedback")).toBeVisible();
-  await expect(
-    page.getByText(/Metrics are numeric time series/),
-  ).toBeVisible();
+  const feedback = page.getByTestId("feedback");
+  await expect(feedback).toBeVisible();
+  // The panel explains the mismatch using the authored explanation for Q1.
+  const explanation = questionExplanation(QUESTION_ORDER[0]).replace(/`/g, "");
+  await expect(feedback).toContainText(explanation.slice(0, 60));
 
   await page.getByRole("button", { name: "Try again" }).click();
   await answerQuestion(page, QUESTION_ORDER[0]);
@@ -83,7 +88,9 @@ test("E2E 3 — refresh resumes the mission", async ({ page }) => {
 test("E2E 4 — accessible non-drag interactions", async ({ page }) => {
   await startMission(page);
 
-  // The first three questions are classification, ordering, and connection.
+  // Answer the first three authored questions without any drag: the content
+  // mixes classification and typed-fill puzzles, and every one has a tap/type
+  // equivalent.
   for (const questionId of QUESTION_ORDER.slice(0, 3)) {
     await answerQuestion(page, questionId);
     await submitAnswer(page);
@@ -113,21 +120,14 @@ test("E2E 5 — unsynced events stay pending until sync succeeds", async ({
 test("E2E 6 — dragging from a node does not move it and creates a connection", async ({
   page,
 }) => {
-  await startMission(page);
+  const task = firstTaskWithInteraction("node_connection");
+  test.skip(!task, "no node-connection question is authored");
+  await startMissionForTask(page, task!);
 
-  // Advance to the first node-connection question.
-  for (const questionId of QUESTION_ORDER.slice(0, 2)) {
-    await answerQuestion(page, questionId);
-    await submitAnswer(page);
-    await expectFeedback(page, "Correct");
-    await advance(page);
-  }
-
-  const source = page.getByRole("button", {
-    name: "CloudWatch alarm",
-    exact: true,
-  });
-  const target = page.getByRole("button", { name: "SNS topic", exact: true });
+  const { from, to } = nodeConnectionDragIndices(task!);
+  const nodeButtons = page.locator(".graph-node");
+  const source = nodeButtons.nth(from);
+  const target = nodeButtons.nth(to);
 
   const before = await source.boundingBox();
   const targetBox = await target.boundingBox();
@@ -152,7 +152,9 @@ test("E2E 6 — dragging from a node does not move it and creates a connection",
   expect(Math.abs(during!.x - before!.x)).toBeLessThan(1);
   expect(Math.abs(during!.y - before!.y)).toBeLessThan(1);
 
+  // A real connection (with a remove control) is created, not the empty state.
   const connections = page.getByRole("list", { name: "Connections" });
-  await expect(connections).toContainText("CloudWatch alarm");
-  await expect(connections).toContainText("SNS topic");
+  await expect(
+    connections.getByRole("button", { name: /Remove connection/i }),
+  ).toBeVisible();
 });

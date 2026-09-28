@@ -135,8 +135,8 @@ the Stage 1 game's neon art instead of emoji and text blocks:
   abandon, threat level, operator selection, defense placed/upgraded/removed,
   hero deployed, Tower purchase, talent selection, adversary rank up, dossier
   unlock, and story seen. High-frequency combat telemetry is deliberately absent.
-- **E2E** was not run (no local auth/E2E setup was exercised); verification is
-  unit and integration tests plus a production build.
+- **E2E** covers Cyber Defense, the learning journey, questions (practice
+  tests), and Settings; see the E2E section below.
 
 ## Progression-matters pass ("make existing Stage 2 progression actually matter")
 
@@ -225,6 +225,9 @@ Stage 1 behaviour, and is covered by new unit/integration tests.
 - `cd apps/web && pnpm lint` — 0 errors (2 pre-existing warnings).
 - `cd apps/web && pnpm test` — 136 files, 1099 tests pass.
 - `cd apps/web && pnpm build` — pass.
+- `cd apps/web && E2E_DATABASE_URL=... pnpm exec playwright test` — 11 tests
+  pass (Chromium): Cyber Defense (2), learning (6), questions/practice test (1),
+  Settings (2).
 
 ### Intentionally deferred
 
@@ -233,7 +236,39 @@ Stage 1 behaviour, and is covered by new unit/integration tests.
   system is deferred rather than faked.
 - **Operation template browsing** remains deferred; only explicit
   confrontation selection is new.
-- **E2E**: the repository's Playwright setup only covers the learning journey and
-  has no authenticated Cyber Defense fixture, so a full Cyber Defense E2E was
-  not added. The gameplay path is covered by the unit/integration tests above.
+
+### E2E suite
+
+Playwright coverage now spans the whole app, not only the learning journey. The
+config forces `dev:` auth for E2E (empty `WORKOS_*` / `VITE_WORKOS_*`), so the
+suite is hermetic and does not depend on a developer's local WorkOS `.env`.
+
+- `e2e/cyber_defense.spec.ts` — the Stage 2 progression loop. Because the
+  tower-defense battle is a real-time simulation, the spec seeds Chapter 1
+  through the same public API the game uses, then drives the UI with a unique
+  local developer identity per test. It covers: fresh campaign unlocks
+  Operations; operator and Threat Level choice; the briefing hiding wave detail
+  and adversary specialty at SOC/Threat-Intel Lv1; buying SOC Lv2 and reloading
+  revealing the first wave; and a server-settled Operation persisting on the
+  dashboard.
+- `e2e/learning.spec.ts` — the learning/mission journey, including the question
+  interactions. Its helper now discovers real content bundles (instead of
+  assuming every `content/**/*.json` is a bundle), supports the current
+  `typed_fill_blank` questions, and targets a node-connection task dynamically,
+  so content updates no longer break it.
+- `e2e/questions.spec.ts` — the exam-simulation practice test: start the exam,
+  use the question navigator, mark for review, submit behind the confirmation,
+  and read the scored review. The practice test is discovered through the public
+  API rather than hardcoded.
+- `e2e/settings.spec.ts` — Personal Settings: accessibility preferences persist
+  across a reload and reset behind a confirmation; master volume at 0 disables
+  the dependent audio controls.
+
+Run the whole suite:
+
+```bash
+cd apps/web
+E2E_DATABASE_URL=postgres://app:app@127.0.0.1:55432/app pnpm e2e
+```
+
 
