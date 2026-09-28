@@ -18,6 +18,31 @@ export function operationMapFor(operation: GeneratedOperation): MissionMap {
   return OPERATION_MAPS[operation.map_id] ?? DEFAULT_OPERATION_MAP;
 }
 
+/**
+ * Every architecture node actually attacked by this Operation, in first-seen
+ * order.
+ *
+ * Derived only from the attacks present in `operation.waves`; it never infers
+ * targets from map node types, so an unrelated Database is not highlighted. A
+ * branching Operation with, say, SQL Injection (Database) and XSS (Application)
+ * returns both, so the briefing can show every real target.
+ */
+export function operationTargetNodeIds(
+  operation: GeneratedOperation,
+  catalog: GameCatalog = GAME_CATALOG,
+): string[] {
+  const targets: string[] = [];
+  for (const wave of operation.waves) {
+    for (const group of wave.groups) {
+      const attack = catalog.attacksById[group.attack_id];
+      if (attack && !targets.includes(attack.targetNodeId)) {
+        targets.push(attack.targetNodeId);
+      }
+    }
+  }
+  return targets;
+}
+
 /** Mission-credit pacing for Operations, matching the campaign defaults. */
 const OPERATION_WAVE_CLEAR_BONUS = 70;
 const OPERATION_EARLY_CALL_BONUS_PER_SECOND = 5;

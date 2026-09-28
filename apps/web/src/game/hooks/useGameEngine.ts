@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { GameCatalog } from "../data";
+import type { DefenseAnchor } from "../models/defense";
 import type { MissionDefinition, SynergyDefinition } from "../models/mission";
 import {
   activeSynergies,
@@ -54,13 +55,18 @@ export interface GameEngineApi {
     nodeId: string,
     nodeType: string,
     padId?: string,
-    gate?: { partnerPadId: string; position: number },
+    anchor?: DefenseAnchor,
+    gate?: { partnerPadId: string },
   ) => SimResult;
   upgrade: (placementId: string) => SimResult;
   remove: (placementId: string) => SimResult;
   startWave: () => void;
   callNextWave: () => SimResult;
-  deployHero: (heroId: string, position: number) => SimResult;
+  deployHero: (
+    heroId: string,
+    position: number,
+    anchor?: { from: string; to: string; fraction: number },
+  ) => SimResult;
   reset: () => void;
 }
 
@@ -149,12 +155,13 @@ export function useGameEngine(
       nodeId: string,
       nodeType: string,
       padId?: string,
-      gate?: { partnerPadId: string; position: number },
+      anchor?: DefenseAnchor,
+      gate?: { partnerPadId: string },
     ) =>
       apply(
         placeDefenseAction(
           stateRef.current,
-          { defenseId, nodeId, nodeType, padId, gate },
+          { defenseId, nodeId, nodeType, padId, anchor, gate },
           catalog,
         ),
       ),
@@ -185,8 +192,11 @@ export function useGameEngine(
   );
 
   const deployHero = useCallback(
-    (heroId: string, position: number) =>
-      apply(deployHeroAction(stateRef.current, heroId, position, catalog)),
+    (
+      heroId: string,
+      position: number,
+      anchor?: { from: string; to: string; fraction: number },
+    ) => apply(deployHeroAction(stateRef.current, heroId, position, catalog, anchor)),
     [apply, catalog],
   );
 

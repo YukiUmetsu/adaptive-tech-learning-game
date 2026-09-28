@@ -3,6 +3,7 @@ import {
   defenseStatsAtLevel,
   placeCost,
   upgradeCost,
+  type DefenseAnchor,
   type PlacedDefense,
 } from "../models/defense";
 import type { HeroRuntime, HeroUnit } from "../models/hero";
@@ -16,12 +17,13 @@ import {
   coverageContains,
   damagePerSecond,
   hasDetection,
+  isSwarmAttack,
   systemDamageReduction,
   leakedSystemDamage,
   synergyDamageBonus,
   type PlacementCheck,
 } from "./combat";
-import { computePath } from "./pathing";
+import { computePath, edgePositionOnPath } from "./pathing";
 import { newId } from "../../lib/id";
 
 /**
@@ -192,6 +194,10 @@ export interface GameState {
   backupRestoresUsed: number;
   /** Total system health restored by Backup this mission. */
   backupRestored: number;
+  /** Whether the Resilience Center emergency recovery has triggered. */
+  resilienceRestoreUsed: boolean;
+  /** Total system health restored by the Resilience Center this mission. */
+  resilienceRestored: number;
 }
 
 export interface StepContext {
@@ -222,6 +228,34 @@ function emptyStats(): MissionStats {
 
 function enemyPosition(enemy: EnemyState): number {
   return enemy.pathIndex + enemy.progress;
+}
+
+/**
+ * Whether a deployed hero can hit an enemy.
+ *
+ * An anchored hero only fights attacks currently on its own logical edge, so a
+ * hero on the Application branch never reaches an API-only attack. A legacy
+ * hero without an anchor keeps the original numeric path comparison.
+ */
+function heroCanReach(
+  unit: HeroUnit,
+  enemy: EnemyState,
+  range: number,
+): boolean {
+  if (!unit.anchor) {
+    return Math.abs(enemyPosition(enemy) - unit.position) <= range;
+  }
+  const { from, to, fraction } = unit.anchor;
+  for (let i = 0; i < enemy.path.length - 1; i += 1) {
+    if (enemy.path[i] !== from || enemy.path[i + 1] !== to) {
+      continue;
+    }
+    if (enemy.pathIndex !== i) {
+      return false;
+    }
+    return Math.abs(enemy.progress - fraction) <= range;
+  }
+  return false;
 }
 
 /** Builds the per-wave spawn schedule. Groups spawn concurrently. */
@@ -291,6 +325,8 @@ export function createInitialState(
     elapsedMs: 0,
     backupRestoresUsed: 0,
     backupRestored: 0,
+    resilienceRestoreUsed: false,
+    resilienceRestored: 0,
   };
 }
 
@@ -381,8 +417,12 @@ export function placeDefense(
     nodeId: string;
     nodeType: string;
     padId?: string;
+    /** Logical edge the pad occupies, for branch-accurate coverage. */
+    anchor?: DefenseAnchor;
     /** Gate controls span the road and need the paired pad. */
-    gate?: { partnerPadId: string; position: number };
+    gate?: {
+      partnerPadId: string;
+    };
   },
   catalog: GameCatalog,
 ): SimResult {
@@ -427,7 +467,7 @@ export function placeDefense(
     padId: input.padId,
     level: 1,
     gate: input.gate ? true : undefined,
-    gatePosition: input.gate?.position,
+    anchor: input.anchor,
     gatePartnerPadId: input.gate?.partnerPadId,
   };
   return {
@@ -516,6 +556,7 @@ export function deployHero(
   heroId: string,
   position: number,
   catalog: GameCatalog,
+  anchor?: { from: string; to: string; fraction: number },
 ): SimResult {
   const hero = state.heroes.find((item) => item.heroId === heroId);
   const definition = catalog.heroesById[heroId];
@@ -536,6 +577,7 @@ export function deployHero(
     id: newId(),
     heroId,
     position: Math.max(0, position),
+    anchor,
     ttlMs: definition.durationMs,
     attackCooldownMs: 0,
   };
@@ -620,7 +662,60 @@ function killEnemy(enemy: EnemyState, state: GameState): void {
 }
 
 function isSwarm(enemy: EnemyState, catalog: GameCatalog): boolean {
-  return catalog.attacksById[enemy.attackId]?.tags?.includes("swarm") === true;
+  return isSwarmAttack(enemy.attackId, catalog);
+}
+
+/**
+ * Where a gate sits on one enemy's own route, in path-segment units, or `null`
+ * when the enemy never traverses the gate edge.
+ *
+ * The gate's edge is the single branch-match rule (the renderer uses the same
+ * `pathEdgeIndex`/`edgePositionOnPath` helpers), so a gate on one branch never
+ * congests traffic on another that merely shares an upstream node. Using the
+ * route's own edge index instead of a global node-depth estimate keeps
+ * congestion correct on branching maps.
+ */
+function gatePathPosition(enemy: EnemyState, gate: PlacedDefense): number | null {
+  if (gate.anchor) {
+    return edgePositionOnPath(
+      enemy.path,
+      gate.anchor.from,
+      gate.anchor.to,
+      gate.anchor.fraction,
+    );
+  }
+  return gate.gatePosition ?? null;
+}
+
+/**
+ * The logical route position (edge index + fraction) a placed control occupies
+ * on one enemy's own path, or `null` when the enemy never traverses the
+ * control's anchored edge.
+ *
+ * Anchored controls are centered on their actual pad fraction — not on the
+ * nearest node — so combat range and support ordering match where the player
+ * built the control. The same function also acts as the branch filter: a
+ * control anchored to a non-traversed edge returns `null`, so a branch-local
+ * path control cannot affect traffic on an unrelated branch that merely shares
+ * an upstream node.
+ *
+ * Legacy/unanchored placements (old cached runs) fall back to their node index,
+ * preserving the original node-centered behavior.
+ */
+export function defensePositionOnPath(
+  placed: PlacedDefense,
+  enemy: EnemyState,
+): number | null {
+  if (placed.anchor) {
+    return edgePositionOnPath(
+      enemy.path,
+      placed.anchor.from,
+      placed.anchor.to,
+      placed.anchor.fraction,
+    );
+  }
+  const nodeIndex = enemy.path.indexOf(placed.nodeId);
+  return nodeIndex < 0 ? null : nodeIndex;
 }
 
 /** Moves an attack to an exact path position (edge index + fraction). */
@@ -645,7 +740,7 @@ function applyGateQueues(
   dtMs: number,
 ): void {
   const gates = state.placed.filter(
-    (entry) => entry.gate && entry.gatePosition !== undefined,
+    (entry) => entry.gate && (entry.anchor !== undefined || entry.gatePosition !== undefined),
   );
   if (gates.length === 0) {
     return;
@@ -653,7 +748,6 @@ function applyGateQueues(
 
   // Admit one swarm attack per gate when the interval has elapsed.
   for (const gate of gates) {
-    const gatePosition = gate.gatePosition as number;
     const nextAt = state.gatePass[gate.id] ?? 0;
     if (state.elapsedMs < nextAt) {
       continue;
@@ -665,6 +759,10 @@ function applyGateQueues(
         continue;
       }
       if (enemy.admittedGates.includes(gate.id)) {
+        continue;
+      }
+      const gatePosition = gatePathPosition(enemy, gate);
+      if (gatePosition === null) {
         continue;
       }
       const position = enemyPosition(enemy);
@@ -691,24 +789,27 @@ function applyGateQueues(
       continue;
     }
     const position = enemyPosition(enemy);
-    let blocking: (typeof gates)[number] | null = null;
+    let blockingPosition: number | null = null;
     for (const gate of gates) {
       if (enemy.admittedGates.includes(gate.id)) {
         continue;
       }
-      const gatePosition = gate.gatePosition as number;
+      const gatePosition = gatePathPosition(enemy, gate);
+      if (gatePosition === null) {
+        continue;
+      }
       if (gatePosition <= position) {
         continue;
       }
       if (gatePosition - position > GATE_QUEUE_RANGE) {
         continue;
       }
-      if (!blocking || gatePosition < (blocking.gatePosition as number)) {
-        blocking = gate;
+      if (blockingPosition === null || gatePosition < blockingPosition) {
+        blockingPosition = gatePosition;
       }
     }
-    if (blocking) {
-      const maxPosition = (blocking.gatePosition as number) - GATE_QUEUE_OFFSET;
+    if (blockingPosition !== null) {
+      const maxPosition = blockingPosition - GATE_QUEUE_OFFSET;
       if (position > maxPosition) {
         setPathPosition(enemy, maxPosition);
       }
@@ -737,8 +838,8 @@ function applyTowerDamage(
   const position = enemyPosition(enemy);
   const synergyBonus = synergyDamageBonus(enemy.attackType, ctx.synergies);
   for (const placed of state.placed) {
-    const nodeIndex = enemy.path.indexOf(placed.nodeId);
-    if (nodeIndex < 0) {
+    const controlPosition = defensePositionOnPath(placed, enemy);
+    if (controlPosition === null) {
       continue;
     }
     const defense = catalog.defensesById[placed.defenseId];
@@ -746,7 +847,7 @@ function applyTowerDamage(
       continue;
     }
     const stats = defenseStatsAtLevel(defense, placed.level);
-    if (!coverageContains(position, nodeIndex, stats.range)) {
+    if (!coverageContains(position, controlPosition, stats.range)) {
       continue;
     }
     let supportMultiplier = 1;
@@ -755,8 +856,10 @@ function applyTowerDamage(
       if (!sourceDefense?.supportTargetId || sourceDefense.supportTargetId !== defense.id) {
         continue;
       }
-      const sourceIndex = enemy.path.indexOf(source.nodeId);
-      if (sourceIndex >= 0 && sourceIndex < nodeIndex) {
+      // Support only applies when the source lies earlier on the enemy's own
+      // route, using each control's actual logical position.
+      const sourcePosition = defensePositionOnPath(source, enemy);
+      if (sourcePosition !== null && sourcePosition < controlPosition) {
         supportMultiplier = Math.max(
           supportMultiplier,
           sourceDefense.supportMultiplier ?? 1,
@@ -807,12 +910,12 @@ function computeEngagements(
     let target: EnemyState | null = null;
     let targetPosition = -Infinity;
     for (const enemy of enemies) {
-      const nodeIndex = enemy.path.indexOf(placed.nodeId);
-      if (nodeIndex < 0) {
+      const controlPosition = defensePositionOnPath(placed, enemy);
+      if (controlPosition === null) {
         continue;
       }
       const position = enemyPosition(enemy);
-      if (!coverageContains(position, nodeIndex, stats.range)) {
+      if (!coverageContains(position, controlPosition, stats.range)) {
         continue;
       }
       const dps = damagePerSecond(defense, placed.level, enemy.attackType, {
@@ -865,7 +968,7 @@ function applyHeroAttacks(
         continue;
       }
       const position = enemyPosition(enemy);
-      if (Math.abs(position - unit.position) > definition.attackRange) {
+      if (!heroCanReach(unit, enemy, definition.attackRange)) {
         continue;
       }
       if (position > bestPosition) {
@@ -901,7 +1004,7 @@ function computeHeroEngagements(
     let bestPosition = -Infinity;
     for (const enemy of enemies) {
       const position = enemyPosition(enemy);
-      if (Math.abs(position - unit.position) > definition.attackRange) {
+      if (!heroCanReach(unit, enemy, definition.attackRange)) {
         continue;
       }
       if (position > bestPosition) {
@@ -1075,7 +1178,7 @@ export function stepSimulation(
       continue;
     }
     if (enemy.pathIndex === enemy.path.length - 1) {
-      leakEnemy(enemy, s, catalog, heroReduction);
+      leakEnemy(enemy, s, mission, catalog, heroReduction);
       continue;
     }
     survivors.push(enemy);
@@ -1150,6 +1253,7 @@ function createEnemy(
 function leakEnemy(
   enemy: EnemyState,
   state: GameState,
+  mission: MissionDefinition,
   catalog: GameCatalog,
   heroReduction: number,
 ): void {
@@ -1189,6 +1293,26 @@ function leakEnemy(
       state.backupRestoresUsed += 1;
       state.backupRestored += restored;
       // Visible, audible recovery: the restore is otherwise easy to miss.
+      pushEffect(state, "restore", enemy, restored);
+    }
+  }
+
+  // Resilience Center Lv2: one modest emergency recovery per Operation. It is
+  // independent of Backup and can never fire twice, so it softens a bad moment
+  // without erasing the consequence of a weak build.
+  const recovery = mission.emergencyRecovery;
+  if (
+    recovery &&
+    !state.resilienceRestoreUsed &&
+    state.health > 0 &&
+    state.health <= state.maxHealth * recovery.threshold
+  ) {
+    const amount = Math.round(state.maxHealth * recovery.restoreFraction);
+    const restored = Math.min(state.maxHealth, state.health + amount) - state.health;
+    if (restored > 0) {
+      state.health += restored;
+      state.resilienceRestoreUsed = true;
+      state.resilienceRestored += restored;
       pushEffect(state, "restore", enemy, restored);
     }
   }

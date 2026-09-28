@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { GAME_CATALOG } from "../data";
 import { MISSIONS_BY_ID } from "../data/missions";
+import { OPERATION_MAPS } from "../data/operationMaps";
 import type { EnemyState } from "../engine/simulation";
 import GameBoard, { ENEMY_RENDER_CAP } from "./GameBoard";
 
@@ -80,14 +81,17 @@ describe("GameBoard", () => {
     expect(screen.queryByText("Edge")).not.toBeInTheDocument();
   });
 
-  it("reports the tapped pad", () => {
+  it("reports the tapped pad with its stable logical identity", () => {
     const onSelectPad = vi.fn();
     renderBoard({ orientation: "vertical", onSelectPad });
     fireEvent.click(
       screen.getByRole("button", { name: "Tower pad 1" }),
     );
     const pad = onSelectPad.mock.calls[0][0];
-    expect(pad.id.startsWith("pad-1")).toBe(true);
+    expect(pad.id).toBe("edge--internet--edge--0-left");
+    expect(pad.edgeFrom).toBe("internet");
+    expect(pad.edgeTo).toBe("edge");
+    expect(pad.fraction).toBeGreaterThan(0);
     expect(typeof pad.nodeId).toBe("string");
   });
 
@@ -98,7 +102,7 @@ describe("GameBoard", () => {
           id: "p1",
           defenseId: "rate_limiter",
           nodeId: "internet",
-          padId: "pad-1",
+          padId: "edge--internet--edge--0-left",
           level: 1,
         },
       ],
@@ -171,5 +175,192 @@ describe("GameBoard", () => {
       screen.getByRole("button", { name: /DDoS Swarm, DDoS/ }),
     );
     expect(screen.getByText("DDoS Swarm")).toBeInTheDocument();
+  });
+
+  it("draws every architecture edge and places enemies on their own branch", () => {
+    const map = OPERATION_MAPS["dual-service"];
+    const viaApi: EnemyState = {
+      ...enemy(0),
+      id: "api-route",
+      path: ["internet", "edge", "api", "db"],
+      pathIndex: 1,
+      progress: 0.5,
+    };
+    const viaApp: EnemyState = {
+      ...enemy(1),
+      id: "app-route",
+      path: ["internet", "edge", "app", "db"],
+      pathIndex: 1,
+      progress: 0.5,
+    };
+    const { container } = render(
+      <GameBoard
+        {...boardProps({ map, enemies: [viaApi, viaApp], primaryTargetNodeId: "db" })}
+      />,
+    );
+
+    // One rendered road group per graph edge, including both branches.
+    expect(container.querySelectorAll(".cyber-road-group").length).toBe(
+      map.edges.length,
+    );
+
+    const rendered = container.querySelectorAll(".cyber-enemy");
+    expect(rendered.length).toBe(2);
+    const transforms = [...rendered].map((node) => node.getAttribute("transform"));
+    expect(transforms[0]).not.toEqual(transforms[1]);
+  });
+
+  it("only queues the enemy that traverses a branch gate", () => {
+    const map = OPERATION_MAPS["dual-service"];
+    const gate = {
+      id: "gate-1",
+      defenseId: "rate_limiter",
+      nodeId: "edge",
+      padId: "edge--edge--app--0-left",
+      gatePartnerPadId: "edge--edge--app--0-right",
+      gate: true,
+      anchor: { from: "edge", to: "app", fraction: 0.3 },
+      level: 1,
+    };
+    const apiEnemy: EnemyState = {
+      ...enemy(0),
+      id: "api-route",
+      path: ["internet", "edge", "api", "db"],
+      pathIndex: 1,
+      progress: 0.1,
+    };
+    const appEnemy: EnemyState = {
+      ...enemy(1),
+      id: "app-route",
+      path: ["internet", "edge", "app", "db"],
+      pathIndex: 1,
+      progress: 0.1,
+    };
+
+    const base = boardProps({ map, primaryTargetNodeId: "db" });
+    const apiWithoutGate = render(<GameBoard {...base} enemies={[apiEnemy]} />);
+    const apiBase = apiWithoutGate
+      .container.querySelector(".cyber-enemy")!
+      .getAttribute("transform");
+    apiWithoutGate.unmount();
+
+    const apiWithGate = render(
+      <GameBoard {...base} placed={[gate]} enemies={[apiEnemy]} />,
+    );
+    expect(
+      apiWithGate.container.querySelector(".cyber-enemy")!.getAttribute("transform"),
+    ).toBe(apiBase);
+    apiWithGate.unmount();
+
+    const appWithoutGate = render(<GameBoard {...base} enemies={[appEnemy]} />);
+    const appBase = appWithoutGate
+      .container.querySelector(".cyber-enemy")!
+      .getAttribute("transform");
+    appWithoutGate.unmount();
+
+    const appWithGate = render(
+      <GameBoard {...base} placed={[gate]} enemies={[appEnemy]} />,
+    );
+    expect(
+      appWithGate.container.querySelector(".cyber-enemy")!.getAttribute("transform"),
+    ).not.toBe(appBase);
+  });
+
+  it("queues swarm traffic but never other attacks on the same gate edge", () => {
+    const map = OPERATION_MAPS["dual-service"];
+    const gate = {
+      id: "gate-1",
+      defenseId: "rate_limiter",
+      nodeId: "edge",
+      padId: "edge--edge--app--0-left",
+      gatePartnerPadId: "edge--edge--app--0-right",
+      gate: true,
+      anchor: { from: "edge", to: "app", fraction: 0.3 },
+      level: 1,
+    };
+    const swarmApp: EnemyState = {
+      ...enemy(0),
+      id: "swarm-app",
+      attackId: "ddos_swarm",
+      attackType: "ddos",
+      path: ["internet", "edge", "app", "db"],
+      pathIndex: 1,
+      progress: 0.1,
+    };
+    const nonSwarmApp: EnemyState = {
+      ...enemy(1),
+      id: "xss-app",
+      attackId: "xss",
+      attackType: "xss",
+      path: ["internet", "edge", "app", "db"],
+      pathIndex: 1,
+      progress: 0.1,
+    };
+    const swarmApi: EnemyState = {
+      ...swarmApp,
+      id: "swarm-api",
+      path: ["internet", "edge", "api", "db"],
+    };
+    const base = boardProps({ map, primaryTargetNodeId: "db" });
+
+    const transformFor = (state: EnemyState, gated: boolean) => {
+      const view = render(
+        <GameBoard {...base} placed={gated ? [gate] : []} enemies={[state]} />,
+      );
+      const transform = view.container
+        .querySelector(".cyber-enemy")!
+        .getAttribute("transform");
+      view.unmount();
+      return transform;
+    };
+
+    // Swarm on the gate's edge is shifted...
+    expect(transformFor(swarmApp, true)).not.toBe(transformFor(swarmApp, false));
+    // ...but non-swarm traffic on the same edge is not.
+    expect(transformFor(nonSwarmApp, true)).toBe(transformFor(nonSwarmApp, false));
+    // ...and swarm on a different branch is not.
+    expect(transformFor(swarmApi, true)).toBe(transformFor(swarmApi, false));
+  });
+
+  it("keeps an Edge -> Application tower on its branch after an orientation change", () => {
+    const map = OPERATION_MAPS["dual-service"];
+    const placed = [
+      {
+        id: "p1",
+        defenseId: "traffic_blocker",
+        nodeId: "edge",
+        padId: "edge--edge--app--0-left",
+        anchor: { from: "edge", to: "app", fraction: 0.25 },
+        level: 1,
+      },
+    ];
+    const desktop = render(
+      <GameBoard
+        {...boardProps({ map, placed, primaryTargetNodeId: "db" })}
+      />,
+    );
+    const desktopTower = desktop.getByRole("button", {
+      name: /Traffic Blocker, level 1/,
+    });
+    const desktopTransform = desktopTower.getAttribute("transform");
+    desktop.unmount();
+
+    const mobile = render(
+      <GameBoard
+        {...boardProps({
+          map,
+          placed,
+          primaryTargetNodeId: "db",
+          orientation: "vertical",
+        })}
+      />,
+    );
+    const mobileTower = mobile.getByRole("button", {
+      name: /Traffic Blocker, level 1/,
+    });
+    // The same saved placement resolves and renders on mobile, at a new pixel
+    // position but on the same logical branch.
+    expect(mobileTower).toBeInTheDocument();
+    expect(mobileTower.getAttribute("transform")).not.toBe(desktopTransform);
   });
 });

@@ -241,6 +241,65 @@ async fn operation_run_ownership_is_enforced() {
 }
 
 #[tokio::test]
+async fn deployed_operation_locks_its_config() {
+    let Some(pool) = pool().await else {
+        return;
+    };
+    let user_id = insert_user(&pool).await;
+    let run_id = Uuid::new_v4();
+    let config = json!({ "seed": 7 });
+
+    let mut conn = pool.acquire().await.expect("acquire");
+    db::cyber_defense::create_operation_run(
+        &mut conn,
+        &db::cyber_defense::NewOperationRun {
+            id: run_id,
+            user_id,
+            seed: 7,
+            template_id: "identity-breach",
+            adversary_id: "ghost-7",
+            hero_id: Some("security_engineer"),
+            threat_level: 3,
+            generated_config: &config,
+        },
+    )
+    .await
+    .expect("create run");
+
+    let before = db::cyber_defense::get_operation_run_for_user(&mut conn, user_id, run_id)
+        .await
+        .expect("read")
+        .expect("run exists");
+    assert!(before.deployed_at.is_none());
+
+    // Deploy is idempotent: the second call keeps the original timestamp.
+    let deployed = db::cyber_defense::deploy_operation_run(&mut conn, user_id, run_id)
+        .await
+        .expect("deploy")
+        .expect("active run deploys");
+    let stamp = deployed.deployed_at.expect("deployed_at is set");
+    let again = db::cyber_defense::deploy_operation_run(&mut conn, user_id, run_id)
+        .await
+        .expect("deploy again")
+        .expect("still active");
+    assert_eq!(again.deployed_at, Some(stamp));
+
+    // The generated config is frozen once deployed.
+    let updated = db::cyber_defense::update_operation_run_config(
+        &mut conn,
+        user_id,
+        run_id,
+        &json!({ "seed": 9 }),
+    )
+    .await
+    .expect("update config");
+    assert!(updated.is_none(), "config is locked after deploy");
+
+    drop(conn);
+    cleanup(&pool, user_id).await;
+}
+
+#[tokio::test]
 async fn duplicate_reward_event_settles_once() {
     let Some(pool) = pool().await else {
         return;
@@ -369,6 +428,74 @@ async fn dossier_flags_union_without_duplicates() {
             "uses_hidden_traffic".to_owned()
         ]
     );
+
+    drop(conn);
+    cleanup(&pool, user_id).await;
+}
+
+#[tokio::test]
+async fn operation_offer_consumption_rolls_back_with_the_transaction() {
+    let Some(pool) = pool().await else {
+        return;
+    };
+    let user_id = insert_user(&pool).await;
+
+    let mut conn = pool.acquire().await.expect("acquire");
+    db::cyber_defense::get_or_create_profile(&mut conn, user_id)
+        .await
+        .expect("create profile");
+
+    let offer_id = Uuid::new_v4();
+    let expires_at = chrono::Utc::now() + chrono::Duration::minutes(30);
+    db::cyber_defense::insert_operation_offers(
+        &mut conn,
+        &[db::cyber_defense::NewOperationOffer {
+            id: offer_id,
+            user_id,
+            seed: 7,
+            template_id: "identity-breach",
+            adversary_id: "ghost-7",
+            adversary_rank: 1,
+            expires_at,
+        }],
+    )
+    .await
+    .expect("insert offer");
+    drop(conn);
+
+    // Consuming inside a transaction that rolls back must release the offer.
+    {
+        let mut tx = pool.begin().await.expect("begin");
+        let consumed = db::cyber_defense::consume_operation_offer(&mut tx, user_id, offer_id)
+            .await
+            .expect("consume");
+        assert!(consumed.is_some());
+        tx.rollback().await.expect("rollback");
+    }
+
+    let mut conn = pool.acquire().await.expect("acquire");
+    let active = db::cyber_defense::list_active_operation_offers(&mut conn, user_id)
+        .await
+        .expect("list active");
+    assert_eq!(
+        active.len(),
+        1,
+        "rolled-back consumption releases the offer"
+    );
+
+    // A committed consumption removes it from the active set.
+    {
+        let mut tx = pool.begin().await.expect("begin");
+        let consumed = db::cyber_defense::consume_operation_offer(&mut tx, user_id, offer_id)
+            .await
+            .expect("consume");
+        assert!(consumed.is_some());
+        tx.commit().await.expect("commit");
+    }
+    let active = db::cyber_defense::list_active_operation_offers(&mut conn, user_id)
+        .await
+        .expect("list active");
+    assert!(active.is_empty(), "committed consumption is durable");
 
     drop(conn);
     cleanup(&pool, user_id).await;

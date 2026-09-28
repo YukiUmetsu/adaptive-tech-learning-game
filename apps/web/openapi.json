@@ -430,6 +430,139 @@
         ]
       }
     },
+    "/v1/cyber-defense/cosmetics/equipped": {
+      "put": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Equips (or clears) an owned Tower theme.",
+        "operationId": "equip_cosmetic",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberCosmeticEquipRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Equipped theme updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberCosmeticsStateDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Theme is not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/cosmetics/{cosmetic_id}/purchase": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Purchases a permanent Tower theme cosmetic with Bits.",
+        "operationId": "purchase_cosmetic",
+        "parameters": [
+          {
+            "name": "cosmetic_id",
+            "in": "path",
+            "description": "Cosmetic identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberCosmeticPurchaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Cosmetic purchased",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberCosmeticPurchaseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown cosmetic or malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Insufficient Bits or reused idempotency key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/cyber-defense/heroes/{hero_id}/talents": {
       "put": {
         "tags": [
@@ -592,7 +725,7 @@
             }
           },
           "400": {
-            "description": "Locked Threat Level, unknown hero, or unknown template",
+            "description": "Locked Threat Level, unknown hero, invalid offer, or unknown template",
             "content": {
               "application/json": {
                 "schema": {
@@ -613,6 +746,63 @@
           },
           "409": {
             "description": "An active Operation already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/operations/offers": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Returns the current stable set of Operation offers.",
+        "description": "Offers are persisted server-side and reused until they expire or are\nconsumed, so the dashboard does not regenerate a different set on every\nrender. A client can only start a template the server actually offered.",
+        "operationId": "operation_offers",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberOperationOffersRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operation offers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberOperationOffersResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Operations are locked",
             "content": {
               "application/json": {
                 "schema": {
@@ -833,6 +1023,162 @@
         ]
       }
     },
+    "/v1/cyber-defense/operations/{run_id}/deploy": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Marks an active Operation as deployed, freezing its configuration.",
+        "operationId": "deploy_operation",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "description": "Operation run identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation deployed (idempotent)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberOperationRunDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Run not found or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Run is not active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/operations/{run_id}/loadout": {
+      "put": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Applies Engineering Lab defense substitutions to an active Operation.",
+        "operationId": "set_operation_loadout",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "description": "Operation run identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberOperationLoadoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Loadout updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberOperationRunDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No Engineering Lab allowance, unknown defense, or unsolvable loadout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Run not found or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Run is not active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/cyber-defense/profile": {
       "get": {
         "tags": [
@@ -987,73 +1333,6 @@
           },
           "409": {
             "description": "Insufficient Bits, max level, prerequisite not met, or reused key",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/v1/cyber-defense/upgrades": {
-      "post": {
-        "tags": [
-          "cyber-defense"
-        ],
-        "summary": "Debits Bits for one Cyber Defense control upgrade.",
-        "description": "The wallet is taken from the verified token, so an anonymous caller is\nrejected: spending is an account-scoped, server-authoritative action. The\nclient sends the action's primitives and an idempotency `event_id`; the\nserver derives the cost and settles the debit exactly once.",
-        "operationId": "spend_upgrade",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CyberDefenseUpgradeRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Bits debited; settled balance returned",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CyberDefenseUpgradeResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Malformed request or invalid upgrade",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Insufficient Bits, an out-of-sequence upgrade level, or a reused idempotency key",
             "content": {
               "application/json": {
                 "schema": {
@@ -3980,6 +4259,130 @@
           }
         }
       },
+      "CyberCosmeticDto": {
+        "type": "object",
+        "description": "One permanent Tower theme cosmetic.",
+        "required": [
+          "cosmetic_id",
+          "name",
+          "description",
+          "price",
+          "owned",
+          "equipped"
+        ],
+        "properties": {
+          "cosmetic_id": {
+            "type": "string",
+            "description": "Cosmetic identifier."
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description."
+          },
+          "equipped": {
+            "type": "boolean",
+            "description": "Whether it is currently equipped."
+          },
+          "name": {
+            "type": "string",
+            "description": "Learner-facing name."
+          },
+          "owned": {
+            "type": "boolean",
+            "description": "Whether the learner owns it."
+          },
+          "price": {
+            "type": "integer",
+            "format": "int64",
+            "description": "One-time Bits cost."
+          }
+        }
+      },
+      "CyberCosmeticEquipRequest": {
+        "type": "object",
+        "description": "Request to equip (or clear) a Tower theme.",
+        "properties": {
+          "theme_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Theme to equip, or `null` to clear."
+          }
+        }
+      },
+      "CyberCosmeticPurchaseRequest": {
+        "type": "object",
+        "description": "Request to purchase one cosmetic with Bits.\n\nThe price is never sent: the server derives it from canonical policy.",
+        "required": [
+          "event_id"
+        ],
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Client-generated idempotency key for this purchase."
+          }
+        }
+      },
+      "CyberCosmeticPurchaseResponse": {
+        "type": "object",
+        "description": "Result of a cosmetic purchase.",
+        "required": [
+          "cosmetic_id",
+          "spent",
+          "newly_settled",
+          "state"
+        ],
+        "properties": {
+          "cosmetic_id": {
+            "type": "string",
+            "description": "Cosmetic that was purchased."
+          },
+          "newly_settled": {
+            "type": "boolean",
+            "description": "`false` when the learner already owned it (a safe retry)."
+          },
+          "spent": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Bits charged (zero on an idempotent retry)."
+          },
+          "state": {
+            "$ref": "#/components/schemas/CyberCosmeticsStateDto",
+            "description": "Updated ownership/equipped state."
+          }
+        }
+      },
+      "CyberCosmeticsStateDto": {
+        "type": "object",
+        "description": "Cosmetic ownership and equipped-theme state.",
+        "required": [
+          "cosmetics",
+          "bits_balance"
+        ],
+        "properties": {
+          "bits_balance": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Settled Bits balance."
+          },
+          "cosmetics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CyberCosmeticDto"
+            },
+            "description": "Every available cosmetic with ownership/equipped state."
+          },
+          "equipped_theme": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Equipped theme id, when any."
+          }
+        }
+      },
       "CyberDefenseProfileResponse": {
         "type": "object",
         "description": "One complete, server-authoritative Cyber Defense profile snapshot.",
@@ -3996,7 +4399,11 @@
           "recommended_threat_level",
           "unlocked_threat_level",
           "total_operations_completed",
-          "legacy_progress_imported"
+          "legacy_progress_imported",
+          "operations_unlocked",
+          "confrontation_available",
+          "available_adversaries",
+          "cosmetics"
         ],
         "properties": {
           "active_operation_run_id": {
@@ -4014,6 +4421,13 @@
             },
             "description": "Adversary progress and ranks."
           },
+          "available_adversaries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Adversaries currently allowed to appear, in introduction order."
+          },
           "bits_balance": {
             "type": "integer",
             "format": "int64",
@@ -4030,6 +4444,24 @@
             "$ref": "#/components/schemas/CyberCareerDto",
             "description": "Career XP, level, and rank."
           },
+          "confrontation_available": {
+            "type": "boolean",
+            "description": "Whether the Stage 2 climax Operation is currently available."
+          },
+          "cosmetics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CyberCosmeticDto"
+            },
+            "description": "Permanent Tower theme cosmetics with ownership/equipped state."
+          },
+          "equipped_theme": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Equipped Tower theme id, when any."
+          },
           "heroes": {
             "type": "array",
             "items": {
@@ -4045,6 +4477,10 @@
           "legacy_progress_imported": {
             "type": "boolean",
             "description": "Whether legacy local progress was imported once."
+          },
+          "operations_unlocked": {
+            "type": "boolean",
+            "description": "Whether Operations are unlocked (Chapter 1 cleared server-side)."
           },
           "recommended_threat_level": {
             "type": "integer",
@@ -4079,59 +4515,21 @@
           }
         }
       },
-      "CyberDefenseUpgradeRequest": {
+      "CyberDefenseSwapDto": {
         "type": "object",
-        "description": "Request to debit Bits for one Cyber Defense control upgrade.\n\nThe client sends only the action's primitives: the server derives the\ncontrol's level from its own settled ledger, computes the canonical cost from\npolicy, and never trusts a client-supplied amount. `event_id` is the\nidempotency key, so a retry after a timeout cannot debit twice.",
+        "description": "One Engineering Lab defense substitution.",
         "required": [
-          "event_id",
-          "run_id",
-          "defense_id",
-          "from_level"
+          "remove",
+          "add"
         ],
         "properties": {
-          "defense_id": {
+          "add": {
             "type": "string",
-            "description": "Control being upgraded. Recorded for audit; it does not affect the cost."
+            "description": "Canonical defense the player takes instead."
           },
-          "event_id": {
+          "remove": {
             "type": "string",
-            "format": "uuid",
-            "description": "Client-generated idempotency key for this upgrade action."
-          },
-          "from_level": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Level the client believes it is upgrading from. The server derives the\nexpected level from the settled ledger and rejects a mismatch."
-          },
-          "run_id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Client-generated id for the mission attempt the upgrade belongs to."
-          }
-        }
-      },
-      "CyberDefenseUpgradeResponse": {
-        "type": "object",
-        "description": "Outcome of a Cyber Defense upgrade spend.",
-        "required": [
-          "bits_balance",
-          "spent",
-          "newly_settled"
-        ],
-        "properties": {
-          "bits_balance": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Settled balance after the spend. Unchanged on an idempotent retry."
-          },
-          "newly_settled": {
-            "type": "boolean",
-            "description": "`false` when this `event_id` was already settled (a safe retry)."
-          },
-          "spent": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Bits charged for this upgrade."
+            "description": "Defense currently offered that the player removes."
           }
         }
       },
@@ -4406,6 +4804,123 @@
           }
         }
       },
+      "CyberOperationLoadoutRequest": {
+        "type": "object",
+        "description": "Request to apply Engineering Lab substitutions to an active Operation.\n\nThe server validates the allowance from the learner's room level and re-checks\nevery generation invariant, so a swap can never make the run impossible.",
+        "properties": {
+          "defense_swaps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CyberDefenseSwapDto"
+            },
+            "description": "Substitutions to apply. Empty is a valid no-op."
+          }
+        }
+      },
+      "CyberOperationOfferDto": {
+        "type": "object",
+        "description": "One chooseable Operation offer.",
+        "required": [
+          "offer_id",
+          "template_id",
+          "title",
+          "adversary_id",
+          "adversary_name",
+          "estimated_minutes",
+          "map_id",
+          "summary",
+          "threat_summary",
+          "reward_preview"
+        ],
+        "properties": {
+          "adversary_id": {
+            "type": "string",
+            "description": "Adversary identifier."
+          },
+          "adversary_name": {
+            "type": "string",
+            "description": "Adversary display name."
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Estimated minutes to clear."
+          },
+          "map_id": {
+            "type": "string",
+            "description": "Map identifier."
+          },
+          "offer_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Opaque offer id, passed back when starting the run."
+          },
+          "reward_preview": {
+            "$ref": "#/components/schemas/CyberRewardDto",
+            "description": "Reward preview at three stars."
+          },
+          "summary": {
+            "type": "string",
+            "description": "Short summary."
+          },
+          "template_id": {
+            "type": "string",
+            "description": "Template identifier."
+          },
+          "threat_summary": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Attack families the Operation features."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing title."
+          }
+        }
+      },
+      "CyberOperationOffersRequest": {
+        "type": "object",
+        "description": "Request for the current Operation offer set.",
+        "properties": {
+          "requested_threat_level": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Threat Level to preview rewards at. Defaults to the recommendation."
+          }
+        }
+      },
+      "CyberOperationOffersResponse": {
+        "type": "object",
+        "description": "A stable set of Operation offers for the dashboard.",
+        "required": [
+          "offers",
+          "confrontation_available",
+          "preview_threat_level"
+        ],
+        "properties": {
+          "confrontation_available": {
+            "type": "boolean",
+            "description": "Whether the story confrontation is currently available."
+          },
+          "offers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CyberOperationOfferDto"
+            },
+            "description": "Up to three offers, best/least-recent first."
+          },
+          "preview_threat_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Threat Level the previews were computed at."
+          }
+        }
+      },
       "CyberOperationResultDto": {
         "type": "object",
         "description": "One recorded Operation result.",
@@ -4472,6 +4987,14 @@
             "type": "integer",
             "format": "int64",
             "description": "Career XP awarded on settlement."
+          },
+          "deployed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the battle started, freezing the configuration. `null` while the\nrun is still configurable (Engineering Lab loadout)."
           },
           "hero_id": {
             "type": [
@@ -4544,6 +5067,14 @@
             ],
             "description": "Selected hero, when any. Defaults to the Security Engineer."
           },
+          "offer_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Opaque server-issued offer id the player chose.\n\nWhen present the server starts exactly that offered template/adversary;\na client cannot forge an offer for a locked template."
+          },
           "requested_threat_level": {
             "type": "integer",
             "format": "int32",
@@ -4554,7 +5085,7 @@
               "string",
               "null"
             ],
-            "description": "Explicit template choice, when browsing Operations directly."
+            "description": "Explicit template choice, when browsing Operations directly.\n\nOnly the story-gated confrontation may be pinned this way; ordinary\ntemplates must come from an offer."
           }
         }
       },
@@ -5921,6 +6452,10 @@
               "$ref": "#/components/schemas/GeneratedModifier"
             },
             "description": "Active modifiers."
+          },
+          "progression_snapshot": {
+            "$ref": "#/components/schemas/OperationProgressionSnapshot",
+            "description": "Run-start progression frozen for this Operation.\n\n`serde(default)` keeps runs persisted before this field existed\ndeserializable; those legacy runs resolve progression from the profile."
           },
           "reward_preview": {
             "$ref": "#/components/schemas/CyberReward",
@@ -7488,6 +8023,91 @@
           "node_id": {
             "type": "string",
             "description": "Knowledge node identifier."
+          }
+        }
+      },
+      "OperationHeroSnapshot": {
+        "type": "object",
+        "description": "The selected hero's frozen progression at run creation.\n\nTalents are captured as the server stored them when the run started, so a\nlater respec in another tab never changes an in-progress battle.",
+        "required": [
+          "hero_id",
+          "level",
+          "selected_talents"
+        ],
+        "properties": {
+          "hero_id": {
+            "type": "string",
+            "description": "Hero identifier."
+          },
+          "level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Hero level at run creation."
+          },
+          "selected_talents": {
+            "description": "Selected talents at run creation, keyed by milestone."
+          }
+        }
+      },
+      "OperationProgressionSnapshot": {
+        "type": "object",
+        "description": "The complete run-start progression snapshot stored inside an Operation.",
+        "required": [
+          "tower"
+        ],
+        "properties": {
+          "hero": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OperationHeroSnapshot",
+                "description": "The selected hero's frozen progression, when a hero was chosen."
+              }
+            ]
+          },
+          "tower": {
+            "$ref": "#/components/schemas/OperationTowerSnapshot",
+            "description": "The Tower room levels frozen at creation."
+          }
+        }
+      },
+      "OperationTowerSnapshot": {
+        "type": "object",
+        "description": "The Tower room levels frozen at run creation.\n\nEvery room that changes run-time behaviour is captured: SOC and Threat\nIntelligence gate the briefing, the Training Center scales hero XP, the\nEngineering Lab allows loadout substitutions, and the Resilience Center\ngrants emergency recovery. Later upgrades affect only future runs.",
+        "required": [
+          "soc_level",
+          "threat_intelligence_level",
+          "training_center_level",
+          "engineering_lab_level",
+          "resilience_center_level"
+        ],
+        "properties": {
+          "engineering_lab_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Engineering Lab room level."
+          },
+          "resilience_center_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Resilience Center room level."
+          },
+          "soc_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "SOC room level."
+          },
+          "threat_intelligence_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Threat Intelligence room level."
+          },
+          "training_center_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Training Center room level."
           }
         }
       },

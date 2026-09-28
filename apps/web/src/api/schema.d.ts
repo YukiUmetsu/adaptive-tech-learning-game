@@ -190,6 +190,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cyber-defense/cosmetics/equipped": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Equips (or clears) an owned Tower theme. */
+        put: operations["equip_cosmetic"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cyber-defense/cosmetics/{cosmetic_id}/purchase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Purchases a permanent Tower theme cosmetic with Bits. */
+        post: operations["purchase_cosmetic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cyber-defense/heroes/{hero_id}/talents": {
         parameters: {
             query?: never;
@@ -235,6 +269,28 @@ export interface paths {
         put?: never;
         /** Starts one repeatable Operation. */
         post: operations["start_operation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cyber-defense/operations/offers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Returns the current stable set of Operation offers.
+         * @description Offers are persisted server-side and reused until they expire or are
+         *     consumed, so the dashboard does not regenerate a different set on every
+         *     render. A client can only start a template the server actually offered.
+         */
+        post: operations["operation_offers"];
         delete?: never;
         options?: never;
         head?: never;
@@ -292,6 +348,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cyber-defense/operations/{run_id}/deploy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marks an active Operation as deployed, freezing its configuration. */
+        post: operations["deploy_operation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cyber-defense/operations/{run_id}/loadout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Applies Engineering Lab defense substitutions to an active Operation. */
+        put: operations["set_operation_loadout"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cyber-defense/profile": {
         parameters: {
             query?: never;
@@ -341,29 +431,6 @@ export interface paths {
         put?: never;
         /** Purchases the next level of one Tower/HQ room with Bits. */
         post: operations["purchase_tower_upgrade"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/cyber-defense/upgrades": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Debits Bits for one Cyber Defense control upgrade.
-         * @description The wallet is taken from the verified token, so an anonymous caller is
-         *     rejected: spending is an account-scoped, server-authoritative action. The
-         *     client sends the action's primitives and an idempotency `event_id`; the
-         *     server derives the cost and settles the debit exactly once.
-         */
-        post: operations["spend_upgrade"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1384,6 +1451,67 @@ export interface components {
              */
             xp: number;
         };
+        /** @description One permanent Tower theme cosmetic. */
+        CyberCosmeticDto: {
+            /** @description Cosmetic identifier. */
+            cosmetic_id: string;
+            /** @description Short description. */
+            description: string;
+            /** @description Whether it is currently equipped. */
+            equipped: boolean;
+            /** @description Learner-facing name. */
+            name: string;
+            /** @description Whether the learner owns it. */
+            owned: boolean;
+            /**
+             * Format: int64
+             * @description One-time Bits cost.
+             */
+            price: number;
+        };
+        /** @description Request to equip (or clear) a Tower theme. */
+        CyberCosmeticEquipRequest: {
+            /** @description Theme to equip, or `null` to clear. */
+            theme_id?: string | null;
+        };
+        /**
+         * @description Request to purchase one cosmetic with Bits.
+         *
+         *     The price is never sent: the server derives it from canonical policy.
+         */
+        CyberCosmeticPurchaseRequest: {
+            /**
+             * Format: uuid
+             * @description Client-generated idempotency key for this purchase.
+             */
+            event_id: string;
+        };
+        /** @description Result of a cosmetic purchase. */
+        CyberCosmeticPurchaseResponse: {
+            /** @description Cosmetic that was purchased. */
+            cosmetic_id: string;
+            /** @description `false` when the learner already owned it (a safe retry). */
+            newly_settled: boolean;
+            /**
+             * Format: int64
+             * @description Bits charged (zero on an idempotent retry).
+             */
+            spent: number;
+            /** @description Updated ownership/equipped state. */
+            state: components["schemas"]["CyberCosmeticsStateDto"];
+        };
+        /** @description Cosmetic ownership and equipped-theme state. */
+        CyberCosmeticsStateDto: {
+            /**
+             * Format: int64
+             * @description Settled Bits balance.
+             */
+            bits_balance: number;
+            /** @description Every available cosmetic with ownership/equipped state. */
+            cosmetics: components["schemas"]["CyberCosmeticDto"][];
+            /** @description Equipped theme id, when any. */
+            equipped_theme?: string | null;
+        };
         /** @description One complete, server-authoritative Cyber Defense profile snapshot. */
         CyberDefenseProfileResponse: {
             /**
@@ -1393,6 +1521,8 @@ export interface components {
             active_operation_run_id?: string | null;
             /** @description Adversary progress and ranks. */
             adversaries: components["schemas"]["CyberAdversaryProgressDto"][];
+            /** @description Adversaries currently allowed to appear, in introduction order. */
+            available_adversaries: string[];
             /**
              * Format: int64
              * @description Settled Bits balance.
@@ -1402,6 +1532,12 @@ export interface components {
             campaign: components["schemas"]["CyberCampaignResultDto"][];
             /** @description Career XP, level, and rank. */
             career: components["schemas"]["CyberCareerDto"];
+            /** @description Whether the Stage 2 climax Operation is currently available. */
+            confrontation_available: boolean;
+            /** @description Permanent Tower theme cosmetics with ownership/equipped state. */
+            cosmetics: components["schemas"]["CyberCosmeticDto"][];
+            /** @description Equipped Tower theme id, when any. */
+            equipped_theme?: string | null;
             /** @description Persistent hero progression. */
             heroes: components["schemas"]["CyberHeroProgressDto"][];
             /**
@@ -1411,6 +1547,8 @@ export interface components {
             highest_threat_level_cleared: number;
             /** @description Whether legacy local progress was imported once. */
             legacy_progress_imported: boolean;
+            /** @description Whether Operations are unlocked (Chapter 1 cleared server-side). */
+            operations_unlocked: boolean;
             /**
              * Format: int32
              * @description Server-recommended Threat Level.
@@ -1436,48 +1574,12 @@ export interface components {
              */
             unlocked_threat_level: number;
         };
-        /**
-         * @description Request to debit Bits for one Cyber Defense control upgrade.
-         *
-         *     The client sends only the action's primitives: the server derives the
-         *     control's level from its own settled ledger, computes the canonical cost from
-         *     policy, and never trusts a client-supplied amount. `event_id` is the
-         *     idempotency key, so a retry after a timeout cannot debit twice.
-         */
-        CyberDefenseUpgradeRequest: {
-            /** @description Control being upgraded. Recorded for audit; it does not affect the cost. */
-            defense_id: string;
-            /**
-             * Format: uuid
-             * @description Client-generated idempotency key for this upgrade action.
-             */
-            event_id: string;
-            /**
-             * Format: int32
-             * @description Level the client believes it is upgrading from. The server derives the
-             *     expected level from the settled ledger and rejects a mismatch.
-             */
-            from_level: number;
-            /**
-             * Format: uuid
-             * @description Client-generated id for the mission attempt the upgrade belongs to.
-             */
-            run_id: string;
-        };
-        /** @description Outcome of a Cyber Defense upgrade spend. */
-        CyberDefenseUpgradeResponse: {
-            /**
-             * Format: int64
-             * @description Settled balance after the spend. Unchanged on an idempotent retry.
-             */
-            bits_balance: number;
-            /** @description `false` when this `event_id` was already settled (a safe retry). */
-            newly_settled: boolean;
-            /**
-             * Format: int64
-             * @description Bits charged for this upgrade.
-             */
-            spent: number;
+        /** @description One Engineering Lab defense substitution. */
+        CyberDefenseSwapDto: {
+            /** @description Canonical defense the player takes instead. */
+            add: string;
+            /** @description Defense currently offered that the player removes. */
+            remove: string;
         };
         /** @description Persistent hero progress for one hero. */
         CyberHeroProgressDto: {
@@ -1625,6 +1727,65 @@ export interface components {
              */
             unlocked_threat_level: number;
         };
+        /**
+         * @description Request to apply Engineering Lab substitutions to an active Operation.
+         *
+         *     The server validates the allowance from the learner's room level and re-checks
+         *     every generation invariant, so a swap can never make the run impossible.
+         */
+        CyberOperationLoadoutRequest: {
+            /** @description Substitutions to apply. Empty is a valid no-op. */
+            defense_swaps?: components["schemas"]["CyberDefenseSwapDto"][];
+        };
+        /** @description One chooseable Operation offer. */
+        CyberOperationOfferDto: {
+            /** @description Adversary identifier. */
+            adversary_id: string;
+            /** @description Adversary display name. */
+            adversary_name: string;
+            /**
+             * Format: int32
+             * @description Estimated minutes to clear.
+             */
+            estimated_minutes: number;
+            /** @description Map identifier. */
+            map_id: string;
+            /**
+             * Format: uuid
+             * @description Opaque offer id, passed back when starting the run.
+             */
+            offer_id: string;
+            /** @description Reward preview at three stars. */
+            reward_preview: components["schemas"]["CyberRewardDto"];
+            /** @description Short summary. */
+            summary: string;
+            /** @description Template identifier. */
+            template_id: string;
+            /** @description Attack families the Operation features. */
+            threat_summary: string[];
+            /** @description Learner-facing title. */
+            title: string;
+        };
+        /** @description Request for the current Operation offer set. */
+        CyberOperationOffersRequest: {
+            /**
+             * Format: int32
+             * @description Threat Level to preview rewards at. Defaults to the recommendation.
+             */
+            requested_threat_level?: number | null;
+        };
+        /** @description A stable set of Operation offers for the dashboard. */
+        CyberOperationOffersResponse: {
+            /** @description Whether the story confrontation is currently available. */
+            confrontation_available: boolean;
+            /** @description Up to three offers, best/least-recent first. */
+            offers: components["schemas"]["CyberOperationOfferDto"][];
+            /**
+             * Format: int32
+             * @description Threat Level the previews were computed at.
+             */
+            preview_threat_level: number;
+        };
         /** @description One recorded Operation result. */
         CyberOperationResultDto: {
             /** @description Whether the Operation was completed. */
@@ -1661,6 +1822,12 @@ export interface components {
              * @description Career XP awarded on settlement.
              */
             career_xp_awarded: number;
+            /**
+             * Format: date-time
+             * @description When the battle started, freezing the configuration. `null` while the
+             *     run is still configurable (Engineering Lab loadout).
+             */
+            deployed_at?: string | null;
             /** @description Selected hero. */
             hero_id?: string | null;
             /**
@@ -1701,11 +1868,24 @@ export interface components {
             /** @description Selected hero, when any. Defaults to the Security Engineer. */
             hero_id?: string | null;
             /**
+             * Format: uuid
+             * @description Opaque server-issued offer id the player chose.
+             *
+             *     When present the server starts exactly that offered template/adversary;
+             *     a client cannot forge an offer for a locked template.
+             */
+            offer_id?: string | null;
+            /**
              * Format: int32
              * @description Requested Threat Level. Must be unlocked for this learner.
              */
             requested_threat_level: number;
-            /** @description Explicit template choice, when browsing Operations directly. */
+            /**
+             * @description Explicit template choice, when browsing Operations directly.
+             *
+             *     Only the story-gated confrontation may be pinned this way; ordinary
+             *     templates must come from an offer.
+             */
             template_id?: string | null;
         };
         /** @description Bits, career XP, and hero XP granted by one settled result. */
@@ -2377,6 +2557,13 @@ export interface components {
             map_id: string;
             /** @description Active modifiers. */
             modifiers: components["schemas"]["GeneratedModifier"][];
+            /**
+             * @description Run-start progression frozen for this Operation.
+             *
+             *     `serde(default)` keeps runs persisted before this field existed
+             *     deserializable; those legacy runs resolve progression from the profile.
+             */
+            progression_snapshot?: components["schemas"]["OperationProgressionSnapshot"];
             /** @description Reward preview at three stars. */
             reward_preview: components["schemas"]["CyberReward"];
             /**
@@ -2996,6 +3183,64 @@ export interface components {
             mode_signals: components["schemas"]["ModeSignal"][];
             /** @description Knowledge node identifier. */
             node_id: string;
+        };
+        /**
+         * @description The selected hero's frozen progression at run creation.
+         *
+         *     Talents are captured as the server stored them when the run started, so a
+         *     later respec in another tab never changes an in-progress battle.
+         */
+        OperationHeroSnapshot: {
+            /** @description Hero identifier. */
+            hero_id: string;
+            /**
+             * Format: int32
+             * @description Hero level at run creation.
+             */
+            level: number;
+            /** @description Selected talents at run creation, keyed by milestone. */
+            selected_talents: unknown;
+        };
+        /** @description The complete run-start progression snapshot stored inside an Operation. */
+        OperationProgressionSnapshot: {
+            hero?: null | components["schemas"]["OperationHeroSnapshot"];
+            /** @description The Tower room levels frozen at creation. */
+            tower: components["schemas"]["OperationTowerSnapshot"];
+        };
+        /**
+         * @description The Tower room levels frozen at run creation.
+         *
+         *     Every room that changes run-time behaviour is captured: SOC and Threat
+         *     Intelligence gate the briefing, the Training Center scales hero XP, the
+         *     Engineering Lab allows loadout substitutions, and the Resilience Center
+         *     grants emergency recovery. Later upgrades affect only future runs.
+         */
+        OperationTowerSnapshot: {
+            /**
+             * Format: int32
+             * @description Engineering Lab room level.
+             */
+            engineering_lab_level: number;
+            /**
+             * Format: int32
+             * @description Resilience Center room level.
+             */
+            resilience_center_level: number;
+            /**
+             * Format: int32
+             * @description SOC room level.
+             */
+            soc_level: number;
+            /**
+             * Format: int32
+             * @description Threat Intelligence room level.
+             */
+            threat_intelligence_level: number;
+            /**
+             * Format: int32
+             * @description Training Center room level.
+             */
+            training_center_level: number;
         };
         /**
          * @description Optional, track-agnostic pedagogical metadata authored on a question.
@@ -4462,6 +4707,102 @@ export interface operations {
             };
         };
     };
+    equip_cosmetic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CyberCosmeticEquipRequest"];
+            };
+        };
+        responses: {
+            /** @description Equipped theme updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberCosmeticsStateDto"];
+                };
+            };
+            /** @description Theme is not owned */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    purchase_cosmetic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Cosmetic identifier */
+                cosmetic_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CyberCosmeticPurchaseRequest"];
+            };
+        };
+        responses: {
+            /** @description Cosmetic purchased */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberCosmeticPurchaseResponse"];
+                };
+            };
+            /** @description Unknown cosmetic or malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Insufficient Bits or reused idempotency key */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     set_hero_talents: {
         parameters: {
             query?: never;
@@ -4580,7 +4921,7 @@ export interface operations {
                     "application/json": components["schemas"]["CyberOperationRunDto"];
                 };
             };
-            /** @description Locked Threat Level, unknown hero, or unknown template */
+            /** @description Locked Threat Level, unknown hero, invalid offer, or unknown template */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -4600,6 +4941,48 @@ export interface operations {
             };
             /** @description An active Operation already exists */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    operation_offers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CyberOperationOffersRequest"];
+            };
+        };
+        responses: {
+            /** @description Operation offers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberOperationOffersResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Operations are locked */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4754,6 +5137,119 @@ export interface operations {
             };
         };
     };
+    deploy_operation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Operation run identifier */
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operation deployed (idempotent) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberOperationRunDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Run not found or not owned */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Run is not active */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    set_operation_loadout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Operation run identifier */
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CyberOperationLoadoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Loadout updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberOperationRunDto"];
+                };
+            };
+            /** @description No Engineering Lab allowance, unknown defense, or unsolvable loadout */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Run not found or not owned */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Run is not active */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     get_profile: {
         parameters: {
             query?: never;
@@ -4869,57 +5365,6 @@ export interface operations {
                 };
             };
             /** @description Insufficient Bits, max level, prerequisite not met, or reused key */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    spend_upgrade: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CyberDefenseUpgradeRequest"];
-            };
-        };
-        responses: {
-            /** @description Bits debited; settled balance returned */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CyberDefenseUpgradeResponse"];
-                };
-            };
-            /** @description Malformed request or invalid upgrade */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Authentication required */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Insufficient Bits, an out-of-sequence upgrade level, or a reused idempotency key */
             409: {
                 headers: {
                     [name: string]: unknown;

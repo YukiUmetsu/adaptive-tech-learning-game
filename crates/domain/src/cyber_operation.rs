@@ -404,6 +404,151 @@ const DEEP_STACK_EDGES: &[OperationMapEdge] = &[
     },
 ];
 
+// Branching topologies. These deliberately put attack targets on parallel
+// branches so a single chokepoint control no longer covers every route, which
+// changes placement decisions without touching the engine.
+
+/// Dual Service: the API and application live on parallel branches into one
+/// database, so edge controls alone cannot cover both.
+const DUAL_SERVICE_NODES: &[OperationMapNode] = &[
+    OperationMapNode {
+        id: "internet",
+        node_type: "edge",
+    },
+    OperationMapNode {
+        id: "edge",
+        node_type: "edge",
+    },
+    OperationMapNode {
+        id: "api",
+        node_type: "api",
+    },
+    OperationMapNode {
+        id: "app",
+        node_type: "application",
+    },
+    OperationMapNode {
+        id: "db",
+        node_type: "database",
+    },
+];
+const DUAL_SERVICE_EDGES: &[OperationMapEdge] = &[
+    OperationMapEdge {
+        from: "internet",
+        to: "edge",
+    },
+    OperationMapEdge {
+        from: "edge",
+        to: "api",
+    },
+    OperationMapEdge {
+        from: "edge",
+        to: "app",
+    },
+    OperationMapEdge {
+        from: "api",
+        to: "db",
+    },
+    OperationMapEdge {
+        from: "app",
+        to: "db",
+    },
+];
+
+/// Identity Fork: every request passes the identity layer, which then splits to
+/// the application and the database.
+const IDENTITY_FORK_NODES: &[OperationMapNode] = &[
+    OperationMapNode {
+        id: "internet",
+        node_type: "edge",
+    },
+    OperationMapNode {
+        id: "api",
+        node_type: "api",
+    },
+    OperationMapNode {
+        id: "auth",
+        node_type: "auth",
+    },
+    OperationMapNode {
+        id: "app",
+        node_type: "application",
+    },
+    OperationMapNode {
+        id: "db",
+        node_type: "database",
+    },
+];
+const IDENTITY_FORK_EDGES: &[OperationMapEdge] = &[
+    OperationMapEdge {
+        from: "internet",
+        to: "api",
+    },
+    OperationMapEdge {
+        from: "api",
+        to: "auth",
+    },
+    OperationMapEdge {
+        from: "auth",
+        to: "app",
+    },
+    OperationMapEdge {
+        from: "auth",
+        to: "db",
+    },
+    OperationMapEdge {
+        from: "app",
+        to: "db",
+    },
+];
+
+/// Service Mesh: the edge can reach the API or the database directly, and the
+/// API fronts the application, so coverage depends on which hop is hardened.
+const SERVICE_MESH_NODES: &[OperationMapNode] = &[
+    OperationMapNode {
+        id: "internet",
+        node_type: "edge",
+    },
+    OperationMapNode {
+        id: "edge",
+        node_type: "edge",
+    },
+    OperationMapNode {
+        id: "api",
+        node_type: "api",
+    },
+    OperationMapNode {
+        id: "app",
+        node_type: "application",
+    },
+    OperationMapNode {
+        id: "db",
+        node_type: "database",
+    },
+];
+const SERVICE_MESH_EDGES: &[OperationMapEdge] = &[
+    OperationMapEdge {
+        from: "internet",
+        to: "edge",
+    },
+    OperationMapEdge {
+        from: "edge",
+        to: "api",
+    },
+    OperationMapEdge {
+        from: "edge",
+        to: "db",
+    },
+    OperationMapEdge {
+        from: "api",
+        to: "app",
+    },
+    OperationMapEdge {
+        from: "app",
+        to: "db",
+    },
+];
+
 /// Every Operation map.
 pub const OPERATION_MAPS: &[OperationMap] = &[
     OperationMap {
@@ -435,6 +580,24 @@ pub const OPERATION_MAPS: &[OperationMap] = &[
         entry_node_id: "internet",
         nodes: DEEP_STACK_NODES,
         edges: DEEP_STACK_EDGES,
+    },
+    OperationMap {
+        id: "dual-service",
+        entry_node_id: "internet",
+        nodes: DUAL_SERVICE_NODES,
+        edges: DUAL_SERVICE_EDGES,
+    },
+    OperationMap {
+        id: "identity-fork",
+        entry_node_id: "internet",
+        nodes: IDENTITY_FORK_NODES,
+        edges: IDENTITY_FORK_EDGES,
+    },
+    OperationMap {
+        id: "service-mesh",
+        entry_node_id: "internet",
+        nodes: SERVICE_MESH_NODES,
+        edges: SERVICE_MESH_EDGES,
     },
 ];
 
@@ -471,15 +634,21 @@ pub struct OperationTemplate {
     pub max_modifiers: i32,
     /// Optional boss attack, used when the map has a valid target.
     pub boss_attack_id: Option<&'static str>,
+    /// Whether the random Operation picker may choose this template.
+    ///
+    /// Story-gated climax templates set this to `false`: they are only started
+    /// explicitly once their story/adversary milestone is reached.
+    pub random_pick: bool,
 }
 
 /// Every Operation template.
 pub const OPERATION_TEMPLATES: &[OperationTemplate] = &[
     OperationTemplate {
         id: "identity-breach",
+        random_pick: true,
         summary: "Credential attacks are replayed against the sign-in flow.",
         title_pool: &["Credential Cascade", "Silent Takeover", "Locked Accounts"],
-        map_id: "identity-stack",
+        map_id: "identity-fork",
         adversary_ids: &["ghost-7"],
         allowed_attack_types: &["credential_stuffing"],
         required_counter_defense_ids: &["mfa"],
@@ -494,9 +663,10 @@ pub const OPERATION_TEMPLATES: &[OperationTemplate] = &[
     },
     OperationTemplate {
         id: "web-assault",
+        random_pick: true,
         summary: "Malicious input probes the application and database layers.",
         title_pool: &["Injection Wave", "Query Breach", "Script Injection"],
-        map_id: "web-stack",
+        map_id: "dual-service",
         adversary_ids: &["null"],
         allowed_attack_types: &["sql_injection", "xss"],
         required_counter_defense_ids: &["parameterized_queries"],
@@ -511,9 +681,10 @@ pub const OPERATION_TEMPLATES: &[OperationTemplate] = &[
     },
     OperationTemplate {
         id: "availability-siege",
+        random_pick: true,
         summary: "A flood of junk traffic tries to exhaust the edge.",
         title_pool: &["Traffic Siege", "Capacity Crunch", "Flood the Edge"],
-        map_id: "edge-basic",
+        map_id: "service-mesh",
         adversary_ids: &["null"],
         allowed_attack_types: &["ddos"],
         required_counter_defense_ids: &["rate_limiter", "traffic_blocker"],
@@ -528,6 +699,7 @@ pub const OPERATION_TEMPLATES: &[OperationTemplate] = &[
     },
     OperationTemplate {
         id: "mixed-intrusion",
+        random_pick: true,
         summary: "Several attack families hit different layers at once.",
         title_pool: &["Layered Intrusion", "Coordinated Push", "Stack Assault"],
         map_id: "full-stack",
@@ -551,6 +723,7 @@ pub const OPERATION_TEMPLATES: &[OperationTemplate] = &[
     },
     OperationTemplate {
         id: "recovery-crisis",
+        random_pick: true,
         summary: "High-impact malware pressures containment and recovery.",
         title_pool: &["Ransomware Lock", "Recovery Under Fire", "Encrypted Core"],
         map_id: "deep-stack",
@@ -565,6 +738,29 @@ pub const OPERATION_TEMPLATES: &[OperationTemplate] = &[
         allowed_modifier_ids: &["recovery_pressure", "hardened_campaign", "delayed_impact"],
         max_modifiers: 2,
         boss_attack_id: None,
+    },
+    OperationTemplate {
+        id: "ghost7-confrontation",
+        random_pick: false,
+        summary: "GHOST-7 commits everything it has left. This is the confrontation the campaign built toward.",
+        title_pool: &["The Confrontation", "GHOST-7: Final Push"],
+        map_id: "full-stack",
+        adversary_ids: &["ghost-7"],
+        allowed_attack_types: &["credential_stuffing", "ddos", "sql_injection"],
+        required_counter_defense_ids: &["mfa", "waf"],
+        base_budget: 1650,
+        base_health: 140,
+        base_latency_target_ms: 280,
+        min_waves: 5,
+        max_waves: 7,
+        allowed_modifier_ids: &[
+            "hidden_traffic",
+            "credential_surge",
+            "identity_pressure",
+            "mixed_vector",
+        ],
+        max_modifiers: 2,
+        boss_attack_id: Some("botnet_ddos_boss"),
     },
 ];
 
@@ -807,6 +1003,63 @@ pub fn operation_adversary(id: &str) -> Option<&'static OperationAdversary> {
         .find(|adversary| adversary.id == id)
 }
 
+/// Templates the random Operation picker may choose from.
+///
+/// Story-gated climax templates are excluded: they are only started explicitly.
+pub fn random_selectable_templates() -> Vec<&'static OperationTemplate> {
+    OPERATION_TEMPLATES
+        .iter()
+        .filter(|template| template.random_pick)
+        .collect()
+}
+
+/// Progress facts that gate which adversaries may appear.
+#[derive(Debug, Clone, Default)]
+pub struct AdversaryUnlockInput {
+    /// Whether Chapter 1 (the campaign boss) is complete.
+    pub campaign_complete: bool,
+    /// Completed story node ids.
+    pub completed_story_nodes: Vec<String>,
+}
+
+/// Adversaries currently allowed to appear, in introduction order.
+///
+/// GHOST-7 appears as soon as Operations unlock. NULL is introduced after the
+/// early Chapter 2 milestone (GHOST-7 rank 2), and VIPER after Chapter 3 shows
+/// coordination (chapter-3-null). Availability is pure and progression-driven;
+/// there are no calendar-based unlocks.
+pub fn available_adversaries(input: &AdversaryUnlockInput) -> Vec<&'static str> {
+    if !input.campaign_complete {
+        return Vec::new();
+    }
+    let has = |node_id: &str| input.completed_story_nodes.iter().any(|id| id == node_id);
+    let mut available: Vec<&'static str> = vec!["ghost-7"];
+    if has("chapter-2-clue") {
+        available.push("null");
+    }
+    if has("chapter-2-clue") && has("chapter-3-null") {
+        available.push("viper");
+    }
+    available
+}
+
+/// Templates whose adversary pool intersects `available`.
+pub fn selectable_templates(
+    available: &[&'static str],
+    random_only: bool,
+) -> Vec<&'static OperationTemplate> {
+    OPERATION_TEMPLATES
+        .iter()
+        .filter(|template| !random_only || template.random_pick)
+        .filter(|template| {
+            template
+                .adversary_ids
+                .iter()
+                .any(|adversary| available.contains(adversary))
+        })
+        .collect()
+}
+
 /// Looks up a modifier by id.
 pub fn operation_modifier(id: &str) -> Option<&'static OperationModifier> {
     OPERATION_MODIFIERS
@@ -967,6 +1220,49 @@ pub struct GeneratedModifier {
     pub description: String,
 }
 
+/// The selected hero's frozen progression at run creation.
+///
+/// Talents are captured as the server stored them when the run started, so a
+/// later respec in another tab never changes an in-progress battle.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema, Default)]
+pub struct OperationHeroSnapshot {
+    /// Hero identifier.
+    pub hero_id: String,
+    /// Hero level at run creation.
+    pub level: i32,
+    /// Selected talents at run creation, keyed by milestone.
+    pub selected_talents: serde_json::Value,
+}
+
+/// The Tower room levels frozen at run creation.
+///
+/// Every room that changes run-time behaviour is captured: SOC and Threat
+/// Intelligence gate the briefing, the Training Center scales hero XP, the
+/// Engineering Lab allows loadout substitutions, and the Resilience Center
+/// grants emergency recovery. Later upgrades affect only future runs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema, Default)]
+pub struct OperationTowerSnapshot {
+    /// SOC room level.
+    pub soc_level: i32,
+    /// Threat Intelligence room level.
+    pub threat_intelligence_level: i32,
+    /// Training Center room level.
+    pub training_center_level: i32,
+    /// Engineering Lab room level.
+    pub engineering_lab_level: i32,
+    /// Resilience Center room level.
+    pub resilience_center_level: i32,
+}
+
+/// The complete run-start progression snapshot stored inside an Operation.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema, Default)]
+pub struct OperationProgressionSnapshot {
+    /// The selected hero's frozen progression, when a hero was chosen.
+    pub hero: Option<OperationHeroSnapshot>,
+    /// The Tower room levels frozen at creation.
+    pub tower: OperationTowerSnapshot,
+}
+
 /// A complete, persisted Operation snapshot.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ToSchema)]
 pub struct GeneratedOperation {
@@ -1008,6 +1304,12 @@ pub struct GeneratedOperation {
     pub boss: bool,
     /// Reward preview at three stars.
     pub reward_preview: CyberReward,
+    /// Run-start progression frozen for this Operation.
+    ///
+    /// `serde(default)` keeps runs persisted before this field existed
+    /// deserializable; those legacy runs resolve progression from the profile.
+    #[serde(default)]
+    pub progression_snapshot: OperationProgressionSnapshot,
 }
 
 fn threat_wave_count(template: &OperationTemplate, threat: i32, rng: &mut Rng) -> i32 {
@@ -1304,13 +1606,21 @@ pub fn generate_operation(
         starting_health,
         latency_target_ms,
         available_defenses,
-        available_heroes: DEFAULT_HERO_IDS.iter().map(|id| (*id).to_owned()).collect(),
+        // The Operation hero roster is exactly the operator chosen at start: the
+        // run records one hero and the battle may only deploy that hero, so the
+        // generated Operation must not expose the other one. `DEFAULT_HERO_IDS`
+        // remains the only fallback for callers that generate without a hero.
+        available_heroes: match input.hero_id.as_deref() {
+            Some(hero_id) if !hero_id.is_empty() => vec![hero_id.to_owned()],
+            _ => DEFAULT_HERO_IDS.iter().map(|id| (*id).to_owned()).collect(),
+        },
         waves,
         modifiers,
         dominant_attack_type: dominant_type.to_owned(),
         hidden_attacks,
         boss: boss.is_some(),
         reward_preview: operation_reward(threat, 3, true, false),
+        progression_snapshot: OperationProgressionSnapshot::default(),
     };
 
     validate_generated_operation(&operation)?;
@@ -1433,10 +1743,18 @@ pub fn validate_generated_operation(
     for defense_id in &operation.available_defenses {
         operation_defense(defense_id).ok_or_else(|| invalid("unknown defense id"))?;
     }
+    if operation.available_heroes.is_empty() {
+        return Err(invalid("operation offers no hero"));
+    }
+    let mut seen_heroes: Vec<&str> = Vec::new();
     for hero_id in &operation.available_heroes {
         if !DEFAULT_HERO_IDS.contains(&hero_id.as_str()) {
             return Err(invalid("unknown hero id"));
         }
+        if seen_heroes.contains(&hero_id.as_str()) {
+            return Err(invalid("duplicate hero id"));
+        }
+        seen_heroes.push(hero_id);
     }
 
     // At least one meaningful counter for the dominant threat must be offered.
@@ -1472,11 +1790,15 @@ pub fn validate_generated_operation(
         return Err(invalid("budget cannot afford the minimum counter package"));
     }
 
-    // Every required counter must be placeable on the map, or the operation
-    // would be unwinnable.
+    // Every required counter must be both offered and placeable on the map, or
+    // the operation would be unwinnable. This also makes an Engineering Lab swap
+    // that removes a required counter fail validation.
     for required in template.required_counter_defense_ids {
         let defense =
             operation_defense(required).ok_or_else(|| invalid("unknown required counter"))?;
+        if !operation.available_defenses.iter().any(|id| id == required) {
+            return Err(invalid("required counter is not offered"));
+        }
         let placeable = map
             .nodes
             .iter()
@@ -1491,6 +1813,137 @@ pub fn validate_generated_operation(
     }
 
     Ok(())
+}
+
+/// One recent Operation identity, used by the anti-repetition rules.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecentOperationIdentity {
+    /// Template id.
+    pub template_id: String,
+    /// Adversary id.
+    pub adversary_id: String,
+}
+
+/// How many of the most recent distinct templates stay out of rotation.
+pub const OPERATION_RECENT_TEMPLATE_AVOIDANCE: usize = 2;
+
+/// Largest Operation offer set.
+pub const MAX_OPERATION_OFFERS: usize = 3;
+
+/// Distinct recent template ids, newest first.
+fn recent_distinct_templates(recent: &[RecentOperationIdentity]) -> Vec<&str> {
+    let mut ids: Vec<&str> = Vec::new();
+    for identity in recent {
+        if !ids.contains(&identity.template_id.as_str()) {
+            ids.push(&identity.template_id);
+        }
+    }
+    ids
+}
+
+/// Selects one template from an already-gated eligible pool.
+///
+/// Anti-repetition order: keep the last
+/// [`OPERATION_RECENT_TEMPLATE_AVOIDANCE`] distinct templates out when any
+/// alternative remains, then avoid the immediately previous template, then fall
+/// back to the whole pool so a single eligible template still works. Selection
+/// is deterministic for `seed`, so a server offer and the run it starts agree.
+pub fn select_operation_template<'a>(
+    pool: &[&'a OperationTemplate],
+    recent: &[RecentOperationIdentity],
+    seed: u64,
+) -> Option<&'a OperationTemplate> {
+    if pool.is_empty() {
+        return None;
+    }
+    if pool.len() == 1 {
+        return Some(pool[0]);
+    }
+
+    let recent_templates = recent_distinct_templates(recent);
+    let avoided: Vec<&str> = recent_templates
+        .into_iter()
+        .take(OPERATION_RECENT_TEMPLATE_AVOIDANCE)
+        .collect();
+
+    let mut candidates: Vec<&'a OperationTemplate> = pool
+        .iter()
+        .copied()
+        .filter(|template| !avoided.contains(&template.id))
+        .collect();
+    if candidates.is_empty() {
+        candidates = pool.to_vec();
+    }
+
+    // Prefer not to repeat the immediately previous template, when it is
+    // possible to do so. Because the adversary is chosen deterministically per
+    // template, differing on the template id also differs on the combination.
+    if let Some(last) = recent.first() {
+        let narrowed: Vec<&'a OperationTemplate> = candidates
+            .iter()
+            .copied()
+            .filter(|template| template.id != last.template_id)
+            .collect();
+        if !narrowed.is_empty() {
+            candidates = narrowed;
+        }
+    }
+
+    let mut rng = Rng::new(seed as i64);
+    let index = rng.below(candidates.len() as u64) as usize;
+    Some(candidates[index])
+}
+
+/// Selects up to `max_offers` distinct templates for an offer set.
+///
+/// The pool is deterministically shuffled for variety, then templates that were
+/// played recently are pushed to the back, so the offer set prefers fresh
+/// content while still surfacing repeats when little content is eligible.
+pub fn select_operation_offer_templates<'a>(
+    pool: &[&'a OperationTemplate],
+    recent: &[RecentOperationIdentity],
+    seed: u64,
+    max_offers: usize,
+) -> Vec<&'a OperationTemplate> {
+    if pool.is_empty() || max_offers == 0 {
+        return Vec::new();
+    }
+    let mut rng = Rng::new(seed as i64);
+    let mut candidates: Vec<&'a OperationTemplate> = pool.to_vec();
+    for index in (1..candidates.len()).rev() {
+        let swap = rng.below((index + 1) as u64) as usize;
+        candidates.swap(index, swap);
+    }
+
+    let avoided: Vec<&str> = recent_distinct_templates(recent)
+        .into_iter()
+        .take(OPERATION_RECENT_TEMPLATE_AVOIDANCE)
+        .collect();
+    // Stable sort keeps the shuffled order within each group.
+    candidates.sort_by_key(|template| avoided.contains(&template.id));
+
+    candidates.truncate(max_offers.min(candidates.len()));
+    candidates
+}
+
+/// Estimated minutes to clear an Operation, derived from its wave pacing.
+///
+/// Display-only: the client shows this on the offer card, and the server never
+/// uses it for scoring. Clamped to a plausible 3–20 minutes.
+pub fn estimated_operation_minutes(operation: &GeneratedOperation) -> i32 {
+    let mut spawn_ms: i64 = 0;
+    for wave in &operation.waves {
+        let mut wave_ms: i64 = 0;
+        for group in &wave.groups {
+            let group_ms = i64::from(group.count.max(0))
+                * i64::from(group.spawn_interval_ms.max(1))
+                + i64::from(group.delay_ms.unwrap_or(0));
+            wave_ms = wave_ms.max(group_ms);
+        }
+        spawn_ms += wave_ms;
+    }
+    let travel_ms = i64::from(i32::try_from(operation.waves.len()).unwrap_or(1)) * 20_000;
+    ((spawn_ms + travel_ms + 59_999) / 60_000).clamp(3, 20) as i32
 }
 
 #[cfg(test)]
@@ -1531,6 +1984,21 @@ mod tests {
         let a = generate_operation(&input(1, "mixed-intrusion", "ghost-7", 6, 5)).unwrap();
         let b = generate_operation(&input(2, "mixed-intrusion", "ghost-7", 6, 5)).unwrap();
         assert_ne!(a, b);
+    }
+
+    #[test]
+    fn operation_offers_only_the_selected_hero() {
+        let mut selected = input(42, "mixed-intrusion", "ghost-7", 6, 5);
+        selected.hero_id = Some("sre".to_owned());
+        let operation = generate_operation(&selected).unwrap();
+        assert_eq!(operation.available_heroes, vec!["sre".to_owned()]);
+
+        // No hero requested falls back to the default roster.
+        let mut unset = input(42, "mixed-intrusion", "ghost-7", 6, 5);
+        unset.hero_id = None;
+        let operation = generate_operation(&unset).unwrap();
+        let expected: Vec<String> = DEFAULT_HERO_IDS.iter().map(|id| (*id).to_owned()).collect();
+        assert_eq!(operation.available_heroes, expected);
     }
 
     #[test]
@@ -1661,6 +2129,236 @@ mod tests {
                     "seed {seed} hid traffic without a detection counter"
                 );
             }
+        }
+    }
+
+    #[test]
+    fn operations_are_locked_until_the_campaign_is_complete() {
+        let locked = AdversaryUnlockInput::default();
+        assert!(available_adversaries(&locked).is_empty());
+        assert!(selectable_templates(&available_adversaries(&locked), true).is_empty());
+    }
+
+    #[test]
+    fn adversaries_unlock_in_story_order() {
+        let base = AdversaryUnlockInput {
+            campaign_complete: true,
+            completed_story_nodes: Vec::new(),
+        };
+        let initial = available_adversaries(&base);
+        assert_eq!(initial, vec!["ghost-7"]);
+
+        let chapter2 = AdversaryUnlockInput {
+            campaign_complete: true,
+            completed_story_nodes: vec!["chapter-2-clue".to_owned()],
+        };
+        let with_null = available_adversaries(&chapter2);
+        assert_eq!(with_null, vec!["ghost-7", "null"]);
+        assert!(!with_null.contains(&"viper"));
+
+        let chapter3 = AdversaryUnlockInput {
+            campaign_complete: true,
+            completed_story_nodes: vec!["chapter-2-clue".to_owned(), "chapter-3-null".to_owned()],
+        };
+        let with_viper = available_adversaries(&chapter3);
+        assert_eq!(with_viper, vec!["ghost-7", "null", "viper"]);
+    }
+
+    #[test]
+    fn first_operation_pool_always_contains_ghost7() {
+        let available = available_adversaries(&AdversaryUnlockInput {
+            campaign_complete: true,
+            completed_story_nodes: Vec::new(),
+        });
+        let templates = selectable_templates(&available, true);
+        assert!(!templates.is_empty(), "no selectable template pool");
+        for template in templates {
+            assert!(template.adversary_ids.contains(&"ghost-7"));
+        }
+    }
+
+    #[test]
+    fn confrontation_is_never_randomly_selected() {
+        let random_ids: Vec<&str> = random_selectable_templates().iter().map(|t| t.id).collect();
+        assert!(!random_ids.contains(&"ghost7-confrontation"));
+        assert!(operation_template("ghost7-confrontation").is_some());
+    }
+
+    #[test]
+    fn map_catalog_matches_the_frontend_contract() {
+        // Keep in sync with `apps/web/src/game/data/operationMaps.ts`.
+        let mut ids: Vec<&str> = OPERATION_MAPS.iter().map(|map| map.id).collect();
+        ids.sort_unstable();
+        assert_eq!(
+            ids,
+            vec![
+                "deep-stack",
+                "dual-service",
+                "edge-basic",
+                "full-stack",
+                "identity-fork",
+                "identity-stack",
+                "service-mesh",
+                "web-stack",
+            ]
+        );
+    }
+
+    #[test]
+    fn branching_maps_route_targets_down_more_than_one_branch() {
+        // Dual Service and Service Mesh put the API and application/database on
+        // parallel branches; both must be reachable from the entry.
+        for map_id in ["dual-service", "identity-fork", "service-mesh"] {
+            let map = operation_map(map_id).expect("known map");
+            assert!(map_reaches(map, "internet"), "{map_id}");
+            assert!(
+                map.nodes
+                    .iter()
+                    .filter(|node| node.id != map.entry_node_id)
+                    .all(|node| { map_reaches(map, node.id) }),
+                "{map_id} has an unreachable node"
+            );
+        }
+    }
+
+    #[test]
+    fn generation_holds_invariants_on_every_map() {
+        // Every template's map must satisfy the generator's reachability and
+        // counter-availability invariants at every seed and threat.
+        for seed in 0..200i64 {
+            for template in OPERATION_TEMPLATES {
+                for threat in [1, 5, 10] {
+                    let operation = generate_operation(&input(
+                        seed,
+                        template.id,
+                        template.adversary_ids[0],
+                        threat,
+                        8,
+                    ))
+                    .unwrap_or_else(|error| panic!("{seed} {template:?}: {error}"));
+                    validate_generated_operation(&operation)
+                        .unwrap_or_else(|error| panic!("{seed} {}: {error}", template.id));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn progression_snapshot_defaults_and_round_trips() {
+        let operation = generate_operation(&input(3, "identity-breach", "ghost-7", 4, 3)).unwrap();
+        assert_eq!(
+            operation.progression_snapshot,
+            OperationProgressionSnapshot::default()
+        );
+        // A stored config written before the field existed still deserializes.
+        let mut legacy = serde_json::to_value(&operation).unwrap();
+        legacy
+            .as_object_mut()
+            .unwrap()
+            .remove("progression_snapshot");
+        let restored: GeneratedOperation = serde_json::from_value(legacy).unwrap();
+        assert_eq!(
+            restored.progression_snapshot,
+            OperationProgressionSnapshot::default()
+        );
+    }
+
+    fn identity(template_id: &str, adversary_id: &str) -> RecentOperationIdentity {
+        RecentOperationIdentity {
+            template_id: template_id.to_owned(),
+            adversary_id: adversary_id.to_owned(),
+        }
+    }
+
+    #[test]
+    fn anti_repetition_avoids_the_last_two_templates_when_alternatives_exist() {
+        let pool = random_selectable_templates();
+        assert!(pool.len() >= 3);
+        let recent = vec![
+            identity(pool[0].id, "ghost-7"),
+            identity(pool[1].id, "null"),
+        ];
+        for seed in 0..50u64 {
+            let chosen = select_operation_template(&pool, &recent, seed).unwrap();
+            assert_ne!(chosen.id, pool[0].id);
+            assert_ne!(chosen.id, pool[1].id);
+        }
+    }
+
+    #[test]
+    fn anti_repetition_falls_back_to_a_single_template() {
+        let only = operation_template("availability-siege").unwrap();
+        let pool = [only];
+        let recent = vec![identity("availability-siege", "null")];
+        assert_eq!(
+            select_operation_template(&pool, &recent, 9).map(|t| t.id),
+            Some("availability-siege")
+        );
+    }
+
+    #[test]
+    fn anti_repetition_with_no_history_still_selects_an_eligible_template() {
+        let pool = random_selectable_templates();
+        let chosen = select_operation_template(&pool, &[], 1).unwrap();
+        assert!(pool.iter().any(|template| template.id == chosen.id));
+    }
+
+    #[test]
+    fn offer_selection_is_distinct_bounded_and_excludes_confrontation() {
+        let pool = random_selectable_templates();
+        let recent = vec![identity(pool[0].id, "ghost-7")];
+        let offers = select_operation_offer_templates(&pool, &recent, 42, MAX_OPERATION_OFFERS);
+        assert!(offers.len() <= MAX_OPERATION_OFFERS);
+        let mut ids: Vec<&str> = offers.iter().map(|template| template.id).collect();
+        let before = ids.len();
+        ids.sort_unstable();
+        ids.dedup();
+        assert_eq!(ids.len(), before, "offers must not repeat a template");
+        assert!(!ids.contains(&"ghost7-confrontation"));
+    }
+
+    #[test]
+    fn offer_sets_vary_and_respect_recent_history() {
+        let pool = random_selectable_templates();
+        let mut seen: BTreeSet<&str> = BTreeSet::new();
+        let recent = vec![
+            identity(pool[0].id, "ghost-7"),
+            identity(pool[1].id, "null"),
+        ];
+        for seed in 0..50u64 {
+            let offers =
+                select_operation_offer_templates(&pool, &recent, seed, MAX_OPERATION_OFFERS);
+            assert!(!offers.is_empty());
+            assert!(offers.len() <= MAX_OPERATION_OFFERS);
+            let mut ids: Vec<&str> = offers.iter().map(|template| template.id).collect();
+            let before = ids.len();
+            ids.sort_unstable();
+            ids.dedup();
+            assert_eq!(ids.len(), before, "offer sets must not repeat a template");
+            // When at least three templates are eligible, the last two are kept
+            // out of the offer set.
+            if pool.len() >= 3 {
+                assert!(
+                    !ids.contains(&pool[0].id) && !ids.contains(&pool[1].id),
+                    "recent templates leaked into the offer set"
+                );
+            }
+            for offer in offers {
+                seen.insert(offer.id);
+            }
+        }
+        // Across seeds the pool is not dominated by one template.
+        assert!(seen.len() > 1, "offers did not vary across seeds");
+    }
+
+    #[test]
+    fn estimated_minutes_stays_plausible() {
+        for template in OPERATION_TEMPLATES {
+            let operation =
+                generate_operation(&input(1, template.id, template.adversary_ids[0], 5, 5))
+                    .unwrap();
+            let minutes = estimated_operation_minutes(&operation);
+            assert!((3..=20).contains(&minutes), "{} -> {minutes}", template.id);
         }
     }
 }

@@ -37,6 +37,46 @@ function buildAdjacency(map: MissionMap): Map<string, string[]> {
  * Breadth-first search with declaration-order neighbours produces stable,
  * deterministic paths for a given map.
  */
+/**
+ * Index of the directed edge `from -> to` inside a concrete path, or `-1`.
+ *
+ * A branching graph shares nodes between routes, so the consecutive node pair
+ * is the only branch-accurate match. The simulation (tower coverage, gate
+ * filtering) and the renderer (gate queue offsets) both use this helper, so a
+ * given effect only ever considers the branch it is actually placed on.
+ */
+export function pathEdgeIndex(path: string[], from: string, to: string): number {
+  for (let i = 0; i < path.length - 1; i += 1) {
+    if (path[i] === from && path[i + 1] === to) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+/** Whether a path traverses the directed edge `from -> to`. */
+export function pathContainsEdge(path: string[], from: string, to: string): boolean {
+  return pathEdgeIndex(path, from, to) >= 0;
+}
+
+/**
+ * Position (edge index + fraction) of a point on an edge, from the perspective
+ * of one concrete path, or `null` when the path never traverses that edge.
+ *
+ * The numeric position a control occupies is only meaningful relative to the
+ * route that carries it. Using the route's own edge index (instead of a global
+ * node-depth approximation) keeps the value correct on branching maps.
+ */
+export function edgePositionOnPath(
+  path: string[],
+  from: string,
+  to: string,
+  fraction: number,
+): number | null {
+  const index = pathEdgeIndex(path, from, to);
+  return index < 0 ? null : index + fraction;
+}
+
 export function computePath(map: MissionMap, targetNodeId: string): PathResult {
   const adjacency = buildAdjacency(map);
   const start = map.entryNodeId;

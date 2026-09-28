@@ -37,6 +37,13 @@ export default defineConfig({
         RUN_MIGRATIONS: "true",
         CORS_ALLOWED_ORIGINS: `http://localhost:${webPort}`,
         RUST_LOG: "warn",
+        // E2E authenticates with `dev:<subject>` bearer tokens, so the API must
+        // use dev auth even when a developer's local `.env` configures WorkOS.
+        // Empty values are treated as unset by the config loader.
+        WORKOS_CLIENT_ID: "",
+        WORKOS_API_KEY: "",
+        WORKOS_ISSUER: "",
+        WORKOS_JWKS_URL: "",
       },
     },
     {
@@ -46,6 +53,10 @@ export default defineConfig({
       timeout: 120_000,
       env: {
         VITE_API_PROXY_TARGET: `http://127.0.0.1:${apiPort}`,
+        // Pair the web with the API's dev auth: no WorkOS client id, so the app
+        // uses the local developer sign-in instead of WorkOS AuthKit.
+        VITE_WORKOS_CLIENT_ID: "",
+        VITE_WORKOS_API_HOSTNAME: "",
       },
     },
   ],

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { useAuth } from "../auth/context";
 import BitsFlyOverlay from "../components/BitsFlyOverlay";
@@ -7,11 +7,11 @@ import BitsHud from "../components/BitsHud";
 import FocusRuntime from "../components/FocusRuntime";
 import FocusWidget from "../components/FocusWidget";
 import PreferencesEffects from "../components/PreferencesEffects";
+import CyberDefenseRoot from "../game/components/CyberDefenseShell";
 import { useDailyMissionHref } from "../hooks/useDailyMissionHref";
 import { MOBILE_NAV_QUERY, useMediaQuery } from "../hooks/useMediaQuery";
 import { useSignOut } from "../hooks/useSignOut";
 import { flushAuxiliary } from "../state/syncAuxiliary";
-import { flushBitSpends } from "../state/bitSpends";
 import { flushCyberTelemetry } from "../game/state/cyberTelemetry";
 import { resetCyberProfile } from "../game/state/cyberProfile";
 import { resetStoryAcknowledgements } from "../game/persistence/storyAck";
@@ -54,15 +54,15 @@ export default function AppShell() {
   const handleSignOut = useSignOut();
   const isMobileNav = useMediaQuery(MOBILE_NAV_QUERY);
   const dailyMissionHref = useDailyMissionHref();
+  const location = useLocation();
+  const isCyberDefense = location.pathname.startsWith("/game");
 
   useEffect(() => {
     if (status === "authenticated") {
-      // Settle any queued Bit spends before reading the authoritative balance,
-      // so the balance already reflects confirmed upgrades.
-      void (async () => {
-        await flushBitSpends();
-        await refreshWallet();
-      })();
+      // Read the authoritative Bits balance on sign-in. Tower and cosmetic
+      // purchases settle server-side at click time, so there is no client queue
+      // to flush first.
+      void refreshWallet();
     } else if (status === "anonymous") {
       resetWallet();
       resetCyberProfile();
@@ -70,12 +70,11 @@ export default function AppShell() {
     }
   }, [status]);
 
-  // Returning online is a natural boundary to flush queued auxiliary work,
-  // pending Bits spends, and buffered telemetry. No polling timer is introduced.
+  // Returning online is a natural boundary to flush queued auxiliary work and
+  // buffered telemetry. No polling timer is introduced.
   useEffect(() => {
     const handleOnline = () => {
       void flushAuxiliary();
-      void flushBitSpends();
       void flushCyberTelemetry();
     };
     window.addEventListener("online", handleOnline);
@@ -164,7 +163,13 @@ export default function AppShell() {
         )}
       </header>
       <main className="app-main">
-        <Outlet />
+        {isCyberDefense ? (
+          <CyberDefenseRoot>
+            <Outlet />
+          </CyberDefenseRoot>
+        ) : (
+          <Outlet />
+        )}
       </main>
       <footer className="app-footer">
         <div className="app-footer-brand">

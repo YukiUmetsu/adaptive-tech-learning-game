@@ -147,6 +147,10 @@ gcloud run deploy tech-learning-api \
 
 Cloud Run accepts public requests; the application validates WorkOS identity/authorization.
 
+For a single-command flow (build, migrate Neon, deploy, smoke test), use
+`infra/deploy.sh`; keep using the migration flags above directly when you need
+manual control.
+
 Start with:
 
 ```text

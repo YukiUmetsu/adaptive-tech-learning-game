@@ -81,7 +81,71 @@ export const OPERATION_MAPS: Record<string, MissionMap> = {
       { from: "app", to: "db" },
     ],
   },
+  // Branching topologies (Stage 2.2). These put attack targets on parallel
+  // branches so a single chokepoint no longer covers every route.
+  "dual-service": {
+    entryNodeId: "internet",
+    nodes: [
+      { id: "internet", type: "edge", label: "Internet" },
+      { id: "edge", type: "edge", label: "Edge" },
+      { id: "api", type: "api", label: "API" },
+      { id: "app", type: "application", label: "Application" },
+      { id: "db", type: "database", label: "Database" },
+    ],
+    edges: [
+      { from: "internet", to: "edge" },
+      { from: "edge", to: "api" },
+      { from: "edge", to: "app" },
+      { from: "api", to: "db" },
+      { from: "app", to: "db" },
+    ],
+  },
+  "identity-fork": {
+    entryNodeId: "internet",
+    nodes: [
+      { id: "internet", type: "edge", label: "Internet" },
+      { id: "api", type: "api", label: "API" },
+      { id: "auth", type: "auth", label: "Identity" },
+      { id: "app", type: "application", label: "Application" },
+      { id: "db", type: "database", label: "Database" },
+    ],
+    edges: [
+      { from: "internet", to: "api" },
+      { from: "api", to: "auth" },
+      { from: "auth", to: "app" },
+      { from: "auth", to: "db" },
+      { from: "app", to: "db" },
+    ],
+  },
+  "service-mesh": {
+    entryNodeId: "internet",
+    nodes: [
+      { id: "internet", type: "edge", label: "Internet" },
+      { id: "edge", type: "edge", label: "Edge" },
+      { id: "api", type: "api", label: "API" },
+      { id: "app", type: "application", label: "Application" },
+      { id: "db", type: "database", label: "Database" },
+    ],
+    edges: [
+      { from: "internet", to: "edge" },
+      { from: "edge", to: "api" },
+      { from: "edge", to: "db" },
+      { from: "api", to: "app" },
+      { from: "app", to: "db" },
+    ],
+  },
 };
 
 /** Fallback map if the server ever sends an unknown id. */
 export const DEFAULT_OPERATION_MAP: MissionMap = OPERATION_MAPS["full-stack"];
+
+/**
+ * Human-readable map name from its id, for example `dual-service` -> `Dual
+ * Service`. Offer cards and briefings must never show the raw id to players.
+ */
+export function operationMapLabel(mapId: string): string {
+  return mapId
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}

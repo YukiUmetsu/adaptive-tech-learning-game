@@ -17,6 +17,26 @@ import type { GameState } from "./simulation";
  * tested without rendering and never depends on client-supplied rewards.
  */
 
+/** Architecture layer a breach reached, per attack family. */
+const BREACH_LAYER: Partial<Record<AttackType, string>> = {
+  ddos: "Edge / availability",
+  sql_injection: "Database access layer",
+  xss: "Application / browser",
+  credential_stuffing: "Identity and authentication",
+  ransomware: "Data and recovery",
+  prompt_injection: "AI tool boundary",
+};
+
+/** Strongest counter category to recommend, per attack family. */
+const SUGGESTED_COUNTER: Partial<Record<AttackType, string>> = {
+  ddos: "Edge rate limiting plus a scrubbing layer",
+  sql_injection: "Parameterized queries (input validation as defense in depth)",
+  xss: "Context-aware output encoding and a Content Security Policy",
+  credential_stuffing: "MFA (rate limiting only slows the attempts)",
+  ransomware: "Least privilege with offline or immutable backups",
+  prompt_injection: "Tool permission boundaries and input isolation",
+};
+
 export interface AttackTally {
   attackId: string;
   name: string;
@@ -53,6 +73,16 @@ export interface PostmortemReport {
 
   /** Total system health restored by Backup this mission. */
   backupRestored: number;
+
+  /** Total system health restored by Resilience Center emergency recovery. */
+  resilienceRestored: number;
+
+  /**
+   * Resilience Center Lv1 detail: the architecture layer that failed, and the
+   * strongest counter category. Only present on a failure with a known cause.
+   */
+  failedLayer?: string;
+  suggestedCounter?: string;
 
   /** One short architecture lesson (spec section 23). */
   message: string;
@@ -115,6 +145,8 @@ export function buildPostmortem(
   }
 
   let primaryCause: { attackType: AttackType; label: string } | undefined;
+  let failedLayer: string | undefined;
+  let suggestedCounter: string | undefined;
   if (!completed) {
     const causeEntries = Object.entries(state.stats.damagedByAttack).sort(
       (a, b) => b[1] - a[1],
@@ -125,6 +157,8 @@ export function buildPostmortem(
         attackType: attackType as AttackType,
         label: ATTACK_TYPE_LABELS[attackType as AttackType] ?? attackType,
       };
+      failedLayer = BREACH_LAYER[attackType as AttackType];
+      suggestedCounter = SUGGESTED_COUNTER[attackType as AttackType];
     }
   }
 
@@ -160,8 +194,11 @@ export function buildPostmortem(
     leakedTotal: state.stats.leaked,
     mostEffectiveDefense,
     primaryCause,
+    failedLayer,
+    suggestedCounter,
     message,
     backupRestored: state.backupRestored,
+    resilienceRestored: state.resilienceRestored,
     bitsPreview: previewBitsForStars(rating.stars),
   };
 }

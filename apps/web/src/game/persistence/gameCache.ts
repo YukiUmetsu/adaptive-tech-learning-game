@@ -14,7 +14,10 @@ import type { GameState } from "../engine/simulation";
  */
 
 const KEY = "adaptive-learn.cyber-defense-session.v1";
-const VERSION = 4;
+// v6: placed defenses carry a stable logical edge anchor, and build pads use
+// stable `edge--from--to--slot-side` ids. A v5 snapshot would restore towers into
+// the wrong branch, so it is discarded rather than migrated.
+const VERSION = 6;
 
 interface CachedSession {
   version: number;

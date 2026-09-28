@@ -50,6 +50,15 @@ export interface HeroUnit {
   heroId: string;
   /** Position along the attacked path (edge index + progress). */
   position: number;
+  /**
+   * The graph edge the hero stands on, when deployed onto a branching map.
+   *
+   * The simulation is graph-aware: a hero anchored to an edge only fights
+   * attacks whose logical path traverses that same edge, so a hero on the
+   * Application branch never reaches an API-only attack. Legacy/campaign units
+   * without an anchor fall back to the numeric path position.
+   */
+  anchor?: { from: string; to: string; fraction: number };
   /** Time left on the road. */
   ttlMs: number;
   /** Time until the next melee hit. */

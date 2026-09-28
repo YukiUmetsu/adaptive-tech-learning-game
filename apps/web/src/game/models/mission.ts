@@ -45,6 +45,19 @@ export interface MissionLessons {
   failure?: Partial<Record<AttackType, string>>;
 }
 
+/**
+ * A one-time emergency recovery granted by the Resilience Center.
+ *
+ * Purely a run modifier: the engine restores health once when it first crosses
+ * the threshold. It never makes failure impossible.
+ */
+export interface EmergencyRecovery {
+  /** Health fraction that must be crossed to trigger. */
+  threshold: number;
+  /** Fraction of maximum health restored, once. */
+  restoreFraction: number;
+}
+
 export interface MissionDefinition {
   id: string;
   title: string;
@@ -69,6 +82,12 @@ export interface MissionDefinition {
   availableHeroes: string[];
 
   waves: WaveDefinition[];
+
+  /**
+   * Optional run modifier: Resilience Center Lv2 emergency recovery. Set by the
+   * Operation/campaign pages from Tower progression, never by the wave content.
+   */
+  emergencyRecovery?: EmergencyRecovery;
 
   lessons: MissionLessons;
 }

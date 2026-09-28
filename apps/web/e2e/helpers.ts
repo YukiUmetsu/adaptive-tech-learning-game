@@ -16,31 +16,73 @@ interface GraphNode {
   y: number;
 }
 
+interface TypedSlot {
+  id: string;
+  label: string;
+}
+
 type Interaction =
   | { type: "classification"; items: Choice[]; categories: Choice[] }
   | { type: "ordering"; items: Choice[] }
-  | { type: "node_connection"; nodes: GraphNode[] };
+  | { type: "node_connection"; nodes: GraphNode[] }
+  | { type: "typed_fill_blank"; slots: TypedSlot[] };
 
 type CanonicalAnswer =
   | { type: "classification"; placements: Record<string, string> }
   | { type: "ordering"; ordered_ids: string[] }
-  | { type: "node_connection"; edges: string[][] };
+  | { type: "node_connection"; edges: string[][] }
+  | {
+      type: "typed_fill_blank";
+      answers: Record<string, { accepted_answers: string[] }>;
+    };
 
 interface Question {
   id: string;
   interaction: Interaction;
   canonical_answer: CanonicalAnswer;
+  explanation?: string;
 }
 
 interface ContentBundle {
   certification: { id: string };
   version: {
+    id: string;
     domains: Array<{
       id: string;
       tasks: Array<{ id: string; question_ids: string[] }>;
     }>;
   };
   questions: Question[];
+}
+
+/** One authored task and the questions a mission for it presents, in order. */
+export interface AuthoredTask {
+  certificationId: string;
+  versionId: string;
+  taskId: string;
+  questionIds: string[];
+}
+
+/**
+ * Whether parsed JSON is a certification content bundle.
+ *
+ * The `content/` tree also holds learning modules, family guides, practice
+ * tests, and challenge files. Only files with a certification, a versioned
+ * domain list, and a questions array are bundles the mission helper can use.
+ */
+function isContentBundle(value: unknown): value is ContentBundle {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const candidate = value as Partial<ContentBundle>;
+  return (
+    typeof candidate.certification === "object" &&
+    candidate.certification !== null &&
+    typeof candidate.version === "object" &&
+    candidate.version !== null &&
+    Array.isArray(candidate.version.domains) &&
+    Array.isArray(candidate.questions)
+  );
 }
 
 // Load every content bundle from the repository `content/` tree instead of
@@ -57,7 +99,10 @@ function collectBundles(directory: string): ContentBundle[] {
     if (entry.isDirectory()) {
       bundles.push(...collectBundles(path));
     } else if (entry.name.endsWith(".json")) {
-      bundles.push(JSON.parse(readFileSync(path, "utf8")) as ContentBundle);
+      const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
+      if (isContentBundle(parsed)) {
+        bundles.push(parsed);
+      }
     }
   }
   return bundles;
@@ -68,11 +113,14 @@ const contentRoot = resolve(
   "../../../content",
 );
 
-function loadAuthoredBundle(): ContentBundle {
-  const bundles = collectBundles(contentRoot);
+const allBundles = collectBundles(contentRoot);
+
+function loadAuthoredBundle(bundles: ContentBundle[]): ContentBundle {
   const first = bundles.find((bundle) =>
     bundle.version.domains.some((domain) =>
-      domain.tasks.some((task) => task.question_ids.length > 0),
+      (domain.tasks ?? []).some(
+        (task) => (task.question_ids ?? []).length > 0,
+      ),
     ),
   );
   if (!first) {
@@ -85,6 +133,7 @@ function loadAuthoredBundle(): ContentBundle {
   const merged: ContentBundle = {
     certification: first.certification,
     version: {
+      id: first.version.id,
       domains: first.version.domains.map((domain) => ({
         ...domain,
         tasks: domain.tasks.map((task) => ({ ...task })),
@@ -127,12 +176,20 @@ function loadAuthoredBundle(): ContentBundle {
   return merged;
 }
 
-const content = loadAuthoredBundle();
+const content = loadAuthoredBundle(allBundles);
+
+/** Every authored question across the content tree, keyed by id. */
+const ALL_QUESTIONS = new Map<string, Question>();
+for (const bundle of allBundles) {
+  for (const question of bundle.questions) {
+    ALL_QUESTIONS.set(question.id, question);
+  }
+}
 
 function authoredQuestionIds(bundle: ContentBundle): string[] {
   for (const domain of bundle.version.domains) {
-    for (const task of domain.tasks) {
-      if (task.question_ids.length > 0) {
+    for (const task of domain.tasks ?? []) {
+      if ((task.question_ids ?? []).length > 0) {
         return task.question_ids;
       }
     }
@@ -146,11 +203,76 @@ export const QUESTION_ORDER: string[] = authoredQuestionIds(content);
 export const TOTAL_QUESTIONS = QUESTION_ORDER.length;
 
 function getQuestion(questionId: string): Question {
-  const question = content.questions.find((entry) => entry.id === questionId);
+  const question = ALL_QUESTIONS.get(questionId);
   if (!question) {
-    throw new Error(`question ${questionId} is not in the content bundle`);
+    throw new Error(`question ${questionId} is not in the content tree`);
   }
   return question;
+}
+
+/** The authored explanation for a question, as shown in the feedback panel. */
+export function questionExplanation(questionId: string): string {
+  return getQuestion(questionId).explanation ?? "";
+}
+
+/** Every authored task across the content tree, in discovery order. */
+export function authoredTasks(): AuthoredTask[] {
+  const tasks: AuthoredTask[] = [];
+  for (const bundle of allBundles) {
+    for (const domain of bundle.version.domains) {
+      for (const task of domain.tasks ?? []) {
+        if ((task.question_ids ?? []).length > 0) {
+          tasks.push({
+            certificationId: bundle.certification.id,
+            versionId: bundle.version.id,
+            taskId: task.id,
+            questionIds: task.question_ids,
+          });
+        }
+      }
+    }
+  }
+  return tasks;
+}
+
+/**
+ * The first authored task whose opening question uses the given interaction.
+ *
+ * Lets a spec target a specific question type (for example a node-connection
+ * drag) without hardcoding a task id that content updates may rename.
+ */
+export function firstTaskWithInteraction(
+  interactionType: Interaction["type"],
+): AuthoredTask | undefined {
+  return authoredTasks().find(
+    (task) =>
+      getQuestion(task.questionIds[0]).interaction.type === interactionType,
+  );
+}
+
+/**
+ * Node indices for the first canonical edge of a task whose opening question is
+ * a node-connection puzzle. Indices match the rendered node order.
+ */
+export function nodeConnectionDragIndices(task: AuthoredTask): {
+  from: number;
+  to: number;
+} {
+  const question = getQuestion(task.questionIds[0]);
+  if (
+    question.interaction.type !== "node_connection" ||
+    question.canonical_answer.type !== "node_connection"
+  ) {
+    throw new Error(
+      `task ${task.taskId} does not open with a node-connection question`,
+    );
+  }
+  const nodes = question.interaction.nodes;
+  const [fromId, toId] = question.canonical_answer.edges[0];
+  return {
+    from: nodes.findIndex((node) => node.id === fromId),
+    to: nodes.findIndex((node) => node.id === toId),
+  };
 }
 
 function choiceLabel(choices: Choice[], id: string): string {
@@ -185,18 +307,32 @@ export async function signInAsDevUser(page: Page): Promise<void> {
 export async function startMission(page: Page): Promise<void> {
   // Task Practice remains available for the demo/internal flow, so the E2E
   // suite drives it directly rather than through the new dashboard modes.
-  await signInAsDevUser(page);
-
-  const certificationId = content.certification.id;
   const taskId = firstAuthoredTaskId(content);
+  await startMissionForTask(page, {
+    certificationId: content.certification.id,
+    versionId: content.version.id,
+    taskId,
+    questionIds: authoredQuestionIds(content),
+  });
+}
 
-  await page.goto(`/tracks/${certificationId}/tasks/${taskId}`);
+/**
+ * Starts the mission for a specific authored task.
+ *
+ * Used when a spec needs a particular question type rather than the first task.
+ */
+export async function startMissionForTask(
+  page: Page,
+  task: AuthoredTask,
+): Promise<void> {
+  await signInAsDevUser(page);
+  await page.goto(`/tracks/${task.certificationId}/tasks/${task.taskId}`);
   await expect(
-    page.getByRole("heading", { name: new RegExp(`Task ${taskId}`) }),
+    page.getByRole("heading", { name: new RegExp(`Task ${task.taskId}`) }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Start mission" }).click();
   await expect(
-    page.getByText(new RegExp(`Question 1 of ${TOTAL_QUESTIONS}`)),
+    page.getByText(new RegExp(`Question 1 of ${task.questionIds.length}`)),
   ).toBeVisible();
 }
 
@@ -305,6 +441,23 @@ export async function answerQuestion(
       ],
     );
     await placeItems(page, pairs);
+    return;
+  }
+
+  if (
+    question.interaction.type === "typed_fill_blank" &&
+    question.canonical_answer.type === "typed_fill_blank"
+  ) {
+    const answers = question.canonical_answer.answers;
+    for (const slot of question.interaction.slots) {
+      const accepted = answers[slot.id]?.accepted_answers ?? [];
+      if (accepted.length === 0) {
+        continue;
+      }
+      await page
+        .getByRole("textbox", { name: slot.label, exact: true })
+        .fill(accepted[0]);
+    }
     return;
   }
 

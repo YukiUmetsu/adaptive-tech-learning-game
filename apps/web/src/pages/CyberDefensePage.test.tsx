@@ -23,6 +23,26 @@ vi.mock("../game/state/cyberProfile", () => ({
     message: "offline",
     activeRunId: null,
   }),
+  completeOperation: async () => ({
+    ok: false as const,
+    code: "network",
+    message: "offline",
+    activeRunId: null,
+  }),
+  completeCampaign: async () => ({
+    ok: false as const,
+    code: "network",
+    message: "offline",
+    activeRunId: null,
+  }),
+  getOperationOffers: async () => ({
+    ok: true as const,
+    data: {
+      offers: [],
+      confrontation_available: false,
+      preview_threat_level: 1,
+    },
+  }),
 }));
 
 vi.mock("../game/state/cyberTelemetry", () => ({
@@ -68,6 +88,10 @@ function baseProfile(overrides: Partial<CyberProfile> = {}): CyberProfile {
     total_operations_completed: 3,
     active_operation_run_id: null,
     legacy_progress_imported: true,
+    operations_unlocked: false,
+    confrontation_available: false,
+    available_adversaries: [],
+    cosmetics: [],
     ...overrides,
   };
 }
@@ -142,6 +166,7 @@ describe("CyberDefensePage", () => {
 
   it("offers Continue Defense once the campaign is complete", () => {
     profileFixture = baseProfile({
+      operations_unlocked: true,
       campaign: [
         "ddos-basics",
         "sql-injection",
@@ -162,7 +187,7 @@ describe("CyberDefensePage", () => {
     expect(
       screen.getByRole("button", { name: /continue defense/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Recommended Operation/i)).toBeInTheDocument();
+    expect(screen.getByText(/Choose Operation/i)).toBeInTheDocument();
   });
 
   it("exposes the upgrade modules and the campaign list", () => {

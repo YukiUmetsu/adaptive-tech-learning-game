@@ -33,6 +33,8 @@ pub struct CyberDefenseProfile {
     pub active_story_chapter: String,
     /// Whether legacy local progress was imported once.
     pub legacy_progress_imported: bool,
+    /// Equipped Tower theme cosmetic id, when one is equipped.
+    pub equipped_theme: Option<String>,
     /// Creation time.
     pub created_at: DateTime<Utc>,
     /// Last update time.
@@ -48,6 +50,7 @@ struct ProfileRow {
     recommended_threat_level: i32,
     active_story_chapter: String,
     legacy_progress_imported: bool,
+    equipped_theme: Option<String>,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
 }
@@ -62,6 +65,7 @@ impl From<ProfileRow> for CyberDefenseProfile {
             recommended_threat_level: row.recommended_threat_level,
             active_story_chapter: row.active_story_chapter,
             legacy_progress_imported: row.legacy_progress_imported,
+            equipped_theme: row.equipped_theme,
             created_at: row.created_at,
             updated_at: row.updated_at,
         }
@@ -85,7 +89,8 @@ pub async fn get_or_create_profile(
     let row = sqlx::query_as::<_, ProfileRow>(
         "SELECT user_id, career_xp, total_operations_completed,
                 highest_threat_level_cleared, recommended_threat_level,
-                active_story_chapter, legacy_progress_imported, created_at, updated_at
+                active_story_chapter, legacy_progress_imported, equipped_theme,
+                created_at, updated_at
          FROM cyber_defense_profiles
          WHERE user_id = $1",
     )
@@ -104,7 +109,8 @@ pub async fn get_profile(
     let row = sqlx::query_as::<_, ProfileRow>(
         "SELECT user_id, career_xp, total_operations_completed,
                 highest_threat_level_cleared, recommended_threat_level,
-                active_story_chapter, legacy_progress_imported, created_at, updated_at
+                active_story_chapter, legacy_progress_imported, equipped_theme,
+                created_at, updated_at
          FROM cyber_defense_profiles
          WHERE user_id = $1",
     )
@@ -602,8 +608,10 @@ pub async fn record_story_progress(
 /// Imports one legacy local campaign result without granting retroactive Bits.
 ///
 /// Unlike [`upsert_campaign_result`], the imported attempt count replaces the
-/// stored value only when it is larger, and `first_clear_reward_settled` is left
-/// untouched so an import can never claim a reward.
+/// stored value only when it is larger. A completion imported here is recorded
+/// as `first_clear_reward_settled` so imported progress can never claim a
+/// first-clear reward later; a non-completed import leaves that flag untouched,
+/// so a mission the learner genuinely still has to clear remains rewardable.
 pub async fn import_campaign_result(
     conn: &mut PgConnection,
     user_id: Uuid,
@@ -617,12 +625,15 @@ pub async fn import_campaign_result(
         "INSERT INTO cyber_campaign_results
              (user_id, mission_id, completed, best_stars, best_health, attempts,
               first_clear_reward_settled)
-         VALUES ($1, $2, $3, $4, $5, $6, FALSE)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (user_id, mission_id) DO UPDATE SET
              completed = cyber_campaign_results.completed OR EXCLUDED.completed,
              best_stars = GREATEST(cyber_campaign_results.best_stars, EXCLUDED.best_stars),
              best_health = GREATEST(cyber_campaign_results.best_health, EXCLUDED.best_health),
              attempts = GREATEST(cyber_campaign_results.attempts, EXCLUDED.attempts),
+             first_clear_reward_settled =
+                 cyber_campaign_results.first_clear_reward_settled
+                 OR EXCLUDED.first_clear_reward_settled,
              updated_at = now()
          RETURNING user_id, mission_id, completed, best_stars, best_health,
                    attempts, first_clear_reward_settled, updated_at",
@@ -633,6 +644,7 @@ pub async fn import_campaign_result(
     .bind(stars.clamp(0, 3))
     .bind(health.max(0))
     .bind(attempts.max(0))
+    .bind(completed)
     .fetch_one(&mut *conn)
     .await?;
 
@@ -787,6 +799,8 @@ pub struct OperationRun {
     pub generated_config: serde_json::Value,
     /// Start time.
     pub started_at: DateTime<Utc>,
+    /// When the battle started and the configuration was frozen, if deployed.
+    pub deployed_at: Option<DateTime<Utc>>,
     /// Completion time.
     pub completed_at: Option<DateTime<Utc>>,
     /// Result stars.
@@ -817,6 +831,7 @@ struct OperationRunRow {
     status: String,
     generated_config: Json<serde_json::Value>,
     started_at: DateTime<Utc>,
+    deployed_at: Option<DateTime<Utc>>,
     completed_at: Option<DateTime<Utc>>,
     result_stars: Option<i32>,
     result_health: Option<i32>,
@@ -840,6 +855,7 @@ impl From<OperationRunRow> for OperationRun {
             status: row.status,
             generated_config: row.generated_config.0,
             started_at: row.started_at,
+            deployed_at: row.deployed_at,
             completed_at: row.completed_at,
             result_stars: row.result_stars,
             result_health: row.result_health,
@@ -884,7 +900,7 @@ pub async fn create_operation_run(
               status, generated_config)
          VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', $8)
          RETURNING id, user_id, seed, template_id, adversary_id, hero_id,
-                   threat_level, status, generated_config, started_at, completed_at,
+                   threat_level, status, generated_config, started_at, deployed_at, completed_at,
                    result_stars, result_health, duration_ms, bits_awarded,
                    career_xp_awarded, hero_xp_awarded, reward_event_id",
     )
@@ -910,7 +926,7 @@ pub async fn get_operation_run_for_user(
 ) -> Result<Option<OperationRun>, DbError> {
     let row = sqlx::query_as::<_, OperationRunRow>(
         "SELECT id, user_id, seed, template_id, adversary_id, hero_id,
-                threat_level, status, generated_config, started_at, completed_at,
+                threat_level, status, generated_config, started_at, deployed_at, completed_at,
                 result_stars, result_health, duration_ms, bits_awarded,
                 career_xp_awarded, hero_xp_awarded, reward_event_id
          FROM cyber_operation_runs
@@ -932,7 +948,7 @@ pub async fn lock_operation_run(
 ) -> Result<Option<OperationRun>, DbError> {
     let row = sqlx::query_as::<_, OperationRunRow>(
         "SELECT id, user_id, seed, template_id, adversary_id, hero_id,
-                threat_level, status, generated_config, started_at, completed_at,
+                threat_level, status, generated_config, started_at, deployed_at, completed_at,
                 result_stars, result_health, duration_ms, bits_awarded,
                 career_xp_awarded, hero_xp_awarded, reward_event_id
          FROM cyber_operation_runs
@@ -953,7 +969,7 @@ pub async fn find_active_operation_run(
 ) -> Result<Option<OperationRun>, DbError> {
     let row = sqlx::query_as::<_, OperationRunRow>(
         "SELECT id, user_id, seed, template_id, adversary_id, hero_id,
-                threat_level, status, generated_config, started_at, completed_at,
+                threat_level, status, generated_config, started_at, deployed_at, completed_at,
                 result_stars, result_health, duration_ms, bits_awarded,
                 career_xp_awarded, hero_xp_awarded, reward_event_id
          FROM cyber_operation_runs
@@ -1036,7 +1052,7 @@ pub async fn complete_operation_run(
              reward_event_id = $10
          WHERE id = $1 AND user_id = $2 AND status = 'active'
          RETURNING id, user_id, seed, template_id, adversary_id, hero_id,
-                   threat_level, status, generated_config, started_at, completed_at,
+                   threat_level, status, generated_config, started_at, deployed_at, completed_at,
                    result_stars, result_health, duration_ms, bits_awarded,
                    career_xp_awarded, hero_xp_awarded, reward_event_id",
     )
@@ -1070,6 +1086,81 @@ pub async fn count_completed_campaign_missions(
     .await?;
 
     Ok(count)
+}
+
+/// Lists distinct Operation templates the learner has completed.
+///
+/// Used by story evaluation so the Stage 2 climax resolves on a real battle.
+pub async fn list_completed_operation_templates(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+) -> Result<Vec<String>, DbError> {
+    let rows = sqlx::query_scalar::<_, String>(
+        "SELECT DISTINCT template_id FROM cyber_operation_runs
+         WHERE user_id = $1 AND status = 'completed'
+         ORDER BY template_id",
+    )
+    .bind(user_id)
+    .fetch_all(&mut *conn)
+    .await?;
+
+    Ok(rows)
+}
+
+/// Replaces an active, not-yet-deployed run's generated config (Engineering Lab
+/// loadout).
+///
+/// Only an `active` run that has not been deployed can be changed: a loadout
+/// cannot be edited after the battle starts, nor after the result is settled.
+pub async fn update_operation_run_config(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+    run_id: Uuid,
+    generated_config: &serde_json::Value,
+) -> Result<Option<OperationRun>, DbError> {
+    let row = sqlx::query_as::<_, OperationRunRow>(
+        "UPDATE cyber_operation_runs
+         SET generated_config = $3
+         WHERE id = $1 AND user_id = $2 AND status = 'active'
+           AND deployed_at IS NULL
+         RETURNING id, user_id, seed, template_id, adversary_id, hero_id,
+                   threat_level, status, generated_config, started_at, deployed_at, completed_at,
+                   result_stars, result_health, duration_ms, bits_awarded,
+                   career_xp_awarded, hero_xp_awarded, reward_event_id",
+    )
+    .bind(run_id)
+    .bind(user_id)
+    .bind(Json(generated_config))
+    .fetch_optional(&mut *conn)
+    .await?;
+
+    Ok(row.map(Into::into))
+}
+
+/// Marks an active run as deployed exactly once.
+///
+/// Idempotent: re-deploying keeps the original timestamp. Returns `None` when
+/// the run does not exist, is not owned, or is no longer active.
+pub async fn deploy_operation_run(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+    run_id: Uuid,
+) -> Result<Option<OperationRun>, DbError> {
+    let row = sqlx::query_as::<_, OperationRunRow>(
+        "UPDATE cyber_operation_runs
+         SET deployed_at = COALESCE(deployed_at, now())
+         WHERE id = $1 AND user_id = $2 AND status = 'active'
+         RETURNING id, user_id, seed, template_id, adversary_id, hero_id,
+                   threat_level, status, generated_config, started_at, deployed_at, completed_at,
+                   result_stars, result_health, duration_ms, bits_awarded,
+                   career_xp_awarded, hero_xp_awarded, reward_event_id",
+    )
+    .bind(run_id)
+    .bind(user_id)
+    .fetch_optional(&mut *conn)
+    .await?;
+
+    Ok(row.map(Into::into))
 }
 
 /// Claims an idempotency key for a one-off reward settlement.
@@ -1150,6 +1241,279 @@ pub async fn list_recent_operation_outcomes(
             starting_health: row.starting_health,
         })
         .collect())
+}
+
+/// Counts reward-bearing Operations settled since a cutoff.
+///
+/// Used by the settlement rate guard. Abandoned and still-active runs are not
+/// counted, so the guard only limits actual reward settlements.
+pub async fn count_settled_operations_since(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+    since: DateTime<Utc>,
+) -> Result<i64, DbError> {
+    let count = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM cyber_operation_runs
+         WHERE user_id = $1
+           AND status IN ('completed', 'failed')
+           AND completed_at IS NOT NULL
+           AND completed_at >= $2",
+    )
+    .bind(user_id)
+    .bind(since)
+    .fetch_one(&mut *conn)
+    .await?;
+
+    Ok(count)
+}
+
+/// One recently started Operation's template/adversary identity.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OperationIdentity {
+    /// Template identifier.
+    pub template_id: String,
+    /// Adversary identifier.
+    pub adversary_id: String,
+}
+
+#[derive(sqlx::FromRow)]
+struct OperationIdentityRow {
+    template_id: String,
+    adversary_id: String,
+}
+
+/// Lists recent Operation identities, newest first, for anti-repetition.
+///
+/// Includes abandoned runs so rapidly abandoned repeats still count as
+/// "recently seen"; the caller decides how many to consider.
+pub async fn list_recent_operation_identities(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+    limit: i64,
+) -> Result<Vec<OperationIdentity>, DbError> {
+    let rows = sqlx::query_as::<_, OperationIdentityRow>(
+        "SELECT template_id, adversary_id
+         FROM cyber_operation_runs
+         WHERE user_id = $1
+         ORDER BY started_at DESC
+         LIMIT $2",
+    )
+    .bind(user_id)
+    .bind(limit.clamp(1, 50))
+    .fetch_all(&mut *conn)
+    .await?;
+
+    Ok(rows
+        .into_iter()
+        .map(|row| OperationIdentity {
+            template_id: row.template_id,
+            adversary_id: row.adversary_id,
+        })
+        .collect())
+}
+
+/// A server-issued Operation offer awaiting a player's choice.
+#[derive(Debug, Clone, PartialEq)]
+pub struct OperationOffer {
+    /// Offer identifier.
+    pub id: Uuid,
+    /// Owning learner.
+    pub user_id: Uuid,
+    /// Deterministic preview/run seed.
+    pub seed: i64,
+    /// Template identifier.
+    pub template_id: String,
+    /// Adversary identifier.
+    pub adversary_id: String,
+    /// Adversary rank captured at offer time.
+    pub adversary_rank: i32,
+    /// Creation time.
+    pub created_at: DateTime<Utc>,
+    /// Expiry time.
+    pub expires_at: DateTime<Utc>,
+}
+
+#[derive(sqlx::FromRow)]
+struct OperationOfferRow {
+    id: Uuid,
+    user_id: Uuid,
+    seed: i64,
+    template_id: String,
+    adversary_id: String,
+    adversary_rank: i32,
+    created_at: DateTime<Utc>,
+    expires_at: DateTime<Utc>,
+}
+
+impl From<OperationOfferRow> for OperationOffer {
+    fn from(row: OperationOfferRow) -> Self {
+        Self {
+            id: row.id,
+            user_id: row.user_id,
+            seed: row.seed,
+            template_id: row.template_id,
+            adversary_id: row.adversary_id,
+            adversary_rank: row.adversary_rank,
+            created_at: row.created_at,
+            expires_at: row.expires_at,
+        }
+    }
+}
+
+/// One offer to persist.
+#[derive(Debug, Clone)]
+pub struct NewOperationOffer<'a> {
+    /// Offer id.
+    pub id: Uuid,
+    /// Owning learner.
+    pub user_id: Uuid,
+    /// Preview/run seed.
+    pub seed: i64,
+    /// Template id.
+    pub template_id: &'a str,
+    /// Adversary id.
+    pub adversary_id: &'a str,
+    /// Adversary rank.
+    pub adversary_rank: i32,
+    /// Expiry.
+    pub expires_at: DateTime<Utc>,
+}
+
+/// Inserts a batch of Operation offers.
+pub async fn insert_operation_offers(
+    conn: &mut PgConnection,
+    offers: &[NewOperationOffer<'_>],
+) -> Result<(), DbError> {
+    for offer in offers {
+        sqlx::query(
+            "INSERT INTO cyber_operation_offers
+                 (id, user_id, seed, template_id, adversary_id, adversary_rank, expires_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)",
+        )
+        .bind(offer.id)
+        .bind(offer.user_id)
+        .bind(offer.seed)
+        .bind(offer.template_id)
+        .bind(offer.adversary_id)
+        .bind(offer.adversary_rank)
+        .bind(offer.expires_at)
+        .execute(&mut *conn)
+        .await?;
+    }
+    Ok(())
+}
+
+/// Lists a learner's outstanding (unconsumed, unexpired) offers, newest first.
+pub async fn list_active_operation_offers(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+) -> Result<Vec<OperationOffer>, DbError> {
+    let rows = sqlx::query_as::<_, OperationOfferRow>(
+        "SELECT id, user_id, seed, template_id, adversary_id, adversary_rank,
+                created_at, expires_at
+         FROM cyber_operation_offers
+         WHERE user_id = $1 AND consumed_at IS NULL AND expires_at > now()
+         ORDER BY created_at DESC",
+    )
+    .bind(user_id)
+    .fetch_all(&mut *conn)
+    .await?;
+
+    Ok(rows.into_iter().map(Into::into).collect())
+}
+
+/// Deletes a learner's expired or consumed offers (small housekeeping).
+pub async fn delete_stale_operation_offers(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+) -> Result<(), DbError> {
+    sqlx::query(
+        "DELETE FROM cyber_operation_offers
+         WHERE user_id = $1 AND (consumed_at IS NOT NULL OR expires_at <= now())",
+    )
+    .bind(user_id)
+    .execute(&mut *conn)
+    .await?;
+    Ok(())
+}
+
+/// Consumes one offer. Returns it only when it was outstanding and unexpired.
+pub async fn consume_operation_offer(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+    offer_id: Uuid,
+) -> Result<Option<OperationOffer>, DbError> {
+    let row = sqlx::query_as::<_, OperationOfferRow>(
+        "UPDATE cyber_operation_offers
+         SET consumed_at = now()
+         WHERE id = $1 AND user_id = $2
+           AND consumed_at IS NULL AND expires_at > now()
+         RETURNING id, user_id, seed, template_id, adversary_id, adversary_rank,
+                   created_at, expires_at",
+    )
+    .bind(offer_id)
+    .bind(user_id)
+    .fetch_optional(&mut *conn)
+    .await?;
+
+    Ok(row.map(Into::into))
+}
+
+/// Lists a learner's permanently unlocked cosmetic ids.
+pub async fn list_cosmetic_unlocks(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+) -> Result<Vec<String>, DbError> {
+    let rows = sqlx::query_scalar::<_, String>(
+        "SELECT cosmetic_id FROM cyber_cosmetic_unlocks
+         WHERE user_id = $1
+         ORDER BY unlocked_at",
+    )
+    .bind(user_id)
+    .fetch_all(&mut *conn)
+    .await?;
+
+    Ok(rows)
+}
+
+/// Records a cosmetic unlock. Returns `false` when it was already owned, so a
+/// duplicate purchase is idempotent.
+pub async fn unlock_cosmetic(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+    cosmetic_id: &str,
+) -> Result<bool, DbError> {
+    let inserted = sqlx::query_scalar::<_, String>(
+        "INSERT INTO cyber_cosmetic_unlocks (user_id, cosmetic_id)
+         VALUES ($1, $2)
+         ON CONFLICT (user_id, cosmetic_id) DO NOTHING
+         RETURNING cosmetic_id",
+    )
+    .bind(user_id)
+    .bind(cosmetic_id)
+    .fetch_optional(&mut *conn)
+    .await?;
+
+    Ok(inserted.is_some())
+}
+
+/// Sets (or clears) the equipped Tower theme.
+pub async fn set_equipped_theme(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+    theme_id: Option<&str>,
+) -> Result<(), DbError> {
+    sqlx::query(
+        "UPDATE cyber_defense_profiles
+         SET equipped_theme = $2, updated_at = now()
+         WHERE user_id = $1",
+    )
+    .bind(user_id)
+    .bind(theme_id)
+    .execute(&mut *conn)
+    .await?;
+
+    Ok(())
 }
 
 /// One balance-telemetry event to append.
