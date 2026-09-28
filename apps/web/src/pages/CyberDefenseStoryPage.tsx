@@ -7,6 +7,7 @@ import HackerArt from "../game/components/art/HackerArt";
 import { STORY_NODES } from "../game/data/story";
 import type { StoryNodeDefinition } from "../game/models/story";
 import { acknowledgeStoryNodes } from "../game/persistence/storyAck";
+import { trackCyberEvent } from "../game/state/cyberTelemetry";
 import {
   refreshCyberProfile,
   useCyberProfile,
@@ -141,7 +142,11 @@ export default function CyberDefenseStoryPage() {
   const completedKey = completedNodes.join(",");
   useEffect(() => {
     if (completedKey.length > 0) {
-      acknowledgeStoryNodes(completedKey.split(","));
+      const ids = completedKey.split(",");
+      acknowledgeStoryNodes(ids);
+      for (const nodeId of ids) {
+        trackCyberEvent("cyber_story_seen", { result: nodeId });
+      }
     }
   }, [completedKey]);
 

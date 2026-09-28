@@ -1072,6 +1072,53 @@ pub async fn count_completed_campaign_missions(
     Ok(count)
 }
 
+/// Lists distinct Operation templates the learner has completed.
+///
+/// Used by story evaluation so the Stage 2 climax resolves on a real battle.
+pub async fn list_completed_operation_templates(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+) -> Result<Vec<String>, DbError> {
+    let rows = sqlx::query_scalar::<_, String>(
+        "SELECT DISTINCT template_id FROM cyber_operation_runs
+         WHERE user_id = $1 AND status = 'completed'
+         ORDER BY template_id",
+    )
+    .bind(user_id)
+    .fetch_all(&mut *conn)
+    .await?;
+
+    Ok(rows)
+}
+
+/// Replaces an active run's generated config (Engineering Lab loadout).
+///
+/// Only an `active` run can be changed, so a loadout cannot be edited after the
+/// result is settled.
+pub async fn update_operation_run_config(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+    run_id: Uuid,
+    generated_config: &serde_json::Value,
+) -> Result<Option<OperationRun>, DbError> {
+    let row = sqlx::query_as::<_, OperationRunRow>(
+        "UPDATE cyber_operation_runs
+         SET generated_config = $3
+         WHERE id = $1 AND user_id = $2 AND status = 'active'
+         RETURNING id, user_id, seed, template_id, adversary_id, hero_id,
+                   threat_level, status, generated_config, started_at, completed_at,
+                   result_stars, result_health, duration_ms, bits_awarded,
+                   career_xp_awarded, hero_xp_awarded, reward_event_id",
+    )
+    .bind(run_id)
+    .bind(user_id)
+    .bind(Json(generated_config))
+    .fetch_optional(&mut *conn)
+    .await?;
+
+    Ok(row.map(Into::into))
+}
+
 /// Claims an idempotency key for a one-off reward settlement.
 ///
 /// Returns `true` when the key is new (the caller may settle), and `false` when

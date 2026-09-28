@@ -21,28 +21,30 @@ pub use concept_state::{
     retrievability, uncertainty, update_concept_state,
 };
 pub use cyber_defense::{
-    CAMPAIGN_MISSIONS, CAREER_MAX_LEVEL, CyberReward, DEFAULT_HEALTH_RATIO_THRESHOLD,
-    DEFAULT_HERO_IDS, HERO_MAX_LEVEL, HERO_PROGRESSION, HeroMilestone, HeroProgressionDefinition,
-    HeroTalentChoice, OperationOutcome, THREAT_LEVEL_MAX, THREAT_LEVEL_MIN, TOWER_UPGRADES,
-    ThreatRecommendationInput, TowerUpgradeDefinition, adversary_progress_award,
-    adversary_rank_from_progress, career_level_from_xp, career_rank, career_xp_to_next_level,
-    fixed_mission_reward, hero_level_from_xp, hero_milestone_choices, hero_progression,
-    hero_xp_to_next_level, is_campaign_mission, is_known_hero, is_legal_talent, operation_reward,
-    recommend_threat_level, tower_level, tower_upgrade, tower_upgrade_cost, unlocked_threat_level,
-    xp_for_career_level, xp_for_hero_level,
+    CAMPAIGN_FINAL_MISSION_ID, CAMPAIGN_MISSIONS, CAREER_MAX_LEVEL, CyberReward,
+    DEFAULT_HEALTH_RATIO_THRESHOLD, DEFAULT_HERO_IDS, HERO_MAX_LEVEL, HERO_PROGRESSION,
+    HeroMilestone, HeroProgressionDefinition, HeroTalentChoice, OperationOutcome, THREAT_LEVEL_MAX,
+    THREAT_LEVEL_MIN, TOWER_UPGRADES, ThreatRecommendationInput, TowerUpgradeDefinition,
+    adversary_progress_award, adversary_rank_from_progress, campaign_complete,
+    career_level_from_xp, career_rank, career_xp_to_next_level, fixed_mission_reward,
+    hero_level_from_xp, hero_milestone_choices, hero_progression, hero_xp_to_next_level,
+    is_campaign_mission, is_known_hero, is_legal_talent, operation_reward, recommend_threat_level,
+    scale_xp, tower_level, tower_upgrade, tower_upgrade_cost, training_center_hero_xp_multiplier,
+    unlocked_threat_level, xp_for_career_level, xp_for_hero_level,
 };
 pub use cyber_operation::{
-    GeneratedModifier, GeneratedOperation, GeneratedSpawnGroup, GeneratedWave,
-    OPERATION_ADVERSARIES, OPERATION_ATTACKS, OPERATION_DEFENSES, OPERATION_MAPS,
+    AdversaryUnlockInput, GeneratedModifier, GeneratedOperation, GeneratedSpawnGroup,
+    GeneratedWave, OPERATION_ADVERSARIES, OPERATION_ATTACKS, OPERATION_DEFENSES, OPERATION_MAPS,
     OPERATION_MODIFIERS, OPERATION_TEMPLATES, OperationAdversary, OperationAttack,
     OperationDefense, OperationGenerationError, OperationGenerationInput, OperationMap,
-    OperationModifier, OperationTemplate, generate_operation, map_has_node, map_reaches,
-    operation_adversary, operation_attack, operation_defense, operation_map, operation_modifier,
-    operation_template, validate_generated_operation,
+    OperationModifier, OperationTemplate, available_adversaries, generate_operation, map_has_node,
+    map_reaches, operation_adversary, operation_attack, operation_defense, operation_map,
+    operation_modifier, operation_template, random_selectable_templates, selectable_templates,
+    validate_generated_operation,
 };
 pub use cyber_story::{
-    STORY_NODES, StoryNodeDefinition, StoryProgressInput, StoryTrigger, active_chapter,
-    evaluate_story_nodes, story_node,
+    CONFRONTATION_TEMPLATE_ID, STORY_NODES, StoryNodeDefinition, StoryProgressInput, StoryTrigger,
+    active_chapter, confrontation_available, evaluate_story_nodes, story_node,
 };
 pub use evaluation::{
     CalibrationBucket, ConceptPrediction, EvaluationSummary, PredictionSample, QuestionPrediction,

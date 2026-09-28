@@ -32,6 +32,12 @@ pub enum ApiError {
     /// The learner already has an active repeatable Operation.
     #[error("an active operation already exists")]
     ActiveOperationExists(Uuid),
+    /// Repeatable Operations are locked until the Chapter 1 campaign is cleared.
+    #[error("complete Chapter 1 before starting Operations")]
+    CyberOperationsLocked,
+    /// The requested story-gated Operation is not unlocked yet.
+    #[error("this Operation is not unlocked yet")]
+    CyberOperationLocked,
     /// The mission references content that no longer exists because the
     /// certification content changed after the mission was issued.
     ///
@@ -58,6 +64,8 @@ impl ApiError {
             Self::InsufficientBits => StatusCode::CONFLICT,
             Self::Conflict(_) => StatusCode::CONFLICT,
             Self::ActiveOperationExists(_) => StatusCode::CONFLICT,
+            Self::CyberOperationsLocked => StatusCode::FORBIDDEN,
+            Self::CyberOperationLocked => StatusCode::FORBIDDEN,
             Self::MissionStale => StatusCode::CONFLICT,
             Self::Unavailable => StatusCode::SERVICE_UNAVAILABLE,
             Self::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
@@ -74,6 +82,8 @@ impl ApiError {
             Self::InsufficientBits => "insufficient_bits",
             Self::Conflict(_) => "conflict",
             Self::ActiveOperationExists(_) => "active_operation_exists",
+            Self::CyberOperationsLocked => "cyber_operations_locked",
+            Self::CyberOperationLocked => "cyber_operation_locked",
             Self::MissionStale => "mission_content_stale",
             Self::Unavailable => "unavailable",
             Self::Internal(_) => "internal_error",
@@ -83,6 +93,8 @@ impl ApiError {
     fn public_message(&self) -> &str {
         match self {
             Self::Internal(_) => "internal server error",
+            Self::CyberOperationsLocked => "Complete Chapter 1 before starting Operations.",
+            Self::CyberOperationLocked => "This Operation is not unlocked yet.",
             Self::MissionStale => {
                 "this study mission was created from an older content version; start a new mission"
             }
@@ -192,13 +204,25 @@ mod tests {
     #[tokio::test]
     async fn mission_stale_maps_to_a_recoverable_conflict() {
         let (status, body) = body_json(ApiError::MissionStale).await;
-
         assert_eq!(status, StatusCode::CONFLICT);
         assert_eq!(body["error"]["code"], "mission_content_stale");
         assert!(
             body["error"]["message"]
                 .as_str()
                 .is_some_and(|message| message.contains("start a new mission")),
+            "{body}"
+        );
+    }
+
+    #[tokio::test]
+    async fn locked_operations_map_to_a_forbidden_code() {
+        let (status, body) = body_json(ApiError::CyberOperationsLocked).await;
+        assert_eq!(status, StatusCode::FORBIDDEN);
+        assert_eq!(body["error"]["code"], "cyber_operations_locked");
+        assert!(
+            body["error"]["message"]
+                .as_str()
+                .is_some_and(|message| message.contains("Chapter 1")),
             "{body}"
         );
     }

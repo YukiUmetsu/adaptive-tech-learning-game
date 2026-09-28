@@ -471,12 +471,18 @@ pub struct OperationTemplate {
     pub max_modifiers: i32,
     /// Optional boss attack, used when the map has a valid target.
     pub boss_attack_id: Option<&'static str>,
+    /// Whether the random Operation picker may choose this template.
+    ///
+    /// Story-gated climax templates set this to `false`: they are only started
+    /// explicitly once their story/adversary milestone is reached.
+    pub random_pick: bool,
 }
 
 /// Every Operation template.
 pub const OPERATION_TEMPLATES: &[OperationTemplate] = &[
     OperationTemplate {
         id: "identity-breach",
+        random_pick: true,
         summary: "Credential attacks are replayed against the sign-in flow.",
         title_pool: &["Credential Cascade", "Silent Takeover", "Locked Accounts"],
         map_id: "identity-stack",
@@ -494,6 +500,7 @@ pub const OPERATION_TEMPLATES: &[OperationTemplate] = &[
     },
     OperationTemplate {
         id: "web-assault",
+        random_pick: true,
         summary: "Malicious input probes the application and database layers.",
         title_pool: &["Injection Wave", "Query Breach", "Script Injection"],
         map_id: "web-stack",
@@ -511,6 +518,7 @@ pub const OPERATION_TEMPLATES: &[OperationTemplate] = &[
     },
     OperationTemplate {
         id: "availability-siege",
+        random_pick: true,
         summary: "A flood of junk traffic tries to exhaust the edge.",
         title_pool: &["Traffic Siege", "Capacity Crunch", "Flood the Edge"],
         map_id: "edge-basic",
@@ -528,6 +536,7 @@ pub const OPERATION_TEMPLATES: &[OperationTemplate] = &[
     },
     OperationTemplate {
         id: "mixed-intrusion",
+        random_pick: true,
         summary: "Several attack families hit different layers at once.",
         title_pool: &["Layered Intrusion", "Coordinated Push", "Stack Assault"],
         map_id: "full-stack",
@@ -551,6 +560,7 @@ pub const OPERATION_TEMPLATES: &[OperationTemplate] = &[
     },
     OperationTemplate {
         id: "recovery-crisis",
+        random_pick: true,
         summary: "High-impact malware pressures containment and recovery.",
         title_pool: &["Ransomware Lock", "Recovery Under Fire", "Encrypted Core"],
         map_id: "deep-stack",
@@ -565,6 +575,29 @@ pub const OPERATION_TEMPLATES: &[OperationTemplate] = &[
         allowed_modifier_ids: &["recovery_pressure", "hardened_campaign", "delayed_impact"],
         max_modifiers: 2,
         boss_attack_id: None,
+    },
+    OperationTemplate {
+        id: "ghost7-confrontation",
+        random_pick: false,
+        summary: "GHOST-7 commits everything it has left. This is the confrontation the campaign built toward.",
+        title_pool: &["The Confrontation", "GHOST-7: Final Push"],
+        map_id: "full-stack",
+        adversary_ids: &["ghost-7"],
+        allowed_attack_types: &["credential_stuffing", "ddos", "sql_injection"],
+        required_counter_defense_ids: &["mfa", "waf"],
+        base_budget: 1650,
+        base_health: 140,
+        base_latency_target_ms: 280,
+        min_waves: 5,
+        max_waves: 7,
+        allowed_modifier_ids: &[
+            "hidden_traffic",
+            "credential_surge",
+            "identity_pressure",
+            "mixed_vector",
+        ],
+        max_modifiers: 2,
+        boss_attack_id: Some("botnet_ddos_boss"),
     },
 ];
 
@@ -805,6 +838,63 @@ pub fn operation_adversary(id: &str) -> Option<&'static OperationAdversary> {
     OPERATION_ADVERSARIES
         .iter()
         .find(|adversary| adversary.id == id)
+}
+
+/// Templates the random Operation picker may choose from.
+///
+/// Story-gated climax templates are excluded: they are only started explicitly.
+pub fn random_selectable_templates() -> Vec<&'static OperationTemplate> {
+    OPERATION_TEMPLATES
+        .iter()
+        .filter(|template| template.random_pick)
+        .collect()
+}
+
+/// Progress facts that gate which adversaries may appear.
+#[derive(Debug, Clone, Default)]
+pub struct AdversaryUnlockInput {
+    /// Whether Chapter 1 (the campaign boss) is complete.
+    pub campaign_complete: bool,
+    /// Completed story node ids.
+    pub completed_story_nodes: Vec<String>,
+}
+
+/// Adversaries currently allowed to appear, in introduction order.
+///
+/// GHOST-7 appears as soon as Operations unlock. NULL is introduced after the
+/// early Chapter 2 milestone (GHOST-7 rank 2), and VIPER after Chapter 3 shows
+/// coordination (chapter-3-null). Availability is pure and progression-driven;
+/// there are no calendar-based unlocks.
+pub fn available_adversaries(input: &AdversaryUnlockInput) -> Vec<&'static str> {
+    if !input.campaign_complete {
+        return Vec::new();
+    }
+    let has = |node_id: &str| input.completed_story_nodes.iter().any(|id| id == node_id);
+    let mut available: Vec<&'static str> = vec!["ghost-7"];
+    if has("chapter-2-clue") {
+        available.push("null");
+    }
+    if has("chapter-2-clue") && has("chapter-3-null") {
+        available.push("viper");
+    }
+    available
+}
+
+/// Templates whose adversary pool intersects `available`.
+pub fn selectable_templates(
+    available: &[&'static str],
+    random_only: bool,
+) -> Vec<&'static OperationTemplate> {
+    OPERATION_TEMPLATES
+        .iter()
+        .filter(|template| !random_only || template.random_pick)
+        .filter(|template| {
+            template
+                .adversary_ids
+                .iter()
+                .any(|adversary| available.contains(adversary))
+        })
+        .collect()
 }
 
 /// Looks up a modifier by id.
@@ -1662,5 +1752,57 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn operations_are_locked_until_the_campaign_is_complete() {
+        let locked = AdversaryUnlockInput::default();
+        assert!(available_adversaries(&locked).is_empty());
+        assert!(selectable_templates(&available_adversaries(&locked), true).is_empty());
+    }
+
+    #[test]
+    fn adversaries_unlock_in_story_order() {
+        let base = AdversaryUnlockInput {
+            campaign_complete: true,
+            completed_story_nodes: Vec::new(),
+        };
+        let initial = available_adversaries(&base);
+        assert_eq!(initial, vec!["ghost-7"]);
+
+        let chapter2 = AdversaryUnlockInput {
+            campaign_complete: true,
+            completed_story_nodes: vec!["chapter-2-clue".to_owned()],
+        };
+        let with_null = available_adversaries(&chapter2);
+        assert_eq!(with_null, vec!["ghost-7", "null"]);
+        assert!(!with_null.contains(&"viper"));
+
+        let chapter3 = AdversaryUnlockInput {
+            campaign_complete: true,
+            completed_story_nodes: vec!["chapter-2-clue".to_owned(), "chapter-3-null".to_owned()],
+        };
+        let with_viper = available_adversaries(&chapter3);
+        assert_eq!(with_viper, vec!["ghost-7", "null", "viper"]);
+    }
+
+    #[test]
+    fn first_operation_pool_always_contains_ghost7() {
+        let available = available_adversaries(&AdversaryUnlockInput {
+            campaign_complete: true,
+            completed_story_nodes: Vec::new(),
+        });
+        let templates = selectable_templates(&available, true);
+        assert!(!templates.is_empty(), "no selectable template pool");
+        for template in templates {
+            assert!(template.adversary_ids.contains(&"ghost-7"));
+        }
+    }
+
+    #[test]
+    fn confrontation_is_never_randomly_selected() {
+        let random_ids: Vec<&str> = random_selectable_templates().iter().map(|t| t.id).collect();
+        assert!(!random_ids.contains(&"ghost7-confrontation"));
+        assert!(operation_template("ghost7-confrontation").is_some());
     }
 }

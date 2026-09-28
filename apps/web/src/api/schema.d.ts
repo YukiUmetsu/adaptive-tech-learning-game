@@ -292,6 +292,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cyber-defense/operations/{run_id}/loadout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Applies Engineering Lab defense substitutions to an active Operation. */
+        put: operations["set_operation_loadout"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cyber-defense/profile": {
         parameters: {
             query?: never;
@@ -1393,6 +1410,8 @@ export interface components {
             active_operation_run_id?: string | null;
             /** @description Adversary progress and ranks. */
             adversaries: components["schemas"]["CyberAdversaryProgressDto"][];
+            /** @description Adversaries currently allowed to appear, in introduction order. */
+            available_adversaries: string[];
             /**
              * Format: int64
              * @description Settled Bits balance.
@@ -1402,6 +1421,8 @@ export interface components {
             campaign: components["schemas"]["CyberCampaignResultDto"][];
             /** @description Career XP, level, and rank. */
             career: components["schemas"]["CyberCareerDto"];
+            /** @description Whether the Stage 2 climax Operation is currently available. */
+            confrontation_available: boolean;
             /** @description Persistent hero progression. */
             heroes: components["schemas"]["CyberHeroProgressDto"][];
             /**
@@ -1411,6 +1432,8 @@ export interface components {
             highest_threat_level_cleared: number;
             /** @description Whether legacy local progress was imported once. */
             legacy_progress_imported: boolean;
+            /** @description Whether Operations are unlocked (Chapter 1 cleared server-side). */
+            operations_unlocked: boolean;
             /**
              * Format: int32
              * @description Server-recommended Threat Level.
@@ -1435,6 +1458,13 @@ export interface components {
              * @description Highest Threat Level the player may currently start.
              */
             unlocked_threat_level: number;
+        };
+        /** @description One Engineering Lab defense substitution. */
+        CyberDefenseSwapDto: {
+            /** @description Canonical defense the player takes instead. */
+            add: string;
+            /** @description Defense currently offered that the player removes. */
+            remove: string;
         };
         /**
          * @description Request to debit Bits for one Cyber Defense control upgrade.
@@ -1624,6 +1654,16 @@ export interface components {
              * @description Highest Threat Level currently unlocked.
              */
             unlocked_threat_level: number;
+        };
+        /**
+         * @description Request to apply Engineering Lab substitutions to an active Operation.
+         *
+         *     The server validates the allowance from the learner's room level and re-checks
+         *     every generation invariant, so a swap can never make the run impossible.
+         */
+        CyberOperationLoadoutRequest: {
+            /** @description Substitutions to apply. Empty is a valid no-op. */
+            defense_swaps?: components["schemas"]["CyberDefenseSwapDto"][];
         };
         /** @description One recorded Operation result. */
         CyberOperationResultDto: {
@@ -4745,6 +4785,69 @@ export interface operations {
             };
             /** @description Run not found or not owned */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    set_operation_loadout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Operation run identifier */
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CyberOperationLoadoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Loadout updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberOperationRunDto"];
+                };
+            };
+            /** @description No Engineering Lab allowance, unknown defense, or unsolvable loadout */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Run not found or not owned */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Run is not active */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -53,6 +53,9 @@ function baseProfile(): CyberProfile {
     tower_level: 1,
     tower_upgrades: [],
     unlocked_threat_level: 1,
+    operations_unlocked: false,
+    confrontation_available: false,
+    available_adversaries: [],
   };
 }
 

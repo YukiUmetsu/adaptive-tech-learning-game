@@ -6,6 +6,7 @@ mod common;
 
 use adaptive_learn_db as db;
 use adaptive_learn_domain::xp_for_hero_level;
+use axum::Router;
 use common::{app_with_pool, database_pool, send_anonymous, send_as};
 use db::PgPool;
 use serde_json::json;
@@ -40,6 +41,33 @@ async fn fund(pool: &PgPool, user_id: Uuid, amount: i64) {
         .await
         .expect("settle funding");
     tx.commit().await.expect("commit funding");
+}
+
+/// Marks every Chapter 1 mission complete directly in the DB.
+///
+/// This unlocks Operations without settling campaign Bits, which keeps the
+/// operation tests' wallet assertions exact.
+async fn unlock_operations(pool: &PgPool, user_id: Uuid) {
+    let mut tx = pool.begin().await.expect("begin unlock");
+    for mission_id in [
+        "ddos-basics",
+        "sql-injection",
+        "credential-stuffing",
+        "mixed-defense",
+        "botnet-boss",
+    ] {
+        db::cyber_defense::upsert_campaign_result(&mut tx, user_id, mission_id, true, 3, 90, true)
+            .await
+            .expect("campaign result");
+    }
+    tx.commit().await.expect("commit unlock");
+}
+
+/// Creates the user (via a profile read) and unlocks Operations.
+async fn ensure_operations_unlocked(app: Router, pool: &PgPool, subject: &str) {
+    let (status, _) = send_as(app, subject, "GET", "/v1/cyber-defense/profile", None).await;
+    assert_eq!(status, 200);
+    unlock_operations(pool, user_id(pool, subject).await).await;
 }
 
 #[tokio::test]
@@ -562,8 +590,9 @@ async fn operation_start_read_complete_flow() {
     let Some(pool) = database_pool().await else {
         return;
     };
-    let app = app_with_pool(pool);
+    let app = app_with_pool(pool.clone());
     let user = subject("operation-flow");
+    ensure_operations_unlocked(app.clone(), &pool, &user).await;
 
     let (status, body) = send_as(
         app.clone(),
@@ -641,9 +670,10 @@ async fn operation_cannot_be_read_or_settled_by_another_user() {
     let Some(pool) = database_pool().await else {
         return;
     };
-    let app = app_with_pool(pool);
+    let app = app_with_pool(pool.clone());
     let owner = subject("operation-owner");
     let other = subject("operation-other");
+    ensure_operations_unlocked(app.clone(), &pool, &owner).await;
 
     let (status, body) = send_as(
         app.clone(),
@@ -682,8 +712,9 @@ async fn operation_abandon_grants_no_reward() {
     let Some(pool) = database_pool().await else {
         return;
     };
-    let app = app_with_pool(pool);
+    let app = app_with_pool(pool.clone());
     let user = subject("operation-abandon");
+    ensure_operations_unlocked(app.clone(), &pool, &user).await;
 
     let (status, body) = send_as(
         app.clone(),
@@ -728,7 +759,7 @@ async fn operation_rejects_locked_threat_and_malformed_result() {
     let Some(pool) = database_pool().await else {
         return;
     };
-    let app = app_with_pool(pool);
+    let app = app_with_pool(pool.clone());
     let user = subject("operation-reject");
 
     // A brand-new player cannot start Threat 10.
@@ -741,6 +772,8 @@ async fn operation_rejects_locked_threat_and_malformed_result() {
     )
     .await;
     assert_eq!(status, 400);
+
+    ensure_operations_unlocked(app.clone(), &pool, &user).await;
 
     let (status, body) = send_as(
         app.clone(),
@@ -999,4 +1032,374 @@ async fn telemetry_accepts_known_events_and_rejects_unknown() {
     )
     .await;
     assert_eq!(status, 401);
+}
+
+#[tokio::test]
+async fn operations_are_locked_until_chapter_one_is_complete() {
+    let Some(pool) = database_pool().await else {
+        return;
+    };
+    let app = app_with_pool(pool.clone());
+    let user = subject("ops-lock");
+
+    // The server rejects an Operation before the campaign boss, regardless of UI.
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        "/v1/cyber-defense/operations",
+        Some(json!({ "requested_threat_level": 2 })),
+    )
+    .await;
+    assert_eq!(status, 403, "{body}");
+    assert_eq!(body["error"]["code"], "cyber_operations_locked");
+
+    ensure_operations_unlocked(app.clone(), &pool, &user).await;
+
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        "/v1/cyber-defense/operations",
+        Some(json!({ "requested_threat_level": 2 })),
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+}
+
+#[tokio::test]
+async fn first_operation_uses_ghost7_and_gates_other_adversaries() {
+    let Some(pool) = database_pool().await else {
+        return;
+    };
+    let app = app_with_pool(pool.clone());
+    let user = subject("adversary-gate");
+    ensure_operations_unlocked(app.clone(), &pool, &user).await;
+
+    let (_, profile) = send_as(app.clone(), &user, "GET", "/v1/cyber-defense/profile", None).await;
+    assert_eq!(profile["operations_unlocked"], true);
+    assert_eq!(profile["confrontation_available"], false);
+    let available: Vec<&str> = profile["available_adversaries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|id| id.as_str().unwrap())
+        .collect();
+    assert_eq!(available, vec!["ghost-7"]);
+
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        "/v1/cyber-defense/operations",
+        Some(json!({ "requested_threat_level": 2 })),
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(body["adversary_id"], "ghost-7");
+    let run_id = body["run_id"].as_str().unwrap().to_owned();
+
+    // Abandon so a pinned template can be attempted.
+    let (status, _) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        &format!("/v1/cyber-defense/operations/{run_id}/abandon"),
+        None,
+    )
+    .await;
+    assert_eq!(status, 200);
+
+    // A template whose only adversary is locked cannot be started yet.
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        "/v1/cyber-defense/operations",
+        Some(json!({ "requested_threat_level": 2, "template_id": "recovery-crisis" })),
+    )
+    .await;
+    assert_eq!(status, 403, "{body}");
+    assert_eq!(body["error"]["code"], "cyber_operation_locked");
+}
+
+#[tokio::test]
+async fn confrontation_operation_requires_story_and_rank() {
+    let Some(pool) = database_pool().await else {
+        return;
+    };
+    let app = app_with_pool(pool.clone());
+    let user = subject("confrontation");
+    ensure_operations_unlocked(app.clone(), &pool, &user).await;
+
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        "/v1/cyber-defense/operations",
+        Some(json!({
+            "requested_threat_level": 2,
+            "template_id": "ghost7-confrontation",
+        })),
+    )
+    .await;
+    assert_eq!(status, 403, "{body}");
+    assert_eq!(body["error"]["code"], "cyber_operation_locked");
+}
+
+#[tokio::test]
+async fn operation_rejects_an_unknown_hero() {
+    let Some(pool) = database_pool().await else {
+        return;
+    };
+    let app = app_with_pool(pool.clone());
+    let user = subject("bad-hero");
+    ensure_operations_unlocked(app.clone(), &pool, &user).await;
+
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        "/v1/cyber-defense/operations",
+        Some(json!({ "requested_threat_level": 2, "hero_id": "oracle" })),
+    )
+    .await;
+    assert_eq!(status, 400, "{body}");
+}
+
+#[tokio::test]
+async fn confrontation_battle_completes_the_climax_story() {
+    let Some(pool) = database_pool().await else {
+        return;
+    };
+    let app = app_with_pool(pool.clone());
+    let user = subject("climax");
+    ensure_operations_unlocked(app.clone(), &pool, &user).await;
+    let uid = user_id(&pool, &user).await;
+
+    // Reaching the story milestone and GHOST-7 rank must not complete the
+    // climax by itself.
+    let mut tx = pool.begin().await.expect("begin setup");
+    for node in [
+        "chapter-1-complete",
+        "chapter-2-ghost7",
+        "chapter-2-clue",
+        "chapter-3-null",
+        "chapter-3-viper",
+        "chapter-4-biolab",
+    ] {
+        db::cyber_defense::record_story_progress(&mut tx, uid, node)
+            .await
+            .expect("record story");
+    }
+    db::cyber_defense::apply_adversary_encounter(&mut tx, uid, "ghost-7", 200, true, true, 5)
+        .await
+        .expect("adversary progress");
+    tx.commit().await.expect("commit setup");
+
+    let (_, profile) = send_as(app.clone(), &user, "GET", "/v1/cyber-defense/profile", None).await;
+    assert_eq!(profile["confrontation_available"], true);
+    let nodes: Vec<&str> = profile["story"]["completed_nodes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|node| node.as_str().unwrap())
+        .collect();
+    assert!(
+        !nodes.contains(&"chapter-5-climax"),
+        "the climax must require a battle, not just a rank"
+    );
+
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        "/v1/cyber-defense/operations",
+        Some(json!({
+            "requested_threat_level": 3,
+            "template_id": "ghost7-confrontation",
+        })),
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(body["template_id"], "ghost7-confrontation");
+    let run_id = body["run_id"].as_str().unwrap().to_owned();
+
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        &format!("/v1/cyber-defense/operations/{run_id}/complete"),
+        Some(json!({
+            "completed": true,
+            "stars": 3,
+            "health": 100,
+            "duration_ms": 200_000,
+        })),
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    let completed: Vec<&str> = body["story_nodes_completed"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|node| node.as_str().unwrap())
+        .collect();
+    assert!(completed.contains(&"chapter-5-climax"), "{body}");
+    assert!(completed.contains(&"chapter-5-hook"), "{body}");
+}
+
+#[tokio::test]
+async fn engineering_lab_validates_and_applies_loadout_swaps() {
+    let Some(pool) = database_pool().await else {
+        return;
+    };
+    let app = app_with_pool(pool.clone());
+    let user = subject("engineering-lab");
+    ensure_operations_unlocked(app.clone(), &pool, &user).await;
+    let uid = user_id(&pool, &user).await;
+    fund(&pool, uid, 500).await;
+
+    // Without the room, substitutions are rejected.
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        "/v1/cyber-defense/operations",
+        Some(json!({ "requested_threat_level": 2 })),
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    let run_id = body["run_id"].as_str().unwrap().to_owned();
+
+    let (status, _) = send_as(
+        app.clone(),
+        &user,
+        "PUT",
+        &format!("/v1/cyber-defense/operations/{run_id}/loadout"),
+        Some(json!({ "defense_swaps": [{ "remove": "rate_limiter", "add": "monitoring" }] })),
+    )
+    .await;
+    assert_eq!(status, 400);
+
+    // Buy SOC 2 (prerequisite) and the Engineering Lab.
+    for _ in 0..2 {
+        let (status, body) = send_as(
+            app.clone(),
+            &user,
+            "POST",
+            "/v1/cyber-defense/tower/upgrades/soc",
+            Some(json!({ "event_id": Uuid::new_v4() })),
+        )
+        .await;
+        assert_eq!(status, 200, "{body}");
+    }
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        "/v1/cyber-defense/tower/upgrades/engineering_lab",
+        Some(json!({ "event_id": Uuid::new_v4() })),
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+
+    // Removing the only required counter must be rejected as unsolvable.
+    let (status, _) = send_as(
+        app.clone(),
+        &user,
+        "PUT",
+        &format!("/v1/cyber-defense/operations/{run_id}/loadout"),
+        Some(json!({ "defense_swaps": [{ "remove": "mfa", "add": "monitoring" }] })),
+    )
+    .await;
+    assert_eq!(status, 400);
+
+    // A safe swap is applied to the persisted run.
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "PUT",
+        &format!("/v1/cyber-defense/operations/{run_id}/loadout"),
+        Some(
+            json!({ "defense_swaps": [{ "remove": "traffic_blocker", "add": "xss_protection" }] }),
+        ),
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    let defenses: Vec<&str> = body["operation"]["available_defenses"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|id| id.as_str().unwrap())
+        .collect();
+    assert!(defenses.contains(&"xss_protection"));
+    assert!(!defenses.contains(&"traffic_blocker"));
+    assert!(defenses.contains(&"mfa"), "required counter remains");
+
+    // The change survives a re-read.
+    let (_, read) = send_as(
+        app.clone(),
+        &user,
+        "GET",
+        &format!("/v1/cyber-defense/operations/{run_id}"),
+        None,
+    )
+    .await;
+    assert!(
+        read["operation"]["available_defenses"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|id| id == "xss_protection")
+    );
+}
+
+#[tokio::test]
+async fn training_center_bonus_boosts_hero_xp_only() {
+    let Some(pool) = database_pool().await else {
+        return;
+    };
+    let app = app_with_pool(pool.clone());
+    let user = subject("training-bonus");
+
+    let (status, _) = send_as(app.clone(), &user, "GET", "/v1/cyber-defense/profile", None).await;
+    assert_eq!(status, 200);
+    let uid = user_id(&pool, &user).await;
+    fund(&pool, uid, 500).await;
+
+    // Two purchases take the Training Center to level 2 (+10% hero XP).
+    for _ in 0..2 {
+        let (status, body) = send_as(
+            app.clone(),
+            &user,
+            "POST",
+            "/v1/cyber-defense/tower/upgrades/training_center",
+            Some(json!({ "event_id": Uuid::new_v4() })),
+        )
+        .await;
+        assert_eq!(status, 200, "{body}");
+    }
+
+    let payload = json!({
+        "result_id": Uuid::new_v4(),
+        "stars": 3,
+        "health": 80,
+        "duration_ms": 60_000,
+        "hero_id": "security_engineer",
+    });
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        "/v1/cyber-defense/campaign/ddos-basics/complete",
+        Some(payload),
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    // Base first-clear hero XP is 35; +10% rounds to 39.
+    assert_eq!(body["reward"]["hero_xp"], 39);
+    // Bits and career XP are unaffected by the Training Center.
+    assert_eq!(body["reward"]["bits"], 75);
+    assert_eq!(body["reward"]["career_xp"], 115);
 }

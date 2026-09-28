@@ -9,8 +9,8 @@ use crate::dto::{
     CyberCampaignCompleteRequest, CyberCampaignCompleteResponse, CyberDefenseProfileResponse,
     CyberDefenseUpgradeRequest, CyberDefenseUpgradeResponse, CyberHeroProgressDto,
     CyberHeroTalentRequest, CyberOperationCompleteRequest, CyberOperationCompleteResponse,
-    CyberOperationRunDto, CyberOperationStartRequest, CyberTowerUpgradePurchaseRequest,
-    CyberTowerUpgradePurchaseResponse,
+    CyberOperationLoadoutRequest, CyberOperationRunDto, CyberOperationStartRequest,
+    CyberTowerUpgradePurchaseRequest, CyberTowerUpgradePurchaseResponse,
 };
 use crate::dto::{CyberLegacyImportRequest, CyberLegacyImportResponse};
 use crate::dto::{CyberTelemetryRequest, CyberTelemetryResponse};
@@ -199,6 +199,35 @@ pub async fn get_operation(
     let run_id = uuid_path(run_id)?;
     Ok(Json(
         services::cyber_defense_get_operation(&state, &user, run_id).await?,
+    ))
+}
+
+/// Applies Engineering Lab defense substitutions to an active Operation.
+#[utoipa::path(
+    put,
+    path = "/v1/cyber-defense/operations/{run_id}/loadout",
+    tag = "cyber-defense",
+    params(("run_id" = Uuid, Path, description = "Operation run identifier")),
+    request_body = CyberOperationLoadoutRequest,
+    responses(
+        (status = 200, description = "Loadout updated", body = CyberOperationRunDto),
+        (status = 400, description = "No Engineering Lab allowance, unknown defense, or unsolvable loadout", body = ErrorResponse),
+        (status = 401, description = "Authentication required", body = ErrorResponse),
+        (status = 404, description = "Run not found or not owned", body = ErrorResponse),
+        (status = 409, description = "Run is not active", body = ErrorResponse)
+    ),
+    security(("bearerAuth" = []))
+)]
+pub async fn set_operation_loadout(
+    State(state): State<AppState>,
+    user: AuthenticatedUser,
+    run_id: Result<Path<Uuid>, axum::extract::rejection::PathRejection>,
+    body: Result<Json<CyberOperationLoadoutRequest>, JsonRejection>,
+) -> Result<Json<CyberOperationRunDto>, ApiError> {
+    let run_id = uuid_path(run_id)?;
+    let request = json_body(body)?;
+    Ok(Json(
+        services::cyber_defense_set_operation_loadout(&state, &user, run_id, request).await?,
     ))
 }
 

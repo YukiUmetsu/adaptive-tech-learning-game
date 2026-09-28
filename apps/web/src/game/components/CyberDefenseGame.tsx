@@ -10,6 +10,7 @@ import { useGameEngine } from "../hooks/useGameEngine";
 import { recordMissionResult } from "../persistence/gameProgress";
 import { hasSeenTutorial, markTutorialSeen } from "../persistence/tutorial";
 import { prefersReducedMotionPreference } from "../../state/preferences";
+import { trackCyberEvent } from "../state/cyberTelemetry";
 import {
   playBaseHit,
   playBlocked,
@@ -65,6 +66,8 @@ export interface CyberDefenseGameProps {
   settlement?: MissionSettlement | null;
   /** Recurring adversary for Operations; shows its intel emblem at the spawn. */
   adversaryId?: string;
+  /** Resilience Center Lv1: show richer postmortem detail on the result screen. */
+  resilienceIntel?: boolean;
 }
 
 /** Result context passed to `onComplete`. */
@@ -85,6 +88,7 @@ export default function CyberDefenseGame({
   recordLocalProgress = true,
   settlement,
   adversaryId,
+  resilienceIntel = false,
 }: CyberDefenseGameProps) {
   const catalog = catalogOverride ?? GAME_CATALOG;
   const isMobile = useMediaQuery(MOBILE_NAV_QUERY);
@@ -373,6 +377,7 @@ export default function CyberDefenseGame({
     if (result.ok) {
       setFeedback(`${defense?.name ?? "Control"} deployed.`);
       playBuild();
+      trackCyberEvent("cyber_defense_placed", { defense_id: armedDefenseId });
     } else {
       setFeedback(result.reason ?? "Could not deploy there.");
     }
@@ -439,26 +444,35 @@ export default function CyberDefenseGame({
     if (result.ok) {
       setFeedback(`${defense?.name ?? "Control"} deployed.`);
       playBuild();
+      trackCyberEvent("cyber_defense_placed", { defense_id: defenseId });
     } else {
       setFeedback(result.reason ?? "Could not deploy there.");
     }
   };
 
   const handleUpgrade = (placementId: string) => {
+    const defenseId = state.placed.find(
+      (item) => item.id === placementId,
+    )?.defenseId;
     const result = engine.upgrade(placementId);
     if (result.ok) {
       setFeedback("Control upgraded for this mission.");
       playUpgrade();
+      trackCyberEvent("cyber_defense_upgraded", { defense_id: defenseId });
     } else {
       setFeedback(result.reason ?? "Could not upgrade.");
     }
   };
 
   const handleRemove = (placementId: string) => {
+    const defenseId = state.placed.find(
+      (item) => item.id === placementId,
+    )?.defenseId;
     const result = engine.remove(placementId);
     if (result.ok) {
       setFeedback("Control removed and refunded.");
       playCheck();
+      trackCyberEvent("cyber_defense_removed", { defense_id: defenseId });
     } else {
       setFeedback(result.reason ?? "");
     }
@@ -474,6 +488,7 @@ export default function CyberDefenseGame({
       playUpgrade();
       triggerHeroBurst();
       setSelectedHeroId(null);
+      trackCyberEvent("cyber_hero_deployed", { hero_id: heroId });
     } else {
       setFeedback(result.reason ?? "Could not deploy the hero.");
     }
@@ -534,6 +549,7 @@ export default function CyberDefenseGame({
           onContinue={onExit}
           onNext={onNext}
           settlement={settlement}
+          resilienceIntel={resilienceIntel}
         />
       </div>
     );

@@ -231,6 +231,47 @@ pub fn is_known_hero(hero_id: &str) -> bool {
     DEFAULT_HERO_IDS.contains(&hero_id)
 }
 
+/// The campaign mission whose completion unlocks repeatable Operations.
+pub const CAMPAIGN_FINAL_MISSION_ID: &str = "botnet-boss";
+
+/// Whether the learner's campaign is complete enough to start Operations.
+///
+/// The server enforces this rather than trusting the UI: a learner must have
+/// cleared the Chapter 1 boss before any Operation can be created.
+pub fn campaign_complete(completed_mission_ids: &[String]) -> bool {
+    completed_mission_ids
+        .iter()
+        .any(|id| id == CAMPAIGN_FINAL_MISSION_ID)
+}
+
+/// Hero XP multiplier granted by the Training Center room level.
+///
+/// Level 1 is the baseline; level 2 grants +10% hero XP, level 3 +15%. The
+/// bonus is deliberately small and only ever applies to hero XP: Bits and
+/// career XP are unaffected. The server derives the multiplier, so the client
+/// can never submit a boosted value.
+pub const TRAINING_CENTER_HERO_XP_BONUS_LV2: f64 = 1.10;
+/// Hero XP multiplier at Training Center level 3.
+pub const TRAINING_CENTER_HERO_XP_BONUS_LV3: f64 = 1.15;
+
+/// Hero XP multiplier for a Training Center level.
+pub fn training_center_hero_xp_multiplier(level: i32) -> f64 {
+    match level {
+        i32::MIN..=1 => 1.0,
+        2 => TRAINING_CENTER_HERO_XP_BONUS_LV2,
+        _ => TRAINING_CENTER_HERO_XP_BONUS_LV3,
+    }
+}
+
+/// Applies a fractional multiplier to an XP amount, rounding down to an integer.
+pub fn scale_xp(xp: i64, multiplier: f64) -> i64 {
+    if xp <= 0 {
+        return xp.max(0);
+    }
+    let scaled = (xp as f64 * multiplier.max(0.0)).round();
+    scaled.max(0.0) as i64
+}
+
 fn campaign_base_bits(mission_id: &str) -> Option<i64> {
     CAMPAIGN_MISSIONS
         .iter()
@@ -930,6 +971,35 @@ mod tests {
         assert!(!is_legal_talent("ghost", 5, "rapid_response"));
         assert!(hero_progression("security_engineer").is_some());
         assert!(hero_progression("nobody").is_none());
+    }
+
+    #[test]
+    fn campaign_is_complete_only_after_the_chapter_one_boss() {
+        assert!(!campaign_complete(&[]));
+        assert!(!campaign_complete(&["ddos-basics".to_owned()]));
+        assert!(campaign_complete(&[
+            "ddos-basics".to_owned(),
+            "botnet-boss".to_owned()
+        ]));
+    }
+
+    #[test]
+    fn training_center_bonus_is_small_and_monotonic() {
+        assert_eq!(training_center_hero_xp_multiplier(0), 1.0);
+        assert_eq!(training_center_hero_xp_multiplier(1), 1.0);
+        assert_eq!(
+            training_center_hero_xp_multiplier(2),
+            TRAINING_CENTER_HERO_XP_BONUS_LV2
+        );
+        assert_eq!(
+            training_center_hero_xp_multiplier(3),
+            TRAINING_CENTER_HERO_XP_BONUS_LV3
+        );
+        // Never more than +15%, so hero XP cannot be farmed absurdly.
+        assert!(training_center_hero_xp_multiplier(99) <= 1.15);
+        assert!(scale_xp(35, training_center_hero_xp_multiplier(2)) > 35);
+        assert_eq!(scale_xp(0, 1.1), 0);
+        assert_eq!(scale_xp(35, 1.0), 35);
     }
 
     #[test]

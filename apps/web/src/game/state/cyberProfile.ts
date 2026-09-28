@@ -210,6 +210,24 @@ export function getOperation(
   );
 }
 
+/**
+ * Applies Engineering Lab defense substitutions to an active Operation.
+ *
+ * The server derives the allowance from the room level and re-validates the
+ * resulting loadout, so the client only sends the intended swaps.
+ */
+export function setOperationLoadout(
+  runId: string,
+  defenseSwaps: { remove: string; add: string }[],
+): Promise<CyberApiResult<CyberOperationRun>> {
+  return run(() =>
+    api.PUT("/v1/cyber-defense/operations/{run_id}/loadout", {
+      params: { path: { run_id: runId } },
+      body: { defense_swaps: defenseSwaps },
+    }),
+  );
+}
+
 /** Settles one Operation run and reconciles the profile. */
 export function completeOperation(
   runId: string,

@@ -3,6 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { GAME_CATALOG } from "../../data";
 import { ADVERSARIES_BY_ID } from "../../data/adversaries";
+import {
+  isCyberCampaignMissionComplete,
+  isCyberCampaignMissionUnlocked,
+} from "../../data/campaignUnlock";
 import { HERO_PROGRESSION } from "../../data/heroProgression";
 import { STORY_NODES } from "../../data/story";
 import type { AttackType } from "../../models/attack";
@@ -15,6 +19,7 @@ import {
   startOperation,
   useCyberProfile,
 } from "../../state/cyberProfile";
+import { initPendingSettlementSync } from "../../state/pendingSettlements";
 import { trackCyberEvent } from "../../state/cyberTelemetry";
 import CoreArt from "../art/CoreArt";
 import EnemyArt from "../art/EnemyArt";
@@ -23,6 +28,7 @@ import TowerArt from "../art/TowerArt";
 import { CoinIcon, PlayIcon, ShieldIcon, TargetIcon } from "../art/Icons";
 import { BoltIcon, SkullIcon } from "../art/Icons";
 import HubScene from "./HubScene";
+import OperationSetup from "./OperationSetup";
 
 /** Distinct attack types a mission sends, in first-seen order. */
 function missionThreatTypes(mission: MissionDefinition): AttackType[] {
@@ -87,6 +93,8 @@ export default function CyberDashboard() {
 
   useEffect(() => {
     trackCyberEvent("cyber_dashboard_view");
+    // Retry any reward that was pending when the network dropped.
+    initPendingSettlementSync();
     void (async () => {
       await refreshCyberProfile();
       await maybeImportLegacyProgress();
@@ -99,51 +107,62 @@ export default function CyberDashboard() {
     setRetrying(false);
   }, []);
 
-  const handleStart = useCallback(async () => {
-    if (!profile) {
-      return;
-    }
-    setStarting(true);
-    setNotice(null);
-    trackCyberEvent("cyber_threat_level_selected", {
-      threat_level: profile.recommended_threat_level,
-    });
-    const result = await startOperation({
-      requested_threat_level: profile.recommended_threat_level,
-    });
-    if (result.ok) {
-      trackCyberEvent("cyber_operation_started", {
-        run_id: result.data.run_id,
-        template_id: result.data.template_id,
-        adversary_id: result.data.adversary_id,
-        threat_level: result.data.threat_level,
-        hero_id: result.data.hero_id ?? undefined,
+  const handleStart = useCallback(
+    async (choice: {
+      heroId: string;
+      threatLevel: number;
+      templateId?: string;
+    }) => {
+      if (!profile) {
+        return;
+      }
+      setStarting(true);
+      setNotice(null);
+      trackCyberEvent("cyber_threat_level_selected", {
+        threat_level: choice.threatLevel,
+        hero_id: choice.heroId,
       });
-      navigate(`/game/operations/${result.data.run_id}`);
-    } else if (result.activeRunId) {
-      navigate(`/game/operations/${result.activeRunId}`);
-    } else {
-      setNotice(result.message);
-    }
-    setStarting(false);
-  }, [navigate, profile]);
-
-  const completedCampaign = new Set(
-    (profile?.campaign ?? [])
-      .filter((row) => row.completed)
-      .map((row) => row.mission_id),
+      trackCyberEvent("cyber_hero_selected", { hero_id: choice.heroId });
+      const result = await startOperation({
+        requested_threat_level: choice.threatLevel,
+        hero_id: choice.heroId,
+        template_id: choice.templateId,
+      });
+      if (result.ok) {
+        trackCyberEvent("cyber_operation_started", {
+          run_id: result.data.run_id,
+          template_id: result.data.template_id,
+          adversary_id: result.data.adversary_id,
+          threat_level: result.data.threat_level,
+          hero_id: result.data.hero_id ?? undefined,
+        });
+        navigate(`/game/operations/${result.data.run_id}`);
+      } else if (result.activeRunId) {
+        navigate(`/game/operations/${result.activeRunId}`);
+      } else {
+        setNotice(result.message);
+      }
+      setStarting(false);
+    },
+    [navigate, profile],
   );
+
+  // Server campaign state is authoritative once a profile exists; local Stage 1
+  // progress is only a pre-import fallback. One shared helper, no duplicated
+  // unlock logic between the dashboard and the mission page.
+  const serverCampaign = profile ? (profile.campaign ?? []) : null;
   const isMissionComplete = (missionId: string) =>
-    completedCampaign.has(missionId) ||
-    localProgress.missions[missionId]?.completed === true;
+    isCyberCampaignMissionComplete(missionId, serverCampaign, localProgress);
   const isMissionUnlocked = (mission: MissionDefinition) =>
-    !mission.requiresMissionId || isMissionComplete(mission.requiresMissionId);
+    isCyberCampaignMissionUnlocked(mission, serverCampaign, localProgress);
 
   const totalMissions = GAME_CATALOG.missions.length;
   const clearedCount = GAME_CATALOG.missions.filter((mission) =>
     isMissionComplete(mission.id),
   ).length;
   const campaignComplete = clearedCount >= totalMissions;
+  const operationsUnlocked = profile?.operations_unlocked === true;
+  const confrontationAvailable = profile?.confrontation_available === true;
 
   const nextMission =
     GAME_CATALOG.missions.find(
@@ -156,6 +175,7 @@ export default function CyberDashboard() {
   const unseenStoryNode = STORY_NODES.find((node) => node.id === unseenStory[0]);
 
   const activeRunId = profile?.active_operation_run_id ?? null;
+  const showOperationSetup = !!profile && operationsUnlocked && !activeRunId;
   const adversary = profile?.adversaries
     .slice()
     .sort((a, b) => b.rank - a.rank || b.progress - a.progress)[0];
@@ -197,7 +217,7 @@ export default function CyberDashboard() {
   })();
 
   // The primary action, chosen explicitly rather than with nested ternaries.
-  let primaryAction: ReactNode;
+  let primaryAction: ReactNode = null;
   let primaryKicker = "Campaign";
   let primaryTitle = nextMission?.title ?? "Cyber Defense";
   let primaryMeta = `${clearedCount} of ${totalMissions} missions cleared`;
@@ -224,6 +244,9 @@ export default function CyberDashboard() {
         <PlayIcon size={16} /> Continue Campaign
       </Link>
     );
+  } else if (showOperationSetup) {
+    // The operator/difficulty chooser is rendered in the primary card body.
+    primaryThreats = [];
   } else if (unseenStoryNode) {
     primaryKicker = "Story";
     primaryTitle = unseenStoryNode.title;
@@ -233,21 +256,6 @@ export default function CyberDashboard() {
       <Link className="cyber-cta" to="/game/story">
         <PlayIcon size={16} /> Continue Story
       </Link>
-    );
-  } else if (profile) {
-    primaryKicker = "Recommended Operation";
-    primaryTitle = "Continue Defense";
-    primaryMeta = `Threat Level ${profile.recommended_threat_level} · ~8 min · ${totalMissions} missions cleared`;
-    primaryThreats = [];
-    primaryAction = (
-      <button
-        type="button"
-        className="cyber-cta"
-        onClick={() => void handleStart()}
-        disabled={starting}
-      >
-        <PlayIcon size={16} /> {starting ? "Preparing…" : "Continue Defense"}
-      </button>
     );
   } else {
     primaryKicker = "Welcome";
@@ -365,9 +373,20 @@ export default function CyberDashboard() {
           )}
         </div>
         <div className="cyber-hub-primary-body">
-          <p className="cyber-hub-kicker">{primaryKicker}</p>
-          <h2 id="cyber-primary-title">{primaryTitle}</h2>
-          <p className="cyber-hub-primary-meta">{primaryMeta}</p>
+          {showOperationSetup && profile ? (
+            <OperationSetup
+              profile={profile}
+              mode={confrontationAvailable ? "confrontation" : "operation"}
+              starting={starting}
+              onStart={(choice) => void handleStart(choice)}
+            />
+          ) : (
+            <>
+              <p className="cyber-hub-kicker">{primaryKicker}</p>
+              <h2 id="cyber-primary-title">{primaryTitle}</h2>
+              <p className="cyber-hub-primary-meta">{primaryMeta}</p>
+            </>
+          )}
           <div className="cyber-hub-primary-actions">
             {primaryAction}
             {notice ? <span className="cyber-notice">{notice}</span> : null}

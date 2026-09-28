@@ -639,3 +639,54 @@ describe("backup recovery", () => {
     expect(restores).toBe(1);
   });
 });
+
+describe("resilience center recovery", () => {
+  /** A leaky mission with a small health pool so the threshold is reached. */
+  function resilienceMission(): MissionDefinition {
+    return {
+      ...MISSIONS_BY_ID["sql-injection"],
+      startingHealth: 30,
+      emergencyRecovery: { threshold: 0.25, restoreFraction: 0.1 },
+    };
+  }
+
+  it("triggers exactly once when health crosses the threshold", () => {
+    const mission = resilienceMission();
+    let state = createInitialState(mission, catalog);
+    state = startFirstWave(state, mission);
+
+    let triggers = 0;
+    let elapsed = 0;
+    while (state.phase === "running" && elapsed < 900_000) {
+      const before = state.resilienceRestoreUsed;
+      state = stepSimulation(state, 100, { mission, catalog });
+      elapsed += 100;
+      if (state.resilienceRestoreUsed && !before) {
+        triggers += 1;
+      }
+    }
+
+    expect(triggers).toBe(1);
+    expect(state.resilienceRestoreUsed).toBe(true);
+    expect(state.resilienceRestored).toBeGreaterThan(0);
+    expect(state.health).toBeLessThanOrEqual(state.maxHealth);
+  });
+
+  it("does nothing when the Resilience Center is not upgraded", () => {
+    const mission: MissionDefinition = {
+      ...MISSIONS_BY_ID["sql-injection"],
+      startingHealth: 30,
+    };
+    let state = createInitialState(mission, catalog);
+    state = startFirstWave(state, mission);
+
+    let elapsed = 0;
+    while (state.phase === "running" && elapsed < 900_000) {
+      state = stepSimulation(state, 100, { mission, catalog });
+      elapsed += 100;
+    }
+
+    expect(state.resilienceRestoreUsed).toBe(false);
+    expect(state.resilienceRestored).toBe(0);
+  });
+});

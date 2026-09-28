@@ -1641,6 +1641,12 @@ pub struct CyberDefenseProfileResponse {
     pub active_operation_run_id: Option<Uuid>,
     /// Whether legacy local progress was imported once.
     pub legacy_progress_imported: bool,
+    /// Whether Operations are unlocked (Chapter 1 cleared server-side).
+    pub operations_unlocked: bool,
+    /// Whether the Stage 2 climax Operation is currently available.
+    pub confrontation_available: bool,
+    /// Adversaries currently allowed to appear, in introduction order.
+    pub available_adversaries: Vec<String>,
 }
 
 /// Client result evidence for a Stage 1 campaign mission.
@@ -1743,6 +1749,26 @@ pub struct CyberOperationStartRequest {
     pub hero_id: Option<String>,
     /// Explicit template choice, when browsing Operations directly.
     pub template_id: Option<String>,
+}
+
+/// One Engineering Lab defense substitution.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberDefenseSwapDto {
+    /// Defense currently offered that the player removes.
+    pub remove: String,
+    /// Canonical defense the player takes instead.
+    pub add: String,
+}
+
+/// Request to apply Engineering Lab substitutions to an active Operation.
+///
+/// The server validates the allowance from the learner's room level and re-checks
+/// every generation invariant, so a swap can never make the run impossible.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberOperationLoadoutRequest {
+    /// Substitutions to apply. Empty is a valid no-op.
+    #[serde(default)]
+    pub defense_swaps: Vec<CyberDefenseSwapDto>,
 }
 
 /// One recorded Operation result.

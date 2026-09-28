@@ -27,6 +27,7 @@ import {
 import { prefersReducedMotionPreference } from "../state/preferences";
 import { playUpgrade } from "../state/sound";
 import { newId } from "../lib/id";
+import { trackCyberEvent } from "../game/state/cyberTelemetry";
 
 /** Spark directions for the upgrade burst, in degrees. */
 const SPARK_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
@@ -138,6 +139,9 @@ export default function CyberDefenseTowerPage() {
       });
       if (result.ok) {
         playUpgrade();
+        trackCyberEvent("cyber_tower_upgrade_purchased", {
+          defense_id: definition.id,
+        });
         if (!reducedMotion) {
           setCelebration({
             id: definition.id,
@@ -154,6 +158,13 @@ export default function CyberDefenseTowerPage() {
           );
         }
       }
+    } catch {
+      // `purchaseTowerUpgrade` normally resolves online/offline as a result, but
+      // a direct rejection must never escape and hang the button.
+      setMessages((current) => ({
+        ...current,
+        [definition.id]: "Could not reach the server. Try again.",
+      }));
     } finally {
       // Always release the button, even if the request rejects unexpectedly.
       setBusyId(null);

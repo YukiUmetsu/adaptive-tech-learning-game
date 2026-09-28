@@ -120,20 +120,120 @@ the Stage 1 game's neon art instead of emoji and text blocks:
 
 ## Known limitations / deferred work
 
-- **Tower in-run effects are descriptive only.** Rooms persist and are
-  purchasable, and the SOC's "show the next wave" behaviour already exists in the
-  HUD, but the other listed benefits (Threat Intel modifier/boss reveal,
-  Training Center hero XP bonus, Engineering Lab loadout, Resilience postmortem)
-  are not yet wired into the engine.
+- **Tower in-run effects.** Rooms persist and are purchasable, and every room
+  now changes actual gameplay (SOC and Threat Intelligence gate the briefing,
+  the Training Center adds hero XP server-side, the Engineering Lab allows
+  validated loadout substitutions, and the Resilience Center improves the
+  postmortem and grants one emergency recovery). See the progression pass below.
 - **Story presentation** is the archive page plus a "Story advanced." line in the
   settlement summary. There is no dedicated story card modal; skipped/unseen
   tracking is a local acknowledgement (`game/persistence/storyAck.ts`).
 - **Operation template browsing** is not built; the dashboard starts a
-  server-selected Operation. The API already accepts an optional `template_id`.
+  server-selected Operation (or the story-gated confrontation). The API already
+  accepts an optional `template_id`.
 - **Telemetry** is wired to dashboard views, Operation start/resume/complete/
-  abandon, and threat selection. The remaining required events (defense placed/
-  upgraded/removed, hero selected/deployed, Tower purchase, talent selection,
-  adversary rank up, dossier unlock, story seen) are defined in the allowlist but
-  not all emitted yet.
+  abandon, threat level, operator selection, defense placed/upgraded/removed,
+  hero deployed, Tower purchase, talent selection, adversary rank up, dossier
+  unlock, and story seen. High-frequency combat telemetry is deliberately absent.
 - **E2E** was not run (no local auth/E2E setup was exercised); verification is
   unit and integration tests plus a production build.
+
+## Progression-matters pass ("make existing Stage 2 progression actually matter")
+
+This pass did not add towers, enemies, heroes, missions, currencies, or game
+modes. It wired existing Stage 2 progression into real gameplay, preserved all
+Stage 1 behaviour, and is covered by new unit/integration tests.
+
+### What now affects gameplay
+
+- **Hero talents** are resolved once at run start through the existing
+  `resolveHeroRuntime` and frozen for the run, then handed to the simulation via
+  the catalog (`data/heroRuntime.ts`, `hooks/useFrozenHeroTalents.ts`). The
+  simulation was not changed: it already reads all hero stats from
+  `catalog.heroesById`.
+- **Operator choice**: the dashboard's `OperationSetup` sends `hero_id` and
+  remembers the last operator locally; the server still validates it.
+- **Threat Level choice**: the dashboard offers nearby levels plus an advanced
+  selector, never above the server's `unlocked_threat_level`.
+- **SOC / Threat Intelligence** gate the Operation briefing through one pure
+  `deriveOperationIntelVisibility` function. Hidden waves, modifiers, boss
+  presence, and adversary specialty are not rendered at all before their level.
+- **Training Center** adds a server-derived hero-XP bonus; the client never
+  submits a boosted value.
+- **Engineering Lab** allows up to its level in defense substitutions on an
+  active run (`PUT /v1/cyber-defense/operations/{run_id}/loadout`). The server
+  derives the allowance, validates each swap, and re-checks every generation
+  invariant, so a swap can never create an impossible run.
+- **Resilience Center Lv1** adds breach-layer and suggested-counter detail to the
+  postmortem; **Lv2** grants one emergency recovery per Operation.
+- **Campaign unlocking** uses server campaign state first (`data/campaignUnlock.ts`),
+  with local Stage 1 progress only as a pre-import fallback. One helper is shared
+  by the dashboard and the mission page.
+- **Server enforces the campaign → Operations lock** (`403 cyber_operations_locked`).
+- **Adversaries are story-gated** (`available_adversaries`): GHOST-7 after
+  Chapter 1, NULL after the early Chapter 2 milestone, VIPER after Chapter 3.
+- **The Stage 2 climax requires a real battle**: `chapter-5-climax` now triggers
+  on completing the `ghost7-confrontation` Operation, not on a rank number.
+- **Durable pending settlement**: a lost connection keeps a local pending record
+  and retries with the same identifiers (`state/pendingSettlements.ts`).
+- **Telemetry**: the remaining allowlisted events are emitted (defense
+  placed/upgraded/removed, hero selected/deployed, Tower purchase, talent
+  selection, adversary rank up, dossier unlock, story seen).
+
+### Balance constants introduced
+
+- Training Center hero XP: Lv1 ×1.00, Lv2 ×1.10, Lv3 ×1.15
+  (`training_center_hero_xp_multiplier`).
+- Resilience Center: trigger at 25% max health, restore 10% max health, once per
+  Operation (`RESILIENCE_TRIGGER_THRESHOLD` / `RESILIENCE_RESTORE_FRACTION`).
+- SOC: Lv2 reveals wave 1, Lv3 reveals waves 1–2, Lv4 adds approximate intensity
+  and exact counts.
+- Threat Intelligence: Lv1 adversary specialty, Lv2 one modifier, Lv3 boss
+  presence and the full modifier set.
+- Engineering Lab: Lv1 one substitution, Lv2 two substitutions.
+- Adversary unlocks: GHOST-7 (Chapter 1), NULL (`chapter-2-clue`), VIPER
+  (`chapter-2-clue` + `chapter-3-null`).
+- Confrontation: requires `chapter-4-biolab` and GHOST-7 rank ≥ 5; template id
+  `ghost7-confrontation`, never chosen by the random picker.
+
+### API / contract changes
+
+- `GET /v1/cyber-defense/profile` now also returns `operations_unlocked`,
+  `confrontation_available`, and `available_adversaries`.
+- New endpoint `PUT /v1/cyber-defense/operations/{run_id}/loadout`.
+- New error codes `cyber_operations_locked` and `cyber_operation_locked` (403).
+
+### Tests added
+
+- Domain: campaign-complete gate, Training Center multiplier, adversary unlock
+  ordering, confrontation trigger, confrontation availability.
+- API: campaign → Operations lock, GHOST-7 first Operation and locked-adversary
+  rejection, confrontation gating and battle-resolved climax, unknown-hero
+  rejection, Training Center hero-XP bonus, Engineering Lab swap validation.
+- Frontend: hero runtime resolution + simulation cooldown integration + frozen
+  talents, Tower intel visibility, briefing gating, cross-device campaign unlock,
+  operator selection and fallback, pending settlement durability/retry,
+  Engineering Lab loadout panel, resilience recovery simulation.
+
+### Verification (this pass)
+
+- `cargo fmt --check` — clean.
+- `cargo clippy --all-targets --all-features -- -D warnings` — clean.
+- `cargo test --no-fail-fast` with local Postgres — all Stage 2 suites pass; the
+  two pre-existing failures below still fail.
+- `cd apps/web && pnpm typecheck` — pass.
+- `cd apps/web && pnpm lint` — 0 errors (2 pre-existing warnings).
+- `cd apps/web && pnpm test` — 136 files, 1099 tests pass.
+- `cd apps/web && pnpm build` — pass.
+
+### Intentionally deferred
+
+- **Training Center Lv3**: free respec already exists globally, so instead of
+  inventing a saved-loadout system it grants ×1.15 hero XP. A multi-loadout
+  system is deferred rather than faked.
+- **Operation template browsing** remains deferred; only explicit
+  confrontation selection is new.
+- **E2E**: the repository's Playwright setup only covers the learning journey and
+  has no authenticated Cyber Defense fixture, so a full Cyber Defense E2E was
+  not added. The gameplay path is covered by the unit/integration tests above.
+

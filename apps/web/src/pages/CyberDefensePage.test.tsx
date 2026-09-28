@@ -23,6 +23,18 @@ vi.mock("../game/state/cyberProfile", () => ({
     message: "offline",
     activeRunId: null,
   }),
+  completeOperation: async () => ({
+    ok: false as const,
+    code: "network",
+    message: "offline",
+    activeRunId: null,
+  }),
+  completeCampaign: async () => ({
+    ok: false as const,
+    code: "network",
+    message: "offline",
+    activeRunId: null,
+  }),
 }));
 
 vi.mock("../game/state/cyberTelemetry", () => ({
@@ -68,6 +80,9 @@ function baseProfile(overrides: Partial<CyberProfile> = {}): CyberProfile {
     total_operations_completed: 3,
     active_operation_run_id: null,
     legacy_progress_imported: true,
+    operations_unlocked: false,
+    confrontation_available: false,
+    available_adversaries: [],
     ...overrides,
   };
 }
@@ -142,6 +157,7 @@ describe("CyberDefensePage", () => {
 
   it("offers Continue Defense once the campaign is complete", () => {
     profileFixture = baseProfile({
+      operations_unlocked: true,
       campaign: [
         "ddos-basics",
         "sql-injection",

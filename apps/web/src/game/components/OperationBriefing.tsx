@@ -7,6 +7,10 @@ import { ADVERSARIES_BY_ID } from "../data/adversaries";
 import { attackIntel } from "../data/attackIntel";
 import { HEROES_BY_ID } from "../data/heroes";
 import { OPERATION_MODIFIERS_BY_ID } from "../data/operationModifiers";
+import {
+  deriveOperationIntelVisibility,
+  type TowerProgress,
+} from "../data/towerEffects";
 import { ATTACK_TYPE_LABELS, type AttackType } from "../models/attack";
 import { findNode, type MapNode, type MissionMap } from "../models/map";
 import { computePath } from "../engine/pathing";
@@ -31,14 +35,21 @@ import {
  *
  * A mission-briefing screen: adversary sigil, Threat Level, a target-map
  * schematic, the incoming threat roster, mission parameters, active modifiers,
- * the assigned operator, and the reward preview. Hidden wave composition is not
- * revealed unless Tower upgrades expose it (Stage2.md step 13.3).
+ * the assigned operator, and the reward preview.
+ *
+ * What it reveals is gated by Tower progression: without a Security Operations
+ * Center the wave detail is unknown, and without Threat Intelligence the
+ * adversary specialty, modifiers, and boss presence are hidden. Hidden detail
+ * is never rendered at all, so it cannot be read from the DOM (Stage2.md step
+ * 13.3 and the SOC / Threat Intelligence room effects).
  */
 export interface OperationBriefingProps {
   run: CyberOperationRun;
   catalog: GameCatalog;
   /** Current rank of the Operation's adversary, shown in its intel card. */
   adversaryRank?: number;
+  /** Tower/HQ room levels; gates what intel is shown. */
+  towerProgress?: TowerProgress;
   onStart: () => void;
   onAbandon: () => void;
   onExit: () => void;
@@ -52,57 +63,76 @@ function mapLabel(mapId: string): string {
     .join(" ");
 }
 
-/** Aggregated incoming threat per attack family. */
-interface ThreatSummary {
+/** One attack family visible in a revealed wave. */
+interface WaveFamily {
   attackType: AttackType;
-  /** A representative attack id for this family, used for intel. */
   attackId: string;
   count: number;
   boss: boolean;
 }
 
-function summarizeThreats(
-  run: CyberOperationRun,
+/** A revealed upcoming wave. */
+interface WaveIntel {
+  index: number;
+  families: WaveFamily[];
+  totalCount: number;
+  boss: boolean;
+}
+
+/** Families present in one wave, in first-seen order. */
+function waveFamilies(
+  wave: CyberOperationRun["operation"]["waves"][number],
   catalog: GameCatalog,
-): ThreatSummary[] {
-  const byType = new Map<AttackType, ThreatSummary>();
-  for (const wave of run.operation.waves) {
-    for (const group of wave.groups) {
-      const attack = catalog.attacksById[group.attack_id];
-      if (!attack) {
-        continue;
-      }
-      const existing = byType.get(attack.attackType);
-      if (!existing) {
-        byType.set(attack.attackType, {
-          attackType: attack.attackType,
-          attackId: attack.id,
-          count: group.count,
-          boss: attack.boss === true,
-        });
-        continue;
-      }
-      existing.count += group.count;
-      existing.boss = existing.boss || attack.boss === true;
-      // Prefer a non-boss attack as the family's intel representative.
-      if (catalog.attacksById[existing.attackId]?.boss && !attack.boss) {
-        existing.attackId = attack.id;
-      }
+  dominant: string,
+): WaveFamily[] {
+  const byType = new Map<AttackType, WaveFamily>();
+  for (const group of wave.groups) {
+    const attack = catalog.attacksById[group.attack_id];
+    if (!attack) {
+      continue;
     }
+    const existing = byType.get(attack.attackType);
+    if (!existing) {
+      byType.set(attack.attackType, {
+        attackType: attack.attackType,
+        attackId: attack.id,
+        count: group.count,
+        boss: attack.boss === true,
+      });
+      continue;
+    }
+    existing.count += group.count;
+    existing.boss = existing.boss || attack.boss === true;
   }
-  return [...byType.values()].sort((a, b) => {
-    if (a.attackType === run.operation.dominant_attack_type) {
-      return -1;
-    }
-    if (b.attackType === run.operation.dominant_attack_type) {
-      return 1;
+  const families = [...byType.values()];
+  families.sort((a, b) => {
+    const aDominant = a.attackType === dominant;
+    const bDominant = b.attackType === dominant;
+    if (aDominant !== bDominant) {
+      return aDominant ? -1 : 1;
     }
     return b.count - a.count;
   });
+  return families;
+}
+
+/** Rough intensity label from a wave's total unit count. */
+function intensityLabel(totalCount: number): string {
+  if (totalCount < 8) {
+    return "Light";
+  }
+  if (totalCount < 20) {
+    return "Moderate";
+  }
+  return "Heavy";
 }
 
 /** The map node an Operation is really trying to reach (its longest path). */
-function primaryTarget(map: MissionMap, catalog: GameCatalog, run: CyberOperationRun): string | null {
+function primaryTarget(
+  map: MissionMap,
+  catalog: GameCatalog,
+  run: CyberOperationRun,
+): string | null {
   const targets = new Set<string>();
   for (const wave of run.operation.waves) {
     for (const group of wave.groups) {
@@ -190,6 +220,7 @@ export default function OperationBriefing({
   run,
   catalog,
   adversaryRank = 1,
+  towerProgress = {},
   onStart,
   onAbandon,
   onExit,
@@ -198,11 +229,8 @@ export default function OperationBriefing({
   const adversary = ADVERSARIES_BY_ID[operation.adversary_id] ?? undefined;
   const map = operationMapFor(operation);
   const targetId = primaryTarget(map, catalog, run);
-  const threats = summarizeThreats(run, catalog);
+  const visibility = deriveOperationIntelVisibility(towerProgress);
   const hero = run.hero_id ? HEROES_BY_ID[run.hero_id] : undefined;
-  const adversaryModifiers = (adversary?.modifierIds ?? [])
-    .map((id) => OPERATION_MODIFIERS_BY_ID[id]?.name)
-    .filter((name): name is string => Boolean(name));
   const estimatedMinutes = Math.max(
     5,
     Math.round((operation.waves.length * 90) / 60),
@@ -210,6 +238,30 @@ export default function OperationBriefing({
   const targetLabel = targetId
     ? (findNode(map, targetId)?.label ?? mapLabel(operation.map_id))
     : mapLabel(operation.map_id);
+
+  const visibleWaves: WaveIntel[] = operation.waves
+    .slice(0, visibility.visibleWaveCount)
+    .map((wave, index) => {
+      const families = waveFamilies(wave, catalog, operation.dominant_attack_type);
+      return {
+        index,
+        families,
+        totalCount: families.reduce((sum, family) => sum + family.count, 0),
+        boss: wave.boss === true,
+      };
+    });
+
+  const modifierLimit = Number.isFinite(visibility.visibleModifierCount)
+    ? visibility.visibleModifierCount
+    : operation.modifiers.length;
+  const visibleModifiers = operation.modifiers.slice(0, modifierLimit);
+  const hiddenModifierCount = Math.max(
+    0,
+    operation.modifiers.length - visibleModifiers.length,
+  );
+  const adversaryModifiers = (adversary?.modifierIds ?? [])
+    .map((id) => OPERATION_MODIFIERS_BY_ID[id]?.name)
+    .filter((name): name is string => Boolean(name));
 
   return (
     <section className="cyber-op" aria-labelledby="operation-title">
@@ -240,7 +292,9 @@ export default function OperationBriefing({
                       {adversary?.name ?? operation.adversary_name}
                     </span>
                     <span className="cyber-op-specialty">
-                      {adversary?.specialty ?? "Recurring adversary"}
+                      {visibility.showAdversarySpecialty
+                        ? (adversary?.specialty ?? "Recurring adversary")
+                        : "Specialty unknown"}
                     </span>
                   </span>
                 </>
@@ -249,11 +303,22 @@ export default function OperationBriefing({
               <span className="game-popover-title">
                 {adversary?.name ?? operation.adversary_name}
               </span>
-              <p className="cyber-op-intel-summary">
-                {adversary?.theme ?? "A recurring adversary."}
-              </p>
+              {visibility.showAdversarySpecialty ? (
+                <>
+                  <p className="cyber-op-intel-summary">
+                    {adversary?.theme ?? "A recurring adversary."}
+                  </p>
+                  <p className="cyber-op-intel-label">
+                    {adversary?.specialty ?? "Recurring adversary"}
+                  </p>
+                </>
+              ) : (
+                <p className="cyber-op-intel-summary">
+                  Upgrade Threat Intelligence to learn this adversary's specialty.
+                </p>
+              )}
               <p className="cyber-op-intel-label">Rank {adversaryRank}</p>
-              {adversaryModifiers.length > 0 ? (
+              {visibility.visibleModifierCount > 0 && adversaryModifiers.length > 0 ? (
                 <>
                   <p className="cyber-op-intel-label">Modifier pool</p>
                   <ul className="cyber-op-intel-defences">
@@ -289,56 +354,87 @@ export default function OperationBriefing({
       <div className="cyber-op-grid">
         <section className="cyber-op-panel" aria-labelledby="op-threats-title">
           <h2 id="op-threats-title">Incoming threats</h2>
-          <p className="cyber-op-hint">Tap a threat for a quick brief.</p>
-          <ul className="cyber-op-threats">
-            {threats.map((threat) => {
-              const intel = attackIntel(threat.attackId);
-              return (
-                <li
-                  key={threat.attackType}
-                  className={
-                    threat.attackType === operation.dominant_attack_type
-                      ? "is-dominant"
-                      : ""
-                  }
-                >
-                  <span className="cyber-op-threat-art" aria-hidden="true">
-                    <svg viewBox="-16 -16 32 32">
-                      <EnemyArt attackType={threat.attackType} />
-                    </svg>
-                  </span>
-                  <span className="cyber-op-threat-name">
-                    {ATTACK_TYPE_LABELS[threat.attackType]}
-                  </span>
-                  <span className="cyber-op-threat-count">
-                    ×{threat.count}
-                  </span>
-                  {intel ? (
-                    <InfoPopover
-                      label={`${ATTACK_TYPE_LABELS[threat.attackType]} intel`}
-                      accent={adversary?.color}
-                    >
-                      <span className="game-popover-title">
-                        {ATTACK_TYPE_LABELS[threat.attackType]}
-                      </span>
-                      <p className="cyber-op-intel-summary">{intel.summary}</p>
-                      <p className="cyber-op-intel-label">How to defend</p>
-                      <ul className="cyber-op-intel-defences">
-                        {intel.defences.map((defence) => (
-                          <li key={defence}>{defence}</li>
-                        ))}
-                      </ul>
-                    </InfoPopover>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
+          {visibility.visibleWaveCount === 0 ? (
+            <p className="muted">
+              Threat categories unknown. Upgrade the SOC to reveal the first wave
+              before you deploy.
+            </p>
+          ) : (
+            <>
+              <p className="cyber-op-hint">Tap a threat for a quick brief.</p>
+              {visibleWaves.map((wave) => (
+                <div key={wave.index} className="cyber-op-wave">
+                  <p className="cyber-op-wave-label">
+                    Wave {wave.index + 1}
+                    {visibility.showWaveIntensity
+                      ? ` — ${intensityLabel(wave.totalCount)}`
+                      : ""}
+                    {visibility.showBossPresence && wave.boss ? " · BOSS" : ""}
+                  </p>
+                  <ul className="cyber-op-threats">
+                    {wave.families.map((family) => {
+                      const intel = attackIntel(family.attackId);
+                      const isDominant =
+                        family.attackType === operation.dominant_attack_type;
+                      return (
+                        <li
+                          key={`${wave.index}-${family.attackType}`}
+                          className={isDominant ? "is-dominant" : ""}
+                        >
+                          <span className="cyber-op-threat-art" aria-hidden="true">
+                            <svg viewBox="-16 -16 32 32">
+                              <EnemyArt attackType={family.attackType} />
+                            </svg>
+                          </span>
+                          <span className="cyber-op-threat-name">
+                            {ATTACK_TYPE_LABELS[family.attackType]}
+                          </span>
+                          {visibility.showExactThreatCounts ? (
+                            <span className="cyber-op-threat-count">
+                              ×{family.count}
+                            </span>
+                          ) : null}
+                          {intel ? (
+                            <InfoPopover
+                              label={`${ATTACK_TYPE_LABELS[family.attackType]} intel`}
+                              accent={adversary?.color}
+                            >
+                              <span className="game-popover-title">
+                                {ATTACK_TYPE_LABELS[family.attackType]}
+                              </span>
+                              <p className="cyber-op-intel-summary">
+                                {intel.summary}
+                              </p>
+                              <p className="cyber-op-intel-label">How to defend</p>
+                              <ul className="cyber-op-intel-defences">
+                                {intel.defences.map((defence) => (
+                                  <li key={defence}>{defence}</li>
+                                ))}
+                              </ul>
+                            </InfoPopover>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+              {operation.waves.length > visibleWaves.length ? (
+                <p className="muted">
+                  {visibility.showWaveIntensity
+                    ? `${operation.waves.length - visibleWaves.length} later wave${
+                        operation.waves.length - visibleWaves.length === 1 ? "" : "s"
+                      } still unknown.`
+                    : "More waves remain unknown."}
+                </p>
+              ) : null}
+            </>
+          )}
 
-          {operation.boss ? (
+          {visibility.showBossPresence && operation.boss ? (
             <p className="cyber-op-flag is-boss">BOSS INCOMING</p>
           ) : null}
-          {operation.hidden_attacks ? (
+          {visibility.visibleModifierCount > 0 && operation.hidden_attacks ? (
             <p className="cyber-op-flag is-hidden">
               Hidden traffic detected — bring detection
             </p>
@@ -354,7 +450,11 @@ export default function OperationBriefing({
             </li>
             <li title="Waves">
               <BoltIcon size={16} />
-              <span>{operation.waves.length} waves</span>
+              <span>
+                {visibility.showWaveIntensity
+                  ? `${operation.waves.length} waves`
+                  : "waves unknown"}
+              </span>
             </li>
             <li title="Starting budget">
               <CoinIcon size={16} />
@@ -382,15 +482,27 @@ export default function OperationBriefing({
 
         <section className="cyber-op-panel" aria-labelledby="op-modifiers-title">
           <h2 id="op-modifiers-title">Modifiers</h2>
-          {operation.modifiers.length > 0 ? (
-            <ul className="cyber-op-modifiers">
-              {operation.modifiers.map((modifier) => (
-                <li key={modifier.id}>
-                  <strong>{modifier.name}</strong>
-                  <span>{modifier.description}</span>
-                </li>
-              ))}
-            </ul>
+          {visibility.visibleModifierCount === 0 ? (
+            <p className="muted">
+              Unknown — upgrade Threat Intelligence to reveal active modifiers.
+            </p>
+          ) : visibleModifiers.length > 0 ? (
+            <>
+              <ul className="cyber-op-modifiers">
+                {visibleModifiers.map((modifier) => (
+                  <li key={modifier.id}>
+                    <strong>{modifier.name}</strong>
+                    <span>{modifier.description}</span>
+                  </li>
+                ))}
+              </ul>
+              {hiddenModifierCount > 0 ? (
+                <p className="muted">
+                  {hiddenModifierCount} additional modifier
+                  {hiddenModifierCount === 1 ? "" : "s"} unknown.
+                </p>
+              ) : null}
+            </>
           ) : (
             <p className="muted">None — a clean run.</p>
           )}

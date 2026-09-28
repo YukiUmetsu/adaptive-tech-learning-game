@@ -35,12 +35,29 @@ pub enum StoryTrigger {
         /// Required Threat Level.
         threat_level: i32,
     },
+    /// A specific Operation template was completed.
+    ///
+    /// Used by the Stage 2 climax, which must be an actual battle rather than a
+    /// rank number crossing a threshold.
+    OperationTemplateCompleted {
+        /// Required Operation template id.
+        template_id: &'static str,
+    },
     /// Another story node was completed.
     StoryNodeCompleted {
         /// Required node id.
         node_id: &'static str,
     },
 }
+
+/// The special Operation that resolves the Stage 2 climax.
+pub const CONFRONTATION_TEMPLATE_ID: &str = "ghost7-confrontation";
+
+/// The story node that must be complete before the confrontation can appear.
+pub const CONFRONTATION_PREREQUISITE_NODE: &str = "chapter-4-biolab";
+
+/// The GHOST-7 rank required to unlock the confrontation Operation.
+pub const CONFRONTATION_ADVERSARY_RANK: i32 = 5;
 
 /// One story beat.
 #[derive(Debug, Clone, Copy)]
@@ -143,11 +160,10 @@ pub const STORY_NODES: &[StoryNodeDefinition] = &[
             "GHOST-7 has stopped hiding. This is the operation the last months were building toward.",
             "Hold the line.",
         ],
-        trigger: StoryTrigger::AdversaryRankReached {
-            adversary_id: "ghost-7",
-            rank: 5,
+        trigger: StoryTrigger::OperationTemplateCompleted {
+            template_id: CONFRONTATION_TEMPLATE_ID,
         },
-        requires: Some("chapter-4-biolab"),
+        requires: Some(CONFRONTATION_PREREQUISITE_NODE),
     },
     StoryNodeDefinition {
         id: "chapter-5-hook",
@@ -180,6 +196,8 @@ pub struct StoryProgressInput {
     pub highest_threat_level_cleared: i32,
     /// `(adversary_id, rank)` pairs.
     pub adversary_ranks: Vec<(String, i32)>,
+    /// Completed repeatable Operation template ids.
+    pub completed_operation_templates: Vec<String>,
     /// Already-completed story node ids.
     pub completed_nodes: Vec<String>,
 }
@@ -198,10 +216,31 @@ fn trigger_met(trigger: &StoryTrigger, input: &StoryProgressInput, completed: &[
         StoryTrigger::ThreatLevelCleared { threat_level } => {
             input.highest_threat_level_cleared >= *threat_level
         }
+        StoryTrigger::OperationTemplateCompleted { template_id } => input
+            .completed_operation_templates
+            .iter()
+            .any(|id| id == template_id),
         // Checked against the evolving set so a node completed earlier in this
         // same pass can unlock its successor immediately.
         StoryTrigger::StoryNodeCompleted { node_id } => completed.iter().any(|id| id == node_id),
     }
+}
+
+/// Whether the Stage 2 climax Operation should be offered.
+///
+/// It is gated on a real story milestone *and* GHOST-7 reaching its rank, and
+/// it is only resolved by winning the battle (the story node triggers on the
+/// Operation template completing), never by the rank number alone.
+pub fn confrontation_available(input: &StoryProgressInput) -> bool {
+    let story_ready = input
+        .completed_nodes
+        .iter()
+        .any(|id| id == CONFRONTATION_PREREQUISITE_NODE);
+    let rank_ready = input
+        .adversary_ranks
+        .iter()
+        .any(|(id, rank)| id == "ghost-7" && *rank >= CONFRONTATION_ADVERSARY_RANK);
+    story_ready && rank_ready
 }
 
 /// Returns newly triggered story node ids, in story order.
@@ -268,16 +307,63 @@ mod tests {
             total_operations_completed: 3,
             highest_threat_level_cleared: 5,
             adversary_ranks: vec![("ghost-7".to_owned(), 5), ("viper".to_owned(), 2)],
+            completed_operation_templates: Vec::new(),
             completed_nodes: Vec::new(),
         };
         let first = evaluate_story_nodes(&input);
         assert!(first.contains(&"chapter-1-complete".to_owned()));
-        assert!(first.contains(&"chapter-5-hook".to_owned()));
+        assert!(first.contains(&"chapter-4-biolab".to_owned()));
+        // The climax is not resolved by rank alone: it needs the battle.
+        assert!(!first.contains(&"chapter-5-climax".to_owned()));
+        assert!(!first.contains(&"chapter-5-hook".to_owned()));
 
         // Re-evaluating with the nodes now completed yields nothing new.
         let mut with_completed = input.clone();
         with_completed.completed_nodes = first.clone();
         assert!(evaluate_story_nodes(&with_completed).is_empty());
+    }
+
+    #[test]
+    fn climax_requires_completing_the_confrontation_battle() {
+        let mut input = StoryProgressInput {
+            completed_campaign_missions: vec!["botnet-boss".to_owned()],
+            total_operations_completed: 3,
+            highest_threat_level_cleared: 5,
+            adversary_ranks: vec![("ghost-7".to_owned(), 5)],
+            completed_operation_templates: Vec::new(),
+            completed_nodes: Vec::new(),
+        };
+        let prerequisite = evaluate_story_nodes(&input);
+        assert!(prerequisite.contains(&"chapter-4-biolab".to_owned()));
+        assert!(!prerequisite.contains(&"chapter-5-climax".to_owned()));
+
+        // The confrontation Operation is now available.
+        input.completed_nodes = prerequisite;
+        assert!(confrontation_available(&input));
+
+        // Winning it (recorded as a completed template) resolves the climax and
+        // only then the hook.
+        input.completed_operation_templates = vec![CONFRONTATION_TEMPLATE_ID.to_owned()];
+        let resolved = evaluate_story_nodes(&input);
+        assert_eq!(
+            resolved,
+            vec!["chapter-5-climax".to_owned(), "chapter-5-hook".to_owned()]
+        );
+    }
+
+    #[test]
+    fn confrontation_is_not_available_before_rank_or_story() {
+        let rank_only = StoryProgressInput {
+            adversary_ranks: vec![("ghost-7".to_owned(), 9)],
+            ..Default::default()
+        };
+        assert!(!confrontation_available(&rank_only));
+
+        let story_only = StoryProgressInput {
+            completed_nodes: vec![CONFRONTATION_PREREQUISITE_NODE.to_owned()],
+            ..Default::default()
+        };
+        assert!(!confrontation_available(&story_only));
     }
 
     #[test]

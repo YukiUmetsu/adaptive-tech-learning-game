@@ -192,6 +192,10 @@ export interface GameState {
   backupRestoresUsed: number;
   /** Total system health restored by Backup this mission. */
   backupRestored: number;
+  /** Whether the Resilience Center emergency recovery has triggered. */
+  resilienceRestoreUsed: boolean;
+  /** Total system health restored by the Resilience Center this mission. */
+  resilienceRestored: number;
 }
 
 export interface StepContext {
@@ -291,6 +295,8 @@ export function createInitialState(
     elapsedMs: 0,
     backupRestoresUsed: 0,
     backupRestored: 0,
+    resilienceRestoreUsed: false,
+    resilienceRestored: 0,
   };
 }
 
@@ -1075,7 +1081,7 @@ export function stepSimulation(
       continue;
     }
     if (enemy.pathIndex === enemy.path.length - 1) {
-      leakEnemy(enemy, s, catalog, heroReduction);
+      leakEnemy(enemy, s, mission, catalog, heroReduction);
       continue;
     }
     survivors.push(enemy);
@@ -1150,6 +1156,7 @@ function createEnemy(
 function leakEnemy(
   enemy: EnemyState,
   state: GameState,
+  mission: MissionDefinition,
   catalog: GameCatalog,
   heroReduction: number,
 ): void {
@@ -1189,6 +1196,26 @@ function leakEnemy(
       state.backupRestoresUsed += 1;
       state.backupRestored += restored;
       // Visible, audible recovery: the restore is otherwise easy to miss.
+      pushEffect(state, "restore", enemy, restored);
+    }
+  }
+
+  // Resilience Center Lv2: one modest emergency recovery per Operation. It is
+  // independent of Backup and can never fire twice, so it softens a bad moment
+  // without erasing the consequence of a weak build.
+  const recovery = mission.emergencyRecovery;
+  if (
+    recovery &&
+    !state.resilienceRestoreUsed &&
+    state.health > 0 &&
+    state.health <= state.maxHealth * recovery.threshold
+  ) {
+    const amount = Math.round(state.maxHealth * recovery.restoreFraction);
+    const restored = Math.min(state.maxHealth, state.health + amount) - state.health;
+    if (restored > 0) {
+      state.health += restored;
+      state.resilienceRestoreUsed = true;
+      state.resilienceRestored += restored;
       pushEffect(state, "restore", enemy, restored);
     }
   }

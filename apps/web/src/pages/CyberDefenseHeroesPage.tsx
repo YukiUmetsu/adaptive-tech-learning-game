@@ -13,6 +13,7 @@ import {
   useCyberProfileLoading,
   type CyberHeroProgress,
 } from "../game/state/cyberProfile";
+import { trackCyberEvent } from "../game/state/cyberTelemetry";
 
 /**
  * Persistent hero progression page (Stage2.md step 8.6).
@@ -90,6 +91,9 @@ export default function CyberDefenseHeroesPage() {
     setBusyHeroId(heroId);
     try {
       const result = await setHeroTalents(heroId, selection);
+      if (result.ok) {
+        trackCyberEvent("cyber_hero_talent_selected", { hero_id: heroId });
+      }
       setMessages((existing) => {
         const next = { ...existing };
         if (result.ok) {

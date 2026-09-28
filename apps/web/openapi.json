@@ -833,6 +833,94 @@
         ]
       }
     },
+    "/v1/cyber-defense/operations/{run_id}/loadout": {
+      "put": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Applies Engineering Lab defense substitutions to an active Operation.",
+        "operationId": "set_operation_loadout",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "description": "Operation run identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberOperationLoadoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Loadout updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberOperationRunDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No Engineering Lab allowance, unknown defense, or unsolvable loadout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Run not found or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Run is not active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/cyber-defense/profile": {
       "get": {
         "tags": [
@@ -3996,7 +4084,10 @@
           "recommended_threat_level",
           "unlocked_threat_level",
           "total_operations_completed",
-          "legacy_progress_imported"
+          "legacy_progress_imported",
+          "operations_unlocked",
+          "confrontation_available",
+          "available_adversaries"
         ],
         "properties": {
           "active_operation_run_id": {
@@ -4014,6 +4105,13 @@
             },
             "description": "Adversary progress and ranks."
           },
+          "available_adversaries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Adversaries currently allowed to appear, in introduction order."
+          },
           "bits_balance": {
             "type": "integer",
             "format": "int64",
@@ -4030,6 +4128,10 @@
             "$ref": "#/components/schemas/CyberCareerDto",
             "description": "Career XP, level, and rank."
           },
+          "confrontation_available": {
+            "type": "boolean",
+            "description": "Whether the Stage 2 climax Operation is currently available."
+          },
           "heroes": {
             "type": "array",
             "items": {
@@ -4045,6 +4147,10 @@
           "legacy_progress_imported": {
             "type": "boolean",
             "description": "Whether legacy local progress was imported once."
+          },
+          "operations_unlocked": {
+            "type": "boolean",
+            "description": "Whether Operations are unlocked (Chapter 1 cleared server-side)."
           },
           "recommended_threat_level": {
             "type": "integer",
@@ -4076,6 +4182,24 @@
             "type": "integer",
             "format": "int32",
             "description": "Highest Threat Level the player may currently start."
+          }
+        }
+      },
+      "CyberDefenseSwapDto": {
+        "type": "object",
+        "description": "One Engineering Lab defense substitution.",
+        "required": [
+          "remove",
+          "add"
+        ],
+        "properties": {
+          "add": {
+            "type": "string",
+            "description": "Canonical defense the player takes instead."
+          },
+          "remove": {
+            "type": "string",
+            "description": "Defense currently offered that the player removes."
           }
         }
       },
@@ -4403,6 +4527,19 @@
             "type": "integer",
             "format": "int32",
             "description": "Highest Threat Level currently unlocked."
+          }
+        }
+      },
+      "CyberOperationLoadoutRequest": {
+        "type": "object",
+        "description": "Request to apply Engineering Lab substitutions to an active Operation.\n\nThe server validates the allowance from the learner's room level and re-checks\nevery generation invariant, so a swap can never make the run impossible.",
+        "properties": {
+          "defense_swaps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CyberDefenseSwapDto"
+            },
+            "description": "Substitutions to apply. Empty is a valid no-op."
           }
         }
       },

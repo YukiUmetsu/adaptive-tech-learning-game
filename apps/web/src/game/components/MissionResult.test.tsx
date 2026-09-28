@@ -29,6 +29,7 @@ function report(overrides: Partial<PostmortemReport> = {}): PostmortemReport {
     leakedTotal: 0,
     message: "Layer controls along the road.",
     backupRestored: 0,
+    resilienceRestored: 0,
     bitsPreview: 60,
     ...overrides,
   };

@@ -19,6 +19,8 @@ export interface MissionResultProps {
   onNext: () => void;
   /** Server settlement state, when the result is being settled or is settled. */
   settlement?: MissionSettlement | null;
+  /** Resilience Center Lv1: show breach layer and suggested counter detail. */
+  resilienceIntel?: boolean;
 }
 
 /** One consolidated, server-settled reward summary. */
@@ -43,6 +45,7 @@ export default function MissionResult({
   onContinue,
   onNext,
   settlement,
+  resilienceIntel = false,
 }: MissionResultProps) {
   const boss = mission.waves.some((wave) => wave.boss === true);
   return (
@@ -110,6 +113,25 @@ export default function MissionResult({
       {!report.completed && report.primaryCause ? (
         <p className="cyber-result-cause">
           Primary cause: <strong>{report.primaryCause.label}</strong>
+        </p>
+      ) : null}
+
+      {resilienceIntel && !report.completed && report.failedLayer ? (
+        <p className="cyber-result-cause">
+          Breach reached: <strong>{report.failedLayer}</strong>
+        </p>
+      ) : null}
+
+      {resilienceIntel && report.suggestedCounter ? (
+        <p className="cyber-result-best">
+          Suggested counter: <strong>{report.suggestedCounter}</strong>
+        </p>
+      ) : null}
+
+      {report.resilienceRestored > 0 ? (
+        <p className="cyber-result-best">
+          Resilience Center recovered <strong>{report.resilienceRestored}</strong>{" "}
+          system health
         </p>
       ) : null}
 
