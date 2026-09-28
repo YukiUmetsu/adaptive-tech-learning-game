@@ -348,6 +348,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cyber-defense/operations/{run_id}/deploy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marks an active Operation as deployed, freezing its configuration. */
+        post: operations["deploy_operation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cyber-defense/operations/{run_id}/loadout": {
         parameters: {
             query?: never;
@@ -1805,6 +1822,12 @@ export interface components {
              * @description Career XP awarded on settlement.
              */
             career_xp_awarded: number;
+            /**
+             * Format: date-time
+             * @description When the battle started, freezing the configuration. `null` while the
+             *     run is still configurable (Engineering Lab loadout).
+             */
+            deployed_at?: string | null;
             /** @description Selected hero. */
             hero_id?: string | null;
             /**
@@ -5105,6 +5128,56 @@ export interface operations {
             };
             /** @description Run not found or not owned */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deploy_operation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Operation run identifier */
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operation deployed (idempotent) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberOperationRunDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Run not found or not owned */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Run is not active */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

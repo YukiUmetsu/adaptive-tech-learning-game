@@ -38,6 +38,9 @@ pub enum ApiError {
     /// The requested story-gated Operation is not unlocked yet.
     #[error("this Operation is not unlocked yet")]
     CyberOperationLocked,
+    /// The Operation's configuration is frozen because the battle has started.
+    #[error("this Operation is already deployed")]
+    CyberOperationAlreadyDeployed,
     /// The campaign mission's prerequisite has not been completed.
     #[error("complete the previous campaign mission first")]
     CyberCampaignMissionLocked,
@@ -69,6 +72,7 @@ impl ApiError {
             Self::ActiveOperationExists(_) => StatusCode::CONFLICT,
             Self::CyberOperationsLocked => StatusCode::FORBIDDEN,
             Self::CyberOperationLocked => StatusCode::FORBIDDEN,
+            Self::CyberOperationAlreadyDeployed => StatusCode::CONFLICT,
             Self::CyberCampaignMissionLocked => StatusCode::FORBIDDEN,
             Self::MissionStale => StatusCode::CONFLICT,
             Self::Unavailable => StatusCode::SERVICE_UNAVAILABLE,
@@ -88,6 +92,7 @@ impl ApiError {
             Self::ActiveOperationExists(_) => "active_operation_exists",
             Self::CyberOperationsLocked => "cyber_operations_locked",
             Self::CyberOperationLocked => "cyber_operation_locked",
+            Self::CyberOperationAlreadyDeployed => "cyber_operation_already_deployed",
             Self::CyberCampaignMissionLocked => "cyber_campaign_mission_locked",
             Self::MissionStale => "mission_content_stale",
             Self::Unavailable => "unavailable",
@@ -100,6 +105,9 @@ impl ApiError {
             Self::Internal(_) => "internal server error",
             Self::CyberOperationsLocked => "Complete Chapter 1 before starting Operations.",
             Self::CyberOperationLocked => "This Operation is not unlocked yet.",
+            Self::CyberOperationAlreadyDeployed => {
+                "This Operation is already deployed; its loadout is locked."
+            }
             Self::CyberCampaignMissionLocked => "Complete the previous campaign mission first.",
             Self::MissionStale => {
                 "this study mission was created from an older content version; start a new mission"

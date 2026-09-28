@@ -1388,10 +1388,162 @@ async fn operation_rejects_an_unknown_hero() {
         &user,
         "POST",
         "/v1/cyber-defense/operations",
-        Some(json!({ "requested_threat_level": 2, "hero_id": "oracle" })),
+        Some(json!({ "requested_threat_level": 2, "hero_id": "not_a_real_hero" })),
     )
     .await;
     assert_eq!(status, 400, "{body}");
+}
+
+#[tokio::test]
+async fn operation_offers_only_the_selected_hero() {
+    let Some(pool) = database_pool().await else {
+        return;
+    };
+    let app = app_with_pool(pool.clone());
+    let user = subject("selected-hero");
+    ensure_operations_unlocked(app.clone(), &pool, &user).await;
+
+    // SRE: the roster, the run, and the frozen talent snapshot all agree.
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        "/v1/cyber-defense/operations",
+        Some(json!({ "requested_threat_level": 2, "hero_id": "sre" })),
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    let run_id = body["run_id"].as_str().unwrap().to_owned();
+    assert_eq!(body["hero_id"], "sre");
+    assert_eq!(body["operation"]["available_heroes"], json!(["sre"]));
+    assert_eq!(
+        body["operation"]["progression_snapshot"]["hero"]["hero_id"],
+        "sre"
+    );
+
+    let (status, _) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        &format!("/v1/cyber-defense/operations/{run_id}/abandon"),
+        None,
+    )
+    .await;
+    assert_eq!(status, 200);
+
+    // Security Engineer: the only offered hero switches with the selection.
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        "/v1/cyber-defense/operations",
+        Some(json!({ "requested_threat_level": 2, "hero_id": "security_engineer" })),
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(body["hero_id"], "security_engineer");
+    assert_eq!(
+        body["operation"]["available_heroes"],
+        json!(["security_engineer"])
+    );
+    assert_eq!(
+        body["operation"]["progression_snapshot"]["hero"]["hero_id"],
+        "security_engineer"
+    );
+}
+
+#[tokio::test]
+async fn operation_deploy_freezes_configuration() {
+    let Some(pool) = database_pool().await else {
+        return;
+    };
+    let app = app_with_pool(pool.clone());
+    let user = subject("deploy-lifecycle");
+    ensure_operations_unlocked(app.clone(), &pool, &user).await;
+
+    let run_id = start_operation(app.clone(), &user, 2).await;
+    let run_uuid = run_uuid(&run_id);
+
+    // A fresh run is configurable.
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "GET",
+        &format!("/v1/cyber-defense/operations/{run_id}"),
+        None,
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(body["deployed_at"].is_null());
+
+    // Deploy sets the authoritative marker.
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        &format!("/v1/cyber-defense/operations/{run_id}/deploy"),
+        None,
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    let deployed_at = body["deployed_at"].as_str().unwrap().to_owned();
+
+    // A second deploy is idempotent.
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        &format!("/v1/cyber-defense/operations/{run_id}/deploy"),
+        None,
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(body["deployed_at"].as_str().unwrap(), deployed_at);
+
+    // Loadout changes are rejected once deployed.
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "PUT",
+        &format!("/v1/cyber-defense/operations/{run_id}/loadout"),
+        Some(json!({ "defense_swaps": [] })),
+    )
+    .await;
+    assert_eq!(status, 409, "{body}");
+    assert_eq!(body["error"]["code"], "cyber_operation_already_deployed");
+
+    // Another user cannot deploy the run.
+    let other = subject("deploy-other");
+    let (status, _) = send_as(
+        app.clone(),
+        &other,
+        "POST",
+        &format!("/v1/cyber-defense/operations/{run_id}/deploy"),
+        None,
+    )
+    .await;
+    assert_eq!(status, 404);
+
+    // A settled run can no longer be deployed.
+    backdate_run(&pool, run_uuid, 600).await;
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        &format!("/v1/cyber-defense/operations/{run_id}/complete"),
+        Some(json!({ "completed": true, "stars": 3, "health": 90, "duration_ms": 120_000 })),
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    let (status, _) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        &format!("/v1/cyber-defense/operations/{run_id}/deploy"),
+        None,
+    )
+    .await;
+    assert_eq!(status, 409);
 }
 
 #[tokio::test]

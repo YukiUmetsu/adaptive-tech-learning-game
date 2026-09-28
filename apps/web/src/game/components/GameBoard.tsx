@@ -5,7 +5,7 @@ import type { DefenseDefinition, PlacedDefense } from "../models/defense";
 import type { HeroUnit } from "../models/hero";
 import type { MissionMap } from "../models/map";
 import type { GameCatalog } from "../data";
-import { layoutMap, type MapOrientation, type NodePosition } from "../engine/layout";
+import { layoutMap, type MapOrientation } from "../engine/layout";
 import { computePath } from "../engine/pathing";
 import {
   GATE_QUEUE_RANGE,
@@ -14,6 +14,16 @@ import {
   type GameEffect,
   type HeroEngagement,
 } from "../engine/simulation";
+import {
+  buildMapRoadGeometry,
+  buildRoadPads,
+  edgePoint,
+  nearestEdgeAnchor,
+  pathPoint,
+  pathPointAt,
+  type Point,
+  type RoadPad,
+} from "../engine/roadGeometry";
 import { canPlaceDefense } from "../engine/combat";
 import { attackLabel, attackTone } from "../lib/format";
 import { hasSprite, towerSpriteKey, enemySpriteKey } from "../assets/sprites";
@@ -28,17 +38,14 @@ import HeroArt from "./art/HeroArt";
 /**
  * The game board.
  *
- * A winding road (with bends) runs the full width; attacks travel along it from
- * the hacker spawn to the defended core. Tower pads are distributed along the
- * whole road, one tower each. Rendering is driven by the pure simulation's
- * `engagements` and `effects`.
+ * Every edge of the architecture graph is drawn, so a branching map visibly
+ * splits and merges. Each attack is positioned by its own logical `enemy.path`
+ * (never by another attack's target), which keeps the renderer and the
+ * simulation in agreement about which route an attack is on. Rendering is
+ * driven by the pure simulation's `engagements` and `effects`.
  */
 
 export const ENEMY_RENDER_CAP = 26;
-
-const PAD_STEP = 110;
-const PAD_START = 70;
-const PAD_OFFSET = 62;
 
 const BOARD_LAYOUT = {
   horizontal: { layerSpacing: 290, nodeSpacing: 132, margin: 150, stagger: 46 },
@@ -186,6 +193,9 @@ export interface PadSelection {
   nodeType: string;
   partnerId?: string;
   roadPosition?: number;
+  /** Edge the pad belongs to, so a gate only spans one branch. */
+  edgeFrom?: string;
+  edgeTo?: string;
 }
 
 export interface GameBoardProps {
@@ -211,36 +221,11 @@ export interface GameBoardProps {
   elapsedMs: number;
   onSelectPad: (pad: PadSelection) => void;
   onSelectPlacement: (placementId: string) => void;
-  onDeployHero: (heroId: string, position: number) => void;
-}
-
-interface Point {
-  x: number;
-  y: number;
-}
-
-interface RoadEdge {
-  points: Point[];
-  length: number;
-}
-
-interface Road {
-  ids: string[];
-  edges: RoadEdge[];
-  nodeDistances: number[];
-  total: number;
-  polyline: Point[];
-}
-
-interface Pad {
-  id: string;
-  nodeId: string;
-  position: Point;
-  angle: number;
-  /** Pad on the opposite side of the road (same spot). */
-  partnerId: string;
-  /** Position along the attacked path. */
-  roadPosition: number;
+  onDeployHero: (
+    heroId: string,
+    position: number,
+    anchor?: { from: string; to: string; fraction: number },
+  ) => void;
 }
 
 export default function GameBoard({
@@ -283,29 +268,24 @@ export default function GameBoard({
     return meta;
   }, [map]);
 
-  const road = useMemo(() => {
-    if (!primaryTargetNodeId) {
-      return null;
-    }
-    const { path, reachable } = computePath(map, primaryTargetNodeId);
-    if (!reachable) {
-      return null;
-    }
-    return buildRoad(
-      path,
-      path.map((id) => layout.positions[id]).filter(Boolean),
-    );
-  }, [map, primaryTargetNodeId, layout]);
+  // Graph geometry for every edge. Enemies are placed by their own path, so the
+  // renderer never assumes a single "primary" route.
+  const geometry = useMemo(
+    () => buildMapRoadGeometry(map, layout),
+    [map, layout],
+  );
 
-  const pads = useMemo<Pad[]>(() => {
-    if (!road || road.total <= 0) {
-      return [];
-    }
-    return buildPads(road);
-  }, [road]);
+  // A reference path (the primary target's route) is only used to render
+  // legacy hero units that predate edge anchors, and for the core portal.
+  const referencePath = useMemo(
+    () => (primaryTargetNodeId ? computePath(map, primaryTargetNodeId).path : []),
+    [map, primaryTargetNodeId],
+  );
+
+  const pads = useMemo<RoadPad[]>(() => buildRoadPads(geometry), [geometry]);
 
   const padById = useMemo(() => {
-    const byId = new Map<string, Pad>();
+    const byId = new Map<string, RoadPad>();
     for (const pad of pads) {
       byId.set(pad.id, pad);
     }
@@ -358,7 +338,7 @@ export default function GameBoard({
 
   /** Spread queued swarm attacks to the left and right of a gate opening. */
   const queuedPoint = (enemy: EnemyState, base: Point): Point => {
-    if (!road || gateQueue.length === 0) {
+    if (gateQueue.length === 0) {
       return base;
     }
     const position = enemy.pathIndex + enemy.progress;
@@ -376,8 +356,9 @@ export default function GameBoard({
       const side = seed % 2 === 0 ? 1 : -1;
       const lateral = 15 + (seed % 4) * 7;
       const back = 6 + (seed % 3) * 7;
-      const behind = pointAtPosition(road, Math.max(0, position - 0.04)) ?? base;
-      const ahead = pointAtPosition(road, position + 0.04) ?? base;
+      const behind =
+        pathPointAt(geometry, enemy.path, Math.max(0, position - 0.04)) ?? base;
+      const ahead = pathPointAt(geometry, enemy.path, position + 0.04) ?? base;
       const dx = ahead.x - behind.x;
       const dy = ahead.y - behind.y;
       const length = Math.hypot(dx, dy) || 1;
@@ -391,9 +372,12 @@ export default function GameBoard({
     return base;
   };
 
-  const positionFromEvent = (clientX: number, clientY: number): number | null => {
+  const anchorFromEvent = (
+    clientX: number,
+    clientY: number,
+  ): { from: string; to: string; fraction: number } | null => {
     const svg = svgRef.current;
-    if (!road || !svg) {
+    if (!svg) {
       return null;
     }
     try {
@@ -402,7 +386,8 @@ export default function GameBoard({
         return null;
       }
       const local = new DOMPoint(clientX, clientY).matrixTransform(ctm.inverse());
-      return nearestRoadPosition(road, { x: local.x, y: local.y });
+      const nearest = nearestEdgeAnchor(geometry, { x: local.x, y: local.y });
+      return nearest ? nearest.anchor : null;
     } catch {
       return null;
     }
@@ -415,9 +400,9 @@ export default function GameBoard({
       return;
     }
     event.preventDefault();
-    const position = positionFromEvent(event.clientX, event.clientY);
-    if (position !== null) {
-      onDeployHero(heroId, position);
+    const anchor = anchorFromEvent(event.clientX, event.clientY);
+    if (anchor) {
+      onDeployHero(heroId, anchor.fraction, anchor);
     }
   };
 
@@ -427,16 +412,13 @@ export default function GameBoard({
       setSelectedEnemyId(null);
       return;
     }
-    const position = positionFromEvent(event.clientX, event.clientY);
-    if (position !== null) {
-      onDeployHero(armedHeroId, position);
+    const anchor = anchorFromEvent(event.clientX, event.clientY);
+    if (anchor) {
+      onDeployHero(armedHeroId, anchor.fraction, anchor);
     }
   };
 
   const rangePreview = useMemo(() => {
-    if (!road) {
-      return null;
-    }
     const preview = (range: number, color: string, center: Point) => ({
       x: center.x,
       y: center.y,
@@ -468,19 +450,20 @@ export default function GameBoard({
     towerMap,
     padById,
     spacing,
-    road,
   ]);
 
   const renderedEnemies = enemies.slice(0, ENEMY_RENDER_CAP);
   const capped = enemies.length > ENEMY_RENDER_CAP;
-  const start = road && road.polyline.length > 0 ? road.polyline[0] : null;
-  const startTangent =
-    road && road.polyline.length > 1
-      ? normalize({
-          x: road.polyline[1].x - road.polyline[0].x,
-          y: road.polyline[1].y - road.polyline[0].y,
-        })
-      : { x: 1, y: 0 };
+  const start = geometry.positions[map.entryNodeId] ?? null;
+  const firstEdge = geometry.edgeOrder
+    .map((key) => geometry.edges[key])
+    .find((edge) => edge.from === map.entryNodeId);
+  const startTangent = firstEdge
+    ? normalize({
+        x: firstEdge.points[1].x - firstEdge.points[0].x,
+        y: firstEdge.points[1].y - firstEdge.points[0].y,
+      })
+    : { x: 1, y: 0 };
   const corePosition = primaryTargetNodeId
     ? layout.positions[primaryTargetNodeId]
     : null;
@@ -499,23 +482,21 @@ export default function GameBoard({
       onDrop={handleHeroDrop}
       onClick={handleBoardClick}
     >
-      {/* Road */}
-      {road && road.polyline.length > 1 ? (
-        <>
-          <polyline
-            className="cyber-road-edge"
-            points={road.polyline.map((p) => `${p.x},${p.y}`).join(" ")}
-          />
-          <polyline
-            className="cyber-road"
-            points={road.polyline.map((p) => `${p.x},${p.y}`).join(" ")}
-          />
-          <polyline
-            className={`cyber-road-line${reducedMotion ? " is-static" : ""}`}
-            points={road.polyline.map((p) => `${p.x},${p.y}`).join(" ")}
-          />
-        </>
-      ) : null}
+      {/* Architecture: every graph edge is drawn, so branches are visible. */}
+      {geometry.edgeOrder.map((key) => {
+        const edge = geometry.edges[key];
+        const points = edge.points.map((p) => `${p.x},${p.y}`).join(" ");
+        return (
+          <g key={key} className="cyber-road-group">
+            <polyline className="cyber-road-edge" points={points} />
+            <polyline className="cyber-road" points={points} />
+            <polyline
+              className={`cyber-road-line${reducedMotion ? " is-static" : ""}`}
+              points={points}
+            />
+          </g>
+        );
+      })}
 
       {/* Rate-limiter gates: a barrier across the road with a small opening */}
       {placed.map((entry) => {
@@ -658,6 +639,8 @@ export default function GameBoard({
                 nodeType,
                 partnerId: pad.partnerId,
                 roadPosition: pad.roadPosition,
+                edgeFrom: pad.edgeFrom,
+                edgeTo: pad.edgeTo,
               });
             }}
             onKeyDown={(event) => {
@@ -666,12 +649,14 @@ export default function GameBoard({
                 event.stopPropagation();
                 setSelectedEnemyId(null);
                 onSelectPad({
-                id: pad.id,
-                nodeId: pad.nodeId,
-                nodeType,
-                partnerId: pad.partnerId,
-                roadPosition: pad.roadPosition,
-              });
+                  id: pad.id,
+                  nodeId: pad.nodeId,
+                  nodeType,
+                  partnerId: pad.partnerId,
+                  roadPosition: pad.roadPosition,
+                  edgeFrom: pad.edgeFrom,
+                  edgeTo: pad.edgeTo,
+                });
               }
             }}
           >
@@ -697,7 +682,9 @@ export default function GameBoard({
           (item) => item.defenseId === entry.id,
         );
         const target = engagement ? enemyById.get(engagement.enemyId) : undefined;
-        const targetPoint = target ? positionPoint(road, target) : null;
+        const targetPoint = target
+          ? pathPoint(geometry, target.path, target.pathIndex, target.progress)
+          : null;
         const firing = !!targetPoint;
         const angle = targetPoint
           ? Math.atan2(
@@ -769,7 +756,7 @@ export default function GameBoard({
         if (!defense || !tower || !enemy) {
           return null;
         }
-        const to = positionPoint(road, enemy);
+        const to = pathPoint(geometry, enemy.path, enemy.pathIndex, enemy.progress);
         if (!to) {
           return null;
         }
@@ -838,7 +825,12 @@ export default function GameBoard({
 
       {/* Attacks */}
       {renderedEnemies.map((enemy) => {
-        const base = positionPoint(road, enemy);
+        const base = pathPoint(
+          geometry,
+          enemy.path,
+          enemy.pathIndex,
+          enemy.progress,
+        );
         if (!base) {
           return null;
         }
@@ -971,7 +963,9 @@ export default function GameBoard({
       {/* Deployed heroes */}
       {heroUnits.map((unit) => {
         const definition = catalog.heroesById[unit.heroId];
-        const point = positionPointAt(road, unit.position);
+        const point = unit.anchor
+          ? edgePoint(geometry, unit.anchor)
+          : pathPointAt(geometry, referencePath, unit.position);
         if (!definition || !point) {
           return null;
         }
@@ -979,7 +973,9 @@ export default function GameBoard({
           (item) => item.heroUnitId === unit.id,
         );
         const target = engagement ? enemyById.get(engagement.enemyId) : undefined;
-        const targetPoint = target ? positionPoint(road, target) : null;
+        const targetPoint = target
+          ? pathPoint(geometry, target.path, target.pathIndex, target.progress)
+          : null;
         const attacking = !!targetPoint;
         const facing = targetPoint && targetPoint.x < point.x ? -1 : 1;
         const ttlPercent = Math.max(
@@ -1049,7 +1045,7 @@ export default function GameBoard({
 
       {/* Blocked / breach bursts */}
       {effects.map((effect) => {
-        const point = positionPointAt(road, effect.position);
+        const point = pathPointAt(geometry, effect.path, effect.position);
         if (!point) {
           return null;
         }
@@ -1114,135 +1110,6 @@ function normalize(v: Point): Point {
   return { x: v.x / length, y: v.y / length };
 }
 
-function buildRoad(ids: string[], positions: NodePosition[]): Road {
-  const edges: RoadEdge[] = [];
-  const nodeDistances: number[] = [0];
-  const polyline: Point[] = [];
-  let total = 0;
-
-  for (let i = 0; i < ids.length - 1 && i < positions.length - 1; i += 1) {
-    const a = positions[i];
-    const b = positions[i + 1];
-    const points = bendPoints(a, b, i);
-    const edge: RoadEdge = { points, length: polylineLength(points) };
-    edges.push(edge);
-    if (polyline.length === 0) {
-      polyline.push(points[0]);
-    }
-    polyline.push(...points.slice(1));
-    total += edge.length;
-    nodeDistances.push(total);
-  }
-
-  return { ids, edges, nodeDistances, total, polyline };
-}
-
-function bendPoints(a: Point, b: Point, index: number): Point[] {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const length = Math.hypot(dx, dy) || 1;
-  const px = -dy / length;
-  const py = dx / length;
-  const bend = 30 * (index % 2 === 0 ? 1 : -1);
-  return [
-    a,
-    { x: a.x + dx * 0.34 + px * bend, y: a.y + dy * 0.34 + py * bend },
-    { x: a.x + dx * 0.66 - px * bend, y: a.y + dy * 0.66 - py * bend },
-    b,
-  ];
-}
-
-function polylineLength(points: Point[]): number {
-  let total = 0;
-  for (let i = 0; i < points.length - 1; i += 1) {
-    total += Math.hypot(points[i + 1].x - points[i].x, points[i + 1].y - points[i].y);
-  }
-  return total;
-}
-
-function pointOnEdge(edge: RoadEdge, t: number): Point {
-  const target = Math.max(0, Math.min(1, t)) * edge.length;
-  let travelled = 0;
-  for (let i = 0; i < edge.points.length - 1; i += 1) {
-    const a = edge.points[i];
-    const b = edge.points[i + 1];
-    const segment = Math.hypot(b.x - a.x, b.y - a.y);
-    if (travelled + segment >= target || i === edge.points.length - 2) {
-      const local = segment === 0 ? 0 : (target - travelled) / segment;
-      const clamped = Math.max(0, Math.min(1, local));
-      return { x: a.x + (b.x - a.x) * clamped, y: a.y + (b.y - a.y) * clamped };
-    }
-    travelled += segment;
-  }
-  return edge.points[edge.points.length - 1];
-}
-
-function pointAtPosition(road: Road | null, position: number): Point | null {
-  if (!road || road.edges.length === 0) {
-    return null;
-  }
-  const edgeIndex = Math.max(
-    0,
-    Math.min(road.edges.length - 1, Math.floor(position)),
-  );
-  return pointOnEdge(road.edges[edgeIndex], position - edgeIndex);
-}
-
-function pointAtDistance(road: Road, distance: number): Point {
-  const clamped = Math.max(0, Math.min(road.total, distance));
-  let travelled = 0;
-  for (let i = 0; i < road.edges.length; i += 1) {
-    const edge = road.edges[i];
-    if (travelled + edge.length >= clamped || i === road.edges.length - 1) {
-      return pointOnEdge(edge, edge.length === 0 ? 0 : (clamped - travelled) / edge.length);
-    }
-    travelled += edge.length;
-  }
-  return road.polyline[road.polyline.length - 1];
-}
-
-/** Converts a pixel distance along the road to a path position (edge + t). */
-function pathPositionAtDistance(road: Road, distance: number): number {
-  let travelled = 0;
-  for (let i = 0; i < road.edges.length; i += 1) {
-    const edge = road.edges[i];
-    if (travelled + edge.length >= distance || i === road.edges.length - 1) {
-      const t = edge.length === 0 ? 0 : (distance - travelled) / edge.length;
-      return i + Math.max(0, Math.min(1, t));
-    }
-    travelled += edge.length;
-  }
-  return road.edges.length;
-}
-
-/** Nearest path position on the road to a point, used for hero drop/tap. */
-function nearestRoadPosition(road: Road, point: Point): number {
-  let bestDistance = Infinity;
-  let bestPosition = 0;
-  for (let edgeIndex = 0; edgeIndex < road.edges.length; edgeIndex += 1) {
-    const edge = road.edges[edgeIndex];
-    for (let i = 0; i < edge.points.length - 1; i += 1) {
-      const a = edge.points[i];
-      const b = edge.points[i + 1];
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const lengthSq = dx * dx + dy * dy || 1;
-      const t = Math.max(
-        0,
-        Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSq),
-      );
-      const px = a.x + dx * t;
-      const py = a.y + dy * t;
-      const distance = Math.hypot(point.x - px, point.y - py);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestPosition = edgeIndex + t;
-      }
-    }
-  }
-  return bestPosition;
-}
-
 function hashId(id: string): number {
   let hash = 0;
   for (let i = 0; i < id.length; i += 1) {
@@ -1251,71 +1118,3 @@ function hashId(id: string): number {
   return hash;
 }
 
-function nodeIndexAtDistance(road: Road, distance: number): number {  let best = 0;
-  let bestDistance = Infinity;
-  road.nodeDistances.forEach((nodeDistance, index) => {
-    const delta = Math.abs(nodeDistance - distance);
-    if (delta < bestDistance) {
-      bestDistance = delta;
-      best = index;
-    }
-  });
-  return best;
-}
-
-function buildPads(road: Road): Pad[] {
-  const pads: Pad[] = [];
-  if (road.total <= PAD_START) {
-    return pads;
-  }
-  let index = 0;
-  for (let d = PAD_START; d <= road.total - PAD_START; d += PAD_STEP) {
-    const center = pointAtDistance(road, d);
-    const ahead = pointAtDistance(road, Math.min(road.total, d + 4));
-    const behind = pointAtDistance(road, Math.max(0, d - 4));
-    const tangent = normalize({ x: ahead.x - behind.x, y: ahead.y - behind.y });
-    const perpendicular = { x: -tangent.y, y: tangent.x };
-    const nodeIndex = nodeIndexAtDistance(road, d);
-    const nodeId = road.ids[nodeIndex] ?? road.ids[0];
-    const pathPosition = pathPositionAtDistance(road, d);
-    const group = index + 1;
-    const leftId = `pad-${group}L`;
-    const rightId = `pad-${group}R`;
-    const leftPosition = {
-      x: center.x + perpendicular.x * PAD_OFFSET,
-      y: center.y + perpendicular.y * PAD_OFFSET,
-    };
-    const rightPosition = {
-      x: center.x - perpendicular.x * PAD_OFFSET,
-      y: center.y - perpendicular.y * PAD_OFFSET,
-    };
-    pads.push(
-      {
-        id: leftId,
-        nodeId,
-        position: leftPosition,
-        angle: Math.atan2(center.y - leftPosition.y, center.x - leftPosition.x),
-        partnerId: rightId,
-        roadPosition: pathPosition,
-      },
-      {
-        id: rightId,
-        nodeId,
-        position: rightPosition,
-        angle: Math.atan2(center.y - rightPosition.y, center.x - rightPosition.x),
-        partnerId: leftId,
-        roadPosition: pathPosition,
-      },
-    );
-    index += 1;
-  }
-  return pads;
-}
-
-function positionPoint(road: Road | null, enemy: EnemyState): Point | null {
-  return pointAtPosition(road, enemy.pathIndex + enemy.progress);
-}
-
-function positionPointAt(road: Road | null, position: number): Point | null {
-  return pointAtPosition(road, position);
-}

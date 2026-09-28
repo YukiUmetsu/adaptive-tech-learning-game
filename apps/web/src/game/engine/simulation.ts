@@ -228,6 +228,34 @@ function enemyPosition(enemy: EnemyState): number {
   return enemy.pathIndex + enemy.progress;
 }
 
+/**
+ * Whether a deployed hero can hit an enemy.
+ *
+ * An anchored hero only fights attacks currently on its own logical edge, so a
+ * hero on the Application branch never reaches an API-only attack. A legacy
+ * hero without an anchor keeps the original numeric path comparison.
+ */
+function heroCanReach(
+  unit: HeroUnit,
+  enemy: EnemyState,
+  range: number,
+): boolean {
+  if (!unit.anchor) {
+    return Math.abs(enemyPosition(enemy) - unit.position) <= range;
+  }
+  const { from, to, fraction } = unit.anchor;
+  for (let i = 0; i < enemy.path.length - 1; i += 1) {
+    if (enemy.path[i] !== from || enemy.path[i + 1] !== to) {
+      continue;
+    }
+    if (enemy.pathIndex !== i) {
+      return false;
+    }
+    return Math.abs(enemy.progress - fraction) <= range;
+  }
+  return false;
+}
+
 /** Builds the per-wave spawn schedule. Groups spawn concurrently. */
 export function buildSpawnQueue(
   mission: MissionDefinition,
@@ -388,7 +416,13 @@ export function placeDefense(
     nodeType: string;
     padId?: string;
     /** Gate controls span the road and need the paired pad. */
-    gate?: { partnerPadId: string; position: number };
+    gate?: {
+      partnerPadId: string;
+      position: number;
+      /** Edge endpoints the gate spans, for branch-accurate congestion. */
+      fromNodeId?: string;
+      toNodeId?: string;
+    };
   },
   catalog: GameCatalog,
 ): SimResult {
@@ -435,6 +469,8 @@ export function placeDefense(
     gate: input.gate ? true : undefined,
     gatePosition: input.gate?.position,
     gatePartnerPadId: input.gate?.partnerPadId,
+    gateFromNodeId: input.gate?.fromNodeId,
+    gateToNodeId: input.gate?.toNodeId,
   };
   return {
     state: {
@@ -522,6 +558,7 @@ export function deployHero(
   heroId: string,
   position: number,
   catalog: GameCatalog,
+  anchor?: { from: string; to: string; fraction: number },
 ): SimResult {
   const hero = state.heroes.find((item) => item.heroId === heroId);
   const definition = catalog.heroesById[heroId];
@@ -542,6 +579,7 @@ export function deployHero(
     id: newId(),
     heroId,
     position: Math.max(0, position),
+    anchor,
     ttlMs: definition.durationMs,
     attackCooldownMs: 0,
   };
@@ -629,6 +667,32 @@ function isSwarm(enemy: EnemyState, catalog: GameCatalog): boolean {
   return catalog.attacksById[enemy.attackId]?.tags?.includes("swarm") === true;
 }
 
+/**
+ * Whether an enemy's logical path traverses a gate's edge.
+ *
+ * A branching map shares nodes between routes, so matching only a node would let
+ * a gate on one branch stop traffic on another. When the gate stores its edge we
+ * require the consecutive pair; legacy gates without an edge fall back to node
+ * membership.
+ */
+function enemyTraversesGate(
+  enemy: EnemyState,
+  gate: PlacedDefense,
+): boolean {
+  if (gate.gateFromNodeId && gate.gateToNodeId) {
+    for (let i = 0; i < enemy.path.length - 1; i += 1) {
+      if (
+        enemy.path[i] === gate.gateFromNodeId &&
+        enemy.path[i + 1] === gate.gateToNodeId
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+  return enemy.path.includes(gate.nodeId);
+}
+
 /** Moves an attack to an exact path position (edge index + fraction). */
 function setPathPosition(enemy: EnemyState, position: number): void {
   const maxIndex = Math.max(0, enemy.path.length - 1);
@@ -673,6 +737,9 @@ function applyGateQueues(
       if (enemy.admittedGates.includes(gate.id)) {
         continue;
       }
+      if (!enemyTraversesGate(enemy, gate)) {
+        continue;
+      }
       const position = enemyPosition(enemy);
       if (position >= gatePosition) {
         continue;
@@ -700,6 +767,9 @@ function applyGateQueues(
     let blocking: (typeof gates)[number] | null = null;
     for (const gate of gates) {
       if (enemy.admittedGates.includes(gate.id)) {
+        continue;
+      }
+      if (!enemyTraversesGate(enemy, gate)) {
         continue;
       }
       const gatePosition = gate.gatePosition as number;
@@ -871,7 +941,7 @@ function applyHeroAttacks(
         continue;
       }
       const position = enemyPosition(enemy);
-      if (Math.abs(position - unit.position) > definition.attackRange) {
+      if (!heroCanReach(unit, enemy, definition.attackRange)) {
         continue;
       }
       if (position > bestPosition) {
@@ -907,7 +977,7 @@ function computeHeroEngagements(
     let bestPosition = -Infinity;
     for (const enemy of enemies) {
       const position = enemyPosition(enemy);
-      if (Math.abs(position - unit.position) > definition.attackRange) {
+      if (!heroCanReach(unit, enemy, definition.attackRange)) {
         continue;
       }
       if (position > bestPosition) {

@@ -12,9 +12,12 @@ import {
   type TowerProgress,
 } from "../data/towerEffects";
 import { ATTACK_TYPE_LABELS, type AttackType } from "../models/attack";
-import { findNode, type MapNode, type MissionMap } from "../models/map";
+import { findNode, type MissionMap } from "../models/map";
 import { computePath } from "../engine/pathing";
+import { layoutMap } from "../engine/layout";
+import { buildMapRoadGeometry } from "../engine/roadGeometry";
 import { operationMapFor } from "../engine/operationAdapter";
+import { operationMapLabel } from "../data/operationMaps";
 import AdversaryArt from "./art/AdversaryArt";
 import CoreArt from "./art/CoreArt";
 import EnemyArt from "./art/EnemyArt";
@@ -53,14 +56,10 @@ export interface OperationBriefingProps {
   onStart: () => void;
   onAbandon: () => void;
   onExit: () => void;
-}
-
-/** Human-readable map name from its id, for example `full-stack` -> `Full Stack`. */
-function mapLabel(mapId: string): string {
-  return mapId
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+  /** True while the deploy request is in flight. */
+  deploying?: boolean;
+  /** Deploy failure message; the battle must not start while set. */
+  deployError?: string | null;
 }
 
 /** One attack family visible in a revealed wave. */
@@ -152,7 +151,13 @@ function primaryTarget(
   return best?.id ?? null;
 }
 
-/** Horizontal architecture schematic: entry → nodes → protected target. */
+/**
+ * Horizontal architecture schematic.
+ *
+ * Renders the real graph (every node and edge) using the same layout
+ * abstraction as the game board, so a branching Operation's briefing and battle
+ * describe the same topology. Likely/known targets are highlighted.
+ */
 function TargetMap({
   map,
   targetId,
@@ -162,56 +167,74 @@ function TargetMap({
   targetId: string | null;
   dominantType: AttackType;
 }) {
-  const path = targetId ? computePath(map, targetId).path : [];
-  const nodes = path
-    .map((id) => findNode(map, id))
-    .filter((node): node is MapNode => Boolean(node));
-  if (nodes.length === 0) {
-    return null;
-  }
+  const layout = layoutMap(map, {
+    orientation: "horizontal",
+    layerSpacing: 96,
+    nodeSpacing: 68,
+    margin: 56,
+  });
+  const geometry = buildMapRoadGeometry(map, layout);
+  const targetSet = new Set<string>(
+    map.nodes
+      .filter((node) => node.id === targetId || node.type === "database")
+      .map((node) => node.id),
+  );
 
-  const spacing = 78;
-  const padX = 84;
-  const y = 58;
-  const width = padX * 2 + (nodes.length - 1) * spacing;
-  const nodeX = (index: number) => padX + index * spacing;
+  const entry = layout.positions[map.entryNodeId];
+  const core = targetId ? layout.positions[targetId] : undefined;
 
   return (
     <svg
       className="cyber-op-map-svg"
-      viewBox={`0 0 ${width} 112`}
+      viewBox={`0 0 ${layout.width} ${Math.max(120, layout.height)}`}
       preserveAspectRatio="xMidYMid meet"
       role="img"
-      aria-label={`Attack path to ${nodes[nodes.length - 1].label}`}
+      aria-label={`Architecture: ${map.nodes
+        .map((node) => node.label)
+        .join(", ")}`}
     >
-      <line
-        x1={padX}
-        y1={y}
-        x2={nodeX(nodes.length - 1)}
-        y2={y}
-        className="cyber-op-map-lane"
-      />
-      {nodes.map((node, index) => (
-        <g
-          key={node.id}
-          className="cyber-op-map-node"
-          transform={`translate(${nodeX(index)} ${y})`}
-        >
-          <circle r={8} className="cyber-op-map-node-ring" />
-          <circle r={3.2} className="cyber-op-map-node-dot" />
-          <text y={-20} textAnchor="middle" className="cyber-op-map-node-label">
-            {node.label}
-          </text>
+      {geometry.edgeOrder.map((key) => {
+        const edge = geometry.edges[key];
+        return (
+          <polyline
+            key={key}
+            className="cyber-op-map-lane"
+            points={edge.points.map((p) => `${p.x},${p.y}`).join(" ")}
+          />
+        );
+      })}
+      {map.nodes.map((node) => {
+        const position = layout.positions[node.id];
+        if (!position) {
+          return null;
+        }
+        const isTarget = targetSet.has(node.id);
+        return (
+          <g
+            key={node.id}
+            className={`cyber-op-map-node${isTarget ? " is-target" : ""}`}
+            transform={`translate(${position.x} ${position.y})`}
+          >
+            <circle r={8} className="cyber-op-map-node-ring" />
+            <circle r={3.2} className="cyber-op-map-node-dot" />
+            <text y={-20} textAnchor="middle" className="cyber-op-map-node-label">
+              {node.label}
+            </text>
+          </g>
+        );
+      })}
+      {entry ? (
+        <g transform={`translate(${entry.x - 30} ${entry.y})`}>
+          <g className="cyber-op-map-enemy">
+            <EnemyArt attackType={dominantType} />
+          </g>
         </g>
-      ))}
-      <g transform={`translate(${padX - 30} ${y})`}>
-        <g className="cyber-op-map-enemy">
-          <EnemyArt attackType={dominantType} />
+      ) : null}
+      {core ? (
+        <g transform={`translate(${core.x + 42} ${core.y})`}>
+          <CoreArt integrity={1} />
         </g>
-      </g>
-      <g transform={`translate(${nodeX(nodes.length - 1) + 42} ${y})`}>
-        <CoreArt integrity={1} />
-      </g>
+      ) : null}
     </svg>
   );
 }
@@ -224,6 +247,8 @@ export default function OperationBriefing({
   onStart,
   onAbandon,
   onExit,
+  deploying = false,
+  deployError = null,
 }: OperationBriefingProps) {
   const operation = run.operation;
   const adversary = ADVERSARIES_BY_ID[operation.adversary_id] ?? undefined;
@@ -236,8 +261,8 @@ export default function OperationBriefing({
     Math.round((operation.waves.length * 90) / 60),
   );
   const targetLabel = targetId
-    ? (findNode(map, targetId)?.label ?? mapLabel(operation.map_id))
-    : mapLabel(operation.map_id);
+    ? (findNode(map, targetId)?.label ?? operationMapLabel(operation.map_id))
+    : operationMapLabel(operation.map_id);
 
   const visibleWaves: WaveIntel[] = operation.waves
     .slice(0, visibility.visibleWaveCount)
@@ -346,7 +371,7 @@ export default function OperationBriefing({
           />
           <p className="cyber-op-map-caption">
             <TargetIcon size={14} /> Target: {targetLabel} ·{" "}
-            {mapLabel(operation.map_id)}
+            {operationMapLabel(operation.map_id)}
           </p>
         </div>
       </header>
@@ -536,9 +561,15 @@ export default function OperationBriefing({
           type="button"
           className="cyber-cta cyber-op-deploy"
           onClick={onStart}
+          disabled={deploying}
         >
-          <PlayIcon size={18} /> DEPLOY
+          <PlayIcon size={18} /> {deploying ? "DEPLOYING…" : "DEPLOY"}
         </button>
+        {deployError ? (
+          <span className="cyber-notice" role="alert">
+            {deployError}
+          </span>
+        ) : null}
         <button
           type="button"
           className="cyber-secondary-button"

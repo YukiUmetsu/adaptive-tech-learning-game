@@ -169,6 +169,10 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
             put(routes::cyber_defense::set_operation_loadout),
         )
         .route(
+            "/v1/cyber-defense/operations/{run_id}/deploy",
+            post(routes::cyber_defense::deploy_operation),
+        )
+        .route(
             "/v1/cyber-defense/operations/{run_id}/abandon",
             post(routes::cyber_defense::abandon_operation),
         )

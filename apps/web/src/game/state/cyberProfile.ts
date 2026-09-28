@@ -250,7 +250,12 @@ export function equipCosmetic(
       api.PUT("/v1/cyber-defense/cosmetics/equipped", {
         body: { theme_id: themeId },
       }),
-    () => {
+    (data) => {
+      // Apply the equipped theme immediately so the game does not wait for (or
+      // flicker during) the background profile refresh.
+      if (profile) {
+        setCyberProfile({ ...profile, equipped_theme: data.equipped_theme });
+      }
       void refreshCyberProfile();
     },
   );
@@ -305,6 +310,22 @@ export function completeOperation(
       reconcileBits(data.bits_balance);
       void refreshCyberProfile();
     },
+  );
+}
+
+/**
+ * Deploys an active Operation, freezing its configuration.
+ *
+ * The server is authoritative about the pre-deploy/deployed boundary; this call
+ * is idempotent. The local battle must only start after it succeeds.
+ */
+export function deployOperation(
+  runId: string,
+): Promise<CyberApiResult<CyberOperationRun>> {
+  return run(() =>
+    api.POST("/v1/cyber-defense/operations/{run_id}/deploy", {
+      params: { path: { run_id: runId } },
+    }),
   );
 }
 

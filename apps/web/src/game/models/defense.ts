@@ -107,6 +107,9 @@ export interface PlacedDefense {
   gatePosition?: number;
   /** The paired pad on the other side of the road. */
   gatePartnerPadId?: string;
+  /** Edge the gate spans, so it only affects enemies on that branch. */
+  gateFromNodeId?: string;
+  gateToNodeId?: string;
 }
 
 export const DEFENSE_CATEGORY_LABELS: Record<DefenseCategory, string> = {

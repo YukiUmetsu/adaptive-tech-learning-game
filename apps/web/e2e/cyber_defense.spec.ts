@@ -172,6 +172,41 @@ test("fresh campaign unlocks Operations; operator, difficulty, and Tower intel p
   await expect(page.getByText(/Specialty unknown/i)).toBeVisible();
 });
 
+test("the selected hero is the only deployable hero and DEPLOY locks the run", async ({
+  page,
+  request,
+}) => {
+  const subject = `cyber-e2e-deploy-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
+  await signInAsFreshUser(page, subject);
+  await seedCampaignComplete(request, subject);
+
+  // Choose the SRE and start an Operation from the dashboard.
+  await page.goto("/game");
+  await page.getByRole("radio", { name: /SRE/ }).click();
+  await page.getByRole("button", { name: /^deploy$/i }).click();
+  await expect(page).toHaveURL(/\/game\/operations\//);
+
+  // Briefing still shows the assigned operator before the battle starts.
+  await expect(page.getByText("SRE", { exact: true })).toBeVisible();
+
+  // DEPLOY is what freezes the configuration and opens the battle.
+  await page.locator(".cyber-op-deploy").click();
+
+  // Only the selected hero is offered in the battle roster.
+  const heroes = page.locator(".cyber-heroes");
+  await expect(heroes).toContainText("SRE");
+  await expect(heroes).not.toContainText("Security Engineer");
+
+  // Leave, then return: the server says deployed, so the briefing (and its
+  // loadout editing) is skipped and the battle opens directly.
+  const runId = runIdFromUrl(page);
+  await page.goto("/game");
+  await page.goto(`/game/operations/${runId}`);
+
+  await expect(page.locator(".cyber-op-deploy")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /start wave/i })).toBeVisible();
+});
+
 test("a settled Operation persists its reward on the dashboard", async ({
   page,
   request,

@@ -1023,6 +1023,74 @@
         ]
       }
     },
+    "/v1/cyber-defense/operations/{run_id}/deploy": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Marks an active Operation as deployed, freezing its configuration.",
+        "operationId": "deploy_operation",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "description": "Operation run identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation deployed (idempotent)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberOperationRunDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Run not found or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Run is not active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/cyber-defense/operations/{run_id}/loadout": {
       "put": {
         "tags": [
@@ -4919,6 +4987,14 @@
             "type": "integer",
             "format": "int64",
             "description": "Career XP awarded on settlement."
+          },
+          "deployed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the battle started, freezing the configuration. `null` while the\nrun is still configurable (Engineering Lab loadout)."
           },
           "hero_id": {
             "type": [

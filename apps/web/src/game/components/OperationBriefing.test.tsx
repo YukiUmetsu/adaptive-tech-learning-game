@@ -125,6 +125,19 @@ describe("OperationBriefing threat intel", () => {
   });
 });
 
+describe("OperationBriefing branching schematic", () => {
+  it("shows both API and Application branches of a branching Operation", () => {
+    renderBriefing(
+      operationRun({
+        map_id: "dual-service",
+        dominant_attack_type: "xss",
+      }),
+    );
+    expect(screen.getByText("API")).toBeInTheDocument();
+    expect(screen.getByText("Application")).toBeInTheDocument();
+  });
+});
+
 describe("OperationBriefing Tower intel gating", () => {
   it("hides wave families, modifiers, boss and specialty without upgrades", () => {
     const run = operationRun({

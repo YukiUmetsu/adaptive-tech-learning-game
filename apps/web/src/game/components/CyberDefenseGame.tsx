@@ -350,7 +350,12 @@ export default function CyberDefenseGame({
       return undefined;
     }
     return pad.partnerId
-      ? { partnerPadId: pad.partnerId, position: pad.roadPosition ?? 0 }
+      ? {
+          partnerPadId: pad.partnerId,
+          position: pad.roadPosition ?? 0,
+          fromNodeId: pad.edgeFrom,
+          toNodeId: pad.edgeTo,
+        }
       : undefined;
   };
 
@@ -479,8 +484,12 @@ export default function CyberDefenseGame({
     setSelectedPlacementId(null);
   };
 
-  const handleDeployHero = (heroId: string, position: number) => {
-    const result = engine.deployHero(heroId, position);
+  const handleDeployHero = (
+    heroId: string,
+    position: number,
+    anchor?: { from: string; to: string; fraction: number },
+  ) => {
+    const result = engine.deployHero(heroId, position, anchor);
     const hero = catalog.heroesById[heroId];
     if (result.ok) {
       lastDeployedHeroIdRef.current = heroId;

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { useAuth } from "../auth/context";
 import BitsFlyOverlay from "../components/BitsFlyOverlay";
@@ -7,6 +7,7 @@ import BitsHud from "../components/BitsHud";
 import FocusRuntime from "../components/FocusRuntime";
 import FocusWidget from "../components/FocusWidget";
 import PreferencesEffects from "../components/PreferencesEffects";
+import CyberDefenseRoot from "../game/components/CyberDefenseShell";
 import { useDailyMissionHref } from "../hooks/useDailyMissionHref";
 import { MOBILE_NAV_QUERY, useMediaQuery } from "../hooks/useMediaQuery";
 import { useSignOut } from "../hooks/useSignOut";
@@ -53,6 +54,8 @@ export default function AppShell() {
   const handleSignOut = useSignOut();
   const isMobileNav = useMediaQuery(MOBILE_NAV_QUERY);
   const dailyMissionHref = useDailyMissionHref();
+  const location = useLocation();
+  const isCyberDefense = location.pathname.startsWith("/game");
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -160,7 +163,13 @@ export default function AppShell() {
         )}
       </header>
       <main className="app-main">
-        <Outlet />
+        {isCyberDefense ? (
+          <CyberDefenseRoot>
+            <Outlet />
+          </CyberDefenseRoot>
+        ) : (
+          <Outlet />
+        )}
       </main>
       <footer className="app-footer">
         <div className="app-footer-brand">

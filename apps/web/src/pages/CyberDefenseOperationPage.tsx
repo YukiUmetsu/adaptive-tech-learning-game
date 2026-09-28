@@ -25,6 +25,7 @@ import { clearSession } from "../game/persistence/gameCache";
 import {
   abandonOperation,
   completeOperation,
+  deployOperation,
   getOperation,
   refreshCyberProfile,
   setOperationLoadout,
@@ -57,6 +58,8 @@ export default function CyberDefenseOperationPage() {
   const [settlement, setSettlement] = useState<MissionSettlement | null>(null);
   const [loadoutBusy, setLoadoutBusy] = useState(false);
   const [loadoutMessage, setLoadoutMessage] = useState<string | null>(null);
+  const [deployBusy, setDeployBusy] = useState(false);
+  const [deployError, setDeployError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -72,6 +75,10 @@ export default function CyberDefenseOperationPage() {
       }
       if (result.ok) {
         setRun(result.data);
+        // The server's run lifecycle decides whether to show the configurable
+        // briefing or resume the deployed battle directly. Local state is never
+        // the source of truth.
+        setBriefing(result.data.deployed_at == null);
         setStatus("ready");
       } else {
         setStatus("missing");
@@ -199,6 +206,23 @@ export default function CyberDefenseOperationPage() {
     [run, profile],
   );
 
+  const handleDeploy = useCallback(async () => {
+    if (!run) {
+      return;
+    }
+    setDeployBusy(true);
+    setDeployError(null);
+    const result = await deployOperation(run.run_id);
+    if (result.ok) {
+      setRun(result.data);
+      setBriefing(false);
+    } else {
+      // Do not start an untracked battle when the server never froze the run.
+      setDeployError(result.message);
+    }
+    setDeployBusy(false);
+  }, [run]);
+
   const handleLoadout = useCallback(
     async (swaps: { remove: string; add: string }[]) => {
       if (!run) {
@@ -261,6 +285,7 @@ export default function CyberDefenseOperationPage() {
 
   if (briefing) {
     const swapAllowance = engineeringLabSwapAllowance(towerProgress);
+    const configurable = run.deployed_at == null;
     return (
       <>
         <OperationBriefing
@@ -272,13 +297,17 @@ export default function CyberDefenseOperationPage() {
               (entry) => entry.adversary_id === run.adversary_id,
             )?.rank ?? 1
           }
-          onStart={() => setBriefing(false)}
+          onStart={() => {
+            void handleDeploy();
+          }}
+          deploying={deployBusy}
+          deployError={deployError}
           onAbandon={() => {
             void handleAbandon();
           }}
           onExit={() => navigate("/game")}
         />
-        {swapAllowance > 0 ? (
+        {configurable && swapAllowance > 0 ? (
           <OperationLoadout
             run={run}
             catalog={catalog}

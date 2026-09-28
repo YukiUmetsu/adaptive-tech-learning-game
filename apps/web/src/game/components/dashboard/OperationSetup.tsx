@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { GAME_CATALOG } from "../../data";
+import { operationMapLabel } from "../../data/operationMaps";
 import { ATTACK_TYPE_LABELS, type AttackType } from "../../models/attack";
 import { clampThreatLevel } from "../../models/operation";
 import { readLastHeroId, writeLastHeroId } from "../../persistence/heroSelection";
@@ -169,6 +170,9 @@ export default function OperationSetup({
               }}
             >
               <span className="cyber-op-offer-title">{offer.title}</span>
+              <span className="cyber-op-offer-map">
+                {operationMapLabel(offer.map_id)}
+              </span>
               <span className="cyber-op-offer-meta">
                 {offer.adversary_name} · {offer.summary} ·{" "}
                 {minutesLabel(offer.estimated_minutes)}

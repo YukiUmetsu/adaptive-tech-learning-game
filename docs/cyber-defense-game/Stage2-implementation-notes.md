@@ -51,6 +51,10 @@ credits only, and its frontend flush queue was dead code. See "Stage 2.2" below.
 - `20261003000003_cyber_operation_active_unique` — at most one active Operation
   per learner.
 - `20261003000004_cyber_telemetry` — batched balance telemetry.
+- `20261003000005_cyber_integrity_replayability` — Operation offers, cosmetic
+  unlocks, and `equipped_theme`.
+- `20261003000006_cyber_operation_deploy` — `deployed_at`, the authoritative
+  pre-deploy → deployed boundary.
 
 ## Key decisions and assumptions
 
@@ -128,9 +132,12 @@ the Stage 1 game's neon art instead of emoji and text blocks:
 - **Story presentation** is the archive page plus a "Story advanced." line in the
   settlement summary. There is no dedicated story card modal; skipped/unseen
   tracking is a local acknowledgement (`game/persistence/storyAck.ts`).
-- **Operation template browsing** is not built; the dashboard starts a
-  server-selected Operation (or the story-gated confrontation). The API already
-  accepts an optional `template_id`.
+- **Operation template browsing** is replaced by server-issued offers: the
+  dashboard fetches a stable set of up to three eligible Operations
+  (`POST /v1/cyber-defense/operations/offers`) and starts exactly the one the
+  player selects, or the story-gated confrontation. A client cannot forge an
+  offer for locked content; the legacy random-selection path remains as an
+  offline fallback.
 - **Telemetry** is wired to dashboard views, Operation start/resume/complete/
   abandon, threat level, operator selection, defense placed/upgraded/removed,
   hero deployed, Tower purchase, talent selection, adversary rank up, dossier
@@ -512,3 +519,186 @@ New error code: `cyber_campaign_mission_locked` (403).
   Issuing server-side campaign run identities
   (`POST /v1/cyber-defense/campaign/{mission_id}/runs`) remains the known
   integrity limitation.
+
+---
+
+# Stage 2.3 — Gameplay Consistency Pass
+
+Fixes four gameplay-consistency problems found after the Stage 2.2 integrity
+work. No new progression, enemies, heroes, currencies, or game modes were added.
+
+## 1. Branching maps genuinely branch
+
+**Before:** `GameBoard` computed one `Road` from `primaryTargetNodeId` and
+positioned every attack with `pointAtPosition(road, pathIndex + progress)`. On a
+branching map, attacks on a non-primary route were drawn on the wrong road, and
+only the primary route existed visually.
+
+**Now:** a new pure module `apps/web/src/game/engine/roadGeometry.ts` turns the
+map graph into render geometry:
+
+- `buildMapRoadGeometry(map, layout)` builds one `RoadEdgeGeometry` per graph
+  edge (bend points + length), plus node positions.
+- `pathPointAt(geometry, path, position)` / `pathPoint(geometry, path,
+  pathIndex, progress)` place an attack on **its own** `enemy.path`.
+- `buildRoadPads(geometry)` builds deterministic pads along every edge,
+  attached to the nearest endpoint so tower coverage matches the simulation.
+- `nearestEdgeAnchor(geometry, point)` resolves a dropped/tapped hero to a
+  concrete `{ from, to, fraction }` edge anchor.
+
+`GameBoard` now draws every edge, positions every attack, effect, beam and hero
+through these helpers, and never derives one attack's visual route from another
+attack's target. The simulation was already graph-aware
+(`enemy.path.indexOf(placed.nodeId)`), so the renderer simply agrees with it.
+
+**Towers and branches.** A tower's `nodeId` is matched against each attack's own
+path, so an Application tower can only damage attacks whose path traverses
+Application. On a shared node (Edge/Internet) coverage legitimately overlaps.
+Rate-limiter gates now also record the edge they span and only congest attacks
+that traverse that edge.
+
+**Heroes.** `HeroUnit` gains an optional edge anchor. An anchored hero only
+fights attacks currently on the same logical edge; heroes deployed on a linear
+map keep the previous behaviour. The local battle cache version was bumped so an
+older cached run is safely discarded rather than misrendered.
+
+**Retained single-route concepts.** `primaryTargetNodeId` is still used to choose
+the main protected core, the spawn portal, and a reference path for legacy
+(non-anchored) hero rendering. It no longer controls any attack's route or the
+road geometry.
+
+**Pads.** Pads are stable for a map (edge order + index), sit on both sides of
+each edge, and every edge gets at least one. Merge areas inherit pads from both
+incoming edges, which gives shared strategic positions without clutter.
+
+## 2. The selected operator is the only Operation hero
+
+**Before:** the Rust generator hardcoded
+`available_heroes = DEFAULT_HERO_IDS`, so every Operation exposed both heroes
+even though the run recorded one.
+
+**Now:** `generate_operation` derives `available_heroes` from the requested
+`hero_id` (falling back to the default roster only when no hero is requested).
+`cyber_defense_start_operation` additionally asserts the invariant
+
+```
+selected hero == available_heroes == progression_snapshot.hero.hero_id
+```
+
+and fails loudly instead of settling XP to the wrong hero. `HeroBar` receives
+only the selected hero because the Operation definition itself contains only
+that hero — this is not a frontend hiding trick. Campaign hero rosters are
+unchanged.
+
+## 3. Pre-deploy → deployed lifecycle
+
+A new migration adds `deployed_at TIMESTAMPTZ NULL` to `cyber_operation_runs`
+(the result `status` column keeps its meaning). `NULL` means configurable;
+a timestamp means the battle started and the configuration is frozen.
+
+- `POST /v1/cyber-defense/operations/{run_id}/deploy` locks the row, requires
+  `status == active`, sets `deployed_at = COALESCE(deployed_at, now())`, and is
+  idempotent. No Bits/reward/simulation state is involved.
+- `PUT .../loadout` now requires `status == active AND deployed_at IS NULL` and
+  returns `409 cyber_operation_already_deployed` otherwise. The SQL update is
+  guarded the same way.
+- `CyberOperationRunDto` gains `deployed_at`.
+
+**Client.** `CyberDefenseOperationPage` no longer toggles to battle on local
+state alone. Clicking DEPLOY calls the endpoint first; the battle starts only on
+success. On load, `run.deployed_at` decides whether the briefing/loadout is
+shown or the battle resumes directly. Engineering Lab loadout editing is hidden
+once deployed.
+
+**Recovery.** A deployed run with no local battle cache reconstructs the initial
+deployed battle from the immutable server config (preparation phase). If a
+browser loses local combat state after substantial progress, that progress is
+not recovered server-side; the player is never sent back to configuration to
+work around it.
+
+## 4. Equipped Tower themes are visible
+
+`CyberDefenseRoot` (`apps/web/src/game/components/CyberDefenseShell.tsx`) wraps
+every `/game` route and sets `data-cyber-theme` from
+`profile.equipped_theme`. CSS in `styles.css` resolves per-theme `--cyber-*`
+tokens and restyles the most visible surfaces:
+
+- dashboard hero and eyebrow accents, primary buttons, the selected Operation
+  offer card,
+- Tower/appearance cards, the briefing schematic (same layout abstraction as the
+  board),
+- the board grid, road lines, and protected-core glow.
+
+Theme tokens are cosmetic only; attack-type, health/danger, and defense-identity
+colours are untouched. No equipped theme matches the previous default exactly;
+Neon Blue is the explicit blue cosmetic. Equipping applies immediately (the
+profile store is updated optimistically, then refreshed) with no reload and no
+revert.
+
+## Files changed (Stage 2.3)
+
+- Rust: `crates/domain/src/cyber_operation.rs`; `crates/db/src/cyber_defense.rs`;
+  new migration `20261003000006_cyber_operation_deploy`;
+  `apps/api/src/{dto,error,services,lib,openapi}.rs`;
+  `apps/api/src/routes/cyber_defense.rs`.
+- Web engine: `engine/roadGeometry.ts` (new), `components/GameBoard.tsx`,
+  `models/hero.ts`, `models/defense.ts`, `engine/simulation.ts`,
+  `hooks/useGameEngine.ts`, `persistence/gameCache.ts` (cache version bump).
+- Web briefing/offers: `components/OperationBriefing.tsx`,
+  `components/dashboard/OperationSetup.tsx`, `data/operationMaps.ts`.
+- Web lifecycle/theme: `pages/CyberDefenseOperationPage.tsx`,
+  `state/cyberProfile.ts`, `components/CyberDefenseShell.tsx` (new),
+  `layout/AppShell.tsx`, `styles.css`.
+
+## API changes (Stage 2.3)
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/v1/cyber-defense/operations/{run_id}/deploy` | Idempotent; freezes the run. |
+
+`CyberOperationRunDto` adds `deployed_at`. New error code
+`cyber_operation_already_deployed` (409).
+
+## Tests added (Stage 2.3)
+
+- `engine/roadGeometry.test.ts` — branches diverge after the fork, converge at
+  Database, both branch edges and pads exist, every Operation map has geometry
+  for every edge, mobile branch nodes do not overlap, linear maps unchanged.
+- `engine/branching.test.ts` — an Application tower cannot damage an API-only
+  attack but does damage an Application attack; an anchored hero only fights
+  attacks on its own edge.
+- `components/GameBoard.test.tsx` — every architecture edge is drawn and
+  branch enemies render at different positions.
+- `components/OperationBriefing.test.tsx` — a dual-service briefing shows both
+  API and Application branches.
+- `components/CyberDefenseShell.test.tsx` — the theme root reflects the equipped
+  theme and stays default when none is equipped.
+- `pages/CyberDefenseOperationPage.test.tsx` — briefing before deploy, battle
+  only after a successful deploy, no battle on failure, deployed runs skip the
+  briefing.
+- `state/cyberProfile.test.ts` — an equipped theme reaches the shared profile.
+- Rust domain/API/DB tests — generator roster matches the selected hero; deploy
+  lifecycle (null → set → idempotent → loadout rejected → cross-user 404 →
+  settled conflict); config locked after deploy.
+
+## Verification (Stage 2.3)
+
+- `cargo fmt --check` — clean.
+- `cargo clippy --all-targets --all-features -- -D warnings` — clean.
+- `cargo test --no-fail-fast` (local Postgres) — all Cyber Defense, domain, and
+  DB suites pass. The only two failures are the same pre-existing, unrelated
+  ones documented above.
+- `cd apps/web && pnpm typecheck` / `pnpm lint` / `pnpm test` / `pnpm build` —
+  pass (141 test files; 1120 tests; lint has 2 pre-existing + 2 fast-refresh
+  warnings, 0 errors).
+- `E2E_DATABASE_URL=… E2E_API_PORT=8091 E2E_WEB_PORT=5184 pnpm e2e
+  cyber_defense.spec.ts` — 3 tests pass, including the selected-hero and
+  DEPLOY-locks-the-run flow.
+
+## Intentionally deferred (Stage 2.3)
+
+- **Branch-accurate gate congestion on shared source nodes.** Gates filter by
+  their exact edge, but the numeric congestion position assumes path index ==
+  node depth; harmless for the current maps.
+- **Server-side recovery of substantial local combat progress.** As above, only
+  the initial deployed battle is reconstructed.

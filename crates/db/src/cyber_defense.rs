@@ -799,6 +799,8 @@ pub struct OperationRun {
     pub generated_config: serde_json::Value,
     /// Start time.
     pub started_at: DateTime<Utc>,
+    /// When the battle started and the configuration was frozen, if deployed.
+    pub deployed_at: Option<DateTime<Utc>>,
     /// Completion time.
     pub completed_at: Option<DateTime<Utc>>,
     /// Result stars.
@@ -829,6 +831,7 @@ struct OperationRunRow {
     status: String,
     generated_config: Json<serde_json::Value>,
     started_at: DateTime<Utc>,
+    deployed_at: Option<DateTime<Utc>>,
     completed_at: Option<DateTime<Utc>>,
     result_stars: Option<i32>,
     result_health: Option<i32>,
@@ -852,6 +855,7 @@ impl From<OperationRunRow> for OperationRun {
             status: row.status,
             generated_config: row.generated_config.0,
             started_at: row.started_at,
+            deployed_at: row.deployed_at,
             completed_at: row.completed_at,
             result_stars: row.result_stars,
             result_health: row.result_health,
@@ -896,7 +900,7 @@ pub async fn create_operation_run(
               status, generated_config)
          VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', $8)
          RETURNING id, user_id, seed, template_id, adversary_id, hero_id,
-                   threat_level, status, generated_config, started_at, completed_at,
+                   threat_level, status, generated_config, started_at, deployed_at, completed_at,
                    result_stars, result_health, duration_ms, bits_awarded,
                    career_xp_awarded, hero_xp_awarded, reward_event_id",
     )
@@ -922,7 +926,7 @@ pub async fn get_operation_run_for_user(
 ) -> Result<Option<OperationRun>, DbError> {
     let row = sqlx::query_as::<_, OperationRunRow>(
         "SELECT id, user_id, seed, template_id, adversary_id, hero_id,
-                threat_level, status, generated_config, started_at, completed_at,
+                threat_level, status, generated_config, started_at, deployed_at, completed_at,
                 result_stars, result_health, duration_ms, bits_awarded,
                 career_xp_awarded, hero_xp_awarded, reward_event_id
          FROM cyber_operation_runs
@@ -944,7 +948,7 @@ pub async fn lock_operation_run(
 ) -> Result<Option<OperationRun>, DbError> {
     let row = sqlx::query_as::<_, OperationRunRow>(
         "SELECT id, user_id, seed, template_id, adversary_id, hero_id,
-                threat_level, status, generated_config, started_at, completed_at,
+                threat_level, status, generated_config, started_at, deployed_at, completed_at,
                 result_stars, result_health, duration_ms, bits_awarded,
                 career_xp_awarded, hero_xp_awarded, reward_event_id
          FROM cyber_operation_runs
@@ -965,7 +969,7 @@ pub async fn find_active_operation_run(
 ) -> Result<Option<OperationRun>, DbError> {
     let row = sqlx::query_as::<_, OperationRunRow>(
         "SELECT id, user_id, seed, template_id, adversary_id, hero_id,
-                threat_level, status, generated_config, started_at, completed_at,
+                threat_level, status, generated_config, started_at, deployed_at, completed_at,
                 result_stars, result_health, duration_ms, bits_awarded,
                 career_xp_awarded, hero_xp_awarded, reward_event_id
          FROM cyber_operation_runs
@@ -1048,7 +1052,7 @@ pub async fn complete_operation_run(
              reward_event_id = $10
          WHERE id = $1 AND user_id = $2 AND status = 'active'
          RETURNING id, user_id, seed, template_id, adversary_id, hero_id,
-                   threat_level, status, generated_config, started_at, completed_at,
+                   threat_level, status, generated_config, started_at, deployed_at, completed_at,
                    result_stars, result_health, duration_ms, bits_awarded,
                    career_xp_awarded, hero_xp_awarded, reward_event_id",
     )
@@ -1103,10 +1107,11 @@ pub async fn list_completed_operation_templates(
     Ok(rows)
 }
 
-/// Replaces an active run's generated config (Engineering Lab loadout).
+/// Replaces an active, not-yet-deployed run's generated config (Engineering Lab
+/// loadout).
 ///
-/// Only an `active` run can be changed, so a loadout cannot be edited after the
-/// result is settled.
+/// Only an `active` run that has not been deployed can be changed: a loadout
+/// cannot be edited after the battle starts, nor after the result is settled.
 pub async fn update_operation_run_config(
     conn: &mut PgConnection,
     user_id: Uuid,
@@ -1117,14 +1122,41 @@ pub async fn update_operation_run_config(
         "UPDATE cyber_operation_runs
          SET generated_config = $3
          WHERE id = $1 AND user_id = $2 AND status = 'active'
+           AND deployed_at IS NULL
          RETURNING id, user_id, seed, template_id, adversary_id, hero_id,
-                   threat_level, status, generated_config, started_at, completed_at,
+                   threat_level, status, generated_config, started_at, deployed_at, completed_at,
                    result_stars, result_health, duration_ms, bits_awarded,
                    career_xp_awarded, hero_xp_awarded, reward_event_id",
     )
     .bind(run_id)
     .bind(user_id)
     .bind(Json(generated_config))
+    .fetch_optional(&mut *conn)
+    .await?;
+
+    Ok(row.map(Into::into))
+}
+
+/// Marks an active run as deployed exactly once.
+///
+/// Idempotent: re-deploying keeps the original timestamp. Returns `None` when
+/// the run does not exist, is not owned, or is no longer active.
+pub async fn deploy_operation_run(
+    conn: &mut PgConnection,
+    user_id: Uuid,
+    run_id: Uuid,
+) -> Result<Option<OperationRun>, DbError> {
+    let row = sqlx::query_as::<_, OperationRunRow>(
+        "UPDATE cyber_operation_runs
+         SET deployed_at = COALESCE(deployed_at, now())
+         WHERE id = $1 AND user_id = $2 AND status = 'active'
+         RETURNING id, user_id, seed, template_id, adversary_id, hero_id,
+                   threat_level, status, generated_config, started_at, deployed_at, completed_at,
+                   result_stars, result_health, duration_ms, bits_awarded,
+                   career_xp_awarded, hero_xp_awarded, reward_event_id",
+    )
+    .bind(run_id)
+    .bind(user_id)
     .fetch_optional(&mut *conn)
     .await?;
 

@@ -138,3 +138,14 @@ export const OPERATION_MAPS: Record<string, MissionMap> = {
 
 /** Fallback map if the server ever sends an unknown id. */
 export const DEFAULT_OPERATION_MAP: MissionMap = OPERATION_MAPS["full-stack"];
+
+/**
+ * Human-readable map name from its id, for example `dual-service` -> `Dual
+ * Service`. Offer cards and briefings must never show the raw id to players.
+ */
+export function operationMapLabel(mapId: string): string {
+  return mapId
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}

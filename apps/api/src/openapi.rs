@@ -89,6 +89,7 @@ use crate::routes::health::{DatabaseStatus, HealthResponse, HealthStatus};
         crate::routes::cyber_defense::start_operation,
         crate::routes::cyber_defense::get_operation,
         crate::routes::cyber_defense::set_operation_loadout,
+        crate::routes::cyber_defense::deploy_operation,
         crate::routes::cyber_defense::abandon_operation,
         crate::routes::cyber_defense::complete_operation,
         crate::routes::cyber_defense::import_legacy_progress,

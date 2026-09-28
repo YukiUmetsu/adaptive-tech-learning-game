@@ -1606,7 +1606,14 @@ pub fn generate_operation(
         starting_health,
         latency_target_ms,
         available_defenses,
-        available_heroes: DEFAULT_HERO_IDS.iter().map(|id| (*id).to_owned()).collect(),
+        // The Operation hero roster is exactly the operator chosen at start: the
+        // run records one hero and the battle may only deploy that hero, so the
+        // generated Operation must not expose the other one. `DEFAULT_HERO_IDS`
+        // remains the only fallback for callers that generate without a hero.
+        available_heroes: match input.hero_id.as_deref() {
+            Some(hero_id) if !hero_id.is_empty() => vec![hero_id.to_owned()],
+            _ => DEFAULT_HERO_IDS.iter().map(|id| (*id).to_owned()).collect(),
+        },
         waves,
         modifiers,
         dominant_attack_type: dominant_type.to_owned(),
@@ -1736,10 +1743,18 @@ pub fn validate_generated_operation(
     for defense_id in &operation.available_defenses {
         operation_defense(defense_id).ok_or_else(|| invalid("unknown defense id"))?;
     }
+    if operation.available_heroes.is_empty() {
+        return Err(invalid("operation offers no hero"));
+    }
+    let mut seen_heroes: Vec<&str> = Vec::new();
     for hero_id in &operation.available_heroes {
         if !DEFAULT_HERO_IDS.contains(&hero_id.as_str()) {
             return Err(invalid("unknown hero id"));
         }
+        if seen_heroes.contains(&hero_id.as_str()) {
+            return Err(invalid("duplicate hero id"));
+        }
+        seen_heroes.push(hero_id);
     }
 
     // At least one meaningful counter for the dominant threat must be offered.
@@ -1969,6 +1984,21 @@ mod tests {
         let a = generate_operation(&input(1, "mixed-intrusion", "ghost-7", 6, 5)).unwrap();
         let b = generate_operation(&input(2, "mixed-intrusion", "ghost-7", 6, 5)).unwrap();
         assert_ne!(a, b);
+    }
+
+    #[test]
+    fn operation_offers_only_the_selected_hero() {
+        let mut selected = input(42, "mixed-intrusion", "ghost-7", 6, 5);
+        selected.hero_id = Some("sre".to_owned());
+        let operation = generate_operation(&selected).unwrap();
+        assert_eq!(operation.available_heroes, vec!["sre".to_owned()]);
+
+        // No hero requested falls back to the default roster.
+        let mut unset = input(42, "mixed-intrusion", "ghost-7", 6, 5);
+        unset.hero_id = None;
+        let operation = generate_operation(&unset).unwrap();
+        let expected: Vec<String> = DEFAULT_HERO_IDS.iter().map(|id| (*id).to_owned()).collect();
+        assert_eq!(operation.available_heroes, expected);
     }
 
     #[test]

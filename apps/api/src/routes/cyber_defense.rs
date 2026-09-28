@@ -282,6 +282,31 @@ pub async fn set_operation_loadout(
     ))
 }
 
+/// Marks an active Operation as deployed, freezing its configuration.
+#[utoipa::path(
+    post,
+    path = "/v1/cyber-defense/operations/{run_id}/deploy",
+    tag = "cyber-defense",
+    params(("run_id" = Uuid, Path, description = "Operation run identifier")),
+    responses(
+        (status = 200, description = "Operation deployed (idempotent)", body = CyberOperationRunDto),
+        (status = 401, description = "Authentication required", body = ErrorResponse),
+        (status = 404, description = "Run not found or not owned", body = ErrorResponse),
+        (status = 409, description = "Run is not active", body = ErrorResponse)
+    ),
+    security(("bearerAuth" = []))
+)]
+pub async fn deploy_operation(
+    State(state): State<AppState>,
+    user: AuthenticatedUser,
+    run_id: Result<Path<Uuid>, axum::extract::rejection::PathRejection>,
+) -> Result<Json<CyberOperationRunDto>, ApiError> {
+    let run_id = uuid_path(run_id)?;
+    Ok(Json(
+        services::cyber_defense_deploy_operation(&state, &user, run_id).await?,
+    ))
+}
+
 /// Abandons an active Operation run. Grants no reward.
 #[utoipa::path(
     post,

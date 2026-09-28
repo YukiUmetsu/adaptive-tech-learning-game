@@ -14,7 +14,7 @@ import type { GameState } from "../engine/simulation";
  */
 
 const KEY = "adaptive-learn.cyber-defense-session.v1";
-const VERSION = 4;
+const VERSION = 5;
 
 interface CachedSession {
   version: number;

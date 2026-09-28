@@ -4770,6 +4770,7 @@ fn operation_run_dto(
         threat_level: run.threat_level,
         operation,
         started_at: run.started_at,
+        deployed_at: run.deployed_at,
         result,
         bits_awarded: run.bits_awarded,
         career_xp_awarded: run.career_xp_awarded,
@@ -5182,6 +5183,29 @@ pub async fn cyber_defense_start_operation(
     operation.progression_snapshot =
         build_progression_snapshot(&mut tx, user.id, hero_id.as_deref()).await?;
 
+    // selected hero == available hero == talent snapshot hero. The server is the
+    // only writer of all three, so a mismatch is a programming error rather than
+    // player input; fail loudly instead of settling XP to the wrong hero.
+    let selected_hero = hero_id.as_deref().unwrap_or_default();
+    if operation.available_heroes.len() != 1 || operation.available_heroes[0] != selected_hero {
+        return Err(ApiError::Internal(anyhow::anyhow!(
+            "operation hero roster does not match the selected hero"
+        )));
+    }
+    match &operation.progression_snapshot.hero {
+        Some(snapshot) if snapshot.hero_id != selected_hero => {
+            return Err(ApiError::Internal(anyhow::anyhow!(
+                "operation snapshot hero does not match the selected hero"
+            )));
+        }
+        None => {
+            return Err(ApiError::Internal(anyhow::anyhow!(
+                "operation snapshot is missing the selected hero"
+            )));
+        }
+        _ => {}
+    }
+
     let config =
         serde_json::to_value(&operation).map_err(|error| ApiError::Internal(error.into()))?;
     let new_run = db::cyber_defense::NewOperationRun {
@@ -5249,6 +5273,12 @@ pub async fn cyber_defense_set_operation_loadout(
     if run.status != "active" {
         tx.rollback().await.map_err(db::DbError::from)?;
         return Err(ApiError::Conflict("operation is not active".to_owned()));
+    }
+    // Deploy freezes the run's configuration. The Engineering Lab cannot change
+    // a loadout once the battle has started, even if the run is still active.
+    if run.deployed_at.is_some() {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return Err(ApiError::CyberOperationAlreadyDeployed);
     }
 
     let mut operation: GeneratedOperation = serde_json::from_value(run.generated_config.clone())
@@ -5321,6 +5351,37 @@ pub async fn cyber_defense_set_operation_loadout(
         .ok_or_else(|| ApiError::Conflict("operation is no longer active".to_owned()))?;
     tx.commit().await.map_err(db::DbError::from)?;
     operation_run_dto(&updated)
+}
+
+/// Marks an active Operation as deployed, freezing its configuration.
+///
+/// Idempotent: a second deploy returns the same run with its original
+/// timestamp. This is the authoritative boundary between the briefing/loadout
+/// (configurable) and the battle (frozen). No simulation state is sent or
+/// stored, and no Bits/reward change happens here.
+pub async fn cyber_defense_deploy_operation(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    run_id: Uuid,
+) -> Result<CyberOperationRunDto, ApiError> {
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+    let run = db::cyber_defense::lock_operation_run(&mut tx, user.id, run_id)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+    if run.status != "active" {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return Err(ApiError::Conflict("operation is not active".to_owned()));
+    }
+    if run.deployed_at.is_some() {
+        // Already deployed: return the stored run unchanged.
+        tx.commit().await.map_err(db::DbError::from)?;
+        return operation_run_dto(&run);
+    }
+    let deployed = db::cyber_defense::deploy_operation_run(&mut tx, user.id, run_id)
+        .await?
+        .ok_or_else(|| ApiError::Conflict("operation is no longer active".to_owned()))?;
+    tx.commit().await.map_err(db::DbError::from)?;
+    operation_run_dto(&deployed)
 }
 
 /// Abandons an active Operation run. Abandoning grants no reward.

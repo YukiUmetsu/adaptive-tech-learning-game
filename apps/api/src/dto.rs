@@ -1889,6 +1889,9 @@ pub struct CyberOperationRunDto {
     pub operation: GeneratedOperation,
     /// Start time.
     pub started_at: DateTime<Utc>,
+    /// When the battle started, freezing the configuration. `null` while the
+    /// run is still configurable (Engineering Lab loadout).
+    pub deployed_at: Option<DateTime<Utc>>,
     /// Recorded result, once settled.
     pub result: Option<CyberOperationResultDto>,
     /// Bits awarded on settlement.

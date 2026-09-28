@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { GAME_CATALOG } from "../data";
 import { MISSIONS_BY_ID } from "../data/missions";
+import { OPERATION_MAPS } from "../data/operationMaps";
 import type { EnemyState } from "../engine/simulation";
 import GameBoard, { ENEMY_RENDER_CAP } from "./GameBoard";
 
@@ -171,5 +172,38 @@ describe("GameBoard", () => {
       screen.getByRole("button", { name: /DDoS Swarm, DDoS/ }),
     );
     expect(screen.getByText("DDoS Swarm")).toBeInTheDocument();
+  });
+
+  it("draws every architecture edge and places enemies on their own branch", () => {
+    const map = OPERATION_MAPS["dual-service"];
+    const viaApi: EnemyState = {
+      ...enemy(0),
+      id: "api-route",
+      path: ["internet", "edge", "api", "db"],
+      pathIndex: 1,
+      progress: 0.5,
+    };
+    const viaApp: EnemyState = {
+      ...enemy(1),
+      id: "app-route",
+      path: ["internet", "edge", "app", "db"],
+      pathIndex: 1,
+      progress: 0.5,
+    };
+    const { container } = render(
+      <GameBoard
+        {...boardProps({ map, enemies: [viaApi, viaApp], primaryTargetNodeId: "db" })}
+      />,
+    );
+
+    // One rendered road group per graph edge, including both branches.
+    expect(container.querySelectorAll(".cyber-road-group").length).toBe(
+      map.edges.length,
+    );
+
+    const rendered = container.querySelectorAll(".cyber-enemy");
+    expect(rendered.length).toBe(2);
+    const transforms = [...rendered].map((node) => node.getAttribute("transform"));
+    expect(transforms[0]).not.toEqual(transforms[1]);
   });
 });
