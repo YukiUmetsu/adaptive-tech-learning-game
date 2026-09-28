@@ -14,6 +14,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 function dismissTutorial() {
@@ -98,5 +99,40 @@ describe("CyberDefenseGame", () => {
     expect(
       screen.getByRole("button", { name: /Start wave 1/ }),
     ).toBeInTheDocument();
+  });
+
+  it("upgrades a control with mission credits and makes no wallet request", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    renderGame();
+    dismissTutorial();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Traffic Blocker, 220 credits/,
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tower pad 1" }));
+
+    // Select the placed control, then upgrade it. The button must advertise
+    // mission credits, never Bits.
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Traffic Blocker, level 1/,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: /Upgrade \(132 credits\)/ }),
+    );
+
+    expect(
+      screen.getByText("Control upgraded for this mission."),
+    ).toBeInTheDocument();
+
+    // No Bits/wallet settlement request is made from an in-run upgrade.
+    const urls = fetchMock.mock.calls.map((call) => String(call[0]));
+    expect(urls.some((url) => url.includes("/v1/cyber-defense/upgrades"))).toBe(
+      false,
+    );
   });
 });

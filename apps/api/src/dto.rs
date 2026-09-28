@@ -13,7 +13,7 @@ use adaptive_learn_content::{
     PlacementPoint, SourceRef,
 };
 use adaptive_learn_domain::{
-    AssessmentMode, ConceptWeight, InteractionType, MissionStatus, QuizMode,
+    AssessmentMode, ConceptWeight, GeneratedOperation, InteractionType, MissionStatus, QuizMode,
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -1512,4 +1512,399 @@ pub struct PracticeTestResultResponse {
     pub questions: Vec<PracticeTestItemResult>,
     /// Explicit note that this raw score is not an official scaled score.
     pub score_note: String,
+}
+
+/// Career progress derived from career XP.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberCareerDto {
+    /// Total career XP.
+    pub xp: i64,
+    /// Career level derived from XP.
+    pub level: i32,
+    /// Rank label for the level.
+    pub rank: String,
+    /// Absolute XP threshold for the next level, or `null` at the cap.
+    pub next_level_xp: Option<i64>,
+    /// XP accumulated within the current level.
+    pub xp_into_level: i64,
+    /// XP span of the current level, or `null` at the cap.
+    pub xp_for_next_level: Option<i64>,
+}
+
+/// Persistent hero progress for one hero.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberHeroProgressDto {
+    /// Hero identifier.
+    pub hero_id: String,
+    /// Total hero XP.
+    pub xp: i64,
+    /// Hero level derived from XP.
+    pub level: i32,
+    /// Maximum hero level.
+    pub max_level: i32,
+    /// Absolute XP threshold for the next level, or `null` at the cap.
+    pub next_level_xp: Option<i64>,
+    /// XP accumulated within the current level.
+    pub xp_into_level: i64,
+    /// XP span of the current level, or `null` at the cap.
+    pub xp_for_next_level: Option<i64>,
+    /// Selected talent choices, keyed by milestone.
+    pub selected_talents: serde_json::Value,
+}
+
+/// One Tower/HQ room upgrade level.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberTowerUpgradeDto {
+    /// Upgrade (room) identifier.
+    pub upgrade_id: String,
+    /// Current level.
+    pub level: i32,
+    /// Maximum level.
+    pub max_level: i32,
+    /// Bits cost to reach the next level, or `null` at the cap.
+    pub next_cost: Option<i64>,
+}
+
+/// Progress against one recurring adversary.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberAdversaryProgressDto {
+    /// Adversary identifier.
+    pub adversary_id: String,
+    /// Accumulated progress.
+    pub progress: i64,
+    /// Derived rank.
+    pub rank: i32,
+    /// Total encounters.
+    pub encounters: i32,
+    /// Total victories.
+    pub victories: i32,
+    /// Highest Threat Level cleared against this adversary.
+    pub highest_threat_level_cleared: i32,
+    /// Unlocked dossier flags.
+    pub dossier_flags: Vec<String>,
+}
+
+/// Story progression summary.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberStoryProgressDto {
+    /// Active chapter identifier.
+    pub active_chapter: String,
+    /// Acknowledged story node identifiers.
+    pub completed_nodes: Vec<String>,
+}
+
+/// Authoritative result for one Stage 1 campaign mission.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberCampaignResultDto {
+    /// Campaign mission identifier.
+    pub mission_id: String,
+    /// Whether the mission was ever completed.
+    pub completed: bool,
+    /// Best stars earned.
+    pub best_stars: i32,
+    /// Best remaining health.
+    pub best_health: i32,
+    /// Total recorded attempts.
+    pub attempts: i32,
+    /// Whether the one-time first-clear reward was settled.
+    pub first_clear_reward_settled: bool,
+}
+
+/// One complete, server-authoritative Cyber Defense profile snapshot.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberDefenseProfileResponse {
+    /// Career XP, level, and rank.
+    pub career: CyberCareerDto,
+    /// Settled Bits balance.
+    pub bits_balance: i64,
+    /// Aggregate Tower level.
+    pub tower_level: i32,
+    /// Tower/HQ room upgrade levels.
+    pub tower_upgrades: Vec<CyberTowerUpgradeDto>,
+    /// Persistent hero progression.
+    pub heroes: Vec<CyberHeroProgressDto>,
+    /// Adversary progress and ranks.
+    pub adversaries: Vec<CyberAdversaryProgressDto>,
+    /// Story progress.
+    pub story: CyberStoryProgressDto,
+    /// Campaign mission results.
+    pub campaign: Vec<CyberCampaignResultDto>,
+    /// Highest Threat Level ever cleared.
+    pub highest_threat_level_cleared: i32,
+    /// Server-recommended Threat Level.
+    pub recommended_threat_level: i32,
+    /// Highest Threat Level the player may currently start.
+    pub unlocked_threat_level: i32,
+    /// Total completed repeatable Operations.
+    pub total_operations_completed: i32,
+    /// Active Operation run identifier, if one exists.
+    pub active_operation_run_id: Option<Uuid>,
+    /// Whether legacy local progress was imported once.
+    pub legacy_progress_imported: bool,
+}
+
+/// Client result evidence for a Stage 1 campaign mission.
+///
+/// Rewards are never accepted from the client; only the raw result is.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberCampaignCompleteRequest {
+    /// Client-generated idempotency key for this result.
+    pub result_id: Uuid,
+    /// Stars earned, `0..=3`. `0` means the attempt failed.
+    pub stars: i32,
+    /// Remaining system health.
+    pub health: i32,
+    /// Attempt duration in milliseconds.
+    pub duration_ms: i64,
+    /// Hero selected for the run, when any. Receives hero XP.
+    pub hero_id: Option<String>,
+}
+
+/// A settled Cyber Defense reward.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberRewardDto {
+    /// Bits awarded.
+    pub bits: i64,
+    /// Career XP awarded.
+    pub career_xp: i64,
+    /// Hero XP awarded.
+    pub hero_xp: i64,
+}
+
+/// Compact career summary returned after a reward settles.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberCareerSummaryDto {
+    /// Total career XP after settlement.
+    pub xp: i64,
+    /// Career level after settlement.
+    pub level: i32,
+    /// Rank label for the level.
+    pub rank: String,
+    /// Whether this settlement raised the career level.
+    pub level_up: bool,
+}
+
+/// Response after settling a Stage 1 campaign mission.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberCampaignCompleteResponse {
+    /// Updated campaign result.
+    pub campaign: CyberCampaignResultDto,
+    /// Reward actually settled by this request (zero on a duplicate).
+    pub reward: CyberRewardDto,
+    /// Settled Bits balance after the reward.
+    pub bits_balance: i64,
+    /// Career summary after the reward.
+    pub career: CyberCareerSummaryDto,
+    /// `false` when this result was already recorded and no new reward settled.
+    pub newly_settled: bool,
+    /// Story nodes triggered by this result.
+    pub story_nodes_completed: Vec<String>,
+}
+
+/// Request to purchase the next level of one Tower/HQ room.
+///
+/// The cost is never sent: the server derives it from canonical policy.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberTowerUpgradePurchaseRequest {
+    /// Client-generated idempotency key for this purchase.
+    pub event_id: Uuid,
+}
+
+/// Result of a Tower/HQ room purchase.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberTowerUpgradePurchaseResponse {
+    /// Room that was upgraded.
+    pub upgrade_id: String,
+    /// Room level after the purchase.
+    pub level: i32,
+    /// Aggregate Tower level after the purchase.
+    pub tower_level: i32,
+    /// Settled Bits balance after the purchase.
+    pub bits_balance: i64,
+    /// Bits charged for this purchase.
+    pub spent: i64,
+    /// `false` when this `event_id` was already settled (a safe retry).
+    pub newly_settled: bool,
+}
+
+/// Request to replace a hero's selected talents.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberHeroTalentRequest {
+    /// Selected choice id keyed by milestone level, for example `{"5": "rapid_response"}`.
+    pub talents: BTreeMap<String, String>,
+}
+
+/// Request to start a repeatable Operation.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberOperationStartRequest {
+    /// Requested Threat Level. Must be unlocked for this learner.
+    pub requested_threat_level: i32,
+    /// Selected hero, when any. Defaults to the Security Engineer.
+    pub hero_id: Option<String>,
+    /// Explicit template choice, when browsing Operations directly.
+    pub template_id: Option<String>,
+}
+
+/// One recorded Operation result.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberOperationResultDto {
+    /// Whether the Operation was completed.
+    pub completed: bool,
+    /// Stars earned.
+    pub stars: i32,
+    /// Remaining system health.
+    pub health: i32,
+    /// Duration in milliseconds.
+    pub duration_ms: i64,
+}
+
+/// A server-issued Operation run and its persisted snapshot.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberOperationRunDto {
+    /// Run identifier.
+    pub run_id: Uuid,
+    /// `active`, `completed`, `failed`, or `abandoned`.
+    pub status: String,
+    /// Deterministic generation seed.
+    pub seed: i64,
+    /// Template identifier.
+    pub template_id: String,
+    /// Adversary identifier.
+    pub adversary_id: String,
+    /// Adversary display name.
+    pub adversary_name: String,
+    /// Selected hero.
+    pub hero_id: Option<String>,
+    /// Threat Level.
+    pub threat_level: i32,
+    /// Full generated Operation snapshot.
+    pub operation: GeneratedOperation,
+    /// Start time.
+    pub started_at: DateTime<Utc>,
+    /// Recorded result, once settled.
+    pub result: Option<CyberOperationResultDto>,
+    /// Bits awarded on settlement.
+    pub bits_awarded: i64,
+    /// Career XP awarded on settlement.
+    pub career_xp_awarded: i64,
+    /// Hero XP awarded on settlement.
+    pub hero_xp_awarded: i64,
+}
+
+/// Client result evidence for one Operation run.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberOperationCompleteRequest {
+    /// Whether the Operation was completed.
+    pub completed: bool,
+    /// Stars earned, `0..=3`.
+    pub stars: i32,
+    /// Remaining system health.
+    pub health: i32,
+    /// Attempt duration in milliseconds.
+    pub duration_ms: i64,
+}
+
+/// Result of settling one Operation run.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberOperationCompleteResponse {
+    /// Updated run.
+    pub run: CyberOperationRunDto,
+    /// Reward settled by this request (zero on a duplicate).
+    pub reward: CyberRewardDto,
+    /// Settled Bits balance.
+    pub bits_balance: i64,
+    /// Career summary after the reward.
+    pub career: CyberCareerSummaryDto,
+    /// Updated hero progress, when the run had a hero.
+    pub hero: Option<CyberHeroProgressDto>,
+    /// Updated adversary progress.
+    pub adversary: CyberAdversaryProgressDto,
+    /// `false` when this run was already settled.
+    pub newly_settled: bool,
+    /// Recommended Threat Level after this result.
+    pub recommended_threat_level: i32,
+    /// Highest Threat Level currently unlocked.
+    pub unlocked_threat_level: i32,
+    /// Dossier flags unlocked by this result.
+    pub dossier_unlocks: Vec<String>,
+    /// Story nodes triggered by this result.
+    pub story_nodes_completed: Vec<String>,
+}
+
+/// One imported legacy campaign mission result.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberLegacyMissionDto {
+    /// Whether the mission was completed locally.
+    pub completed: bool,
+    /// Best stars earned locally.
+    pub stars: i32,
+    /// Best remaining health recorded locally.
+    pub best_health: i32,
+    /// Attempts recorded locally.
+    pub attempts: i32,
+}
+
+/// Request to import legacy Stage 1 local progress once.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberLegacyImportRequest {
+    /// Known campaign mission results keyed by mission id.
+    pub missions: BTreeMap<String, CyberLegacyMissionDto>,
+}
+
+/// Result of a legacy progress import.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberLegacyImportResponse {
+    /// `false` when progress was already imported (or the import was a no-op).
+    pub imported: bool,
+    /// Number of known missions imported.
+    pub missions_imported: i32,
+    /// One-time returning-defender career XP granted by the server.
+    pub career_xp_granted: i64,
+    /// Settled Bits balance (never increased by an import).
+    pub bits_balance: i64,
+    /// Career summary after the import.
+    pub career: CyberCareerSummaryDto,
+}
+
+/// One balance-telemetry event from the client.
+///
+/// Only game identifiers and results; no raw personal data.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberTelemetryEventDto {
+    /// Event name, from the known allowlist.
+    pub name: String,
+    /// Operation run id, when relevant.
+    pub run_id: Option<Uuid>,
+    /// Operation template id, when relevant.
+    pub template_id: Option<String>,
+    /// Adversary id, when relevant.
+    pub adversary_id: Option<String>,
+    /// Threat Level, when relevant.
+    pub threat_level: Option<i32>,
+    /// Hero id, when relevant.
+    pub hero_id: Option<String>,
+    /// Defense id, when relevant.
+    pub defense_id: Option<String>,
+    /// Wave index, when relevant.
+    pub wave: Option<i32>,
+    /// Result label, when relevant.
+    pub result: Option<String>,
+    /// Stars, when relevant.
+    pub stars: Option<i32>,
+    /// Duration bucket label, when relevant.
+    pub duration_bucket: Option<String>,
+}
+
+/// A batch of telemetry events.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberTelemetryRequest {
+    /// Events to append. Bounded to a small batch.
+    pub events: Vec<CyberTelemetryEventDto>,
+}
+
+/// Acknowledgement of a telemetry batch.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberTelemetryResponse {
+    /// Number of events accepted.
+    pub accepted: i32,
 }

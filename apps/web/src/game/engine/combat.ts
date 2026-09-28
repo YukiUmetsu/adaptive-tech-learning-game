@@ -3,6 +3,7 @@ import {
   defenseStatsAtLevel,
   effectivenessFor,
   placeCost,
+  upgradeSpendToLevel,
   type DefenseDefinition,
   type PlacedDefense,
 } from "../models/defense";
@@ -24,7 +25,13 @@ export interface PlacementCheck {
   reason?: string;
 }
 
-/** Sum of deployment costs for all currently placed defenses. */
+/**
+ * Sum of deployment and mission-credit upgrade costs for all placed defenses.
+ *
+ * Upgrade spend is derived from each placement's level via the canonical
+ * `upgradeCost` sequence (see `upgradeSpendToLevel`), so it stays correct
+ * without storing a separate per-placement ledger.
+ */
 export function computeSpentBudget(
   placed: PlacedDefense[],
   catalog: GameCatalog,
@@ -36,6 +43,7 @@ export function computeSpentBudget(
       continue;
     }
     total += placeCost(defense);
+    total += upgradeSpendToLevel(defense, item.level);
   }
   return total;
 }

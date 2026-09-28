@@ -60,3 +60,87 @@ export const HERO_ROLES: Record<HeroKind, string> = {
   effectiveness_boost: "Hardens active controls",
   damage_reduction: "Absorbs incoming damage",
 };
+
+/**
+ * Multiplicative talent modifiers applied to a hero's base runtime stats.
+ *
+ * Values are conservative (Stage2.md step 8.3): a talent specializes a hero, it
+ * never doubles its power.
+ */
+export interface HeroRuntimeModifiers {
+  cooldownMultiplier: number;
+  durationMultiplier: number;
+  magnitudeMultiplier: number;
+  attackDamageMultiplier: number;
+  attackIntervalMultiplier: number;
+}
+
+/** Neutral modifiers, used when no talent is selected. */
+export const NEUTRAL_HERO_MODIFIERS: HeroRuntimeModifiers = {
+  cooldownMultiplier: 1,
+  durationMultiplier: 1,
+  magnitudeMultiplier: 1,
+  attackDamageMultiplier: 1,
+  attackIntervalMultiplier: 1,
+};
+
+/** One mutually exclusive talent choice at a milestone. */
+export interface HeroTalentChoice {
+  id: string;
+  name: string;
+  description: string;
+  modifiers: Partial<HeroRuntimeModifiers>;
+}
+
+/** A hero talent milestone and its two choices. */
+export interface HeroMilestoneDefinition {
+  level: number;
+  choices: [HeroTalentChoice, HeroTalentChoice];
+}
+
+/** Persistent progression definition for one hero. */
+export interface HeroProgressionDefinition {
+  heroId: string;
+  maxLevel: number;
+  milestones: HeroMilestoneDefinition[];
+}
+
+/** Selected talent choices keyed by milestone level, for example `{ "5": "rapid_response" }`. */
+export type HeroTalentSelection = Record<string, string>;
+
+/**
+ * Resolves a hero's frozen runtime stats from its base definition and the
+ * selected talents. Called once at match start; talents never change mid-wave.
+ */
+export function resolveHeroRuntime(
+  base: HeroDefinition,
+  selection: HeroTalentSelection,
+  milestones: HeroMilestoneDefinition[],
+): HeroDefinition {
+  const modifiers: HeroRuntimeModifiers = { ...NEUTRAL_HERO_MODIFIERS };
+  for (const milestone of milestones) {
+    const choiceId = selection[String(milestone.level)];
+    const choice = milestone.choices.find((entry) => entry.id === choiceId);
+    if (!choice) {
+      continue;
+    }
+    modifiers.cooldownMultiplier *= choice.modifiers.cooldownMultiplier ?? 1;
+    modifiers.durationMultiplier *= choice.modifiers.durationMultiplier ?? 1;
+    modifiers.magnitudeMultiplier *= choice.modifiers.magnitudeMultiplier ?? 1;
+    modifiers.attackDamageMultiplier *=
+      choice.modifiers.attackDamageMultiplier ?? 1;
+    modifiers.attackIntervalMultiplier *=
+      choice.modifiers.attackIntervalMultiplier ?? 1;
+  }
+
+  return {
+    ...base,
+    cooldownMs: Math.round(base.cooldownMs * modifiers.cooldownMultiplier),
+    durationMs: Math.round(base.durationMs * modifiers.durationMultiplier),
+    magnitude: base.magnitude * modifiers.magnitudeMultiplier,
+    attackDamage: base.attackDamage * modifiers.attackDamageMultiplier,
+    attackIntervalMs: Math.round(
+      base.attackIntervalMs * modifiers.attackIntervalMultiplier,
+    ),
+  };
+}

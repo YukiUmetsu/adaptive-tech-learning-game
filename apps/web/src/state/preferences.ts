@@ -51,10 +51,14 @@ export interface FocusPreferences {
 }
 
 export interface AudioPreferences {
-  /** Master sound switch; mirrors the legacy mute preference. */
-  enabled: boolean;
-  answerFeedbackSounds: boolean;
-  missionCompletionSounds: boolean;
+  /** Master volume, 0 (mute) to 100 (loudest). Scales every game sound. */
+  masterVolume: number;
+  /** Answer-feedback chime volume, 0-100. */
+  answerFeedbackVolume: number;
+  /** Mission-completion sound volume, 0-100. */
+  missionCompletionVolume: number;
+  /** Background battle music volume, 0-100. */
+  battleMusicVolume: number;
 }
 
 export interface AccessibilityPreferences {
@@ -109,9 +113,10 @@ export function defaultPreferences(): UserPreferences {
       idleTimeoutMinutes: 5,
     },
     audio: {
-      enabled: true,
-      answerFeedbackSounds: true,
-      missionCompletionSounds: true,
+      masterVolume: 50,
+      answerFeedbackVolume: 50,
+      missionCompletionVolume: 50,
+      battleMusicVolume: 50,
     },
     accessibility: {
       reducedMotion: false,
@@ -149,6 +154,14 @@ function asOption(
   fallback: number,
 ): number {
   return typeof value === "number" && allowed.includes(value) ? value : fallback;
+}
+
+/** Clamps a stored volume to an integer 0-100, falling back when absent. */
+function asVolume(value: unknown, fallback: number): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.max(0, Math.min(100, Math.round(value)));
+  }
+  return fallback;
 }
 
 /**
@@ -216,14 +229,25 @@ export function parsePreferences(raw: unknown): UserPreferences {
       ),
     },
     audio: {
-      enabled: asBoolean(audio.enabled, base.audio.enabled),
-      answerFeedbackSounds: asBoolean(
-        audio.answerFeedbackSounds,
-        base.audio.answerFeedbackSounds,
+      // Volumes are 0-100. Older stored preferences used booleans; map a
+      // legacy `false` to muted and `true` to the default level.
+      masterVolume: asVolume(
+        audio.masterVolume,
+        audio.enabled === false ? 0 : base.audio.masterVolume,
       ),
-      missionCompletionSounds: asBoolean(
-        audio.missionCompletionSounds,
-        base.audio.missionCompletionSounds,
+      answerFeedbackVolume: asVolume(
+        audio.answerFeedbackVolume,
+        audio.answerFeedbackSounds === false ? 0 : base.audio.answerFeedbackVolume,
+      ),
+      missionCompletionVolume: asVolume(
+        audio.missionCompletionVolume,
+        audio.missionCompletionSounds === false
+          ? 0
+          : base.audio.missionCompletionVolume,
+      ),
+      battleMusicVolume: asVolume(
+        audio.battleMusicVolume,
+        audio.battleMusic === false ? 0 : base.audio.battleMusicVolume,
       ),
     },
     accessibility: {
@@ -276,7 +300,7 @@ export function readStoredPreferences(): UserPreferences {
     // First run after the upgrade: carry over the legacy mute choice.
     if (window.localStorage.getItem(LEGACY_MUTE_KEY) === "true") {
       const migrated = defaultPreferences();
-      migrated.audio.enabled = false;
+      migrated.audio.masterVolume = 0;
       return migrated;
     }
     return defaultPreferences();

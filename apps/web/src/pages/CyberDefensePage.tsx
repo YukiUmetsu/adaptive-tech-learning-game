@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { useAuth } from "../auth/context";
 import CoreArt from "../game/components/art/CoreArt";
+import CyberDashboard from "../game/components/dashboard/CyberDashboard";
 import EnemyArt from "../game/components/art/EnemyArt";
 import HeroArt from "../game/components/art/HeroArt";
 import TowerArt from "../game/components/art/TowerArt";
@@ -132,6 +133,23 @@ export default function CyberDefensePage() {
   const totalMissions = missions.length;
   const requiresSignIn = status === "anonymous";
 
+  // Signed-in players get the persistent Stage 2 dashboard; signed-out visitors
+  // see the public explanation of the game and are sent to sign in to play.
+  if (status === "loading") {
+    return (
+      <section aria-busy="true">
+        <p className="home-eyebrow">Cyber Defense</p>
+        <h1>Protect systems from real cyber attacks.</h1>
+        <p className="muted" role="status">
+          Checking your session…
+        </p>
+      </section>
+    );
+  }
+  if (status === "authenticated") {
+    return <CyberDashboard />;
+  }
+
   const cleared = missions.filter(
     (mission) => progress.missions[mission.id]?.completed === true,
   ).length;
@@ -231,6 +249,39 @@ export default function CyberDefensePage() {
           <span className="cyber-stat-label">Threat types</span>
         </li>
       </ul>
+
+      <section className="cyber-teaser" aria-labelledby="cyber-teaser-title">
+        <h2 id="cyber-teaser-title">Your defense HQ</h2>
+        <p className="muted">
+          Sign in to make progress permanent: earn Bits, upgrade your Tower,
+          level your operators, track recurring adversaries, and play
+          repeatable Operations after the campaign.
+        </p>
+        <ul className="cyber-teaser-list">
+          <li>
+            <strong>Tower</strong> — spend Bits on permanent HQ rooms.
+          </li>
+          <li>
+            <strong>Heroes</strong> — level the Security Engineer and SRE and
+            choose talents.
+          </li>
+          <li>
+            <strong>Operations</strong> — endless server-issued missions with
+            Threat Levels.
+          </li>
+        </ul>
+        <div className="cyber-home-actions">
+          <Link
+            className="cyber-cta"
+            to={`/login?returnTo=${encodeURIComponent("/game")}`}
+          >
+            <PlayIcon size={16} /> Sign in to save progress
+          </Link>
+          <span className="cyber-home-cta-note muted">
+            An account is required to save progress.
+          </span>
+        </div>
+      </section>
 
       <div className="cyber-mission-head">
         <h2>Missions</h2>

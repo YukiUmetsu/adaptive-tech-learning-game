@@ -12,6 +12,9 @@ import { MOBILE_NAV_QUERY, useMediaQuery } from "../hooks/useMediaQuery";
 import { useSignOut } from "../hooks/useSignOut";
 import { flushAuxiliary } from "../state/syncAuxiliary";
 import { flushBitSpends } from "../state/bitSpends";
+import { flushCyberTelemetry } from "../game/state/cyberTelemetry";
+import { resetCyberProfile } from "../game/state/cyberProfile";
+import { resetStoryAcknowledgements } from "../game/persistence/storyAck";
 import { refreshWallet, resetWallet } from "../state/wallet";
 import LearningTracksNav from "./LearningTracksNav";
 import MobileTabBar from "./MobileTabBar";
@@ -62,15 +65,18 @@ export default function AppShell() {
       })();
     } else if (status === "anonymous") {
       resetWallet();
+      resetCyberProfile();
+      resetStoryAcknowledgements();
     }
   }, [status]);
 
-  // Returning online is a natural boundary to flush queued auxiliary work and
-  // any pending Bits spends. No polling timer is introduced.
+  // Returning online is a natural boundary to flush queued auxiliary work,
+  // pending Bits spends, and buffered telemetry. No polling timer is introduced.
   useEffect(() => {
     const handleOnline = () => {
       void flushAuxiliary();
       void flushBitSpends();
+      void flushCyberTelemetry();
     };
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);

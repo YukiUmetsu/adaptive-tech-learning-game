@@ -13,7 +13,6 @@ import {
   type AnimationIntensity,
   type StudyBalance,
 } from "../state/preferences";
-import { setSoundMuted, useSoundMuted } from "../state/sound";
 
 interface ChoiceOption<T> {
   value: T;
@@ -94,6 +93,47 @@ function SettingsToggle({
   );
 }
 
+function SettingsSlider({
+  label,
+  note,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  note?: string;
+  value: number;
+  disabled?: boolean;
+  onChange: (next: number) => void;
+}) {
+  return (
+    <label
+      className={`settings-slider${disabled ? " settings-slider--disabled" : ""}`}
+    >
+      <span className="settings-toggle-text">
+        <span className="settings-toggle-title">{label}</span>
+        {note ? <span className="muted settings-toggle-note">{note}</span> : null}
+      </span>
+      <span className="settings-slider-control">
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={5}
+          value={value}
+          disabled={disabled}
+          aria-label={label}
+          aria-valuetext={value === 0 ? "Muted" : `${value}%`}
+          onChange={(event) => onChange(Number(event.target.value))}
+        />
+        <span className="settings-slider-value" aria-hidden="true">
+          {value === 0 ? "Muted" : `${value}%`}
+        </span>
+      </span>
+    </label>
+  );
+}
+
 function SettingsChoice<T extends string | number>({
   legend,
   name,
@@ -150,7 +190,6 @@ export default function SettingsPage() {
   const preferences = useUserPreferences();
   const { user } = useAuth();
   const signOut = useSignOut();
-  const muted = useSoundMuted();
   const [confirmingReset, setConfirmingReset] = useState(false);
 
   const { study, focus, audio, accessibility, gamification } = preferences;
@@ -294,32 +333,44 @@ export default function SettingsPage() {
           <SettingsSection
             id="audio"
             title="Audio & Feedback"
-            description="Short synthesized sounds play after answers and rewards."
+            description="Set how loud each game sound is. Drag to 0 to mute it."
           >
-            <SettingsToggle
-              label="Sound effects"
-              note="Turn all game sounds on or off."
-              checked={!muted}
-              onChange={(enabled) => setSoundMuted(!enabled)}
-            />
-
-            <SettingsToggle
-              label="Answer feedback sounds"
-              note="Chimes for correct and incorrect answers."
-              checked={audio.answerFeedbackSounds}
-              disabled={!audio.enabled}
-              onChange={(answerFeedbackSounds) =>
-                updatePreferences({ audio: { answerFeedbackSounds } })
+            <SettingsSlider
+              label="Master volume"
+              note="Scales every game sound."
+              value={audio.masterVolume}
+              onChange={(masterVolume) =>
+                updatePreferences({ audio: { masterVolume } })
               }
             />
 
-            <SettingsToggle
-              label="Daily Mission completion sounds"
+            <SettingsSlider
+              label="Answer feedback"
+              note="Chimes for correct and incorrect answers."
+              value={audio.answerFeedbackVolume}
+              disabled={audio.masterVolume === 0}
+              onChange={(answerFeedbackVolume) =>
+                updatePreferences({ audio: { answerFeedbackVolume } })
+              }
+            />
+
+            <SettingsSlider
+              label="Mission completion"
               note="A short flourish when you finish a mission."
-              checked={audio.missionCompletionSounds}
-              disabled={!audio.enabled}
-              onChange={(missionCompletionSounds) =>
-                updatePreferences({ audio: { missionCompletionSounds } })
+              value={audio.missionCompletionVolume}
+              disabled={audio.masterVolume === 0}
+              onChange={(missionCompletionVolume) =>
+                updatePreferences({ audio: { missionCompletionVolume } })
+              }
+            />
+
+            <SettingsSlider
+              label="Battle music"
+              note="Background music while a Cyber Defense fight is running."
+              value={audio.battleMusicVolume}
+              disabled={audio.masterVolume === 0}
+              onChange={(battleMusicVolume) =>
+                updatePreferences({ audio: { battleMusicVolume } })
               }
             />
           </SettingsSection>

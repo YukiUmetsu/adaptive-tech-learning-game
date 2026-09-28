@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { GAME_CATALOG } from "../data";
 import { MISSIONS_BY_ID } from "../data/missions";
+import { upgradeCost } from "../models/defense";
 import type { MissionDefinition } from "../models/mission";
 import {
   buildSpawnQueue,
@@ -12,6 +13,7 @@ import {
   removeDefense,
   startFirstWave,
   stepSimulation,
+  totalBudgetSpent,
   upgradeDefense,
   type GameState,
 } from "./simulation";
@@ -183,6 +185,117 @@ describe("budget spending", () => {
 
     const capped = upgradeDefense(upgraded.state, placementId, catalog);
     expect(capped.ok).toBe(false);
+  });
+
+  it("deducts mission credits when upgrading level 1 to level 2", () => {
+    const mission = MISSIONS_BY_ID["ddos-basics"];
+    const state = placeOn(
+      createInitialState(mission, catalog),
+      mission,
+      "waf",
+      "edge",
+    );
+    const placementId = state.placed[0].id;
+    const waf = catalog.defensesById["waf"];
+    const cost = upgradeCost(waf, 1);
+    const before = state.budget;
+    const result = upgradeDefense(state, placementId, catalog);
+    expect(result.ok).toBe(true);
+    expect(result.state.placed[0].level).toBe(2);
+    expect(result.state.budget).toBe(before - cost);
+    expect(result.state.budget).toBe(mission.startingBudget - waf.cost - cost);
+  });
+
+  it("rejects an upgrade without enough mission credits", () => {
+    const mission = MISSIONS_BY_ID["ddos-basics"];
+    const state = placeOn(
+      createInitialState(mission, catalog),
+      mission,
+      "waf",
+      "edge",
+    );
+    const placementId = state.placed[0].id;
+    const broke: GameState = { ...state, budget: 0 };
+    const result = upgradeDefense(broke, placementId, catalog);
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe("Not enough mission credits.");
+    expect(result.state.placed[0].level).toBe(1);
+    expect(result.state.budget).toBe(0);
+  });
+
+  it("upgrades two placements of the same control independently", () => {
+    const mission = MISSIONS_BY_ID["ddos-basics"];
+    let state = createInitialState(mission, catalog);
+    state = placeOn(state, mission, "waf", "edge", "edge-p0");
+    state = placeOn(state, mission, "waf", "api", "api-p0");
+    const first = state.placed[0];
+    const second = state.placed[1];
+
+    const result = upgradeDefense(state, first.id, catalog);
+    expect(result.ok).toBe(true);
+    expect(result.state.placed.find((item) => item.id === first.id)?.level).toBe(
+      2,
+    );
+    expect(
+      result.state.placed.find((item) => item.id === second.id)?.level,
+    ).toBe(1);
+  });
+
+  it("counts upgrade spend toward the total budget spent", () => {
+    const mission = MISSIONS_BY_ID["ddos-basics"];
+    const state = placeOn(
+      createInitialState(mission, catalog),
+      mission,
+      "waf",
+      "edge",
+    );
+    const placementId = state.placed[0].id;
+    const before = totalBudgetSpent(state, catalog);
+    const upgraded = upgradeDefense(state, placementId, catalog);
+    expect(totalBudgetSpent(upgraded.state, catalog)).toBe(
+      before + upgradeCost(catalog.defensesById["waf"], 1),
+    );
+  });
+
+  it("refunds all spend when selling during preparation", () => {
+    const mission = MISSIONS_BY_ID["ddos-basics"];
+    let state = placeOn(
+      createInitialState(mission, catalog),
+      mission,
+      "waf",
+      "edge",
+    );
+    const placementId = state.placed[0].id;
+    state = upgradeDefense(state, placementId, catalog).state;
+    const removed = removeDefense(state, placementId, catalog);
+    expect(removed.ok).toBe(true);
+    expect(removed.state.budget).toBe(mission.startingBudget);
+  });
+
+  it("cannot generate mission credits by cycling place/upgrade/sell", () => {
+    const mission = MISSIONS_BY_ID["ddos-basics"];
+    // Combat has begun, so the sell refund is below 100%.
+    let state = startFirstWave(createInitialState(mission, catalog), mission);
+    for (let cycle = 0; cycle < 5; cycle += 1) {
+      const placement = placeDefense(
+        state,
+        {
+          defenseId: "waf",
+          nodeId: "edge",
+          nodeType: "edge",
+          padId: `edge-cycle-${cycle}`,
+        },
+        catalog,
+      );
+      expect(placement.ok).toBe(true);
+      state = placement.state;
+      const placementId = state.placed[state.placed.length - 1].id;
+      state = upgradeDefense(state, placementId, catalog).state;
+      const removed = removeDefense(state, placementId, catalog);
+      expect(removed.ok).toBe(true);
+      state = removed.state;
+    }
+    expect(state.budget).toBeLessThanOrEqual(mission.startingBudget);
   });
 
   it("refunds budget when a defense is removed", () => {

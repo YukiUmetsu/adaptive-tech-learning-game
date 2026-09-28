@@ -16,9 +16,17 @@ use adaptive_learn_content::{
 use adaptive_learn_db as db;
 use adaptive_learn_domain::concept_state::SUCCESS_THRESHOLD;
 use adaptive_learn_domain::{
-    ConceptWeight, DAILY_MISSION_BONUS_BITS, LearningEvent, MODEL_VERSION, MissionInstance,
-    MissionStatus, PredictionSample, QuizMode, SECTION_QUIZ_BONUS_BITS, cyber_defense_upgrade_bits,
-    evaluate, predict_question, retrievability, reward_bits, summarize_streak,
+    ConceptWeight, DAILY_MISSION_BONUS_BITS, DEFAULT_HEALTH_RATIO_THRESHOLD, GeneratedOperation,
+    LearningEvent, MODEL_VERSION, MissionInstance, MissionStatus, OPERATION_TEMPLATES,
+    OperationGenerationInput, OperationOutcome, PredictionSample, QuizMode,
+    SECTION_QUIZ_BONUS_BITS, StoryProgressInput, THREAT_LEVEL_MAX, THREAT_LEVEL_MIN,
+    TOWER_UPGRADES, ThreatRecommendationInput, active_chapter, adversary_progress_award,
+    adversary_rank_from_progress, career_level_from_xp, career_rank, cyber_defense_upgrade_bits,
+    evaluate, evaluate_story_nodes, fixed_mission_reward, generate_operation, hero_level_from_xp,
+    is_campaign_mission, is_known_hero, is_legal_talent, operation_reward, operation_template,
+    predict_question, recommend_threat_level, retrievability, reward_bits, summarize_streak,
+    tower_level, tower_upgrade, tower_upgrade_cost, unlocked_threat_level, xp_for_career_level,
+    xp_for_hero_level,
 };
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use uuid::Uuid;
@@ -28,7 +36,14 @@ use crate::dto::{
     AnswerPayload, AnswerRequest, AuxiliaryEventRequest, CalibrationBucketDto, CatalogResponse,
     CertificationDto, CertificationVersionDto, ChallengeStageKind, ChallengeStageView,
     ChallengeStartRequest, ChallengeSummaryDto, ChallengeView, CompleteMissionResponse, ConceptDto,
-    CyberDefenseUpgradeRequest, CyberDefenseUpgradeResponse, DailyItemCompleteRequest,
+    CyberAdversaryProgressDto, CyberCampaignCompleteRequest, CyberCampaignCompleteResponse,
+    CyberCampaignResultDto, CyberCareerDto, CyberCareerSummaryDto, CyberDefenseProfileResponse,
+    CyberDefenseUpgradeRequest, CyberDefenseUpgradeResponse, CyberHeroProgressDto,
+    CyberHeroTalentRequest, CyberLegacyImportRequest, CyberLegacyImportResponse,
+    CyberOperationCompleteRequest, CyberOperationCompleteResponse, CyberOperationResultDto,
+    CyberOperationRunDto, CyberOperationStartRequest, CyberRewardDto, CyberStoryProgressDto,
+    CyberTelemetryRequest, CyberTelemetryResponse, CyberTowerUpgradeDto,
+    CyberTowerUpgradePurchaseRequest, CyberTowerUpgradePurchaseResponse, DailyItemCompleteRequest,
     DailyItemCompleteResponse, DailyMissionItemDto, DailyMissionItemKind, DailyMissionItemStatus,
     DailyMissionPlanType, DailyMissionRequest, DailyMissionResponse, DailyMissionStatus,
     DiscoveryResponse, DiscoveryState, DiscoveryUpdateRequest, DomainDto, DomainProgressDto,
@@ -4057,6 +4072,1171 @@ fn matches_submitted_shape(item: &PracticeTestItem, submitted: &SubmittedAnswer)
             SubmittedAnswer::TypedFillBlank(_)
         )
     )
+}
+
+// ---------------------------------------------------------------------------
+// Cyber Defense Stage 2 progression
+// ---------------------------------------------------------------------------
+
+/// Minimum plausible Cyber Defense attempt duration, in milliseconds.
+const CYBER_MIN_DURATION_MS: i64 = 5_000;
+/// Maximum plausible Cyber Defense attempt duration, in milliseconds.
+const CYBER_MAX_DURATION_MS: i64 = 2 * 60 * 60 * 1000;
+/// Maximum plausible remaining system health accepted from a client.
+const CYBER_MAX_HEALTH: i32 = 100_000;
+/// One-time career XP granted to a returning defender with imported progress.
+const LEGACY_RETURNING_DEFENDER_XP: i64 = 50;
+
+/// Derives the career transport view from raw XP.
+fn career_dto(xp: i64) -> CyberCareerDto {
+    let level = career_level_from_xp(xp);
+    let current = xp_for_career_level(level).unwrap_or(0);
+    let next = xp_for_career_level(level + 1);
+    CyberCareerDto {
+        xp,
+        level,
+        rank: career_rank(level).to_owned(),
+        next_level_xp: next,
+        xp_into_level: (xp - current).max(0),
+        xp_for_next_level: next.map(|threshold| (threshold - current).max(0)),
+    }
+}
+
+/// Derives the hero transport view from raw XP.
+fn hero_dto(hero_id: &str, xp: i64, selected_talents: serde_json::Value) -> CyberHeroProgressDto {
+    let level = hero_level_from_xp(xp);
+    let current = xp_for_hero_level(level).unwrap_or(0);
+    let next = xp_for_hero_level(level + 1);
+    CyberHeroProgressDto {
+        hero_id: hero_id.to_owned(),
+        xp,
+        level,
+        max_level: adaptive_learn_domain::HERO_MAX_LEVEL,
+        next_level_xp: next,
+        xp_into_level: (xp - current).max(0),
+        xp_for_next_level: next.map(|threshold| (threshold - current).max(0)),
+        selected_talents,
+    }
+}
+
+/// Builds the complete, server-authoritative Cyber Defense profile snapshot.
+///
+/// Levels and ranks are always derived here from stored XP; the client never
+/// reconstructs them. The two Stage 1 heroes are reported even before any XP
+/// row exists, so the frontend never has to invent defaults.
+pub async fn cyber_defense_profile(
+    state: &AppState,
+    user: &AuthenticatedUser,
+) -> Result<CyberDefenseProfileResponse, ApiError> {
+    let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+
+    let profile = db::cyber_defense::get_or_create_profile(&mut conn, user.id).await?;
+    let bits_balance = db::wallets::balance(&state.pool, user.id).await?;
+    let tower_rows = db::cyber_defense::list_tower_upgrades(&mut conn, user.id).await?;
+    let hero_rows = db::cyber_defense::list_hero_progress(&mut conn, user.id).await?;
+    let adversary_rows = db::cyber_defense::list_adversary_progress(&mut conn, user.id).await?;
+    let story_rows = db::cyber_defense::list_story_progress(&mut conn, user.id).await?;
+    let campaign_rows = db::cyber_defense::list_campaign_results(&mut conn, user.id).await?;
+    let active = db::cyber_defense::find_active_operation_run(&mut conn, user.id).await?;
+
+    let tower_by_id: HashMap<&str, i32> = tower_rows
+        .iter()
+        .map(|row| (row.upgrade_id.as_str(), row.level))
+        .collect();
+    let levels: Vec<i32> = TOWER_UPGRADES
+        .iter()
+        .map(|definition| tower_by_id.get(definition.id).copied().unwrap_or(0))
+        .collect();
+    let tower_upgrades: Vec<CyberTowerUpgradeDto> = TOWER_UPGRADES
+        .iter()
+        .zip(levels.iter())
+        .map(|(definition, level)| CyberTowerUpgradeDto {
+            upgrade_id: definition.id.to_owned(),
+            level: *level,
+            max_level: definition.max_level,
+            next_cost: tower_upgrade_cost(definition.id, *level),
+        })
+        .collect();
+
+    let hero_by_id: HashMap<&str, &db::cyber_defense::HeroProgress> = hero_rows
+        .iter()
+        .map(|row| (row.hero_id.as_str(), row))
+        .collect();
+    let heroes: Vec<CyberHeroProgressDto> = adaptive_learn_domain::DEFAULT_HERO_IDS
+        .iter()
+        .map(|hero_id| match hero_by_id.get(hero_id) {
+            Some(row) => hero_dto(hero_id, row.xp, row.selected_talents.clone()),
+            None => hero_dto(hero_id, 0, serde_json::json!({})),
+        })
+        .collect();
+
+    let adversaries: Vec<CyberAdversaryProgressDto> = adversary_rows
+        .iter()
+        .map(|row| CyberAdversaryProgressDto {
+            adversary_id: row.adversary_id.clone(),
+            progress: row.progress,
+            rank: adaptive_learn_domain::adversary_rank_from_progress(row.progress),
+            encounters: row.encounters,
+            victories: row.victories,
+            highest_threat_level_cleared: row.highest_threat_level_cleared,
+            dossier_flags: row.dossier_flags.clone(),
+        })
+        .collect();
+
+    let campaign: Vec<CyberCampaignResultDto> = campaign_rows
+        .iter()
+        .map(|row| CyberCampaignResultDto {
+            mission_id: row.mission_id.clone(),
+            completed: row.completed,
+            best_stars: row.best_stars,
+            best_health: row.best_health,
+            attempts: row.attempts,
+            first_clear_reward_settled: row.first_clear_reward_settled,
+        })
+        .collect();
+
+    let story = CyberStoryProgressDto {
+        active_chapter: profile.active_story_chapter.clone(),
+        completed_nodes: story_rows
+            .iter()
+            .map(|row| row.story_node_id.clone())
+            .collect(),
+    };
+
+    Ok(CyberDefenseProfileResponse {
+        career: career_dto(profile.career_xp),
+        bits_balance,
+        tower_level: tower_level(&levels),
+        tower_upgrades,
+        heroes,
+        adversaries,
+        story,
+        campaign,
+        highest_threat_level_cleared: profile.highest_threat_level_cleared,
+        recommended_threat_level: profile.recommended_threat_level,
+        unlocked_threat_level: unlocked_threat_level(
+            profile.recommended_threat_level,
+            profile.highest_threat_level_cleared,
+        ),
+        total_operations_completed: profile.total_operations_completed,
+        active_operation_run_id: active.map(|run| run.id),
+        legacy_progress_imported: profile.legacy_progress_imported,
+    })
+}
+
+/// Settles one Stage 1 campaign mission result and its reward.
+///
+/// The server derives completion, first-clear status, and every reward value
+/// from canonical policy. `result_id` is the client idempotency key, so a
+/// retried completion settles nothing a second time. Bits and progression
+/// changes commit in one transaction.
+pub async fn cyber_defense_campaign_complete(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    mission_id: &str,
+    request: CyberCampaignCompleteRequest,
+) -> Result<CyberCampaignCompleteResponse, ApiError> {
+    if !is_campaign_mission(mission_id) {
+        return Err(ApiError::BadRequest("unknown campaign mission".to_owned()));
+    }
+    if !(0..=3).contains(&request.stars) {
+        return Err(ApiError::BadRequest(
+            "stars must be between 0 and 3".to_owned(),
+        ));
+    }
+    if !(0..=CYBER_MAX_HEALTH).contains(&request.health) {
+        return Err(ApiError::BadRequest("invalid health".to_owned()));
+    }
+    if !(CYBER_MIN_DURATION_MS..=CYBER_MAX_DURATION_MS).contains(&request.duration_ms) {
+        return Err(ApiError::BadRequest("implausible duration".to_owned()));
+    }
+
+    let hero_id = match request.hero_id.as_deref() {
+        Some(hero) if !hero.is_empty() => {
+            if !is_known_hero(hero) {
+                return Err(ApiError::BadRequest("unknown hero".to_owned()));
+            }
+            Some(hero.to_owned())
+        }
+        _ => None,
+    };
+
+    let completed = request.stars > 0;
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+
+    let profile = db::cyber_defense::get_or_create_profile(&mut tx, user.id).await?;
+    // Serialize settlement for one wallet so two racing results cannot both
+    // read the same pre-settlement state.
+    db::wallets::lock_wallet(&mut tx, user.id).await?;
+
+    let existing = db::cyber_defense::get_campaign_result(&mut tx, user.id, mission_id).await?;
+    let already_settled = existing
+        .as_ref()
+        .is_some_and(|result| result.first_clear_reward_settled);
+
+    let claimed = db::cyber_defense::claim_reward_event(
+        &mut tx,
+        request.result_id,
+        user.id,
+        "cyber_campaign",
+    )
+    .await?;
+
+    if !claimed {
+        // A duplicate of an already-settled result: settle nothing and report
+        // the stored state.
+        tx.rollback().await.map_err(db::DbError::from)?;
+        let campaign = existing.ok_or(ApiError::NotFound)?;
+        return Ok(CyberCampaignCompleteResponse {
+            campaign: CyberCampaignResultDto {
+                mission_id: campaign.mission_id,
+                completed: campaign.completed,
+                best_stars: campaign.best_stars,
+                best_health: campaign.best_health,
+                attempts: campaign.attempts,
+                first_clear_reward_settled: campaign.first_clear_reward_settled,
+            },
+            reward: CyberRewardDto {
+                bits: 0,
+                career_xp: 0,
+                hero_xp: 0,
+            },
+            bits_balance: db::wallets::balance(&state.pool, user.id).await?,
+            career: CyberCareerSummaryDto {
+                xp: profile.career_xp,
+                level: career_level_from_xp(profile.career_xp),
+                rank: career_rank(career_level_from_xp(profile.career_xp)).to_owned(),
+                level_up: false,
+            },
+            newly_settled: false,
+            story_nodes_completed: Vec::new(),
+        });
+    }
+
+    let first_clear = completed && !already_settled;
+    let mut reward = fixed_mission_reward(mission_id, request.stars, first_clear);
+    // Hero XP only lands when a known hero is named, so the selected hero is
+    // the one that levels.
+    let hero_xp = if hero_id.is_some() {
+        reward.hero_xp
+    } else {
+        reward.hero_xp = 0;
+        0
+    };
+
+    if reward.bits > 0 {
+        let transaction = db::wallets::BitTransaction {
+            user_id: user.id,
+            device_id: None,
+            event_id: request.result_id,
+            mission_instance_id: request.result_id,
+            question_id: mission_id.to_owned(),
+            amount: reward.bits,
+            reason: "cyber_campaign_reward".to_owned(),
+        };
+        db::wallets::settle(&mut tx, &transaction).await?;
+    }
+
+    let career_xp =
+        db::cyber_defense::increment_career_xp(&mut tx, user.id, reward.career_xp).await?;
+    if let Some(hero) = hero_id.as_deref() {
+        db::cyber_defense::increment_hero_xp(&mut tx, user.id, hero, hero_xp).await?;
+    }
+
+    let campaign = db::cyber_defense::upsert_campaign_result(
+        &mut tx,
+        user.id,
+        mission_id,
+        completed,
+        request.stars,
+        request.health,
+        first_clear,
+    )
+    .await?;
+
+    let story_nodes_completed = evaluate_and_record_story(&mut tx, user.id).await?;
+
+    tx.commit().await.map_err(db::DbError::from)?;
+
+    let bits_balance = db::wallets::balance(&state.pool, user.id).await?;
+    let level = career_level_from_xp(career_xp);
+    Ok(CyberCampaignCompleteResponse {
+        campaign: CyberCampaignResultDto {
+            mission_id: campaign.mission_id,
+            completed: campaign.completed,
+            best_stars: campaign.best_stars,
+            best_health: campaign.best_health,
+            attempts: campaign.attempts,
+            first_clear_reward_settled: campaign.first_clear_reward_settled,
+        },
+        reward: CyberRewardDto {
+            bits: reward.bits,
+            career_xp: reward.career_xp,
+            hero_xp,
+        },
+        bits_balance,
+        career: CyberCareerSummaryDto {
+            xp: career_xp,
+            level,
+            rank: career_rank(level).to_owned(),
+            level_up: level > career_level_from_xp(profile.career_xp),
+        },
+        newly_settled: true,
+        story_nodes_completed,
+    })
+}
+
+/// Purchases the next level of one Tower/HQ room.
+///
+/// The client sends only an idempotency `event_id`; the server derives the room
+/// level from the settled ledger, checks prerequisites, computes the canonical
+/// cost, and debits the wallet. Bits spend and the level increment commit in one
+/// transaction.
+pub async fn cyber_defense_tower_purchase(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    upgrade_id: &str,
+    request: CyberTowerUpgradePurchaseRequest,
+) -> Result<CyberTowerUpgradePurchaseResponse, ApiError> {
+    let definition = tower_upgrade(upgrade_id)
+        .ok_or_else(|| ApiError::BadRequest("unknown tower upgrade".to_owned()))?;
+    // Tower purchases are not tied to an Operation run; the ledger groups them
+    // under the nil run id.
+    let run_id = Uuid::nil();
+
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+    db::cyber_defense::get_or_create_profile(&mut tx, user.id).await?;
+    db::wallets::lock_wallet(&mut tx, user.id).await?;
+
+    // Derive the room level from the settled ledger, excluding this request's
+    // own key so a retry resolves to the level it originally upgraded from.
+    let purchased =
+        db::wallets::count_upgrades(&mut tx, user.id, run_id, upgrade_id, request.event_id).await?;
+    let from_level = i32::try_from(purchased)
+        .map_err(|_| ApiError::Conflict("tower upgrade level overflow".to_owned()))?;
+
+    if from_level >= definition.max_level {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return Err(ApiError::Conflict(
+            "tower upgrade is already at its maximum level".to_owned(),
+        ));
+    }
+
+    if let Some((required_id, required_level)) = definition.prerequisite {
+        let current =
+            db::wallets::count_upgrades(&mut tx, user.id, run_id, required_id, request.event_id)
+                .await?;
+        if current < i64::from(required_level) {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            return Err(ApiError::Conflict(format!(
+                "requires {required_id} level {required_level}"
+            )));
+        }
+    }
+
+    let cost = tower_upgrade_cost(upgrade_id, from_level).ok_or_else(|| {
+        ApiError::Conflict("tower upgrade is already at its maximum level".to_owned())
+    })?;
+
+    let spend = db::wallets::BitSpend {
+        user_id: user.id,
+        device_id: None,
+        event_id: request.event_id,
+        run_id,
+        item_id: upgrade_id.to_owned(),
+        amount: cost,
+        reason: "cyber_tower_upgrade".to_owned(),
+    };
+
+    match db::wallets::spend(&mut tx, &spend).await? {
+        db::wallets::SpendOutcome::Settled { balance } => {
+            db::cyber_defense::increment_tower_upgrade(&mut tx, user.id, upgrade_id).await?;
+            let levels = db::cyber_defense::list_tower_upgrades(&mut tx, user.id).await?;
+            let aggregate = tower_level(&levels.iter().map(|row| row.level).collect::<Vec<_>>());
+            tx.commit().await.map_err(db::DbError::from)?;
+            Ok(CyberTowerUpgradePurchaseResponse {
+                upgrade_id: upgrade_id.to_owned(),
+                level: from_level + 1,
+                tower_level: aggregate,
+                bits_balance: balance,
+                spent: cost,
+                newly_settled: true,
+            })
+        }
+        db::wallets::SpendOutcome::AlreadySettled => {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+            let levels = db::cyber_defense::list_tower_upgrades(&mut conn, user.id).await?;
+            let aggregate = tower_level(&levels.iter().map(|row| row.level).collect::<Vec<_>>());
+            let level = levels
+                .iter()
+                .find(|row| row.upgrade_id == upgrade_id)
+                .map(|row| row.level)
+                .unwrap_or(from_level + 1);
+            Ok(CyberTowerUpgradePurchaseResponse {
+                upgrade_id: upgrade_id.to_owned(),
+                level,
+                tower_level: aggregate,
+                bits_balance: db::wallets::balance(&state.pool, user.id).await?,
+                spent: cost,
+                newly_settled: false,
+            })
+        }
+        db::wallets::SpendOutcome::KeyReused => {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            Err(ApiError::Conflict(
+                "idempotency key was reused for a different purchase".to_owned(),
+            ))
+        }
+        db::wallets::SpendOutcome::InsufficientFunds => {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            Err(ApiError::InsufficientBits)
+        }
+    }
+}
+
+/// Replaces a hero's selected talents.
+///
+/// The selection is validated against canonical milestones: the hero must exist,
+/// each milestone must be unlocked by the hero's level, and each choice must be
+/// legal. Because the selection is keyed by milestone, mutually exclusive
+/// choices can never both be active. Respec is free in Stage 2.
+pub async fn cyber_defense_set_hero_talents(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    hero_id: &str,
+    request: CyberHeroTalentRequest,
+) -> Result<CyberHeroProgressDto, ApiError> {
+    if !is_known_hero(hero_id) {
+        return Err(ApiError::BadRequest("unknown hero".to_owned()));
+    }
+
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+    db::cyber_defense::get_or_create_profile(&mut tx, user.id).await?;
+    let heroes = db::cyber_defense::list_hero_progress(&mut tx, user.id).await?;
+    let xp = heroes
+        .iter()
+        .find(|row| row.hero_id == hero_id)
+        .map(|row| row.xp)
+        .unwrap_or(0);
+    let level = hero_level_from_xp(xp);
+
+    let mut normalized = serde_json::Map::new();
+    for (milestone, choice) in &request.talents {
+        let milestone_level: i32 = milestone
+            .parse()
+            .map_err(|_| ApiError::BadRequest("invalid talent milestone".to_owned()))?;
+        if milestone_level > level {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            return Err(ApiError::Conflict(format!(
+                "milestone {milestone_level} is not unlocked"
+            )));
+        }
+        if !is_legal_talent(hero_id, milestone_level, choice) {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            return Err(ApiError::BadRequest("invalid talent choice".to_owned()));
+        }
+        normalized.insert(milestone.clone(), serde_json::Value::String(choice.clone()));
+    }
+
+    let stored = db::cyber_defense::set_hero_talents(
+        &mut tx,
+        user.id,
+        hero_id,
+        &serde_json::Value::Object(normalized),
+    )
+    .await?;
+    tx.commit().await.map_err(db::DbError::from)?;
+
+    Ok(hero_dto(hero_id, stored.xp, stored.selected_talents))
+}
+
+/// Builds the compact career summary returned after a reward.
+fn career_summary(xp: i64, level_up: bool) -> CyberCareerSummaryDto {
+    let level = career_level_from_xp(xp);
+    CyberCareerSummaryDto {
+        xp,
+        level,
+        rank: career_rank(level).to_owned(),
+        level_up,
+    }
+}
+
+/// Builds the adversary transport view from a stored row.
+fn adversary_dto_from_row(row: &db::cyber_defense::AdversaryProgress) -> CyberAdversaryProgressDto {
+    CyberAdversaryProgressDto {
+        adversary_id: row.adversary_id.clone(),
+        progress: row.progress,
+        rank: adversary_rank_from_progress(row.progress),
+        encounters: row.encounters,
+        victories: row.victories,
+        highest_threat_level_cleared: row.highest_threat_level_cleared,
+        dossier_flags: row.dossier_flags.clone(),
+    }
+}
+
+/// Default adversary view for one never encountered.
+fn empty_adversary_dto(adversary_id: &str) -> CyberAdversaryProgressDto {
+    CyberAdversaryProgressDto {
+        adversary_id: adversary_id.to_owned(),
+        progress: 0,
+        rank: 1,
+        encounters: 0,
+        victories: 0,
+        highest_threat_level_cleared: 0,
+        dossier_flags: Vec::new(),
+    }
+}
+
+/// Builds the transport view of one stored Operation run.
+fn operation_run_dto(
+    run: &db::cyber_defense::OperationRun,
+) -> Result<CyberOperationRunDto, ApiError> {
+    let operation: GeneratedOperation = serde_json::from_value(run.generated_config.clone())
+        .map_err(|error| {
+            ApiError::Internal(anyhow::anyhow!(
+                "stored operation config is invalid: {error}"
+            ))
+        })?;
+    let result = run.result_stars.map(|stars| CyberOperationResultDto {
+        completed: run.status == "completed",
+        stars,
+        health: run.result_health.unwrap_or(0),
+        duration_ms: run.duration_ms.unwrap_or(0),
+    });
+    Ok(CyberOperationRunDto {
+        run_id: run.id,
+        status: run.status.clone(),
+        seed: run.seed,
+        template_id: run.template_id.clone(),
+        adversary_id: run.adversary_id.clone(),
+        adversary_name: operation.adversary_name.clone(),
+        hero_id: run.hero_id.clone(),
+        threat_level: run.threat_level,
+        operation,
+        started_at: run.started_at,
+        result,
+        bits_awarded: run.bits_awarded,
+        career_xp_awarded: run.career_xp_awarded,
+        hero_xp_awarded: run.hero_xp_awarded,
+    })
+}
+
+/// Evaluates story triggers from stored progress and records any new nodes.
+async fn evaluate_and_record_story(
+    tx: &mut db::PgConnection,
+    user_id: Uuid,
+) -> Result<Vec<String>, ApiError> {
+    let profile = db::cyber_defense::get_or_create_profile(tx, user_id).await?;
+    let campaign = db::cyber_defense::list_campaign_results(tx, user_id).await?;
+    let adversaries = db::cyber_defense::list_adversary_progress(tx, user_id).await?;
+    let story = db::cyber_defense::list_story_progress(tx, user_id).await?;
+
+    let input = StoryProgressInput {
+        completed_campaign_missions: campaign
+            .iter()
+            .filter(|result| result.completed)
+            .map(|result| result.mission_id.clone())
+            .collect(),
+        total_operations_completed: profile.total_operations_completed,
+        highest_threat_level_cleared: profile.highest_threat_level_cleared,
+        adversary_ranks: adversaries
+            .iter()
+            .map(|row| {
+                (
+                    row.adversary_id.clone(),
+                    adversary_rank_from_progress(row.progress),
+                )
+            })
+            .collect(),
+        completed_nodes: story.iter().map(|row| row.story_node_id.clone()).collect(),
+    };
+
+    let newly = evaluate_story_nodes(&input);
+    for node_id in &newly {
+        db::cyber_defense::record_story_progress(tx, user_id, node_id).await?;
+    }
+    if !newly.is_empty() {
+        let mut all = input.completed_nodes.clone();
+        all.extend(newly.iter().cloned());
+        db::cyber_defense::set_active_story_chapter(tx, user_id, active_chapter(&all)).await?;
+    }
+    Ok(newly)
+}
+
+/// Starts one repeatable Operation for the authenticated learner.
+///
+/// The server selects the template/adversary, generates a secure seed, produces
+/// a deterministic Operation, and persists the whole snapshot so a refresh
+/// restores the exact same run. A learner can have only one active run.
+pub async fn cyber_defense_start_operation(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    request: CyberOperationStartRequest,
+) -> Result<CyberOperationRunDto, ApiError> {
+    let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+    let profile = db::cyber_defense::get_or_create_profile(&mut conn, user.id).await?;
+
+    let unlocked = unlocked_threat_level(
+        profile.recommended_threat_level,
+        profile.highest_threat_level_cleared,
+    );
+    if !(THREAT_LEVEL_MIN..=THREAT_LEVEL_MAX).contains(&request.requested_threat_level)
+        || request.requested_threat_level > unlocked
+    {
+        return Err(ApiError::BadRequest(
+            "threat level is not unlocked".to_owned(),
+        ));
+    }
+
+    let hero_id = match request.hero_id.as_deref() {
+        Some(hero) if !hero.is_empty() => {
+            if !is_known_hero(hero) {
+                return Err(ApiError::BadRequest("unknown hero".to_owned()));
+            }
+            Some(hero.to_owned())
+        }
+        _ => Some(adaptive_learn_domain::DEFAULT_HERO_IDS[0].to_owned()),
+    };
+
+    if let Some(active) = db::cyber_defense::find_active_operation_run(&mut conn, user.id).await? {
+        return Err(ApiError::ActiveOperationExists(active.id));
+    }
+
+    // Template/adversary selection is server-side. The template may be pinned by
+    // the client for explicit browsing; the adversary is always chosen here.
+    let pick = Uuid::new_v4().as_u128();
+    let template = match request.template_id.as_deref() {
+        Some(id) => operation_template(id)
+            .ok_or_else(|| ApiError::BadRequest("unknown operation template".to_owned()))?,
+        None => &OPERATION_TEMPLATES[(pick % OPERATION_TEMPLATES.len() as u128) as usize],
+    };
+    let adversary =
+        &template.adversary_ids[((pick >> 16) % template.adversary_ids.len() as u128) as usize];
+
+    let adversary_rows = db::cyber_defense::list_adversary_progress(&mut conn, user.id).await?;
+    let adversary_rank = adversary_rows
+        .iter()
+        .find(|row| row.adversary_id == *adversary)
+        .map(|row| adversary_rank_from_progress(row.progress))
+        .unwrap_or(1);
+
+    let seed = Uuid::new_v4().as_u128() as i64;
+    let operation = generate_operation(&OperationGenerationInput {
+        seed,
+        template_id: template.id.to_owned(),
+        adversary_id: (*adversary).to_owned(),
+        threat_level: request.requested_threat_level,
+        adversary_rank,
+        hero_id: hero_id.clone(),
+    })
+    .map_err(|error| ApiError::BadRequest(error.to_string()))?;
+
+    let config =
+        serde_json::to_value(&operation).map_err(|error| ApiError::Internal(error.into()))?;
+    let new_run = db::cyber_defense::NewOperationRun {
+        id: Uuid::new_v4(),
+        user_id: user.id,
+        seed,
+        template_id: operation.template_id.as_str(),
+        adversary_id: operation.adversary_id.as_str(),
+        hero_id: hero_id.as_deref(),
+        threat_level: operation.threat_level,
+        generated_config: &config,
+    };
+
+    let run = match db::cyber_defense::create_operation_run(&mut conn, &new_run).await {
+        Ok(run) => run,
+        Err(error) if error.is_unique_violation() => {
+            return match db::cyber_defense::find_active_operation_run(&mut conn, user.id).await? {
+                Some(active) => Err(ApiError::ActiveOperationExists(active.id)),
+                None => Err(ApiError::Conflict("could not start operation".to_owned())),
+            };
+        }
+        Err(error) => return Err(error.into()),
+    };
+
+    operation_run_dto(&run)
+}
+
+/// Reads one Operation run owned by the authenticated learner.
+pub async fn cyber_defense_get_operation(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    run_id: Uuid,
+) -> Result<CyberOperationRunDto, ApiError> {
+    let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+    let run = db::cyber_defense::get_operation_run_for_user(&mut conn, user.id, run_id)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+    operation_run_dto(&run)
+}
+
+/// Abandons an active Operation run. Abandoning grants no reward.
+pub async fn cyber_defense_abandon_operation(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    run_id: Uuid,
+) -> Result<CyberOperationRunDto, ApiError> {
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+    let abandoned = db::cyber_defense::abandon_operation_run(&mut tx, user.id, run_id).await?;
+    if !abandoned {
+        let existing =
+            db::cyber_defense::get_operation_run_for_user(&mut tx, user.id, run_id).await?;
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return match existing {
+            None => Err(ApiError::NotFound),
+            Some(_) => Err(ApiError::Conflict("operation is not active".to_owned())),
+        };
+    }
+    let run = db::cyber_defense::get_operation_run_for_user(&mut tx, user.id, run_id)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+    tx.commit().await.map_err(db::DbError::from)?;
+    operation_run_dto(&run)
+}
+
+/// Builds the response for an Operation that was already settled.
+async fn duplicate_operation_response(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    run: &db::cyber_defense::OperationRun,
+    profile: &db::cyber_defense::CyberDefenseProfile,
+) -> Result<CyberOperationCompleteResponse, ApiError> {
+    let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+    let adversary = db::cyber_defense::list_adversary_progress(&mut conn, user.id)
+        .await?
+        .iter()
+        .find(|row| row.adversary_id == run.adversary_id)
+        .map(adversary_dto_from_row)
+        .unwrap_or_else(|| empty_adversary_dto(&run.adversary_id));
+    let hero = match run.hero_id.as_deref() {
+        Some(hero_id) => db::cyber_defense::list_hero_progress(&mut conn, user.id)
+            .await?
+            .iter()
+            .find(|row| row.hero_id == hero_id)
+            .map(|row| hero_dto(hero_id, row.xp, row.selected_talents.clone())),
+        None => None,
+    };
+
+    Ok(CyberOperationCompleteResponse {
+        run: operation_run_dto(run)?,
+        reward: CyberRewardDto {
+            bits: 0,
+            career_xp: 0,
+            hero_xp: 0,
+        },
+        bits_balance: db::wallets::balance(&state.pool, user.id).await?,
+        career: career_summary(profile.career_xp, false),
+        hero,
+        adversary,
+        newly_settled: false,
+        recommended_threat_level: profile.recommended_threat_level,
+        unlocked_threat_level: unlocked_threat_level(
+            profile.recommended_threat_level,
+            profile.highest_threat_level_cleared,
+        ),
+        dossier_unlocks: Vec::new(),
+        story_nodes_completed: Vec::new(),
+    })
+}
+
+/// Settles one Operation run's result and permanent rewards exactly once.
+pub async fn cyber_defense_complete_operation(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    run_id: Uuid,
+    request: CyberOperationCompleteRequest,
+) -> Result<CyberOperationCompleteResponse, ApiError> {
+    if !(0..=3).contains(&request.stars) {
+        return Err(ApiError::BadRequest(
+            "stars must be between 0 and 3".to_owned(),
+        ));
+    }
+    if !(0..=CYBER_MAX_HEALTH).contains(&request.health) {
+        return Err(ApiError::BadRequest("invalid health".to_owned()));
+    }
+    if !(CYBER_MIN_DURATION_MS..=CYBER_MAX_DURATION_MS).contains(&request.duration_ms) {
+        return Err(ApiError::BadRequest("implausible duration".to_owned()));
+    }
+    if request.completed && request.stars == 0 {
+        return Err(ApiError::BadRequest(
+            "a completed operation needs at least one star".to_owned(),
+        ));
+    }
+    if !request.completed && request.stars != 0 {
+        return Err(ApiError::BadRequest(
+            "a failed operation cannot earn stars".to_owned(),
+        ));
+    }
+
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+    let profile = db::cyber_defense::get_or_create_profile(&mut tx, user.id).await?;
+    let run = db::cyber_defense::lock_operation_run(&mut tx, user.id, run_id)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+
+    if run.status != "active" {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return duplicate_operation_response(state, user, &run, &profile).await;
+    }
+
+    let operation: GeneratedOperation = serde_json::from_value(run.generated_config.clone())
+        .map_err(|error| {
+            ApiError::Internal(anyhow::anyhow!(
+                "stored operation config is invalid: {error}"
+            ))
+        })?;
+
+    let completed = request.completed;
+    let stars = request.stars;
+
+    let adversary_rows = db::cyber_defense::list_adversary_progress(&mut tx, user.id).await?;
+    let existing = adversary_rows
+        .iter()
+        .find(|row| row.adversary_id == run.adversary_id);
+    let prior_victories = existing.map(|row| row.victories).unwrap_or(0);
+    let prior_flags = existing
+        .map(|row| row.dossier_flags.clone())
+        .unwrap_or_default();
+    let first_adversary_clear = completed && prior_victories == 0;
+    let first_boss_clear = completed && operation.boss && prior_victories == 0;
+
+    let reward = operation_reward(run.threat_level, stars, completed, first_adversary_clear);
+    let hero_xp = if run.hero_id.is_some() {
+        reward.hero_xp
+    } else {
+        0
+    };
+
+    db::wallets::lock_wallet(&mut tx, user.id).await?;
+    let reward_event_id = Uuid::new_v4();
+    if reward.bits > 0 {
+        let transaction = db::wallets::BitTransaction {
+            user_id: user.id,
+            device_id: None,
+            event_id: reward_event_id,
+            mission_instance_id: run.id,
+            question_id: run.template_id.clone(),
+            amount: reward.bits,
+            reason: "cyber_operation_reward".to_owned(),
+        };
+        db::wallets::settle(&mut tx, &transaction).await?;
+    }
+
+    let career_xp =
+        db::cyber_defense::increment_career_xp(&mut tx, user.id, reward.career_xp).await?;
+    if let Some(hero) = run.hero_id.as_deref() {
+        db::cyber_defense::increment_hero_xp(&mut tx, user.id, hero, hero_xp).await?;
+    }
+
+    let progress_delta = adversary_progress_award(
+        run.threat_level,
+        completed,
+        operation.boss,
+        first_boss_clear,
+    );
+    let highest_cleared = if completed { run.threat_level } else { 0 };
+    let adversary_row = db::cyber_defense::apply_adversary_encounter(
+        &mut tx,
+        user.id,
+        &run.adversary_id,
+        progress_delta,
+        true,
+        completed,
+        highest_cleared,
+    )
+    .await?;
+    let rank = adversary_rank_from_progress(adversary_row.progress);
+
+    let mut flags: Vec<String> = Vec::new();
+    match operation.dominant_attack_type.as_str() {
+        "credential_stuffing" => flags.push("identity_specialist".to_owned()),
+        "sql_injection" | "xss" => flags.push("web_specialist".to_owned()),
+        "ransomware" => flags.push("impact_specialist".to_owned()),
+        _ => {}
+    }
+    if operation.modifiers.iter().any(|m| m.id == "hidden_traffic") {
+        flags.push("uses_hidden_traffic".to_owned());
+    }
+    if operation
+        .modifiers
+        .iter()
+        .any(|m| m.id == "credential_surge")
+    {
+        flags.push("credential_surge_observed".to_owned());
+    }
+    if operation.boss && completed {
+        flags.push("boss_pattern_seen".to_owned());
+    }
+    if completed && run.threat_level >= 5 {
+        flags.push("highest_threat_5".to_owned());
+    }
+    if rank >= 3 {
+        flags.push("rank_3_story_clue".to_owned());
+    }
+    let dossier_unlocks: Vec<String> = flags
+        .iter()
+        .filter(|flag| !prior_flags.contains(flag))
+        .cloned()
+        .collect();
+    db::cyber_defense::add_dossier_flags(&mut tx, user.id, &run.adversary_id, &flags).await?;
+
+    let update = db::cyber_defense::OperationResultUpdate {
+        completed,
+        stars,
+        health: request.health,
+        duration_ms: request.duration_ms,
+        bits: reward.bits,
+        career_xp: reward.career_xp,
+        hero_xp,
+        reward_event_id,
+    };
+    let run = db::cyber_defense::complete_operation_run(&mut tx, user.id, run_id, &update)
+        .await?
+        .ok_or_else(|| ApiError::Conflict("operation is no longer active".to_owned()))?;
+
+    // Recommended Threat Level uses the last five settled results, including
+    // this one, and never changes difficulty during a run.
+    let new_highest = profile.highest_threat_level_cleared.max(highest_cleared);
+    let recent = db::cyber_defense::list_recent_operation_outcomes(&mut tx, user.id, 5).await?;
+    let recent_outcomes: Vec<OperationOutcome> = recent
+        .iter()
+        .map(|row| OperationOutcome {
+            completed: row.completed,
+            stars: row.stars,
+            remaining_health_ratio: if row.starting_health > 0 {
+                f64::from(row.health) / f64::from(row.starting_health)
+            } else {
+                0.0
+            },
+        })
+        .collect();
+    let recommended = recommend_threat_level(&ThreatRecommendationInput {
+        current: profile.recommended_threat_level,
+        recent: recent_outcomes,
+        health_ratio_threshold: DEFAULT_HEALTH_RATIO_THRESHOLD,
+    });
+    db::cyber_defense::update_threat_progress(
+        &mut tx,
+        user.id,
+        new_highest,
+        recommended,
+        if completed { 1 } else { 0 },
+    )
+    .await?;
+
+    let story_nodes_completed = evaluate_and_record_story(&mut tx, user.id).await?;
+
+    tx.commit().await.map_err(db::DbError::from)?;
+
+    let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+    let bits_balance = db::wallets::balance(&state.pool, user.id).await?;
+    let hero = match run.hero_id.as_deref() {
+        Some(hero_id) => db::cyber_defense::list_hero_progress(&mut conn, user.id)
+            .await?
+            .iter()
+            .find(|row| row.hero_id == hero_id)
+            .map(|row| hero_dto(hero_id, row.xp, row.selected_talents.clone())),
+        None => None,
+    };
+    let adversary = db::cyber_defense::list_adversary_progress(&mut conn, user.id)
+        .await?
+        .iter()
+        .find(|row| row.adversary_id == run.adversary_id)
+        .map(adversary_dto_from_row)
+        .unwrap_or_else(|| empty_adversary_dto(&run.adversary_id));
+    let unlocked = unlocked_threat_level(recommended, new_highest);
+
+    Ok(CyberOperationCompleteResponse {
+        run: operation_run_dto(&run)?,
+        reward: CyberRewardDto {
+            bits: reward.bits,
+            career_xp: reward.career_xp,
+            hero_xp,
+        },
+        bits_balance,
+        career: career_summary(
+            career_xp,
+            career_level_from_xp(career_xp) > career_level_from_xp(profile.career_xp),
+        ),
+        hero,
+        adversary,
+        newly_settled: true,
+        recommended_threat_level: recommended,
+        unlocked_threat_level: unlocked,
+        dossier_unlocks,
+        story_nodes_completed,
+    })
+}
+
+/// Imports legacy Stage 1 local campaign progress exactly once.
+///
+/// Local progress is untrusted: only completion state, best stars, best health,
+/// and attempts are imported. No retroactive Bits or arbitrary XP are granted
+/// from client-local values. A single fixed returning-defender career XP amount
+/// is granted when at least one valid mission was previously completed.
+pub async fn cyber_defense_import_legacy(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    request: CyberLegacyImportRequest,
+) -> Result<CyberLegacyImportResponse, ApiError> {
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+    let profile = db::cyber_defense::get_or_create_profile(&mut tx, user.id).await?;
+
+    if profile.legacy_progress_imported {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return Ok(CyberLegacyImportResponse {
+            imported: false,
+            missions_imported: 0,
+            career_xp_granted: 0,
+            bits_balance: db::wallets::balance(&state.pool, user.id).await?,
+            career: career_summary(profile.career_xp, false),
+        });
+    }
+
+    let mut missions_imported = 0i32;
+    let mut any_completed = false;
+    for (mission_id, mission) in &request.missions {
+        if !is_campaign_mission(mission_id) {
+            continue;
+        }
+        let stars = mission.stars.clamp(0, 3);
+        let health = mission.best_health.clamp(0, CYBER_MAX_HEALTH);
+        let attempts = mission.attempts.clamp(0, 10_000);
+        let completed = mission.completed && stars > 0;
+        any_completed |= completed;
+        db::cyber_defense::import_campaign_result(
+            &mut tx, user.id, mission_id, completed, stars, health, attempts,
+        )
+        .await?;
+        missions_imported += 1;
+    }
+
+    let imported = db::cyber_defense::mark_legacy_progress_imported(&mut tx, user.id).await?;
+    let mut career_xp_granted = 0;
+    if imported && any_completed {
+        career_xp_granted = LEGACY_RETURNING_DEFENDER_XP;
+        db::cyber_defense::increment_career_xp(&mut tx, user.id, career_xp_granted).await?;
+    }
+
+    evaluate_and_record_story(&mut tx, user.id).await?;
+    tx.commit().await.map_err(db::DbError::from)?;
+
+    let career_xp = profile.career_xp + career_xp_granted;
+    Ok(CyberLegacyImportResponse {
+        imported,
+        missions_imported,
+        career_xp_granted,
+        bits_balance: db::wallets::balance(&state.pool, user.id).await?,
+        career: career_summary(
+            career_xp,
+            career_level_from_xp(career_xp) > career_level_from_xp(profile.career_xp),
+        ),
+    })
+}
+
+/// Known balance-telemetry event names.
+const CYBER_TELEMETRY_EVENTS: &[&str] = &[
+    "cyber_dashboard_view",
+    "cyber_operation_offered",
+    "cyber_operation_started",
+    "cyber_operation_resumed",
+    "cyber_operation_completed",
+    "cyber_operation_failed",
+    "cyber_operation_abandoned",
+    "cyber_threat_level_selected",
+    "cyber_defense_placed",
+    "cyber_defense_upgraded",
+    "cyber_defense_removed",
+    "cyber_hero_selected",
+    "cyber_hero_deployed",
+    "cyber_tower_upgrade_purchased",
+    "cyber_hero_level_up",
+    "cyber_hero_talent_selected",
+    "cyber_adversary_rank_up",
+    "cyber_dossier_unlock",
+    "cyber_story_seen",
+];
+
+/// Maximum events accepted in one telemetry batch.
+const CYBER_TELEMETRY_MAX_BATCH: usize = 50;
+/// Maximum length of a telemetry text dimension.
+const CYBER_TELEMETRY_MAX_TEXT: usize = 64;
+
+/// Appends a batch of balance-telemetry events.
+///
+/// Only game identifiers and results are accepted, and unknown event names are
+/// rejected so the stream stays analyzable. No raw personal data is stored.
+pub async fn cyber_defense_telemetry(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    request: CyberTelemetryRequest,
+) -> Result<CyberTelemetryResponse, ApiError> {
+    if request.events.len() > CYBER_TELEMETRY_MAX_BATCH {
+        return Err(ApiError::BadRequest(
+            "telemetry batch is too large".to_owned(),
+        ));
+    }
+
+    for event in &request.events {
+        if !CYBER_TELEMETRY_EVENTS.contains(&event.name.as_str()) {
+            return Err(ApiError::BadRequest("unknown telemetry event".to_owned()));
+        }
+        if event.stars.is_some_and(|stars| !(0..=3).contains(&stars)) {
+            return Err(ApiError::BadRequest("invalid telemetry stars".to_owned()));
+        }
+        if event
+            .threat_level
+            .is_some_and(|threat| !(THREAT_LEVEL_MIN..=THREAT_LEVEL_MAX).contains(&threat))
+        {
+            return Err(ApiError::BadRequest(
+                "invalid telemetry threat level".to_owned(),
+            ));
+        }
+        if event.wave.is_some_and(|wave| !(0..=100).contains(&wave)) {
+            return Err(ApiError::BadRequest("invalid telemetry wave".to_owned()));
+        }
+        let text_values = [
+            event.template_id.as_deref(),
+            event.adversary_id.as_deref(),
+            event.hero_id.as_deref(),
+            event.defense_id.as_deref(),
+            event.result.as_deref(),
+            event.duration_bucket.as_deref(),
+        ];
+        for value in text_values.into_iter().flatten() {
+            if value.len() > CYBER_TELEMETRY_MAX_TEXT {
+                return Err(ApiError::BadRequest(
+                    "telemetry value is too long".to_owned(),
+                ));
+            }
+        }
+    }
+
+    let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+    let events: Vec<db::cyber_defense::NewTelemetryEvent<'_>> = request
+        .events
+        .iter()
+        .map(|event| db::cyber_defense::NewTelemetryEvent {
+            event_name: event.name.as_str(),
+            run_id: event.run_id,
+            template_id: event.template_id.as_deref(),
+            adversary_id: event.adversary_id.as_deref(),
+            threat_level: event.threat_level,
+            hero_id: event.hero_id.as_deref(),
+            defense_id: event.defense_id.as_deref(),
+            wave: event.wave,
+            result: event.result.as_deref(),
+            stars: event.stars,
+            duration_bucket: event.duration_bucket.as_deref(),
+        })
+        .collect();
+    db::cyber_defense::insert_telemetry_events(&mut conn, user.id, &events).await?;
+
+    Ok(CyberTelemetryResponse {
+        accepted: i32::try_from(events.len()).unwrap_or(0),
+    })
 }
 
 #[cfg(test)]

@@ -132,6 +132,46 @@ pub fn build_router(state: AppState, config: &Config) -> Router {
             "/v1/cyber-defense/upgrades",
             post(routes::cyber_defense::spend_upgrade),
         )
+        .route(
+            "/v1/cyber-defense/profile",
+            get(routes::cyber_defense::get_profile),
+        )
+        .route(
+            "/v1/cyber-defense/campaign/{mission_id}/complete",
+            post(routes::cyber_defense::complete_campaign),
+        )
+        .route(
+            "/v1/cyber-defense/tower/upgrades/{upgrade_id}",
+            post(routes::cyber_defense::purchase_tower_upgrade),
+        )
+        .route(
+            "/v1/cyber-defense/heroes/{hero_id}/talents",
+            put(routes::cyber_defense::set_hero_talents),
+        )
+        .route(
+            "/v1/cyber-defense/operations",
+            post(routes::cyber_defense::start_operation),
+        )
+        .route(
+            "/v1/cyber-defense/operations/{run_id}",
+            get(routes::cyber_defense::get_operation),
+        )
+        .route(
+            "/v1/cyber-defense/operations/{run_id}/abandon",
+            post(routes::cyber_defense::abandon_operation),
+        )
+        .route(
+            "/v1/cyber-defense/operations/{run_id}/complete",
+            post(routes::cyber_defense::complete_operation),
+        )
+        .route(
+            "/v1/cyber-defense/legacy-progress",
+            post(routes::cyber_defense::import_legacy_progress),
+        )
+        .route(
+            "/v1/cyber-defense/telemetry",
+            post(routes::cyber_defense::submit_telemetry),
+        )
         .route("/v1/me", get(routes::me::get_me))
         .route("/v1/me/settings", put(routes::me::update_settings));
 

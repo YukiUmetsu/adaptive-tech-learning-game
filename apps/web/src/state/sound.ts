@@ -21,14 +21,14 @@ const MIN_INTERVAL_MS = 120;
 let context: AudioContext | null = null;
 let lastPlayedAt = 0;
 
-/** Current mute preference, derived from the Personal Settings audio master. */
+/** Current mute state, derived from the master volume. */
 export function isSoundMuted(): boolean {
-  return !getPreferences().audio.enabled;
+  return getPreferences().audio.masterVolume <= 0;
 }
 
-/** Updates and persists the mute preference. */
+/** Mutes (0) or restores the master volume to the default level. */
 export function setSoundMuted(value: boolean): void {
-  updatePreferences({ audio: { enabled: !value } });
+  updatePreferences({ audio: { masterVolume: value ? 0 : 50 } });
 }
 
 /** Flips the mute preference. */
@@ -38,7 +38,12 @@ export function toggleSoundMuted(): void {
 
 /** React binding for the mute preference. */
 export function useSoundMuted(): boolean {
-  return !useUserPreferences().audio.enabled;
+  return useUserPreferences().audio.masterVolume <= 0;
+}
+
+/** Clamps a stored volume to an integer 0-100. */
+function clampVolume(value: number): number {
+  return Math.max(0, Math.min(100, Math.round(value)));
 }
 
 function audioContextCtor():
@@ -306,14 +311,19 @@ const COMPLETION_SOUNDS: ReadonlySet<SoundName> = new Set([
 
 function play(name: SoundName, minIntervalMs = MIN_INTERVAL_MS): void {
   const audio = getPreferences().audio;
-  if (!audio.enabled) {
+  const master = clampVolume(audio.masterVolume);
+  if (master <= 0) {
     return;
   }
-  // Per-category switches only gate the categories that already exist.
-  if ((name === "correct" || name === "wrong") && !audio.answerFeedbackSounds) {
-    return;
+  // Per-category volumes only scale the categories that already exist.
+  let category = 100;
+  if (name === "correct" || name === "wrong") {
+    category = clampVolume(audio.answerFeedbackVolume);
+  } else if (COMPLETION_SOUNDS.has(name)) {
+    category = clampVolume(audio.missionCompletionVolume);
   }
-  if (COMPLETION_SOUNDS.has(name) && !audio.missionCompletionSounds) {
+  const volume = (master / 100) * (category / 100);
+  if (volume <= 0) {
     return;
   }
 
@@ -354,7 +364,7 @@ function play(name: SoundName, minIntervalMs = MIN_INTERVAL_MS): void {
       oscillator.type = wave;
       oscillator.frequency.value = frequency;
       gain.gain.setValueAtTime(0.0001, noteStart);
-      gain.gain.exponentialRampToValueAtTime(peak, noteStart + 0.02);
+      gain.gain.exponentialRampToValueAtTime(peak * volume, noteStart + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + duration);
       oscillator.connect(gain).connect(context!.destination);
       oscillator.start(noteStart);
@@ -371,7 +381,7 @@ function play(name: SoundName, minIntervalMs = MIN_INTERVAL_MS): void {
         start + sweep.duration,
       );
       gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(peak, start + 0.012);
+      gain.gain.exponentialRampToValueAtTime(peak * volume, start + 0.012);
       gain.gain.exponentialRampToValueAtTime(0.0001, start + sweep.duration);
       oscillator.connect(gain).connect(context.destination);
       oscillator.start(start);
@@ -488,4 +498,260 @@ export function playFanfare(): void {
 /** Descending cue for losing a mission. */
 export function playDefeat(): void {
   play("defeat", 1000);
+}
+
+/* ---------------------------------------------------------------------------
+ * Background battle music
+ *
+ * A tiny, fully synthesized loop (no audio assets, no licensing): an A-minor
+ * chord progression with a bass line, arpeggio, lead, and light percussion,
+ * scheduled ahead with the Web Audio clock. It honours the master sound switch
+ * and its own preference, and never throws when audio is unavailable.
+ * ------------------------------------------------------------------------- */
+
+const MUSIC_TEMPO = 116;
+/** 16th-note duration in seconds. */
+const MUSIC_STEP_SECONDS = 60 / MUSIC_TEMPO / 4;
+/** How often the scheduler wakes up. */
+const MUSIC_LOOKAHEAD_MS = 25;
+/** How far ahead notes are scheduled. */
+const MUSIC_SCHEDULE_AHEAD = 0.12;
+/** Four bars of 16th notes. */
+const MUSIC_STEPS = 64;
+/** Master music gain (kept below the sound effects). */
+const MUSIC_GAIN = 0.4;
+
+interface MusicChord {
+  bass: number;
+  arp: number[];
+}
+
+/** i – VI – III – VII in A minor. */
+const MUSIC_PROGRESSION: MusicChord[] = [
+  { bass: 110.0, arp: [220.0, 261.63, 329.63, 261.63] },
+  { bass: 87.31, arp: [174.61, 220.0, 261.63, 220.0] },
+  { bass: 130.81, arp: [261.63, 329.63, 392.0, 329.63] },
+  { bass: 98.0, arp: [196.0, 246.94, 293.66, 246.94] },
+];
+
+/** Sparse lead notes, one per chord. */
+const MUSIC_LEAD = [440.0, 349.23, 523.25, 392.0];
+
+let musicMaster: GainNode | null = null;
+let musicTimer: ReturnType<typeof setInterval> | null = null;
+let musicNextTime = 0;
+let musicStep = 0;
+let musicNoise: AudioBuffer | null = null;
+
+function musicEnabled(): boolean {
+  const audio = getPreferences().audio;
+  return audio.masterVolume > 0 && audio.battleMusicVolume > 0;
+}
+
+function ensureMusicNoise(ctx: AudioContext): AudioBuffer {
+  if (musicNoise) {
+    return musicNoise;
+  }
+  const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.2), ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let index = 0; index < data.length; index += 1) {
+    data[index] = Math.random() * 2 - 1;
+  }
+  musicNoise = buffer;
+  return buffer;
+}
+
+function musicTone(
+  ctx: AudioContext,
+  master: GainNode,
+  frequency: number,
+  time: number,
+  duration: number,
+  peak: number,
+  wave: OscillatorType,
+): void {
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+  oscillator.type = wave;
+  oscillator.frequency.setValueAtTime(frequency, time);
+  gain.gain.setValueAtTime(0.0001, time);
+  gain.gain.exponentialRampToValueAtTime(peak, time + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+  oscillator.connect(gain).connect(master);
+  oscillator.start(time);
+  oscillator.stop(time + duration + 0.02);
+}
+
+function musicKick(ctx: AudioContext, master: GainNode, time: number): void {
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(150, time);
+  oscillator.frequency.exponentialRampToValueAtTime(50, time + 0.12);
+  gain.gain.setValueAtTime(0.0001, time);
+  gain.gain.exponentialRampToValueAtTime(0.22, time + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.14);
+  oscillator.connect(gain).connect(master);
+  oscillator.start(time);
+  oscillator.stop(time + 0.16);
+}
+
+function musicHat(
+  ctx: AudioContext,
+  master: GainNode,
+  time: number,
+  peak: number,
+): void {
+  const source = ctx.createBufferSource();
+  source.buffer = ensureMusicNoise(ctx);
+  const filter = ctx.createBiquadFilter();
+  filter.type = "highpass";
+  filter.frequency.value = 7000;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, time);
+  gain.gain.exponentialRampToValueAtTime(peak, time + 0.005);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.04);
+  source.connect(filter).connect(gain).connect(master);
+  source.start(time);
+  source.stop(time + 0.06);
+}
+
+function scheduleMusicStep(
+  ctx: AudioContext,
+  master: GainNode,
+  step: number,
+  time: number,
+): void {
+  const chord = MUSIC_PROGRESSION[Math.floor(step / 16) % MUSIC_PROGRESSION.length];
+  const inBar = step % 16;
+
+  // Bass: a syncopated root line.
+  if (inBar % 4 === 0 || inBar === 6 || inBar === 11) {
+    musicTone(ctx, master, chord.bass, time, 0.22, 0.14, "sawtooth");
+  }
+  // Arpeggio on every 8th note.
+  if (step % 2 === 0) {
+    const note = chord.arp[(step / 2) % chord.arp.length];
+    musicTone(ctx, master, note, time, 0.14, 0.05, "triangle");
+  }
+  // One soft lead note at the start of each bar.
+  if (inBar === 0) {
+    musicTone(
+      ctx,
+      master,
+      MUSIC_LEAD[Math.floor(step / 16) % MUSIC_LEAD.length],
+      time,
+      0.5,
+      0.04,
+      "square",
+    );
+  }
+  // Light percussion.
+  if (inBar === 0 || inBar === 8) {
+    musicKick(ctx, master, time);
+  }
+  if (inBar % 4 === 2) {
+    musicHat(ctx, master, time, 0.05);
+  } else if (inBar % 2 === 1) {
+    musicHat(ctx, master, time, 0.022);
+  }
+}
+
+function musicTick(): void {
+  if (!musicEnabled()) {
+    stopBattleMusic();
+    return;
+  }
+  const Ctor = audioContextCtor();
+  if (!Ctor) {
+    return;
+  }
+  try {
+    context ??= new Ctor();
+    if (context.state === "suspended") {
+      void context.resume();
+    }
+    if (!musicMaster) {
+      return;
+    }
+    while (musicNextTime < context.currentTime + MUSIC_SCHEDULE_AHEAD) {
+      scheduleMusicStep(context, musicMaster, musicStep, musicNextTime);
+      musicNextTime += MUSIC_STEP_SECONDS;
+      musicStep = (musicStep + 1) % MUSIC_STEPS;
+    }
+  } catch {
+    // Music must never break the game.
+  }
+}
+
+/** Whether the battle music loop is currently scheduled. */
+export function isBattleMusicPlaying(): boolean {
+  return musicTimer !== null;
+}
+
+/** Starts the looping battle music. Idempotent and preference-aware. */
+export function startBattleMusic(): void {
+  if (musicTimer !== null || !musicEnabled()) {
+    return;
+  }
+  const Ctor = audioContextCtor();
+  if (!Ctor) {
+    return;
+  }
+  try {
+    context ??= new Ctor();
+    if (context.state === "suspended") {
+      void context.resume();
+    }
+    musicMaster = context.createGain();
+    const audio = getPreferences().audio;
+    const musicGain =
+      MUSIC_GAIN *
+      (clampVolume(audio.masterVolume) / 100) *
+      (clampVolume(audio.battleMusicVolume) / 100);
+    musicMaster.gain.setValueAtTime(0.0001, context.currentTime);
+    musicMaster.gain.exponentialRampToValueAtTime(
+      Math.max(0.0001, musicGain),
+      context.currentTime + 0.6,
+    );
+    musicMaster.connect(context.destination);
+    musicNextTime = context.currentTime + 0.08;
+    musicStep = 0;
+    musicTimer = setInterval(musicTick, MUSIC_LOOKAHEAD_MS);
+  } catch {
+    musicTimer = null;
+    musicMaster = null;
+  }
+}
+
+/** Fades out and stops the battle music. Safe to call when not playing. */
+export function stopBattleMusic(): void {
+  if (musicTimer !== null) {
+    clearInterval(musicTimer);
+    musicTimer = null;
+  }
+  const master = musicMaster;
+  musicMaster = null;
+  if (!master || !context) {
+    return;
+  }
+  try {
+    const now = context.currentTime;
+    master.gain.cancelScheduledValues(now);
+    master.gain.setValueAtTime(Math.max(0.0001, master.gain.value), now);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+    window.setTimeout(() => {
+      try {
+        master.disconnect();
+      } catch {
+        // Already disconnected.
+      }
+    }, 600);
+  } catch {
+    try {
+      master.disconnect();
+    } catch {
+      // Already disconnected.
+    }
+  }
 }

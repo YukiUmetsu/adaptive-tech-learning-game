@@ -362,6 +362,647 @@
         }
       }
     },
+    "/v1/cyber-defense/campaign/{mission_id}/complete": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Settles the result of one Stage 1 campaign mission.",
+        "description": "The client sends only raw result evidence and an idempotency `result_id`; the\nserver derives completion, first-clear status, and every reward value.",
+        "operationId": "complete_campaign",
+        "parameters": [
+          {
+            "name": "mission_id",
+            "in": "path",
+            "description": "Campaign mission identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberCampaignCompleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Mission result settled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberCampaignCompleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown mission or invalid result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/heroes/{hero_id}/talents": {
+      "put": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Replaces a hero's selected talents (free respec in Stage 2).",
+        "operationId": "set_hero_talents",
+        "parameters": [
+          {
+            "name": "hero_id",
+            "in": "path",
+            "description": "Hero identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberHeroTalentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Talents updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberHeroProgressDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown hero or illegal talent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Milestone not yet unlocked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/legacy-progress": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Imports legacy Stage 1 local progress once.",
+        "operationId": "import_legacy_progress",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberLegacyImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Legacy progress imported (or already imported)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberLegacyImportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/operations": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Starts one repeatable Operation.",
+        "operationId": "start_operation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberOperationStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operation started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberOperationRunDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Locked Threat Level, unknown hero, or unknown template",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "An active Operation already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/operations/{run_id}": {
+      "get": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Reads one owned Operation run, so a refresh restores the exact run.",
+        "operationId": "get_operation",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "description": "Operation run identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberOperationRunDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Run not found or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/operations/{run_id}/abandon": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Abandons an active Operation run. Grants no reward.",
+        "operationId": "abandon_operation",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "description": "Operation run identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation abandoned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberOperationRunDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Run not found or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Run is not active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/operations/{run_id}/complete": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Settles one Operation run's result and rewards exactly once.",
+        "operationId": "complete_operation",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "description": "Operation run identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberOperationCompleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operation settled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberOperationCompleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Run not found or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/profile": {
+      "get": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Returns the authenticated player's complete Cyber Defense profile.",
+        "description": "One server-authoritative snapshot: career, Bits, Tower, heroes, adversaries,\nstory, and campaign results. The first request creates a default profile.",
+        "operationId": "get_profile",
+        "responses": {
+          "200": {
+            "description": "Complete Cyber Defense profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberDefenseProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/telemetry": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Appends a batch of balance-telemetry events.",
+        "operationId": "submit_telemetry",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberTelemetryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Telemetry accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberTelemetryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown event or invalid batch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/tower/upgrades/{upgrade_id}": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Purchases the next level of one Tower/HQ room with Bits.",
+        "operationId": "purchase_tower_upgrade",
+        "parameters": [
+          {
+            "name": "upgrade_id",
+            "in": "path",
+            "description": "Tower room upgrade identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberTowerUpgradePurchaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Room upgraded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberTowerUpgradePurchaseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown room or malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Insufficient Bits, max level, prerequisite not met, or reused key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/cyber-defense/upgrades": {
       "post": {
         "tags": [
@@ -3089,6 +3730,355 @@
           }
         }
       },
+      "CyberAdversaryProgressDto": {
+        "type": "object",
+        "description": "Progress against one recurring adversary.",
+        "required": [
+          "adversary_id",
+          "progress",
+          "rank",
+          "encounters",
+          "victories",
+          "highest_threat_level_cleared",
+          "dossier_flags"
+        ],
+        "properties": {
+          "adversary_id": {
+            "type": "string",
+            "description": "Adversary identifier."
+          },
+          "dossier_flags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Unlocked dossier flags."
+          },
+          "encounters": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Total encounters."
+          },
+          "highest_threat_level_cleared": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Highest Threat Level cleared against this adversary."
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Accumulated progress."
+          },
+          "rank": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Derived rank."
+          },
+          "victories": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Total victories."
+          }
+        }
+      },
+      "CyberCampaignCompleteRequest": {
+        "type": "object",
+        "description": "Client result evidence for a Stage 1 campaign mission.\n\nRewards are never accepted from the client; only the raw result is.",
+        "required": [
+          "result_id",
+          "stars",
+          "health",
+          "duration_ms"
+        ],
+        "properties": {
+          "duration_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Attempt duration in milliseconds."
+          },
+          "health": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Remaining system health."
+          },
+          "hero_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Hero selected for the run, when any. Receives hero XP."
+          },
+          "result_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Client-generated idempotency key for this result."
+          },
+          "stars": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Stars earned, `0..=3`. `0` means the attempt failed."
+          }
+        }
+      },
+      "CyberCampaignCompleteResponse": {
+        "type": "object",
+        "description": "Response after settling a Stage 1 campaign mission.",
+        "required": [
+          "campaign",
+          "reward",
+          "bits_balance",
+          "career",
+          "newly_settled",
+          "story_nodes_completed"
+        ],
+        "properties": {
+          "bits_balance": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Settled Bits balance after the reward."
+          },
+          "campaign": {
+            "$ref": "#/components/schemas/CyberCampaignResultDto",
+            "description": "Updated campaign result."
+          },
+          "career": {
+            "$ref": "#/components/schemas/CyberCareerSummaryDto",
+            "description": "Career summary after the reward."
+          },
+          "newly_settled": {
+            "type": "boolean",
+            "description": "`false` when this result was already recorded and no new reward settled."
+          },
+          "reward": {
+            "$ref": "#/components/schemas/CyberRewardDto",
+            "description": "Reward actually settled by this request (zero on a duplicate)."
+          },
+          "story_nodes_completed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Story nodes triggered by this result."
+          }
+        }
+      },
+      "CyberCampaignResultDto": {
+        "type": "object",
+        "description": "Authoritative result for one Stage 1 campaign mission.",
+        "required": [
+          "mission_id",
+          "completed",
+          "best_stars",
+          "best_health",
+          "attempts",
+          "first_clear_reward_settled"
+        ],
+        "properties": {
+          "attempts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Total recorded attempts."
+          },
+          "best_health": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Best remaining health."
+          },
+          "best_stars": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Best stars earned."
+          },
+          "completed": {
+            "type": "boolean",
+            "description": "Whether the mission was ever completed."
+          },
+          "first_clear_reward_settled": {
+            "type": "boolean",
+            "description": "Whether the one-time first-clear reward was settled."
+          },
+          "mission_id": {
+            "type": "string",
+            "description": "Campaign mission identifier."
+          }
+        }
+      },
+      "CyberCareerDto": {
+        "type": "object",
+        "description": "Career progress derived from career XP.",
+        "required": [
+          "xp",
+          "level",
+          "rank",
+          "xp_into_level"
+        ],
+        "properties": {
+          "level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Career level derived from XP."
+          },
+          "next_level_xp": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Absolute XP threshold for the next level, or `null` at the cap."
+          },
+          "rank": {
+            "type": "string",
+            "description": "Rank label for the level."
+          },
+          "xp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total career XP."
+          },
+          "xp_for_next_level": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "XP span of the current level, or `null` at the cap."
+          },
+          "xp_into_level": {
+            "type": "integer",
+            "format": "int64",
+            "description": "XP accumulated within the current level."
+          }
+        }
+      },
+      "CyberCareerSummaryDto": {
+        "type": "object",
+        "description": "Compact career summary returned after a reward settles.",
+        "required": [
+          "xp",
+          "level",
+          "rank",
+          "level_up"
+        ],
+        "properties": {
+          "level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Career level after settlement."
+          },
+          "level_up": {
+            "type": "boolean",
+            "description": "Whether this settlement raised the career level."
+          },
+          "rank": {
+            "type": "string",
+            "description": "Rank label for the level."
+          },
+          "xp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total career XP after settlement."
+          }
+        }
+      },
+      "CyberDefenseProfileResponse": {
+        "type": "object",
+        "description": "One complete, server-authoritative Cyber Defense profile snapshot.",
+        "required": [
+          "career",
+          "bits_balance",
+          "tower_level",
+          "tower_upgrades",
+          "heroes",
+          "adversaries",
+          "story",
+          "campaign",
+          "highest_threat_level_cleared",
+          "recommended_threat_level",
+          "unlocked_threat_level",
+          "total_operations_completed",
+          "legacy_progress_imported"
+        ],
+        "properties": {
+          "active_operation_run_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Active Operation run identifier, if one exists."
+          },
+          "adversaries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CyberAdversaryProgressDto"
+            },
+            "description": "Adversary progress and ranks."
+          },
+          "bits_balance": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Settled Bits balance."
+          },
+          "campaign": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CyberCampaignResultDto"
+            },
+            "description": "Campaign mission results."
+          },
+          "career": {
+            "$ref": "#/components/schemas/CyberCareerDto",
+            "description": "Career XP, level, and rank."
+          },
+          "heroes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CyberHeroProgressDto"
+            },
+            "description": "Persistent hero progression."
+          },
+          "highest_threat_level_cleared": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Highest Threat Level ever cleared."
+          },
+          "legacy_progress_imported": {
+            "type": "boolean",
+            "description": "Whether legacy local progress was imported once."
+          },
+          "recommended_threat_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Server-recommended Threat Level."
+          },
+          "story": {
+            "$ref": "#/components/schemas/CyberStoryProgressDto",
+            "description": "Story progress."
+          },
+          "total_operations_completed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Total completed repeatable Operations."
+          },
+          "tower_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Aggregate Tower level."
+          },
+          "tower_upgrades": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CyberTowerUpgradeDto"
+            },
+            "description": "Tower/HQ room upgrade levels."
+          },
+          "unlocked_threat_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Highest Threat Level the player may currently start."
+          }
+        }
+      },
       "CyberDefenseUpgradeRequest": {
         "type": "object",
         "description": "Request to debit Bits for one Cyber Defense control upgrade.\n\nThe client sends only the action's primitives: the server derives the\ncontrol's level from its own settled ledger, computes the canonical cost from\npolicy, and never trusts a client-supplied amount. `event_id` is the\nidempotency key, so a retry after a timeout cannot debit twice.",
@@ -3142,6 +4132,708 @@
             "type": "integer",
             "format": "int64",
             "description": "Bits charged for this upgrade."
+          }
+        }
+      },
+      "CyberHeroProgressDto": {
+        "type": "object",
+        "description": "Persistent hero progress for one hero.",
+        "required": [
+          "hero_id",
+          "xp",
+          "level",
+          "max_level",
+          "xp_into_level",
+          "selected_talents"
+        ],
+        "properties": {
+          "hero_id": {
+            "type": "string",
+            "description": "Hero identifier."
+          },
+          "level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Hero level derived from XP."
+          },
+          "max_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum hero level."
+          },
+          "next_level_xp": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Absolute XP threshold for the next level, or `null` at the cap."
+          },
+          "selected_talents": {
+            "description": "Selected talent choices, keyed by milestone."
+          },
+          "xp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total hero XP."
+          },
+          "xp_for_next_level": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "XP span of the current level, or `null` at the cap."
+          },
+          "xp_into_level": {
+            "type": "integer",
+            "format": "int64",
+            "description": "XP accumulated within the current level."
+          }
+        }
+      },
+      "CyberHeroTalentRequest": {
+        "type": "object",
+        "description": "Request to replace a hero's selected talents.",
+        "required": [
+          "talents"
+        ],
+        "properties": {
+          "talents": {
+            "type": "object",
+            "description": "Selected choice id keyed by milestone level, for example `{\"5\": \"rapid_response\"}`.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CyberLegacyImportRequest": {
+        "type": "object",
+        "description": "Request to import legacy Stage 1 local progress once.",
+        "required": [
+          "missions"
+        ],
+        "properties": {
+          "missions": {
+            "type": "object",
+            "description": "Known campaign mission results keyed by mission id.",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CyberLegacyMissionDto"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CyberLegacyImportResponse": {
+        "type": "object",
+        "description": "Result of a legacy progress import.",
+        "required": [
+          "imported",
+          "missions_imported",
+          "career_xp_granted",
+          "bits_balance",
+          "career"
+        ],
+        "properties": {
+          "bits_balance": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Settled Bits balance (never increased by an import)."
+          },
+          "career": {
+            "$ref": "#/components/schemas/CyberCareerSummaryDto",
+            "description": "Career summary after the import."
+          },
+          "career_xp_granted": {
+            "type": "integer",
+            "format": "int64",
+            "description": "One-time returning-defender career XP granted by the server."
+          },
+          "imported": {
+            "type": "boolean",
+            "description": "`false` when progress was already imported (or the import was a no-op)."
+          },
+          "missions_imported": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of known missions imported."
+          }
+        }
+      },
+      "CyberLegacyMissionDto": {
+        "type": "object",
+        "description": "One imported legacy campaign mission result.",
+        "required": [
+          "completed",
+          "stars",
+          "best_health",
+          "attempts"
+        ],
+        "properties": {
+          "attempts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Attempts recorded locally."
+          },
+          "best_health": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Best remaining health recorded locally."
+          },
+          "completed": {
+            "type": "boolean",
+            "description": "Whether the mission was completed locally."
+          },
+          "stars": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Best stars earned locally."
+          }
+        }
+      },
+      "CyberOperationCompleteRequest": {
+        "type": "object",
+        "description": "Client result evidence for one Operation run.",
+        "required": [
+          "completed",
+          "stars",
+          "health",
+          "duration_ms"
+        ],
+        "properties": {
+          "completed": {
+            "type": "boolean",
+            "description": "Whether the Operation was completed."
+          },
+          "duration_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Attempt duration in milliseconds."
+          },
+          "health": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Remaining system health."
+          },
+          "stars": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Stars earned, `0..=3`."
+          }
+        }
+      },
+      "CyberOperationCompleteResponse": {
+        "type": "object",
+        "description": "Result of settling one Operation run.",
+        "required": [
+          "run",
+          "reward",
+          "bits_balance",
+          "career",
+          "adversary",
+          "newly_settled",
+          "recommended_threat_level",
+          "unlocked_threat_level",
+          "dossier_unlocks",
+          "story_nodes_completed"
+        ],
+        "properties": {
+          "adversary": {
+            "$ref": "#/components/schemas/CyberAdversaryProgressDto",
+            "description": "Updated adversary progress."
+          },
+          "bits_balance": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Settled Bits balance."
+          },
+          "career": {
+            "$ref": "#/components/schemas/CyberCareerSummaryDto",
+            "description": "Career summary after the reward."
+          },
+          "dossier_unlocks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Dossier flags unlocked by this result."
+          },
+          "hero": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CyberHeroProgressDto",
+                "description": "Updated hero progress, when the run had a hero."
+              }
+            ]
+          },
+          "newly_settled": {
+            "type": "boolean",
+            "description": "`false` when this run was already settled."
+          },
+          "recommended_threat_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Recommended Threat Level after this result."
+          },
+          "reward": {
+            "$ref": "#/components/schemas/CyberRewardDto",
+            "description": "Reward settled by this request (zero on a duplicate)."
+          },
+          "run": {
+            "$ref": "#/components/schemas/CyberOperationRunDto",
+            "description": "Updated run."
+          },
+          "story_nodes_completed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Story nodes triggered by this result."
+          },
+          "unlocked_threat_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Highest Threat Level currently unlocked."
+          }
+        }
+      },
+      "CyberOperationResultDto": {
+        "type": "object",
+        "description": "One recorded Operation result.",
+        "required": [
+          "completed",
+          "stars",
+          "health",
+          "duration_ms"
+        ],
+        "properties": {
+          "completed": {
+            "type": "boolean",
+            "description": "Whether the Operation was completed."
+          },
+          "duration_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Duration in milliseconds."
+          },
+          "health": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Remaining system health."
+          },
+          "stars": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Stars earned."
+          }
+        }
+      },
+      "CyberOperationRunDto": {
+        "type": "object",
+        "description": "A server-issued Operation run and its persisted snapshot.",
+        "required": [
+          "run_id",
+          "status",
+          "seed",
+          "template_id",
+          "adversary_id",
+          "adversary_name",
+          "threat_level",
+          "operation",
+          "started_at",
+          "bits_awarded",
+          "career_xp_awarded",
+          "hero_xp_awarded"
+        ],
+        "properties": {
+          "adversary_id": {
+            "type": "string",
+            "description": "Adversary identifier."
+          },
+          "adversary_name": {
+            "type": "string",
+            "description": "Adversary display name."
+          },
+          "bits_awarded": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Bits awarded on settlement."
+          },
+          "career_xp_awarded": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Career XP awarded on settlement."
+          },
+          "hero_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Selected hero."
+          },
+          "hero_xp_awarded": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Hero XP awarded on settlement."
+          },
+          "operation": {
+            "$ref": "#/components/schemas/GeneratedOperation",
+            "description": "Full generated Operation snapshot."
+          },
+          "result": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CyberOperationResultDto",
+                "description": "Recorded result, once settled."
+              }
+            ]
+          },
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Run identifier."
+          },
+          "seed": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Deterministic generation seed."
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Start time."
+          },
+          "status": {
+            "type": "string",
+            "description": "`active`, `completed`, `failed`, or `abandoned`."
+          },
+          "template_id": {
+            "type": "string",
+            "description": "Template identifier."
+          },
+          "threat_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Threat Level."
+          }
+        }
+      },
+      "CyberOperationStartRequest": {
+        "type": "object",
+        "description": "Request to start a repeatable Operation.",
+        "required": [
+          "requested_threat_level"
+        ],
+        "properties": {
+          "hero_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Selected hero, when any. Defaults to the Security Engineer."
+          },
+          "requested_threat_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Requested Threat Level. Must be unlocked for this learner."
+          },
+          "template_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Explicit template choice, when browsing Operations directly."
+          }
+        }
+      },
+      "CyberReward": {
+        "type": "object",
+        "description": "Bits, career XP, and hero XP granted by one settled result.",
+        "required": [
+          "bits",
+          "career_xp",
+          "hero_xp"
+        ],
+        "properties": {
+          "bits": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Spendable Bits."
+          },
+          "career_xp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Non-spendable career XP."
+          },
+          "hero_xp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Non-spendable hero XP for the run's selected hero."
+          }
+        }
+      },
+      "CyberRewardDto": {
+        "type": "object",
+        "description": "A settled Cyber Defense reward.",
+        "required": [
+          "bits",
+          "career_xp",
+          "hero_xp"
+        ],
+        "properties": {
+          "bits": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Bits awarded."
+          },
+          "career_xp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Career XP awarded."
+          },
+          "hero_xp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Hero XP awarded."
+          }
+        }
+      },
+      "CyberStoryProgressDto": {
+        "type": "object",
+        "description": "Story progression summary.",
+        "required": [
+          "active_chapter",
+          "completed_nodes"
+        ],
+        "properties": {
+          "active_chapter": {
+            "type": "string",
+            "description": "Active chapter identifier."
+          },
+          "completed_nodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Acknowledged story node identifiers."
+          }
+        }
+      },
+      "CyberTelemetryEventDto": {
+        "type": "object",
+        "description": "One balance-telemetry event from the client.\n\nOnly game identifiers and results; no raw personal data.",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "adversary_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Adversary id, when relevant."
+          },
+          "defense_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Defense id, when relevant."
+          },
+          "duration_bucket": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Duration bucket label, when relevant."
+          },
+          "hero_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Hero id, when relevant."
+          },
+          "name": {
+            "type": "string",
+            "description": "Event name, from the known allowlist."
+          },
+          "result": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Result label, when relevant."
+          },
+          "run_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Operation run id, when relevant."
+          },
+          "stars": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Stars, when relevant."
+          },
+          "template_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Operation template id, when relevant."
+          },
+          "threat_level": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Threat Level, when relevant."
+          },
+          "wave": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Wave index, when relevant."
+          }
+        }
+      },
+      "CyberTelemetryRequest": {
+        "type": "object",
+        "description": "A batch of telemetry events.",
+        "required": [
+          "events"
+        ],
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CyberTelemetryEventDto"
+            },
+            "description": "Events to append. Bounded to a small batch."
+          }
+        }
+      },
+      "CyberTelemetryResponse": {
+        "type": "object",
+        "description": "Acknowledgement of a telemetry batch.",
+        "required": [
+          "accepted"
+        ],
+        "properties": {
+          "accepted": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of events accepted."
+          }
+        }
+      },
+      "CyberTowerUpgradeDto": {
+        "type": "object",
+        "description": "One Tower/HQ room upgrade level.",
+        "required": [
+          "upgrade_id",
+          "level",
+          "max_level"
+        ],
+        "properties": {
+          "level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Current level."
+          },
+          "max_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum level."
+          },
+          "next_cost": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Bits cost to reach the next level, or `null` at the cap."
+          },
+          "upgrade_id": {
+            "type": "string",
+            "description": "Upgrade (room) identifier."
+          }
+        }
+      },
+      "CyberTowerUpgradePurchaseRequest": {
+        "type": "object",
+        "description": "Request to purchase the next level of one Tower/HQ room.\n\nThe cost is never sent: the server derives it from canonical policy.",
+        "required": [
+          "event_id"
+        ],
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Client-generated idempotency key for this purchase."
+          }
+        }
+      },
+      "CyberTowerUpgradePurchaseResponse": {
+        "type": "object",
+        "description": "Result of a Tower/HQ room purchase.",
+        "required": [
+          "upgrade_id",
+          "level",
+          "tower_level",
+          "bits_balance",
+          "spent",
+          "newly_settled"
+        ],
+        "properties": {
+          "bits_balance": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Settled Bits balance after the purchase."
+          },
+          "level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Room level after the purchase."
+          },
+          "newly_settled": {
+            "type": "boolean",
+            "description": "`false` when this `event_id` was already settled (a safe retry)."
+          },
+          "spent": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Bits charged for this purchase."
+          },
+          "tower_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Aggregate Tower level after the purchase."
+          },
+          "upgrade_id": {
+            "type": "string",
+            "description": "Room that was upgraded."
           }
         }
       },
@@ -3555,6 +5247,14 @@
           "message"
         ],
         "properties": {
+          "active_run_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Active Operation run id, when the error is `active_operation_exists`."
+          },
           "code": {
             "type": "string",
             "description": "Stable error code."
@@ -4123,6 +5823,215 @@
           "becoming_due",
           "due"
         ]
+      },
+      "GeneratedModifier": {
+        "type": "object",
+        "description": "One active Operation modifier.",
+        "required": [
+          "id",
+          "name",
+          "description"
+        ],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Learner-facing description."
+          },
+          "id": {
+            "type": "string",
+            "description": "Modifier identifier."
+          },
+          "name": {
+            "type": "string",
+            "description": "Learner-facing name."
+          }
+        }
+      },
+      "GeneratedOperation": {
+        "type": "object",
+        "description": "A complete, persisted Operation snapshot.",
+        "required": [
+          "seed",
+          "template_id",
+          "adversary_id",
+          "adversary_name",
+          "threat_level",
+          "title",
+          "summary",
+          "map_id",
+          "starting_budget",
+          "starting_health",
+          "latency_target_ms",
+          "available_defenses",
+          "available_heroes",
+          "waves",
+          "modifiers",
+          "dominant_attack_type",
+          "hidden_attacks",
+          "boss",
+          "reward_preview"
+        ],
+        "properties": {
+          "adversary_id": {
+            "type": "string",
+            "description": "Adversary identifier."
+          },
+          "adversary_name": {
+            "type": "string",
+            "description": "Adversary display name."
+          },
+          "available_defenses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Defenses offered."
+          },
+          "available_heroes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Heroes offered."
+          },
+          "boss": {
+            "type": "boolean",
+            "description": "Whether a boss is present."
+          },
+          "dominant_attack_type": {
+            "type": "string",
+            "description": "The dominant attack family."
+          },
+          "hidden_attacks": {
+            "type": "boolean",
+            "description": "Whether some traffic is hidden until detection is active."
+          },
+          "latency_target_ms": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Latency target in milliseconds."
+          },
+          "map_id": {
+            "type": "string",
+            "description": "Map identifier the frontend resolves."
+          },
+          "modifiers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GeneratedModifier"
+            },
+            "description": "Active modifiers."
+          },
+          "reward_preview": {
+            "$ref": "#/components/schemas/CyberReward",
+            "description": "Reward preview at three stars."
+          },
+          "seed": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Generation seed."
+          },
+          "starting_budget": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Starting mission credits."
+          },
+          "starting_health": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Starting system health."
+          },
+          "summary": {
+            "type": "string",
+            "description": "Learner-facing summary."
+          },
+          "template_id": {
+            "type": "string",
+            "description": "Template identifier."
+          },
+          "threat_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Threat Level."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing title."
+          },
+          "waves": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GeneratedWave"
+            },
+            "description": "Waves."
+          }
+        }
+      },
+      "GeneratedSpawnGroup": {
+        "type": "object",
+        "description": "One spawn group in a generated wave.",
+        "required": [
+          "attack_id",
+          "count",
+          "spawn_interval_ms",
+          "health_multiplier",
+          "speed_multiplier"
+        ],
+        "properties": {
+          "attack_id": {
+            "type": "string",
+            "description": "Attack identifier."
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of units."
+          },
+          "delay_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Optional start delay in milliseconds."
+          },
+          "health_multiplier": {
+            "type": "number",
+            "format": "double",
+            "description": "Enemy health multiplier applied at spawn."
+          },
+          "spawn_interval_ms": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Spawn interval in milliseconds."
+          },
+          "speed_multiplier": {
+            "type": "number",
+            "format": "double",
+            "description": "Enemy speed multiplier applied at spawn."
+          }
+        }
+      },
+      "GeneratedWave": {
+        "type": "object",
+        "description": "One generated wave.",
+        "required": [
+          "groups",
+          "boss"
+        ],
+        "properties": {
+          "boss": {
+            "type": "boolean",
+            "description": "Marks the boss wave."
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GeneratedSpawnGroup"
+            },
+            "description": "Spawn groups."
+          }
+        }
       },
       "GlossaryTerm": {
         "type": "object",

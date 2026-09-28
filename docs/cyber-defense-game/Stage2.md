@@ -1,1953 +1,1895 @@
 # Cyber Defense Tower — Stage 2 Implementation Plan
 
-**File:** `Stage2.md`  
-**Stage:** 2  
-**Stage 1 baseline:** existing `cyber-td` implementation  
-**Primary product goal:** turn the existing Cyber Defense Tower game from a five-mission experience into a persistent, replayable game that a user can casually return to for months.
+**Target branch:** start from the current `cyber-td` implementation  
+**Stage 1:** existing five-mission Cyber Defense Tower game  
+**Stage 2 goal:** turn Stage 1 into a persistent game that users can casually play for months without adding another game genre.
 
 ---
 
-## 1. Priority Order
+# 0. Execution plan
 
-When requirements conflict, use this order:
+## Priority order
+
+When two requirements conflict, optimize in this order:
 
 1. **Fun**
-2. **A game system that remains worth playing for months**
+2. **Long-term replayability**
 3. **Meaningful use of Bits**
 4. **Security education**
 
-Security content must still be reasonably accurate. "Security education is fourth priority" means the game should not sacrifice fun or replayability to become a simulator or textbook. It does **not** mean knowingly teaching false security concepts.
+Security concepts still must hold true at all times.
 
-### Stage 2 product test
+## Hard constraints
 
-A successful Stage 2 player should be able to finish the original five missions and still think:
+Do not add any of these in Stage 2:
 
-> "I want to play one more operation because I am close to a hero level, a Tower upgrade, or the next adversary/story reveal."
+- Daily incidents
+- Daily Cyber Defense missions
+- Daily login rewards
+- Streak-loss punishment
+- Energy that blocks play
+- Gacha
+- Loot boxes
+- Battle pass
+- PvP
+- Multiplayer
+- Guilds
+- Seasons
+- Paid Bits
+- A new standalone game mode
+- A detailed SOC simulator
 
-The game must no longer end after the original five missions.
+Do not use **Oracle** as a name for:
+
+- adversary
+- hacker
+- boss
+- company
+- hero
+- operation
+- story character
+
+Avoid names that intentionally mimic real security vendors, cloud providers, database companies, or real-world threat groups.
+
+## Existing Stage 1 systems must be reused
+
+Do not rebuild working Stage 1 systems.
+
+Stage 1 already has:
+
+- browser-side deterministic simulation
+- five fixed missions
+- towers/security controls
+- tower placement
+- mission-local credits
+- tower upgrades
+- waves
+- bosses
+- hero deployment
+- hero combat
+- hero cooldowns
+- hero auras
+- synergies
+- hidden/revealed attacks
+- postmortems
+- star ratings
+- mission caching/resume
+- persistent Bits wallet infrastructure
+- server-authoritative Bits debit endpoint
+- local mission completion tracking
+
+The main Stage 2 problem is **meta-progression and replayability**, not basic combat.
 
 ---
 
-# 2. Stage 1 Baseline — Do Not Rebuild Existing Systems
+# 1. Baseline Repository Files
 
-Before implementing Stage 2, inspect the current `cyber-td` branch and preserve the working Stage 1 systems.
+Before modifying anything, inspect these files.
 
-Stage 1 already includes:
-
-- Five missions:
-  - DDoS basics
-  - SQL Injection
-  - Credential Stuffing
-  - Mixed Defense
-  - Botnet DDoS boss
-- Browser-side deterministic simulation.
-- Multiple waves and intermissions.
-- Mission-local credits.
-- Early-wave call bonus.
-- System health.
-- Latency target.
-- Star ratings.
-- Mission postmortems.
-- Mission resume/cache.
-- Build pads and placement rules.
-- Eleven security defenses/controls.
-- Defense-specific effectiveness.
-- Support controls.
-- Defense-in-depth synergies.
-- Rate Limiter gate behavior.
-- Hidden/revealed attacks.
-- Backup recovery.
-- Boss health and boss summons.
-- Two playable heroes:
-  - Security Engineer
-  - SRE
-- Heroes can be deployed on the road.
-- Hero melee combat.
-- Hero active duration.
-- Hero cooldowns.
-- Hero aura effects.
-- Sound, feedback, effects, pausing, speed controls, and mobile-oriented interactions.
-- Existing Bits wallet infrastructure.
-- Local mission completion/stars/best-health/attempt tracking.
-- Current server endpoint for spending Bits on an in-run defense upgrade.
-
-Useful Stage 1 code locations include:
+## Frontend game
 
 ```text
 apps/web/src/game/
   components/
+    CyberDefenseGame.tsx
+    GameBoard.tsx
+    GameHud.tsx
+    DefenseShop.tsx
+    DefenseCard.tsx
+    HeroBar.tsx
+    HeroDetail.tsx
+    MissionBriefing.tsx
+    MissionResult.tsx
   data/
     attacks.ts
     defenses.ts
     heroes.ts
     missions.ts
     synergies.ts
+    index.ts
   engine/
     combat.ts
     simulation.ts
     postmortem.ts
+    pathing.ts
+    layout.ts
   hooks/
+    useGameEngine.ts
   models/
+    attack.ts
+    defense.ts
+    hero.ts
+    map.ts
+    mission.ts
   persistence/
+    gameCache.ts
+    gameProgress.ts
+    tutorial.ts
 
 apps/web/src/pages/
   CyberDefensePage.tsx
   CyberDefenseMissionPage.tsx
 
-apps/api/src/routes/cyber_defense.rs
-apps/api/src/services.rs
-
 apps/web/src/state/
   wallet.ts
   bitSpends.ts
 
-crates/db/migrations/
+apps/web/src/App.tsx
+```
 
+## Backend
+
+```text
+apps/api/src/
+  dto.rs
+  openapi.rs
+  services.rs
+  routes/
+    cyber_defense.rs
+    mod.rs
+
+crates/domain/src/
+  reward.rs
+  lib.rs
+
+crates/db/src/
+  wallets.rs
+  lib.rs
+
+crates/db/migrations/
+```
+
+## Existing game specification
+
+```text
 docs/18-cyber-defense-game-spec.md
 ```
 
-Stage 2 should extend these systems rather than replacing them.
-
 ---
 
-# 3. Research Summary and Design Implications
+# 2. Stage 2 End State
 
-This section summarizes the research basis for Stage 2. The coding agent does not need to reproduce the research. It should use the implications when making implementation decisions.
-
-## 3.1 Player motivation: autonomy, competence, relatedness
-
-Self-Determination Theory research applied to games found that perceived **autonomy**, **competence**, and **relatedness** are associated with enjoyment and future play. In particular, autonomy and competence matter strongly for a single-player strategy game.
-
-### Stage 2 implications
-
-Support autonomy through:
-
-- hero choice,
-- Tower/HQ upgrade choices,
-- selectable challenge,
-- multiple viable defense strategies,
-- optional story/detail screens instead of forced long exposition.
-
-Support competence through:
-
-- clear progression,
-- readable cause-and-effect,
-- hero levels,
-- visible Tower growth,
-- understandable losses,
-- mastery of increasingly difficult operations.
-
-Support relatedness primarily through the fictional organization, operators, and recurring adversaries. Stage 2 does **not** need multiplayer or social mechanics.
-
-Source:
-
-- Ryan, Rigby, Przybylski, *The Motivational Pull of Video Games: A Self-Determination Theory Approach*  
-  https://selfdeterminationtheory.org/SDT/documents/2006_RyanRigbyPrzybylski_MandE.pdf
-
----
-
-## 3.2 Challenge should grow with player ability
-
-Research on game-based learning and flow indicates that challenge and engagement are related, and that challenge should keep pace with growing player ability. Dynamic difficulty research does **not** establish one universally best adaptation strategy.
-
-### Stage 2 implication
-
-Do **not** secretly manipulate difficulty to force wins or losses.
-
-Implement:
-
-- a visible **Recommended Threat Level**,
-- user-selectable threat level,
-- performance-based recommendations,
-- optional harder operations,
-- deterministic and explainable scaling.
-
-The user can always choose a lower or higher level than recommended.
-
-This protects autonomy while reducing boredom and frustration.
-
-Sources:
-
-- Hamari et al., *Challenging games help students learn*  
-  https://doi.org/10.1016/j.chb.2015.07.045
-- Ang & Mitchell, *Comparing Effects of Dynamic Difficulty Adjustment Systems on Video Game Experience*  
-  https://doi.org/10.1145/3116595.3116623
-- *Dynamic Difficulty Adjustment in Tower Defence*  
-  https://doi.org/10.1016/j.procs.2015.07.563
-
----
-
-## 3.3 Long-term progression needs more than points
-
-Gamification research generally finds positive but modest effects. Points and badges by themselves are not enough to make a long-lived game. Levels, autonomy, feedback, and meaningful game choices matter.
-
-### Stage 2 implication
-
-Bits must buy something the player cares about.
-
-Do not treat:
+At the end of Stage 2 the player loop should be:
 
 ```text
-Bits balance increased
-```
-
-as the reward.
-
-Instead make Bits enable visible permanent progress such as:
-
-```text
-Tower floor upgraded
-Threat Intel room improved
-Hero training capability unlocked
-New strategic option unlocked
-```
-
-The reward loop should be:
-
-```text
-Play
-  ↓
-Earn Bits / XP
-  ↓
-Make a permanent choice
-  ↓
-See the Tower / hero / dossier change
-  ↓
-Have new strategic possibilities
-  ↓
-Play again
-```
-
-Sources:
-
-- *Gamification enhances student intrinsic motivation...: a meta-analysis*  
-  https://link.springer.com/article/10.1007/s11423-023-10337-7
-- *Using game concepts to improve programming learning: A multi-level meta-analysis*  
-  https://onlinelibrary.wiley.com/doi/10.1002/cae.22630
-
----
-
-## 3.4 Avoid dark-pattern retention
-
-Long-term play must come from mastery, progression, strategy, story, and ownership.
-
-Do **not** use Stage 2 to add:
-
-- loot boxes,
-- paid random rewards,
-- deliberately frustrating wait timers,
-- expiring rewards,
-- daily FOMO,
-- streak-loss punishment,
-- forced check-ins,
-- artificial energy limits,
-- deceptive near-miss systems.
-
-There are no daily incidents in Stage 2.
-
-Source:
-
-- 2026 systematic review of dark patterns and random reward mechanisms in games  
-  https://www.sciencedirect.com/science/article/pii/S1875952126000443
-
----
-
-## 3.5 Game theory and strategic balance
-
-A strategy game becomes shallow when one choice is effectively dominant.
-
-The player should repeatedly face trade-offs such as:
-
-```text
-Spend now vs save
-Broad defense vs specialist defense
-More protection vs lower latency
-Information vs direct mitigation
-Hero A vs Hero B
-Safe threat level vs harder reward
-```
-
-### Stage 2 implication
-
-No single defense, hero, Tower build, or upgrade path should be correct in nearly every operation.
-
-Operations must be context-dependent.
-
-Measure defense and hero selection rates after release. Investigate designs where one option dominates unrelated operation types.
-
-Player decisions should generally satisfy this pattern:
-
-```text
-Choice A has a meaningful advantage.
-Choice B has a different meaningful advantage.
-The better choice depends on the operation state.
-```
-
-Risk/reward should remain readable. The existing early-wave-call mechanic is a good example and should stay.
-
-Useful research/background:
-
-- Player tactics in commercial tower defense games:  
-  https://www.sciencedirect.com/science/article/pii/S1875952125000436
-- Risk/reward decision making under uncertainty:  
-  https://pubmed.ncbi.nlm.nih.gov/29567432/
-- Avoiding dominant options is a core balance objective. A recent formal treatment of asymmetric game balance is available here:  
-  https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7001878
-
----
-
-## 3.6 UI/UX: keep state visible and choices understandable
-
-General usability research strongly supports:
-
-- visibility of system status,
-- consistency,
-- user control,
-- error prevention,
-- recognition instead of recall,
-- progressive disclosure.
-
-### Stage 2 implication
-
-The game dashboard must immediately answer:
-
-```text
-What should I do next?
-How strong am I?
-What am I working toward?
-How many Bits do I have?
-Who am I fighting?
-What will I unlock next?
-```
-
-Do not put every meta-system on the main screen at once.
-
-Use one primary action:
-
-```text
-CONTINUE DEFENSE
-```
-
-Secondary destinations can be:
-
-```text
-Tower
-Heroes
-Threat Intel
-Campaign
-Operations
-```
-
-Source:
-
-- Nielsen Norman Group, usability heuristics  
-  https://www.nngroup.com/articles/ten-usability-heuristics/
-
-Accessibility guidance:
-
-- allow pause,
-- avoid essential information that disappears too quickly,
-- support reduced motion,
-- do not use color alone for state,
-- use readable text and touch-friendly controls.
-
-Example game accessibility guidance:
-
-- Microsoft Xbox Accessibility Guidelines  
-  https://learn.microsoft.com/en-us/gaming/accessibility/
-
----
-
-# 4. Cybersecurity Research Basis
-
-Stage 2 is a game first, but the security relationships used in game mechanics must remain defensible.
-
-Use the following as primary references when adding or changing security content.
-
-## 4.1 High-level defensive structure
-
-NIST CSF 2.0 organizes cybersecurity outcomes around:
-
-```text
-Govern
-Identify
-Protect
-Detect
-Respond
-Recover
-```
-
-This is useful conceptual inspiration for the Tower/HQ without turning the game into compliance training.
-
-Source:
-
-- NIST Cybersecurity Framework 2.0  
-  https://www.nist.gov/publications/nist-cybersecurity-framework-csf-20
-
-CIS Controls provide a prioritized set of safeguards and emphasize building an adaptive, continuously improved defense.
-
-Sources:
-
-- https://www.cisecurity.org/controls
-- https://www.cisecurity.org/controls/implementation-groups
-
----
-
-## 4.2 Adversaries and TTPs
-
-Use MITRE ATT&CK vocabulary carefully.
-
-ATT&CK:
-
-- **Tactics** represent the adversary's goal/why.
-- **Techniques** represent how an adversary accomplishes a tactical goal.
-
-Useful Enterprise tactics include:
-
-```text
-Reconnaissance
-Initial Access
-Execution
-Persistence
-Privilege Escalation
-Credential Access
-Discovery
-Lateral Movement
-Collection
-Command and Control
-Exfiltration
-Impact
-```
-
-The Stage 2 adversary system may borrow these concepts for story, dossiers, and operation modifiers.
-
-Do not falsely label every web vulnerability as an ATT&CK technique.
-
-Sources:
-
-- https://attack.mitre.org/tactics/
-- https://attack.mitre.org/techniques/
-
----
-
-## 4.3 Web security relationships
-
-### SQL Injection
-
-Keep the current concept that Parameterized Queries are substantially stronger/root-cause protection compared with merely filtering traffic through a WAF.
-
-OWASP's preferred SQL injection defenses include prepared statements / parameterized queries.
-
-Source:
-
-- https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html
-
-### XSS
-
-Do not teach that CSP alone "solves XSS."
-
-Output encoding, safe framework behavior, sanitization where appropriate, and other contextual defenses matter. CSP is defense in depth.
-
-Source:
-
-- https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
-
-### Credential stuffing
-
-MFA is a strong defense against password reuse attacks. Rate limiting is useful but should not be presented as equivalent to strong authentication.
-
-Phishing-resistant MFA is stronger than generic push/SMS MFA.
-
-Sources:
-
-- https://cheatsheetseries.owasp.org/cheatsheets/Credential_Stuffing_Prevention_Cheat_Sheet.html
-- https://www.cisa.gov/audiences/small-and-medium-businesses/secure-your-business/require-multifactor-authentication
-
-### Current web-risk taxonomy
-
-Use OWASP Top 10:2025 when future Stage 2 content references modern web risk categories.
-
-Source:
-
-- https://top10.owasp.org/2025/
-
----
-
-## 4.4 Networking and system security relationships
-
-### Segmentation
-
-Network segmentation can limit lateral movement and contain compromise. It is not a magic prevention control.
-
-Sources:
-
-- CISA ransomware guidance  
-  https://www.cisa.gov/stopransomware/ransomware-guide
-- CISA network segmentation guidance  
-  https://www.cisa.gov/sites/default/files/publications/layering-network-security-segmentation_infographic_508_0.pdf
-
-### Least privilege
-
-Least privilege should primarily reduce blast radius/impact. It should not behave like a generic projectile tower that magically blocks unrelated attacks.
-
-### Backups
-
-Backup is primarily recovery/resilience. It should not be represented as preventing ransomware infection.
-
-### Monitoring / IDS
-
-Monitoring and detection should reveal, provide warning, or improve response. Avoid describing logging/IDS as automatically preventing all attacks.
-
-### Zero Trust
-
-Zero Trust is not "trust nothing" and is not simply network segmentation. NIST emphasizes protecting resources and avoiding implicit trust based solely on network location.
-
-Source:
-
-- NIST SP 800-207  
-  https://csrc.nist.gov/pubs/sp/800/207/final
-
-### Incident response
-
-Respond and Recover should remain part of the fiction and postmortem systems rather than forcing the tower-defense game into a detailed SOC simulator.
-
-Source:
-
-- NIST SP 800-61 Rev. 3  
-  https://csrc.nist.gov/pubs/sp/800/61/r3/final
-
----
-
-# 5. Stage 2 Design Pillars
-
-## 5.1 Keep Tower Defense as the main game
-
-Stage 2 is **not** a request to create several new mini-games.
-
-The existing tower-defense simulation remains the primary gameplay.
-
-New systems should feed into it:
-
-```text
-Persistent progression
+Open Cyber Defense
         ↓
-Operation selection
+Continue Defense
         ↓
-Existing Tower Defense gameplay
+Play next campaign mission OR repeatable Operation
         ↓
-Rewards
+Tower Defense match
         ↓
-Tower / Hero / Adversary / Story progression
+Earn:
+- Bits
+- Career XP
+- Hero XP
+- adversary dossier progress
         ↓
-Next operation
+Spend Bits on permanent Tower/HQ upgrades
+        ↓
+Level hero / career
+        ↓
+Unlock new strategic options / story / adversary behavior
+        ↓
+Play another Operation
 ```
+
+Completing the current five fixed missions must no longer mean the game is finished.
 
 ---
 
-## 5.2 Preserve the original five missions
+# 3. Required Stage 2 Systems
 
-The current five Stage 1 missions become the introductory campaign.
+Stage 2 must implement these systems:
 
-Conceptually:
+1. Persistent Cyber Defense profile
+2. Career XP and level
+3. Real Cyber Defense Bits rewards
+4. Mission-credit in-run tower upgrades
+5. Persistent Tower/HQ upgrades
+6. Persistent hero XP and levels
+7. Repeatable Operations
+8. Threat Level difficulty
+9. Recommended Threat Level
+10. Recurring fictional adversaries
+11. Adversary rank
+12. Threat Intel / dossier progress
+13. Story progression
+14. Cross-device persistence
+15. Balance telemetry
+16. Legacy Stage 1 migration
+
+---
+
+# 4. Implementation Order
+
+Use this dependency order:
 
 ```text
-CHAPTER 1 — FIRST CONTACT
-
-1. DDoS Basics
-2. SQL Injection
-3. Credential Stuffing
-4. Mixed Defense
-5. Botnet DDoS Boss
+STEP 0  Baseline verification
+STEP 1  Domain/config foundations
+STEP 2  Database schema
+STEP 3  Cyber Defense profile read API
+STEP 4  Remove persistent Bits from in-run upgrades
+STEP 5  Server-authoritative Stage 1 mission rewards
+STEP 6  Career XP + level
+STEP 7  Persistent Tower/HQ
+STEP 8  Hero progression
+STEP 9  Operation data model
+STEP 10 Deterministic operation generator
+STEP 11 Operation start/complete API
+STEP 12 Threat Level + recommended difficulty
+STEP 13 Operation frontend flow
+STEP 14 Recurring adversaries
+STEP 15 Threat Intel / dossier
+STEP 16 Story progression
+STEP 17 Cyber Defense dashboard redesign
+STEP 18 Legacy progress migration
+STEP 19 Telemetry
+STEP 20 Balance, security, accessibility, regression
 ```
 
-The exact existing names may remain if changing them would add unnecessary work.
+Do not start Step 13 before Steps 9–12 work through the API.
 
-Completing Mission 5 should now communicate:
+---
+
+# STEP 0 — Baseline Verification
+
+## Goal
+
+Prove the Stage 1 branch is healthy before Stage 2 changes.
+
+## Tasks
+
+### 0.1 Run backend checks
+
+From repository root:
+
+```bash
+cargo fmt --check
+cargo clippy --all-targets --all-features -- -D warnings
+cargo test
+```
+
+### 0.2 Run frontend checks
+
+```bash
+cd apps/web
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+Run E2E if local DB/auth test setup is already available:
+
+```bash
+E2E_DATABASE_URL=postgres://app:app@localhost:5432/app pnpm e2e
+```
+
+### 0.3 Manually verify Stage 1
+
+Confirm:
+
+- `/game` loads
+- current five missions appear
+- mission locking works
+- at least one mission starts
+- tower placement works
+- hero deployment works
+- a tower can upgrade
+- boss mission works
+- mission result renders
+- Bits wallet loads
+
+### 0.4 Record known failures
+
+If a baseline test already fails:
+
+- do not silently fix unrelated code
+- document it in the implementation notes
+- distinguish pre-existing failures from Stage 2 regressions
+
+## Exit criteria
+
+Do not start Step 1 until the Stage 1 baseline is understood.
+
+---
+
+# STEP 1 — Add Stage 2 Domain and Balance Configuration
+
+## Goal
+
+Create one canonical place for Stage 2 progression rules before database or API code depends on them.
+
+## Files to add
+
+Recommended:
 
 ```text
-CHAPTER 1 COMPLETE
-OPERATIONS UNLOCKED
+crates/domain/src/cyber_defense.rs
 ```
 
-It must **not** communicate that the player has effectively finished the whole Cyber Defense game.
-
----
-
-## 5.3 No daily system in Stage 2
-
-Explicit non-goals:
-
-- no daily incidents,
-- no daily missions,
-- no daily login reward,
-- no mandatory daily check-in,
-- no streak-loss punishment,
-- no time-gated content.
-
-A user should be able to play:
-
-- three times in one evening,
-- once per week,
-- or return after three weeks,
-
-without being punished.
-
----
-
-# 6. Core Stage 2 Loop
-
-The target long-term loop:
+Update:
 
 ```text
-                 ┌─────────────────────┐
-                 │   CONTINUE DEFENSE  │
-                 └──────────┬──────────┘
-                            ↓
-                    Select / accept
-                       Operation
-                            ↓
-                   Tower Defense Run
-                            ↓
-       ┌────────────────────┼────────────────────┐
-       ↓                    ↓                    ↓
-     Bits                  XP               Adversary Intel
-       ↓                    ↓                    ↓
- Tower / HQ            Hero + Officer        Dossier /
- Upgrades                Progression          Story
-       └────────────────────┼────────────────────┘
-                            ↓
-                  New strategic options
-                            ↓
-                Higher Threat Operations
-                            ↓
-                    Continue Defense
+crates/domain/src/lib.rs
 ```
 
-The loop must work without new attack types being required every week.
+## 1.1 Create domain constants and pure functions
 
----
+The domain module should own:
 
-# 7. Stage 2 Feature Scope
+- career XP thresholds
+- hero XP thresholds
+- Tower upgrade cost rules
+- fixed mission reward rules
+- operation reward rules
+- adversary rank thresholds
+- threat-level bounds
+- recommended-threat-level adjustment rules
 
-The required Stage 2 systems are:
+Do not scatter these values through handlers or React.
 
-1. **Persistent Cyber Defense profile**
-2. **Real Cyber Defense reward settlement**
-3. **Mission-credit in-run upgrades**
-4. **Hero levels and hero progression**
-5. **Persistent Tower / Cyber Defense HQ**
-6. **Repeatable Operations**
-7. **Recurring fictional adversaries with progression**
-8. **Story progression**
-9. **Threat Intel / adversary dossier**
-10. **Visible recommended difficulty**
-11. **Cross-device/server-side persistent progression**
-12. **Balance telemetry**
+Recommended functions:
 
-The following are explicitly not required for Stage 2:
+```rust
+pub fn career_level_from_xp(xp: i64) -> i32
+pub fn hero_level_from_xp(xp: i64) -> i32
+pub fn xp_for_career_level(level: i32) -> Option<i64>
+pub fn xp_for_hero_level(level: i32) -> Option<i64>
 
-- new game genres,
-- PvP,
-- multiplayer,
-- guilds,
-- leaderboards,
-- daily missions/incidents,
-- seasons,
-- battle passes,
-- loot boxes,
-- gacha,
-- paid Bits,
-- energy systems,
-- real-time backend simulation,
-- complex SOC workflow simulation.
+pub fn tower_upgrade_cost(upgrade_id: &str, current_level: i32) -> Option<i64>
 
----
+pub fn fixed_mission_reward(
+    mission_id: &str,
+    stars: i32,
+    first_clear: bool,
+) -> CyberReward
 
-# 8. Persistent Cyber Defense Profile
+pub fn operation_reward(
+    threat_level: i32,
+    stars: i32,
+    completed: bool,
+    first_adversary_clear: bool,
+) -> CyberReward
 
-Create a server-authoritative Cyber Defense profile.
+pub fn adversary_rank_from_progress(progress: i64) -> i32
 
-Recommended conceptual model:
+pub fn recommend_threat_level(input: ThreatRecommendationInput) -> i32
+```
 
-```ts
-interface CyberDefenseProfile {
-  playerLevel: number
-  playerXp: number
-  rank: string
+Recommended reward shape:
 
-  towerLevel: number
-
-  totalOperationsCompleted: number
-  highestThreatLevelCleared: number
-  recommendedThreatLevel: number
-
-  activeStoryChapter: string
-  storyFlags: string[]
-
-  heroes: HeroProgress[]
-  towerUpgrades: TowerUpgradeProgress[]
-  adversaries: AdversaryProgress[]
+```rust
+pub struct CyberReward {
+    pub bits: i64,
+    pub career_xp: i64,
+    pub hero_xp: i64,
 }
 ```
 
-Do not trust the browser to directly set:
+## 1.2 Initial level curves
+
+Do not over-optimize yet.
+
+Use simple table/config-driven curves.
+
+### Career level
+
+Initial cap:
 
 ```text
-XP
-level
-Bits
-Tower upgrade levels
-adversary rank
-story completion
-reward amounts
+30
 ```
 
-The server calculates transitions.
+Example threshold pattern:
+
+```text
+Lv 1: 0
+Lv 2: 100
+Lv 3: 230
+Lv 4: 390
+Lv 5: 580
+...
+```
+
+Early levels should happen quickly.
+
+### Hero level
+
+Initial cap:
+
+```text
+20
+```
+
+Heroes should level faster than the overall career early on.
+
+## 1.3 Threat Level bounds
+
+Stage 2 initial public range:
+
+```text
+1–10
+```
+
+Write code so later stages can increase the maximum without schema changes.
+
+## 1.4 Add domain tests
+
+Add pure unit tests for:
+
+- exact XP thresholds
+- threshold - 1
+- threshold + 1
+- max level behavior
+- invalid level
+- negative XP handling
+- reward monotonicity
+- higher Threat Level never rewards less than lower Threat Level for the same result
+- failed operation reward is lower than successful operation reward
+- Tower cost is positive
+- unknown Tower upgrade returns `None`
+- recommended Threat Level remains in allowed bounds
+
+## Exit criteria
+
+All domain tests pass.
 
 ---
 
-# 9. Officer / Career Level
+# STEP 2 — Add Stage 2 Database Schema
 
-Add an overall Cyber Defense career level.
+## Goal
 
-This is separate from individual hero levels.
+Persist long-term Cyber Defense progression server-side.
 
-Example ranks:
+## Migration
+
+Create the next sequential migration pair in:
 
 ```text
-Level 1–4     Junior Security Analyst
-Level 5–9     Security Analyst
-Level 10–14   Senior Security Analyst
-Level 15–19   Incident Responder
-Level 20–24   Threat Hunter
-Level 25+     SOC Lead
+crates/db/migrations/
 ```
 
-Names and thresholds should be data-driven.
+Use the repository's next migration timestamp.
 
-## Requirements
+Example names only:
 
-- Career XP is earned from Operations and first-time campaign clears.
-- Failed Operations should award a smaller amount of XP so an unsuccessful session is not completely wasted.
-- XP requirements increase gradually.
-- Early levels should arrive quickly.
-- Progression should slow later without becoming grindy.
-- Career level may unlock:
-  - higher recommended threat levels,
-  - Tower rooms,
-  - story chapters,
-  - optional Operation modifiers.
+```text
+YYYYMMDD000001_cyber_defense_stage2.up.sql
+YYYYMMDD000001_cyber_defense_stage2.down.sql
+```
 
-Career level should **not** simply provide large universal damage bonuses.
+Do not reuse this example timestamp if a newer migration exists.
+
+## 2.1 Create `cyber_defense_profiles`
+
+Suggested schema:
+
+```sql
+CREATE TABLE cyber_defense_profiles (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+
+    career_xp BIGINT NOT NULL DEFAULT 0 CHECK (career_xp >= 0),
+
+    total_operations_completed INTEGER NOT NULL DEFAULT 0
+        CHECK (total_operations_completed >= 0),
+
+    highest_threat_level_cleared INTEGER NOT NULL DEFAULT 0
+        CHECK (highest_threat_level_cleared >= 0),
+
+    recommended_threat_level INTEGER NOT NULL DEFAULT 1
+        CHECK (recommended_threat_level >= 1),
+
+    active_story_chapter TEXT NOT NULL DEFAULT 'chapter-1',
+
+    legacy_progress_imported BOOLEAN NOT NULL DEFAULT FALSE,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+Do not store career level if it can be derived safely from XP.
+
+## 2.2 Create `cyber_hero_progress`
+
+```sql
+CREATE TABLE cyber_hero_progress (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    hero_id TEXT NOT NULL,
+    xp BIGINT NOT NULL DEFAULT 0 CHECK (xp >= 0),
+    selected_talents JSONB NOT NULL DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    PRIMARY KEY (user_id, hero_id)
+);
+```
+
+Do not store level separately unless there is a strong reason.
+
+## 2.3 Create `cyber_tower_upgrades`
+
+```sql
+CREATE TABLE cyber_tower_upgrades (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    upgrade_id TEXT NOT NULL,
+    level INTEGER NOT NULL DEFAULT 0 CHECK (level >= 0),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    PRIMARY KEY (user_id, upgrade_id)
+);
+```
+
+## 2.4 Create `cyber_adversary_progress`
+
+```sql
+CREATE TABLE cyber_adversary_progress (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    adversary_id TEXT NOT NULL,
+
+    progress BIGINT NOT NULL DEFAULT 0 CHECK (progress >= 0),
+    encounters INTEGER NOT NULL DEFAULT 0 CHECK (encounters >= 0),
+    victories INTEGER NOT NULL DEFAULT 0 CHECK (victories >= 0),
+
+    highest_threat_level_cleared INTEGER NOT NULL DEFAULT 0
+        CHECK (highest_threat_level_cleared >= 0),
+
+    dossier_flags JSONB NOT NULL DEFAULT '[]'::jsonb,
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    PRIMARY KEY (user_id, adversary_id)
+);
+```
+
+Rank should be derived from progress.
+
+## 2.5 Create `cyber_story_progress`
+
+```sql
+CREATE TABLE cyber_story_progress (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    story_node_id TEXT NOT NULL,
+    completed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    PRIMARY KEY (user_id, story_node_id)
+);
+```
+
+## 2.6 Create `cyber_campaign_results`
+
+Use this for authoritative one-time Stage 1 mission reward settlement.
+
+```sql
+CREATE TABLE cyber_campaign_results (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    mission_id TEXT NOT NULL,
+
+    completed BOOLEAN NOT NULL,
+    best_stars INTEGER NOT NULL DEFAULT 0
+        CHECK (best_stars BETWEEN 0 AND 3),
+    best_health INTEGER NOT NULL DEFAULT 0
+        CHECK (best_health >= 0),
+    attempts INTEGER NOT NULL DEFAULT 0
+        CHECK (attempts >= 0),
+
+    first_clear_reward_settled BOOLEAN NOT NULL DEFAULT FALSE,
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    PRIMARY KEY (user_id, mission_id)
+);
+```
+
+## 2.7 Create `cyber_operation_runs`
+
+```sql
+CREATE TABLE cyber_operation_runs (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+    seed BIGINT NOT NULL,
+    template_id TEXT NOT NULL,
+    adversary_id TEXT NOT NULL,
+    hero_id TEXT,
+
+    threat_level INTEGER NOT NULL CHECK (threat_level >= 1),
+
+    status TEXT NOT NULL CHECK (
+        status IN ('active', 'completed', 'failed', 'abandoned')
+    ),
+
+    generated_config JSONB NOT NULL,
+
+    started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    completed_at TIMESTAMPTZ,
+
+    result_stars INTEGER CHECK (
+        result_stars IS NULL OR result_stars BETWEEN 0 AND 3
+    ),
+    result_health INTEGER,
+    duration_ms BIGINT,
+
+    bits_awarded BIGINT NOT NULL DEFAULT 0,
+    career_xp_awarded BIGINT NOT NULL DEFAULT 0,
+    hero_xp_awarded BIGINT NOT NULL DEFAULT 0,
+
+    reward_event_id UUID UNIQUE
+);
+```
+
+Add indexes:
+
+```sql
+CREATE INDEX cyber_operation_runs_user_status_idx
+ON cyber_operation_runs(user_id, status);
+
+CREATE INDEX cyber_operation_runs_user_started_idx
+ON cyber_operation_runs(user_id, started_at DESC);
+```
+
+## 2.8 DB module
+
+Add:
+
+```text
+crates/db/src/cyber_defense.rs
+```
+
+Update:
+
+```text
+crates/db/src/lib.rs
+```
+
+The DB module should expose explicit functions, not business logic.
+
+Examples:
+
+```rust
+get_or_create_profile(...)
+get_hero_progress(...)
+list_hero_progress(...)
+list_tower_upgrades(...)
+list_adversary_progress(...)
+list_story_progress(...)
+
+upsert_campaign_result(...)
+create_operation_run(...)
+get_operation_run_for_user(...)
+complete_operation_run(...)
+
+increment_career_xp(...)
+increment_hero_xp(...)
+increment_adversary_progress(...)
+
+purchase_tower_upgrade(...)
+```
+
+Where multiple progression changes happen from one operation completion, perform them in one DB transaction.
+
+## 2.9 DB tests
+
+Add DB integration tests for:
+
+- default profile creation
+- no duplicate profile
+- hero upsert
+- Tower upgrade increment
+- story progress idempotency
+- campaign result best stars
+- operation ownership
+- duplicate reward event
+- cross-user operation lookup rejected/not found
+- completion transaction rollback on failure
+
+## Exit criteria
+
+Migrations apply and revert in local test DB.
+
+```bash
+cargo test
+```
+
+passes.
 
 ---
 
-# 10. Hero Progression
+# STEP 3 — Build Cyber Defense Profile API
 
-Stage 1 already has two actual combat heroes. Keep them.
+## Goal
 
-```text
-Security Engineer
-SRE
-```
+Give the frontend one server-authoritative snapshot of the player's persistent Cyber Defense state.
 
-Stage 2 adds persistent progression around them.
+## Files
 
-## 10.1 Hero level
-
-Recommended Stage 2 cap:
+Update:
 
 ```text
-Level 20
+apps/api/src/dto.rs
+apps/api/src/routes/cyber_defense.rs
+apps/api/src/services.rs
+apps/api/src/openapi.rs
+apps/api/src/lib.rs or router wiring if required
 ```
 
-The cap must be configurable so a later stage can extend it without schema changes.
+## 3.1 DTOs
 
-## 10.2 XP rules
+Add DTOs approximately like:
 
-Hero XP is awarded to the hero selected/used for the Operation.
-
-Avoid XP systems that encourage pointless ability spam.
-
-Recommended:
-
-```text
-Operation completed:
-  full hero XP
-
-Operation failed:
-  partial hero XP
-
-Hero deployed at least once:
-  small participation bonus
+```rust
+CyberDefenseProfileResponse
+CyberCareerDto
+CyberHeroProgressDto
+CyberTowerUpgradeDto
+CyberAdversaryProgressDto
+CyberStoryProgressDto
 ```
 
-Do not calculate XP from raw melee-hit count.
-
-## 10.3 Milestone talents
-
-Do not make every level a meaningless `+2% damage`.
-
-Most levels can slightly improve the hero, but milestone levels should change play.
-
-Example milestones:
-
-```text
-Level 5
-Level 10
-Level 15
-Level 20
-```
-
-Each milestone may offer one of two choices.
-
-Example Security Engineer direction:
-
-```text
-Rapid Response
-- shorter cooldown
-
-Deep Hardening
-- stronger control-effectiveness aura
-```
-
-Example SRE direction:
-
-```text
-Burst Capacity
-- stronger mitigation for a shorter duration
-
-Sustained Capacity
-- longer duration with lower peak mitigation
-```
-
-Exact values must be balance-tested.
-
-### Talent UX
-
-- Show only the next meaningful milestone by default.
-- Allow the player to inspect the full path.
-- Do not permanently punish an early choice.
-- Respec should be free or inexpensive enough that experimentation is encouraged.
-- Do not use randomized talents.
-
----
-
-# 11. Persistent Tower / Cyber Defense HQ
-
-The Tower is the major persistent visual progression system and the primary Bits sink.
-
-It should feel like:
-
-> "This is my cyber defense organization and it has grown because I kept playing."
-
-## 11.1 Visual requirement
-
-Create a dedicated Tower/HQ screen.
-
-A simple 2D/SVG/CSS building is sufficient.
-
-The visual should change when rooms/floors are upgraded.
-
-Do not require 3D.
-
-Example:
-
-```text
-┌───────────────────────────┐
-│ Threat Intelligence  Lv 2 │
-├───────────────────────────┤
-│ Training Center      Lv 3 │
-├───────────────────────────┤
-│ Engineering Lab      Lv 2 │
-├───────────────────────────┤
-│ SOC                  Lv 4 │
-└───────────────────────────┘
-```
-
-## 11.2 Initial Stage 2 rooms
-
-Keep the number small.
-
-Recommended:
-
-### SOC
-
-Purpose:
-
-- operation awareness,
-- wave preview,
-- detection assistance.
-
-Possible upgrades:
-
-- reveal the first wave before deployment,
-- later reveal two upcoming waves,
-- improve explanation of hidden threats.
-
-### Threat Intelligence
-
-Purpose:
-
-- adversary information,
-- operation modifier previews,
-- dossier progression.
-
-Possible upgrades:
-
-- reveal adversary specialty,
-- reveal one hidden modifier,
-- reveal boss warning,
-- expose more pre-mission threat information.
-
-### Training Center
-
-Purpose:
-
-- hero progression.
-
-Possible upgrades:
-
-- unlock hero talent milestones,
-- modest hero XP bonus,
-- unlock alternate hero loadout capability later.
-
-### Engineering Lab
-
-Purpose:
-
-- strategic defense customization.
-
-Stage 2 may initially use this for:
-
-- unlocking optional defense variants,
-- loadout flexibility,
-- one additional strategic upgrade slot.
-
-Do not immediately add a large tech tree.
-
-### Resilience Center
-
-Purpose:
-
-- response/recovery.
-
-Possible upgrades:
-
-- small improvements to recovery-oriented mechanics,
-- better postmortem information,
-- optional emergency capability at higher level.
-
-Avoid turning it into an automatic-win button.
-
-## 11.3 Tower level
-
-Tower level should be derived from permanent facility progress rather than being an unrelated XP bar.
-
-Example:
-
-```text
-Tower Level = function(sum of room levels, major story milestones)
-```
-
-This gives the building a meaningful aggregate level.
-
----
-
-# 12. Bits Economy — Major Stage 2 Change
-
-Bits become persistent meta-progression currency.
-
-## 12.1 Remove persistent Bits from temporary in-run upgrades
-
-Current Stage 1 behavior spends persistent Bits to upgrade a deployed control for the current mission.
-
-Stage 2 should change this.
-
-Use:
-
-```text
-Mission Credits
-→ place defenses
-→ upgrade defenses during the run
-
-Bits
-→ permanent Tower/HQ progression
-→ other permanent meta unlocks
-```
-
-This separation is important.
-
-A player should not permanently lose platform currency for a tower that disappears at the end of a five-minute run.
-
-## 12.2 Real Cyber Defense rewards
-
-Stage 1 currently previews Bits at the result screen.
-
-Stage 2 must settle actual Cyber Defense rewards server-side.
-
-Reward categories:
-
-```text
-Operation completion Bits
-Star/performance bonus
-Higher-threat bonus
-First-time campaign clear bonus
-Boss/story milestone bonus
-```
-
-Failed runs may award a small amount of XP but normally little or no Bits. Tune this through playtesting.
-
-## 12.3 Reward principles
-
-- The server calculates reward amount.
-- A run can settle its reward only once.
-- Replaying the same completed run ID never awards again.
-- Higher threat level should generally pay more.
-- Playing below the player's recommended level remains allowed but should be an inefficient farming strategy.
-- There must be no requirement to spend money.
-- There is no paid Bits purchase in Stage 2.
-- There is no random Bits jackpot.
-
-## 12.4 Upgrade pacing target
-
-Exact numbers must be centralized in configuration and playtested.
-
-Target feeling:
-
-```text
-Early game:
-meaningful permanent purchase every ~1–2 casual sessions
-
-Mid game:
-meaningful purchase every ~2–4 sessions
-
-Late Stage 2:
-larger upgrade every ~3–6 sessions
-```
-
-Avoid both:
-
-```text
-"I can buy everything immediately."
-```
-
-and:
-
-```text
-"I need to replay the same thing 30 times for one upgrade."
-```
-
----
-
-# 13. Repeatable Operations — Main Replayability System
-
-After the original five missions, unlock **Operations**.
-
-Operations are unlimited. They are not daily.
-
-The player can play as many or as few as desired.
-
-## 13.1 Semi-procedural, not fully random
-
-Do not generate arbitrary combinations that may be impossible, nonsensical, or educationally wrong.
-
-Build Operations from curated templates.
-
-An operation template defines:
-
-```ts
-interface OperationTemplate {
-  id: string
-  mapId: string
-
-  allowedAttackTypes: AttackType[]
-  requiredCoverage: string[]
-
-  baseBudget: number
-  baseHealth: number
-  baseLatencyTargetMs: number
-
-  waveRules: WaveGenerationRules
-  allowedModifiers: string[]
-
-  compatibleAdversaries: string[]
+The profile response should include:
+
+```json
+{
+  "career": {
+    "xp": 0,
+    "level": 1,
+    "rank": "Junior Security Analyst",
+    "next_level_xp": 100
+  },
+  "bits_balance": 120,
+  "tower_level": 1,
+  "tower_upgrades": [],
+  "heroes": [],
+  "adversaries": [],
+  "story": {
+    "active_chapter": "chapter-1",
+    "completed_nodes": []
+  },
+  "campaign": {},
+  "highest_threat_level_cleared": 0,
+  "recommended_threat_level": 1,
+  "total_operations_completed": 0
 }
 ```
 
-A seed determines variation inside those safe rules.
+## 3.2 Endpoint
 
-## 13.2 Operation variation
-
-Reuse the current systems by varying:
-
-- enemy composition,
-- counts,
-- spawn interval,
-- wave count,
-- boss presence,
-- hidden attacks,
-- budget,
-- latency target,
-- enemy speed,
-- enemy attack effort/health,
-- target path,
-- defense availability,
-- one or more clearly disclosed modifiers.
-
-Do not scale every variable simultaneously.
-
-Players should understand why an Operation is harder.
-
-## 13.3 Seeded generation
-
-Every Operation receives a deterministic seed.
-
-Benefits:
-
-- reproducibility,
-- debugging,
-- analytics,
-- possible future replay validation,
-- the same Operation can be resumed.
-
-## 13.4 Operation length
-
-Target:
-
-```text
-5–12 minutes for normal Operations
-10–18 minutes for major/boss Operations
-```
-
-A user should be able to make visible progress in a short casual session.
-
-## 13.5 Operation selection UX
-
-Do not dump 20 Operations on the player.
-
-Default screen:
-
-```text
-RECOMMENDED OPERATION
-
-Threat Level 6
-GHOST-7
-Credential pressure + hidden traffic
-Estimated time: 8 min
-
-[CONTINUE DEFENSE]
-```
-
-Optional:
-
-```text
-Browse Other Operations
-```
-
-A browse screen may show two or three alternates.
-
-This preserves autonomy without creating choice paralysis.
-
----
-
-# 14. Threat Level and Difficulty
-
-Use a visible numeric threat system.
-
-Example:
-
-```text
-Threat Level 1–10
-```
-
-The architecture should allow future extension beyond 10.
-
-## 14.1 Recommended Threat Level
-
-Calculate a recommendation using recent performance, for example:
-
-- clears,
-- remaining health,
-- stars,
-- repeated failures,
-- current career level.
-
-Do not silently alter an Operation after the user starts it.
-
-Display:
-
-```text
-Recommended: Threat Level 5
-```
-
-The player can select:
-
-```text
-4
-5
-6
-```
-
-or browse a wider range from an advanced control.
-
-## 14.2 Difficulty scaling
-
-Preferred order of scaling:
-
-1. smarter composition / mixed threats,
-2. additional waves,
-3. meaningful modifiers,
-4. slightly tighter budget/latency,
-5. moderate enemy-stat scaling.
-
-Avoid relying primarily on enormous HP inflation.
-
----
-
-# 15. Recurring Adversaries
-
-Stage 2 adds recurring fictional adversaries.
-
-They exist to:
-
-- give attacks personality,
-- provide long-term progression,
-- create strategic themes,
-- carry the story,
-- make repeated Operations feel connected.
-
-They are not real threat groups.
-
-## Naming constraint
-
-Do not name a character **Oracle**.
-
-Avoid names that intentionally mimic real cybersecurity vendors, major database/cloud companies, or real threat groups.
-
-## 15.1 Initial adversaries
-
-Recommended initial set:
-
-### GHOST-7
-
-Theme:
-
-- identity,
-- credential attacks,
-- stealth,
-- account compromise.
-
-Favors:
-
-- Credential Stuffing,
-- hidden threats,
-- authentication pressure.
-
-### NULL
-
-Theme:
-
-- web/application attacks.
-
-Favors:
-
-- SQL Injection,
-- XSS,
-- application-layer combinations.
-
-### VIPER
-
-Theme:
-
-- malware/impact/recovery pressure.
-
-Favors:
-
-- Ransomware,
-- high-impact attacks,
-- resilience and blast-radius decisions.
-
-Names and descriptions remain content-data, not engine constants.
-
-## 15.2 Adversary progression model
-
-Do not make adversary level simply mean:
-
-```text
-+10% HP every time player wins
-```
-
-Separate:
-
-```text
-Adversary Rank
-```
-
-from:
-
-```text
-Operation Threat Level
-```
-
-### Adversary Rank
-
-Represents:
-
-- story progression,
-- learned tactics,
-- dossier completion,
-- expanded modifier pool.
-
-Example:
-
-```text
-Rank 1
-Known: Credential Stuffing
-
-Rank 3
-New tactic unlocked
-
-Rank 5
-New mixed-operation behavior
-
-Rank 7
-Boss operation
-
-Rank 10
-Major story reveal
-```
-
-### Threat Level
-
-Controls numeric challenge.
-
-This separation prevents the game from punishing the player merely for progressing the story.
-
-## 15.3 Adversary progression fairness
-
-- Adversary rank never forces the player into an unwinnable threat level.
-- The player can lower Threat Level.
-- New tactics must be disclosed after they are first discovered.
-- New tactics should have counterplay.
-- The postmortem should explain what happened.
-
----
-
-# 16. Threat Intel / Adversary Dossier
-
-Do not add another spendable currency unless later playtesting proves it is needed.
-
-For Stage 2, **Intel is collectible progress**, not money.
-
-Example:
-
-```text
-GHOST-7
-
-Profile completion: 45%
-
-Known behavior
-✓ Credential attacks
-✓ Reuses breached passwords
-✓ Prefers identity path
-
-Unknown
-?
-?
-?
-
-Observed operations
-7
-
-Highest defeated threat
-6
-```
-
-Intel/dossier entries unlock from:
-
-- first encounter,
-- defeating an adversary,
-- encountering a new modifier,
-- reaching an adversary rank milestone,
-- story events.
-
-This gives the player collection/progress without another economy to manage.
-
----
-
-# 17. Story
-
-The player is a security officer defending a fictional biotechnology research organization.
-
-The final organization name should remain content-configurable so it can be changed without code changes.
-
-Do not hard-code a real company identity.
-
-## 17.1 Story delivery
-
-Keep story short during normal play.
-
-Preferred:
-
-```text
-2–4 sentence mission briefing
-↓
-gameplay
-↓
-1–3 sentence result/story beat
-```
-
-Longer optional information may live in:
-
-```text
-Incident Archive
-Adversary Dossier
-Story Log
-```
-
-The player can skip narrative screens.
-
-## 17.2 Story progression
-
-Story progression is based on gameplay milestones, not calendar time.
-
-Example:
-
-```text
-Complete Stage 1 campaign
-→ Operations unlocked
-→ First adversary identified
-
-Complete 5 Operations
-→ next story beat
-
-Reach GHOST-7 Rank 3
-→ new tactic / story reveal
-
-Complete first adversary boss Operation
-→ next chapter
-```
-
-Exact milestone counts are content configuration.
-
-## 17.3 Story structure target
-
-Stage 2 should contain enough beats to create direction without requiring a huge writing project.
-
-Recommended:
-
-```text
-Chapter 1
-Existing five missions
-
-Chapter 2
-Operations begin
-First recurring adversary
-
-Chapter 3
-Second/third adversary appears
-
-Chapter 4
-Evidence suggests coordinated targeting of the biolab
-
-Chapter 5
-Stage 2 major boss / unresolved hook for Stage 3
-```
-
-Stage 2 does not need a final ending.
-
----
-
-# 18. Strategic Variety and Dominant-Strategy Prevention
-
-Every repeatable Operation should aim to create at least two viable approaches.
-
-Examples:
-
-```text
-Higher direct mitigation
-vs
-More detection/support
-
-Specialize for the dominant threat
-vs
-Cover mixed threats
-
-Spend early
-vs
-save for later waves
-
-Use Security Engineer
-vs
-use SRE
-```
-
-## Balance rule
-
-If the same tower combination wins nearly all unrelated templates, investigate it.
-
-Telemetry should capture:
-
-- defense pick rate,
-- defense win rate,
-- hero pick rate,
-- hero win rate,
-- Tower upgrade ownership,
-- first-wave placement,
-- upgrade order,
-- final build,
-- failed threat type.
-
-Do not automatically nerf based on a single metric. Context matters.
-
----
-
-# 19. Progression Without Automatic Victory
-
-Stage 2 needs satisfying power growth, but grinding should not replace strategy.
-
-Keep the Stage 1 principle:
-
-> Knowledge and decisions should matter more than raw grinding.
-
-Permanent progression should primarily provide:
-
-- more strategic options,
-- better information,
-- hero specialization,
-- modest efficiency,
-- convenience,
-- visible ownership/progress.
-
-Avoid:
-
-```text
-Tower Level 20:
-all defenses deal +500% damage
-```
-
-A veteran should feel stronger, but still need to build correctly.
-
-Recommended ceiling for generic permanent combat bonuses:
-
-```text
-small-to-moderate, not enough to invalidate counter relationships
-```
-
-Specific balance numbers must be established through playtesting.
-
----
-
-# 20. Stage 2 UI Information Architecture
-
-## 20.1 Cyber Defense home
-
-Replace the current "mission list is the whole game" feeling.
-
-Recommended layout:
-
-```text
-CYBER DEFENSE
-
-Officer
-Security Analyst — Lv 8
-████████░░
-
-Tower Level 5
-Bits: 1,840
-
-Current Threat
-GHOST-7 — Rank 4
-
-----------------------------------
-
-RECOMMENDED OPERATION
-
-Threat Level 5
-Identity breach
-~8 min
-
-[ CONTINUE DEFENSE ]
-
-----------------------------------
-
-Tower
-Heroes
-Threat Intel
-Campaign
-Operations
-```
-
-Do not show every sub-stat above the fold.
-
-## 20.2 Primary CTA
-
-There should almost always be one obvious action:
-
-```text
-CONTINUE DEFENSE
-```
-
-Behavior:
-
-- new player → next Stage 1 campaign mission,
-- completed Stage 1 → recommended Operation,
-- unfinished run → Resume Operation,
-- pending story beat → story beat then recommended Operation.
-
-## 20.3 Post-operation result
-
-Do not create five separate reward modals.
-
-Use one concise sequence:
-
-```text
-OPERATION COMPLETE
-
-★★★
-
-+82 Bits
-+110 Officer XP
-+95 Security Engineer XP
-
-Security Engineer
-Lv 7 → Lv 8
-
-Tower upgrade now affordable:
-Threat Intelligence Lv 3
-
-[CONTINUE]
-```
-
-The player may click details for:
-
-- blocked threats,
-- postmortem,
-- dossier discovery,
-- statistics.
-
-## 20.4 Tower screen
-
-Prioritize:
-
-- visual building,
-- affordable upgrade indicator,
-- next benefit,
-- current level,
-- cost.
-
-Do not show a spreadsheet of 40 modifiers.
-
-## 20.5 Hero screen
-
-Show:
-
-```text
-Hero art
-Level / XP
-Current ability
-Next milestone
-Selected talents
-```
-
-Detailed numeric stats can be expandable.
-
----
-
-# 21. ADHD-Friendly Interaction Requirements
-
-The broader product is designed to minimize unnecessary cognitive load. Preserve that here.
-
-Requirements:
-
-- one obvious primary next action,
-- short play sessions,
-- resumable operations,
-- no huge choice wall,
-- concise briefings,
-- progress visible without opening several screens,
-- explain failure immediately,
-- avoid requiring memorization of prior wave details,
-- use icons + text, not icons alone,
-- avoid tiny text,
-- avoid forced long animations,
-- no penalty for closing the game,
-- no daily FOMO,
-- pause must remain available,
-- avoid stacked reward popups.
-
----
-
-# 22. Operation Modifiers
-
-Stage 2 needs enough variation to reuse existing content for months.
-
-Start with a small modifier library.
-
-Examples:
-
-## Hidden Traffic
-
-Some attacks begin unidentified until Detection is online.
-
-## Tight Budget
-
-Lower starting mission credits.
-
-## Strict Latency
-
-Lower latency target for bonus stars.
-
-## Surge
-
-One wave contains a much larger number of swarm enemies.
-
-## Mixed Vector
-
-Two attack families occur in the same wave.
-
-## Accelerated Attack
-
-A specific enemy family moves moderately faster.
-
-## Hardened Campaign
-
-A specific family has moderately more attack effort/health.
-
-## Limited Arsenal
-
-A small number of defenses are unavailable.
-
-Use carefully: never remove every reasonable counter.
-
-## Recovery Pressure
-
-Higher likelihood of ransomware / impact-oriented attacks.
-
-### Modifier requirement
-
-Every modifier must:
-
-1. be visible before the Operation unless hiding it is itself a Threat Intel mechanic,
-2. have at least one reasonable counter,
-3. not contradict the security model,
-4. not make the generated Operation mathematically unwinnable.
-
----
-
-# 23. Operation Generation Safety
-
-Procedural generation must never be unconstrained randomization.
-
-For each Operation template define:
-
-- minimum viable budget,
-- valid defense set,
-- mandatory counters,
-- allowed modifiers,
-- maximum modifier count,
-- threat-level scaling bounds,
-- canonical test strategy.
-
-Example invariant:
-
-```text
-If SQL Injection is the primary threat,
-the generated Operation must make at least one meaningful SQLi counter available.
-```
-
-Example:
-
-```text
-Do not generate:
-SQL Injection-heavy Operation
-+
-Parameterized Queries unavailable
-+
-WAF unavailable
-+
-budget too low for remaining application defenses
-```
-
----
-
-# 24. Backend Architecture
-
-Active simulation remains browser-side.
-
-Do not add per-tick API calls.
-
-Backend becomes authoritative for:
-
-```text
-Cyber Defense profile
-Bits
-XP
-Hero level
-Hero talents
-Tower upgrades
-Adversary rank
-Story progress
-Operation issuance
-Operation reward settlement
-```
-
-Frontend remains authoritative only for transient simulation state:
-
-```text
-enemy positions
-current tower placement
-mission credits
-wave timers
-hero cooldown during the run
-visual effects
-```
-
----
-
-# 25. Recommended Database Model
-
-Names may be adjusted to repository conventions.
-
-## 25.1 `cyber_defense_profiles`
-
-Suggested fields:
-
-```text
-user_id PK/FK
-xp
-level
-total_operations_completed
-highest_threat_level_cleared
-recommended_threat_level
-active_story_chapter
-created_at
-updated_at
-```
-
-Level may be derived from XP instead of stored if that is safer.
-
-## 25.2 `cyber_hero_progress`
-
-```text
-user_id
-hero_id
-xp
-level
-selected_talents JSONB or normalized relation
-created_at
-updated_at
-
-PRIMARY KEY (user_id, hero_id)
-```
-
-Prefer deriving level from XP when practical.
-
-## 25.3 `cyber_tower_upgrades`
-
-```text
-user_id
-upgrade_id
-level
-updated_at
-
-PRIMARY KEY (user_id, upgrade_id)
-```
-
-## 25.4 `cyber_adversary_progress`
-
-```text
-user_id
-adversary_id
-rank
-encounters
-victories
-highest_threat_level_cleared
-dossier_flags JSONB
-updated_at
-
-PRIMARY KEY (user_id, adversary_id)
-```
-
-## 25.5 `cyber_story_progress`
-
-Either:
-
-```text
-user_id
-story_node_id
-completed_at
-```
-
-or a compact profile JSON structure if the number of story flags remains small.
-
-Prefer explicit rows if story branching becomes important.
-
-## 25.6 `cyber_operation_runs`
-
-```text
-id UUID PK
-user_id
-seed
-template_id
-adversary_id
-threat_level
-status
-started_at
-completed_at
-
-result_health
-result_stars
-duration_ms
-
-bits_awarded
-player_xp_awarded
-hero_id
-hero_xp_awarded
-
-reward_event_id
-```
-
-Store enough information for:
-
-- idempotency,
-- support/debugging,
-- analytics,
-- abuse detection,
-- future deterministic replay validation.
-
----
-
-# 26. API Design
-
-Exact endpoint naming may follow existing API conventions.
-
-Recommended Stage 2 surface:
-
-## Profile
+Add:
 
 ```http
 GET /v1/cyber-defense/profile
 ```
 
-Returns:
+Authentication required.
 
-- career progression,
-- heroes,
-- Tower,
-- adversaries,
-- story,
-- Bits balance or wallet reference,
-- recommended Threat Level.
+## 3.3 Service behavior
 
-## Start Operation
+On first request:
+
+- ensure profile exists
+- ensure rows for the two existing heroes are returned with XP 0 even if no DB row exists yet
+- derive level/rank from domain functions
+- load wallet balance
+- load Tower upgrades
+- load campaign results
+- load adversaries
+- load story progress
+
+Do not make the frontend reconstruct authoritative levels itself.
+
+## 3.4 OpenAPI
+
+Register endpoint and schemas.
+
+Then regenerate frontend API types:
+
+```bash
+cd apps/web
+pnpm generate:api
+```
+
+Commit:
+
+```text
+apps/web/openapi.json
+apps/web/src/api/schema.d.ts
+```
+
+## 3.5 Tests
+
+Backend tests:
+
+- requires auth
+- creates default profile
+- returns wallet balance
+- returns default heroes
+- user cannot view another user's profile
+- level is derived correctly from XP
+
+Frontend API typecheck must pass.
+
+## Exit criteria
+
+Authenticated browser can fetch one complete profile object.
+
+---
+
+# STEP 4 — Move In-Run Tower Upgrades to Mission Credits
+
+## Goal
+
+Stop charging permanent Bits for temporary tower upgrades.
+
+This must happen before permanent Tower/HQ purchases are introduced.
+
+## Current behavior to remove
+
+Current frontend flow:
+
+```text
+handleUpgrade
+→ upgradeBitsCost
+→ spendBits
+→ /v1/cyber-defense/upgrades
+→ temporary tower level increase
+```
+
+Stage 2 behavior:
+
+```text
+handleUpgrade
+→ check mission credits
+→ deduct mission credits
+→ temporary tower level increase
+```
+
+## 4.1 Update defense model
+
+In:
+
+```text
+apps/web/src/game/models/defense.ts
+```
+
+Keep or rename:
+
+```ts
+upgradeCost(defense, level)
+```
+
+Make it represent **mission credits**.
+
+Delete or deprecate:
+
+```ts
+upgradeBitsCost(...)
+```
+
+if no longer used anywhere.
+
+## 4.2 Update simulation
+
+In:
+
+```text
+apps/web/src/game/engine/simulation.ts
+```
+
+`upgradeDefense()` must:
+
+1. find placed defense
+2. validate max level
+3. derive mission-credit upgrade cost
+4. reject if `state.budget < cost`
+5. deduct cost from `state.budget`
+6. increment that exact placement's level
+
+This immediately fixes the same-defense-type server sequencing problem because placement upgrades are entirely local mission state.
+
+## 4.3 Update combat budget calculation
+
+In:
+
+```text
+apps/web/src/game/engine/combat.ts
+```
+
+`computeSpentBudget()` must include:
+
+- original placement costs
+- mission-credit upgrade costs
+
+This is necessary for star/budget scoring.
+
+If current `PlacedDefense` does not preserve enough information to calculate cumulative upgrade spend, compute it from current level and canonical upgrade cost sequence.
+
+## 4.4 Update `CyberDefenseGame.tsx`
+
+Remove:
+
+```text
+spendBits
+refundBits
+flushBitSpends
+useSettledBits
+runIdRef for upgrade spending
+```
+
+from the tower-upgrade path.
+
+Show:
+
+```text
+Upgrade — 120 credits
+```
+
+not Bits.
+
+## 4.5 Update `DefenseShop`
+
+The upgrade control should display mission-credit cost.
+
+Use the same icon/label already used for mission budget.
+
+Do not show Bits for temporary upgrades.
+
+## 4.6 Backend deprecation
+
+The current endpoint:
+
+```http
+POST /v1/cyber-defense/upgrades
+```
+
+should no longer be called by Stage 2 frontend.
+
+If production compatibility is not needed, remove:
+
+- route
+- DTOs
+- OpenAPI registration
+- `cyber_defense_upgrade`
+- `cyber_defense_upgrade_bits`
+- obsolete tests
+
+If compatibility is needed, leave it temporarily but mark it deprecated and unreachable from the new frontend.
+
+Do not leave dead frontend queue behavior.
+
+## 4.7 Update tests
+
+Required:
+
+- level 1 → 2 deducts mission credits
+- insufficient mission credits rejects upgrade
+- max level rejects upgrade
+- two WAF placements upgrade independently
+- upgrading one WAF does not upgrade the other
+- upgrading affects spent-budget star calculation
+- no wallet request occurs from an in-run upgrade
+- removing upgraded tower refunds according to chosen Stage 2 rule
+
+### Refund rule
+
+Use one rule consistently.
+
+Recommended:
+
+```text
+sell refund = 100% during prep before first wave
+sell refund = 70% after combat begins
+```
+
+If implementing that is out of scope, keep existing refund behavior for Stage 2 and document it.
+
+Do not accidentally create infinite mission-credit profit through upgrade/sell cycles.
+
+## Exit criteria
+
+A complete Cyber Defense mission can be played with network disconnected after it starts, including upgrades.
+
+Persistent Bits never change when a temporary tower upgrades.
+
+---
+
+# STEP 5 — Settle Real Rewards for the Existing Five Missions
+
+## Goal
+
+Make the current campaign economically meaningful before adding repeatable Operations.
+
+## 5.1 Create campaign completion endpoint
+
+Add:
+
+```http
+POST /v1/cyber-defense/campaign/{mission_id}/complete
+```
+
+Request:
+
+```json
+{
+  "stars": 3,
+  "health": 84,
+  "duration_ms": 320000
+}
+```
+
+Do **not** accept:
+
+```text
+bits_awarded
+xp_awarded
+reward multiplier
+```
+
+from the client.
+
+## 5.2 Server validation
+
+Validate:
+
+- known mission ID
+- stars 0–3
+- health >= 0
+- plausible duration
+- authenticated user
+
+For Stage 2, the fixed campaign game still runs client-side.
+
+Do not try to recreate the whole simulation server-side.
+
+## 5.3 First-clear reward
+
+Server determines:
+
+- first clear
+- best stars
+- best health
+- attempt count
+- Bits reward
+- career XP
+- hero XP if appropriate
+
+Recommended rule:
+
+- first successful clear: full campaign reward
+- replay success: smaller XP, no repeat first-clear bonus
+- improved star record: optional small bonus
+- failed attempt: small career/hero XP, no Bits or very small Bits
+
+Do not let fixed mission replay become the best infinite Bits farm.
+
+## 5.4 Wallet settlement
+
+Reuse the wallet ledger.
+
+Do not create a second Bits balance.
+
+If the current `bit_transactions` schema requires a mission UUID and question-like item field, use a dedicated generated reward UUID/run UUID and machine-readable item/reason.
+
+Do not fake learning-question IDs if a small schema extension would be cleaner.
+
+If changing the wallet ledger is necessary, add a backwards-compatible migration.
+
+## 5.5 Response
+
+Return:
+
+```json
+{
+  "campaign": {
+    "mission_id": "ddos-basics",
+    "completed": true,
+    "best_stars": 3,
+    "best_health": 84
+  },
+  "reward": {
+    "bits": 60,
+    "career_xp": 100,
+    "hero_xp": 0
+  },
+  "bits_balance": 980,
+  "career": {
+    "xp": 310,
+    "level": 3,
+    "level_up": true
+  }
+}
+```
+
+## 5.6 Update MissionResult flow
+
+After local match end:
+
+1. render immediate local result
+2. send completion request
+3. show "Saving rewards..." state
+4. on success, show settled reward values
+5. reconcile Bits wallet from returned server balance
+6. update Cyber Defense profile cache/store
+7. if offline, show reward pending and retry later
+
+Do not show a fake settled `+Bits` number before server confirmation.
+
+## 5.7 Offline queue
+
+If offline completion support is kept:
+
+- store pending completion locally
+- use run/result idempotency
+- retry after reconnect
+- show "Pending" instead of pretending it is settled
+
+Do not allow repeated local reload to generate duplicate reward IDs.
+
+## 5.8 Tests
+
+Backend:
+
+- first clear rewards once
+- duplicate request does not double reward
+- replay does not repeat first-clear reward
+- unknown mission rejected
+- malformed star count rejected
+- Bits balance updates atomically
+- XP updates atomically
+
+Frontend:
+
+- reward loading state
+- reward settled state
+- offline/pending state
+- Bits reconcile
+- duplicate rendering does not call completion twice
+
+## Exit criteria
+
+The current five missions now provide real persistent progress.
+
+---
+
+# STEP 6 — Career XP and Level UI
+
+## Goal
+
+Expose persistent overall progression.
+
+## 6.1 Add frontend profile store/hook
+
+Recommended:
+
+```text
+apps/web/src/game/state/cyberProfile.ts
+```
+
+or follow the repository's state convention.
+
+Responsibilities:
+
+- fetch `/v1/cyber-defense/profile`
+- cache last known profile
+- reconcile completion responses
+- expose loading/error state
+- avoid duplicate concurrent profile fetches
+
+Do not put profile fetching directly into many components.
+
+## 6.2 Career display
+
+On `/game`, show:
+
+```text
+Security Analyst
+Level 6
+840 / 1,000 XP
+```
+
+Use proper progressbar accessibility attributes.
+
+## 6.3 Rank names
+
+Rank labels should be domain/data driven.
+
+Initial suggestion:
+
+```text
+Lv 1–4    Junior Security Analyst
+Lv 5–9    Security Analyst
+Lv 10–14  Senior Security Analyst
+Lv 15–19  Incident Responder
+Lv 20–24  Threat Hunter
+Lv 25–30  SOC Lead
+```
+
+## 6.4 Level-up presentation
+
+On reward result:
+
+```text
+LEVEL UP
+Security Analyst — Level 7
+```
+
+Keep it short.
+
+Do not open a separate modal for every reward category.
+
+## 6.5 Tests
+
+- XP bar correct
+- max-level display correct
+- level-up shown only when level changes
+- no negative progress width
+- screen reader label contains current XP and level
+
+## Exit criteria
+
+A player can visibly make career progress by replaying Cyber Defense.
+
+---
+
+# STEP 7 — Persistent Tower / Cyber Defense HQ
+
+## Goal
+
+Give Bits a permanent, desirable use.
+
+This is the primary Stage 2 Bits sink.
+
+## 7.1 Add Tower data
+
+Create:
+
+```text
+apps/web/src/game/data/towerUpgrades.ts
+apps/web/src/game/models/tower.ts
+```
+
+Do not hard-code Tower definitions into components.
+
+Suggested initial rooms:
+
+```text
+soc
+threat_intelligence
+training_center
+engineering_lab
+resilience_center
+```
+
+## 7.2 Tower upgrade definition
+
+Suggested shape:
+
+```ts
+export interface TowerUpgradeDefinition {
+  id: string
+  roomId: TowerRoomId
+  name: string
+  description: string
+  maxLevel: number
+  levelBenefits: TowerLevelBenefit[]
+  prerequisites?: TowerUpgradeRequirement[]
+}
+```
+
+Frontend cost is display-only.
+
+Server domain rules remain authoritative.
+
+## 7.3 Initial effects
+
+Keep effects modest and understandable.
+
+### SOC
+
+Lv 1:
+- current behavior
+
+Lv 2:
+- show first upcoming wave in briefing
+
+Lv 3:
+- show two upcoming wave categories
+
+Lv 4:
+- expose a little more pre-wave information
+
+### Threat Intelligence
+
+Lv 1:
+- show adversary specialty
+
+Lv 2:
+- reveal one Operation modifier before start
+
+Lv 3:
+- reveal boss presence before start
+
+### Training Center
+
+Lv 1:
+- hero progression screen enabled
+
+Lv 2:
+- small hero XP bonus
+
+Lv 3:
+- talent respec unlocked or discounted
+
+### Engineering Lab
+
+Lv 1:
+- one operation loadout customization feature
+
+Lv 2:
+- unlock one alternate strategic control option
+
+Do not add many new towers yet.
+
+### Resilience Center
+
+Lv 1:
+- improved recovery/postmortem information
+
+Lv 2:
+- modest recovery-oriented benefit
+
+Do not create a universal health buff large enough to erase mistakes.
+
+## 7.4 Tower purchase endpoint
+
+Add:
+
+```http
+POST /v1/cyber-defense/tower/upgrades/{upgrade_id}
+```
+
+No cost in request body.
+
+Server:
+
+1. authenticates
+2. gets current upgrade level
+3. checks prerequisites
+4. derives next-level cost
+5. locks wallet
+6. spends Bits
+7. increments upgrade level
+8. commits in one transaction
+9. returns new wallet balance + Tower state
+
+## 7.5 Tower level
+
+Derive aggregate Tower level from room upgrade totals.
+
+Example:
+
+```text
+Tower Level = 1 + sum(room levels)
+```
+
+or another pure rule.
+
+Do not create a second Tower XP system.
+
+## 7.6 Tower page
+
+Add route:
+
+```text
+/game/tower
+```
+
+Add page:
+
+```text
+apps/web/src/pages/CyberDefenseTowerPage.tsx
+```
+
+Use:
+
+- 2D CSS/SVG building
+- one floor/room card per room
+- current level
+- next benefit
+- cost
+- upgrade button
+
+Affordable upgrade should be visually obvious.
+
+Avoid showing every future level at once.
+
+## 7.7 Tests
+
+Backend:
+
+- successful purchase
+- insufficient Bits
+- max level
+- prerequisite failure
+- concurrent purchase
+- duplicate idempotency
+- user isolation
+
+Frontend:
+
+- affordability
+- disabled max-level button
+- Bits update after purchase
+- Tower visual level update
+- touch behavior
+
+## Exit criteria
+
+A player can earn Bits in Cyber Defense and permanently upgrade their HQ.
+
+---
+
+# STEP 8 — Hero Progression
+
+## Goal
+
+Turn the existing Security Engineer and SRE into long-term characters.
+
+Do not create more heroes yet.
+
+## 8.1 Extend hero data
+
+Update:
+
+```text
+apps/web/src/game/data/heroes.ts
+apps/web/src/game/models/hero.ts
+```
+
+Separate permanent progression definition from current mission runtime definition.
+
+Recommended:
+
+```ts
+interface HeroProgressionDefinition {
+  heroId: string
+  maxLevel: number
+  milestones: HeroMilestone[]
+}
+```
+
+## 8.2 Initial milestone levels
+
+Use:
+
+```text
+5
+10
+15
+20
+```
+
+## 8.3 Talent choices
+
+Security Engineer examples:
+
+### Level 5
+
+Choice A: Rapid Response
+- cooldown moderately shorter
+
+Choice B: Deep Hardening
+- stronger control-effectiveness aura
+
+### Level 10
+
+Choice A:
+- longer field duration
+
+Choice B:
+- stronger melee hit / attack cadence
+
+SRE examples:
+
+### Level 5
+
+Choice A: Burst Capacity
+- stronger reduction, shorter duration
+
+Choice B: Sustained Capacity
+- lower peak reduction, longer duration
+
+Exact values should be conservative.
+
+## 8.4 Mission runtime derivation
+
+At match start:
+
+1. load profile hero state
+2. resolve base `HeroDefinition`
+3. apply selected talent modifiers
+4. create runtime hero stats
+5. freeze them for the run
+
+Do not have profile API calls alter hero stats mid-wave.
+
+## 8.5 Hero XP award
+
+Campaign/Operation completion returns hero XP.
+
+Hero XP should go to:
+
+- selected hero for the run
+- or deployed hero if only one was used
+
+Pick one rule and use it consistently.
+
+Recommended:
+
+```text
+selected hero receives XP whether or not the ability was used
+```
+
+This avoids encouraging meaningless ability spam.
+
+## 8.6 Hero progression page
+
+Route:
+
+```text
+/game/heroes
+```
+
+Page:
+
+```text
+CyberDefenseHeroesPage.tsx
+```
+
+Show:
+
+```text
+Hero art
+Level
+XP bar
+current ability
+current talents
+next milestone
+```
+
+## 8.7 Talent API
+
+Add:
+
+```http
+PUT /v1/cyber-defense/heroes/{hero_id}/talents
+```
+
+Validate:
+
+- hero exists
+- milestone unlocked
+- choice legal
+- mutually exclusive choices not both active
+
+For Stage 2, allow respec.
+
+Recommended:
+
+- free respec initially
+
+Do not use Bits for respec until playtesting proves a reason.
+
+## 8.8 Tests
+
+- hero XP level derivation
+- milestone unlock
+- locked talent rejected
+- invalid talent rejected
+- hero runtime applies correct modifier
+- talent cannot stack twice
+- respec works
+- selected hero gets completion XP once
+
+## Exit criteria
+
+The player has a persistent reason to keep using the existing two heroes.
+
+---
+
+# STEP 9 — Define Repeatable Operation Models
+
+## Goal
+
+Create data structures before generating Operations.
+
+## Files to add
+
+```text
+apps/web/src/game/models/operation.ts
+apps/web/src/game/data/operationTemplates.ts
+apps/web/src/game/data/operationModifiers.ts
+```
+
+Backend should have equivalent Rust transport/domain structures.
+
+## 9.1 Operation definition
+
+Recommended generated shape:
+
+```ts
+interface GeneratedOperation {
+  runId: string
+  seed: number
+  templateId: string
+  adversaryId: string
+  threatLevel: number
+
+  title: string
+  summary: string
+
+  startingBudget: number
+  startingHealth: number
+  latencyTargetMs: number
+
+  map: MissionMap
+  availableDefenses: string[]
+  availableHeroes: string[]
+
+  waves: WaveDefinition[]
+  modifiers: OperationModifierInstance[]
+
+  rewardPreview: {
+    bits: number
+    careerXp: number
+    heroXp: number
+  }
+}
+```
+
+The generated operation must be convertible into the existing `MissionDefinition`-like input needed by the Stage 1 engine.
+
+Prefer an adapter instead of forking the engine.
+
+## 9.2 Operation template
+
+Recommended:
+
+```ts
+interface OperationTemplate {
+  id: string
+  titlePool: string[]
+  mapId: string
+
+  adversaryIds: string[]
+
+  allowedThreats: AttackType[]
+  requiredCounterDefenseIds: string[]
+
+  baseBudget: number
+  baseHealth: number
+  baseLatencyTargetMs: number
+
+  minWaves: number
+  maxWaves: number
+
+  allowedModifierIds: string[]
+  maxModifiers: number
+}
+```
+
+## 9.3 Initial templates
+
+Create at least:
+
+1. Identity Breach
+2. Web Assault
+3. Availability Siege
+4. Mixed Intrusion
+5. Recovery Crisis
+
+These reuse current Stage 1 attacks/defenses.
+
+Do not add new enemy types just to increase template count.
+
+## Exit criteria
+
+Templates compile and validation tests confirm all IDs exist.
+
+---
+
+# STEP 10 — Build Deterministic Operation Generator
+
+## Goal
+
+Generate replayable variety safely.
+
+## Location
+
+Prefer a pure shared/domain-style implementation.
+
+Because the server issues authoritative Operation configuration, canonical generation should live in Rust.
+
+Recommended:
+
+```text
+crates/domain/src/cyber_operation.rs
+```
+
+Frontend may have matching types/adapters but should not independently invent authoritative Operations.
+
+## 10.1 Deterministic RNG
+
+Use a small deterministic seeded PRNG implementation or a crate already acceptable for the workspace.
+
+Do not use wall-clock randomness inside generation once seed is supplied.
+
+Same:
+
+```text
+seed + template + threat level + adversary rank
+```
+
+must produce the same Operation.
+
+## 10.2 Generation order
+
+Use this exact sequence:
+
+1. select template
+2. select adversary
+3. apply threat-level baseline
+4. choose compatible modifiers
+5. choose wave count
+6. generate wave threat composition
+7. calculate budget
+8. calculate latency target
+9. calculate health
+10. validate counter availability
+11. validate minimum viable build cost
+12. emit generated config
+
+Do not first randomize everything and then hope validation succeeds.
+
+## 10.3 Threat scaling
+
+Use a mix of:
+
+- composition complexity
+- wave count
+- modifier count
+- moderate enemy health multiplier
+- moderate speed multiplier
+- starting-budget pressure
+
+Avoid HP-only scaling.
+
+Suggested initial bands:
+
+### Threat 1–3
+
+- 3–4 waves
+- one dominant attack family
+- 0–1 modifier
+- generous budget
+
+### Threat 4–6
+
+- 4–6 waves
+- mixed attack families
+- 1–2 modifiers
+- moderate budget pressure
+
+### Threat 7–10
+
+- 5–7 waves
+- mixed threats
+- stronger adversary-specific behavior
+- 2 modifiers
+- boss chance where valid
+
+## 10.4 Generation invariants
+
+Every generated Operation must satisfy:
+
+- at least one attack is present
+- every attack ID exists
+- every defense ID exists
+- every hero ID exists
+- map path reaches target
+- at least one meaningful counter exists for dominant threat
+- starting budget can afford a known viable opening
+- Limited Arsenal cannot remove all viable counters
+- no modifier duplicate
+- no incompatible modifier combination
+- boss has valid target/path
+- wave count within bounds
+- Threat Level within bounds
+
+## 10.5 Solvability check
+
+Do not solve Tower Defense optimally.
+
+Use a cheaper invariant:
+
+Each template defines a `canonicalOpening` or `minimumCounterPackage`.
+
+Example:
+
+```text
+Identity Breach
+minimum package:
+- MFA
+- optional Rate Limiter
+```
+
+Generator verifies the required package is:
+
+- available
+- placeable
+- affordable
+
+This catches obviously impossible runs.
+
+## 10.6 Tests
+
+Must include:
+
+```text
+same seed → exact same JSON
+different seeds → variation
+1000 generated operations → no invariant failure
+threat 10 reward >= threat 1 reward
+all required counters available
+all maps path successfully
+```
+
+Add property-style loop tests even if no property-testing crate is introduced.
+
+## Exit criteria
+
+A test can generate 1,000 valid Operations with no impossible configuration.
+
+---
+
+# STEP 11 — Operation Start and Completion API
+
+## Goal
+
+Make repeatable Operations server-issued and rewards idempotent.
+
+## 11.1 Start endpoint
+
+Add:
 
 ```http
 POST /v1/cyber-defense/operations
 ```
 
-Request may include:
+Request:
 
 ```json
 {
@@ -1956,941 +1898,1790 @@ Request may include:
 }
 ```
 
-Server returns:
+Optional:
 
 ```json
 {
-  "run_id": "...",
-  "seed": "...",
-  "template_id": "...",
-  "adversary_id": "ghost-7",
-  "threat_level": 5,
-  "operation": { "...": "deterministic configuration" }
+  "template_id": "identity-breach"
 }
 ```
 
-The server should select or validate an Operation compatible with current progression.
+only when browsing an explicit Operation choice.
 
-## Complete Operation
+## 11.2 Start service flow
+
+Server:
+
+1. authenticate user
+2. load Cyber profile
+3. validate requested Threat Level
+4. validate selected hero
+5. select template/adversary
+6. generate secure seed
+7. generate deterministic Operation
+8. persist complete generated config in `cyber_operation_runs`
+9. return generated config
+
+Do not regenerate on every GET from mutable data.
+
+Persist the generated Operation snapshot so future balance/content updates do not change an in-progress run.
+
+## 11.3 Active run behavior
+
+If an active Operation exists:
+
+Default `POST /operations` should return a conflict or active-run reference rather than silently create many runs.
+
+Recommended response:
+
+```text
+409 ACTIVE_OPERATION_EXISTS
+```
+
+with active run ID.
+
+The frontend then offers Resume or Abandon.
+
+## 11.4 Operation read endpoint
+
+Add:
+
+```http
+GET /v1/cyber-defense/operations/{run_id}
+```
+
+Return only if owned by current user.
+
+## 11.5 Abandon endpoint
+
+Add:
+
+```http
+POST /v1/cyber-defense/operations/{run_id}/abandon
+```
+
+No reward.
+
+Abandoned run cannot later complete.
+
+## 11.6 Complete endpoint
+
+Add:
 
 ```http
 POST /v1/cyber-defense/operations/{run_id}/complete
 ```
 
-Returns server-settled:
+Request contains only result evidence:
 
 ```json
 {
   "completed": true,
-  "bits_awarded": 82,
-  "bits_balance": 1840,
-  "player_xp_awarded": 110,
-  "hero_xp_awarded": 95,
-  "level_changes": [],
-  "tower_unlocks": [],
-  "adversary_changes": [],
-  "story_events": []
+  "stars": 2,
+  "health": 42,
+  "duration_ms": 487000
 }
 ```
 
-Completion must be idempotent.
+Do not accept rewards or levels.
 
-## Tower upgrade
+## 11.7 Completion transaction
+
+One DB transaction should:
+
+1. lock/load run
+2. verify owner
+3. verify status is active
+4. validate plausible result
+5. derive rewards
+6. settle Bits
+7. add career XP
+8. add hero XP
+9. update total Operations
+10. update highest cleared Threat Level
+11. update recommended Threat Level
+12. update adversary progress
+13. write reward values into run
+14. mark completed/failed
+15. commit
+
+Duplicate completion request:
+
+- returns previously stored result
+- does not award again
+
+## 11.8 Anti-cheat minimums
+
+Validate:
+
+- duration above minimum plausible time
+- star range
+- health range
+- run active
+- run belongs to user
+- reward not already settled
+- Threat Level from stored run, not request
+- hero from stored run
+
+Do not implement server-side simulation replay in Stage 2.
+
+## 11.9 Tests
+
+- start operation
+- active-run conflict
+- read own run
+- cannot read another user's run
+- abandon
+- complete
+- duplicate complete
+- failed result
+- Bits atomically awarded
+- XP atomically awarded
+- transaction rollback
+- malformed result
+- absurd duration rejected
+
+## Exit criteria
+
+A server-issued Operation can start, complete, and settle permanent rewards exactly once.
+
+---
+
+# STEP 12 — Threat Level and Recommended Difficulty
+
+## Goal
+
+Keep the game challenging for months without hidden rubber-banding.
+
+## 12.1 Recommended Threat Level rule
+
+Use recent results.
+
+Recommended simple rule:
+
+Track last 5 completed Operations.
+
+Increase recommendation by 1 when:
+
+- at least 4/5 are wins
+- and average stars >= 2
+- and average remaining-health ratio >= configured threshold
+
+Decrease recommendation by 1 when:
+
+- at least 3/5 are failures
+
+Otherwise unchanged.
+
+Clamp to:
+
+```text
+1–10
+```
+
+Do not change difficulty during a run.
+
+## 12.2 Player control
+
+Operation start UI should show:
+
+```text
+Recommended Threat: 5
+```
+
+Allow nearby choices:
+
+```text
+4  5  6
+```
+
+Advanced selector may expose the full unlocked range.
+
+## 12.3 Unlock rules
+
+Do not let a brand-new player immediately farm Threat 10.
+
+Suggested unlocked maximum:
+
+```text
+max(
+  recommended + 2,
+  highest_cleared + 1
+)
+```
+
+with a small campaign-based minimum.
+
+## 12.4 Reward scaling
+
+Higher Threat Level must give:
+
+- more Bits
+- more career XP
+- more hero XP
+
+But not exponentially.
+
+Avoid making lower difficulty feel worthless.
+
+## 12.5 Tests
+
+- recommendation rises
+- recommendation falls
+- no change in mixed performance
+- clamped min/max
+- user may choose lower difficulty
+- user may choose allowed higher difficulty
+- locked Threat Level rejected server-side
+
+## Exit criteria
+
+Difficulty progression is understandable and player-controlled.
+
+---
+
+# STEP 13 — Operation Frontend Flow
+
+## Goal
+
+Let the player continue indefinitely after the five fixed missions.
+
+## 13.1 Route
+
+Add:
+
+```text
+/game/operations/:runId
+```
+
+Recommended page:
+
+```text
+apps/web/src/pages/CyberDefenseOperationPage.tsx
+```
+
+## 13.2 Reuse `CyberDefenseGame`
+
+Do not duplicate the battle UI.
+
+Create an adapter:
+
+```ts
+generatedOperationToMissionDefinition(operation)
+```
+
+Then render existing:
+
+```tsx
+<CyberDefenseGame ... />
+```
+
+Add only the minimum props needed for Operation completion.
+
+Prefer extending result callbacks over branching deeply inside the engine.
+
+## 13.3 Operation briefing
+
+Show:
+
+```text
+Operation title
+Adversary
+Threat Level
+Estimated time
+Threat categories
+Visible modifiers
+Reward preview
+Selected hero
+```
+
+Do not show exact hidden wave composition unless Tower upgrades allow it.
+
+## 13.4 Operation completion
+
+Result flow:
+
+1. local postmortem
+2. send result to server
+3. await reward settlement
+4. show one consolidated reward summary
+5. update profile
+6. CTA:
+   - Continue Defense
+   - Tower
+   - Heroes
+
+Primary CTA should be:
+
+```text
+CONTINUE DEFENSE
+```
+
+## 13.5 Resume
+
+Operation game cache key must include:
+
+```text
+runId
+```
+
+not merely template ID.
+
+Refresh must restore exact generated run.
+
+## 13.6 Abandon
+
+Add explicit:
+
+```text
+Abandon Operation
+```
+
+with confirmation only if progress would be lost.
+
+Do not accidentally abandon on browser back.
+
+## 13.7 Tests
+
+- generated Operation adapts to mission engine
+- start → fight → complete
+- refresh resume
+- result settlement
+- duplicate render does not double complete
+- abandon
+- mobile layout
+- auth guard
+
+## Exit criteria
+
+After current five missions, the player can click Continue Defense and play unlimited server-issued Operations.
+
+---
+
+# STEP 14 — Recurring Adversaries
+
+## Goal
+
+Give repeated Operations identity and progression.
+
+## 14.1 Add adversary definitions
+
+Create:
+
+```text
+apps/web/src/game/data/adversaries.ts
+apps/web/src/game/models/adversary.ts
+```
+
+Equivalent canonical IDs must exist server-side.
+
+Initial Stage 2 adversaries:
+
+### `ghost-7`
+
+Theme:
+
+```text
+identity
+credentials
+stealth
+account compromise
+```
+
+Preferred threats:
+
+- Credential Stuffing
+- hidden attacks
+- identity pressure
+
+### `null`
+
+Theme:
+
+```text
+web
+application
+injection
+```
+
+Preferred threats:
+
+- SQL Injection
+- XSS
+- mixed application attacks
+
+### `viper`
+
+Theme:
+
+```text
+malware
+impact
+recovery
+```
+
+Preferred threats:
+
+- Ransomware
+- high-impact waves
+- recovery pressure
+
+Do not use Oracle.
+
+## 14.2 Adversary rank
+
+Rank represents **behavior/story progression**, not raw difficulty.
+
+Suggested milestones:
+
+```text
+Rank 1
+base operation behavior
+
+Rank 2
+new modifier becomes possible
+
+Rank 3
+dossier reveal
+
+Rank 4
+new mixed-wave pattern
+
+Rank 5
+boss-capable operation
+
+Rank 7
+story beat
+
+Rank 10
+major Stage 2 confrontation
+```
+
+Threat Level still controls numeric challenge.
+
+## 14.3 Adversary progress
+
+Award progress for:
+
+- encounter
+- successful Operation
+- higher Threat success
+- first boss clear
+
+Do not regress rank.
+
+## 14.4 Adversary-specific modifier pools
+
+Examples:
+
+### GHOST-7
+
+- Hidden Traffic
+- Credential Surge
+- Identity Pressure
+
+### NULL
+
+- Mixed Vector
+- Strict Latency
+- Application Pressure
+
+### VIPER
+
+- Recovery Pressure
+- Hardened Campaign
+- Delayed Impact
+
+All modifiers must have clear counterplay.
+
+## 14.5 Tests
+
+- rank derivation
+- modifier unlock by rank
+- rank does not force Threat Level
+- invalid adversary rejected
+- no `oracle` ID/name anywhere in Stage 2 content
+- boss unlock occurs correctly
+
+## Exit criteria
+
+Two runs at the same Threat Level can feel strategically different because of adversary identity.
+
+---
+
+# STEP 15 — Threat Intel / Dossier
+
+## Goal
+
+Add collectible long-term progress without another currency.
+
+Intel is **not spendable currency** in Stage 2.
+
+## 15.1 Dossier flags
+
+Examples:
+
+```text
+identity_specialist
+uses_hidden_traffic
+credential_surge_observed
+rank_3_story_clue
+boss_pattern_seen
+highest_threat_5
+```
+
+Server controls unlocks.
+
+## 15.2 Dossier page
+
+Route:
+
+```text
+/game/intel
+```
+
+Page:
+
+```text
+CyberDefenseIntelPage.tsx
+```
+
+Display each adversary:
+
+```text
+GHOST-7
+Rank 4
+Dossier 45%
+
+Known:
+✓ Credential specialist
+✓ Hidden traffic observed
+
+Unknown:
+?
+?
+```
+
+Unknown entries should not expose hidden text in HTML.
+
+## 15.3 Unlock presentation
+
+At Operation result:
+
+```text
+NEW INTEL
+GHOST-7: Credential Surge
+```
+
+Keep this inside the consolidated reward summary.
+
+Do not add another modal.
+
+## 15.4 Tests
+
+- dossier flag unlock once
+- hidden info absent before unlock
+- unlock visible after profile refresh
+- cross-device persistence
+
+## Exit criteria
+
+Repeated play creates collectible adversary knowledge.
+
+---
+
+# STEP 16 — Story Progression
+
+## Goal
+
+Give persistent context and future goals without interrupting gameplay.
+
+## 16.1 Story data
+
+Create:
+
+```text
+apps/web/src/game/data/story.ts
+apps/web/src/game/models/story.ts
+```
+
+Server should own trigger evaluation or at minimum final completed-node state.
+
+Suggested structure:
+
+```ts
+interface StoryNodeDefinition {
+  id: string
+  chapterId: string
+  title: string
+  body: string[]
+  trigger: StoryTriggerDefinition
+}
+```
+
+## 16.2 Stage 2 story structure
+
+### Chapter 1 — First Contact
+
+The existing five Stage 1 missions.
+
+After current boss clear:
+
+```text
+Chapter 1 Complete
+Operations unlocked
+```
+
+### Chapter 2 — Pattern Recognition
+
+- repeatable Operations begin
+- GHOST-7 appears
+- first dossier clues
+
+### Chapter 3 — Multiple Vectors
+
+- NULL and VIPER appear
+- attacks show coordination
+
+### Chapter 4 — Targeted Research
+
+- biolab-specific targeting becomes clear
+- major adversary milestones
+
+### Chapter 5 — Stage 2 climax
+
+- major Operation / boss
+- story hook remains open for Stage 3
+
+## 16.3 Trigger types
+
+Support only a small set:
+
+```text
+campaign_mission_completed
+operations_completed
+adversary_rank_reached
+threat_level_cleared
+story_node_completed
+```
+
+Do not add calendar/date triggers.
+
+## 16.4 Story presentation
+
+Use:
+
+```text
+2–4 short paragraphs maximum
+```
+
+Normal flow:
+
+```text
+story card
+[Continue]
+[Skip]
+```
+
+Skipped story is considered acknowledged.
+
+Full text available later in Story Archive.
+
+## 16.5 Story archive
+
+Route:
+
+```text
+/game/story
+```
+
+Optional for first Stage 2 iteration, but data model should support it.
+
+## 16.6 Tests
+
+- Stage 1 boss unlocks Operations
+- story node triggers once
+- skip works
+- story does not block gameplay if UI fails
+- no date-based trigger
+- trigger progress persists cross-device
+
+## Exit criteria
+
+The player understands that the original five missions are the beginning, not the ending.
+
+---
+
+# STEP 17 — Redesign `/game` as the Stage 2 Dashboard
+
+## Goal
+
+Make the persistent game loop obvious.
+
+Do not make the mission list the main product after Stage 2.
+
+## File
+
+Refactor:
+
+```text
+apps/web/src/pages/CyberDefensePage.tsx
+```
+
+Create smaller components if needed.
+
+Recommended:
+
+```text
+apps/web/src/game/components/dashboard/
+  CareerSummary.tsx
+  RecommendedOperation.tsx
+  TowerSummary.tsx
+  HeroSummary.tsx
+  ThreatSummary.tsx
+  CampaignSummary.tsx
+```
+
+## 17.1 Above-the-fold layout
+
+Show:
+
+```text
+CYBER DEFENSE
+
+Security Analyst — Lv 8
+XP ███████░░
+
+Tower Lv 6
+Bits 1,840
+
+Current Threat
+GHOST-7 — Rank 4
+```
+
+Then one primary card:
+
+```text
+CONTINUE DEFENSE
+
+Recommended Operation
+Threat Level 5
+~8 min
+
+[CONTINUE DEFENSE]
+```
+
+## 17.2 Primary CTA logic
+
+Use this order:
+
+```text
+if unfinished Operation:
+    Resume Operation
+else if Stage 1 campaign incomplete:
+    Continue Campaign
+else if unseen blocking story beat:
+    Continue Story
+else:
+    Recommended Operation
+```
+
+Story should not permanently block gameplay.
+
+## 17.3 Secondary navigation
+
+Provide:
+
+```text
+Tower
+Heroes
+Threat Intel
+Campaign
+Operations
+```
+
+Do not show ten equally weighted buttons.
+
+## 17.4 Campaign section
+
+The five original missions remain accessible.
+
+Show Chapter 1 progress.
+
+Do not remove replay.
+
+## 17.5 Tests
+
+- new user gets first campaign mission
+- partial campaign gets next campaign mission
+- completed campaign gets Operation
+- active Operation gets Resume
+- Bits shown from server wallet
+- mobile layout
+- one primary CTA
+
+## Exit criteria
+
+A returning user can understand what to do within a few seconds.
+
+---
+
+# STEP 18 — Migrate Existing Stage 1 Local Progress
+
+## Goal
+
+Do not make current users lose their five-mission progress.
+
+## Current source
+
+```text
+apps/web/src/game/persistence/gameProgress.ts
+```
+
+## 18.1 Migration endpoint
+
+Add:
 
 ```http
-POST /v1/cyber-defense/tower/upgrades/{upgrade_id}
+POST /v1/cyber-defense/legacy-progress
 ```
 
-The server:
+Request may contain:
 
-- validates prerequisites,
-- derives cost,
-- locks wallet/progression as needed,
-- spends Bits atomically,
-- increments exactly once.
-
-## Hero talent selection
-
-```http
-PUT /v1/cyber-defense/heroes/{hero_id}/talents
+```json
+{
+  "missions": {
+    "ddos-basics": {
+      "completed": true,
+      "stars": 3,
+      "best_health": 80,
+      "attempts": 2
+    }
+  }
+}
 ```
 
-The server validates:
+## 18.2 Trust boundary
 
-- required hero level,
-- legal talent choice,
-- legal slot,
-- respec rules.
+Local progress is untrusted.
 
----
+Import only:
 
-# 27. Bits Migration From Stage 1
+- completion state
+- best stars
+- best health
+- attempts if useful
 
-Stage 1 currently has a Cyber Defense endpoint that permanently debits Bits for temporary in-run control upgrades.
+Do **not** issue retroactive Bits based solely on client-local progress.
 
-Stage 2 should deprecate this behavior.
+Do not issue arbitrary XP from imported attempts.
 
-## Required migration behavior
+Optional:
 
-1. In-run defense upgrades use mission credits.
-2. Frontend no longer queues Bits spends for temporary upgrades.
-3. Existing `/v1/cyber-defense/upgrades` should be:
-   - removed if no released client depends on it, or
-   - kept temporarily as deprecated compatibility behavior.
-4. If real users have already lost persistent Bits to Stage 1 temporary upgrades:
-   - inspect the existing spend ledger,
-   - perform an idempotent one-time refund or transition grant,
-   - ensure it cannot be claimed twice.
+- grant a fixed one-time "returning defender" XP amount if at least one valid mission was previously completed
 
-Do not silently strand early users' currency if Stage 1 debit records exist.
+If doing this, server derives the amount.
 
----
+## 18.3 Migration process
 
-# 28. Stage 1 Local Progress Migration
+Frontend:
 
-Current Stage 1 mission progress is browser-local.
+1. fetch profile
+2. if `legacy_progress_imported == false`
+3. read local Stage 1 progress
+4. post valid known mission progress
+5. await success
+6. profile marks import complete
+7. keep local data for compatibility but stop treating it as authoritative
 
-Stage 2 progression is server-side.
+## 18.4 Tests
 
-On first Stage 2 launch:
+- imports known mission
+- ignores unknown mission
+- clamps invalid values
+- cannot import twice
+- no Bits granted from arbitrary client stars
+- empty progress still marks migration complete
+- failure retries later
 
-1. Load existing local Stage 1 mission progress.
-2. Import completion/stars/best-health as legacy campaign progress.
-3. Do **not** grant retroactive repeatable economic rewards based solely on untrusted local data.
-4. Mark legacy import complete.
-5. Preserve the local copy until server acknowledgement succeeds.
-6. After successful migration, server state becomes authoritative.
+## Exit criteria
 
-A user should not lose the fact that they already completed the five original missions.
-
----
-
-# 29. Operation Reward Security / Anti-Cheat
-
-Do not over-engineer anti-cheat, but persistent rewards require more protection than a client-only preview.
-
-Minimum requirements:
-
-- authenticated user,
-- server-issued `run_id`,
-- run belongs to user,
-- run status must be active,
-- server knows template/seed/threat level,
-- completion reward calculated on server,
-- one settlement per run,
-- idempotent retries,
-- plausible duration floor,
-- maximum reward caps,
-- rate limiting,
-- no client-provided Bits amount,
-- no client-provided XP amount,
-- no negative/overflow values,
-- no cross-user IDOR.
-
-If abuse later matters, the current deterministic simulation makes future compact action-log replay validation possible.
-
-Do not build full server simulation in Stage 2 unless necessary.
+Existing Stage 1 users retain campaign completion.
 
 ---
 
-# 30. Important Current Bits Upgrade Issue
+# STEP 19 — Telemetry for Balancing
 
-During Stage 1 review, the client upgrades a specific placement but the server's upgrade-spend sequence is associated with the run and `defense_id`.
+## Goal
 
-Before keeping any portion of that flow, test multiple instances of the same defense type in the same run.
+Collect only enough data to find boring, dominant, impossible, or overly grindy systems.
 
-Stage 2's preferred solution is to remove persistent Bits spending from in-run upgrades entirely, which also removes this semantic mismatch.
+Do not add invasive tracking.
 
-Add a regression test so two identical towers can independently upgrade using mission credits.
+## Required events
 
----
-
-# 31. Suggested New Frontend Data Modules
-
-Keep data-driven design.
-
-Possible additions:
+At minimum:
 
 ```text
-apps/web/src/game/data/
-  adversaries.ts
-  heroProgression.ts
-  operationTemplates.ts
-  operationModifiers.ts
-  towerUpgrades.ts
-  story.ts
-  progression.ts
+cyber_dashboard_view
 
-apps/web/src/game/models/
-  adversary.ts
-  operation.ts
-  progression.ts
-  tower.ts
-  story.ts
+cyber_operation_offered
+cyber_operation_started
+cyber_operation_resumed
+cyber_operation_completed
+cyber_operation_failed
+cyber_operation_abandoned
+
+cyber_threat_level_selected
+
+cyber_defense_placed
+cyber_defense_upgraded
+cyber_defense_removed
+
+cyber_hero_selected
+cyber_hero_deployed
+
+cyber_tower_upgrade_purchased
+cyber_hero_level_up
+cyber_hero_talent_selected
+
+cyber_adversary_rank_up
+cyber_dossier_unlock
+cyber_story_seen
 ```
 
-Avoid embedding progression logic directly in React components.
+## Useful dimensions
+
+Do not send raw personal data.
+
+Useful fields:
+
+```text
+run_id
+template_id
+adversary_id
+threat_level
+hero_id
+defense_id
+wave
+result
+stars
+duration_bucket
+```
+
+## Required product metrics
+
+Be able to answer:
+
+1. What percentage of campaign completers start an Operation?
+2. What percentage play a second Operation?
+3. How many Operations per session?
+4. Which templates are abandoned?
+5. Which Threat Levels have extreme fail rates?
+6. Which defenses are nearly always selected?
+7. Which defenses are almost never selected?
+8. Which heroes dominate?
+9. How quickly do users earn and spend Bits?
+10. How long between Tower upgrades?
+11. Are users stuck with large Bits balances and nothing desirable to buy?
+12. Do users stop immediately after Stage 1?
+
+## Exit criteria
+
+Stage 2 can be tuned from real behavioral data without storing unnecessary personal information.
 
 ---
 
-# 32. Suggested Stage 2 Frontend Screens
+# STEP 20 — Final Balance, Security, Accessibility, and Regression Pass
 
-Potential components:
+## Goal
 
-```text
-CyberDefenseDashboard
-OperationCard
-OperationBrowser
-ThreatLevelSelector
-
-TowerScreen
-TowerRoom
-TowerUpgradePanel
-
-HeroProgressScreen
-HeroTalentPanel
-
-ThreatIntelScreen
-AdversaryDossier
-
-StoryBeat
-StoryArchive
-
-OperationRewardSummary
-```
-
-Reuse Stage 1 game components inside the Operation flow.
+Do not ship Stage 2 just because the systems compile.
 
 ---
 
-# 33. Failure Design
+## 20.1 Fun / replayability review
 
-Failure should create:
-
-```text
-"I know what I should try differently."
-```
-
-not:
+Play at least:
 
 ```text
-"The game cheated."
+20 generated Operations
 ```
 
-Requirements:
+covering:
 
-- identify primary breach cause,
-- show the relevant attack,
-- explain which defense relationship mattered,
-- allow immediate retry,
-- preserve XP progress,
-- recommend a lower Threat Level after repeated failures without automatically lowering it,
-- never mock the player,
-- do not remove permanent progress on failure.
+- all three adversaries
+- Threat 1
+- Threat 3
+- Threat 5
+- Threat 7
+- Threat 10
+- each initial template
+
+Look for:
+
+- repetitive opening build
+- dominant towers
+- hero that is always correct
+- operation that is obviously unwinnable
+- operation that is trivial
+- modifier combinations that feel unfair
+- rewards that feel too slow
 
 ---
 
-# 34. Casual-Months Progression Target
+## 20.2 Economy review
 
-Stage 2 should be designed for a player who plays roughly:
+Test a simulated progression path.
+
+### Casual target
+
+Assume:
 
 ```text
 2–5 Operations per week
 ```
 
-without requiring that schedule.
-
-A target content/progression horizon:
+Target:
 
 ```text
-8–16 weeks of visible progression
+8–16 weeks of visible Stage 2 progression
 ```
 
-for a casual player.
+Do not artificially time-gate it.
 
-A player who binges the game is allowed to progress faster. Do not artificially stop them with calendar gates.
+Check:
 
-Use several parallel progress tracks so one bar is usually close to moving:
+- early permanent purchase every ~1–2 sessions
+- mid-game purchase every ~2–4 sessions
+- later purchase every ~3–6 sessions
+
+If a required upgrade needs 20 repetitive runs, reduce grind.
+
+If everything can be purchased in one evening, increase depth/cost.
+
+---
+
+## 20.3 Dominant-strategy review
+
+Test whether one build wins unrelated content.
+
+Example failure condition:
 
 ```text
-Officer XP
+WAF + MFA + Backup
+wins almost every template regardless of threats
+```
+
+If this occurs:
+
+- adjust operation composition
+- improve specialized defenses
+- tune costs
+- tune ranges
+- tune modifiers
+
+Do not "fix" balance by teaching false security relationships.
+
+---
+
+## 20.4 Security-content review
+
+Verify these remain true:
+
+### SQL Injection
+
+- Parameterized Queries remain strongest/root-cause-style counter
+- WAF helps but does not "fix" SQLi
+
+### XSS
+
+- XSS Protection remains primary
+- WAF helps
+- do not describe CSP alone as universal XSS prevention
+
+### Credential Stuffing
+
+- MFA is strong
+- Rate Limiting helps but is not equivalent to MFA
+
+### Least Privilege
+
+- reduces impact/blast radius
+- does not magically prevent initial compromise
+
+### Backup
+
+- recovery control
+- does not prevent ransomware infection
+
+### Monitoring / IDS
+
+- detection/support
+- does not automatically stop every attack
+
+### Segmentation if introduced
+
+- limits lateral movement
+- does not prevent all initial access
+
+---
+
+## 20.5 Authorization/security tests
+
+For every Stage 2 endpoint:
+
+- auth required
+- no IDOR
+- user cannot mutate another user's run
+- unknown content IDs rejected
+- reward values not accepted from client
+- Bits cannot become negative
+- XP cannot become negative
+- duplicate completion idempotent
+- duplicate purchase idempotent
+- malformed JSON rejected
+- SQLx binds values; no dynamic unsafe SQL
+- all numeric inputs bounded
+
+---
+
+## 20.6 Accessibility
+
+Verify:
+
+- keyboard navigation on meta pages
+- focus visible
+- no required hover
+- touch targets large enough
+- no information conveyed only by color
+- reduced motion respected
+- pause still works
+- story skippable
+- reward summary does not auto-dismiss
+- XP bars have accessible labels
+- Tower buttons identify level/cost
+- mobile screen remains usable at narrow width
+
+---
+
+## 20.7 Performance
+
+Active simulation must still:
+
+- run entirely in browser
+- avoid per-tick backend calls
+- avoid repeated profile fetches during a wave
+- avoid operation-state server writes every frame
+
+API calls should happen primarily at:
+
+```text
+dashboard load
+operation start
+operation complete
+Tower purchase
+talent selection
+legacy migration
+```
+
+---
+
+## 20.8 Full test suite
+
+Run:
+
+```bash
+cargo fmt --check
+cargo clippy --all-targets --all-features -- -D warnings
+cargo test
+```
+
+Then:
+
+```bash
+cd apps/web
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+Then E2E if available:
+
+```bash
+E2E_DATABASE_URL=postgres://app:app@localhost:5432/app pnpm e2e
+```
+
+Do not mark Stage 2 complete with newly introduced failing tests.
+
+---
+
+# 5. Detailed Stage 2 Acceptance Test
+
+A coding agent should use this as the final functional walkthrough.
+
+## Fresh user
+
+1. Sign in.
+2. Open `/game`.
+3. See Career Level 1.
+4. See Tower Level 1.
+5. See Bits.
+6. Primary CTA points to first Stage 1 mission.
+7. Complete first mission.
+8. Server awards actual Bits and XP.
+9. Refresh.
+10. Reward remains.
+11. Replay mission.
+12. First-clear reward is not duplicated.
+13. Complete the remaining four missions.
+14. Boss clear marks Chapter 1 complete.
+15. Operations unlock.
+
+## First Operation
+
+16. Dashboard now shows recommended Operation.
+17. Select Security Engineer.
+18. Select recommended Threat Level.
+19. Start Operation.
+20. Server creates persistent run.
+21. Refresh during wave.
+22. Run restores.
+23. Upgrade a tower.
+24. Mission credits decrease.
+25. Persistent Bits do not decrease.
+26. Complete Operation.
+27. Server awards Bits.
+28. Career XP increases.
+29. Security Engineer XP increases.
+30. Adversary progress increases.
+31. Result shows one consolidated reward summary.
+
+## Tower
+
+32. Open Tower.
+33. Purchase affordable SOC upgrade.
+34. Bits decrease server-side.
+35. Refresh.
+36. Upgrade remains.
+37. Start another Operation.
+38. SOC benefit is visible.
+
+## Hero
+
+39. Gain enough Hero XP for milestone.
+40. Open Heroes.
+41. Choose talent.
+42. Start Operation.
+43. Talent changes hero runtime behavior.
+44. Respec.
+45. New behavior replaces old choice cleanly.
+
+## Adversary
+
+46. Play multiple Operations against GHOST-7.
+47. Rank increases.
+48. Dossier unlock appears.
+49. New modifier becomes possible.
+50. Lower Threat Level remains selectable.
+
+## Story
+
+51. Trigger story milestone.
+52. Story shown once.
+53. Skip works.
+54. Story log/progress remains after refresh.
+55. Story does not block future Operations.
+
+## Cross-device/server persistence
+
+56. Clear browser local storage.
+57. Sign in again.
+58. Career remains.
+59. Bits remain.
+60. Tower remains.
+61. Hero XP remains.
+62. Dossier remains.
+63. Story remains.
+64. Campaign completion remains.
+
+If this walkthrough works, the core Stage 2 loop is complete.
+
+---
+
+# 6. Important Test Matrix
+
+Use this matrix as a minimum.
+
+| System | Happy path | Failure path | Idempotency | Cross-device |
+|---|---|---|---|---|
+| Campaign reward | yes | invalid result | yes | yes |
+| Operation start | yes | active run exists | N/A | yes |
+| Operation complete | yes | malformed result | yes | yes |
+| Tower purchase | yes | insufficient Bits | yes | yes |
+| Career XP | yes | invalid award source | via run | yes |
+| Hero XP | yes | invalid hero | via run | yes |
+| Hero talent | yes | locked talent | safe update | yes |
+| Adversary rank | yes | invalid adversary | via run | yes |
+| Dossier | yes | invalid flag | yes | yes |
+| Story | yes | unmet trigger | yes | yes |
+| Legacy import | yes | invalid local data | one-time | yes |
+
+---
+
+# 7. Suggested File Additions
+
+This is a recommendation, not a requirement if repository conventions suggest a cleaner structure.
+
+## Domain
+
+```text
+crates/domain/src/
+  cyber_defense.rs
+  cyber_operation.rs
+```
+
+## Database
+
+```text
+crates/db/src/
+  cyber_defense.rs
+```
+
+## API
+
+Prefer extending current:
+
+```text
+apps/api/src/routes/cyber_defense.rs
+```
+
+If it becomes too large, split:
+
+```text
+apps/api/src/routes/cyber_defense/
+  mod.rs
+  profile.rs
+  campaign.rs
+  operations.rs
+  tower.rs
+  heroes.rs
+  legacy.rs
+```
+
+Do not split prematurely before the route file becomes difficult to manage.
+
+## Frontend models/data
+
+```text
+apps/web/src/game/models/
+  operation.ts
+  tower.ts
+  adversary.ts
+  progression.ts
+  story.ts
+
+apps/web/src/game/data/
+  operationTemplates.ts
+  operationModifiers.ts
+  towerUpgrades.ts
+  adversaries.ts
+  heroProgression.ts
+  story.ts
+```
+
+## Frontend pages
+
+```text
+apps/web/src/pages/
+  CyberDefenseOperationPage.tsx
+  CyberDefenseTowerPage.tsx
+  CyberDefenseHeroesPage.tsx
+  CyberDefenseIntelPage.tsx
+```
+
+Optional:
+
+```text
+CyberDefenseStoryPage.tsx
+CyberDefenseOperationsPage.tsx
+```
+
+## Frontend state
+
+```text
+apps/web/src/game/state/
+  cyberProfile.ts
+  cyberOperations.ts
+```
+
+Keep active simulation state in the existing game engine rather than duplicating it here.
+
+---
+
+# 8. Stage 2 Data Rules
+
+The following must be server-authoritative:
+
+```text
+Bits
+Career XP
+Career level
 Hero XP
-Tower upgrade affordability
-Adversary dossier
+Hero talents
+Tower upgrade level
+Adversary progress
 Adversary rank
-Story milestone
-Highest Threat Level
+Dossier unlocks
+Story progress
+Operation identity
+Operation seed
+Operation Threat Level
+Operation reward
 ```
 
-Do not make all of them use separate currencies.
-
----
-
-# 35. Balance Targets
-
-These are starting targets, not immutable rules.
-
-## Recommended Threat Level
-
-Target completion rate after the onboarding period:
+The following can remain local/transient:
 
 ```text
-roughly 60–80%
+enemy position
+tower targeting
+projectiles/effects
+wave timer
+hero cooldown inside current run
+mission credits
+temporary placed tower levels
+pause state
+sound settings
 ```
-
-A recommended level should be challenging enough that decisions matter but not so punishing that casual players repeatedly brick-wall.
-
-## Higher optional levels
-
-Expected to be harder.
-
-The player chose the risk.
-
-## Early Stage 1 campaign
-
-Should remain forgiving enough to teach mechanics.
-
-## Hero impact
-
-A hero should materially help but should not make bad architecture irrelevant.
-
-## Tower progression
-
-Permanent bonuses should help but not erase attack/control counter relationships.
 
 ---
 
-# 36. Telemetry
+# 9. Stage 2 UX Rules
 
-Add enough telemetry to balance Stage 2.
+Follow these for every new screen.
 
-Do not collect unnecessary personal information.
+## Primary action
 
-Recommended events:
+There should be one obvious next action.
+
+On dashboard:
 
 ```text
-cyber_dashboard_view
-operation_offered
-operation_started
-operation_resumed
-operation_completed
-operation_failed
-operation_abandoned
-
-threat_level_selected
-
-defense_placed
-defense_upgraded
-defense_removed
-
-hero_selected
-hero_deployed
-
-tower_upgrade_viewed
-tower_upgrade_purchased
-
-hero_level_up
-hero_talent_selected
-
-adversary_rank_up
-dossier_entry_unlocked
-story_beat_seen
+CONTINUE DEFENSE
 ```
 
-Useful aggregated metrics:
+## Progressive disclosure
 
-- number of players who play another Operation after campaign completion,
-- voluntary replay rate,
-- Operations per session,
-- median Operation duration,
-- failure rate by threat level,
-- retry-after-failure rate,
-- defense pick rate,
-- defense win rate,
-- hero pick rate,
-- hero win rate,
-- Bits earned vs spent,
-- median Bits balance,
-- time between Tower purchases,
-- progression velocity,
-- operation-template repetition,
-- abandon location.
-
-### Primary qualitative success measure
-
-The player should voluntarily continue after no new fixed mission is required.
-
-Do not optimize only for raw session length.
-
----
-
-# 37. Testing Plan
-
-Testing is a Stage 2 requirement, not cleanup work.
-
-## 37.1 Existing Stage 1 regression tests
-
-All current Stage 1 tests must continue to pass unless a test intentionally changes due to the mission-credit upgrade migration.
-
-Preserve tests covering:
-
-- defense placement,
-- invalid placement,
-- pad occupation,
-- gate behavior,
-- heroes,
-- hero cooldowns,
-- tower combat,
-- wave bonuses,
-- early calls,
-- SQLi behavior,
-- credential stuffing,
-- mixed defense,
-- boss summons,
-- backup,
-- postmortem,
-- mission resume.
-
----
-
-## 37.2 Progression unit tests
-
-Test XP boundaries:
+Do not show:
 
 ```text
-0 XP
-exact level threshold
-threshold - 1
-threshold + 1
-multiple-level award
-max configured level
+all hero talent math
+all 10 Threat Levels
+all Tower future levels
+all adversary unknown tactics
+all story history
 ```
 
-Test:
+on the main screen.
 
-- career level derivation,
-- hero level derivation,
-- milestone talent availability,
-- Tower level derivation,
-- adversary rank thresholds.
+Show only the next useful information.
 
----
+## Short session support
 
-## 37.3 Bits tests
-
-Required:
-
-- Operation reward settles once.
-- Duplicate completion returns same settled result without duplicate Bits.
-- Client cannot choose reward amount.
-- Tower cost derived server-side.
-- Insufficient Bits does not partially upgrade.
-- Concurrent purchase attempts do not double-upgrade.
-- Reused idempotency key for a different action is rejected.
-- Wallet cannot become negative.
-- Refund migration is idempotent if needed.
-- In-run defense upgrades do not spend persistent Bits.
-- Two same-type towers can upgrade independently with mission credits.
-
----
-
-## 37.4 Operation generator tests
-
-Required:
-
-### Determinism
+Normal Operation target:
 
 ```text
-same seed + same template + same threat level
-→ same generated Operation
+5–12 minutes
 ```
 
-### Diversity
-
-Different seeds should produce meaningful variation.
-
-### Bounds
-
-Generated values remain within template-defined safety ranges.
-
-### Counter availability
-
-Every primary threat has at least one meaningful counter available.
-
-### Budget solvability
-
-At least one known valid build fits the generated starting budget.
-
-### Modifier compatibility
-
-Disallowed combinations never occur.
-
-### No impossible defense restriction
-
-Limited Arsenal cannot remove every viable counter.
-
-### Boss constraints
-
-Boss Operations always include a valid path and counter strategy.
-
----
-
-## 37.5 Adversary tests
-
-- rank advances only on valid server events,
-- rank does not advance twice on retry,
-- new tactic unlock occurs at configured threshold,
-- dossier unlock is idempotent,
-- adversary rank does not force a Threat Level,
-- all adversary IDs reference existing content,
-- adversaries remain fictional.
-
----
-
-## 37.6 Story tests
-
-- original five missions unlock Chapter 2 correctly,
-- story beat triggers once,
-- skipped story remains marked appropriately,
-- story does not block Operations if the presentation fails,
-- story progress restores on another device,
-- no story trigger depends on a daily login/calendar date.
-
----
-
-## 37.7 API authorization tests
-
-For every Stage 2 write endpoint:
-
-- unauthenticated rejected,
-- user A cannot mutate user B,
-- unknown IDs rejected,
-- invalid enum/content IDs rejected,
-- malformed payload rejected,
-- repeated requests are safe where idempotency applies.
-
----
-
-## 37.8 Resume tests
-
-Start Operation:
+Boss/major Operation:
 
 ```text
-place defenses
-start wave
-close/refresh
-return
+10–18 minutes
 ```
 
-The Operation must restore correctly.
+## Failure
 
-Also test:
+Failure should answer:
 
-- server profile refresh does not corrupt local active simulation,
-- completed runs are not resumable,
-- abandoned runs cannot settle twice.
+```text
+What got through?
+Why?
+What can I change?
+```
 
----
+Failure should not remove permanent progress.
 
-## 37.9 UI tests
+## Return after a long break
 
-Desktop and mobile:
+A player returning after three weeks should not see:
 
-- dashboard has a single obvious primary CTA,
-- Bits balance visible,
-- XP progress readable,
-- Tower screen works by touch,
-- hero talents usable without hover,
-- Threat Level selection understandable,
-- reward summary does not overflow,
-- dossier works on small screens,
-- story can be skipped,
-- back navigation does not lose an active run accidentally.
+```text
+You lost your streak.
+You missed 21 rewards.
+Your energy expired.
+```
 
----
+They should see:
 
-## 37.10 Accessibility tests
-
-- keyboard navigation for meta screens,
-- touch targets large enough for mobile,
-- no state communicated by color alone,
-- reduced-motion preference respected,
-- pause remains usable,
-- essential text is not auto-dismissed too quickly,
-- readable focus state,
-- semantic headings/labels,
-- screen-reader names for progress bars and upgrade buttons.
+```text
+Welcome back.
+Continue Defense.
+```
 
 ---
 
-## 37.11 Security-content correctness tests
+# 10. Stage 2 Game Design Rules
 
-Content-level validation should catch obviously misleading relationships.
+## Avoid dominant strategies
 
-Examples:
+Every Operation should make context matter.
 
-- Parameterized Queries must remain a strong SQLi counter.
-- WAF must not be described as permanently fixing vulnerable code.
-- Backup must not be described as preventing ransomware infection.
-- Least Privilege must not be described as preventing every initial compromise.
-- Monitoring must not be described as automatically blocking everything it detects.
-- Rate Limiter must not be described as equivalent to MFA for Credential Stuffing.
-- CSP must not be described as the sole universal XSS fix.
+Good trade-offs:
 
-These can be snapshot/content tests plus manual review.
+```text
+specialist defense vs broad defense
+detection vs direct mitigation
+save credits vs spend early
+low latency vs more protection
+Security Engineer vs SRE
+safe Threat Level vs higher reward
+```
 
----
+Bad state:
 
-# 38. Implementation Sequence
+```text
+same three towers win every operation
+```
 
-Implement Stage 2 incrementally.
+## Persistent progression should not replace skill
 
-Do not attempt every subsystem in one giant branch/commit.
+Do not create:
 
-## Stage 2A — Economy and persistent profile
+```text
+Tower Lv 20 = +500% all damage
+```
 
-Goal:
+Permanent growth should mainly provide:
 
-> create the permanent foundation.
+- information
+- options
+- specialization
+- small efficiency
+- hero customization
+- visible ownership
 
-Implement:
+## No forced grinding
 
-- Cyber Defense server profile,
-- career XP/level,
-- real Operation/Campaign reward settlement,
-- mission-credit tower upgrades,
-- remove temporary persistent-Bits tower-upgrade spending,
-- Tower upgrade persistence,
-- legacy Stage 1 progress import,
-- possible Stage 1 Bits refund migration,
-- dashboard shell.
+Do not require repetitive trivial runs to progress.
 
-Exit criteria:
+If players intentionally farm Threat 1 because it is fastest, reduce low-threat reward efficiency relative to recommended difficulty.
 
-- original mission can award real server-settled Bits/XP,
-- player can spend Bits on one permanent Tower upgrade,
-- refresh/login on another device preserves progress.
-
----
-
-## Stage 2B — Hero progression
-
-Implement:
-
-- persistent hero XP,
-- level curve,
-- hero progress UI,
-- initial milestone talents,
-- server validation,
-- Operation reward hero XP.
-
-Exit criteria:
-
-- both existing Stage 1 heroes can level,
-- leveling visibly changes something meaningful,
-- no hero XP exploit from repeated client calls.
+Do not set reward to zero just because the player chose lower difficulty.
 
 ---
 
-## Stage 2C — Repeatable Operations
+# 11. Research-Based Design Notes
 
-Implement:
+These are implementation constraints, not separate research tasks.
 
-- Operation templates,
-- seeded generator,
-- Threat Level,
-- recommended Threat Level,
-- Operation start/complete APIs,
-- resume,
-- reward scaling,
-- Operation browser with one recommended choice.
+## Game psychology
 
-Exit criteria:
+Use:
 
-- player can finish original campaign and continue playing unlimited Operations,
-- 20 generated runs do not all feel identical,
-- generation does not produce impossible configurations.
+- competence: clear mastery and level progression
+- autonomy: hero/talent/Tower/difficulty choices
+- ownership: persistent Tower growth
+- understandable challenge
+- short feedback loops
 
-This is the critical Stage 2 retention milestone.
+Do not rely on:
 
----
+- FOMO
+- random paid rewards
+- punishment for absence
 
-## Stage 2D — Adversaries + Threat Intel
+## UI/UX
 
-Implement:
+Keep:
 
-- adversary data model,
-- three initial fictional adversaries,
-- adversary rank,
-- tactic/modifier pools,
-- dossiers,
-- story hooks.
-
-Exit criteria:
-
-- Operations feel meaningfully different by adversary,
-- rank progression changes possible tactics without silently forcing difficulty,
-- dossier gives long-term collection progress.
-
----
-
-## Stage 2E — Story and Tower polish
-
-Implement:
-
-- Chapter 1 framing around existing missions,
-- Stage 2 story beats,
-- Tower visual growth,
-- chapter progression,
-- reward/progression polish,
-- telemetry dashboards/events,
-- balance tuning.
-
-Exit criteria:
-
-- campaign ending transitions naturally into Operations,
-- player understands why they should return,
-- Tower visibly reflects permanent progress,
-- no "finished everything" dead end remains after five missions.
-
----
-
-# 39. Acceptance Criteria for Stage 2
-
-Stage 2 is complete when all of the following are true.
-
-## Long-term loop
-
-- Completing the five original missions unlocks a repeatable system.
-- There is no finite "all done" state after five missions.
-- Operations can be generated indefinitely from curated templates.
-- Operations remain deterministic by seed.
-- Threat Level supports continued challenge.
-
-## Progression
-
-- Player/career XP persists server-side.
-- Both existing heroes have persistent levels.
-- Tower/HQ has persistent upgrades.
-- At least three recurring adversaries have persistent dossier/rank progress.
-- Story progresses based on gameplay milestones.
-- Progress works across devices.
-
-## Bits
-
-- Cyber Defense actually awards Bits.
-- Bits are server-authoritative.
-- Bits have permanent uses.
-- In-run tower upgrades use mission credits rather than persistent Bits.
-- Reward settlement and spending are idempotent.
-- Player can always continue playing with zero Bits.
-
-## Fun / UX
-
-- One primary "Continue Defense" action exists.
-- Returning players can reach gameplay quickly.
-- Story is skippable.
-- No daily system exists.
-- No forced waiting exists.
-- No loot-box/gacha system exists.
-- Failure gives understandable feedback.
-- Mobile remains usable.
+- visible status
+- consistent controls
+- undo/respec where reasonable
+- one clear CTA
+- recognition over memorization
+- progressive disclosure
 
 ## Security education
 
-- Existing security-control relationships remain accurate enough for learning.
-- New content uses current OWASP/NIST/CISA/MITRE terminology carefully.
-- No mechanic teaches obviously false security behavior.
+Use established relationships from:
+
+- NIST CSF 2.0
+- NIST SP 800-207
+- NIST SP 800-61 Rev. 3
+- MITRE ATT&CK
+- OWASP Top 10 / Cheat Sheets
+- CIS Controls
+- CISA guidance
+
+Do not turn those frameworks into extra required UI complexity.
+
+---
+
+# 12. Stage 2 Definition of Done
+
+Stage 2 is done only when:
+
+## Replayability
+
+- original five missions are still playable
+- finishing them unlocks repeatable Operations
+- Operations can be generated indefinitely
+- Threat Level supports long-term challenge
+- at least three adversaries create different strategic patterns
+
+## Progression
+
+- career XP persists
+- career level persists
+- Security Engineer levels
+- SRE levels
+- hero talents persist
+- Tower upgrades persist
+- adversary rank persists
+- dossier persists
+- story persists
+
+## Bits
+
+- Cyber Defense awards real Bits
+- Bits are server-authoritative
+- Bits buy permanent Tower progression
+- temporary tower upgrades use mission credits
+- zero Bits never prevents the player from playing
+
+## UX
+
+- `/game` has one primary Continue Defense action
+- active runs resume
+- short sessions remain practical
+- no daily requirement exists
+- no forced wait exists
+- story is skippable
+- mobile remains functional
+
+## Security
+
+- rewards cannot be client-selected
+- purchases cannot overdraft wallet
+- duplicate completion cannot duplicate rewards
+- users cannot mutate another user's progression
+- all server writes validate content IDs
 
 ## Quality
 
-- Existing Stage 1 regression tests pass.
-- New progression/economy/API tests pass.
-- Operation-generation invariant tests pass.
-- E2E flow from new user → campaign → Operations → Tower upgrade → hero level works.
+- current Stage 1 tests still pass
+- new Stage 2 tests pass
+- operation generator passes invariant tests
+- full fresh-user walkthrough passes
+- cross-device persistence works
 
 ---
 
-# 40. Non-Goals / Do Not Add During Stage 2
+# 13. Commit / Checkpoint Strategy
 
-Unless required to complete the systems above, do not add:
+Prefer small checkpoints.
+
+Suggested checkpoints:
 
 ```text
-More standalone game modes
-PvP
-Guilds
-Multiplayer
-Daily incidents
-Daily streaks
-Daily login rewards
-Energy
-Battle pass
-Seasons
-Gacha
-Loot boxes
-Paid Bits
-Ads
-Complex crafting
-50-tower tech tree
-Real-world threat actor impersonation
-A detailed enterprise SOC simulator
+stage2: add cyber defense progression domain rules
+
+stage2: add cyber defense persistence schema
+
+stage2: add cyber defense profile API
+
+stage2: move in-run upgrades to mission credits
+
+stage2: settle campaign rewards server-side
+
+stage2: add career progression UI
+
+stage2: add persistent tower upgrades
+
+stage2: add hero progression
+
+stage2: add operation models and generator
+
+stage2: add operation APIs
+
+stage2: add operation frontend
+
+stage2: add adversary progression and intel
+
+stage2: add story progression
+
+stage2: redesign cyber defense dashboard
+
+stage2: migrate legacy game progress
+
+stage2: add balancing telemetry
+
+stage2: final balance and regression pass
 ```
 
-The purpose of Stage 2 is depth and longevity from the **existing Tower Defense game**, not feature sprawl.
+After each checkpoint:
+
+```bash
+cargo test
+(cd apps/web && pnpm typecheck && pnpm test)
+```
+
+Run the full lint/build suite at major milestone boundaries.
 
 ---
 
-# 41. Coding-Agent Guardrails
+# 14. Coding Agent Final Instruction
 
-When implementing this document:
+Do not interpret Stage 2 as:
 
-1. Inspect existing implementation before changing architecture.
-2. Reuse Stage 1 engine/model patterns.
-3. Keep simulation browser-side.
-4. Keep economy/progression server-authoritative.
-5. Prefer data-driven definitions.
-6. Avoid giant React components.
-7. Avoid duplicating reward/progression math between frontend and backend.
-8. Put server-authoritative calculations in Rust/server code.
-9. Centralize balance constants.
-10. Make migrations backward-compatible and idempotent where possible.
-11. Add tests with each subsystem, not after the entire Stage 2 implementation.
-12. Do not remove Stage 1 behavior merely because the new system exists.
-13. Do not introduce hidden calendar/daily requirements.
-14. Do not use `Oracle` as an adversary, hero, organization, boss, or story character name.
-15. Do not use real threat-group names as fictional villains.
-16. Do not make progression an automatic replacement for strategy.
-17. Do not make a security control more powerful by teaching an incorrect security concept.
-18. Preserve the ability to pause/resume and play short sessions.
-19. Maintain mobile usability.
-20. If a design choice conflicts with priorities, use:
+> "Add lots of new content."
+
+Interpret Stage 2 as:
+
+> "Turn the existing Cyber Defense Tower game into a persistent progression system with indefinite repeatable Operations."
+
+The five Stage 1 missions, current towers, current attacks, and two current heroes are enough to build the first long-running version.
+
+The most important successful transition is:
 
 ```text
-Fun
-> Long-term replayability
-> Meaningful Bits economy
-> Security education
+Stage 1:
+
+Mission 1
+→ Mission 2
+→ Mission 3
+→ Mission 4
+→ Mission 5
+→ Done
+
+
+Stage 2:
+
+Campaign
+→ Operation
+→ permanent progress
+→ Operation
+→ Tower upgrade
+→ Operation
+→ hero level
+→ adversary evolution
+→ story
+→ harder Operation
+→ continue indefinitely
 ```
 
-while still refusing to encode factually false security relationships.
+Build that loop first.
 
----
-
-# 42. Research References
-
-## Game motivation / psychology / gamification
-
-1. Ryan, Rigby, Przybylski — *The Motivational Pull of Video Games: A Self-Determination Theory Approach*  
-   https://selfdeterminationtheory.org/SDT/documents/2006_RyanRigbyPrzybylski_MandE.pdf
-
-2. Hamari et al. — *Challenging games help students learn: engagement, flow and immersion in game-based learning*  
-   https://doi.org/10.1016/j.chb.2015.07.045
-
-3. Gamification and intrinsic motivation meta-analysis  
-   https://link.springer.com/article/10.1007/s11423-023-10337-7
-
-4. Programming-learning gamification meta-analysis  
-   https://onlinelibrary.wiley.com/doi/10.1002/cae.22630
-
-5. 2026 systematic review on game dark patterns and random reward mechanisms  
-   https://www.sciencedirect.com/science/article/pii/S1875952126000443
-
-## Game design / difficulty / tower defense
-
-6. Dynamic Difficulty Adjustment in Tower Defence  
-   https://doi.org/10.1016/j.procs.2015.07.563
-
-7. Comparing Dynamic Difficulty Adjustment Systems  
-   https://doi.org/10.1145/3116595.3116623
-
-8. Player tactic discovery in a commercial tower defense game  
-   https://www.sciencedirect.com/science/article/pii/S1875952125000436
-
-9. Risk/reward decision making under uncertainty  
-   https://pubmed.ncbi.nlm.nih.gov/29567432/
-
-## UI/UX / accessibility
-
-10. Nielsen Norman Group — Ten Usability Heuristics  
-    https://www.nngroup.com/articles/ten-usability-heuristics/
-
-11. Microsoft Xbox Accessibility Guidelines  
-    https://learn.microsoft.com/en-us/gaming/accessibility/
-
-## Cybersecurity
-
-12. NIST Cybersecurity Framework 2.0  
-    https://www.nist.gov/publications/nist-cybersecurity-framework-csf-20
-
-13. NIST SP 800-61 Rev. 3 — Incident Response  
-    https://csrc.nist.gov/pubs/sp/800/61/r3/final
-
-14. NIST SP 800-207 — Zero Trust Architecture  
-    https://csrc.nist.gov/pubs/sp/800/207/final
-
-15. MITRE ATT&CK Enterprise Tactics  
-    https://attack.mitre.org/tactics/
-
-16. MITRE ATT&CK Enterprise Techniques  
-    https://attack.mitre.org/techniques/
-
-17. OWASP Top 10:2025  
-    https://top10.owasp.org/2025/
-
-18. OWASP ASVS 5.0  
-    https://github.com/OWASP/ASVS
-
-19. OWASP SQL Injection Prevention Cheat Sheet  
-    https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html
-
-20. OWASP XSS Prevention Cheat Sheet  
-    https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
-
-21. OWASP Credential Stuffing Prevention Cheat Sheet  
-    https://cheatsheetseries.owasp.org/cheatsheets/Credential_Stuffing_Prevention_Cheat_Sheet.html
-
-22. CIS Critical Security Controls  
-    https://www.cisecurity.org/controls
-
-23. CISA MFA guidance  
-    https://www.cisa.gov/audiences/small-and-medium-businesses/secure-your-business/require-multifactor-authentication
-
-24. CISA StopRansomware Guide  
-    https://www.cisa.gov/stopransomware/ransomware-guide
-
-25. CISA network segmentation guidance  
-    https://www.cisa.gov/sites/default/files/publications/layering-network-security-segmentation_infographic_508_0.pdf
-
----
-
-# 43. Final Stage 2 Product Definition
-
-Stage 1 built a working cybersecurity tower-defense game.
-
-Stage 2 should turn it into a **persistent cyber-defense career**.
-
-The player should have:
-
-```text
-a Tower that grows,
-heroes that grow,
-adversaries that evolve,
-a story that continues,
-operations that do not run out,
-Bits that matter,
-and increasingly difficult strategic decisions.
-```
-
-The game should remain easy to enter:
-
-```text
-Open Cyber Defense
-↓
-CONTINUE DEFENSE
-↓
-5–12 minute Operation
-↓
-Meaningful permanent progress
-```
-
-That is the Stage 2 target.
+Do not add another game type until this loop is fun and durable.

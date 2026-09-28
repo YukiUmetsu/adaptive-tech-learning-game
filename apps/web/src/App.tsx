@@ -12,7 +12,12 @@ import AccountPage from "./pages/AccountPage";
 import CertificationDashboardPage from "./pages/CertificationDashboardPage";
 import CertificationsPage from "./pages/CertificationsPage";
 import CyberDefenseMissionPage from "./pages/CyberDefenseMissionPage";
+import CyberDefenseOperationPage from "./pages/CyberDefenseOperationPage";
 import CyberDefensePage from "./pages/CyberDefensePage";
+import CyberDefenseHeroesPage from "./pages/CyberDefenseHeroesPage";
+import CyberDefenseIntelPage from "./pages/CyberDefenseIntelPage";
+import CyberDefenseStoryPage from "./pages/CyberDefenseStoryPage";
+import CyberDefenseTowerPage from "./pages/CyberDefenseTowerPage";
 import DailyMissionPage from "./pages/DailyMissionPage";
 import DemoPage from "./pages/DemoPage";
 import DomainLearningPage from "./pages/DomainLearningPage";
@@ -70,6 +75,46 @@ export default function App() {
         />
         <Route path="demo" element={<DemoPage />} />
         <Route path="game" element={<CyberDefensePage />} />
+        <Route
+          path="game/operations/:runId"
+          element={
+            <RequireAuth>
+              <CyberDefenseOperationPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="game/tower"
+          element={
+            <RequireAuth>
+              <CyberDefenseTowerPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="game/heroes"
+          element={
+            <RequireAuth>
+              <CyberDefenseHeroesPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="game/intel"
+          element={
+            <RequireAuth>
+              <CyberDefenseIntelPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="game/story"
+          element={
+            <RequireAuth>
+              <CyberDefenseStoryPage />
+            </RequireAuth>
+          }
+        />
         <Route
           path="game/missions/:missionId"
           element={

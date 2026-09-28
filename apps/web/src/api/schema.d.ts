@@ -169,6 +169,184 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cyber-defense/campaign/{mission_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Settles the result of one Stage 1 campaign mission.
+         * @description The client sends only raw result evidence and an idempotency `result_id`; the
+         *     server derives completion, first-clear status, and every reward value.
+         */
+        post: operations["complete_campaign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cyber-defense/heroes/{hero_id}/talents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replaces a hero's selected talents (free respec in Stage 2). */
+        put: operations["set_hero_talents"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cyber-defense/legacy-progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Imports legacy Stage 1 local progress once. */
+        post: operations["import_legacy_progress"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cyber-defense/operations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Starts one repeatable Operation. */
+        post: operations["start_operation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cyber-defense/operations/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reads one owned Operation run, so a refresh restores the exact run. */
+        get: operations["get_operation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cyber-defense/operations/{run_id}/abandon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Abandons an active Operation run. Grants no reward. */
+        post: operations["abandon_operation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cyber-defense/operations/{run_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Settles one Operation run's result and rewards exactly once. */
+        post: operations["complete_operation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cyber-defense/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns the authenticated player's complete Cyber Defense profile.
+         * @description One server-authoritative snapshot: career, Bits, Tower, heroes, adversaries,
+         *     story, and campaign results. The first request creates a default profile.
+         */
+        get: operations["get_profile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cyber-defense/telemetry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Appends a batch of balance-telemetry events. */
+        post: operations["submit_telemetry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cyber-defense/tower/upgrades/{upgrade_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Purchases the next level of one Tower/HQ room with Bits. */
+        post: operations["purchase_tower_upgrade"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cyber-defense/upgrades": {
         parameters: {
             query?: never;
@@ -1056,6 +1234,208 @@ export interface components {
             /** @description Learner-facing label for the role, for example `IPv4 default route target`. */
             label: string;
         };
+        /** @description Progress against one recurring adversary. */
+        CyberAdversaryProgressDto: {
+            /** @description Adversary identifier. */
+            adversary_id: string;
+            /** @description Unlocked dossier flags. */
+            dossier_flags: string[];
+            /**
+             * Format: int32
+             * @description Total encounters.
+             */
+            encounters: number;
+            /**
+             * Format: int32
+             * @description Highest Threat Level cleared against this adversary.
+             */
+            highest_threat_level_cleared: number;
+            /**
+             * Format: int64
+             * @description Accumulated progress.
+             */
+            progress: number;
+            /**
+             * Format: int32
+             * @description Derived rank.
+             */
+            rank: number;
+            /**
+             * Format: int32
+             * @description Total victories.
+             */
+            victories: number;
+        };
+        /**
+         * @description Client result evidence for a Stage 1 campaign mission.
+         *
+         *     Rewards are never accepted from the client; only the raw result is.
+         */
+        CyberCampaignCompleteRequest: {
+            /**
+             * Format: int64
+             * @description Attempt duration in milliseconds.
+             */
+            duration_ms: number;
+            /**
+             * Format: int32
+             * @description Remaining system health.
+             */
+            health: number;
+            /** @description Hero selected for the run, when any. Receives hero XP. */
+            hero_id?: string | null;
+            /**
+             * Format: uuid
+             * @description Client-generated idempotency key for this result.
+             */
+            result_id: string;
+            /**
+             * Format: int32
+             * @description Stars earned, `0..=3`. `0` means the attempt failed.
+             */
+            stars: number;
+        };
+        /** @description Response after settling a Stage 1 campaign mission. */
+        CyberCampaignCompleteResponse: {
+            /**
+             * Format: int64
+             * @description Settled Bits balance after the reward.
+             */
+            bits_balance: number;
+            /** @description Updated campaign result. */
+            campaign: components["schemas"]["CyberCampaignResultDto"];
+            /** @description Career summary after the reward. */
+            career: components["schemas"]["CyberCareerSummaryDto"];
+            /** @description `false` when this result was already recorded and no new reward settled. */
+            newly_settled: boolean;
+            /** @description Reward actually settled by this request (zero on a duplicate). */
+            reward: components["schemas"]["CyberRewardDto"];
+            /** @description Story nodes triggered by this result. */
+            story_nodes_completed: string[];
+        };
+        /** @description Authoritative result for one Stage 1 campaign mission. */
+        CyberCampaignResultDto: {
+            /**
+             * Format: int32
+             * @description Total recorded attempts.
+             */
+            attempts: number;
+            /**
+             * Format: int32
+             * @description Best remaining health.
+             */
+            best_health: number;
+            /**
+             * Format: int32
+             * @description Best stars earned.
+             */
+            best_stars: number;
+            /** @description Whether the mission was ever completed. */
+            completed: boolean;
+            /** @description Whether the one-time first-clear reward was settled. */
+            first_clear_reward_settled: boolean;
+            /** @description Campaign mission identifier. */
+            mission_id: string;
+        };
+        /** @description Career progress derived from career XP. */
+        CyberCareerDto: {
+            /**
+             * Format: int32
+             * @description Career level derived from XP.
+             */
+            level: number;
+            /**
+             * Format: int64
+             * @description Absolute XP threshold for the next level, or `null` at the cap.
+             */
+            next_level_xp?: number | null;
+            /** @description Rank label for the level. */
+            rank: string;
+            /**
+             * Format: int64
+             * @description Total career XP.
+             */
+            xp: number;
+            /**
+             * Format: int64
+             * @description XP span of the current level, or `null` at the cap.
+             */
+            xp_for_next_level?: number | null;
+            /**
+             * Format: int64
+             * @description XP accumulated within the current level.
+             */
+            xp_into_level: number;
+        };
+        /** @description Compact career summary returned after a reward settles. */
+        CyberCareerSummaryDto: {
+            /**
+             * Format: int32
+             * @description Career level after settlement.
+             */
+            level: number;
+            /** @description Whether this settlement raised the career level. */
+            level_up: boolean;
+            /** @description Rank label for the level. */
+            rank: string;
+            /**
+             * Format: int64
+             * @description Total career XP after settlement.
+             */
+            xp: number;
+        };
+        /** @description One complete, server-authoritative Cyber Defense profile snapshot. */
+        CyberDefenseProfileResponse: {
+            /**
+             * Format: uuid
+             * @description Active Operation run identifier, if one exists.
+             */
+            active_operation_run_id?: string | null;
+            /** @description Adversary progress and ranks. */
+            adversaries: components["schemas"]["CyberAdversaryProgressDto"][];
+            /**
+             * Format: int64
+             * @description Settled Bits balance.
+             */
+            bits_balance: number;
+            /** @description Campaign mission results. */
+            campaign: components["schemas"]["CyberCampaignResultDto"][];
+            /** @description Career XP, level, and rank. */
+            career: components["schemas"]["CyberCareerDto"];
+            /** @description Persistent hero progression. */
+            heroes: components["schemas"]["CyberHeroProgressDto"][];
+            /**
+             * Format: int32
+             * @description Highest Threat Level ever cleared.
+             */
+            highest_threat_level_cleared: number;
+            /** @description Whether legacy local progress was imported once. */
+            legacy_progress_imported: boolean;
+            /**
+             * Format: int32
+             * @description Server-recommended Threat Level.
+             */
+            recommended_threat_level: number;
+            /** @description Story progress. */
+            story: components["schemas"]["CyberStoryProgressDto"];
+            /**
+             * Format: int32
+             * @description Total completed repeatable Operations.
+             */
+            total_operations_completed: number;
+            /**
+             * Format: int32
+             * @description Aggregate Tower level.
+             */
+            tower_level: number;
+            /** @description Tower/HQ room upgrade levels. */
+            tower_upgrades: components["schemas"]["CyberTowerUpgradeDto"][];
+            /**
+             * Format: int32
+             * @description Highest Threat Level the player may currently start.
+             */
+            unlocked_threat_level: number;
+        };
         /**
          * @description Request to debit Bits for one Cyber Defense control upgrade.
          *
@@ -1098,6 +1478,391 @@ export interface components {
              * @description Bits charged for this upgrade.
              */
             spent: number;
+        };
+        /** @description Persistent hero progress for one hero. */
+        CyberHeroProgressDto: {
+            /** @description Hero identifier. */
+            hero_id: string;
+            /**
+             * Format: int32
+             * @description Hero level derived from XP.
+             */
+            level: number;
+            /**
+             * Format: int32
+             * @description Maximum hero level.
+             */
+            max_level: number;
+            /**
+             * Format: int64
+             * @description Absolute XP threshold for the next level, or `null` at the cap.
+             */
+            next_level_xp?: number | null;
+            /** @description Selected talent choices, keyed by milestone. */
+            selected_talents: unknown;
+            /**
+             * Format: int64
+             * @description Total hero XP.
+             */
+            xp: number;
+            /**
+             * Format: int64
+             * @description XP span of the current level, or `null` at the cap.
+             */
+            xp_for_next_level?: number | null;
+            /**
+             * Format: int64
+             * @description XP accumulated within the current level.
+             */
+            xp_into_level: number;
+        };
+        /** @description Request to replace a hero's selected talents. */
+        CyberHeroTalentRequest: {
+            /** @description Selected choice id keyed by milestone level, for example `{"5": "rapid_response"}`. */
+            talents: {
+                [key: string]: string;
+            };
+        };
+        /** @description Request to import legacy Stage 1 local progress once. */
+        CyberLegacyImportRequest: {
+            /** @description Known campaign mission results keyed by mission id. */
+            missions: {
+                [key: string]: components["schemas"]["CyberLegacyMissionDto"];
+            };
+        };
+        /** @description Result of a legacy progress import. */
+        CyberLegacyImportResponse: {
+            /**
+             * Format: int64
+             * @description Settled Bits balance (never increased by an import).
+             */
+            bits_balance: number;
+            /** @description Career summary after the import. */
+            career: components["schemas"]["CyberCareerSummaryDto"];
+            /**
+             * Format: int64
+             * @description One-time returning-defender career XP granted by the server.
+             */
+            career_xp_granted: number;
+            /** @description `false` when progress was already imported (or the import was a no-op). */
+            imported: boolean;
+            /**
+             * Format: int32
+             * @description Number of known missions imported.
+             */
+            missions_imported: number;
+        };
+        /** @description One imported legacy campaign mission result. */
+        CyberLegacyMissionDto: {
+            /**
+             * Format: int32
+             * @description Attempts recorded locally.
+             */
+            attempts: number;
+            /**
+             * Format: int32
+             * @description Best remaining health recorded locally.
+             */
+            best_health: number;
+            /** @description Whether the mission was completed locally. */
+            completed: boolean;
+            /**
+             * Format: int32
+             * @description Best stars earned locally.
+             */
+            stars: number;
+        };
+        /** @description Client result evidence for one Operation run. */
+        CyberOperationCompleteRequest: {
+            /** @description Whether the Operation was completed. */
+            completed: boolean;
+            /**
+             * Format: int64
+             * @description Attempt duration in milliseconds.
+             */
+            duration_ms: number;
+            /**
+             * Format: int32
+             * @description Remaining system health.
+             */
+            health: number;
+            /**
+             * Format: int32
+             * @description Stars earned, `0..=3`.
+             */
+            stars: number;
+        };
+        /** @description Result of settling one Operation run. */
+        CyberOperationCompleteResponse: {
+            /** @description Updated adversary progress. */
+            adversary: components["schemas"]["CyberAdversaryProgressDto"];
+            /**
+             * Format: int64
+             * @description Settled Bits balance.
+             */
+            bits_balance: number;
+            /** @description Career summary after the reward. */
+            career: components["schemas"]["CyberCareerSummaryDto"];
+            /** @description Dossier flags unlocked by this result. */
+            dossier_unlocks: string[];
+            hero?: null | components["schemas"]["CyberHeroProgressDto"];
+            /** @description `false` when this run was already settled. */
+            newly_settled: boolean;
+            /**
+             * Format: int32
+             * @description Recommended Threat Level after this result.
+             */
+            recommended_threat_level: number;
+            /** @description Reward settled by this request (zero on a duplicate). */
+            reward: components["schemas"]["CyberRewardDto"];
+            /** @description Updated run. */
+            run: components["schemas"]["CyberOperationRunDto"];
+            /** @description Story nodes triggered by this result. */
+            story_nodes_completed: string[];
+            /**
+             * Format: int32
+             * @description Highest Threat Level currently unlocked.
+             */
+            unlocked_threat_level: number;
+        };
+        /** @description One recorded Operation result. */
+        CyberOperationResultDto: {
+            /** @description Whether the Operation was completed. */
+            completed: boolean;
+            /**
+             * Format: int64
+             * @description Duration in milliseconds.
+             */
+            duration_ms: number;
+            /**
+             * Format: int32
+             * @description Remaining system health.
+             */
+            health: number;
+            /**
+             * Format: int32
+             * @description Stars earned.
+             */
+            stars: number;
+        };
+        /** @description A server-issued Operation run and its persisted snapshot. */
+        CyberOperationRunDto: {
+            /** @description Adversary identifier. */
+            adversary_id: string;
+            /** @description Adversary display name. */
+            adversary_name: string;
+            /**
+             * Format: int64
+             * @description Bits awarded on settlement.
+             */
+            bits_awarded: number;
+            /**
+             * Format: int64
+             * @description Career XP awarded on settlement.
+             */
+            career_xp_awarded: number;
+            /** @description Selected hero. */
+            hero_id?: string | null;
+            /**
+             * Format: int64
+             * @description Hero XP awarded on settlement.
+             */
+            hero_xp_awarded: number;
+            /** @description Full generated Operation snapshot. */
+            operation: components["schemas"]["GeneratedOperation"];
+            result?: null | components["schemas"]["CyberOperationResultDto"];
+            /**
+             * Format: uuid
+             * @description Run identifier.
+             */
+            run_id: string;
+            /**
+             * Format: int64
+             * @description Deterministic generation seed.
+             */
+            seed: number;
+            /**
+             * Format: date-time
+             * @description Start time.
+             */
+            started_at: string;
+            /** @description `active`, `completed`, `failed`, or `abandoned`. */
+            status: string;
+            /** @description Template identifier. */
+            template_id: string;
+            /**
+             * Format: int32
+             * @description Threat Level.
+             */
+            threat_level: number;
+        };
+        /** @description Request to start a repeatable Operation. */
+        CyberOperationStartRequest: {
+            /** @description Selected hero, when any. Defaults to the Security Engineer. */
+            hero_id?: string | null;
+            /**
+             * Format: int32
+             * @description Requested Threat Level. Must be unlocked for this learner.
+             */
+            requested_threat_level: number;
+            /** @description Explicit template choice, when browsing Operations directly. */
+            template_id?: string | null;
+        };
+        /** @description Bits, career XP, and hero XP granted by one settled result. */
+        CyberReward: {
+            /**
+             * Format: int64
+             * @description Spendable Bits.
+             */
+            bits: number;
+            /**
+             * Format: int64
+             * @description Non-spendable career XP.
+             */
+            career_xp: number;
+            /**
+             * Format: int64
+             * @description Non-spendable hero XP for the run's selected hero.
+             */
+            hero_xp: number;
+        };
+        /** @description A settled Cyber Defense reward. */
+        CyberRewardDto: {
+            /**
+             * Format: int64
+             * @description Bits awarded.
+             */
+            bits: number;
+            /**
+             * Format: int64
+             * @description Career XP awarded.
+             */
+            career_xp: number;
+            /**
+             * Format: int64
+             * @description Hero XP awarded.
+             */
+            hero_xp: number;
+        };
+        /** @description Story progression summary. */
+        CyberStoryProgressDto: {
+            /** @description Active chapter identifier. */
+            active_chapter: string;
+            /** @description Acknowledged story node identifiers. */
+            completed_nodes: string[];
+        };
+        /**
+         * @description One balance-telemetry event from the client.
+         *
+         *     Only game identifiers and results; no raw personal data.
+         */
+        CyberTelemetryEventDto: {
+            /** @description Adversary id, when relevant. */
+            adversary_id?: string | null;
+            /** @description Defense id, when relevant. */
+            defense_id?: string | null;
+            /** @description Duration bucket label, when relevant. */
+            duration_bucket?: string | null;
+            /** @description Hero id, when relevant. */
+            hero_id?: string | null;
+            /** @description Event name, from the known allowlist. */
+            name: string;
+            /** @description Result label, when relevant. */
+            result?: string | null;
+            /**
+             * Format: uuid
+             * @description Operation run id, when relevant.
+             */
+            run_id?: string | null;
+            /**
+             * Format: int32
+             * @description Stars, when relevant.
+             */
+            stars?: number | null;
+            /** @description Operation template id, when relevant. */
+            template_id?: string | null;
+            /**
+             * Format: int32
+             * @description Threat Level, when relevant.
+             */
+            threat_level?: number | null;
+            /**
+             * Format: int32
+             * @description Wave index, when relevant.
+             */
+            wave?: number | null;
+        };
+        /** @description A batch of telemetry events. */
+        CyberTelemetryRequest: {
+            /** @description Events to append. Bounded to a small batch. */
+            events: components["schemas"]["CyberTelemetryEventDto"][];
+        };
+        /** @description Acknowledgement of a telemetry batch. */
+        CyberTelemetryResponse: {
+            /**
+             * Format: int32
+             * @description Number of events accepted.
+             */
+            accepted: number;
+        };
+        /** @description One Tower/HQ room upgrade level. */
+        CyberTowerUpgradeDto: {
+            /**
+             * Format: int32
+             * @description Current level.
+             */
+            level: number;
+            /**
+             * Format: int32
+             * @description Maximum level.
+             */
+            max_level: number;
+            /**
+             * Format: int64
+             * @description Bits cost to reach the next level, or `null` at the cap.
+             */
+            next_cost?: number | null;
+            /** @description Upgrade (room) identifier. */
+            upgrade_id: string;
+        };
+        /**
+         * @description Request to purchase the next level of one Tower/HQ room.
+         *
+         *     The cost is never sent: the server derives it from canonical policy.
+         */
+        CyberTowerUpgradePurchaseRequest: {
+            /**
+             * Format: uuid
+             * @description Client-generated idempotency key for this purchase.
+             */
+            event_id: string;
+        };
+        /** @description Result of a Tower/HQ room purchase. */
+        CyberTowerUpgradePurchaseResponse: {
+            /**
+             * Format: int64
+             * @description Settled Bits balance after the purchase.
+             */
+            bits_balance: number;
+            /**
+             * Format: int32
+             * @description Room level after the purchase.
+             */
+            level: number;
+            /** @description `false` when this `event_id` was already settled (a safe retry). */
+            newly_settled: boolean;
+            /**
+             * Format: int64
+             * @description Bits charged for this purchase.
+             */
+            spent: number;
+            /**
+             * Format: int32
+             * @description Aggregate Tower level after the purchase.
+             */
+            tower_level: number;
+            /** @description Room that was upgraded. */
+            upgrade_id: string;
         };
         /** @description Request to complete a learning-node Daily Mission item. */
         DailyItemCompleteRequest: {
@@ -1290,6 +2055,11 @@ export interface components {
         };
         /** @description Structured error details. */
         ErrorBody: {
+            /**
+             * Format: uuid
+             * @description Active Operation run id, when the error is `active_operation_exists`.
+             */
+            active_run_id?: string | null;
             /** @description Stable error code. */
             code: string;
             /** @description Safe, human-readable message. */
@@ -1573,6 +2343,108 @@ export interface components {
          * @enum {string}
          */
         FreshnessState: "unknown" | "fresh" | "becoming_due" | "due";
+        /** @description One active Operation modifier. */
+        GeneratedModifier: {
+            /** @description Learner-facing description. */
+            description: string;
+            /** @description Modifier identifier. */
+            id: string;
+            /** @description Learner-facing name. */
+            name: string;
+        };
+        /** @description A complete, persisted Operation snapshot. */
+        GeneratedOperation: {
+            /** @description Adversary identifier. */
+            adversary_id: string;
+            /** @description Adversary display name. */
+            adversary_name: string;
+            /** @description Defenses offered. */
+            available_defenses: string[];
+            /** @description Heroes offered. */
+            available_heroes: string[];
+            /** @description Whether a boss is present. */
+            boss: boolean;
+            /** @description The dominant attack family. */
+            dominant_attack_type: string;
+            /** @description Whether some traffic is hidden until detection is active. */
+            hidden_attacks: boolean;
+            /**
+             * Format: int32
+             * @description Latency target in milliseconds.
+             */
+            latency_target_ms: number;
+            /** @description Map identifier the frontend resolves. */
+            map_id: string;
+            /** @description Active modifiers. */
+            modifiers: components["schemas"]["GeneratedModifier"][];
+            /** @description Reward preview at three stars. */
+            reward_preview: components["schemas"]["CyberReward"];
+            /**
+             * Format: int64
+             * @description Generation seed.
+             */
+            seed: number;
+            /**
+             * Format: int32
+             * @description Starting mission credits.
+             */
+            starting_budget: number;
+            /**
+             * Format: int32
+             * @description Starting system health.
+             */
+            starting_health: number;
+            /** @description Learner-facing summary. */
+            summary: string;
+            /** @description Template identifier. */
+            template_id: string;
+            /**
+             * Format: int32
+             * @description Threat Level.
+             */
+            threat_level: number;
+            /** @description Learner-facing title. */
+            title: string;
+            /** @description Waves. */
+            waves: components["schemas"]["GeneratedWave"][];
+        };
+        /** @description One spawn group in a generated wave. */
+        GeneratedSpawnGroup: {
+            /** @description Attack identifier. */
+            attack_id: string;
+            /**
+             * Format: int32
+             * @description Number of units.
+             */
+            count: number;
+            /**
+             * Format: int32
+             * @description Optional start delay in milliseconds.
+             */
+            delay_ms?: number | null;
+            /**
+             * Format: double
+             * @description Enemy health multiplier applied at spawn.
+             */
+            health_multiplier: number;
+            /**
+             * Format: int32
+             * @description Spawn interval in milliseconds.
+             */
+            spawn_interval_ms: number;
+            /**
+             * Format: double
+             * @description Enemy speed multiplier applied at spawn.
+             */
+            speed_multiplier: number;
+        };
+        /** @description One generated wave. */
+        GeneratedWave: {
+            /** @description Marks the boss wave. */
+            boss: boolean;
+            /** @description Spawn groups. */
+            groups: components["schemas"]["GeneratedSpawnGroup"][];
+        };
         /**
          * @description One clickable term in learner-facing text, with its explanation.
          *
@@ -3536,6 +4408,468 @@ export interface operations {
             };
             /** @description Unknown practice test */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    complete_campaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Campaign mission identifier */
+                mission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CyberCampaignCompleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Mission result settled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberCampaignCompleteResponse"];
+                };
+            };
+            /** @description Unknown mission or invalid result */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    set_hero_talents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Hero identifier */
+                hero_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CyberHeroTalentRequest"];
+            };
+        };
+        responses: {
+            /** @description Talents updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberHeroProgressDto"];
+                };
+            };
+            /** @description Unknown hero or illegal talent */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Milestone not yet unlocked */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    import_legacy_progress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CyberLegacyImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Legacy progress imported (or already imported) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberLegacyImportResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    start_operation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CyberOperationStartRequest"];
+            };
+        };
+        responses: {
+            /** @description Operation started */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberOperationRunDto"];
+                };
+            };
+            /** @description Locked Threat Level, unknown hero, or unknown template */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description An active Operation already exists */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_operation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Operation run identifier */
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operation run */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberOperationRunDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Run not found or not owned */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    abandon_operation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Operation run identifier */
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operation abandoned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberOperationRunDto"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Run not found or not owned */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Run is not active */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    complete_operation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Operation run identifier */
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CyberOperationCompleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Operation settled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberOperationCompleteResponse"];
+                };
+            };
+            /** @description Malformed result */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Run not found or not owned */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_profile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Complete Cyber Defense profile */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberDefenseProfileResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    submit_telemetry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CyberTelemetryRequest"];
+            };
+        };
+        responses: {
+            /** @description Telemetry accepted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberTelemetryResponse"];
+                };
+            };
+            /** @description Unknown event or invalid batch */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    purchase_tower_upgrade: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Tower room upgrade identifier */
+                upgrade_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CyberTowerUpgradePurchaseRequest"];
+            };
+        };
+        responses: {
+            /** @description Room upgraded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyberTowerUpgradePurchaseResponse"];
+                };
+            };
+            /** @description Unknown room or malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Authentication required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Insufficient Bits, max level, prerequisite not met, or reused key */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
