@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { GAME_CATALOG } from "../data";
+import { GAME_CATALOG, type GameCatalog } from "../data";
 import type { MissionDefinition } from "../models/mission";
+import type { PostmortemReport } from "../engine/postmortem";
 import { MOBILE_NAV_QUERY, useMediaQuery } from "../../hooks/useMediaQuery";
 import { buildPostmortem } from "../engine/postmortem";
 import { computePath } from "../engine/pathing";
@@ -9,10 +10,6 @@ import { useGameEngine } from "../hooks/useGameEngine";
 import { recordMissionResult } from "../persistence/gameProgress";
 import { hasSeenTutorial, markTutorialSeen } from "../persistence/tutorial";
 import { prefersReducedMotionPreference } from "../../state/preferences";
-import { flushBitSpends } from "../../state/bitSpends";
-import { refundBits, spendBits, useSettledBits } from "../../state/wallet";
-import { newId } from "../../lib/id";
-import { upgradeBitsCost } from "../models/defense";
 import {
   playBaseHit,
   playBlocked,
@@ -27,13 +24,15 @@ import {
   playUpgrade,
   playVictory,
   playWaveStart,
+  startBattleMusic,
+  stopBattleMusic,
 } from "../../state/sound";
 import DefenseShop from "./DefenseShop";
 import GameBoard, { type PadSelection } from "./GameBoard";
 import GameHud, { type WavePreviewEntry } from "./GameHud";
 import HeroBar from "./HeroBar";
 import HeroDetail from "./HeroDetail";
-import MissionResult from "./MissionResult";
+import MissionResult, { type MissionSettlement } from "./MissionResult";
 import WaveBanner from "./WaveBanner";
 import TutorialOverlay from "./TutorialOverlay";
 
@@ -42,16 +41,38 @@ import TutorialOverlay from "./TutorialOverlay";
  *
  * Owns UI concerns (selection, pause, speed, sound, screen shake, progress
  * recording) and delegates all gameplay math to the pure engine through
- * `useGameEngine`. Simulation stays offline: the only mid-mission request is the
- * optional, idempotent Bits spend for a control upgrade, which never blocks
- * play and reconciles later (spec sections 28 and 29). The board spans the full
- * width; the tower shop and hero roster are a compact tray below it.
+ * `useGameEngine`. Simulation and in-run control upgrades stay fully offline:
+ * upgrades are paid for with mission credits, never persistent Bits, so no
+ * mid-mission request is required (spec sections 28 and 29). The board spans
+ * the full width; the tower shop and hero roster are a compact tray below it.
  */
 export interface CyberDefenseGameProps {
   mission: MissionDefinition;
   hasNext: boolean;
   onExit: () => void;
   onNext: () => void;
+  /** Optional catalog override (Operations scale enemy stats per run). */
+  catalog?: GameCatalog;
+  /**
+   * When provided, called once when the match ends, with the postmortem and the
+   * run context needed to settle server-side rewards. Campaign and Operation
+   * pages use this to send result evidence.
+   */
+  onComplete?: (report: PostmortemReport, context: MissionCompletionContext) => void;
+  /** Whether to record local Stage 1 progress. Operations disable this. */
+  recordLocalProgress?: boolean;
+  /** Server settlement state, forwarded to the result screen. */
+  settlement?: MissionSettlement | null;
+  /** Recurring adversary for Operations; shows its intel emblem at the spawn. */
+  adversaryId?: string;
+}
+
+/** Result context passed to `onComplete`. */
+export interface MissionCompletionContext {
+  /** Hero used in the run, when one was deployed. */
+  heroId?: string;
+  /** Run duration in milliseconds. */
+  durationMs: number;
 }
 
 export default function CyberDefenseGame({
@@ -59,15 +80,16 @@ export default function CyberDefenseGame({
   hasNext,
   onExit,
   onNext,
+  catalog: catalogOverride,
+  onComplete,
+  recordLocalProgress = true,
+  settlement,
+  adversaryId,
 }: CyberDefenseGameProps) {
-  const catalog = GAME_CATALOG;
+  const catalog = catalogOverride ?? GAME_CATALOG;
   const isMobile = useMediaQuery(MOBILE_NAV_QUERY);
   const orientation = isMobile ? "vertical" : "horizontal";
   const reducedMotion = prefersReducedMotionPreference();
-  const bitsAvailable = useSettledBits();
-  // Stable id for this mission attempt, stamped on every Bits spend so the
-  // server can group and audit upgrades within one run.
-  const runIdRef = useRef(newId());
 
   const [manualPaused, setManualPaused] = useState(false);
   const [autoPause, setAutoPause] = useState(true);
@@ -166,6 +188,11 @@ export default function CyberDefenseGame({
     [state, mission, catalog],
   );
 
+  // Context captured for server-side settlement when the match ends.
+  const elapsedMsRef = useRef(0);
+  elapsedMsRef.current = state.elapsedMs;
+  const lastDeployedHeroIdRef = useRef<string | null>(null);
+
   const shakeTimer = useRef<number | null>(null);
   const triggerShake = useCallback(() => {
     setShaking(true);
@@ -240,6 +267,16 @@ export default function CyberDefenseGame({
     }
   }, [firing, paused]);
 
+  // Background battle music while a wave is running and not manually paused.
+  useEffect(() => {
+    if (state.phase === "running" && !manualPaused) {
+      startBattleMusic();
+    } else {
+      stopBattleMusic();
+    }
+  }, [state.phase, manualPaused]);
+  useEffect(() => stopBattleMusic, []);
+
   // A hero melee hit is signalled by a "hit" effect. Play a short swing cue for
   // each new one; the sound service throttles bursts from multiple heroes.
   const heroHitSeqRef = useRef(0);
@@ -275,12 +312,24 @@ export default function CyberDefenseGame({
     } else {
       playDefeat();
     }
-    recordMissionResult(mission.id, {
-      completed: report.completed,
-      stars: report.stars,
-      health: report.health,
+    if (recordLocalProgress) {
+      recordMissionResult(mission.id, {
+        completed: report.completed,
+        stars: report.stars,
+        health: report.health,
+      });
+    }
+    onComplete?.(report, {
+      heroId: lastDeployedHeroIdRef.current ?? undefined,
+      durationMs: elapsedMsRef.current,
     });
-  }, [report, mission.id, mission.waves]);
+  }, [
+    report,
+    mission.id,
+    mission.waves,
+    onComplete,
+    recordLocalProgress,
+  ]);
 
   const handleArm = (defenseId: string) => {
     setFeedback(null);
@@ -396,32 +445,11 @@ export default function CyberDefenseGame({
   };
 
   const handleUpgrade = (placementId: string) => {
-    const placed = state.placed.find((entry) => entry.id === placementId);
-    const defense = placed && catalog.defensesById[placed.defenseId];
-    if (!placed || !defense) {
-      return;
-    }
-    const cost = upgradeBitsCost(defense, placed.level);
-    const spend = {
-      eventId: newId(),
-      runId: runIdRef.current,
-      defenseId: defense.id,
-      fromLevel: placed.level,
-      amount: cost,
-    };
-    if (!spendBits(spend)) {
-      setFeedback("Not enough Bits to upgrade.");
-      return;
-    }
     const result = engine.upgrade(placementId);
     if (result.ok) {
       setFeedback("Control upgraded for this mission.");
       playUpgrade();
-      // Persist the debit. The spend already applied locally, so a slow or
-      // offline network never blocks the upgrade; the queue reconciles later.
-      void flushBitSpends();
     } else {
-      refundBits(spend.eventId);
       setFeedback(result.reason ?? "Could not upgrade.");
     }
   };
@@ -441,6 +469,7 @@ export default function CyberDefenseGame({
     const result = engine.deployHero(heroId, position);
     const hero = catalog.heroesById[heroId];
     if (result.ok) {
+      lastDeployedHeroIdRef.current = heroId;
       setFeedback(`${hero?.name ?? "Hero"} deployed.`);
       playUpgrade();
       triggerHeroBurst();
@@ -504,6 +533,7 @@ export default function CyberDefenseGame({
           onRetry={handleRetry}
           onContinue={onExit}
           onNext={onNext}
+          settlement={settlement}
         />
       </div>
     );
@@ -556,6 +586,7 @@ export default function CyberDefenseGame({
           armedHeroId={armedHeroId}
           detectionActive={engine.detectionActive}
           primaryTargetNodeId={primaryTargetNodeId}
+          adversaryId={adversaryId}
           integrity={state.maxHealth > 0 ? state.health / state.maxHealth : 0}
           reducedMotion={reducedMotion}
           elapsedMs={state.elapsedMs}
@@ -583,7 +614,6 @@ export default function CyberDefenseGame({
           catalog={catalog}
           placed={state.placed}
           budget={state.budget}
-          bitsAvailable={bitsAvailable}
           armedDefenseId={armedDefenseId}
           selectedPad={selectedPad}
           selectedPlacementId={selectedPlacementId}

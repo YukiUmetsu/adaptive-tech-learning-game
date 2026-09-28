@@ -1,0 +1,182 @@
+version: dsa-authoring-blueprint-v1
+status: staging
+reviewed: 2026-09-25
+notes:
+  - Not production content JSON.
+  - family_id values are proposed stable authoring identifiers.
+  - stage/scaffold metadata assumes planned Phase 1 pedagogy support.
+domains:
+  - id: domain-1
+    name: Interview Reasoning, Complexity, and Correctness
+    families:
+      - family_id: dsa.reasoning.bruteforce_to_bottleneck
+        tier: A
+        signals: [correct_baseline_exists, repeated_expensive_operation]
+      - family_id: dsa.reasoning.invariant_progress
+        tier: A
+        signals: [state_changes_step_by_step, correctness_depends_on_preserved_condition]
+      - family_id: dsa.reasoning.complexity_by_operation
+        tier: A
+        signals: [aggregate_operation_count, nested_loops_may_share_progress]
+
+  - id: domain-2
+    name: Arrays, Strings, Hashing, and Prefix State
+    families:
+      - family_id: dsa.hash.membership
+        tier: A
+        signals: [seen_before, membership, deduplication]
+        invariant: The set contains exactly the values whose membership should currently count.
+        transfer_groups: [repeated_membership_state]
+        contexts: [event_deduplication, visited_states, duplicate_records]
+      - family_id: dsa.hash.lookup_state
+        tier: A
+        signals: [frequency, last_index, keyed_metadata]
+        contexts: [metrics_aggregation, per_user_counts, last_seen_index]
+      - family_id: dsa.hash.complement_lookup
+        tier: B
+        signals: [current_item_implies_needed_counterpart]
+      - family_id: dsa.prefix.aggregate
+        tier: A
+        signals: [many_fixed_range_queries, immutable_or_stable_sequence]
+        transfer_groups: [cumulative_range_difference]
+        contexts: [usage_totals, billing_ranges, event_bucket_counts]
+      - family_id: dsa.prefix.state_count
+        tier: B
+        signals: [current_prefix_related_to_previous_prefix, count_prior_states]
+
+  - id: domain-3
+    name: Two Pointers, Sliding Windows, and Intervals
+    families:
+      - family_id: dsa.two_pointers.opposing
+        tier: A
+        signals: [ordered_sequence, discard_candidates_from_boundaries]
+      - family_id: dsa.two_pointers.read_write
+        tier: A
+        signals: [in_place_compaction, processed_prefix]
+      - family_id: dsa.two_pointers.fast_slow
+        tier: B
+        signals: [relative_pointer_rate, fixed_gap, cycle_or_midpoint]
+      - family_id: dsa.sliding_window.fixed
+        tier: A
+        signals: [contiguous_fixed_size, neighboring_windows_overlap]
+        transfer_groups: [moving_contiguous_range]
+        contexts: [rolling_metrics, fixed_time_bucket, sequence_window]
+      - family_id: dsa.sliding_window.variable
+        tier: A
+        signals: [contiguous_range, expand_right, repair_by_shrinking_left]
+        invariant: After repair, the active window satisfies the authored validity condition.
+        transfer_groups: [moving_contiguous_range]
+        contexts: [api_rate_limiting, security_events, string_processing]
+      - family_id: dsa.intervals.sort_merge
+        tier: A
+        signals: [range_items, overlap, ordering_by_boundary]
+        transfer_groups: [overlap_then_merge]
+        contexts: [calendar, maintenance_windows, reservations]
+
+  - id: domain-4
+    name: Linked Structures, Stacks, Queues, and Heaps
+    families:
+      - family_id: dsa.linked.pointer_rewire
+        tier: B
+        signals: [mutation_of_links, preserve_reachability]
+      - family_id: dsa.stack.unresolved_lifo
+        tier: A
+        signals: [most_recent_unresolved_first, nesting]
+      - family_id: dsa.stack.monotonic
+        tier: A
+        signals: [nearest_greater_or_smaller, dominated_candidates]
+        transfer_groups: [nearest_unresolved_boundary]
+      - family_id: dsa.queue.frontier
+        tier: A
+        signals: [fifo_frontier, layer_order]
+      - family_id: dsa.heap.priority_selection
+        tier: A
+        signals: [repeated_current_extreme, changing_candidate_set]
+        transfer_groups: [priority_frontier]
+      - family_id: dsa.heap.k_way_merge
+        tier: B
+        signals: [multiple_ordered_sources, one_frontier_per_source]
+        transfer_groups: [priority_frontier]
+
+  - id: domain-5
+    name: Binary Search, Sorting, and Ordered Reasoning
+    families:
+      - family_id: dsa.binary_search.boundary
+        tier: A
+        signals: [ordered_candidates, discard_half, first_or_last_boundary]
+        transfer_groups: [ordered_candidate_elimination]
+      - family_id: dsa.binary_search.monotonic_predicate
+        tier: A
+        signals: [ordered_answer_space, monotonic_feasibility]
+        transfer_groups: [monotonic_feasibility_boundary]
+      - family_id: dsa.sort.transform_then_scan
+        tier: B
+        signals: [global_order_exposes_local_structure]
+
+  - id: domain-6
+    name: Trees, Recursion, and Tries
+    families:
+      - family_id: dsa.recursion.decompose_combine
+        tier: B
+        signals: [same_shape_subproblem, combine_child_results]
+        transfer_groups: [hierarchical_combine]
+      - family_id: dsa.tree.dfs_return_state
+        tier: A
+        signals: [parent_depends_on_child_summary]
+        transfer_groups: [hierarchical_combine]
+      - family_id: dsa.tree.bfs_levels
+        tier: A
+        signals: [level_order, minimum_edge_depth]
+        transfer_groups: [equal_cost_frontier]
+      - family_id: dsa.bst.ordered_search
+        tier: B
+        signals: [ordered_tree, discard_subtree]
+      - family_id: dsa.trie.prefix_index
+        tier: B
+        signals: [prefix_queries, shared_prefixes]
+
+  - id: domain-7
+    name: Graphs, Connectivity, Dependencies, and Shortest Paths
+    families:
+      - family_id: dsa.graph.traversal
+        tier: A
+        signals: [entities_and_relationships, reachability_or_components]
+      - family_id: dsa.graph.bfs_shortest_unweighted
+        tier: A
+        signals: [minimum_hops, equal_cost_edges]
+        transfer_groups: [equal_cost_frontier]
+      - family_id: dsa.graph.topological_dependencies
+        tier: A
+        signals: [directed_prerequisites, ordering]
+        transfer_groups: [dependency_order]
+      - family_id: dsa.graph.union_find
+        tier: B
+        signals: [repeated_component_merges, connectivity_queries]
+        transfer_groups: [dynamic_connectivity]
+      - family_id: dsa.graph.dijkstra
+        tier: B
+        signals: [weighted_shortest_path, nonnegative_weights]
+        transfer_groups: [priority_frontier]
+
+  - id: domain-8
+    name: Backtracking, Greedy Reasoning, and Dynamic Programming
+    families:
+      - family_id: dsa.backtracking.choose_explore_undo
+        tier: A
+        signals: [choice_tree, enumerate_or_find_configuration]
+        transfer_groups: [choice_tree_search]
+      - family_id: dsa.backtracking.pruning
+        tier: B
+        signals: [branch_can_be_proven_impossible_or_noncompetitive]
+        transfer_groups: [choice_tree_search]
+      - family_id: dsa.greedy.safe_choice
+        tier: A
+        signals: [local_choice, needs_safety_argument]
+      - family_id: dsa.dp.state_transition
+        tier: A
+        signals: [overlapping_subproblems, repeated_state]
+        transfer_groups: [reused_subproblem_state]
+      - family_id: dsa.dp.sequence_grid
+        tier: B
+        signals: [one_or_two_index_state, grid_or_sequence_dependencies]
+        transfer_groups: [reused_subproblem_state]

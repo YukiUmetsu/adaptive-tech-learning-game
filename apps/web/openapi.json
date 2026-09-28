@@ -296,7 +296,7 @@
           "practice-tests"
         ],
         "summary": "Scores and reviews a complete practice-test attempt.",
-        "description": "The whole attempt is submitted at once; the response reveals canonical\nanswers, explanations, and per-choice feedback. The raw practice score is\nnot an AWS scaled score.",
+        "description": "The whole attempt is submitted at once; the response reveals canonical\nanswers, explanations, and per-choice feedback. The raw practice score is\nnot an official scaled score.",
         "operationId": "submit_practice_test",
         "parameters": [
           {
@@ -360,6 +360,647 @@
             }
           }
         }
+      }
+    },
+    "/v1/cyber-defense/campaign/{mission_id}/complete": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Settles the result of one Stage 1 campaign mission.",
+        "description": "The client sends only raw result evidence and an idempotency `result_id`; the\nserver derives completion, first-clear status, and every reward value.",
+        "operationId": "complete_campaign",
+        "parameters": [
+          {
+            "name": "mission_id",
+            "in": "path",
+            "description": "Campaign mission identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberCampaignCompleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Mission result settled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberCampaignCompleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown mission or invalid result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/heroes/{hero_id}/talents": {
+      "put": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Replaces a hero's selected talents (free respec in Stage 2).",
+        "operationId": "set_hero_talents",
+        "parameters": [
+          {
+            "name": "hero_id",
+            "in": "path",
+            "description": "Hero identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberHeroTalentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Talents updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberHeroProgressDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown hero or illegal talent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Milestone not yet unlocked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/legacy-progress": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Imports legacy Stage 1 local progress once.",
+        "operationId": "import_legacy_progress",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberLegacyImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Legacy progress imported (or already imported)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberLegacyImportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/operations": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Starts one repeatable Operation.",
+        "operationId": "start_operation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberOperationStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operation started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberOperationRunDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Locked Threat Level, unknown hero, or unknown template",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "An active Operation already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/operations/{run_id}": {
+      "get": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Reads one owned Operation run, so a refresh restores the exact run.",
+        "operationId": "get_operation",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "description": "Operation run identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberOperationRunDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Run not found or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/operations/{run_id}/abandon": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Abandons an active Operation run. Grants no reward.",
+        "operationId": "abandon_operation",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "description": "Operation run identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation abandoned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberOperationRunDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Run not found or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Run is not active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/operations/{run_id}/complete": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Settles one Operation run's result and rewards exactly once.",
+        "operationId": "complete_operation",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "description": "Operation run identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberOperationCompleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Operation settled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberOperationCompleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Run not found or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/profile": {
+      "get": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Returns the authenticated player's complete Cyber Defense profile.",
+        "description": "One server-authoritative snapshot: career, Bits, Tower, heroes, adversaries,\nstory, and campaign results. The first request creates a default profile.",
+        "operationId": "get_profile",
+        "responses": {
+          "200": {
+            "description": "Complete Cyber Defense profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberDefenseProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/telemetry": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Appends a batch of balance-telemetry events.",
+        "operationId": "submit_telemetry",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberTelemetryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Telemetry accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberTelemetryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown event or invalid batch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/cyber-defense/tower/upgrades/{upgrade_id}": {
+      "post": {
+        "tags": [
+          "cyber-defense"
+        ],
+        "summary": "Purchases the next level of one Tower/HQ room with Bits.",
+        "operationId": "purchase_tower_upgrade",
+        "parameters": [
+          {
+            "name": "upgrade_id",
+            "in": "path",
+            "description": "Tower room upgrade identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CyberTowerUpgradePurchaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Room upgraded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CyberTowerUpgradePurchaseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown room or malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Insufficient Bits, max level, prerequisite not met, or reused key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/v1/cyber-defense/upgrades": {
@@ -1177,6 +1818,103 @@
         ]
       }
     },
+    "/v1/tracks/{track_id}/challenges/{challenge_id}/start": {
+      "post": {
+        "tags": [
+          "challenges"
+        ],
+        "summary": "Starts an authored multi-stage challenge as one mission.",
+        "description": "The server resolves the authored definition, enforces authored\nprerequisites, freezes the referenced content, and composes the ordered\nmission itself. The client never supplies question ids. Requires an\nauthenticated account.",
+        "operationId": "start_challenge",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `ai-python-fluency`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "challenge_id",
+            "in": "path",
+            "description": "Authored challenge identifier, unique within the track.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChallengeStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Issued challenge mission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown track or challenge",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Challenge prerequisites are not met",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/tracks/{track_id}/daily-mission": {
       "post": {
         "tags": [
@@ -1297,6 +2035,84 @@
           },
           "404": {
             "description": "Unknown learning track",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tracks/{track_id}/family-insights": {
+      "get": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Returns learner-family structure insights for a track.",
+        "description": "One aggregate request covers every family the learner has already\nencountered, so the Track Hub never fetches per-family or per-example state.\nAn optional `mission_id` scopes the response to a completed mission's\nfamilies so a completion summary shows only structures the finished work\ninvolved. It is post-exposure teaching content only: it never returns a\nfamily the learner has not seen, never returns families for an in-progress\nmission, and never carries a canonical answer. A track with no authored\nfamily guides reports `has_guides: false` and an empty list, so old tracks\nare unaffected and clients can hide the patterns surface entirely.",
+        "operationId": "get_track_family_insights",
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "description": "Learning track identifier, for example `aws-soa-c03`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mission_id",
+            "in": "query",
+            "description": "Completed mission whose families should scope the response.\n\nWhen present, only families the finished mission involved are returned.\nOmit it for the track-wide pattern browser.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Learner-family structure insights",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FamilyInsightsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Mission belongs to another account or track",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown learning track or mission",
             "content": {
               "application/json": {
                 "schema": {
@@ -2583,6 +3399,167 @@
           }
         }
       },
+      "ChallengeStageKind": {
+        "type": "string",
+        "description": "The kind of activity an authored challenge stage runs.",
+        "enum": [
+          "question",
+          "learning_node"
+        ]
+      },
+      "ChallengeStageView": {
+        "type": "object",
+        "description": "One learner-facing challenge stage.\n\nReferences existing content by stable id. It never carries a canonical\nanswer; question content ships through the mission's own question payloads.",
+        "required": [
+          "id",
+          "order",
+          "kind"
+        ],
+        "properties": {
+          "domain_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Domain that owns the referenced activity, when known."
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable stage identifier."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ChallengeStageKind",
+            "description": "Activity kind."
+          },
+          "node_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Referenced knowledge node id, for learning-node stages."
+          },
+          "order": {
+            "type": "integer",
+            "format": "int32",
+            "description": "1-based presentation order.",
+            "minimum": 0
+          },
+          "question_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Referenced question id, for question stages."
+          }
+        }
+      },
+      "ChallengeStartRequest": {
+        "type": "object",
+        "description": "Request to start an authored multi-stage challenge.",
+        "properties": {
+          "device_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Device/install context. Ownership always comes from the authenticated\nuser; this value is never used as an authorization proof."
+          },
+          "discovery": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDiscoveryInput"
+            },
+            "description": "Raw Knowledge Map discovery progress for the track, if available.\n\nUsed only to check authored challenge prerequisites; it is never learning\nevidence."
+          }
+        }
+      },
+      "ChallengeSummaryDto": {
+        "type": "object",
+        "description": "Compact challenge summary for the aggregate track map.",
+        "required": [
+          "id",
+          "title",
+          "estimated_minutes",
+          "stage_count",
+          "prerequisite_node_ids"
+        ],
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional concise scenario/brief."
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Rough duration estimate in minutes.",
+            "minimum": 0
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable challenge identifier."
+          },
+          "prerequisite_node_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Nodes that must be unlocked before the challenge is available."
+          },
+          "stage_count": {
+            "type": "integer",
+            "description": "Number of authored stages.",
+            "minimum": 0
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing title."
+          }
+        }
+      },
+      "ChallengeView": {
+        "type": "object",
+        "description": "A learner-facing authored challenge.",
+        "required": [
+          "id",
+          "title",
+          "estimated_minutes",
+          "stages"
+        ],
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional concise scenario/brief shown above every stage."
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Rough duration estimate in minutes.",
+            "minimum": 0
+          },
+          "id": {
+            "type": "string",
+            "description": "Stable challenge identifier."
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChallengeStageView"
+            },
+            "description": "Ordered stages."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing title."
+          }
+        }
+      },
       "Choice": {
         "type": "object",
         "description": "A selectable item or category.",
@@ -2753,6 +3730,355 @@
           }
         }
       },
+      "CyberAdversaryProgressDto": {
+        "type": "object",
+        "description": "Progress against one recurring adversary.",
+        "required": [
+          "adversary_id",
+          "progress",
+          "rank",
+          "encounters",
+          "victories",
+          "highest_threat_level_cleared",
+          "dossier_flags"
+        ],
+        "properties": {
+          "adversary_id": {
+            "type": "string",
+            "description": "Adversary identifier."
+          },
+          "dossier_flags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Unlocked dossier flags."
+          },
+          "encounters": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Total encounters."
+          },
+          "highest_threat_level_cleared": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Highest Threat Level cleared against this adversary."
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Accumulated progress."
+          },
+          "rank": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Derived rank."
+          },
+          "victories": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Total victories."
+          }
+        }
+      },
+      "CyberCampaignCompleteRequest": {
+        "type": "object",
+        "description": "Client result evidence for a Stage 1 campaign mission.\n\nRewards are never accepted from the client; only the raw result is.",
+        "required": [
+          "result_id",
+          "stars",
+          "health",
+          "duration_ms"
+        ],
+        "properties": {
+          "duration_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Attempt duration in milliseconds."
+          },
+          "health": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Remaining system health."
+          },
+          "hero_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Hero selected for the run, when any. Receives hero XP."
+          },
+          "result_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Client-generated idempotency key for this result."
+          },
+          "stars": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Stars earned, `0..=3`. `0` means the attempt failed."
+          }
+        }
+      },
+      "CyberCampaignCompleteResponse": {
+        "type": "object",
+        "description": "Response after settling a Stage 1 campaign mission.",
+        "required": [
+          "campaign",
+          "reward",
+          "bits_balance",
+          "career",
+          "newly_settled",
+          "story_nodes_completed"
+        ],
+        "properties": {
+          "bits_balance": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Settled Bits balance after the reward."
+          },
+          "campaign": {
+            "$ref": "#/components/schemas/CyberCampaignResultDto",
+            "description": "Updated campaign result."
+          },
+          "career": {
+            "$ref": "#/components/schemas/CyberCareerSummaryDto",
+            "description": "Career summary after the reward."
+          },
+          "newly_settled": {
+            "type": "boolean",
+            "description": "`false` when this result was already recorded and no new reward settled."
+          },
+          "reward": {
+            "$ref": "#/components/schemas/CyberRewardDto",
+            "description": "Reward actually settled by this request (zero on a duplicate)."
+          },
+          "story_nodes_completed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Story nodes triggered by this result."
+          }
+        }
+      },
+      "CyberCampaignResultDto": {
+        "type": "object",
+        "description": "Authoritative result for one Stage 1 campaign mission.",
+        "required": [
+          "mission_id",
+          "completed",
+          "best_stars",
+          "best_health",
+          "attempts",
+          "first_clear_reward_settled"
+        ],
+        "properties": {
+          "attempts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Total recorded attempts."
+          },
+          "best_health": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Best remaining health."
+          },
+          "best_stars": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Best stars earned."
+          },
+          "completed": {
+            "type": "boolean",
+            "description": "Whether the mission was ever completed."
+          },
+          "first_clear_reward_settled": {
+            "type": "boolean",
+            "description": "Whether the one-time first-clear reward was settled."
+          },
+          "mission_id": {
+            "type": "string",
+            "description": "Campaign mission identifier."
+          }
+        }
+      },
+      "CyberCareerDto": {
+        "type": "object",
+        "description": "Career progress derived from career XP.",
+        "required": [
+          "xp",
+          "level",
+          "rank",
+          "xp_into_level"
+        ],
+        "properties": {
+          "level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Career level derived from XP."
+          },
+          "next_level_xp": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Absolute XP threshold for the next level, or `null` at the cap."
+          },
+          "rank": {
+            "type": "string",
+            "description": "Rank label for the level."
+          },
+          "xp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total career XP."
+          },
+          "xp_for_next_level": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "XP span of the current level, or `null` at the cap."
+          },
+          "xp_into_level": {
+            "type": "integer",
+            "format": "int64",
+            "description": "XP accumulated within the current level."
+          }
+        }
+      },
+      "CyberCareerSummaryDto": {
+        "type": "object",
+        "description": "Compact career summary returned after a reward settles.",
+        "required": [
+          "xp",
+          "level",
+          "rank",
+          "level_up"
+        ],
+        "properties": {
+          "level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Career level after settlement."
+          },
+          "level_up": {
+            "type": "boolean",
+            "description": "Whether this settlement raised the career level."
+          },
+          "rank": {
+            "type": "string",
+            "description": "Rank label for the level."
+          },
+          "xp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total career XP after settlement."
+          }
+        }
+      },
+      "CyberDefenseProfileResponse": {
+        "type": "object",
+        "description": "One complete, server-authoritative Cyber Defense profile snapshot.",
+        "required": [
+          "career",
+          "bits_balance",
+          "tower_level",
+          "tower_upgrades",
+          "heroes",
+          "adversaries",
+          "story",
+          "campaign",
+          "highest_threat_level_cleared",
+          "recommended_threat_level",
+          "unlocked_threat_level",
+          "total_operations_completed",
+          "legacy_progress_imported"
+        ],
+        "properties": {
+          "active_operation_run_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Active Operation run identifier, if one exists."
+          },
+          "adversaries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CyberAdversaryProgressDto"
+            },
+            "description": "Adversary progress and ranks."
+          },
+          "bits_balance": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Settled Bits balance."
+          },
+          "campaign": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CyberCampaignResultDto"
+            },
+            "description": "Campaign mission results."
+          },
+          "career": {
+            "$ref": "#/components/schemas/CyberCareerDto",
+            "description": "Career XP, level, and rank."
+          },
+          "heroes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CyberHeroProgressDto"
+            },
+            "description": "Persistent hero progression."
+          },
+          "highest_threat_level_cleared": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Highest Threat Level ever cleared."
+          },
+          "legacy_progress_imported": {
+            "type": "boolean",
+            "description": "Whether legacy local progress was imported once."
+          },
+          "recommended_threat_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Server-recommended Threat Level."
+          },
+          "story": {
+            "$ref": "#/components/schemas/CyberStoryProgressDto",
+            "description": "Story progress."
+          },
+          "total_operations_completed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Total completed repeatable Operations."
+          },
+          "tower_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Aggregate Tower level."
+          },
+          "tower_upgrades": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CyberTowerUpgradeDto"
+            },
+            "description": "Tower/HQ room upgrade levels."
+          },
+          "unlocked_threat_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Highest Threat Level the player may currently start."
+          }
+        }
+      },
       "CyberDefenseUpgradeRequest": {
         "type": "object",
         "description": "Request to debit Bits for one Cyber Defense control upgrade.\n\nThe client sends only the action's primitives: the server derives the\ncontrol's level from its own settled ledger, computes the canonical cost from\npolicy, and never trusts a client-supplied amount. `event_id` is the\nidempotency key, so a retry after a timeout cannot debit twice.",
@@ -2806,6 +4132,708 @@
             "type": "integer",
             "format": "int64",
             "description": "Bits charged for this upgrade."
+          }
+        }
+      },
+      "CyberHeroProgressDto": {
+        "type": "object",
+        "description": "Persistent hero progress for one hero.",
+        "required": [
+          "hero_id",
+          "xp",
+          "level",
+          "max_level",
+          "xp_into_level",
+          "selected_talents"
+        ],
+        "properties": {
+          "hero_id": {
+            "type": "string",
+            "description": "Hero identifier."
+          },
+          "level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Hero level derived from XP."
+          },
+          "max_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum hero level."
+          },
+          "next_level_xp": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Absolute XP threshold for the next level, or `null` at the cap."
+          },
+          "selected_talents": {
+            "description": "Selected talent choices, keyed by milestone."
+          },
+          "xp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total hero XP."
+          },
+          "xp_for_next_level": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "XP span of the current level, or `null` at the cap."
+          },
+          "xp_into_level": {
+            "type": "integer",
+            "format": "int64",
+            "description": "XP accumulated within the current level."
+          }
+        }
+      },
+      "CyberHeroTalentRequest": {
+        "type": "object",
+        "description": "Request to replace a hero's selected talents.",
+        "required": [
+          "talents"
+        ],
+        "properties": {
+          "talents": {
+            "type": "object",
+            "description": "Selected choice id keyed by milestone level, for example `{\"5\": \"rapid_response\"}`.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CyberLegacyImportRequest": {
+        "type": "object",
+        "description": "Request to import legacy Stage 1 local progress once.",
+        "required": [
+          "missions"
+        ],
+        "properties": {
+          "missions": {
+            "type": "object",
+            "description": "Known campaign mission results keyed by mission id.",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CyberLegacyMissionDto"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CyberLegacyImportResponse": {
+        "type": "object",
+        "description": "Result of a legacy progress import.",
+        "required": [
+          "imported",
+          "missions_imported",
+          "career_xp_granted",
+          "bits_balance",
+          "career"
+        ],
+        "properties": {
+          "bits_balance": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Settled Bits balance (never increased by an import)."
+          },
+          "career": {
+            "$ref": "#/components/schemas/CyberCareerSummaryDto",
+            "description": "Career summary after the import."
+          },
+          "career_xp_granted": {
+            "type": "integer",
+            "format": "int64",
+            "description": "One-time returning-defender career XP granted by the server."
+          },
+          "imported": {
+            "type": "boolean",
+            "description": "`false` when progress was already imported (or the import was a no-op)."
+          },
+          "missions_imported": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of known missions imported."
+          }
+        }
+      },
+      "CyberLegacyMissionDto": {
+        "type": "object",
+        "description": "One imported legacy campaign mission result.",
+        "required": [
+          "completed",
+          "stars",
+          "best_health",
+          "attempts"
+        ],
+        "properties": {
+          "attempts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Attempts recorded locally."
+          },
+          "best_health": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Best remaining health recorded locally."
+          },
+          "completed": {
+            "type": "boolean",
+            "description": "Whether the mission was completed locally."
+          },
+          "stars": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Best stars earned locally."
+          }
+        }
+      },
+      "CyberOperationCompleteRequest": {
+        "type": "object",
+        "description": "Client result evidence for one Operation run.",
+        "required": [
+          "completed",
+          "stars",
+          "health",
+          "duration_ms"
+        ],
+        "properties": {
+          "completed": {
+            "type": "boolean",
+            "description": "Whether the Operation was completed."
+          },
+          "duration_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Attempt duration in milliseconds."
+          },
+          "health": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Remaining system health."
+          },
+          "stars": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Stars earned, `0..=3`."
+          }
+        }
+      },
+      "CyberOperationCompleteResponse": {
+        "type": "object",
+        "description": "Result of settling one Operation run.",
+        "required": [
+          "run",
+          "reward",
+          "bits_balance",
+          "career",
+          "adversary",
+          "newly_settled",
+          "recommended_threat_level",
+          "unlocked_threat_level",
+          "dossier_unlocks",
+          "story_nodes_completed"
+        ],
+        "properties": {
+          "adversary": {
+            "$ref": "#/components/schemas/CyberAdversaryProgressDto",
+            "description": "Updated adversary progress."
+          },
+          "bits_balance": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Settled Bits balance."
+          },
+          "career": {
+            "$ref": "#/components/schemas/CyberCareerSummaryDto",
+            "description": "Career summary after the reward."
+          },
+          "dossier_unlocks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Dossier flags unlocked by this result."
+          },
+          "hero": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CyberHeroProgressDto",
+                "description": "Updated hero progress, when the run had a hero."
+              }
+            ]
+          },
+          "newly_settled": {
+            "type": "boolean",
+            "description": "`false` when this run was already settled."
+          },
+          "recommended_threat_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Recommended Threat Level after this result."
+          },
+          "reward": {
+            "$ref": "#/components/schemas/CyberRewardDto",
+            "description": "Reward settled by this request (zero on a duplicate)."
+          },
+          "run": {
+            "$ref": "#/components/schemas/CyberOperationRunDto",
+            "description": "Updated run."
+          },
+          "story_nodes_completed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Story nodes triggered by this result."
+          },
+          "unlocked_threat_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Highest Threat Level currently unlocked."
+          }
+        }
+      },
+      "CyberOperationResultDto": {
+        "type": "object",
+        "description": "One recorded Operation result.",
+        "required": [
+          "completed",
+          "stars",
+          "health",
+          "duration_ms"
+        ],
+        "properties": {
+          "completed": {
+            "type": "boolean",
+            "description": "Whether the Operation was completed."
+          },
+          "duration_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Duration in milliseconds."
+          },
+          "health": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Remaining system health."
+          },
+          "stars": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Stars earned."
+          }
+        }
+      },
+      "CyberOperationRunDto": {
+        "type": "object",
+        "description": "A server-issued Operation run and its persisted snapshot.",
+        "required": [
+          "run_id",
+          "status",
+          "seed",
+          "template_id",
+          "adversary_id",
+          "adversary_name",
+          "threat_level",
+          "operation",
+          "started_at",
+          "bits_awarded",
+          "career_xp_awarded",
+          "hero_xp_awarded"
+        ],
+        "properties": {
+          "adversary_id": {
+            "type": "string",
+            "description": "Adversary identifier."
+          },
+          "adversary_name": {
+            "type": "string",
+            "description": "Adversary display name."
+          },
+          "bits_awarded": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Bits awarded on settlement."
+          },
+          "career_xp_awarded": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Career XP awarded on settlement."
+          },
+          "hero_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Selected hero."
+          },
+          "hero_xp_awarded": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Hero XP awarded on settlement."
+          },
+          "operation": {
+            "$ref": "#/components/schemas/GeneratedOperation",
+            "description": "Full generated Operation snapshot."
+          },
+          "result": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CyberOperationResultDto",
+                "description": "Recorded result, once settled."
+              }
+            ]
+          },
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Run identifier."
+          },
+          "seed": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Deterministic generation seed."
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Start time."
+          },
+          "status": {
+            "type": "string",
+            "description": "`active`, `completed`, `failed`, or `abandoned`."
+          },
+          "template_id": {
+            "type": "string",
+            "description": "Template identifier."
+          },
+          "threat_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Threat Level."
+          }
+        }
+      },
+      "CyberOperationStartRequest": {
+        "type": "object",
+        "description": "Request to start a repeatable Operation.",
+        "required": [
+          "requested_threat_level"
+        ],
+        "properties": {
+          "hero_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Selected hero, when any. Defaults to the Security Engineer."
+          },
+          "requested_threat_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Requested Threat Level. Must be unlocked for this learner."
+          },
+          "template_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Explicit template choice, when browsing Operations directly."
+          }
+        }
+      },
+      "CyberReward": {
+        "type": "object",
+        "description": "Bits, career XP, and hero XP granted by one settled result.",
+        "required": [
+          "bits",
+          "career_xp",
+          "hero_xp"
+        ],
+        "properties": {
+          "bits": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Spendable Bits."
+          },
+          "career_xp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Non-spendable career XP."
+          },
+          "hero_xp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Non-spendable hero XP for the run's selected hero."
+          }
+        }
+      },
+      "CyberRewardDto": {
+        "type": "object",
+        "description": "A settled Cyber Defense reward.",
+        "required": [
+          "bits",
+          "career_xp",
+          "hero_xp"
+        ],
+        "properties": {
+          "bits": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Bits awarded."
+          },
+          "career_xp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Career XP awarded."
+          },
+          "hero_xp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Hero XP awarded."
+          }
+        }
+      },
+      "CyberStoryProgressDto": {
+        "type": "object",
+        "description": "Story progression summary.",
+        "required": [
+          "active_chapter",
+          "completed_nodes"
+        ],
+        "properties": {
+          "active_chapter": {
+            "type": "string",
+            "description": "Active chapter identifier."
+          },
+          "completed_nodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Acknowledged story node identifiers."
+          }
+        }
+      },
+      "CyberTelemetryEventDto": {
+        "type": "object",
+        "description": "One balance-telemetry event from the client.\n\nOnly game identifiers and results; no raw personal data.",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "adversary_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Adversary id, when relevant."
+          },
+          "defense_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Defense id, when relevant."
+          },
+          "duration_bucket": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Duration bucket label, when relevant."
+          },
+          "hero_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Hero id, when relevant."
+          },
+          "name": {
+            "type": "string",
+            "description": "Event name, from the known allowlist."
+          },
+          "result": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Result label, when relevant."
+          },
+          "run_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Operation run id, when relevant."
+          },
+          "stars": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Stars, when relevant."
+          },
+          "template_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Operation template id, when relevant."
+          },
+          "threat_level": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Threat Level, when relevant."
+          },
+          "wave": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Wave index, when relevant."
+          }
+        }
+      },
+      "CyberTelemetryRequest": {
+        "type": "object",
+        "description": "A batch of telemetry events.",
+        "required": [
+          "events"
+        ],
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CyberTelemetryEventDto"
+            },
+            "description": "Events to append. Bounded to a small batch."
+          }
+        }
+      },
+      "CyberTelemetryResponse": {
+        "type": "object",
+        "description": "Acknowledgement of a telemetry batch.",
+        "required": [
+          "accepted"
+        ],
+        "properties": {
+          "accepted": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of events accepted."
+          }
+        }
+      },
+      "CyberTowerUpgradeDto": {
+        "type": "object",
+        "description": "One Tower/HQ room upgrade level.",
+        "required": [
+          "upgrade_id",
+          "level",
+          "max_level"
+        ],
+        "properties": {
+          "level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Current level."
+          },
+          "max_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum level."
+          },
+          "next_cost": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Bits cost to reach the next level, or `null` at the cap."
+          },
+          "upgrade_id": {
+            "type": "string",
+            "description": "Upgrade (room) identifier."
+          }
+        }
+      },
+      "CyberTowerUpgradePurchaseRequest": {
+        "type": "object",
+        "description": "Request to purchase the next level of one Tower/HQ room.\n\nThe cost is never sent: the server derives it from canonical policy.",
+        "required": [
+          "event_id"
+        ],
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Client-generated idempotency key for this purchase."
+          }
+        }
+      },
+      "CyberTowerUpgradePurchaseResponse": {
+        "type": "object",
+        "description": "Result of a Tower/HQ room purchase.",
+        "required": [
+          "upgrade_id",
+          "level",
+          "tower_level",
+          "bits_balance",
+          "spent",
+          "newly_settled"
+        ],
+        "properties": {
+          "bits_balance": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Settled Bits balance after the purchase."
+          },
+          "level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Room level after the purchase."
+          },
+          "newly_settled": {
+            "type": "boolean",
+            "description": "`false` when this `event_id` was already settled (a safe retry)."
+          },
+          "spent": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Bits charged for this purchase."
+          },
+          "tower_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Aggregate Tower level after the purchase."
+          },
+          "upgrade_id": {
+            "type": "string",
+            "description": "Room that was upgraded."
           }
         }
       },
@@ -3219,6 +5247,14 @@
           "message"
         ],
         "properties": {
+          "active_run_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Active Operation run id, when the error is `active_operation_exists`."
+          },
           "code": {
             "type": "string",
             "description": "Stable error code."
@@ -3244,6 +5280,65 @@
           "description": {
             "type": "string",
             "description": "Learner-safe description."
+          },
+          "remediation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ErrorRemediation",
+                "description": "Optional, track-agnostic remediation metadata.\n\nPhase 3 uses it as a bounded teaching-policy signal when this error is a\nrecent, unresolved part of accepted history. It never changes scoring,\nmastery, or rewards, and absent metadata keeps old content working.\nServer-side only: it is never attached to a learner-facing question DTO."
+              }
+            ]
+          }
+        }
+      },
+      "ErrorRemediation": {
+        "type": "object",
+        "description": "Optional, track-agnostic remediation metadata authored on a structured\nerror code.\n\nThis describes the *teaching-policy* response to a recent structured error.\nIt is not mastery and it never permanently labels a learner: a structured\nerror is temporary, local evidence about how one attempt failed, and it only\ninfluences selection while it is recent and not superseded by a recovery.\n\nEvery field is optional, so an existing `{\"code\", \"description\"}` error\ndefinition keeps working unchanged. The `*_id` values are opaque authored\nstrings; core code never branches on their contents.",
+        "properties": {
+          "concept_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Concepts most directly implicated by the error.\n\nLets a specific mistake target a narrower concept than the whole\nquestion. When present in a scored bundle these must be known concepts."
+          },
+          "min_scaffold_level": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Temporary lower bound on embedded support for immediate remediation.\n\nCooperates with scaffold fading: it raises the preferred scaffold while\nthe error signal is active and disappears once the learner recovers. It\nnever permanently raises scaffold state.",
+            "maximum": 6,
+            "minimum": 0
+          },
+          "node_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A learning node that directly addresses the misconception."
+          },
+          "preferred_family_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A reusable family the remediation should stay within or redirect to."
+          },
+          "preferred_stage": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PedagogyStage",
+                "description": "The kind of follow-up activity most useful for this error."
+              }
+            ]
           }
         }
       },
@@ -3325,6 +5420,272 @@
           "developing",
           "substantial"
         ]
+      },
+      "FamilyConfusion": {
+        "type": "object",
+        "description": "One authored near-neighbor comparison for a family.",
+        "required": [
+          "other_family_id",
+          "distinction"
+        ],
+        "properties": {
+          "distinction": {
+            "type": "string",
+            "description": "The distinction that tells the two families apart."
+          },
+          "other_family_id": {
+            "type": "string",
+            "description": "The other family this one is commonly confused with.\n\nResolves to an authored guide in the same track/version; opaque to core\ncode."
+          }
+        }
+      },
+      "FamilyConfusionDto": {
+        "type": "object",
+        "description": "A resolved Family A vs Family B distinction.",
+        "required": [
+          "other_family_id",
+          "other_family_title",
+          "distinction"
+        ],
+        "properties": {
+          "distinction": {
+            "type": "string",
+            "description": "The authored distinction between the two families."
+          },
+          "other_family_id": {
+            "type": "string",
+            "description": "Authored id of the neighboring family. Opaque."
+          },
+          "other_family_title": {
+            "type": "string",
+            "description": "Learner-facing title of the neighboring family."
+          }
+        }
+      },
+      "FamilyExampleContext": {
+        "type": "object",
+        "description": "One representative context for a family.\n\nThe `context_id` matches an authored `pedagogy.surface_context` value; the\n`label` is the learner-facing text, so raw machine ids are never rendered.",
+        "required": [
+          "context_id",
+          "label"
+        ],
+        "properties": {
+          "context_id": {
+            "type": "string",
+            "description": "Opaque authored surface-context id, for example `api_rate_limiting`."
+          },
+          "label": {
+            "type": "string",
+            "description": "Learner-facing label, for example `API rate limiting`."
+          }
+        }
+      },
+      "FamilyGuide": {
+        "type": "object",
+        "description": "A reusable deep structure, authored once per track/version family.\n\nThis is *not* a concept and *not* a question: one family may involve several\nconcepts, and one concept may participate in several families. See\n`docs/06-learning-engine.md` and `docs/16-content-audit.md`.",
+        "required": [
+          "schema_version",
+          "certification_id",
+          "certification_version",
+          "family_id",
+          "title",
+          "summary",
+          "recognition_signals",
+          "source_refs"
+        ],
+        "properties": {
+          "certification_id": {
+            "type": "string",
+            "description": "Certification identifier, for example `aws-soa-c03`."
+          },
+          "certification_version": {
+            "type": "string",
+            "description": "Certification version identifier, for example `soa-c03`."
+          },
+          "common_confusions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FamilyConfusion"
+            },
+            "description": "Useful near-neighbor comparisons, authored as distinctions."
+          },
+          "core_rules": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The key rule(s) or invariant(s) that make the family work."
+          },
+          "example_contexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FamilyExampleContext"
+            },
+            "description": "Representative contexts, as explanatory examples rather than history."
+          },
+          "family_id": {
+            "type": "string",
+            "description": "Stable family identifier matching the Phase 1 `pedagogy.family_id`.\n\nOpaque: core code never inspects its prefix or contents."
+          },
+          "recognition_signals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Structural clues that should trigger the same reasoning next time."
+          },
+          "schema_version": {
+            "type": "string",
+            "description": "Schema discriminator; must equal `family-guide-v1`."
+          },
+          "source_refs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceRef"
+            },
+            "description": "Official references supporting the guide's factual claims."
+          },
+          "structural_steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional ordered conceptual skeleton (not executable instructions)."
+          },
+          "summary": {
+            "type": "string",
+            "description": "Short plain-language definition of the deep structure.\n\nIt should explain the structure, not merely name a technique."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing family name, for example `Moving Valid Window`."
+          }
+        }
+      },
+      "FamilyInsightDto": {
+        "type": "object",
+        "description": "One authored family guide plus what the learner has seen of it.",
+        "required": [
+          "family_id",
+          "title",
+          "summary",
+          "recognition_signals",
+          "core_rules",
+          "structural_steps",
+          "example_contexts",
+          "common_confusions",
+          "source_refs",
+          "seen_context_count",
+          "seen_example_count"
+        ],
+        "properties": {
+          "common_confusions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FamilyConfusionDto"
+            },
+            "description": "Authored near-neighbor distinctions, with resolved learner-facing titles."
+          },
+          "comparison": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StructureComparisonDto",
+                "description": "Same-skeleton comparison, present only once context variety exists."
+              }
+            ]
+          },
+          "core_rules": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Key rule(s) that make the family work."
+          },
+          "example_contexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FamilyExampleContext"
+            },
+            "description": "Representative authored contexts (explanatory, not learner history)."
+          },
+          "family_id": {
+            "type": "string",
+            "description": "Stable authored family identifier. Opaque."
+          },
+          "recognition_signals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Structural clues that should trigger the same reasoning next time."
+          },
+          "seen_context_count": {
+            "type": "integer",
+            "description": "Distinct surface contexts the learner has actually seen.",
+            "minimum": 0
+          },
+          "seen_example_count": {
+            "type": "integer",
+            "description": "Distinct examples the learner has actually seen.",
+            "minimum": 0
+          },
+          "source_refs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceRef"
+            },
+            "description": "Source references supporting the guide."
+          },
+          "structural_steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional reusable conceptual skeleton."
+          },
+          "summary": {
+            "type": "string",
+            "description": "Short plain-language deep-structure definition."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing family name."
+          }
+        }
+      },
+      "FamilyInsightsResponse": {
+        "type": "object",
+        "description": "Learner-facing family insights for one learning track (Phase 5).\n\nOne aggregate request returns every family the learner has already\nencountered, so the Track Hub never fetches per-family or per-example state.\nIt is post-exposure teaching content only: never a mastery claim, a score, or\nan answer key, and families with no exposure are omitted entirely.",
+        "required": [
+          "track_id",
+          "track_version",
+          "has_guides",
+          "insights"
+        ],
+        "properties": {
+          "has_guides": {
+            "type": "boolean",
+            "description": "Whether this track version authors any family guides at all.\n\nThe client uses this to hide the patterns surface entirely when a track\nhas no guides. An empty `insights` list with `has_guides: true` only means\nthe learner has not met a family yet."
+          },
+          "insights": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FamilyInsightDto"
+            },
+            "description": "Insights for families the learner has already seen, in family-id order."
+          },
+          "track_id": {
+            "type": "string",
+            "description": "Learning track identifier."
+          },
+          "track_version": {
+            "type": "string",
+            "description": "Learning track version identifier."
+          }
+        }
       },
       "FeedbackResponse": {
         "type": "object",
@@ -3462,6 +5823,215 @@
           "becoming_due",
           "due"
         ]
+      },
+      "GeneratedModifier": {
+        "type": "object",
+        "description": "One active Operation modifier.",
+        "required": [
+          "id",
+          "name",
+          "description"
+        ],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Learner-facing description."
+          },
+          "id": {
+            "type": "string",
+            "description": "Modifier identifier."
+          },
+          "name": {
+            "type": "string",
+            "description": "Learner-facing name."
+          }
+        }
+      },
+      "GeneratedOperation": {
+        "type": "object",
+        "description": "A complete, persisted Operation snapshot.",
+        "required": [
+          "seed",
+          "template_id",
+          "adversary_id",
+          "adversary_name",
+          "threat_level",
+          "title",
+          "summary",
+          "map_id",
+          "starting_budget",
+          "starting_health",
+          "latency_target_ms",
+          "available_defenses",
+          "available_heroes",
+          "waves",
+          "modifiers",
+          "dominant_attack_type",
+          "hidden_attacks",
+          "boss",
+          "reward_preview"
+        ],
+        "properties": {
+          "adversary_id": {
+            "type": "string",
+            "description": "Adversary identifier."
+          },
+          "adversary_name": {
+            "type": "string",
+            "description": "Adversary display name."
+          },
+          "available_defenses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Defenses offered."
+          },
+          "available_heroes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Heroes offered."
+          },
+          "boss": {
+            "type": "boolean",
+            "description": "Whether a boss is present."
+          },
+          "dominant_attack_type": {
+            "type": "string",
+            "description": "The dominant attack family."
+          },
+          "hidden_attacks": {
+            "type": "boolean",
+            "description": "Whether some traffic is hidden until detection is active."
+          },
+          "latency_target_ms": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Latency target in milliseconds."
+          },
+          "map_id": {
+            "type": "string",
+            "description": "Map identifier the frontend resolves."
+          },
+          "modifiers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GeneratedModifier"
+            },
+            "description": "Active modifiers."
+          },
+          "reward_preview": {
+            "$ref": "#/components/schemas/CyberReward",
+            "description": "Reward preview at three stars."
+          },
+          "seed": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Generation seed."
+          },
+          "starting_budget": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Starting mission credits."
+          },
+          "starting_health": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Starting system health."
+          },
+          "summary": {
+            "type": "string",
+            "description": "Learner-facing summary."
+          },
+          "template_id": {
+            "type": "string",
+            "description": "Template identifier."
+          },
+          "threat_level": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Threat Level."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing title."
+          },
+          "waves": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GeneratedWave"
+            },
+            "description": "Waves."
+          }
+        }
+      },
+      "GeneratedSpawnGroup": {
+        "type": "object",
+        "description": "One spawn group in a generated wave.",
+        "required": [
+          "attack_id",
+          "count",
+          "spawn_interval_ms",
+          "health_multiplier",
+          "speed_multiplier"
+        ],
+        "properties": {
+          "attack_id": {
+            "type": "string",
+            "description": "Attack identifier."
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of units."
+          },
+          "delay_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Optional start delay in milliseconds."
+          },
+          "health_multiplier": {
+            "type": "number",
+            "format": "double",
+            "description": "Enemy health multiplier applied at spawn."
+          },
+          "spawn_interval_ms": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Spawn interval in milliseconds."
+          },
+          "speed_multiplier": {
+            "type": "number",
+            "format": "double",
+            "description": "Enemy speed multiplier applied at spawn."
+          }
+        }
+      },
+      "GeneratedWave": {
+        "type": "object",
+        "description": "One generated wave.",
+        "required": [
+          "groups",
+          "boss"
+        ],
+        "properties": {
+          "boss": {
+            "type": "boolean",
+            "description": "Marks the boss wave."
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GeneratedSpawnGroup"
+            },
+            "description": "Spawn groups."
+          }
+        }
       },
       "GlossaryTerm": {
         "type": "object",
@@ -4645,6 +7215,17 @@
             "type": "string",
             "description": "Certification version identifier."
           },
+          "challenge": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ChallengeView",
+                "description": "Authored challenge orchestration for a challenge mission.\n\n`null` for every ordinary quiz mode. The stage list is server-resolved at\nissuance and drives local, resumable execution."
+              }
+            ]
+          },
           "content_version": {
             "type": "string",
             "description": "Immutable content version."
@@ -4909,6 +7490,75 @@
             "description": "Knowledge node identifier."
           }
         }
+      },
+      "PedagogyMetadata": {
+        "type": "object",
+        "description": "Optional, track-agnostic pedagogical metadata authored on a question.\n\nEvery field is optional, so existing content without `pedagogy` keeps\nloading unchanged. The metadata is descriptive in Phase 1: it is stored in\ncanonical content and exposed to server-side planning, but it never changes\nmastery, scoring, rewards, or selection ranking.\n\nThe `*_id` and `surface_context` values are opaque, author-defined strings.\nCore code must never branch on their contents, and no global enum exists for\nthem, so any current or future track (DSA, Python, AWS, Terraform, security,\nML) can use the same contract.",
+        "properties": {
+          "challenge_group_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Groups questions that may eventually form one multi-stage learning\njourney. Phase 1 stores the grouping only; it does not sequence it."
+          },
+          "family_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Deeper reusable family/pattern/strategy/conceptual structure this\nactivity belongs to, for example `dsa.sliding_window.variable`."
+          },
+          "scaffold_level": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "How much assistance is embedded in the activity, `0..=6`.\n\nThis is not difficulty: an easy question may embed no help and a hard\nquestion may embed substantial help. It never modifies\n`difficulty_prior`.",
+            "maximum": 6,
+            "minimum": 0
+          },
+          "stage": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PedagogyStage",
+                "description": "Instructional role of this particular activity."
+              }
+            ]
+          },
+          "surface_context": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Surface/domain/story context, for example `api_rate_limiting`."
+          },
+          "transfer_group_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Groups activities that exercise the same deep transferable structure."
+          }
+        }
+      },
+      "PedagogyStage": {
+        "type": "string",
+        "description": "The instructional role an authored activity plays.\n\nThis is deliberately separate from [`AssessmentMode`]: an assessment mode\ndescribes the *evidence* an attempt provides, while a pedagogy stage\ndescribes *what the learner is being asked to do* in the activity. The\nvalues are domain-neutral; track-specific structure belongs in authored\n`family_id`/`transfer_group_id`/`challenge_group_id` strings, never here.\n\nPhase 1 is descriptive only. The stage is stored and exposed to server-side\nplanning code, but does not yet change selection or mastery.",
+        "enum": [
+          "discover",
+          "recognize",
+          "differentiate",
+          "reason",
+          "trace",
+          "diagnose",
+          "construct",
+          "transfer"
+        ]
       },
       "PlacementAxis": {
         "type": "object",
@@ -5301,7 +7951,7 @@
           },
           "score_note": {
             "type": "string",
-            "description": "Explicit note that this raw score is not an AWS scaled score."
+            "description": "Explicit note that this raw score is not an official scaled score."
           },
           "scored_question_count": {
             "type": "integer",
@@ -5501,6 +8151,24 @@
         ],
         "description": "One data-driven assertion in a browser-executed Python exercise.\n\nTests are trusted authored content, never learner input. They ship to the\nbrowser so the learner's program can be executed and checked locally, which\nmeans they are inspectable rather than secret. Expected values are passed as\nstructured JSON data: they are never interpolated into generated Python\nsource and never evaluated by the server."
       },
+      "QuestionErrorCode": {
+        "type": "object",
+        "description": "Learner-safe structured error-code definition.\n\nDeliberately excludes the optional Phase 3 remediation metadata: authored\ntarget concepts, nodes, stages, families, and scaffold floors could reveal\nthe intended repair (and thus the answer) before scoring. The canonical\ndefinition stays server-side; only the code and its learner-safe description\ntravel to the client.",
+        "required": [
+          "code",
+          "description"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Stable code, for example `classification_misplaced`."
+          },
+          "description": {
+            "type": "string",
+            "description": "Learner-safe description."
+          }
+        }
+      },
       "QuestionView": {
         "type": "object",
         "description": "A question shown to the learner. Contains no answer key.",
@@ -5582,7 +8250,8 @@
           "full_practice",
           "task_practice",
           "recommended_practice",
-          "section_quiz"
+          "section_quiz",
+          "challenge"
         ]
       },
       "Recommendation": {
@@ -5750,7 +8419,8 @@
           "needs_practice",
           "stale_knowledge",
           "domain_review",
-          "strong_and_fresh"
+          "strong_and_fresh",
+          "targeted_remediation"
         ]
       },
       "RecommendationRequest": {
@@ -6080,6 +8750,30 @@
           }
         }
       },
+      "SeenExampleDto": {
+        "type": "object",
+        "description": "One already-seen example in a same-skeleton comparison.\n\nLearner-safe: a problem title, a learner-facing context label, and when the\nlearner saw it. It never carries a canonical answer or hidden metadata.",
+        "required": [
+          "title",
+          "context_label",
+          "seen_at"
+        ],
+        "properties": {
+          "context_label": {
+            "type": "string",
+            "description": "Learner-facing surface-context label."
+          },
+          "seen_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the learner encountered the example."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing problem title."
+          }
+        }
+      },
       "SessionActivity": {
         "type": "object",
         "description": "One planned activity.",
@@ -6216,6 +8910,61 @@
           }
         }
       },
+      "StructureComparisonDto": {
+        "type": "object",
+        "description": "A post-exposure comparison of two or more seen examples.",
+        "required": [
+          "family_id",
+          "title",
+          "summary",
+          "recognition_signals",
+          "core_rules",
+          "structural_steps",
+          "examples"
+        ],
+        "properties": {
+          "core_rules": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The rule(s) that make the family work."
+          },
+          "examples": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeenExampleDto"
+            },
+            "description": "The already-seen examples, newest first."
+          },
+          "family_id": {
+            "type": "string",
+            "description": "Stable authored family identifier. Opaque."
+          },
+          "recognition_signals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Structural clues shared by the examples."
+          },
+          "structural_steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional reusable skeleton (not executable instructions)."
+          },
+          "summary": {
+            "type": "string",
+            "description": "Plain-language deep-structure summary."
+          },
+          "title": {
+            "type": "string",
+            "description": "Learner-facing family title."
+          }
+        }
+      },
       "StudyQuestionView": {
         "type": "object",
         "description": "A question for an ordinary study mission that supports local scoring.\n\nThis is the only mission-facing DTO that carries canonical answers. It keeps\nevery learner-facing field of [`QuestionView`] and adds the deterministic\nscoring metadata needed to score an attempt in the browser.\n\nThe extra fields are explicitly *not* authoritative: `/v1/sync` always\nre-scores the raw submitted answer against the server-known content before\naccepting evidence, settling Bits, or updating concept state. Practice tests\nand any pre-submit response keep using [`QuestionView`], which never exposes\nan answer key.",
@@ -6273,9 +9022,9 @@
           "error_codes": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ErrorCodeDef"
+              "$ref": "#/components/schemas/QuestionErrorCode"
             },
-            "description": "Authored structured error-code definitions for this question."
+            "description": "Learner-safe structured error-code definitions for this question.\n\nNever includes remediation metadata; see [`QuestionErrorCode`]."
           },
           "explanation": {
             "type": "string",
@@ -6726,9 +9475,17 @@
           "track_id",
           "track_version",
           "content_version",
-          "domains"
+          "domains",
+          "challenges"
         ],
         "properties": {
+          "challenges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChallengeSummaryDto"
+            },
+            "description": "Authored challenges for this track, in embedded order.\n\nCompact summaries so the hub can list them without a request per\nchallenge; the full stage list arrives with the issued mission."
+          },
           "content_version": {
             "type": "string",
             "description": "Immutable learning content version."

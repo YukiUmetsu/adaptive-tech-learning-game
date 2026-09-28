@@ -4,7 +4,7 @@ import type { AttackType } from "../models/attack";
 import {
   defenseStatsAtLevel,
   placeCost,
-  upgradeBitsCost,
+  upgradeCost,
   type PlacedDefense,
 } from "../models/defense";
 import type { MissionDefinition, SynergyDefinition } from "../models/mission";
@@ -28,7 +28,6 @@ export interface DefenseShopProps {
   catalog: GameCatalog;
   placed: PlacedDefense[];
   budget: number;
-  bitsAvailable: number;
   armedDefenseId: string | null;
   selectedPad: PadSelection | null;
   selectedPlacementId: string | null;
@@ -46,7 +45,6 @@ export default function DefenseShop({
   catalog,
   placed,
   budget,
-  bitsAvailable,
   armedDefenseId,
   selectedPad,
   selectedPlacementId,
@@ -99,8 +97,8 @@ export default function DefenseShop({
     if (defense) {
       const stats = defenseStatsAtLevel(defense, selectedPlacement.level);
       const maxed = selectedPlacement.level >= defense.maxLevel;
-      const nextCost = maxed ? 0 : upgradeBitsCost(defense, selectedPlacement.level);
-      const affordable = bitsAvailable >= nextCost;
+      const nextCost = maxed ? 0 : upgradeCost(defense, selectedPlacement.level);
+      const affordable = budget >= nextCost;
       detail = (
         <div className="cyber-shop-detail">
           <div className="cyber-shop-detail-head">
@@ -118,7 +116,7 @@ export default function DefenseShop({
               {
                 icon: <CoinIcon size={14} />,
                 label: "Upgrade cost",
-                value: maxed ? "MAX" : `${nextCost} Bits`,
+                value: maxed ? "MAX" : `${nextCost} credits`,
                 tone: "cost",
               },
             ]}
@@ -130,7 +128,7 @@ export default function DefenseShop({
               disabled={maxed || !affordable}
               onClick={() => onUpgrade(selectedPlacement.id)}
             >
-              {maxed ? "Fully upgraded" : `Upgrade (${nextCost} Bits)`}
+              {maxed ? "Fully upgraded" : `Upgrade (${nextCost} credits)`}
             </button>
             <button
               type="button"
@@ -141,7 +139,7 @@ export default function DefenseShop({
             </button>
           </div>
           {!maxed && !affordable ? (
-            <p className="cyber-defense-hint">Not enough Bits.</p>
+            <p className="cyber-defense-hint">Not enough credits.</p>
           ) : null}
         </div>
       );

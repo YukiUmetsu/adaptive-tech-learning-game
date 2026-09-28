@@ -1,6 +1,7 @@
 import type { EvidenceLevel, FreshnessState, KnowledgeNode } from "../api/types";
 import { stripInlineCode } from "../lib/inlineCode";
 import { assessmentModeLabel, type NodeVisual } from "../state/knowledgeSignal";
+import type { NodeState } from "../state/learningProgress";
 import { ANSWER_REWARD_RANGE, DAILY_MISSION_BONUS_BITS } from "../state/rewards";
 import InlineText from "./InlineText";
 
@@ -9,6 +10,8 @@ interface NodeSignalPanelProps {
   domainName: string;
   moduleTitle: string;
   visual: NodeVisual;
+  /** Derived map state; a locked node cannot be explored yet. */
+  state: NodeState;
   onExplore: () => void;
   onClose: () => void;
 }
@@ -47,17 +50,24 @@ function freshnessLabel(state: FreshnessState): string {
  * Compact, motivating node detail.
  *
  * Leads with the node's signal, then a reward hook, then one clear action.
- * Assessment modes are only described here. No percentages or negative labels.
+ * A locked node offers no action: the panel explains its prerequisite instead,
+ * matching the map's derived state rather than linking to a card that cannot be
+ * revealed yet. Assessment modes are only described here. No percentages or
+ * negative labels.
  */
 export default function NodeSignalPanel({
   node,
   domainName,
   moduleTitle,
   visual,
+  state,
   onExplore,
   onClose,
 }: NodeSignalPanelProps) {
   const hasData = visual.modes.length > 0 || visual.evidence !== "none";
+  // A locked node cannot be explored yet, so it never offers the action. The
+  // panel instead explains the prerequisite, matching the map's derived state.
+  const locked = state === "locked";
 
   return (
     <aside
@@ -144,18 +154,32 @@ export default function NodeSignalPanel({
         </div>
       ) : null}
 
-      <div className="node-panel-rewards">
-        <span className="node-panel-reward">
-          <span aria-hidden="true">💰</span> {ANSWER_REWARD_RANGE} Bits / correct
-        </span>
-        <span className="node-panel-reward node-panel-reward--daily">
-          <span aria-hidden="true">🔥</span> +{DAILY_MISSION_BONUS_BITS} daily bonus
-        </span>
-      </div>
+      {locked ? (
+        <p className="node-panel-locked" role="note">
+          <span aria-hidden="true">🔒</span> Finish the earlier topics to unlock
+          this one.
+        </p>
+      ) : (
+        <>
+          <div className="node-panel-rewards">
+            <span className="node-panel-reward">
+              <span aria-hidden="true">💰</span> {ANSWER_REWARD_RANGE} Bits / correct
+            </span>
+            <span className="node-panel-reward node-panel-reward--daily">
+              <span aria-hidden="true">🔥</span> +{DAILY_MISSION_BONUS_BITS} daily
+              bonus
+            </span>
+          </div>
 
-      <button type="button" className="primary node-panel-explore" onClick={onExplore}>
-        <span aria-hidden="true">✨</span> Explore this topic
-      </button>
+          <button
+            type="button"
+            className="primary node-panel-explore"
+            onClick={onExplore}
+          >
+            <span aria-hidden="true">✨</span> Explore this topic
+          </button>
+        </>
+      )}
     </aside>
   );
 }

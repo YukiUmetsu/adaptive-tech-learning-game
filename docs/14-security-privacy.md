@@ -280,6 +280,14 @@ worker (before loading). Learner code can never request a package.
 - Packages load from the pinned, self-hosted distribution with Pyodide's
   package loader (`loadPackage`) — never `micropip`, `loadPackagesFromImports`,
   PyPI, or arbitrary URLs. `connect-src 'self'` keeps those fetches same-origin.
+- A pure-Python Apache Airflow **study shim** is built into the sandbox (not a
+  wheel and not on the package allowlist). It implements the DAG-authoring
+  surface a future Airflow track needs — `DAG`, `@dag`/`@task`,
+  `BashOperator`/`PythonOperator`/`EmptyOperator`, `TaskGroup`, and `>>`/`<<` —
+  and has no scheduler, metadata database, web server, executor, or network
+  access. It is explicitly not Apache Airflow; content imports `airflow` but
+  does **not** declare it in `packages`. See
+  `apps/web/src/pythonSandbox/airflowShim.ts`.
 - `scripts/sync-pyodide.mjs` downloads the dependency closure of the approved
   packages and verifies every wheel against the SHA-256 in the pinned
   `pyodide-lock.json`.

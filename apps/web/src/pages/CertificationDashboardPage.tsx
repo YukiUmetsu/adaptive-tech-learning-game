@@ -45,7 +45,10 @@ import { loadTrackProgress, signalIndex } from "../state/trackProgress";
 import { refreshWallet } from "../state/wallet";
 import { shortDomainName } from "../state/domainNames";
 import { ANSWER_REWARD_RANGE } from "../state/rewards";
+import ChallengeList from "../components/ChallengeList";
 import DailyMissionRunner from "../components/DailyMissionRunner";
+import FamilyInsightToolbelt from "../components/FamilyInsightToolbelt";
+import { useFamilyInsights } from "../hooks/useFamilyInsights";
 
 interface Launch {
   mode: QuizMode;
@@ -70,7 +73,9 @@ export default function CertificationDashboardPage() {
   const { status } = useAuth();
   const authenticated = status === "authenticated";
 
-  const [view, setView] = useState<"map" | "daily" | "practice">("map");
+  const [view, setView] = useState<"map" | "daily" | "practice" | "patterns">(
+    "map",
+  );
   const [starting, setStarting] = useState<string | null>(null);
   const [choosingDomain, setChoosingDomain] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,12 +121,25 @@ export default function CertificationDashboardPage() {
     enabled: authenticated,
     discovery,
   });
+  const { state: familyState, reload: reloadFamilies } = useFamilyInsights({
+    trackId: certificationId,
+    enabled: authenticated,
+  });
   const practiceTestsState = usePracticeTests(certificationId);
   const practiceTests = useMemo(
     () =>
       practiceTestsState.status === "loaded" ? practiceTestsState.tests : [],
     [practiceTestsState],
   );
+
+  // Patterns are only worth surfacing when the track authors family guides.
+  // An empty insight list with guides authored is a valid "nothing met yet"
+  // state; no guides at all means the tab would always be a dead end, so it is
+  // hidden rather than shown with a permanent empty state.
+  const familyInsights =
+    familyState.status === "loaded" && familyState.response.has_guides
+      ? familyState.response.insights
+      : null;
 
   // Publish the Daily Mission projection for the floating Focus widget when the
   // runner is not mounted. The runner owns it while the daily view is open, so
@@ -299,12 +317,16 @@ export default function CertificationDashboardPage() {
       ? recommendation.node_id ?? null
       : null;
 
+  const selectedNodeState = selected
+    ? (derivedByDomain[selected.domain.domain.id]?.nodeState[selected.node.id] ??
+      "ready")
+    : "ready";
+
   const selectedVisual =
     selected && trackMap
       ? deriveNodeVisual(
           selected.node.id,
-          derivedByDomain[selected.domain.domain.id]?.nodeState[selected.node.id] ??
-            "ready",
+          selectedNodeState,
           signals.get(selected.node.id),
           recommendedNodeId,
         )
@@ -678,6 +700,18 @@ export default function CertificationDashboardPage() {
           >
             <span aria-hidden="true">🎯</span> Practice
           </button>
+          {familyInsights !== null ? (
+            <button
+              type="button"
+              aria-current={view === "patterns" ? "page" : undefined}
+              onClick={() => {
+                setView("patterns");
+                void reloadFamilies();
+              }}
+            >
+              <span aria-hidden="true">🧩</span> Patterns
+            </button>
+          ) : null}
         </nav>
 
         <div className="track-hub-hud">
@@ -775,6 +809,7 @@ export default function CertificationDashboardPage() {
                 domainName={shortDomainName(selected.domain.domain.name)}
                 moduleTitle={selected.module.title}
                 visual={selectedVisual}
+                state={selectedNodeState}
                 onExplore={() =>
                   navigate(
                     `/tracks/${certification.id}/domains/${selected.domain.domain.id}/learn?node=${encodeURIComponent(selected.node.id)}`,
@@ -839,6 +874,13 @@ export default function CertificationDashboardPage() {
         ) : (
           <p role="status">Loading today&apos;s mission…</p>
         )
+      ) : view === "patterns" && familyInsights !== null ? (
+        <section className="track-hub-practice-view" aria-label="Reusable patterns">
+          <FamilyInsightToolbelt
+            trackId={certification.id}
+            insights={familyInsights}
+          />
+        </section>
       ) : (
         <section className="track-hub-practice-view" aria-label="Practice">
           <div className="hub-practice-head">
@@ -887,6 +929,12 @@ export default function CertificationDashboardPage() {
               </ul>
             </section>
           ) : null}
+
+          <ChallengeList
+            trackId={certification.id}
+            trackVersion={trackVersion ?? ""}
+            challenges={trackMap?.challenges ?? []}
+          />
         </section>
       )}
 

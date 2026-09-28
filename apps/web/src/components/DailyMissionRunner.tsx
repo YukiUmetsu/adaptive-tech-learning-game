@@ -32,6 +32,7 @@ import { flushAuxiliary, loadServerDiscovery } from "../state/syncAuxiliary";
 import { useLearningDomain } from "../hooks/useLearningDomain";
 import InlineText from "./InlineText";
 import KnowledgeCard from "./KnowledgeCard";
+import QuestionPrompt from "./QuestionPrompt";
 
 interface DailyMissionRunnerProps {
   trackId: string;
@@ -122,6 +123,23 @@ export default function DailyMissionRunner({
     void onRefresh();
   }, [onRefresh]);
 
+  // A task can name content the server no longer has (for example after a
+  // content revision). Ask for a refreshed plan at most once per item so the
+  // learner is never stuck on an item the changed content cannot execute.
+  const refreshAttempted = useRef<Set<string>>(new Set());
+  const refreshUnavailableItem = useCallback(
+    (position: number) => {
+      const key = `${mission.id}:${position}`;
+      if (refreshAttempted.current.has(key)) {
+        return;
+      }
+      refreshAttempted.current.add(key);
+      setDisplayedPosition(null);
+      void onRefresh();
+    },
+    [mission.id, onRefresh],
+  );
+
   // Beginning or resuming a Daily Mission activity is meaningful study, but
   // merely previewing the plan is not.
   const displayedItemPosition = displayed?.position ?? null;
@@ -208,6 +226,7 @@ export default function DailyMissionRunner({
             item={displayed}
             onCompleted={() => markCompleted(displayed.position)}
             onAdvanced={advance}
+            onUnavailable={() => refreshUnavailableItem(displayed.position)}
           />
         ) : (
           <DailyPracticeActivity
@@ -321,12 +340,14 @@ function DailyNodeActivity({
   item,
   onCompleted,
   onAdvanced,
+  onUnavailable,
 }: {
   trackId: string;
   missionId: string;
   item: DailyMissionItemDto;
   onCompleted: () => void;
   onAdvanced: () => void;
+  onUnavailable?: () => void;
 }) {
   const { state } = useLearningDomain(trackId, item.domain_id);
   const [progress, setProgress] = useState<DomainLearningProgress | null>(null);
@@ -382,6 +403,21 @@ function DailyNodeActivity({
       ) ?? null
     );
   }, [data, item.node_id]);
+
+  // A node item can name content a later content revision removed. Ask the
+  // server for a refreshed plan instead of leaving the learner on a dead task;
+  // the runner deduplicates this per item so it can never loop.
+  const requestedRefresh = useRef(false);
+  useEffect(() => {
+    if (state.status === "loading" || requestedRefresh.current) {
+      return;
+    }
+    if (state.status !== "error" && node) {
+      return;
+    }
+    requestedRefresh.current = true;
+    onUnavailable?.();
+  }, [state.status, node, onUnavailable]);
 
   const moduleTitle = useMemo(() => {
     if (!data || !node) {
@@ -711,9 +747,11 @@ function DailyPracticeReview({
             const attempt = attemptFor(question.id);
             return (
               <li key={question.id} className="daily-review-question">
-                <p className="daily-review-prompt">
-                  <InlineText text={question.prompt} />
-                </p>
+                <QuestionPrompt
+                  text={question.prompt}
+                  level={3}
+                  className="daily-review-prompt"
+                />
                 <p className="muted daily-review-meta">
                   {question.assessment_mode.replace(/_/g, " ")}
                   {attempt

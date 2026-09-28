@@ -2,6 +2,7 @@ import type { AttackType } from "../models/attack";
 import {
   defenseStatsAtLevel,
   placeCost,
+  upgradeCost,
   type PlacedDefense,
 } from "../models/defense";
 import type { HeroRuntime, HeroUnit } from "../models/hero";
@@ -439,7 +440,7 @@ export function placeDefense(
   };
 }
 
-/** Upgrades a placed defense one level, deducting the upgrade cost. */
+/** Upgrades a placed defense one level using mission credits. */
 export function upgradeDefense(
   state: GameState,
   placementId: string,
@@ -457,16 +458,29 @@ export function upgradeDefense(
   if (placed.level >= defense.maxLevel) {
     return { state, ok: false, reason: `${defense.name} is fully upgraded.` };
   }
+  const cost = upgradeCost(defense, placed.level);
+  if (state.budget < cost) {
+    return { state, ok: false, reason: "Not enough mission credits." };
+  }
   const nextPlaced = state.placed.map((item, itemIndex) =>
     itemIndex === index ? { ...item, level: item.level + 1 } : item,
   );
   return {
-    state: { ...state, placed: nextPlaced },
+    state: { ...state, budget: state.budget - cost, placed: nextPlaced },
     ok: true,
   };
 }
 
-/** Removes a placed defense and refunds its full cost (free experimentation). */
+/** Fraction of spend refunded when a tower is sold. */
+const PREP_REFUND_RATE = 1;
+const COMBAT_REFUND_RATE = 0.7;
+
+/**
+ * Removes a placed defense and refunds its spend using one consistent rule:
+ * 100% during preparation (before the first wave) and 70% once combat has
+ * begun. Because the combat refund is below 100%, an upgrade/sell cycle can
+ * never turn a profit in mission credits.
+ */
 export function removeDefense(
   state: GameState,
   placementId: string,
@@ -476,7 +490,10 @@ export function removeDefense(
   if (!placed) {
     return { state, ok: false, reason: "Control not found." };
   }
-  const refund = computeSpentBudget([placed], catalog);
+  const spent = computeSpentBudget([placed], catalog);
+  const refundRate =
+    state.phase === "prep" ? PREP_REFUND_RATE : COMBAT_REFUND_RATE;
+  const refund = Math.round(spent * refundRate);
   return {
     state: {
       ...state,

@@ -7,8 +7,15 @@ export type CertificationVersionDto =
 export type DomainDto = components["schemas"]["DomainDto"];
 export type TaskDto = components["schemas"]["TaskDto"];
 export type ConceptDto = components["schemas"]["ConceptDto"];
+export type PedagogyStage = components["schemas"]["PedagogyStage"];
+export type PedagogyMetadata = components["schemas"]["PedagogyMetadata"];
 export type MissionResponse = components["schemas"]["MissionResponse"];
 export type IssueMissionRequest = components["schemas"]["IssueMissionRequest"];
+export type ChallengeView = components["schemas"]["ChallengeView"];
+export type ChallengeStageView = components["schemas"]["ChallengeStageView"];
+export type ChallengeStageKind = components["schemas"]["ChallengeStageKind"];
+export type ChallengeSummaryDto = components["schemas"]["ChallengeSummaryDto"];
+export type ChallengeStartRequest = components["schemas"]["ChallengeStartRequest"];
 export type QuizMode = components["schemas"]["QuizMode"];
 export type WalletResponse = components["schemas"]["WalletResponse"];
 export type MeResponse = components["schemas"]["MeResponse"];
@@ -50,6 +57,15 @@ export type AuxiliaryEventRequest =
   components["schemas"]["AuxiliaryEventRequest"];
 export type DiscoveryResponse = components["schemas"]["DiscoveryResponse"];
 export type TrackMapResponse = components["schemas"]["TrackMapResponse"];
+export type FamilyInsightsResponse =
+  components["schemas"]["FamilyInsightsResponse"];
+export type FamilyInsightDto = components["schemas"]["FamilyInsightDto"];
+export type FamilyConfusionDto = components["schemas"]["FamilyConfusionDto"];
+export type StructureComparisonDto =
+  components["schemas"]["StructureComparisonDto"];
+export type SeenExampleDto = components["schemas"]["SeenExampleDto"];
+export type FamilyExampleContext =
+  components["schemas"]["FamilyExampleContext"];
 export type TrackProgressResponse =
   components["schemas"]["TrackProgressResponse"];
 export type DomainProgressDto = components["schemas"]["DomainProgressDto"];

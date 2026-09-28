@@ -1306,16 +1306,16 @@ Recommended structure:
 
 ```text
 content/
-  ai-or-cs/
-    dsa-interview/
+  computer-science/
+    dsa/
       v1/
         learning/
           learning-domain-1.json
           learning-domain-2.json
           ...
         questions/
-          dsa-interview-domain-1.json
-          dsa-interview-domain-2.json
+          dsa-domain-1.json
+          dsa-domain-2.json
           ...
 ```
 

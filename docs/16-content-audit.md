@@ -32,8 +32,9 @@
 - Tasks: `id`/`name` non-empty and unique; every `question_ids` entry references an authored question.
 - Questions: `id`/`prompt` non-empty and unique; `content_version` matches the bundle; `certification_version` matches the version id; `domain_id`/`task_id` resolve to a real task; `difficulty_prior` ∈ `[0, 1]`; `interaction_type` matches the `interaction` shape.
 - Question concepts: ≥1, all known, none duplicated, weights ∈ `(0, 1]` summing to `1.0`.
-- `error_codes`: non-empty and unique, each with a code and description.
+- `error_codes`: non-empty and unique, each with a code and description. Optional `remediation` (when present) must carry at least one target, with non-blank `node_id`/`preferred_family_id`, unique non-blank `concept_ids` that resolve in the bundle, and a `min_scaffold_level` within `0..=6`; a remediation `node_id` is cross-checked against the learning map for the same track/version when learning content exists.
 - `source_refs`: non-empty, each with non-empty `title` and `url`. *(Presence and shape only — accuracy is the fact-check gate.)*
+- `pedagogy` (optional): when present, `family_id`, `transfer_group_id`, `surface_context`, and `challenge_group_id` must be non-blank (trim-aware); `scaffold_level` ∈ `0..=6`; `stage` must be a known `PedagogyStage` value (parse-time). No cross-question pedagogy rule is enforced in Phase 1.
 
 **Interaction ↔ canonical answer** (both must match the interaction; the answer must cover the authored shape):
 
@@ -53,7 +54,7 @@
 | `typed_fill_blank` | ≥1 slot; unique id/label; every `{{slot_id}}` resolves to a slot and each slot is referenced exactly once; malformed/duplicate placeholders rejected; table columns/rows/cells complete | answers cover exactly the slots; `accepted_answers` non-empty and non-blank |
 | `multiple_choice` | ≥2 choices; unique ids | name one known choice |
 | `multiple_response` | ≥2 choices; unique ids; `required_selections` ≥2 and ≤ choices | known, non-duplicated choices; count == `required_selections` |
-| `python_code` | `language == "python"`; `entrypoint` (if set) a valid Python identifier; starter non-empty and ≤20,000 bytes; ≤4 packages from `{numpy, pandas, matplotlib}`; 1–50 tests; ≤16 args/test; serialized arg/expected ≤8,000 bytes; expected stdout ≤8,000 bytes; `raises` exception a valid identifier; call/raises tests need an entrypoint | tests valid (validated with the interaction) |
+| `python_code` | `language == "python"`; `entrypoint` (if set) a valid Python identifier; starter non-empty and ≤20,000 bytes; ≤4 packages from `{numpy, pandas, matplotlib}`; 1–50 tests; ≤16 args/test; serialized arg/expected ≤8,000 bytes; expected stdout ≤8,000 bytes; `raises` exception a valid identifier; call/raises tests need an entrypoint | tests valid (validated with the interaction); the built-in `airflow` study shim is imported without a `packages` entry |
 
 ## 1.2 Learning domains (`crates/content/src/learning.rs`)
 
@@ -68,7 +69,7 @@
 
 - `schema_version == "practice-test-v2"`; `id`/`title`/`exam_code`/`certification_version`/`content_version` non-empty; `time_limit_minutes > 0`.
 - ≥1 item; `question_count == items.len()`; `order` unique and contiguous `1..=N`; question ids unique; question `id`/`prompt` non-empty; interaction type matches; `assessment_mode` a valid enum (parse-time); `difficulty_prior` in range; question `certification_version`/`content_version` match the test; when `question_types` is declared, every item type appears in it.
-- Each item's `interaction` and `canonical_answer` use the same structural rules as quiz questions.
+- Each item's `interaction` and `canonical_answer` use the same structural rules as quiz questions, and `pedagogy` (when present) follows the same rules as in §1.1.
 - Items are **not** required to declare concepts, `error_codes`, or `source_refs`; the editorial fact-check gate still requires a source for any factual claim.
 
 ## 1.4 Cross-source checks (`crates/content/src/registry.rs`)
@@ -77,6 +78,7 @@
 - Every task's questions must share one `content_version` (`task_content_version_mixed`).
 - **Learning ↔ bundle:** the domain exists in the version; its weight equals the blueprint weight; every node concept id exists; every module task id exists.
 - **Practice test ↔ bundle:** `exam_code` matches the certification; every item `domain_id` exists.
+- **Challenge ↔ bundle/learning:** a challenge's `certification_id`/`certification_version` resolve to a bundle; unique challenge id per track version; every question stage resolves to a question in that version; every learning-node stage and every `prerequisite_node_id` resolves in the learning map; a declared `domain_id` exists; and when a referenced question authors `challenge_group_id`, it equals the challenge id. Challenges with fewer than two stages, duplicate stage ids, or non-contiguous stage order are rejected structurally.
 - No duplicate learning domain (cert + version + domain) or practice-test id.
 - Invalid JSON is reported per file (`invalid_json`, `invalid_learning_json`, `invalid_practice_test_json`); if no bundle parses at all, `no_content`.
 
@@ -85,6 +87,29 @@
 Part 1 is the authoritative list of what is checked automatically; everything below is a manual responsibility.
 
 Factual accuracy and currency; source quality/authority/relevance; teach-before-test; natural English, tone, ambiguity, readability; distractor plausibility; **answer predictability**; semantic duplication; interaction run length; coverage relevance beyond ids, weights, and counts. These are why Parts 2–4 exist.
+
+## 1.6 Family guides (`crates/content/src/family_guide.rs`)
+
+Family guides are optional (`family-guide-v1`). Discovery is by path:
+`**/families/**/*.json` → `FamilyGuide`. Every rule below is machine-checked;
+guide *quality* is the human audit in §4.20.
+
+- `schema_version == "family-guide-v1"`.
+- `certification_id`, `certification_version`, `family_id`, `title`, `summary` non-empty.
+- `recognition_signals` has ≥1 entry; no blank entries; no normalized duplicates
+  (case-insensitive, whitespace-collapsed).
+- `core_rules` and `structural_steps`, when present, have no blank or duplicate entries.
+- `common_confusions`, when present: non-blank `other_family_id` and `distinction`;
+  no self-confusion; no duplicate target. A target must resolve to an authored
+  guide in the **same** `(certification_id, certification_version)`.
+- `example_contexts`, when present: non-blank `context_id` and `label`; no duplicate `context_id`.
+- `source_refs`: ≥1 entry, each with non-empty title and URL.
+- Unique `family_id` per track version (`duplicate_family_guide`).
+
+Backward compatibility: a question's `family_id` does **not** have to have a
+guide; old tracks with no guides load and behave unchanged. Audit tooling
+(`ContentRegistry::families_missing_guides`) reports question families that lack
+a guide as a **warning**, never a build failure.
 
 ---
 
@@ -424,7 +449,225 @@ A question is complete only when:
 - [ ] it does not create a third identical interaction type in a row;
 - [ ] it is not semantically redundant with adjacent questions;
 - [ ] it stays within intended track scope;
-- [ ] its reading burden matches the quiz mode/difficulty.
+- [ ] its reading burden matches the quiz mode/difficulty;
+- [ ] when it is a typed-code question (`typed_fill_blank` with `code`
+      content), it satisfies every typed-code requirement in §4.22.
+
+## 4.17 Pedagogical metadata audit (only when authored)
+
+`pedagogy` is optional. These checks apply **only** to questions that use it;
+old tracks without the metadata are not required to add it.
+
+- [ ] `family_id` names a genuinely shared deeper structure — the same pattern,
+      strategy, or conceptual family would describe every member, not just this
+      question's surface wording.
+- [ ] `stage` accurately describes what the learner is actually doing
+      (`recognize` for identification, `diagnose` for fault-finding,
+      `construct` for building, `transfer` for applying the structure in a
+      substantially different context, and so on).
+- [ ] `scaffold_level` reflects the help actually embedded in the activity
+      (`0` none … `6` strongly guided), independent of `difficulty_prior`.
+- [ ] `surface_context` is not misleading: it names the domain/story the learner
+      sees, not a hidden hint at the answer.
+- [ ] every `transfer_group_id` member really exercises the same underlying
+      structure in a different surface context.
+- [ ] every `challenge_group_id` member genuinely belongs together as one
+      intended multi-stage journey.
+- [ ] pedagogy metadata is not used to reveal the intended approach before
+      scoring (it is authored and server-side only).
+
+## 4.18 Structured-error remediation audit (only when authored)
+
+`error_codes[].remediation` is optional. These checks apply **only** to error
+definitions that use it; old tracks without the metadata are not required to add
+it, and the runtime ignores an error code that has no remediation.
+
+- [ ] the error code represents a real, distinguishable mistake — the scorer can
+      actually produce it from the submitted answer, not a guess about intent;
+- [ ] the code is stable and meaningful (not a renamed human description), and
+      the description is learner-safe and useful;
+- [ ] a broad error is not split into narrower codes merely because granular
+      remediation sounds useful; if the scorer cannot reliably tell two errors
+      apart, keep the error broader;
+- [ ] `concept_ids`, when present, name the concepts that genuinely explain the
+      mistake (not just a copy of every concept on the question);
+- [ ] `node_id`, when present, actually teaches the missing idea, is
+      definition-first, and lives in the same track/version;
+- [ ] `preferred_stage` matches the needed repair (`differentiate` for a
+      confused pair, `trace` for a boundary/state bug, `diagnose` for an
+      implementation bug, `reason` for an unclear invariant, …);
+- [ ] `preferred_family_id`, when present, is pedagogically sensible as a place
+      to stay within or redirect to;
+- [ ] `min_scaffold_level`, when present, is justified by the difficulty of the
+      mistake and is not a permanent support increase;
+- [ ] the remediation still makes sense in a different surface context (it is
+      not secretly tied to one scenario);
+- [ ] learner-facing wording (the error description and the resulting
+      recommendation title) is natural and never exposes an internal code;
+- [ ] the mapping does not reveal the intended approach or answer before
+      scoring.
+
+## 4.19 Multi-stage challenge audit (only when authored)
+
+Challenges are optional and opt-in; a track without them is not deficient. These
+checks apply **only** to authored `challenge-v1` definitions.
+
+- [ ] the challenge brief (title + description) is concise and states the
+      scenario without repeating every stage prompt;
+- [ ] every stage teaches or tests something distinct — no redundant
+      near-duplicate questions or repeated activity;
+- [ ] the stage order forms a coherent learning journey (for example
+      recognize → reason → trace → diagnose → construct → transfer); recognize
+      first and transfer last are good defaults, not schema laws;
+- [ ] each stage's referenced activity actually serves that role (check its
+      pedagogy `stage`, assessment mode, and scaffold level);
+- [ ] scaffolding generally fades across stages unless a review stage
+      intentionally raises support;
+- [ ] surface contexts vary where transfer is intended, and the final transfer
+      stage does not leak the family/pattern label in its prompt;
+- [ ] interaction types are varied (no long same-type runs) and the challenge is
+      a reasonable length for one sitting;
+- [ ] every stage prompt is understandable with the challenge brief but also
+      independently answerable (review/testing must not depend on hidden
+      context);
+- [ ] factual claims across the brief and every referenced activity have
+      authoritative sources, and wrong-answer feedback remains accurate;
+- [ ] every referenced question and node exists in the same track version, and
+      any `challenge_group_id` on a referenced question matches the challenge;
+- [ ] the challenge does not copy proprietary interview-question-bank text and
+      contains no answer-revealing metadata in the learner-facing brief.
+
+## 4.20 Family guide audit (only when authored)
+
+Family guides are optional and opt-in; a track without them is not deficient.
+These checks apply **only** to authored `family-guide-v1` definitions.
+
+- [ ] the family represents a genuinely reusable structure — the same summary
+      would describe every member, not one question's surface wording;
+- [ ] the summary explains the deep structure in plain language, not just a
+      technique name ("Maintain one active range as boundaries move", not
+      "the famous sliding-window algorithm");
+- [ ] recognition signals describe meaningful structure, not shallow keywords,
+      and avoid leaking an implementation/answer name where possible;
+- [ ] core rules/invariants are correct and general enough to transfer;
+- [ ] structural steps are conceptual learning content, not executable
+      instructions, and are general across the family's contexts;
+- [ ] example contexts genuinely share the structure and are representative,
+      not a substitute for real learner history;
+- [ ] every common-confusion distinction is accurate, names a real near
+      neighbor, and explains the clue that separates the two families;
+- [ ] source references support the factual and conceptual claims, point at an
+      authoritative page/section, and are current;
+- [ ] wording is concise and natural (read-aloud test), with no undefined jargon;
+- [ ] the guide does not leak an answer into cold practice and is not shown
+      before first exposure;
+- [ ] the guide does not overclaim real-world use or vendor endorsement.
+
+## 4.21 Same-skeleton comparison audit
+
+For a structural comparison / transfer group, verify:
+
+- [ ] the compared examples differ meaningfully in surface context, not only in
+      cosmetic wording;
+- [ ] the examples genuinely share the same relevant deep structure, not merely a
+      shared topic or a matching noun;
+- [ ] the similarity points at the actual invariant/state relationship, not a
+      coincidence of story or formatting;
+- [ ] no future or unseen assessment question is used as an example;
+- [ ] an A-vs-B confusion is only shown once the learner has encountered
+      **both** families, so it cannot pre-label an unencountered neighbor;
+- [ ] a completion summary uses examples the finished work actually involved;
+- [ ] examples the learner has already encountered are used where intended, and a
+      failed attempt is not presented as understanding;
+- [ ] the comparison reveals no canonical answer or hidden solution metadata;
+- [ ] the view stays optional and non-blocking (no mandatory modal after every
+      answer) and shows no mastery percentage.
+
+## 4.22 Typed-code fill-in questions (manual requirement)
+
+Applies to every `typed_fill_blank` question whose
+`interaction.content.type` is `code` — a standalone code template, or a `code`
+cell inside a `table`. The learner types a missing expression into real
+code, so the surrounding text carries the whole teaching load. The validator
+checks only structure, placeholders, and accepted answers; **none of the
+following is machine-checked.** Every typed-code question must, at minimum,
+provide all six.
+
+1. **What the function is supposed to accomplish.** The learner must know the
+   goal of the function they are completing, not only the shape of the
+   surrounding code. State the job in one concrete sentence.
+2. **Input/output contract.** Name the function and state what it receives and
+   what it returns, including the type/shape and the edge-case return (for
+   example, "returns `None` when no pair exists").
+3. **At least one concrete example.** Show a real input and the exact expected
+   output for it, so the contract is unambiguous and testable by hand.
+4. **Every important constraint.** State the non-obvious rules the answer must
+   satisfy — for example "the two indexes must be different", "0-based",
+   "at least two items", "do not mutate the input", "handle duplicates". A
+   constraint that the accepted answer depends on must be visible before the
+   attempt.
+5. **Enough explanation to derive the expression, without revealing it.** The
+   prompt, template context, and hints must let a learner who knows the concept
+   *derive* the missing expression, but must not print the literal accepted
+   answer (or a trivially copyable fragment of it) in the prompt, template, slot
+   `label`, or slot `placeholder`. The literal answer belongs in the scored
+   `explanation`/wrong-answer feedback, which is shown only after the attempt.
+   This is the same boundary as §4.10 and §4.15 applied to code.
+6. **Real code showing a real blank — never internal labels.** The missing
+   expression is authored as a `{{slot_id}}` placeholder in the code, and the
+   rendered line must read as genuine code with a visible blank where the
+   expression goes. Do not leave an internal slot id, a human "label", a
+   placeholder name, or a description of the blank standing in for the code, and
+   do not move the blank out of its position to a separate field. The slot
+   `label` is an accessible name only; it is never the thing displayed in the
+   code.
+
+**Worked contrast**
+
+*Good* — goal, contract, example, constraint, and a derivable-but-unrevealed
+prompt, over real code with one blank:
+
+```jsonc
+{
+  "prompt": "Complete first_two_sum so it returns the indexes of the first two values that add up to target, or None if none exist. The two indexes must be different, and each value is used at most once. Example: first_two_sum([2, 7, 11, 15], 9) returns [0, 1].",
+  "content": {
+    "type": "code",
+    "language": "python",
+    "template": "def first_two_sum(nums, target):\n    seen = {}\n    for i, num in enumerate(nums):\n        need = {{missing_value}}\n        if need in seen:\n            return [seen[need], i]\n        seen[num] = i\n    return None"
+  }
+}
+```
+
+*Bad* — none of the six required cues are present; the learner is asked to
+pattern-match, and the prompt (or hint) states the answer literally:
+
+```jsonc
+{
+  "prompt": "Complete the code.",
+  "content": {
+    "type": "code",
+    "language": "python",
+    "template": "for i, num in enumerate(nums):\n    need = target - num  # replace this line"
+  },
+  "hints": ["Use target - num."]
+}
+```
+
+**Checklist (per typed-code question)**
+
+- [ ] states in one sentence what the function accomplishes;
+- [ ] states the input and output contract, including the empty/no-answer return;
+- [ ] includes at least one concrete input → output example;
+- [ ] states every constraint the accepted answer depends on (distinct indexes,
+      bounds, immutability, duplicates, ordering);
+- [ ] the prompt/template/hints let a prepared learner derive the expression;
+- [ ] neither the prompt, template, slot `label`, nor `placeholder` prints the
+      literal accepted answer or a copyable fragment of it;
+- [ ] the literal answer appears only in the post-attempt explanation/feedback;
+- [ ] the code reads as genuine code with the blank exactly where the expression
+      belongs — no internal ids, labels, or descriptions standing in for code;
+- [ ] the slot `label` and `placeholder` describe the blank for assistive
+      technology without leaking the answer (§4.15).
 
 ---
 
@@ -432,9 +675,49 @@ A question is complete only when:
 
 Every audit produces two sections: **Learning Material Audit** and **Questions Audit**. Each includes: summary; strengths; factual-accuracy findings and source-reference quality (link, currency, authority); coverage gaps; terminology/definition issues; confusing-concept comparisons; readability/ADHD issues; natural-English/wording issues; teach-before-test gaps; additions/removals/replacements; prioritized action list.
 
-Question audits also include: interaction-type distribution; same-type run violations; semantic duplication; scenario/troubleshooting coverage; feedback/hint quality; answer predictability (position census, content cues, blind-guess test).
+Question audits also include: interaction-type distribution; same-type run violations; semantic duplication; scenario/troubleshooting coverage; feedback/hint quality; answer predictability (position census, content cues, blind-guess test); and typed-code completeness — purpose, input/output contract, worked example, stated constraints, derivable-without-reveal prompt, and real blanks (§4.22).
 
 Report any automated-validation failure (`ContentError` code + source path) verbatim **before** the editorial findings, since it blocks content from loading at all.
+
+## 5.1 Family / pattern coverage report
+
+When a track authors pedagogy metadata or family guides, include a per-family
+coverage block. This is reporting, never a build gate:
+
+```text
+Family: dsa.sliding_window.variable
+
+Guide: yes
+Questions: 14
+Transfer groups: 2
+Surface contexts: 4
+
+Stages:
+recognize       3
+differentiate   2
+reason          2
+trace           2
+diagnose        1
+construct       2
+transfer        2
+
+Common confusions:
+prefix state
+two pointers
+
+Warnings:
+none
+```
+
+A missing guide is a warning, not a failure:
+
+```text
+Family guide coverage: 0%
+```
+
+Old tracks with no family guides stay warning-free and are not required to
+migrate. `ContentRegistry::families_missing_guides(certification_version)` is the
+reporting surface for question families that lack a guide.
 
 ---
 

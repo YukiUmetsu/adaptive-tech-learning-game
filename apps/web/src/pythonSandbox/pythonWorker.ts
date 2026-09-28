@@ -8,7 +8,8 @@
  * and discards the interpreter.
  *
  * `loadPackagesFromImports` and `micropip` are deliberately not exposed. Only
- * the standard library is available to initial exercises.
+ * the standard library and the built-in Airflow study shim are available to
+ * initial exercises.
  */
 import { pythonRuntimeBaseUrl } from "../pythonExecution/config";
 import { installMemoryQuota } from "../pythonExecution/memoryQuota";
@@ -19,6 +20,7 @@ import {
   type PythonExecutionResult,
   type RunnerMessage,
 } from "../pythonExecution/protocol";
+import { AIRFLOW_SHIM } from "./airflowShim";
 import { PYTHON_HARNESS } from "./harness";
 
 interface WorkerScope {
@@ -150,7 +152,7 @@ async function handleRun(
     let raw: unknown;
     try {
       raw = await runtime.runPythonAsync(
-        `${PYTHON_HARNESS}\n_run(__adaptive_learn_payload__)`,
+        `${PYTHON_HARNESS}\n${AIRFLOW_SHIM}\n_run(__adaptive_learn_payload__)`,
       );
     } finally {
       try {

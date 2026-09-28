@@ -9,11 +9,11 @@
 use std::collections::BTreeMap;
 
 use adaptive_learn_content::{
-    CanonicalAnswer, ErrorCodeDef, GlossaryTerm, Interaction, LearningDesign, LearningDomainMeta,
-    LearningModule, PlacementPoint, SourceRef,
+    CanonicalAnswer, GlossaryTerm, Interaction, LearningDesign, LearningDomainMeta, LearningModule,
+    PlacementPoint, SourceRef,
 };
 use adaptive_learn_domain::{
-    AssessmentMode, ConceptWeight, InteractionType, MissionStatus, QuizMode,
+    AssessmentMode, ConceptWeight, GeneratedOperation, InteractionType, MissionStatus, QuizMode,
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -129,6 +129,83 @@ pub struct IssueMissionRequest {
     pub recommendation_id: Option<Uuid>,
 }
 
+/// Request to start an authored multi-stage challenge.
+#[derive(Debug, Default, Deserialize, ToSchema)]
+pub struct ChallengeStartRequest {
+    /// Device/install context. Ownership always comes from the authenticated
+    /// user; this value is never used as an authorization proof.
+    #[serde(default)]
+    pub device_id: Option<Uuid>,
+    /// Raw Knowledge Map discovery progress for the track, if available.
+    ///
+    /// Used only to check authored challenge prerequisites; it is never learning
+    /// evidence.
+    #[serde(default)]
+    pub discovery: Vec<adaptive_learn_content::DomainDiscoveryInput>,
+}
+
+/// The kind of activity an authored challenge stage runs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ChallengeStageKind {
+    /// An existing quiz question.
+    Question,
+    /// An existing knowledge node (learn/review).
+    LearningNode,
+}
+
+/// One learner-facing challenge stage.
+///
+/// References existing content by stable id. It never carries a canonical
+/// answer; question content ships through the mission's own question payloads.
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct ChallengeStageView {
+    /// Stable stage identifier.
+    pub id: String,
+    /// 1-based presentation order.
+    pub order: u32,
+    /// Activity kind.
+    pub kind: ChallengeStageKind,
+    /// Referenced question id, for question stages.
+    pub question_id: Option<String>,
+    /// Referenced knowledge node id, for learning-node stages.
+    pub node_id: Option<String>,
+    /// Domain that owns the referenced activity, when known.
+    pub domain_id: Option<String>,
+}
+
+/// A learner-facing authored challenge.
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct ChallengeView {
+    /// Stable challenge identifier.
+    pub id: String,
+    /// Learner-facing title.
+    pub title: String,
+    /// Optional concise scenario/brief shown above every stage.
+    pub description: Option<String>,
+    /// Rough duration estimate in minutes.
+    pub estimated_minutes: u32,
+    /// Ordered stages.
+    pub stages: Vec<ChallengeStageView>,
+}
+
+/// Compact challenge summary for the aggregate track map.
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct ChallengeSummaryDto {
+    /// Stable challenge identifier.
+    pub id: String,
+    /// Learner-facing title.
+    pub title: String,
+    /// Optional concise scenario/brief.
+    pub description: Option<String>,
+    /// Rough duration estimate in minutes.
+    pub estimated_minutes: u32,
+    /// Number of authored stages.
+    pub stage_count: usize,
+    /// Nodes that must be unlocked before the challenge is available.
+    pub prerequisite_node_ids: Vec<String>,
+}
+
 /// A server-issued mission with its questions.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct MissionResponse {
@@ -162,6 +239,11 @@ pub struct MissionResponse {
     /// never authoritative. Practice tests keep the answer-key-free
     /// [`QuestionView`].
     pub questions: Vec<StudyQuestionView>,
+    /// Authored challenge orchestration for a challenge mission.
+    ///
+    /// `null` for every ordinary quiz mode. The stage list is server-resolved at
+    /// issuance and drives local, resumable execution.
+    pub challenge: Option<ChallengeView>,
 }
 
 /// A learner's settled Bits balance.
@@ -234,6 +316,21 @@ pub struct QuestionView {
     pub interaction: Interaction,
 }
 
+/// Learner-safe structured error-code definition.
+///
+/// Deliberately excludes the optional Phase 3 remediation metadata: authored
+/// target concepts, nodes, stages, families, and scaffold floors could reveal
+/// the intended repair (and thus the answer) before scoring. The canonical
+/// definition stays server-side; only the code and its learner-safe description
+/// travel to the client.
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct QuestionErrorCode {
+    /// Stable code, for example `classification_misplaced`.
+    pub code: String,
+    /// Learner-safe description.
+    pub description: String,
+}
+
 /// A question for an ordinary study mission that supports local scoring.
 ///
 /// This is the only mission-facing DTO that carries canonical answers. It keeps
@@ -276,8 +373,10 @@ pub struct StudyQuestionView {
     pub explanation: String,
     /// Per-choice feedback keyed by choice id.
     pub choice_feedback: BTreeMap<String, String>,
-    /// Authored structured error-code definitions for this question.
-    pub error_codes: Vec<ErrorCodeDef>,
+    /// Learner-safe structured error-code definitions for this question.
+    ///
+    /// Never includes remediation metadata; see [`QuestionErrorCode`].
+    pub error_codes: Vec<QuestionErrorCode>,
 }
 
 /// Answer primitives for one attempt. Exactly one field is set.
@@ -776,6 +875,106 @@ pub struct TrackMapResponse {
     pub content_version: String,
     /// Learning domains with modules, nodes, and reveals.
     pub domains: Vec<LearningDomainResponse>,
+    /// Authored challenges for this track, in embedded order.
+    ///
+    /// Compact summaries so the hub can list them without a request per
+    /// challenge; the full stage list arrives with the issued mission.
+    pub challenges: Vec<ChallengeSummaryDto>,
+}
+
+/// Learner-facing family insights for one learning track (Phase 5).
+///
+/// One aggregate request returns every family the learner has already
+/// encountered, so the Track Hub never fetches per-family or per-example state.
+/// It is post-exposure teaching content only: never a mastery claim, a score, or
+/// an answer key, and families with no exposure are omitted entirely.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct FamilyInsightsResponse {
+    /// Learning track identifier.
+    pub track_id: String,
+    /// Learning track version identifier.
+    pub track_version: String,
+    /// Whether this track version authors any family guides at all.
+    ///
+    /// The client uses this to hide the patterns surface entirely when a track
+    /// has no guides. An empty `insights` list with `has_guides: true` only means
+    /// the learner has not met a family yet.
+    pub has_guides: bool,
+    /// Insights for families the learner has already seen, in family-id order.
+    pub insights: Vec<FamilyInsightDto>,
+}
+
+/// One authored family guide plus what the learner has seen of it.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct FamilyInsightDto {
+    /// Stable authored family identifier. Opaque.
+    pub family_id: String,
+    /// Learner-facing family name.
+    pub title: String,
+    /// Short plain-language deep-structure definition.
+    pub summary: String,
+    /// Structural clues that should trigger the same reasoning next time.
+    pub recognition_signals: Vec<String>,
+    /// Key rule(s) that make the family work.
+    pub core_rules: Vec<String>,
+    /// Optional reusable conceptual skeleton.
+    pub structural_steps: Vec<String>,
+    /// Representative authored contexts (explanatory, not learner history).
+    pub example_contexts: Vec<adaptive_learn_content::FamilyExampleContext>,
+    /// Authored near-neighbor distinctions, with resolved learner-facing titles.
+    pub common_confusions: Vec<FamilyConfusionDto>,
+    /// Source references supporting the guide.
+    pub source_refs: Vec<SourceRef>,
+    /// Distinct surface contexts the learner has actually seen.
+    pub seen_context_count: usize,
+    /// Distinct examples the learner has actually seen.
+    pub seen_example_count: usize,
+    /// Same-skeleton comparison, present only once context variety exists.
+    pub comparison: Option<StructureComparisonDto>,
+}
+
+/// A resolved Family A vs Family B distinction.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct FamilyConfusionDto {
+    /// Authored id of the neighboring family. Opaque.
+    pub other_family_id: String,
+    /// Learner-facing title of the neighboring family.
+    pub other_family_title: String,
+    /// The authored distinction between the two families.
+    pub distinction: String,
+}
+
+/// A post-exposure comparison of two or more seen examples.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct StructureComparisonDto {
+    /// Stable authored family identifier. Opaque.
+    pub family_id: String,
+    /// Learner-facing family title.
+    pub title: String,
+    /// Plain-language deep-structure summary.
+    pub summary: String,
+    /// Structural clues shared by the examples.
+    pub recognition_signals: Vec<String>,
+    /// The rule(s) that make the family work.
+    pub core_rules: Vec<String>,
+    /// Optional reusable skeleton (not executable instructions).
+    pub structural_steps: Vec<String>,
+    /// The already-seen examples, newest first.
+    pub examples: Vec<SeenExampleDto>,
+}
+
+/// One already-seen example in a same-skeleton comparison.
+///
+/// Learner-safe: a problem title, a learner-facing context label, and when the
+/// learner saw it. It never carries a canonical answer or hidden metadata.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct SeenExampleDto {
+    /// Learner-facing problem title.
+    pub title: String,
+    /// Learner-facing surface-context label.
+    pub context_label: String,
+    /// When the learner encountered the example.
+    pub seen_at: DateTime<Utc>,
 }
 
 /// Account-wide daily study streak.
@@ -1313,4 +1512,399 @@ pub struct PracticeTestResultResponse {
     pub questions: Vec<PracticeTestItemResult>,
     /// Explicit note that this raw score is not an official scaled score.
     pub score_note: String,
+}
+
+/// Career progress derived from career XP.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberCareerDto {
+    /// Total career XP.
+    pub xp: i64,
+    /// Career level derived from XP.
+    pub level: i32,
+    /// Rank label for the level.
+    pub rank: String,
+    /// Absolute XP threshold for the next level, or `null` at the cap.
+    pub next_level_xp: Option<i64>,
+    /// XP accumulated within the current level.
+    pub xp_into_level: i64,
+    /// XP span of the current level, or `null` at the cap.
+    pub xp_for_next_level: Option<i64>,
+}
+
+/// Persistent hero progress for one hero.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberHeroProgressDto {
+    /// Hero identifier.
+    pub hero_id: String,
+    /// Total hero XP.
+    pub xp: i64,
+    /// Hero level derived from XP.
+    pub level: i32,
+    /// Maximum hero level.
+    pub max_level: i32,
+    /// Absolute XP threshold for the next level, or `null` at the cap.
+    pub next_level_xp: Option<i64>,
+    /// XP accumulated within the current level.
+    pub xp_into_level: i64,
+    /// XP span of the current level, or `null` at the cap.
+    pub xp_for_next_level: Option<i64>,
+    /// Selected talent choices, keyed by milestone.
+    pub selected_talents: serde_json::Value,
+}
+
+/// One Tower/HQ room upgrade level.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberTowerUpgradeDto {
+    /// Upgrade (room) identifier.
+    pub upgrade_id: String,
+    /// Current level.
+    pub level: i32,
+    /// Maximum level.
+    pub max_level: i32,
+    /// Bits cost to reach the next level, or `null` at the cap.
+    pub next_cost: Option<i64>,
+}
+
+/// Progress against one recurring adversary.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberAdversaryProgressDto {
+    /// Adversary identifier.
+    pub adversary_id: String,
+    /// Accumulated progress.
+    pub progress: i64,
+    /// Derived rank.
+    pub rank: i32,
+    /// Total encounters.
+    pub encounters: i32,
+    /// Total victories.
+    pub victories: i32,
+    /// Highest Threat Level cleared against this adversary.
+    pub highest_threat_level_cleared: i32,
+    /// Unlocked dossier flags.
+    pub dossier_flags: Vec<String>,
+}
+
+/// Story progression summary.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberStoryProgressDto {
+    /// Active chapter identifier.
+    pub active_chapter: String,
+    /// Acknowledged story node identifiers.
+    pub completed_nodes: Vec<String>,
+}
+
+/// Authoritative result for one Stage 1 campaign mission.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberCampaignResultDto {
+    /// Campaign mission identifier.
+    pub mission_id: String,
+    /// Whether the mission was ever completed.
+    pub completed: bool,
+    /// Best stars earned.
+    pub best_stars: i32,
+    /// Best remaining health.
+    pub best_health: i32,
+    /// Total recorded attempts.
+    pub attempts: i32,
+    /// Whether the one-time first-clear reward was settled.
+    pub first_clear_reward_settled: bool,
+}
+
+/// One complete, server-authoritative Cyber Defense profile snapshot.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberDefenseProfileResponse {
+    /// Career XP, level, and rank.
+    pub career: CyberCareerDto,
+    /// Settled Bits balance.
+    pub bits_balance: i64,
+    /// Aggregate Tower level.
+    pub tower_level: i32,
+    /// Tower/HQ room upgrade levels.
+    pub tower_upgrades: Vec<CyberTowerUpgradeDto>,
+    /// Persistent hero progression.
+    pub heroes: Vec<CyberHeroProgressDto>,
+    /// Adversary progress and ranks.
+    pub adversaries: Vec<CyberAdversaryProgressDto>,
+    /// Story progress.
+    pub story: CyberStoryProgressDto,
+    /// Campaign mission results.
+    pub campaign: Vec<CyberCampaignResultDto>,
+    /// Highest Threat Level ever cleared.
+    pub highest_threat_level_cleared: i32,
+    /// Server-recommended Threat Level.
+    pub recommended_threat_level: i32,
+    /// Highest Threat Level the player may currently start.
+    pub unlocked_threat_level: i32,
+    /// Total completed repeatable Operations.
+    pub total_operations_completed: i32,
+    /// Active Operation run identifier, if one exists.
+    pub active_operation_run_id: Option<Uuid>,
+    /// Whether legacy local progress was imported once.
+    pub legacy_progress_imported: bool,
+}
+
+/// Client result evidence for a Stage 1 campaign mission.
+///
+/// Rewards are never accepted from the client; only the raw result is.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberCampaignCompleteRequest {
+    /// Client-generated idempotency key for this result.
+    pub result_id: Uuid,
+    /// Stars earned, `0..=3`. `0` means the attempt failed.
+    pub stars: i32,
+    /// Remaining system health.
+    pub health: i32,
+    /// Attempt duration in milliseconds.
+    pub duration_ms: i64,
+    /// Hero selected for the run, when any. Receives hero XP.
+    pub hero_id: Option<String>,
+}
+
+/// A settled Cyber Defense reward.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberRewardDto {
+    /// Bits awarded.
+    pub bits: i64,
+    /// Career XP awarded.
+    pub career_xp: i64,
+    /// Hero XP awarded.
+    pub hero_xp: i64,
+}
+
+/// Compact career summary returned after a reward settles.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberCareerSummaryDto {
+    /// Total career XP after settlement.
+    pub xp: i64,
+    /// Career level after settlement.
+    pub level: i32,
+    /// Rank label for the level.
+    pub rank: String,
+    /// Whether this settlement raised the career level.
+    pub level_up: bool,
+}
+
+/// Response after settling a Stage 1 campaign mission.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberCampaignCompleteResponse {
+    /// Updated campaign result.
+    pub campaign: CyberCampaignResultDto,
+    /// Reward actually settled by this request (zero on a duplicate).
+    pub reward: CyberRewardDto,
+    /// Settled Bits balance after the reward.
+    pub bits_balance: i64,
+    /// Career summary after the reward.
+    pub career: CyberCareerSummaryDto,
+    /// `false` when this result was already recorded and no new reward settled.
+    pub newly_settled: bool,
+    /// Story nodes triggered by this result.
+    pub story_nodes_completed: Vec<String>,
+}
+
+/// Request to purchase the next level of one Tower/HQ room.
+///
+/// The cost is never sent: the server derives it from canonical policy.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberTowerUpgradePurchaseRequest {
+    /// Client-generated idempotency key for this purchase.
+    pub event_id: Uuid,
+}
+
+/// Result of a Tower/HQ room purchase.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberTowerUpgradePurchaseResponse {
+    /// Room that was upgraded.
+    pub upgrade_id: String,
+    /// Room level after the purchase.
+    pub level: i32,
+    /// Aggregate Tower level after the purchase.
+    pub tower_level: i32,
+    /// Settled Bits balance after the purchase.
+    pub bits_balance: i64,
+    /// Bits charged for this purchase.
+    pub spent: i64,
+    /// `false` when this `event_id` was already settled (a safe retry).
+    pub newly_settled: bool,
+}
+
+/// Request to replace a hero's selected talents.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberHeroTalentRequest {
+    /// Selected choice id keyed by milestone level, for example `{"5": "rapid_response"}`.
+    pub talents: BTreeMap<String, String>,
+}
+
+/// Request to start a repeatable Operation.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberOperationStartRequest {
+    /// Requested Threat Level. Must be unlocked for this learner.
+    pub requested_threat_level: i32,
+    /// Selected hero, when any. Defaults to the Security Engineer.
+    pub hero_id: Option<String>,
+    /// Explicit template choice, when browsing Operations directly.
+    pub template_id: Option<String>,
+}
+
+/// One recorded Operation result.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberOperationResultDto {
+    /// Whether the Operation was completed.
+    pub completed: bool,
+    /// Stars earned.
+    pub stars: i32,
+    /// Remaining system health.
+    pub health: i32,
+    /// Duration in milliseconds.
+    pub duration_ms: i64,
+}
+
+/// A server-issued Operation run and its persisted snapshot.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberOperationRunDto {
+    /// Run identifier.
+    pub run_id: Uuid,
+    /// `active`, `completed`, `failed`, or `abandoned`.
+    pub status: String,
+    /// Deterministic generation seed.
+    pub seed: i64,
+    /// Template identifier.
+    pub template_id: String,
+    /// Adversary identifier.
+    pub adversary_id: String,
+    /// Adversary display name.
+    pub adversary_name: String,
+    /// Selected hero.
+    pub hero_id: Option<String>,
+    /// Threat Level.
+    pub threat_level: i32,
+    /// Full generated Operation snapshot.
+    pub operation: GeneratedOperation,
+    /// Start time.
+    pub started_at: DateTime<Utc>,
+    /// Recorded result, once settled.
+    pub result: Option<CyberOperationResultDto>,
+    /// Bits awarded on settlement.
+    pub bits_awarded: i64,
+    /// Career XP awarded on settlement.
+    pub career_xp_awarded: i64,
+    /// Hero XP awarded on settlement.
+    pub hero_xp_awarded: i64,
+}
+
+/// Client result evidence for one Operation run.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberOperationCompleteRequest {
+    /// Whether the Operation was completed.
+    pub completed: bool,
+    /// Stars earned, `0..=3`.
+    pub stars: i32,
+    /// Remaining system health.
+    pub health: i32,
+    /// Attempt duration in milliseconds.
+    pub duration_ms: i64,
+}
+
+/// Result of settling one Operation run.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberOperationCompleteResponse {
+    /// Updated run.
+    pub run: CyberOperationRunDto,
+    /// Reward settled by this request (zero on a duplicate).
+    pub reward: CyberRewardDto,
+    /// Settled Bits balance.
+    pub bits_balance: i64,
+    /// Career summary after the reward.
+    pub career: CyberCareerSummaryDto,
+    /// Updated hero progress, when the run had a hero.
+    pub hero: Option<CyberHeroProgressDto>,
+    /// Updated adversary progress.
+    pub adversary: CyberAdversaryProgressDto,
+    /// `false` when this run was already settled.
+    pub newly_settled: bool,
+    /// Recommended Threat Level after this result.
+    pub recommended_threat_level: i32,
+    /// Highest Threat Level currently unlocked.
+    pub unlocked_threat_level: i32,
+    /// Dossier flags unlocked by this result.
+    pub dossier_unlocks: Vec<String>,
+    /// Story nodes triggered by this result.
+    pub story_nodes_completed: Vec<String>,
+}
+
+/// One imported legacy campaign mission result.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberLegacyMissionDto {
+    /// Whether the mission was completed locally.
+    pub completed: bool,
+    /// Best stars earned locally.
+    pub stars: i32,
+    /// Best remaining health recorded locally.
+    pub best_health: i32,
+    /// Attempts recorded locally.
+    pub attempts: i32,
+}
+
+/// Request to import legacy Stage 1 local progress once.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberLegacyImportRequest {
+    /// Known campaign mission results keyed by mission id.
+    pub missions: BTreeMap<String, CyberLegacyMissionDto>,
+}
+
+/// Result of a legacy progress import.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberLegacyImportResponse {
+    /// `false` when progress was already imported (or the import was a no-op).
+    pub imported: bool,
+    /// Number of known missions imported.
+    pub missions_imported: i32,
+    /// One-time returning-defender career XP granted by the server.
+    pub career_xp_granted: i64,
+    /// Settled Bits balance (never increased by an import).
+    pub bits_balance: i64,
+    /// Career summary after the import.
+    pub career: CyberCareerSummaryDto,
+}
+
+/// One balance-telemetry event from the client.
+///
+/// Only game identifiers and results; no raw personal data.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberTelemetryEventDto {
+    /// Event name, from the known allowlist.
+    pub name: String,
+    /// Operation run id, when relevant.
+    pub run_id: Option<Uuid>,
+    /// Operation template id, when relevant.
+    pub template_id: Option<String>,
+    /// Adversary id, when relevant.
+    pub adversary_id: Option<String>,
+    /// Threat Level, when relevant.
+    pub threat_level: Option<i32>,
+    /// Hero id, when relevant.
+    pub hero_id: Option<String>,
+    /// Defense id, when relevant.
+    pub defense_id: Option<String>,
+    /// Wave index, when relevant.
+    pub wave: Option<i32>,
+    /// Result label, when relevant.
+    pub result: Option<String>,
+    /// Stars, when relevant.
+    pub stars: Option<i32>,
+    /// Duration bucket label, when relevant.
+    pub duration_bucket: Option<String>,
+}
+
+/// A batch of telemetry events.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CyberTelemetryRequest {
+    /// Events to append. Bounded to a small batch.
+    pub events: Vec<CyberTelemetryEventDto>,
+}
+
+/// Acknowledgement of a telemetry batch.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CyberTelemetryResponse {
+    /// Number of events accepted.
+    pub accepted: i32,
 }

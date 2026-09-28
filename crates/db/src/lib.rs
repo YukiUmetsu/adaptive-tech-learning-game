@@ -5,6 +5,7 @@
 //! `users` and `sync_batches` tables.
 
 pub mod concept_state;
+pub mod cyber_defense;
 pub mod daily_missions;
 pub mod devices;
 pub mod discovery;
@@ -23,6 +24,7 @@ pub mod wallets;
 use std::time::Duration;
 
 pub use error::DbError;
+pub use sqlx::PgConnection;
 pub use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 

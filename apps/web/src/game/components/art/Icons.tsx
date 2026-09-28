@@ -132,3 +132,29 @@ export function BackupIcon({ size = 18, className }: IconProps) {
     </svg>
   );
 }
+
+export function StarIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size, className)} fill="currentColor" stroke="none">
+      <path d="M12 2 L15 9 L22 9.5 L16.5 14 L18.5 21 L12 17 L5.5 21 L7.5 14 L2 9.5 L9 9 Z" />
+    </svg>
+  );
+}
+
+export function EyeIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size, className)} fill="none" stroke="currentColor" strokeWidth={2}>
+      <path d="M2 12 Q12 4 22 12 Q12 20 2 12 Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+export function BookIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size, className)} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 5 a2 2 0 0 1 2-2 h12 v18 H6 a2 2 0 0 1-2-2 Z" />
+      <path d="M8 3 v18" />
+    </svg>
+  );
+}

@@ -1,6 +1,7 @@
 import type { MissionDefinition } from "../models/mission";
 import type { PostmortemReport } from "../engine/postmortem";
 import MissionCelebration from "./MissionCelebration";
+import MissionRewards from "./MissionRewards";
 
 /**
  * Mission result and postmortem (spec sections 24, 25, and 38.5).
@@ -16,6 +17,18 @@ export interface MissionResultProps {
   onRetry: () => void;
   onContinue: () => void;
   onNext: () => void;
+  /** Server settlement state, when the result is being settled or is settled. */
+  settlement?: MissionSettlement | null;
+}
+
+/** One consolidated, server-settled reward summary. */
+export interface MissionSettlement {
+  status: "saving" | "settled" | "pending" | "error";
+  reward?: { bits: number; careerXp: number; heroXp: number };
+  career?: { level: number; rank: string; levelUp: boolean } | null;
+  dossierUnlocks?: string[];
+  storyNodes?: string[];
+  message?: string;
 }
 
 function stars(stars: number): string {
@@ -29,6 +42,7 @@ export default function MissionResult({
   onRetry,
   onContinue,
   onNext,
+  settlement,
 }: MissionResultProps) {
   const boss = mission.waves.some((wave) => wave.boss === true);
   return (
@@ -117,12 +131,16 @@ export default function MissionResult({
         <p>{report.message}</p>
       </div>
 
-      <p className="cyber-result-bits">
-        Bits preview: <strong>+{report.bitsPreview}</strong>{" "}
-        <span className="muted">
-          (credited by the platform after it verifies the run)
-        </span>
-      </p>
+      {settlement ? (
+        <MissionRewards settlement={settlement} />
+      ) : (
+        <p className="cyber-result-bits">
+          Bits preview: <strong>+{report.bitsPreview}</strong>{" "}
+          <span className="muted">
+            (credited by the platform after it verifies the run)
+          </span>
+        </p>
+      )}
 
       <div className="cyber-result-actions">
         {hasNext && report.completed ? (

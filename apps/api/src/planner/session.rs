@@ -18,6 +18,7 @@ use super::{
     ConceptSummary, LITTLE_EVIDENCE_MASS, Model, PlannerInput, PlannerQuestion,
     STALE_RETRIEVABILITY, UNSEEN_BONUS, WEAK_ESTIMATE, WEIGHT_DIFFICULTY_FIT, WEIGHT_DOMAIN,
 };
+use crate::remediation;
 use crate::selection::{self, Candidate, HistoryEntry};
 
 /// Estimated minutes for one knowledge-node activity.
@@ -329,6 +330,13 @@ fn node_activities(model: &Model<'_>) -> Vec<NodeActivity> {
         } else {
             0.0
         };
+        // A recent structured error's authored node (or a node teaching one of
+        // its target concepts) is preferred as one repair activity, bounded and
+        // never a bypass of accessibility.
+        let remediation_bonus = model.input.remediation.as_ref().map_or(0.0, |target| {
+            remediation::WEIGHT_REMEDIATION
+                * remediation::node_fit(target, &node.id, &node.concept_ids)
+        });
         let retrieval = summaries
             .iter()
             .map(|summary| summary.retrieval(model.input.now))
@@ -340,7 +348,8 @@ fn node_activities(model: &Model<'_>) -> Vec<NodeActivity> {
                 node_index,
                 score: (1.0 - retrieval)
                     + model.domain_weight(&node.domain_id) * WEIGHT_DOMAIN
-                    + prereq_bonus,
+                    + prereq_bonus
+                    + remediation_bonus,
             });
         } else if model.node_has_weak(node) && !model.node_explored(node) {
             let little_evidence = model
@@ -354,7 +363,8 @@ fn node_activities(model: &Model<'_>) -> Vec<NodeActivity> {
                     score: model.node_avg_weakness(node)
                         + model.domain_weight(&node.domain_id) * WEIGHT_DOMAIN
                         + UNSEEN_BONUS
-                        + prereq_bonus,
+                        + prereq_bonus
+                        + remediation_bonus,
                 });
             }
         }
@@ -378,20 +388,21 @@ fn practice_activities(model: &Model<'_>, history: &[HistoryEntry]) -> Vec<Pract
 
     let mut anchors: Vec<(f64, usize)> = Vec::new();
     for (index, question) in model.input.questions.iter().enumerate() {
-        let (weakness, min_estimate, any_explored) = model.question_signal(question);
-        if !any_explored || min_estimate >= WEAK_ESTIMATE {
+        let signal = model.question_signal(question);
+        if !signal.any_explored || signal.min_estimate >= WEAK_ESTIMATE {
             continue;
         }
-        let estimate = 1.0 - weakness;
-        let fit = 1.0 - (question.difficulty_prior.clamp(0.0, 1.0) - estimate).abs();
+        let fit = 1.0 - (question.difficulty_prior.clamp(0.0, 1.0) - signal.estimate).abs();
         let repeat = if model.input.recent_question_ids.contains(&question.id) {
             super::REPEAT_PENALTY
         } else {
             0.0
         };
-        let score = weakness
+        let pedagogy = model.question_policy_score(question, &signal);
+        let score = signal.weakness
             + fit * WEIGHT_DIFFICULTY_FIT
             + model.domain_weight(&question.domain_id) * WEIGHT_DOMAIN
+            + pedagogy
             - repeat;
         anchors.push((score, index));
     }
@@ -538,13 +549,16 @@ fn to_candidate(question: &PlannerQuestion) -> Candidate {
         assessment_mode: question.assessment_mode,
         difficulty_prior: question.difficulty_prior,
         concepts: question.concepts.clone(),
+        pedagogy: question.pedagogy.clone(),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use adaptive_learn_domain::{AssessmentMode, ConceptWeight, InteractionType};
+    use adaptive_learn_domain::{
+        AssessmentMode, ConceptWeight, InteractionType, PedagogyMetadata, PedagogyStage,
+    };
     use chrono::{DateTime, TimeZone, Utc};
 
     fn now() -> DateTime<Utc> {
@@ -592,6 +606,7 @@ mod tests {
             assessment_mode: AssessmentMode::Application,
             difficulty_prior: 0.5,
             concepts: concepts.iter().map(|c| concept(c)).collect(),
+            pedagogy: None,
         }
     }
 
@@ -630,6 +645,8 @@ mod tests {
                 unlocked_node_ids: HashSet::new(),
                 completed_module_ids: HashSet::new(),
                 recent_question_ids: HashSet::new(),
+                recent_pedagogy: crate::pedagogy::RecentPedagogy::default(),
+                remediation: None,
             },
             available_minutes: 20,
             preference: SessionPreference::Balanced,
@@ -921,6 +938,51 @@ mod tests {
     }
 
     #[test]
+    fn session_practice_uses_the_shared_scaffold_policy() {
+        // The low-scaffold id sorts first, so only the policy can anchor on the
+        // supported question.
+        let mut high = question("q-z-high", "d1", &["c1"]);
+        high.pedagogy = Some(PedagogyMetadata {
+            family_id: Some("generic.family".to_owned()),
+            stage: None,
+            scaffold_level: Some(5),
+            transfer_group_id: None,
+            surface_context: None,
+            challenge_group_id: None,
+        });
+        let mut low = question("q-a-low", "d1", &["c1"]);
+        low.pedagogy = Some(PedagogyMetadata {
+            family_id: Some("generic.family".to_owned()),
+            stage: None,
+            scaffold_level: Some(1),
+            transfer_group_id: None,
+            surface_context: None,
+            challenge_group_id: None,
+        });
+
+        // A weak concept makes both questions eligible practice anchors.
+        let input = session_input(
+            vec![domain("d1", 1.0)],
+            Vec::new(),
+            vec![low, high],
+            vec![state("c1", 0.15, 4.0, now())],
+        );
+
+        let session = plan_session(&input).expect("session");
+        let practice = session
+            .activities
+            .iter()
+            .find(|a| a.kind == SessionActivityKind::Practice)
+            .expect("practice activity");
+        assert_eq!(
+            practice.question_ids.first().map(String::as_str),
+            Some("q-z-high"),
+            "a weak learner's session practice should start with support: {:?}",
+            practice.question_ids
+        );
+    }
+
+    #[test]
     fn empty_track_has_no_session() {
         let input = session_input(Vec::new(), Vec::new(), Vec::new(), Vec::new());
         assert!(plan_session(&input).is_none());
@@ -939,5 +1001,24 @@ mod tests {
         let session = plan_session(&input).expect("session");
         assert_eq!(session.track_id, "ai-python-fluency");
         assert!(!session.activities.is_empty());
+    }
+
+    #[test]
+    fn planner_candidate_carries_pedagogy_metadata() {
+        // Phase 1 plumbing only: the metadata must survive the
+        // `PlannerQuestion -> Candidate` projection so future selector code can
+        // read it. No ranking behavior is asserted or changed here.
+        let mut planner_question = question("q1", "d1", &["c1"]);
+        planner_question.pedagogy = Some(PedagogyMetadata {
+            family_id: Some("python.async.task_lifecycle".to_owned()),
+            stage: Some(PedagogyStage::Trace),
+            scaffold_level: Some(1),
+            transfer_group_id: Some("async_cancellation".to_owned()),
+            surface_context: Some("background_worker".to_owned()),
+            challenge_group_id: None,
+        });
+
+        let candidate = to_candidate(&planner_question);
+        assert_eq!(candidate.pedagogy, planner_question.pedagogy);
     }
 }

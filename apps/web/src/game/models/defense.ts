@@ -147,7 +147,12 @@ export function placeCost(defense: DefenseDefinition): number {
   return defense.cost;
 }
 
-/** Cost to upgrade from `level` to `level + 1`. */
+/**
+ * Cost in mission credits to upgrade from `level` to `level + 1`.
+ *
+ * In-run upgrades are temporary and mission-scoped, so they are paid for with
+ * the mission budget, never with persistent Bits.
+ */
 export function upgradeCost(defense: DefenseDefinition, level: number): number {
   if (level >= defense.maxLevel) {
     return 0;
@@ -156,9 +161,25 @@ export function upgradeCost(defense: DefenseDefinition, level: number): number {
   return defense.upgradeCost ?? Math.round(defense.cost * 0.6 * scale);
 }
 
-/** Small persistent-Bits cost to upgrade a deployed control, in-mission only. */
-export function upgradeBitsCost(_defense: DefenseDefinition, level: number): number {
-  return level <= 1 ? 15 : 25;
+/**
+ * Total mission credits spent on upgrades to reach `level`.
+ *
+ * Cumulative upgrade spend is derived from the current level and the canonical
+ * `upgradeCost` sequence rather than stored on `PlacedDefense`. A pure helper
+ * keeps a placement self-describing: it cannot drift out of sync with its
+ * level, and `computeSpentBudget` (and therefore sell refunds and star scoring)
+ * is deterministic from placement + level alone.
+ */
+export function upgradeSpendToLevel(
+  defense: DefenseDefinition,
+  level: number,
+): number {
+  const capped = Math.min(Math.max(1, level), defense.maxLevel);
+  let total = 0;
+  for (let current = 1; current < capped; current += 1) {
+    total += upgradeCost(defense, current);
+  }
+  return total;
 }
 
 /** Effectiveness of a defense against one attack type (0 when unlisted). */

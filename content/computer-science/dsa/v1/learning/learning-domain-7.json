@@ -1,0 +1,1385 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "dsa-learning-2026-09-26-v13",
+  "certification_id": "cs-dsa",
+  "certification_version": "dsa-v1",
+  "exam_guide_revision": "Editorial and factual review 2026-09-26 using docs/16-content-audit.md. Every node starts with visible, self-contained context; definitions precede use; worked examples teach concepts tested by the current question bank.",
+  "domain": {
+    "id": "domain-7",
+    "name": "Graphs, Connectivity & Shortest Paths",
+    "weight": 0.13
+  },
+  "learning_design": {
+    "progress_label": "Pattern Vision",
+    "unlock_rule": "Problem context and example data stay visible. Progressive reveal is used only for answers or learner decisions. Each node defines a new term before relying on it.",
+    "mastery_note": "Recognize the structure, explain why the method fits, and distinguish it from similar methods."
+  },
+  "source_refs": [
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture notes index (BFS, DFS, shortest paths, DP)",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+    },
+    {
+      "title": "Princeton Algorithms — 4.1 Undirected Graphs",
+      "url": "https://algs4.cs.princeton.edu/40graphs/"
+    },
+    {
+      "title": "Princeton Algorithms — 4.2 Directed Graphs",
+      "url": "https://algs4.cs.princeton.edu/42digraph/"
+    },
+    {
+      "title": "Princeton Algorithms — 4.4 Shortest Paths",
+      "url": "https://algs4.cs.princeton.edu/44sp/"
+    },
+    {
+      "title": "Princeton Algorithms — 1.5 Union-Find",
+      "url": "https://algs4.cs.princeton.edu/15uf/"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "frontier",
+      "definition": "Discovered graph vertices waiting to be processed."
+    },
+    {
+      "term": "component",
+      "definition": "A group of vertices connected under the graph's connectivity rule."
+    },
+    {
+      "term": "topological order",
+      "definition": "An order where every prerequisite appears before each dependent vertex."
+    },
+    {
+      "term": "relaxation",
+      "definition": "Testing whether one edge produces a cheaper path to its destination."
+    },
+    {
+      "term": "tentative distance",
+      "definition": "The best path cost to a vertex known so far."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "7.1",
+      "7.2",
+      "7.3"
+    ],
+    "skill_ids": [
+      "7.1.01",
+      "7.1.02",
+      "7.1.03",
+      "7.2.01",
+      "7.2.02",
+      "7.2.03",
+      "7.3.01",
+      "7.3.02",
+      "7.3.03"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 67
+  },
+  "authoring_notes": "Audited against docs/16-content-audit.md. Concrete context first; first problem/setup never hidden; continuation nodes reintroduce required context; definitions precede comparison/application; short worked examples follow abstract rules; multi-step behavior is separated into distinct prompts; similar concepts are differentiated when the question bank tests that distinction; avoid unexplained jargon and meta-language such as 'you are learning to'.",
+  "modules": [
+    {
+      "id": "domain-7-module-1-traversal",
+      "title": "Graph traversal",
+      "order": 1,
+      "task_ids": [
+        "7.1"
+      ],
+      "skill_ids": [
+        "7.1.01",
+        "7.1.02",
+        "7.1.03"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-7-graph-model",
+          "title": "Graph model",
+          "concept_ids": [
+            "dsa.graph.model_visited"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Service `A` calls `B` and `C`. Both `B` and `C` call `D`, and `D` can call `B`. The relationships can branch, merge, and form cycles."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A graph represents entities as vertices and relationships as edges. Unlike a tree, a graph can have shared destinations and cycles."
+              }
+            },
+            {
+              "id": "visual",
+              "kind": "mental_model",
+              "label": "CONNECTIONS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "`A → B`",
+                  "`A → C`",
+                  "`B → D`",
+                  "`C → D`",
+                  "`D → B`  ← cycle"
+                ]
+              }
+            },
+            {
+              "id": "visited",
+              "kind": "action",
+              "label": "WHY TRACK VISITED",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A traversal marks a vertex when it is discovered. Without visited state, the cycle `B → D → B → ...` can be followed repeatedly."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use a graph when relationships are not a strict hierarchy and may contain multiple parents, cross-links, or cycles."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Graph traversal needs both a frontier of work and state that prevents unwanted revisits."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Why is a visited set useful in the graph above? Answer: It prevents repeated traversal of the `B ↔ D` cycle.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "It prevents repeated traversal of the `B ↔ D` cycle.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Algorithms — 4.1 Undirected Graphs",
+              "url": "https://algs4.cs.princeton.edu/40graphs/"
+            },
+            {
+              "title": "Princeton Algorithms — 4.2 Directed Graphs",
+              "url": "https://algs4.cs.princeton.edu/42digraph/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture notes index (BFS, DFS, shortest paths, DP)",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "vertex",
+              "definition": "An entity or state represented as a node in a graph."
+            },
+            {
+              "term": "edge",
+              "definition": "A relationship or transition between vertices."
+            },
+            {
+              "term": "reachability",
+              "definition": "Whether one vertex can be reached from another by following edges."
+            }
+          ]
+        },
+        {
+          "id": "domain-7-bfs",
+          "title": "BFS",
+          "concept_ids": [
+            "dsa.graph.bfs_unweighted"
+          ],
+          "prerequisite_node_ids": [
+            "domain-7-graph-model"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Every service-to-service call counts as one hop. Edges are `A→B`, `A→C`, `B→D`, `C→E`. Find the fewest hops from `A` to `E`."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Breadth-first search (BFS) explores vertices in layers of increasing edge count. For an unweighted graph, the first time BFS reaches a vertex gives a shortest path by number of edges."
+              }
+            },
+            {
+              "id": "step-1",
+              "kind": "mental_model",
+              "label": "LEVEL 0",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Start at `A`.",
+                  "distance(A) = `0`."
+                ]
+              }
+            },
+            {
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "LEVEL 1",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Discover `B` and `C`.",
+                  "distance = `1` hop."
+                ]
+              }
+            },
+            {
+              "id": "step-3",
+              "kind": "mental_model",
+              "label": "LEVEL 2",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "From `C`, discover `E`.",
+                  "distance(A, E) = `2` hops.",
+                  "One shortest route is `A → C → E`."
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use BFS for fewest-edge or fewest-hop paths when every edge has equal cost."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Equal edge cost + minimum hops → BFS."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "In the graph above, how many hops from `A` to `E`? Answer: `2`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`2`.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture notes index (BFS, DFS, shortest paths, DP)",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "Princeton Algorithms — 4.1 Undirected Graphs",
+              "url": "https://algs4.cs.princeton.edu/40graphs/"
+            }
+          ]
+        },
+        {
+          "id": "domain-7-dfs",
+          "title": "DFS cycle state",
+          "concept_ids": [
+            "dsa.graph.dfs_structure",
+            "dsa.graph.cycle_state"
+          ],
+          "prerequisite_node_ids": [
+            "domain-7-graph-model"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Directed dependencies are `A→B`, `B→C`, `C→A`. We need to detect whether the dependency graph contains a cycle."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Depth-first search (DFS) follows one path deeply before returning. For directed-cycle detection, track both vertices already seen and vertices still active on the current DFS path."
+              }
+            },
+            {
+              "id": "step-1",
+              "kind": "mental_model",
+              "label": "STEP 1",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Enter `A` → active path `{A}`.",
+                  "Follow `A→B` → active path `{A, B}`.",
+                  "Follow `B→C` → active path `{A, B, C}`."
+                ]
+              }
+            },
+            {
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "From `C`, edge `C→A` points to a vertex still active on the current path.",
+                  "That back edge proves a directed cycle."
+                ]
+              }
+            },
+            {
+              "id": "why",
+              "kind": "connects_to",
+              "label": "WHY `VISITED` ALONE IS NOT ENOUGH",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "An edge to a previously visited vertex is not automatically a cycle if that vertex belongs to a finished DFS branch. For this directed-cycle method, the decisive signal is an edge to a vertex still active on the current recursion path."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Directed DFS cycle detection: edge to an active-path vertex → cycle."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "DFS sees an edge to a vertex that is still active on the current path. What does that indicate? Answer: A directed cycle.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "A directed cycle.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture notes index (BFS, DFS, shortest paths, DP)",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "Princeton Algorithms — 4.2 Directed Graphs",
+              "url": "https://algs4.cs.princeton.edu/42digraph/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-7-module-2-connectivity",
+      "title": "Dependencies and connectivity",
+      "order": 2,
+      "task_ids": [
+        "7.2"
+      ],
+      "skill_ids": [
+        "7.2.01",
+        "7.2.02",
+        "7.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-7-module-1-traversal"
+      ],
+      "nodes": [
+        {
+          "id": "domain-7-topological",
+          "title": "Topological order",
+          "concept_ids": [
+            "dsa.graph.topological",
+            "dsa.graph.cycle_state"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Deployment dependencies are `schema → api → smoke`. An arrow means the left task must finish before the right task."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A topological order is an ordering of a directed acyclic graph (DAG) where every prerequisite appears before each dependent task."
+              }
+            },
+            {
+              "id": "example",
+              "kind": "mental_model",
+              "label": "EXAMPLE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Valid order: `schema, api, smoke`.",
+                  "`api` cannot appear before `schema`.",
+                  "`smoke` cannot appear before `api`."
+                ]
+              }
+            },
+            {
+              "id": "cycle",
+              "kind": "not_this",
+              "label": "WHAT IF THERE IS A CYCLE?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Suppose `A→B`, `B→C`, and `C→A`.",
+                  "Each task requires another task in the cycle to come first.",
+                  "No complete topological order exists."
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use topological ordering when directed edges mean prerequisites and all prerequisites must be respected in one execution order."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Topological order exists only for a DAG."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For `schema → api → smoke`, which task must come first? Answer: `schema`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`schema`.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Algorithms — 4.2 Directed Graphs",
+              "url": "https://algs4.cs.princeton.edu/42digraph/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture notes index (BFS, DFS, shortest paths, DP)",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            }
+          ]
+        },
+        {
+          "id": "domain-7-union-find",
+          "title": "Union-find",
+          "concept_ids": [
+            "dsa.graph.union_find"
+          ],
+          "prerequisite_node_ids": [
+            "domain-7-topological"
+          ],
+          "map_position": {
+            "x": 0.44,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Network links are added over time: connect `(A,B)`, then `(C,D)`, then `(B,C)`. After each addition, the system repeatedly asks whether two devices are in the same connected component. It does not need the route."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Union-find, also called disjoint-set union, maintains groups under repeated merges. `union(a,b)` merges two components; `find(x)` identifies the component containing `x`."
+              }
+            },
+            {
+              "id": "step-1",
+              "kind": "mental_model",
+              "label": "STEP 1",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "`union(A, B)` → component `{A, B}`.",
+                  "`union(C, D)` → component `{C, D}`."
+                ]
+              }
+            },
+            {
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "`union(B, C)` merges the two groups.",
+                  "Now `{A, B, C, D}` is one component.",
+                  "`find(A)` and `find(D)` identify the same component."
+                ]
+              }
+            },
+            {
+              "id": "limit",
+              "kind": "not_this",
+              "label": "LIMITATION",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Union-find answers connectivity questions efficiently, but it does not preserve the exact path between two vertices. If the route itself is required, use a graph traversal or path algorithm."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use union-find for repeated 'same component?' queries when connections are being added and exact routes are unnecessary."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Need connectivity under repeated unions, not the path → union-find."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Can union-find by itself return the shortest path from `A` to `D`? Answer: No.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Algorithms — 1.5 Union-Find",
+              "url": "https://algs4.cs.princeton.edu/15uf/"
+            },
+            {
+              "title": "Princeton Algorithms — 4.1 Undirected Graphs",
+              "url": "https://algs4.cs.princeton.edu/40graphs/"
+            }
+          ]
+        },
+        {
+          "id": "domain-7-algorithm-choice",
+          "title": "Choose a graph method",
+          "concept_ids": [
+            "dsa.graph.algorithm_choice",
+            "dsa.graph.bfs_unweighted",
+            "dsa.graph.topological",
+            "dsa.graph.union_find"
+          ],
+          "prerequisite_node_ids": [
+            "domain-7-union-find",
+            "domain-7-bfs"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The same infrastructure graph can support different questions. The right algorithm depends on the requested output and the meaning of edge costs."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Graph shape alone does not choose the algorithm. First identify whether the question is about reachability, hop count, prerequisite order, dynamic connectivity, or weighted cost."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "mental_model",
+              "label": "MATCH THE QUESTION",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "question",
+                    "label": "Question"
+                  },
+                  {
+                    "id": "method",
+                    "label": "Method"
+                  },
+                  {
+                    "id": "reason",
+                    "label": "Why"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "hops",
+                    "cells": {
+                      "question": "Fewest hops; all edges equal cost",
+                      "method": "BFS",
+                      "reason": "Explores by edge-count layers"
+                    }
+                  },
+                  {
+                    "id": "order",
+                    "cells": {
+                      "question": "Prerequisites before dependents",
+                      "method": "Topological order",
+                      "reason": "Respects directed dependencies in a DAG"
+                    }
+                  },
+                  {
+                    "id": "connected",
+                    "cells": {
+                      "question": "Repeated same-component? after link additions",
+                      "method": "Union-find",
+                      "reason": "Maintains merged components"
+                    }
+                  },
+                  {
+                    "id": "weighted",
+                    "cells": {
+                      "question": "Minimum total nonnegative edge cost",
+                      "method": "Dijkstra",
+                      "reason": "Uses tentative path cost as priority"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "dfs",
+              "kind": "connects_to",
+              "label": "WHERE DFS FITS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "DFS is useful for structural exploration such as directed-cycle detection and other tasks where following one branch deeply is useful."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Write the graph query in one sentence before choosing the traversal or data structure."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choose from the objective and edge semantics, not from the word `graph`."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Minimum total latency with nonnegative edge weights: BFS or Dijkstra? Answer: Dijkstra.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Dijkstra.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture notes index (BFS, DFS, shortest paths, DP)",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "Princeton Algorithms — 4.2 Directed Graphs",
+              "url": "https://algs4.cs.princeton.edu/42digraph/"
+            },
+            {
+              "title": "Princeton Algorithms — 1.5 Union-Find",
+              "url": "https://algs4.cs.princeton.edu/15uf/"
+            },
+            {
+              "title": "Princeton Algorithms — 4.4 Shortest Paths",
+              "url": "https://algs4.cs.princeton.edu/44sp/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-7-module-3-shortest",
+      "title": "Shortest paths",
+      "order": 3,
+      "task_ids": [
+        "7.3"
+      ],
+      "skill_ids": [
+        "7.3.01",
+        "7.3.02",
+        "7.3.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-7-module-2-connectivity"
+      ],
+      "nodes": [
+        {
+          "id": "domain-7-dijkstra",
+          "title": "Dijkstra",
+          "concept_ids": [
+            "dsa.graph.dijkstra"
+          ],
+          "prerequisite_node_ids": [
+            "domain-7-algorithm-choice"
+          ],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Weighted directed edges are `S→A = 4`, `S→B = 1`, `B→A = 2`, `A→T = 3`, `B→T = 7`. All weights are nonnegative. Find the minimum total cost from `S` to `T`."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Dijkstra's algorithm keeps the best known distance to each vertex and repeatedly processes the unsettled vertex with the smallest known distance. The standard algorithm requires nonnegative edge weights."
+              }
+            },
+            {
+              "id": "step-1",
+              "kind": "mental_model",
+              "label": "STEP 1",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Start: `dist[S] = 0`.",
+                  "From S: `dist[A] = 4`, `dist[B] = 1`.",
+                  "Next process `B` because `1` is smaller."
+                ]
+              }
+            },
+            {
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Through B: candidate to A = `1 + 2 = 3` → improve A from `4` to `3`.",
+                  "Candidate to T = `1 + 7 = 8` → set T to `8`."
+                ]
+              }
+            },
+            {
+              "id": "step-3",
+              "kind": "mental_model",
+              "label": "STEP 3",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Next process A at distance `3`.",
+                  "Through A: candidate to T = `3 + 3 = 6` → improve T from `8` to `6`.",
+                  "Shortest total cost = `6` via `S → B → A → T`."
+                ]
+              }
+            },
+            {
+              "id": "negative",
+              "kind": "not_this",
+              "label": "NEGATIVE EDGE WARNING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "With a negative edge, a vertex that looked final can later receive a cheaper route. That breaks the finalization logic used by standard Dijkstra."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Nonnegative weights + minimum total edge cost → Dijkstra."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Why is BFS not enough when edge weights differ? Answer: Fewest edges may not have the smallest total weight.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Fewest edges may not have the smallest total weight.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Algorithms — 4.4 Shortest Paths",
+              "url": "https://algs4.cs.princeton.edu/44sp/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture notes index (BFS, DFS, shortest paths, DP)",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            }
+          ]
+        },
+        {
+          "id": "domain-7-relaxation",
+          "title": "Relax an edge",
+          "concept_ids": [
+            "dsa.graph.relaxation",
+            "dsa.graph.dijkstra"
+          ],
+          "prerequisite_node_ids": [
+            "domain-7-dijkstra"
+          ],
+          "map_position": {
+            "x": 0.46,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Current best distances are `dist[A] = 4` and `dist[B] = 12`. Edge `A→B` has weight `3`. We also want to reconstruct the actual shortest route later."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Relaxation tests whether going to `B` through `A` gives a cheaper route than the best route currently known for `B`."
+              }
+            },
+            {
+              "id": "math",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Candidate through A = `dist[A] + weight(A,B)`.",
+                  "`4 + 3 = 7`.",
+                  "Current `dist[B] = 12`.",
+                  "`7 < 12`, so update `dist[B] = 7`."
+                ]
+              }
+            },
+            {
+              "id": "route",
+              "kind": "action",
+              "label": "KEEP THE PREDECESSOR",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Because A produced the improvement, also record `prev[B] = A`.",
+                  "Following predecessor links backward later reconstructs the chosen route."
+                ]
+              }
+            },
+            {
+              "id": "code",
+              "kind": "action",
+              "label": "CORE UPDATE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "relax.py",
+                "language": "python",
+                "code": "candidate = dist[u] + weight\nif candidate < dist[v]:\n    dist[v] = candidate\n    prev[v] = u\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "candidate",
+                    "anchor": {
+                      "line": 1,
+                      "text": "candidate = dist[u] + weight",
+                      "occurrence": 1
+                    },
+                    "title": "Try the edge",
+                    "explanation": "Compute the path cost to v through u.",
+                    "required": true
+                  },
+                  {
+                    "id": "update",
+                    "anchor": {
+                      "line": 3,
+                      "text": "dist[v] = candidate",
+                      "occurrence": 1
+                    },
+                    "title": "Keep only an improvement",
+                    "explanation": "Replace the stored best distance only when the new route is cheaper.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Relax `u→v` when `dist[u] + weight(u,v) < dist[v]`; update the predecessor at the same time if the route is needed."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "With `dist[A]=4`, `dist[B]=12`, and edge weight `3`, what becomes the new `dist[B]`? Answer: `7`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`7`.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Algorithms — 4.4 Shortest Paths",
+              "url": "https://algs4.cs.princeton.edu/44sp/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture notes index (BFS, DFS, shortest paths, DP)",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            }
+          ]
+        },
+        {
+          "id": "domain-7-dijkstra-practice",
+          "title": "Stale heap entries",
+          "concept_ids": [
+            "dsa.graph.dijkstra",
+            "dsa.graph.relaxation",
+            "dsa.graph.algorithm_choice"
+          ],
+          "prerequisite_node_ids": [
+            "domain-7-relaxation"
+          ],
+          "map_position": {
+            "x": 0.8,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A heap-based Dijkstra run first pushes `(20, V)`. Later, another route improves `V` to distance `8`, so it also pushes `(8, V)`. Both heap entries remain until popped."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A simple heap implementation may insert a new entry whenever a distance improves instead of editing the old heap entry. The distance map stores the current best value; an older heap entry can therefore become stale."
+              }
+            },
+            {
+              "id": "step-1",
+              "kind": "mental_model",
+              "label": "STEP 1",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Heap contains `(8, V)` and `(20, V)`.",
+                  "Current distance map says `dist[V] = 8`."
+                ]
+              }
+            },
+            {
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Pop `(8, V)` first and process it.",
+                  "Later pop `(20, V)`.",
+                  "`20 != dist[V]`, so this entry is stale and can be skipped."
+                ]
+              }
+            },
+            {
+              "id": "code",
+              "kind": "action",
+              "label": "SKIP STALE WORK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "dijkstra_heap.py",
+                "language": "python",
+                "code": "while heap:\n    popped_dist, u = heapq.heappop(heap)\n    if popped_dist != dist[u]:\n        continue\n    # relax outgoing edges from u\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "pop",
+                    "anchor": {
+                      "line": 2,
+                      "text": "popped_dist, u = heapq.heappop(heap)",
+                      "occurrence": 1
+                    },
+                    "title": "Take the cheapest heap entry",
+                    "explanation": "The heap may still contain older entries for the same vertex.",
+                    "required": true
+                  },
+                  {
+                    "id": "skip",
+                    "anchor": {
+                      "line": 3,
+                      "text": "if popped_dist != dist[u]:",
+                      "occurrence": 1
+                    },
+                    "title": "Compare with current truth",
+                    "explanation": "If the values differ, a better route was recorded after this heap entry was created.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "This lazy duplicate-entry pattern is useful with heaps that do not update an existing priority in place."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Heap entry is work history; `dist` is the current best distance."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Heap pops `(20,V)` but `dist[V]` is `8`. Process or skip? Answer: Skip it.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Skip it.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Algorithms — 4.4 Shortest Paths",
+              "url": "https://algs4.cs.princeton.edu/44sp/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture notes index (BFS, DFS, shortest paths, DP)",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

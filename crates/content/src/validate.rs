@@ -5,9 +5,13 @@
 
 use std::collections::{BTreeSet, HashSet};
 
-use adaptive_learn_domain::InteractionType;
+use adaptive_learn_domain::{
+    InteractionType, PEDAGOGY_MAX_SCAFFOLD_LEVEL, PEDAGOGY_MIN_SCAFFOLD_LEVEL,
+};
 
-use crate::model::{CanonicalAnswer, ContentBundle, Interaction, Question, QuestionConcept};
+use crate::model::{
+    CanonicalAnswer, ContentBundle, ErrorCodeDef, Interaction, Question, QuestionConcept,
+};
 
 /// A single content validation failure.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -319,7 +323,9 @@ fn validate_questions(bundle: &ContentBundle, errors: &mut Vec<ContentError>) {
         validate_interaction(question, errors);
         validate_canonical_answer(question, errors);
         validate_error_codes(question, errors);
+        validate_remediation_concepts(question, &concept_ids, errors);
         validate_source_refs(question, errors);
+        validate_pedagogy(question, errors);
     }
 }
 
@@ -377,6 +383,54 @@ fn validate_question_concepts(
                 question.id
             ),
         ));
+    }
+}
+
+/// Validates optional pedagogical metadata.
+///
+/// Phase 1 only enforces local, non-cross-question invariants: present string
+/// identifiers must not be blank and `scaffold_level` must be within
+/// `0..=6`. It deliberately does not require any field, so content authored
+/// before this contract keeps validating unchanged, and it deliberately does
+/// not impose cross-question constraints (for example, that a challenge group
+/// stays inside one domain): future tracks must be able to use the same
+/// metadata without a redesign.
+///
+/// An unknown `stage` string never reaches this function: `PedagogyStage`
+/// deserialization rejects it, so the content source fails loudly at parse
+/// time.
+pub(crate) fn validate_pedagogy(question: &Question, errors: &mut Vec<ContentError>) {
+    let Some(pedagogy) = &question.pedagogy else {
+        return;
+    };
+
+    for (field, value) in [
+        ("family_id", pedagogy.family_id.as_deref()),
+        ("transfer_group_id", pedagogy.transfer_group_id.as_deref()),
+        ("surface_context", pedagogy.surface_context.as_deref()),
+        ("challenge_group_id", pedagogy.challenge_group_id.as_deref()),
+    ] {
+        if value.is_some_and(|value| value.trim().is_empty()) {
+            errors.push(ContentError::new(
+                "pedagogy_field_empty",
+                format!(
+                    "question {} pedagogy.{field} must not be blank when present",
+                    question.id
+                ),
+            ));
+        }
+    }
+
+    if let Some(level) = pedagogy.scaffold_level {
+        if !(PEDAGOGY_MIN_SCAFFOLD_LEVEL..=PEDAGOGY_MAX_SCAFFOLD_LEVEL).contains(&level) {
+            errors.push(ContentError::new(
+                "pedagogy_scaffold_level_invalid",
+                format!(
+                    "question {} pedagogy.scaffold_level {} must be within {}..={}",
+                    question.id, level, PEDAGOGY_MIN_SCAFFOLD_LEVEL, PEDAGOGY_MAX_SCAFFOLD_LEVEL
+                ),
+            ));
+        }
     }
 }
 
@@ -2139,6 +2193,116 @@ fn validate_error_codes(question: &Question, errors: &mut Vec<ContentError>) {
                     question.id, error_code.code
                 ),
             ));
+        }
+        validate_error_remediation(question, error_code, errors);
+    }
+}
+
+/// Validates the optional remediation metadata on one structured error code.
+///
+/// Local, non-cross-source rules only: the object must carry at least one
+/// target, present string ids must not be blank, concept ids must be unique,
+/// and the scaffold floor must be within the Phase 1 bounds. Concept and node
+/// references are cross-checked later where bundle/learning context exists.
+pub(crate) fn validate_error_remediation(
+    question: &Question,
+    error_code: &ErrorCodeDef,
+    errors: &mut Vec<ContentError>,
+) {
+    let Some(remediation) = &error_code.remediation else {
+        return;
+    };
+
+    if remediation.is_empty() {
+        errors.push(ContentError::new(
+            "error_remediation_empty",
+            format!(
+                "question {} error code {} remediation must set at least one target",
+                question.id, error_code.code
+            ),
+        ));
+    }
+
+    let mut seen = HashSet::new();
+    for concept_id in &remediation.concept_ids {
+        if concept_id.trim().is_empty() {
+            errors.push(ContentError::new(
+                "error_remediation_concept_empty",
+                format!(
+                    "question {} error code {} remediation.concept_ids must not contain blank ids",
+                    question.id, error_code.code
+                ),
+            ));
+        }
+        if !seen.insert(concept_id.as_str()) {
+            errors.push(ContentError::new(
+                "error_remediation_duplicate_concept",
+                format!(
+                    "question {} error code {} remediation repeats concept {}",
+                    question.id, error_code.code, concept_id
+                ),
+            ));
+        }
+    }
+
+    for (field, value) in [
+        ("node_id", remediation.node_id.as_deref()),
+        (
+            "preferred_family_id",
+            remediation.preferred_family_id.as_deref(),
+        ),
+    ] {
+        if value.is_some_and(|value| value.trim().is_empty()) {
+            errors.push(ContentError::new(
+                "error_remediation_field_empty",
+                format!(
+                    "question {} error code {} remediation.{field} must not be blank when present",
+                    question.id, error_code.code
+                ),
+            ));
+        }
+    }
+
+    if let Some(level) = remediation.min_scaffold_level {
+        if !(PEDAGOGY_MIN_SCAFFOLD_LEVEL..=PEDAGOGY_MAX_SCAFFOLD_LEVEL).contains(&level) {
+            errors.push(ContentError::new(
+                "error_remediation_scaffold_level_invalid",
+                format!(
+                    "question {} error code {} remediation.min_scaffold_level {} must be within {}..={}",
+                    question.id,
+                    error_code.code,
+                    level,
+                    PEDAGOGY_MIN_SCAFFOLD_LEVEL,
+                    PEDAGOGY_MAX_SCAFFOLD_LEVEL
+                ),
+            ));
+        }
+    }
+}
+
+/// Requires remediation concept ids to resolve within a scored bundle.
+///
+/// Practice-test questions may omit concepts, so this runs only for bundle
+/// questions where the authored concept set is authoritative.
+fn validate_remediation_concepts(
+    question: &Question,
+    concept_ids: &HashSet<&str>,
+    errors: &mut Vec<ContentError>,
+) {
+    for error_code in &question.error_codes {
+        let Some(remediation) = &error_code.remediation else {
+            continue;
+        };
+        for concept_id in &remediation.concept_ids {
+            if !concept_id.trim().is_empty() && !concept_ids.contains(concept_id.as_str()) {
+                errors.push(ContentError::new(
+                    "error_remediation_unknown_concept",
+                    format!(
+                        "question {} error code {} remediation references unknown concept {}",
+                        question.id, error_code.code, concept_id
+                    ),
+                ));
+            }
         }
     }
 }

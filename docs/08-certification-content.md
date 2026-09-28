@@ -31,8 +31,9 @@ Do not start with six ecosystems simultaneously.
 Current authored content lives under `content/<category>/<certification>/<version>/`
 and is surfaced through the API catalog plus `apps/web/src/state/catalogMeta.ts`:
 AWS SOA-C03, SAA-C03, and AIP-C01; Microsoft AZ-900 and AZ-104; CompTIA
-Security+ SY0-701; HashiCorp Terraform Associate 004; and the AI/Python tracks
-(Python fluency, Python data stack, PyTorch core). Demo bundles live under
+Security+ SY0-701; HashiCorp Terraform Associate 004; the AI/Python tracks
+(Python fluency, Python data stack, PyTorch core); and the Computer Science track
+(Data Structures & Algorithms). Demo bundles live under
 `content/demo/`. Each certification also ships learning knowledge maps alongside
 its scored question bundles.
 
@@ -95,6 +96,39 @@ explanation
 hints
 source references
 ```
+
+### Optional pedagogical metadata
+
+A question may also carry an optional, track-agnostic `pedagogy` object. It is
+descriptive in Phase 1 (it never changes mastery, scoring, rewards, or
+selection) and every field is optional, so existing content keeps loading
+unchanged.
+
+```jsonc
+"pedagogy": {
+  "family_id": "aws.storage.cost_latency_tradeoff", // reusable pattern (opaque)
+  "stage": "differentiate",                          // PedagogyStage
+  "scaffold_level": 2,                               // 0..=6 embedded help
+  "transfer_group_id": "tradeoff_under_constraints", // opaque
+  "surface_context": "order_processing",             // opaque
+  "challenge_group_id": "storage-tradeoff-01"        // opaque
+}
+```
+
+- `stage` is one of `discover`, `recognize`, `differentiate`, `reason`,
+  `trace`, `diagnose`, `construct`, `transfer`.
+- `scaffold_level` is how much help is embedded, **not** difficulty.
+- `family_id`, `transfer_group_id`, `surface_context`, and `challenge_group_id`
+  are author-defined strings; the validator rejects blank values when a field is
+  present but does not constrain their contents or impose cross-question rules.
+
+See [06-learning-engine.md](06-learning-engine.md#pedagogical-metadata-phase-1)
+for the semantics and the intentional distinction between assessment mode,
+pedagogy stage, difficulty, and scaffolding.
+
+`pedagogy` is authored content. It is not sent in learner-facing question DTOs
+before scoring, because some `family_id` values could reveal the intended
+approach.
 
 ## Learning modules (knowledge maps)
 
@@ -264,7 +298,11 @@ Rules:
   `annotation:`) and the v1 key (prompt progress only) without losing discovery
   progress, then drops the legacy key. Node and module state are derived, so
   progress cannot drift from the curriculum and stale ids are ignored.
-- A node is `unlocked` when every required prompt is completed. A `code_file`
+- A node is `unlocked` when every required prompt is completed. Authored
+  prompts are always required: a hidden prompt must be revealed before the node
+  completes, so completion (including its sound) never fires while authored text
+  is still hidden. Optionality is reserved for individual reveal elements
+  (annotations and text spans), where it never blocks completion. A `code_file`
   prompt completes when every annotation flagged `required` is revealed;
   optional annotations never block completion. A `code_file` with no required
   annotations (including an empty list) completes on an explicit mark-as-reviewed
@@ -649,7 +687,13 @@ error:
 - `/v1/sync` rejects only the stale event (its `error_code` is
   `mission_content_stale`) and keeps the rest of the batch;
 - starting a Daily Mission item replaces a stale mission with one built from
-  current content instead of resuming the unscoreable one.
+  current content instead of resuming the unscoreable one;
+- reading a Daily Mission whose plan still has a pending item that the current
+  content cannot execute (a removed knowledge node, an unknown practice
+  question, or an empty domain) rebuilds the plan from current content. The
+  mission id and day key are preserved so the completion reward stays
+  idempotent; only checklist progress resets, and recorded learning evidence is
+  untouched.
 
 The client drops the stale mission and its queued events, then starts a new
 mission. Historical mastery is never remapped onto the changed content.

@@ -1,0 +1,1438 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "dsa-learning-2026-09-26-v12",
+  "certification_id": "cs-dsa",
+  "certification_version": "dsa-v1",
+  "exam_guide_revision": "Editorial and factual review 2026-09-26 using docs/16-content-audit.md. Problems and setup are visible immediately; every node is self-contained at entry.",
+  "domain": {
+    "id": "domain-5",
+    "name": "Binary Search, Sorting & Ordered Reasoning",
+    "weight": 0.1
+  },
+  "learning_design": {
+    "progress_label": "Pattern Vision",
+    "unlock_rule": "Problem context and example data stay visible. Progressive reveal is used only for answers or decisions. Each node defines the idea before asking the learner to use it.",
+    "mastery_note": "Recognize the structure, understand why the method works, and know when a similar-looking method does not fit."
+  },
+  "source_refs": [
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 3 notes: Sets and Sorting",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/16d78ce4aa9f365920d109ac278c281e_MIT6_006S20_lec3.pdf"
+    },
+    {
+      "title": "Python documentation — bisect",
+      "url": "https://docs.python.org/3/library/bisect.html"
+    },
+    {
+      "title": "Python documentation — Sorting HOW TO",
+      "url": "https://docs.python.org/3/howto/sorting.html"
+    },
+    {
+      "title": "Princeton Algorithms — Sorting",
+      "url": "https://algs4.cs.princeton.edu/20sorting/"
+    },
+    {
+      "title": "Princeton Algorithms — Mergesort",
+      "url": "https://algs4.cs.princeton.edu/22mergesort/"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "lower bound",
+      "definition": "The first position whose value is greater than or equal to the target."
+    },
+    {
+      "term": "predicate",
+      "definition": "A test that returns true or false for one candidate."
+    },
+    {
+      "term": "stable sort",
+      "definition": "A sort that keeps the original order of records whose sort keys are equal."
+    },
+    {
+      "term": "sort key",
+      "definition": "The value used to decide a record's position in sorted order."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "5.1",
+      "5.2",
+      "5.3"
+    ],
+    "skill_ids": [
+      "5.1.01",
+      "5.1.02",
+      "5.1.03",
+      "5.2.01",
+      "5.2.02",
+      "5.2.03",
+      "5.3.01",
+      "5.3.02",
+      "5.3.03"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 66
+  },
+  "authoring_notes": "Audited against docs/16-content-audit.md: concrete context first; title/topic defined before use; one new idea per sentence where practical; short worked examples immediately follow abstract rules; technical terms are defined before reuse; similar concepts are explicitly differentiated; multi-step behavior is split into separate prompts; no opening depends on remembering an earlier card; no 'you are learning to' meta-prose; first problem/setup is never hidden.",
+  "modules": [
+    {
+      "id": "domain-5-module-1-binary",
+      "title": "Binary search",
+      "order": 1,
+      "task_ids": [
+        "5.1"
+      ],
+      "skill_ids": [
+        "5.1.01",
+        "5.1.02",
+        "5.1.03"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-5-binary-exact",
+          "title": "Exact search",
+          "concept_ids": [
+            "dsa.binary.exact"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A sorted index is `[2, 5, 8, 12, 19]`. Find the index of target `12`, or return `-1` if it is absent."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Binary search keeps a candidate interval in sorted data. Compare the target with the middle value, then discard the half that cannot contain the target."
+              }
+            },
+            {
+              "id": "step-1",
+              "kind": "mental_model",
+              "label": "STEP 1",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Candidate indexes: `0..4`",
+                  "mid = `2`, value = `8`",
+                  "`12 > 8` → discard indexes `0..2`."
+                ]
+              }
+            },
+            {
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Candidate indexes: `3..4`",
+                  "mid = `3`, value = `12`",
+                  "Target found at index `3`."
+                ]
+              }
+            },
+            {
+              "id": "code",
+              "kind": "action",
+              "label": "CODE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "binary_search.py",
+                "language": "python",
+                "code": "def binary_search(nums, target):\n    left, right = 0, len(nums) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if nums[mid] == target:\n            return mid\n        if nums[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "mid",
+                    "anchor": {
+                      "line": 4,
+                      "text": "mid = (left + right) // 2",
+                      "occurrence": 1
+                    },
+                    "title": "Check the middle candidate",
+                    "explanation": "Sorted order lets one comparison discard a whole side.",
+                    "required": true
+                  },
+                  {
+                    "id": "move",
+                    "anchor": {
+                      "line": 8,
+                      "text": "left = mid + 1",
+                      "occurrence": 1
+                    },
+                    "title": "Remove mid and everything left of it",
+                    "explanation": "Those values are too small.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use exact binary search when data is sorted and the question asks whether one exact key is present or where it is."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Compare at the middle; discard the impossible half."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For `[2, 5, 8, 12, 19]`, what index contains `12`? Answer: `3`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`3`.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "Python documentation — bisect",
+              "url": "https://docs.python.org/3/library/bisect.html"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "candidate interval",
+              "definition": "The part of the sorted search space that could still contain the answer."
+            }
+          ]
+        },
+        {
+          "id": "domain-5-binary-progress",
+          "title": "Search progress",
+          "concept_ids": [
+            "dsa.binary.progress"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-binary-exact"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Search sorted values `[2, 9]` for target `9` using an inclusive interval `[left, right]`. Start with `left = 0`, `right = 1`, so `mid = 0`."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Every binary-search update must make the candidate interval smaller. With an inclusive interval, a checked middle index must be excluded from the next interval when it is not the answer."
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "mental_model",
+              "label": "BAD UPDATE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "`mid = 0`, value = `2`, target is larger.",
+                  "If code sets `left = mid`, then `left` stays `0`.",
+                  "Next loop: `left = 0`, `right = 1`, `mid = 0` again.",
+                  "The same interval repeats."
+                ]
+              }
+            },
+            {
+              "id": "good",
+              "kind": "mental_model",
+              "label": "GOOD UPDATE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Set `left = mid + 1`.",
+                  "New interval is `[1, 1]`.",
+                  "Now `mid = 1`, value = `9`, so the target is found."
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Whenever you write binary search, choose an interval convention first and verify that every non-terminal branch strictly shrinks it."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A checked `mid` that is not the answer must leave the next candidate interval."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "With inclusive `[left, right]`, target is larger than `nums[mid]`. What should `left` become? Answer: `mid + 1`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`mid + 1`.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "Python documentation — bisect",
+              "url": "https://docs.python.org/3/library/bisect.html"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-binary-boundary",
+          "title": "Boundary search",
+          "concept_ids": [
+            "dsa.binary.boundary",
+            "dsa.binary.progress"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-binary-progress"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sorted timestamps are `[10, 20, 20, 30]`. A request may not match exactly. Return the first index whose timestamp is greater than or equal to the requested value."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A boundary search looks for a transition position instead of any exact match. The lower bound is the first position where the value is `>= target`."
+              }
+            },
+            {
+              "id": "examples",
+              "kind": "mental_model",
+              "label": "EXAMPLES",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "target",
+                    "label": "Target"
+                  },
+                  {
+                    "id": "index",
+                    "label": "First index >= target"
+                  },
+                  {
+                    "id": "value",
+                    "label": "Value"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "t20",
+                    "cells": {
+                      "target": "20",
+                      "index": "1",
+                      "value": "20"
+                    }
+                  },
+                  {
+                    "id": "t25",
+                    "cells": {
+                      "target": "25",
+                      "index": "3",
+                      "value": "30"
+                    }
+                  },
+                  {
+                    "id": "t31",
+                    "cells": {
+                      "target": "31",
+                      "index": "4",
+                      "value": "insertion after the list"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "python",
+              "kind": "action",
+              "label": "PYTHON",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "lower_bound.py",
+                "language": "python",
+                "code": "from bisect import bisect_left\n\nvalues = [10, 20, 20, 30]\ni = bisect_left(values, 20)\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "bisect",
+                    "anchor": {
+                      "line": 4,
+                      "text": "i = bisect_left(values, 20)",
+                      "occurrence": 1
+                    },
+                    "title": "Find the left insertion boundary",
+                    "explanation": "For an existing value, `bisect_left` returns a position before equal entries.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use boundary search for first `>= x`, first `> x`, first true, last false, or an insertion position. Do not stop at an arbitrary equal value when the contract asks for the first one."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Exact search asks 'is x here?'; boundary search asks 'where does the condition change?'"
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For `[10, 20, 20, 30]`, what is the first index with value `>= 20`? Answer: `1`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`1`.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Python documentation — bisect",
+              "url": "https://docs.python.org/3/library/bisect.html"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-5-module-2-answer-space",
+      "title": "Search an answer",
+      "order": 2,
+      "task_ids": [
+        "5.2"
+      ],
+      "skill_ids": [
+        "5.2.01",
+        "5.2.02",
+        "5.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-5-module-1-binary"
+      ],
+      "nodes": [
+        {
+          "id": "domain-5-answer-monotonic",
+          "title": "Search an answer",
+          "concept_ids": [
+            "dsa.binary.answer_space"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.16,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A simulator can test worker counts from `1` through `8`. Counts `1..5` miss the deadline; counts `6..8` meet it. Find the smallest worker count that passes."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Binary search can search candidate answers, not only array indexes. This works when a boolean test changes in one direction, such as `False ... False, True ... True`."
+              }
+            },
+            {
+              "id": "step-1",
+              "kind": "mental_model",
+              "label": "STEP 1",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Search candidates `1..8`.",
+                  "Try `4` → false.",
+                  "The minimum passing answer must be greater than `4`."
+                ]
+              }
+            },
+            {
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Search candidates `5..8`.",
+                  "Try `6` → true.",
+                  "Keep `6` as a possible answer and search smaller candidates."
+                ]
+              }
+            },
+            {
+              "id": "step-3",
+              "kind": "mental_model",
+              "label": "STEP 3",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Try `5` → false.",
+                  "Boundary is between `5` and `6`.",
+                  "Minimum passing count = `6`."
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use answer-space binary search when you can cheaply test a candidate and the pass/fail result is monotonic across the ordered candidates."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Find the boundary between failing and passing candidate answers."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If candidates `1..5` fail and `6..8` pass, what is the first true candidate? Answer: `6`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`6`.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-answer-predicate",
+          "title": "Monotonic condition",
+          "concept_ids": [
+            "dsa.binary.answer_space",
+            "dsa.binary.boundary"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-answer-monotonic"
+          ],
+          "map_position": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A team wants to binary-search a concurrency limit. Measurements are: `4=pass, 5=pass, 6=pass, 7=fail, 8=pass`. Decide whether half-elimination is safe."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A predicate is monotonic when its boolean result changes at most once across the ordered search range. For first-true search, the shape must be `False ... False, True ... True`."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "mental_model",
+              "label": "SAFE VS UNSAFE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "case",
+                    "label": "Case"
+                  },
+                  {
+                    "id": "pattern",
+                    "label": "Pattern"
+                  },
+                  {
+                    "id": "binary",
+                    "label": "Binary search?"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "safe",
+                    "cells": {
+                      "case": "Capacity threshold",
+                      "pattern": "F F F T T T",
+                      "binary": "Yes"
+                    }
+                  },
+                  {
+                    "id": "unsafe",
+                    "cells": {
+                      "case": "Measured concurrency",
+                      "pattern": "T T T F T",
+                      "binary": "No"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "why",
+              "kind": "not_this",
+              "label": "WHY THE UNSAFE CASE FAILS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "At `7`, a failure does not prove that all larger values fail because `8` passes. One comparison therefore cannot safely discard an entire side."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Prove or establish the monotonic relationship before binary-searching a numeric answer."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Numeric range alone is not enough. The pass/fail predicate must have one ordered transition."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Pattern `F F T T T`: monotonic for first-true search? Answer: Yes.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Yes.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-answer-boundaries",
+          "title": "Choose the boundary",
+          "concept_ids": [
+            "dsa.binary.answer_space",
+            "dsa.binary.progress"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-answer-predicate"
+          ],
+          "map_position": {
+            "x": 0.82,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A monotonic worker test is `False ... False, True ... True`. The product asks for the cheapest worker count that meets the deadline."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Finding the transition is only part of the job. The requested output decides which side of the transition to return."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "mental_model",
+              "label": "BOUNDARY GOALS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "request",
+                    "label": "Product request"
+                  },
+                  {
+                    "id": "goal",
+                    "label": "Search goal"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "firsttrue",
+                    "cells": {
+                      "request": "Cheapest passing count",
+                      "goal": "First true"
+                    }
+                  },
+                  {
+                    "id": "lastfalse",
+                    "cells": {
+                      "request": "Largest count that still fails",
+                      "goal": "Last false"
+                    }
+                  },
+                  {
+                    "id": "firstgreater",
+                    "cells": {
+                      "request": "First value strictly greater than x",
+                      "goal": "First > x"
+                    }
+                  },
+                  {
+                    "id": "firstge",
+                    "cells": {
+                      "request": "Insertion before equal values",
+                      "goal": "First >= x"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "example",
+              "kind": "action",
+              "label": "EXAMPLE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Counts `1..5` fail.",
+                  "Counts `6..8` pass.",
+                  "Cheapest passing count → return `6`, the first true value."
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Write the exact boundary requested before coding the search updates."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Search for the side the output asks for, not merely 'the transition'."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Minimum worker count that meets the deadline: first true or last false? Answer: First true.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "First true.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "Python documentation — bisect",
+              "url": "https://docs.python.org/3/library/bisect.html"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-5-module-3-sorting",
+      "title": "Sorting",
+      "order": 3,
+      "task_ids": [
+        "5.3"
+      ],
+      "skill_ids": [
+        "5.3.01",
+        "5.3.02",
+        "5.3.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-5-module-2-answer-space"
+      ],
+      "nodes": [
+        {
+          "id": "domain-5-sort-preprocess",
+          "title": "Sort then scan",
+          "concept_ids": [
+            "dsa.sort.preprocess"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.14,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Customer IDs arrive as `[B, A, C, A, B]`. The batch may be reordered, and you need to process each customer group once."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sorting can be useful preprocessing. It costs work up front but can place related records next to each other, turning a scattered grouping problem into one sequential scan."
+              }
+            },
+            {
+              "id": "example",
+              "kind": "mental_model",
+              "label": "EXAMPLE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Before: `[B, A, C, A, B]`",
+                  "Sort by customer ID: `[A, A, B, B, C]`",
+                  "Equal IDs are now adjacent.",
+                  "One scan can identify the A group, then B, then C."
+                ]
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "connects_to",
+              "label": "SORT OR HASH?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "need",
+                    "label": "Need"
+                  },
+                  {
+                    "id": "choice",
+                    "label": "Typical choice"
+                  },
+                  {
+                    "id": "why",
+                    "label": "Why"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "duplicate",
+                    "cells": {
+                      "need": "Only detect whether any duplicate exists; extra memory allowed",
+                      "choice": "Set",
+                      "why": "No need to pay for ordering"
+                    }
+                  },
+                  {
+                    "id": "groups",
+                    "cells": {
+                      "need": "Need ordered adjacent groups and reordering is allowed",
+                      "choice": "Sort then scan",
+                      "why": "Sorting creates useful adjacency"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sort first when reordering is allowed and sorted order makes later comparisons, grouping, merging, or scanning simpler."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Pay for a sort only when the order it creates is useful afterward."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If original arrival order must be preserved and you do not store original positions, is sorting safe? Answer: No.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3 notes: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/16d78ce4aa9f365920d109ac278c281e_MIT6_006S20_lec3.pdf"
+            },
+            {
+              "title": "Princeton Algorithms — Sorting",
+              "url": "https://algs4.cs.princeton.edu/20sorting/"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-sort-key",
+          "title": "Sort keys",
+          "concept_ids": [
+            "dsa.sort.key_contract"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-sort-preprocess"
+          ],
+          "map_position": {
+            "x": 0.47,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Jobs are records such as `{id: 'A', deadline: 30, payload: ...}`. Return job IDs ordered by deadline. The ID and payload must stay attached to the correct deadline."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A sort key is the value used to compare records. Sort the full records by that key instead of extracting and sorting detached key values."
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "not_this",
+              "label": "BAD TRANSFORMATION",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Extract deadlines only: `[30, 10, 20]`.",
+                  "Sort them: `[10, 20, 30]`.",
+                  "The ordering survives, but the connection to job IDs is gone."
+                ]
+              }
+            },
+            {
+              "id": "code",
+              "kind": "action",
+              "label": "PYTHON",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "sort_jobs.py",
+                "language": "python",
+                "code": "jobs = [\n    {\"id\": \"A\", \"deadline\": 30},\n    {\"id\": \"B\", \"deadline\": 10},\n    {\"id\": \"C\", \"deadline\": 20},\n]\n\nordered = sorted(jobs, key=lambda job: job[\"deadline\"])\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "key",
+                    "anchor": {
+                      "line": 7,
+                      "text": "key=lambda job: job[\"deadline\"]",
+                      "occurrence": 1
+                    },
+                    "title": "Sort by deadline",
+                    "explanation": "The entire record moves while deadline controls ordering.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use a key function when records contain many fields but one field, or a computed value, determines the requested order."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sort the records; use the key only to decide their order."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Need job IDs ordered by deadline. Should you sort detached deadlines alone? Answer: No.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Python documentation — Sorting HOW TO",
+              "url": "https://docs.python.org/3/howto/sorting.html"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+            }
+          ]
+        },
+        {
+          "id": "domain-5-sort-stable-merge",
+          "title": "Stable sort and merge",
+          "concept_ids": [
+            "dsa.sort.stability",
+            "dsa.ordered.merge"
+          ],
+          "prerequisite_node_ids": [
+            "domain-5-sort-key"
+          ],
+          "map_position": {
+            "x": 0.8,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Two forms of existing order can be useful. First, equal-priority jobs should keep their arrival order. Second, two changelog feeds are already sorted by timestamp and need one combined sorted output."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A stable sort preserves the original relative order of records with equal keys. An ordered merge reuses the order already present in sorted inputs instead of sorting everything again."
+              }
+            },
+            {
+              "id": "stable",
+              "kind": "mental_model",
+              "label": "STABLE SORT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Arrival order: `A(priority 2), B(priority 1), C(priority 2)`",
+                  "Stable sort by priority:",
+                  "`B(priority 1), A(priority 2), C(priority 2)`",
+                  "A still comes before C because their priority keys are equal."
+                ]
+              }
+            },
+            {
+              "id": "merge",
+              "kind": "mental_model",
+              "label": "ORDERED MERGE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Feed A: `[1, 4, 9]`",
+                  "Feed B: `[2, 6, 8]`",
+                  "Only the two current front values can be globally next.",
+                  "Choose the smaller front, advance that feed, and repeat.",
+                  "Merged: `[1, 2, 4, 6, 8, 9]`"
+                ]
+              }
+            },
+            {
+              "id": "python-note",
+              "kind": "connects_to",
+              "label": "PYTHON",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Python's built-in sorting is stable, so equal-key records retain their original relative order."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Require stability when tie order has meaning. Use ordered merge when inputs are already sorted and should be combined without a full re-sort."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Preserve useful order that the data already gives you."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Two sorted feeds are being merged. Which items can be the next global output? Answer: Only the current front item from each feed.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Only the current front item from each feed.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Python documentation — Sorting HOW TO",
+              "url": "https://docs.python.org/3/howto/sorting.html"
+            },
+            {
+              "title": "Princeton Algorithms — Mergesort",
+              "url": "https://algs4.cs.princeton.edu/22mergesort/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

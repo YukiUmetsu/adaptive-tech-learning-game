@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { GAME_CATALOG } from "../data";
-import { upgradeBitsCost, type PlacedDefense } from "../models/defense";
+import {
+  upgradeCost,
+  upgradeSpendToLevel,
+  type PlacedDefense,
+} from "../models/defense";
 import {
   activeSynergies,
   auraBonus,
@@ -29,18 +33,26 @@ function placed(defenseId: string, nodeId: string, level = 1): PlacedDefense {
 }
 
 describe("combat economy", () => {
-  it("sums placement and upgrade costs", () => {
-    const defenses = [placed("waf", "edge"), placed("rate_limiter", "edge")];
-    expect(computeSpentBudget(defenses, GAME_CATALOG)).toBe(200 + 150);
+  it("sums placement and mission-credit upgrade costs", () => {
+    const defenses = [placed("waf", "edge", 2), placed("rate_limiter", "edge")];
+    expect(computeSpentBudget(defenses, GAME_CATALOG)).toBe(
+      waf.cost + upgradeCost(waf, 1) + rateLimiter.cost,
+    );
   });
 
-  it("does not charge mission credits for upgrades", () => {
-    const defenses = [placed("waf", "edge", 2)];
+  it("charges no upgrade credits for a fresh level-1 control", () => {
+    const defenses = [placed("waf", "edge")];
     expect(computeSpentBudget(defenses, GAME_CATALOG)).toBe(waf.cost);
   });
 
-  it("prices in-mission upgrades in Bits", () => {
-    expect(upgradeBitsCost(waf, 1)).toBeGreaterThan(0);
+  it("prices in-mission upgrades in mission credits", () => {
+    expect(upgradeCost(waf, 1)).toBeGreaterThan(0);
+    expect(upgradeCost(waf, waf.maxLevel)).toBe(0);
+  });
+
+  it("derives cumulative upgrade spend from the level", () => {
+    expect(upgradeSpendToLevel(waf, 1)).toBe(0);
+    expect(upgradeSpendToLevel(waf, 2)).toBe(upgradeCost(waf, 1));
   });
 
   it("sums latency across deployed controls", () => {
@@ -180,6 +192,18 @@ describe("mission rating", () => {
 
   it("drops the budget star when overspending", () => {
     expect(rateMission({ ...base, spent: 900 }).stars).toBe(2);
+  });
+
+  it("counts mission-credit upgrades toward the spent-budget star", () => {
+    const noUpgrade = computeSpentBudget([placed("waf", "edge")], GAME_CATALOG);
+    const upgraded = computeSpentBudget(
+      [placed("waf", "edge", 2)],
+      GAME_CATALOG,
+    );
+    expect(upgraded).toBeGreaterThan(noUpgrade);
+    const tight = { ...base, recommendedSpend: 250 };
+    expect(rateMission({ ...tight, spent: noUpgrade }).budgetOk).toBe(true);
+    expect(rateMission({ ...tight, spent: upgraded }).budgetOk).toBe(false);
   });
 
   it("drops the latency star when the target is exceeded", () => {

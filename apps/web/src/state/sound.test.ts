@@ -6,6 +6,7 @@ import {
   updatePreferences,
 } from "./preferences";
 import {
+  isBattleMusicPlaying,
   isSoundMuted,
   playBlocked,
   playCorrect,
@@ -16,6 +17,8 @@ import {
   playVictory,
   playWrong,
   setSoundMuted,
+  startBattleMusic,
+  stopBattleMusic,
   toggleSoundMuted,
   unlockAudioOnFirstGesture,
 } from "./sound";
@@ -84,11 +87,11 @@ describe("sound", () => {
   it("persists the mute preference through Personal Settings", () => {
     setSoundMuted(true);
     expect(isSoundMuted()).toBe(true);
-    expect(readStoredPreferences().audio.enabled).toBe(false);
+    expect(readStoredPreferences().audio.masterVolume).toBe(0);
 
     toggleSoundMuted();
     expect(isSoundMuted()).toBe(false);
-    expect(readStoredPreferences().audio.enabled).toBe(true);
+    expect(readStoredPreferences().audio.masterVolume).toBe(50);
   });
 
   it("does not throw when AudioContext is unavailable", () => {
@@ -122,7 +125,7 @@ describe("sound", () => {
     expect(recorded.length).toBeGreaterThan(0);
 
     recorded = [];
-    updatePreferences({ audio: { missionCompletionSounds: false } });
+    updatePreferences({ audio: { missionCompletionVolume: 0 } });
     vi.setSystemTime(new Date("2100-01-01T00:00:05Z"));
     playFanfare();
     expect(recorded).toHaveLength(0);
@@ -155,5 +158,36 @@ describe("sound", () => {
     recorded = [];
     playHeroAttack();
     expect(recorded).toHaveLength(0);
+  });
+
+  it("starts and stops the battle music loop", () => {
+    vi.useFakeTimers();
+    stubAudioContext();
+
+    expect(isBattleMusicPlaying()).toBe(false);
+    startBattleMusic();
+    expect(isBattleMusicPlaying()).toBe(true);
+    // Starting again is idempotent.
+    startBattleMusic();
+    expect(isBattleMusicPlaying()).toBe(true);
+
+    stopBattleMusic();
+    expect(isBattleMusicPlaying()).toBe(false);
+  });
+
+  it("does not start battle music when the preference is off", () => {
+    vi.useFakeTimers();
+    stubAudioContext();
+    updatePreferences({ audio: { battleMusicVolume: 0 } });
+
+    startBattleMusic();
+    expect(isBattleMusicPlaying()).toBe(false);
+  });
+
+  it("degrades to silence when AudioContext is unavailable", () => {
+    // jsdom has no AudioContext.
+    expect(() => startBattleMusic()).not.toThrow();
+    expect(() => stopBattleMusic()).not.toThrow();
+    expect(isBattleMusicPlaying()).toBe(false);
   });
 });

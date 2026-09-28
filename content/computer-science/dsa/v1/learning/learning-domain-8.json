@@ -1,0 +1,1461 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "dsa-learning-2026-09-26-v13",
+  "certification_id": "cs-dsa",
+  "certification_version": "dsa-v1",
+  "exam_guide_revision": "Editorial and factual review 2026-09-26 using docs/16-content-audit.md. Every node starts with visible, self-contained context; definitions precede use; worked examples teach concepts tested by the current question bank.",
+  "domain": {
+    "id": "domain-8",
+    "name": "Backtracking, Greedy & Dynamic Programming",
+    "weight": 0.1
+  },
+  "learning_design": {
+    "progress_label": "Pattern Vision",
+    "unlock_rule": "Problem context and example data stay visible. Progressive reveal is used only for answers or learner decisions. Each node defines a new term before relying on it.",
+    "mastery_note": "Recognize the structure, explain why the method fits, and distinguish it from similar methods."
+  },
+  "source_refs": [
+    {
+      "title": "MIT OpenCourseWare 6.046J — Lecture 1 notes: Interval Scheduling / Greedy Algorithms",
+      "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/ff2a7015ff913fc01f0381d8f5126a9a_MIT6_046JS15_lec01.pdf"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 15: Dynamic Programming, Part 1",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_lec15/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Dynamic Programming II",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-20-dynamic-programming-ii-text-justification-blackjack/"
+    },
+    {
+      "title": "MIT Press — Introduction to Algorithms",
+      "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "backtracking",
+      "definition": "Explore a choice, undo it, then try another choice."
+    },
+    {
+      "term": "pruning",
+      "definition": "Stop a branch after proving no completion can produce a valid or better answer."
+    },
+    {
+      "term": "greedy",
+      "definition": "Commit to a local choice without revisiting it later."
+    },
+    {
+      "term": "memoization",
+      "definition": "Cache answers to DP states reached by top-down recursion."
+    },
+    {
+      "term": "tabulation",
+      "definition": "Compute DP states bottom-up in dependency order."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "8.1",
+      "8.2",
+      "8.3"
+    ],
+    "skill_ids": [
+      "8.1.01",
+      "8.1.02",
+      "8.1.03",
+      "8.2.01",
+      "8.2.02",
+      "8.2.03",
+      "8.3.01",
+      "8.3.02",
+      "8.3.03"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 65
+  },
+  "authoring_notes": "Audited against docs/16-content-audit.md. Concrete context first; first problem/setup never hidden; continuation nodes reintroduce required context; definitions precede comparison/application; short worked examples follow abstract rules; multi-step behavior is separated into distinct prompts; similar concepts are differentiated when the question bank tests that distinction; avoid unexplained jargon and meta-language such as 'you are learning to'.",
+  "modules": [
+    {
+      "id": "domain-8-module-1-backtracking",
+      "title": "Backtracking",
+      "order": 1,
+      "task_ids": [
+        "8.1"
+      ],
+      "skill_ids": [
+        "8.1.01",
+        "8.1.02",
+        "8.1.03"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-8-backtracking-tree",
+          "title": "Backtracking choices",
+          "concept_ids": [
+            "dsa.backtracking.choose_explore_undo"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A test generator must choose one region from `{us, eu}` and one database from `{postgres, mysql}`. It must emit every valid configuration, and later constraints may reject some partial choices."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Backtracking explores a tree of choices. At each step: choose an option, explore what follows, then undo the choice before trying its sibling."
+              }
+            },
+            {
+              "id": "tree",
+              "kind": "mental_model",
+              "label": "CHOICE TREE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Choose `us`.",
+                  "  Try `postgres` → one complete candidate.",
+                  "  Undo database choice; try `mysql` → another candidate.",
+                  "Undo region choice; choose `eu` and repeat."
+                ]
+              }
+            },
+            {
+              "id": "lifecycle",
+              "kind": "action",
+              "label": "BRANCH LIFECYCLE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "1. Choose.",
+                  "2. Explore recursively.",
+                  "3. Undo.",
+                  "4. Try the next sibling choice."
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use backtracking when you must explore combinations/permutations under constraints and one early choice creates several later alternatives."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choose → explore → undo → try the sibling."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Before trying a sibling branch, what must happen to the previous branch's temporary choice? Answer: Undo it.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Undo it.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture notes index (BFS, DFS, shortest paths, DP)",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "decision tree",
+              "definition": "A conceptual tree where each branch represents one available choice."
+            },
+            {
+              "term": "partial candidate",
+              "definition": "The choices selected so far before a complete solution is built."
+            }
+          ]
+        },
+        {
+          "id": "domain-8-backtracking-state",
+          "title": "Backtracking state",
+          "concept_ids": [
+            "dsa.backtracking.state",
+            "dsa.backtracking.choose_explore_undo"
+          ],
+          "prerequisite_node_ids": [
+            "domain-8-backtracking-tree"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A feature solver uses shared list `chosen`. It appends feature `A`, recursively explores, returns, and then wants to try sibling feature `B`."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Mutable branch state must describe only the current branch. If a choice is added before recursion, remove that same choice after recursion returns."
+              }
+            },
+            {
+              "id": "bad",
+              "kind": "not_this",
+              "label": "BUG",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "`chosen = [A]`",
+                  "Recursive call returns.",
+                  "Code immediately appends `B` without removing `A`.",
+                  "Sibling branch incorrectly starts as `[A, B]` instead of `[B]`."
+                ]
+              }
+            },
+            {
+              "id": "good",
+              "kind": "mental_model",
+              "label": "CORRECT FLOW",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "`chosen.append(A)`",
+                  "`explore()`",
+                  "`chosen.pop()`  ← restore parent state",
+                  "`chosen.append(B)`",
+                  "`explore()`"
+                ]
+              }
+            },
+            {
+              "id": "code",
+              "kind": "action",
+              "label": "CODE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "backtrack.py",
+                "language": "python",
+                "code": "def search(options, chosen):\n    if complete(chosen):\n        emit(chosen)\n        return\n\n    for option in options:\n        chosen.append(option)\n        search(options, chosen)\n        chosen.pop()\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "choose",
+                    "anchor": {
+                      "line": 7,
+                      "text": "chosen.append(option)",
+                      "occurrence": 1
+                    },
+                    "title": "Choose",
+                    "explanation": "Add temporary state for this branch.",
+                    "required": true
+                  },
+                  {
+                    "id": "undo",
+                    "anchor": {
+                      "line": 9,
+                      "text": "chosen.pop()",
+                      "occurrence": 1
+                    },
+                    "title": "Undo",
+                    "explanation": "Restore the parent state before the next sibling.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Every mutation made for one branch needs a matching undo before the next sibling."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "After exploring choice `A`, what should happen before trying sibling `B`? Answer: Remove `A` from the shared branch state.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Remove `A` from the shared branch state.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture notes index (BFS, DFS, shortest paths, DP)",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/"
+            },
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ]
+        },
+        {
+          "id": "domain-8-backtracking-prune",
+          "title": "Pruning",
+          "concept_ids": [
+            "dsa.backtracking.pruning",
+            "dsa.backtracking.state"
+          ],
+          "prerequisite_node_ids": [
+            "domain-8-backtracking-state"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A deployment may use at most `16 GiB`. A partial branch already uses `18 GiB`. Every remaining component has a non-negative memory size."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Pruning stops exploring a branch only when you can prove that no completion below that branch can produce a valid or better answer."
+              }
+            },
+            {
+              "id": "why",
+              "kind": "mental_model",
+              "label": "WHY THIS BRANCH IS IMPOSSIBLE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Current usage = `18 GiB`.",
+                  "Limit = `16 GiB`.",
+                  "Future choices can only add `0` or more memory.",
+                  "Usage can never return to `<= 16 GiB`.",
+                  "Prune the entire branch."
+                ]
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "connects_to",
+              "label": "PROOF VS GUESS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "case",
+                    "label": "Situation"
+                  },
+                  {
+                    "id": "prune",
+                    "label": "Safe to prune?"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "hard",
+                    "cells": {
+                      "case": "Already exceeds a hard limit and future additions are non-negative",
+                      "prune": "Yes"
+                    }
+                  },
+                  {
+                    "id": "looksbad",
+                    "cells": {
+                      "case": "Branch looks unlikely to be best, but no bound proves it",
+                      "prune": "No"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Prune on a hard constraint or a valid bound, not because a branch merely looks unpromising."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Pruning requires proof that the branch cannot recover."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Usage is already 18 GiB with a 16 GiB limit and future sizes are non-negative. Continue or prune? Answer: Prune.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Prune.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-8-module-2-greedy",
+      "title": "Greedy",
+      "order": 2,
+      "task_ids": [
+        "8.2"
+      ],
+      "skill_ids": [
+        "8.2.01",
+        "8.2.02",
+        "8.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-8-module-1-backtracking"
+      ],
+      "nodes": [
+        {
+          "id": "domain-8-greedy-safe",
+          "title": "Greedy choices",
+          "concept_ids": [
+            "dsa.greedy.safe_choice"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "An algorithm wants to choose one locally attractive option now and never revisit that decision. The key question is not whether the choice looks good, but whether committing to it is safe."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A greedy algorithm repeatedly makes a local choice and does not backtrack. For an optimization problem, the greedy rule needs a reason or proof that this commitment does not block an optimal solution."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "mental_model",
+              "label": "GREEDY VS BACKTRACKING",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "method",
+                    "label": "Method"
+                  },
+                  {
+                    "id": "commit",
+                    "label": "What happens to choices"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "greedy",
+                    "cells": {
+                      "method": "Greedy",
+                      "commit": "Commits to one rule-driven choice and does not revisit it"
+                    }
+                  },
+                  {
+                    "id": "backtracking",
+                    "cells": {
+                      "method": "Backtracking",
+                      "commit": "Explores a choice temporarily, then undoes it before trying siblings"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "evidence",
+              "kind": "action",
+              "label": "WHAT COUNTS AS EVIDENCE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "A proof that an optimal solution can always include the greedy choice.",
+                  "An exchange argument that swaps the greedy choice into an optimal solution without making it worse.",
+                  "A known problem structure whose greedy rule has been established."
+                ]
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Do not use greedy because a choice looks best locally; use it because that local commitment is provably safe."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Does 'this option has the biggest immediate value' alone prove a greedy algorithm is correct? Answer: No.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.046J — Lecture 1 notes: Interval Scheduling / Greedy Algorithms",
+              "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/ff2a7015ff913fc01f0381d8f5126a9a_MIT6_046JS15_lec01.pdf"
+            },
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "greedy choice",
+              "definition": "A local choice committed to without later backtracking."
+            },
+            {
+              "term": "exchange argument",
+              "definition": "A proof technique showing an optimal solution can be changed to use the greedy choice without becoming worse."
+            }
+          ]
+        },
+        {
+          "id": "domain-8-greedy-interval",
+          "title": "Interval scheduling",
+          "concept_ids": [
+            "dsa.greedy.interval_scheduling",
+            "dsa.greedy.safe_choice"
+          ],
+          "prerequisite_node_ids": [
+            "domain-8-greedy-safe"
+          ],
+          "map_position": {
+            "x": 0.44,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "One lab can run one booking at a time. Every accepted booking counts equally. Bookings are `A=[1,4]`, `B=[3,5]`, `C=[0,6]`, `D=[5,7]`, `E=[8,9]`. Choose the maximum number of non-overlapping bookings."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For the classic maximum-count interval scheduling problem, repeatedly choose the compatible interval with the earliest finish time."
+              }
+            },
+            {
+              "id": "step-1",
+              "kind": "mental_model",
+              "label": "STEP 1",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Earliest finishing interval is `A=[1,4]`.",
+                  "Choose A."
+                ]
+              }
+            },
+            {
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Among intervals starting at or after 4, `D=[5,7]` finishes earliest.",
+                  "Choose D."
+                ]
+              }
+            },
+            {
+              "id": "step-3",
+              "kind": "mental_model",
+              "label": "STEP 3",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Next compatible interval is `E=[8,9]`.",
+                  "Result: `A, D, E` → 3 bookings."
+                ]
+              }
+            },
+            {
+              "id": "why",
+              "kind": "connects_to",
+              "label": "WHY EARLY FINISH HELPS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Finishing as early as possible leaves at least as much remaining time for later compatible intervals as choosing a later-finishing compatible interval."
+              }
+            },
+            {
+              "id": "scope",
+              "kind": "not_this",
+              "label": "SCOPE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "This rule is for maximizing the number of equal-value compatible intervals. If intervals have different profits and the goal is maximum total profit, the same greedy rule is not generally sufficient."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Maximum count of equal-value non-overlapping intervals → repeatedly choose earliest finish."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If jobs have different profits and the objective is maximum total profit, can we automatically reuse earliest-finish greedy? Answer: No.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.046J — Lecture 1 notes: Interval Scheduling / Greedy Algorithms",
+              "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/ff2a7015ff913fc01f0381d8f5126a9a_MIT6_046JS15_lec01.pdf"
+            },
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ]
+        },
+        {
+          "id": "domain-8-greedy-vs-dp",
+          "title": "Greedy or DP",
+          "concept_ids": [
+            "dsa.greedy.discrimination",
+            "dsa.greedy.safe_choice"
+          ],
+          "prerequisite_node_ids": [
+            "domain-8-greedy-interval"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Build-cache capacity is `10`. Artifact A uses `10` and saves `10` minutes. B uses `5` and saves `9`; C uses `5` and saves `9`. Artifacts are indivisible."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Greedy commits to one local choice. Dynamic programming (DP) keeps enough state to compare combinations when local choices can change future options."
+              }
+            },
+            {
+              "id": "counterexample",
+              "kind": "mental_model",
+              "label": "GREEDY COUNTEREXAMPLE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Greedy idea: take the single artifact with the highest saving → choose A → total saving `10`.",
+                  "Better combination: choose B + C → size `5 + 5 = 10`, saving `9 + 9 = 18`.",
+                  "The locally largest single saving is not globally best."
+                ]
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "connects_to",
+              "label": "WHEN EACH FITS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "shape",
+                    "label": "Problem shape"
+                  },
+                  {
+                    "id": "fit",
+                    "label": "Likely method"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "safe",
+                    "cells": {
+                      "shape": "A local choice can be proven safe and future options do not need comparison",
+                      "fit": "Greedy"
+                    }
+                  },
+                  {
+                    "id": "tradeoffs",
+                    "cells": {
+                      "shape": "Different combinations consume resources and create future trade-offs",
+                      "fit": "Dynamic programming"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use a small counterexample to test a proposed greedy rule before trusting it."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If local choices interact through future capacity or state, keep those trade-offs instead of committing greedily."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Capacity 10: A=(10,10), B=(5,9), C=(5,9). Which has more total saving: A or B+C? Answer: `B + C` with `18`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`B + C` with `18`.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.046J — Lecture 1 notes: Interval Scheduling / Greedy Algorithms",
+              "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/ff2a7015ff913fc01f0381d8f5126a9a_MIT6_046JS15_lec01.pdf"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 15: Dynamic Programming, Part 1",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_lec15/"
+            },
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-8-module-3-dp",
+      "title": "Dynamic programming",
+      "order": 3,
+      "task_ids": [
+        "8.3"
+      ],
+      "skill_ids": [
+        "8.3.01",
+        "8.3.02",
+        "8.3.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-8-module-2-greedy"
+      ],
+      "nodes": [
+        {
+          "id": "domain-8-dp-state",
+          "title": "DP state",
+          "concept_ids": [
+            "dsa.dp.state_transition"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Artifacts are processed from index `i` onward. Each artifact has a size and value. A cache has some `remaining` capacity. We want the maximum total value that can still fit."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A DP state stores exactly the information needed to identify the remaining subproblem. For 0/1 artifact selection, `(i, remaining)` tells us which items are still available and how much capacity is left."
+              }
+            },
+            {
+              "id": "same-state",
+              "kind": "mental_model",
+              "label": "WHY HISTORY CAN BE FORGOTTEN",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "History 1 and History 2 may have chosen different earlier items.",
+                  "If both reach the same `i` and the same `remaining`, their future choices are identical.",
+                  "They can reuse one answer for `best(i, remaining)`."
+                ]
+              }
+            },
+            {
+              "id": "transition",
+              "kind": "action",
+              "label": "TRANSITION",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Skip item i → `best(i + 1, remaining)`.",
+                  "If item i fits, take it → `value[i] + best(i + 1, remaining - size[i])`.",
+                  "State answer = maximum of the legal choices."
+                ]
+              }
+            },
+            {
+              "id": "mistake",
+              "kind": "not_this",
+              "label": "TOO LITTLE STATE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If two histories have the same `i` but different remaining capacity, they are not the same subproblem because different future items may fit."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Two histories may share one DP state only when their future decision problem is identical."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Same item index but remaining capacities 3 and 8: same DP state? Answer: No.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 15: Dynamic Programming, Part 1",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_lec15/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+            },
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "DP state",
+              "definition": "A compact description of one subproblem whose answer can be reused."
+            },
+            {
+              "term": "transition",
+              "definition": "The rule that computes one DP state from smaller or dependent states."
+            },
+            {
+              "term": "overlapping subproblems",
+              "definition": "The same subproblem is reached from more than one decision path."
+            }
+          ]
+        },
+        {
+          "id": "domain-8-dp-memo",
+          "title": "Memoization",
+          "concept_ids": [
+            "dsa.dp.memoization",
+            "dsa.dp.state_transition"
+          ],
+          "prerequisite_node_ids": [
+            "domain-8-dp-state"
+          ],
+          "map_position": {
+            "x": 0.46,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A recursive cache optimizer repeatedly reaches the same state such as `(i=4, remaining=7)` from different choice histories. The recurrence is correct, but repeated states redo the same work."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Memoization caches the answer the first time a recursive DP state is solved. Later calls with the same state return the cached answer instead of recomputing it."
+              }
+            },
+            {
+              "id": "code",
+              "kind": "action",
+              "label": "TOP-DOWN MEMOIZATION",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "memo.py",
+                "language": "python",
+                "code": "from functools import lru_cache\n\n@lru_cache(None)\ndef best(i, remaining):\n    if i == len(items):\n        return 0\n\n    answer = best(i + 1, remaining)\n    size, value = items[i]\n    if size <= remaining:\n        answer = max(answer, value + best(i + 1, remaining - size))\n    return answer\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "cache",
+                    "anchor": {
+                      "line": 3,
+                      "text": "@lru_cache(None)",
+                      "occurrence": 1
+                    },
+                    "title": "Cache by function arguments",
+                    "explanation": "The state `(i, remaining)` becomes the cache key.",
+                    "required": true
+                  },
+                  {
+                    "id": "state",
+                    "anchor": {
+                      "line": 4,
+                      "text": "def best(i, remaining):",
+                      "occurrence": 1
+                    },
+                    "title": "State is explicit",
+                    "explanation": "Calls with the same two arguments represent the same future subproblem.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "connects_to",
+              "label": "MEMOIZATION VS TABULATION",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "style",
+                    "label": "Style"
+                  },
+                  {
+                    "id": "direction",
+                    "label": "How states are computed"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "memo",
+                    "cells": {
+                      "style": "Memoization",
+                      "direction": "Top-down; recurse and cache states as reached"
+                    }
+                  },
+                  {
+                    "id": "tab",
+                    "cells": {
+                      "style": "Tabulation",
+                      "direction": "Bottom-up; compute states in a dependency-safe order"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Add memoization when a correct recursive formulation reaches the same DP states repeatedly and you want to keep the recursive structure."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Same state reached again → reuse the cached answer."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "What does memoization change about repeated states? Answer: They reuse cached answers instead of being recomputed.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "They reuse cached answers instead of being recomputed.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 15: Dynamic Programming, Part 1",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_lec15/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Dynamic Programming II",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-20-dynamic-programming-ii-text-justification-blackjack/"
+            }
+          ]
+        },
+        {
+          "id": "domain-8-dp-sequence-resource",
+          "title": "Common DP states",
+          "concept_ids": [
+            "dsa.dp.sequence_resource",
+            "dsa.dp.state_transition",
+            "dsa.greedy.discrimination"
+          ],
+          "prerequisite_node_ids": [
+            "domain-8-dp-memo",
+            "domain-8-greedy-vs-dp"
+          ],
+          "map_position": {
+            "x": 0.8,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Two problems look unrelated: (1) find minimum edits between strings `cat` and `cut`; (2) choose indivisible artifacts under a cache-capacity limit. Both need decisions whose future depends on a small set of coordinates."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sequence DP often uses positions such as `(i, j)` to represent the unprocessed suffixes of two sequences. Resource DP often uses `(i, remaining)` to represent remaining items and remaining capacity."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "mental_model",
+              "label": "TWO COMMON SHAPES",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "problem",
+                    "label": "Problem"
+                  },
+                  {
+                    "id": "state",
+                    "label": "State"
+                  },
+                  {
+                    "id": "meaning",
+                    "label": "Meaning"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "edit",
+                    "cells": {
+                      "problem": "Edit distance",
+                      "state": "(i, j)",
+                      "meaning": "Positions still to process in the two strings"
+                    }
+                  },
+                  {
+                    "id": "knap",
+                    "cells": {
+                      "problem": "0/1 artifact selection",
+                      "state": "(i, remaining)",
+                      "meaning": "Items still available and capacity left"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "edit",
+              "kind": "action",
+              "label": "EDIT-DISTANCE EXAMPLE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "At state `(i, j)`, compare `a[i]` and `b[j]`.",
+                  "If they match, advance both positions.",
+                  "If they differ, legal choices such as insert, delete, or replace move to different smaller states.",
+                  "The DP keeps the minimum total edit cost among those choices."
+                ]
+              }
+            },
+            {
+              "id": "resource",
+              "kind": "action",
+              "label": "RESOURCE EXAMPLE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "At `(i, remaining)`, either skip item i or take it if it fits.",
+                  "Taking it reduces `remaining`.",
+                  "The DP keeps the better value among the legal choices."
+                ]
+              }
+            },
+            {
+              "id": "greedy",
+              "kind": "connects_to",
+              "label": "WHY NOT JUST GREEDY?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "These problems can require comparing future consequences of different current choices. A local choice is not enough unless a separate greedy proof shows it is safe."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choose state coordinates that completely describe what remains to be decided."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For edit distance between two suffixes, which two coordinates naturally identify the subproblem? Answer: The current positions `(i, j)` in the two strings.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "The current positions `(i, j)` in the two strings.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Dynamic Programming I",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-19-dynamic-programming-i-fibonacci-shortest-paths/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Dynamic Programming II",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/resources/lecture-20-dynamic-programming-ii-text-justification-blackjack/"
+            },
+            {
+              "title": "MIT Press — Introduction to Algorithms",
+              "url": "https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

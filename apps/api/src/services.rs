@@ -16,9 +16,17 @@ use adaptive_learn_content::{
 use adaptive_learn_db as db;
 use adaptive_learn_domain::concept_state::SUCCESS_THRESHOLD;
 use adaptive_learn_domain::{
-    ConceptWeight, DAILY_MISSION_BONUS_BITS, LearningEvent, MODEL_VERSION, MissionInstance,
-    MissionStatus, PredictionSample, QuizMode, SECTION_QUIZ_BONUS_BITS, cyber_defense_upgrade_bits,
-    evaluate, predict_question, retrievability, reward_bits, summarize_streak,
+    ConceptWeight, DAILY_MISSION_BONUS_BITS, DEFAULT_HEALTH_RATIO_THRESHOLD, GeneratedOperation,
+    LearningEvent, MODEL_VERSION, MissionInstance, MissionStatus, OPERATION_TEMPLATES,
+    OperationGenerationInput, OperationOutcome, PredictionSample, QuizMode,
+    SECTION_QUIZ_BONUS_BITS, StoryProgressInput, THREAT_LEVEL_MAX, THREAT_LEVEL_MIN,
+    TOWER_UPGRADES, ThreatRecommendationInput, active_chapter, adversary_progress_award,
+    adversary_rank_from_progress, career_level_from_xp, career_rank, cyber_defense_upgrade_bits,
+    evaluate, evaluate_story_nodes, fixed_mission_reward, generate_operation, hero_level_from_xp,
+    is_campaign_mission, is_known_hero, is_legal_talent, operation_reward, operation_template,
+    predict_question, recommend_threat_level, retrievability, reward_bits, summarize_streak,
+    tower_level, tower_upgrade, tower_upgrade_cost, unlocked_threat_level, xp_for_career_level,
+    xp_for_hero_level,
 };
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use uuid::Uuid;
@@ -26,29 +34,41 @@ use uuid::Uuid;
 use crate::auth::AuthenticatedUser;
 use crate::dto::{
     AnswerPayload, AnswerRequest, AuxiliaryEventRequest, CalibrationBucketDto, CatalogResponse,
-    CertificationDto, CertificationVersionDto, CompleteMissionResponse, ConceptDto,
-    CyberDefenseUpgradeRequest, CyberDefenseUpgradeResponse, DailyItemCompleteRequest,
+    CertificationDto, CertificationVersionDto, ChallengeStageKind, ChallengeStageView,
+    ChallengeStartRequest, ChallengeSummaryDto, ChallengeView, CompleteMissionResponse, ConceptDto,
+    CyberAdversaryProgressDto, CyberCampaignCompleteRequest, CyberCampaignCompleteResponse,
+    CyberCampaignResultDto, CyberCareerDto, CyberCareerSummaryDto, CyberDefenseProfileResponse,
+    CyberDefenseUpgradeRequest, CyberDefenseUpgradeResponse, CyberHeroProgressDto,
+    CyberHeroTalentRequest, CyberLegacyImportRequest, CyberLegacyImportResponse,
+    CyberOperationCompleteRequest, CyberOperationCompleteResponse, CyberOperationResultDto,
+    CyberOperationRunDto, CyberOperationStartRequest, CyberRewardDto, CyberStoryProgressDto,
+    CyberTelemetryRequest, CyberTelemetryResponse, CyberTowerUpgradeDto,
+    CyberTowerUpgradePurchaseRequest, CyberTowerUpgradePurchaseResponse, DailyItemCompleteRequest,
     DailyItemCompleteResponse, DailyMissionItemDto, DailyMissionItemKind, DailyMissionItemStatus,
     DailyMissionPlanType, DailyMissionRequest, DailyMissionResponse, DailyMissionStatus,
     DiscoveryResponse, DiscoveryState, DiscoveryUpdateRequest, DomainDto, DomainProgressDto,
-    EvaluationSliceDto, FeedbackResponse, IssueMissionRequest, LearningDomainResponse,
-    MissionResponse, MissionReviewResponse, ModelEvaluationResponse, NodeProgressDto,
-    PracticeTestDomainResult, PracticeTestItemResult, PracticeTestItemView,
-    PracticeTestListResponse, PracticeTestResponse, PracticeTestResultResponse,
-    PracticeTestSubmissionRequest, PracticeTestSummaryDto, QuestionView,
-    RecommendationEventRequest, RecommendationEventResponse, RecommendationResponse,
-    ReviewedAttempt, ReviewedQuestion, StreakDto, StudyQuestionView, StudySessionRequest,
-    StudySessionResponse, SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse,
-    SyncSectionResult, TaskDto, TrackMapResponse, TrackProgressResponse, UpdateSettingsRequest,
-    UserSettingsDto, WalletResponse,
+    EvaluationSliceDto, FamilyConfusionDto, FamilyInsightDto, FamilyInsightsResponse,
+    FeedbackResponse, IssueMissionRequest, LearningDomainResponse, MissionResponse,
+    MissionReviewResponse, ModelEvaluationResponse, NodeProgressDto, PracticeTestDomainResult,
+    PracticeTestItemResult, PracticeTestItemView, PracticeTestListResponse, PracticeTestResponse,
+    PracticeTestResultResponse, PracticeTestSubmissionRequest, PracticeTestSummaryDto,
+    QuestionErrorCode, QuestionView, RecommendationEventRequest, RecommendationEventResponse,
+    RecommendationResponse, ReviewedAttempt, ReviewedQuestion, SeenExampleDto, StreakDto,
+    StructureComparisonDto, StudyQuestionView, StudySessionRequest, StudySessionResponse,
+    SyncEventRequest, SyncEventResult, SyncRequest, SyncResponse, SyncSectionResult, TaskDto,
+    TrackMapResponse, TrackProgressResponse, UpdateSettingsRequest, UserSettingsDto,
+    WalletResponse,
 };
 use crate::error::ApiError;
+use crate::pedagogy::RecentPedagogy;
 use crate::planner::{
     self, ConceptStateView, PlannerDomain, PlannerInput, PlannerNode, PlannerQuestion,
 };
-use crate::selection::{self, Candidate, ConceptEvidence, HistoryEntry};
+use crate::remediation;
+use crate::selection::{self, Candidate, ConceptEvidence, HistoryEntry, HistoryErrorCode};
 use crate::signals;
 use crate::state::AppState;
+use crate::structure;
 
 /// Response times are capped so background time cannot inflate study time.
 const MAX_RESPONSE_MS: i32 = 30 * 60 * 1000;
@@ -164,13 +184,214 @@ pub fn track_map(state: &AppState, track_id: &str) -> Result<TrackMapResponse, A
         .filter(|domain| domain.certification_version == track_version)
         .map(learning_domain_response)
         .collect();
+    let challenges = state
+        .content
+        .challenges_for_certification(track_id)
+        .into_iter()
+        .map(challenge_summary)
+        .collect();
 
     Ok(TrackMapResponse {
         track_id: track_id.to_owned(),
         track_version,
         content_version: bundle.version.content_version.clone(),
         domains,
+        challenges,
     })
+}
+
+/// Maps an authored challenge into its compact hub summary.
+fn challenge_summary(
+    challenge: &adaptive_learn_content::ChallengeDefinition,
+) -> ChallengeSummaryDto {
+    ChallengeSummaryDto {
+        id: challenge.id.clone(),
+        title: challenge.title.clone(),
+        description: challenge.description.clone(),
+        estimated_minutes: challenge.estimated_minutes(),
+        stage_count: challenge.stages.len(),
+        prerequisite_node_ids: challenge.prerequisite_node_ids.clone(),
+    }
+}
+
+/// Returns learner-family insights for one track (Phase 5).
+///
+/// This is post-exposure teaching content derived on read from accepted history
+/// plus canonical authored guides. It never writes evidence, changes concept
+/// state, settles Bits, or exposes an answer key. A track with no authored
+/// guides, or a learner with no relevant exposure, returns an empty list.
+///
+/// When `mission_id` is supplied, the response is scoped to the families of
+/// that **completed, owned** mission, so a completion summary shows only
+/// structures the finished work actually involved. An in-progress or foreign
+/// mission yields an empty list rather than leaking mid-mission family metadata.
+pub async fn family_insights(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    track_id: &str,
+    mission_id: Option<Uuid>,
+) -> Result<FamilyInsightsResponse, ApiError> {
+    let bundle = state
+        .content
+        .bundle_for_certification(track_id)
+        .ok_or(ApiError::NotFound)?;
+    let track_version = bundle.version.id.clone();
+
+    let guides: Vec<&adaptive_learn_content::FamilyGuide> = state
+        .content
+        .family_guides()
+        .iter()
+        .filter(|guide| {
+            guide.certification_id == track_id && guide.certification_version == track_version
+        })
+        .collect();
+
+    if guides.is_empty() {
+        return Ok(FamilyInsightsResponse {
+            track_id: track_id.to_owned(),
+            track_version,
+            has_guides: false,
+            insights: Vec::new(),
+        });
+    }
+
+    // Optional mission scope: only families represented by a completed, owned
+    // mission are returned. Anything else is treated as an empty scope, never a
+    // fallback to the whole track.
+    let mission_families: Option<HashSet<String>> = match mission_id {
+        None => None,
+        Some(id) => {
+            let mission = load_mission(state, id).await?;
+            if mission.user_id != Some(user.id) || mission.certification_id != track_id {
+                return Err(ApiError::Forbidden);
+            }
+            if mission.status != MissionStatus::Completed {
+                return Ok(FamilyInsightsResponse {
+                    track_id: track_id.to_owned(),
+                    track_version,
+                    has_guides: true,
+                    insights: Vec::new(),
+                });
+            }
+            Some(
+                mission
+                    .question_ids
+                    .iter()
+                    .filter_map(|question_id| state.content.question(&track_version, question_id))
+                    .filter_map(|question| {
+                        question
+                            .pedagogy
+                            .as_ref()
+                            .and_then(|pedagogy| pedagogy.family_id.as_deref())
+                    })
+                    .map(str::trim)
+                    .filter(|family_id| !family_id.is_empty())
+                    .map(str::to_owned)
+                    .collect(),
+            )
+        }
+    };
+
+    let rows = db::learning_events::distinct_seen_questions(&state.pool, user.id, track_id).await?;
+    let seen = seen_records(state, &track_version, &rows, mission_families.as_ref());
+
+    let insights = structure::build_family_insights(&guides, &seen)
+        .into_iter()
+        .map(family_insight_dto)
+        .collect();
+
+    Ok(FamilyInsightsResponse {
+        track_id: track_id.to_owned(),
+        track_version,
+        has_guides: true,
+        insights,
+    })
+}
+
+/// Joins all-time seen question ids to authored pedagogy and learner-safe titles.
+///
+/// The learning event never stores pedagogy metadata; it is reconstructed from
+/// canonical content here, so accepted events stay the single authoritative
+/// history and no duplicate "family history" table is needed. A question that no
+/// longer exists in the current content version is skipped safely, and when a
+/// mission scope is supplied only its families are kept.
+pub(crate) fn seen_records(
+    state: &AppState,
+    track_version: &str,
+    rows: &[db::learning_events::SeenQuestion],
+    mission_families: Option<&HashSet<String>>,
+) -> Vec<structure::SeenRecord> {
+    let mut seen = Vec::new();
+    for row in rows {
+        let Some(question) = state.content.question(track_version, &row.question_id) else {
+            continue;
+        };
+        let Some(pedagogy) = &question.pedagogy else {
+            continue;
+        };
+        let Some(family_id) = pedagogy
+            .family_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|family_id| !family_id.is_empty())
+        else {
+            continue;
+        };
+        if mission_families.is_some_and(|allowed| !allowed.contains(family_id)) {
+            continue;
+        }
+        seen.push(structure::SeenRecord {
+            family_id: family_id.to_owned(),
+            question_id: row.question_id.clone(),
+            transfer_group_id: pedagogy.transfer_group_id.clone(),
+            surface_context: pedagogy.surface_context.clone(),
+            title: question.prompt.clone(),
+            seen_at: row.last_occurred_at,
+        });
+    }
+    seen
+}
+
+/// Maps the pure insight into its learner-facing transport shape.
+fn family_insight_dto(insight: structure::FamilyInsight) -> FamilyInsightDto {
+    FamilyInsightDto {
+        family_id: insight.family_id,
+        title: insight.title,
+        summary: insight.summary,
+        recognition_signals: insight.recognition_signals,
+        core_rules: insight.core_rules,
+        structural_steps: insight.structural_steps,
+        example_contexts: insight.example_contexts,
+        common_confusions: insight
+            .common_confusions
+            .into_iter()
+            .map(|confusion| FamilyConfusionDto {
+                other_family_id: confusion.other_family_id,
+                other_family_title: confusion.other_family_title,
+                distinction: confusion.distinction,
+            })
+            .collect(),
+        source_refs: insight.source_refs,
+        seen_context_count: insight.seen_context_count,
+        seen_example_count: insight.seen_example_count,
+        comparison: insight.comparison.map(|comparison| StructureComparisonDto {
+            family_id: comparison.family_id,
+            title: comparison.title,
+            summary: comparison.summary,
+            recognition_signals: comparison.recognition_signals,
+            core_rules: comparison.core_rules,
+            structural_steps: comparison.structural_steps,
+            examples: comparison
+                .examples
+                .into_iter()
+                .map(|example| SeenExampleDto {
+                    title: example.title,
+                    context_label: example.context_label,
+                    seen_at: example.seen_at,
+                })
+                .collect(),
+        }),
+    }
 }
 
 /// Shared planner inputs assembled from content, learner state, and discovery.
@@ -194,18 +415,11 @@ async fn planner_context(
     let track_version = bundle.version.id.clone();
 
     let states = db::concept_state::list_for_user(&state.pool, user.id, &track_version).await?;
-    let history: Vec<HistoryEntry> =
-        db::learning_events::recent_for_user(&state.pool, user.id, track_id, HISTORY_LIMIT)
-            .await?
-            .into_iter()
-            .map(|entry| HistoryEntry {
-                question_id: entry.question_id,
-                score: entry.score,
-                assessment_mode: entry.assessment_mode,
-                occurred_at: entry.occurred_at,
-                concepts: entry.concepts,
-            })
-            .collect();
+    let history = history_entries(
+        state,
+        &track_version,
+        db::learning_events::recent_for_user(&state.pool, user.id, track_id, HISTORY_LIMIT).await?,
+    );
 
     let domains: Vec<PlannerDomain> = bundle
         .version
@@ -231,6 +445,7 @@ async fn planner_context(
             assessment_mode: question.assessment_mode,
             difficulty_prior: question.difficulty_prior,
             concepts: concept_weights(question),
+            pedagogy: question.pedagogy.clone(),
         })
         .collect();
 
@@ -239,6 +454,10 @@ async fn planner_context(
         derive_track_discovery(state, &track_version, &merged)
     };
 
+    let recent_pedagogy = RecentPedagogy::build(&history);
+    // Structured-error resolution is separate from ranking: resolve at most one
+    // active remediation target from the same recent accepted history.
+    let remediation = remediation::resolve_active_remediation(&history);
     let input = PlannerInput {
         track_id: track_id.to_owned(),
         track_version: track_version.clone(),
@@ -264,6 +483,8 @@ async fn planner_context(
             .iter()
             .map(|entry| entry.question_id.clone())
             .collect(),
+        recent_pedagogy,
+        remediation,
     };
 
     Ok(PlannerContext {
@@ -417,6 +638,7 @@ fn mission_practice_source(mode: QuizMode, has_recommendation: bool) -> &'static
         QuizMode::TaskPractice => "task_practice",
         QuizMode::RecommendedPractice => "recommended_practice",
         QuizMode::SectionQuiz => "section_quiz",
+        QuizMode::Challenge => "challenge",
     }
 }
 
@@ -751,6 +973,7 @@ fn candidate_from_planner_question(question: &PlannerQuestion) -> Candidate {
         assessment_mode: question.assessment_mode,
         difficulty_prior: question.difficulty_prior,
         concepts: question.concepts.clone(),
+        pedagogy: question.pedagogy.clone(),
     }
 }
 
@@ -782,6 +1005,10 @@ struct GeneratedDailyItems {
 /// refreshes, and repeated requests all return the same stored snapshot. If
 /// adaptive generation fails, a standard non-adaptive plan is persisted instead
 /// and kept for the rest of the day.
+///
+/// The one exception is stale content: if a later content revision removes a
+/// knowledge node or question a pending item still needs, the plan is rebuilt
+/// from current content (see `refresh_unexecutable_daily_mission`).
 pub async fn daily_mission(
     state: &AppState,
     user: &AuthenticatedUser,
@@ -820,10 +1047,16 @@ pub async fn daily_mission(
     if let Some(existing) =
         db::daily_missions::find_for_day(&state.pool, user.id, track_id, day_key).await?
     {
-        settle_completed_reward(state, &existing).await;
-        let current = db::daily_missions::find_by_id(&state.pool, existing.id)
-            .await?
-            .unwrap_or(existing);
+        let current = refresh_unexecutable_daily_mission(
+            state,
+            user,
+            track_id,
+            &track_version,
+            existing,
+            &request.discovery,
+        )
+        .await?;
+        settle_completed_reward(state, &current).await;
         return Ok(daily_response(&bundle.version.domains, &current));
     }
 
@@ -834,10 +1067,16 @@ pub async fn daily_mission(
         db::daily_missions::find_latest_for_user_track(&state.pool, user.id, track_id).await?
     {
         if day_key <= latest.day_key {
-            settle_completed_reward(state, &latest).await;
-            let current = db::daily_missions::find_by_id(&state.pool, latest.id)
-                .await?
-                .unwrap_or(latest);
+            let current = refresh_unexecutable_daily_mission(
+                state,
+                user,
+                track_id,
+                &track_version,
+                latest,
+                &request.discovery,
+            )
+            .await?;
+            settle_completed_reward(state, &current).await;
             return Ok(daily_response(&bundle.version.domains, &current));
         }
     }
@@ -878,6 +1117,107 @@ pub async fn daily_mission(
         .await?
         .unwrap_or(stored);
     Ok(daily_response(&bundle.version.domains, &current))
+}
+
+/// Whether every pending item of a stored Daily Mission can still be executed
+/// against the current authored content.
+///
+/// A certification revision can remove a knowledge node or a question that a
+/// stored plan references, so an item can no longer be completed. Completed
+/// items are ignored: their work is already recorded against the concept state.
+fn daily_plan_is_executable(
+    state: &AppState,
+    mission: &db::daily_missions::StoredDailyMission,
+) -> bool {
+    mission
+        .items
+        .iter()
+        .filter(|item| item.status != "completed")
+        .all(|item| match item.kind.as_str() {
+            "learn_node" | "review_node" => item.node_id.as_deref().is_some_and(|node_id| {
+                state
+                    .content
+                    .learning_domain(&mission.track_version, &item.domain_id)
+                    .and_then(|domain| domain.node(node_id))
+                    .is_some()
+            }),
+            "practice" => {
+                let ids = practice_question_ids(&item.practice_context);
+                !ids.is_empty()
+                    && ids
+                        .iter()
+                        .all(|id| state.content.question(&mission.track_version, id).is_some())
+            }
+            "domain_practice" => !state
+                .content
+                .questions_for_domain(&mission.track_version, &item.domain_id)
+                .is_empty(),
+            _ => false,
+        })
+}
+
+/// Rebuilds a stored Daily Mission when the authored content changed under it,
+/// so a plan can never strand the learner with an item that cannot be executed.
+///
+/// The plan is immutable except for this recovery: only a mission that still
+/// has a pending item the current content cannot execute is rebuilt, and only
+/// before its completion reward has settled. The mission id and day are
+/// preserved so a later completion reward stays idempotent. Recorded learning
+/// evidence is untouched; only checklist progress resets, because it no longer
+/// maps onto the new content.
+async fn refresh_unexecutable_daily_mission(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    track_id: &str,
+    track_version: &str,
+    mission: db::daily_missions::StoredDailyMission,
+    discovery: &[DomainDiscoveryInput],
+) -> Result<db::daily_missions::StoredDailyMission, ApiError> {
+    if mission.is_completed()
+        || mission.reward_settled_at.is_some()
+        || daily_plan_is_executable(state, &mission)
+    {
+        return Ok(mission);
+    }
+
+    let generated = generate_daily_items(state, user, track_id, track_version, discovery).await;
+    if generated.items.is_empty() {
+        tracing::warn!(
+            mission = %mission.id,
+            "daily mission content changed, but no replacement plan could be generated"
+        );
+        return Ok(mission);
+    }
+
+    tracing::warn!(
+        mission = %mission.id,
+        "rebuilding a daily mission whose content changed"
+    );
+    let items: Vec<db::daily_missions::NewDailyMissionItem<'_>> = generated
+        .items
+        .iter()
+        .map(|item| db::daily_missions::NewDailyMissionItem {
+            position: item.position,
+            kind: item.kind,
+            domain_id: &item.domain_id,
+            node_id: item.node_id.as_deref(),
+            title: &item.title,
+            estimated_minutes: item.estimated_minutes,
+            practice_context: item.practice_context.clone(),
+        })
+        .collect();
+    let plan_type = if generated.adaptive {
+        DailyMissionPlanType::Adaptive
+    } else {
+        DailyMissionPlanType::Standard
+    };
+
+    match db::daily_missions::replace_items(&state.pool, mission.id, plan_type.as_str(), &items)
+        .await?
+    {
+        Some(updated) => Ok(updated),
+        None => Ok(mission),
+    }
 }
 
 /// Generates items adaptively, falling back to authored track content.
@@ -1896,6 +2236,9 @@ fn mission_response(state: &AppState, stored: MissionInstance) -> MissionRespons
         issued_at: stored.issued_at,
         expires_at: stored.expires_at,
         questions,
+        // Ordinary missions carry no challenge orchestration. Challenge
+        // missions attach it at issuance in `start_challenge`.
+        challenge: None,
     }
 }
 
@@ -2074,6 +2417,144 @@ async fn build_question_set(
                 .map(|question| question.task_id.clone());
             Ok((Some(domain_id), task_id, Some(module_id), ids))
         }
+        // A challenge is composed from its authored definition by
+        // `start_challenge`, not by the generic mission-issuance path.
+        QuizMode::Challenge => Err(ApiError::BadRequest(
+            "challenges must be started from their track".to_owned(),
+        )),
+    }
+}
+
+/// Starts an authored multi-stage challenge as one ordinary mission.
+///
+/// The server owns composition: it resolves the authored definition, checks
+/// authored prerequisites against the learner's discovery, freezes the
+/// referenced content version, and issues one mission whose `question_ids` are
+/// the challenge's question stages in order. The client never supplies question
+/// ids and cannot construct a challenge.
+pub async fn start_challenge(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    track_id: &str,
+    challenge_id: &str,
+    request: ChallengeStartRequest,
+) -> Result<MissionResponse, ApiError> {
+    let bundle = state
+        .content
+        .bundle_for_certification(track_id)
+        .ok_or(ApiError::NotFound)?;
+    let challenge = state
+        .content
+        .challenge(track_id, challenge_id)
+        .ok_or(ApiError::NotFound)?;
+    if challenge.certification_version != bundle.version.id {
+        return Err(ApiError::NotFound);
+    }
+
+    // Authored prerequisites reuse existing Knowledge Map unlock semantics.
+    if !challenge.prerequisite_node_ids.is_empty() {
+        let merged =
+            merged_track_discovery(state, user.id, &bundle.version.id, &request.discovery).await;
+        let derived = derive_track_discovery(state, &bundle.version.id, &merged);
+        let unmet = challenge
+            .prerequisite_node_ids
+            .iter()
+            .filter(|node_id| !derived.unlocked_node_ids.contains(*node_id))
+            .count();
+        if unmet > 0 {
+            return Err(ApiError::Conflict(
+                "challenge prerequisites are not met yet".to_owned(),
+            ));
+        }
+    }
+
+    let now = Utc::now();
+    let device_id = request.device_id.unwrap_or_else(Uuid::new_v4);
+    let mission = MissionInstance {
+        id: Uuid::new_v4(),
+        user_id: Some(user.id),
+        device_id,
+        certification_id: bundle.certification.id.clone(),
+        certification_version: bundle.version.id.clone(),
+        content_version: bundle.version.content_version.clone(),
+        mode: QuizMode::Challenge,
+        recommendation_id: None,
+        daily_mission_id: None,
+        daily_item_position: None,
+        domain_id: challenge.domain_id.clone(),
+        task_id: None,
+        module_id: None,
+        question_ids: challenge.ordered_question_ids(),
+        status: MissionStatus::Issued,
+        issued_at: now,
+        expires_at: now + Duration::minutes(QuizMode::Challenge.ttl_minutes()),
+        completed_at: None,
+    };
+    let stored = db::missions::insert(&state.pool, &mission).await?;
+
+    if let Some(device) = request.device_id {
+        if let Err(error) = db::devices::upsert(&state.pool, device, user.id).await {
+            tracing::debug!(error = %error, "could not associate device with user");
+        }
+    }
+
+    // Measurement only; failure never affects the issued challenge.
+    log_predictions_best_effort(state, Some(user), &stored, "challenge", false).await;
+
+    let mut response = mission_response(state, stored);
+    response.challenge = Some(challenge_view(state, challenge));
+    Ok(response)
+}
+
+/// Maps an authored challenge into its learner-facing orchestration view.
+fn challenge_view(
+    state: &AppState,
+    challenge: &adaptive_learn_content::ChallengeDefinition,
+) -> ChallengeView {
+    let version = &challenge.certification_version;
+    let stages = challenge
+        .ordered_stages()
+        .into_iter()
+        .map(|stage| {
+            let (kind, question_id, node_id) = match stage {
+                adaptive_learn_content::ChallengeStage::Question { question_id, .. } => (
+                    ChallengeStageKind::Question,
+                    Some(question_id.clone()),
+                    None,
+                ),
+                adaptive_learn_content::ChallengeStage::LearningNode { node_id, .. } => (
+                    ChallengeStageKind::LearningNode,
+                    None,
+                    Some(node_id.clone()),
+                ),
+            };
+            let domain_id = question_id
+                .as_deref()
+                .and_then(|id| state.content.question(version, id))
+                .map(|question| question.domain_id.clone())
+                .or_else(|| {
+                    node_id
+                        .as_deref()
+                        .and_then(|id| state.content.node_domain_id(version, id))
+                        .map(str::to_owned)
+                });
+            ChallengeStageView {
+                id: stage.id().to_owned(),
+                order: stage.order(),
+                kind,
+                question_id,
+                node_id,
+                domain_id,
+            }
+        })
+        .collect();
+
+    ChallengeView {
+        id: challenge.id.clone(),
+        title: challenge.title.clone(),
+        description: challenge.description.clone(),
+        estimated_minutes: challenge.estimated_minutes(),
+        stages,
     }
 }
 
@@ -2099,23 +2580,18 @@ async fn select_recommended_practice(
     }
 
     let anchor_candidate = candidate_from(anchor);
-    let history: Vec<HistoryEntry> = match state.content.bundle_for_version(version) {
-        Some(bundle) => db::learning_events::recent_for_user(
-            &state.pool,
-            owner,
-            &bundle.certification.id,
-            HISTORY_LIMIT,
-        )
-        .await?
-        .into_iter()
-        .map(|entry| HistoryEntry {
-            question_id: entry.question_id,
-            score: entry.score,
-            assessment_mode: entry.assessment_mode,
-            occurred_at: entry.occurred_at,
-            concepts: entry.concepts,
-        })
-        .collect(),
+    let history = match state.content.bundle_for_version(version) {
+        Some(bundle) => history_entries(
+            state,
+            version,
+            db::learning_events::recent_for_user(
+                &state.pool,
+                owner,
+                &bundle.certification.id,
+                HISTORY_LIMIT,
+            )
+            .await?,
+        ),
         None => Vec::new(),
     };
 
@@ -2162,18 +2638,12 @@ async fn select_section_quiz(
         })
         .unwrap_or_default();
 
-    let history: Vec<HistoryEntry> =
+    let history = history_entries(
+        state,
+        version,
         db::learning_events::recent_for_user(&state.pool, owner, certification_id, HISTORY_LIMIT)
-            .await?
-            .into_iter()
-            .map(|entry| HistoryEntry {
-                question_id: entry.question_id,
-                score: entry.score,
-                assessment_mode: entry.assessment_mode,
-                occurred_at: entry.occurred_at,
-                concepts: entry.concepts,
-            })
-            .collect();
+            .await?,
+    );
 
     let states: Vec<ConceptEvidence> =
         db::concept_state::list_for_user(&state.pool, owner, version)
@@ -2232,22 +2702,17 @@ async fn select_ids(
         .unwrap_or_default();
 
     // History is combined across every device the learner has signed in on.
-    let history: Vec<HistoryEntry> = db::learning_events::recent_for_user(
-        &state.pool,
-        user_id,
-        &request.certification_id,
-        HISTORY_LIMIT,
-    )
-    .await?
-    .into_iter()
-    .map(|entry| HistoryEntry {
-        question_id: entry.question_id,
-        score: entry.score,
-        assessment_mode: entry.assessment_mode,
-        occurred_at: entry.occurred_at,
-        concepts: entry.concepts,
-    })
-    .collect();
+    let history = history_entries(
+        state,
+        version,
+        db::learning_events::recent_for_user(
+            &state.pool,
+            user_id,
+            &request.certification_id,
+            HISTORY_LIMIT,
+        )
+        .await?,
+    );
 
     // Derived concept state is the primary adaptation signal. It is absent for
     // a cold-start learner; selection falls back to accepted history instead.
@@ -2284,7 +2749,56 @@ fn candidate_from(question: &Question) -> Candidate {
         assessment_mode: question.assessment_mode,
         difficulty_prior: question.difficulty_prior,
         concepts: concept_weights(question),
+        pedagogy: question.pedagogy.clone(),
     }
+}
+
+/// Maps accepted history rows, joining authored pedagogy metadata by question id.
+///
+/// The learning event never stores pedagogy metadata; it is reconstructed from
+/// canonical content here so selection can use it without duplication or a
+/// schema change. A missing or changed question simply contributes no metadata.
+fn history_entries(
+    state: &AppState,
+    version: &str,
+    rows: Vec<db::learning_events::UserHistoryEntry>,
+) -> Vec<HistoryEntry> {
+    rows.into_iter()
+        .map(|entry| {
+            let question = state.content.question(version, &entry.question_id);
+            let pedagogy = question.and_then(|question| question.pedagogy.clone());
+            // Pair each authoritative stored error code with its authored
+            // remediation metadata. The code comes from the accepted event; the
+            // metadata is joined from canonical content, never duplicated onto
+            // the event.
+            let error_codes = entry
+                .structured_error_codes
+                .iter()
+                .map(|code| HistoryErrorCode {
+                    code: code.clone(),
+                    remediation: question
+                        .and_then(|question| {
+                            question
+                                .error_codes
+                                .iter()
+                                .find(|definition| &definition.code == code)
+                        })
+                        .and_then(|definition| definition.remediation.clone()),
+                })
+                .collect();
+            HistoryEntry {
+                question_id: entry.question_id,
+                score: entry.score,
+                assessment_mode: entry.assessment_mode,
+                occurred_at: entry.occurred_at,
+                concepts: entry.concepts,
+                attempt_number: entry.attempt_number,
+                hint_count: entry.hint_count,
+                pedagogy,
+                error_codes,
+            }
+        })
+        .collect()
 }
 
 /// Scores one attempt without persisting an event.
@@ -3262,7 +3776,16 @@ fn study_question_view(question: &adaptive_learn_content::Question) -> StudyQues
         canonical_answer: question.canonical_answer.clone(),
         explanation: question.explanation.clone(),
         choice_feedback: question.choice_feedback.clone(),
-        error_codes: question.error_codes.clone(),
+        // Learner-safe projection: strips authored remediation metadata, which
+        // could reveal the intended repair before scoring.
+        error_codes: question
+            .error_codes
+            .iter()
+            .map(|definition| QuestionErrorCode {
+                code: definition.code.clone(),
+                description: definition.description.clone(),
+            })
+            .collect(),
     }
 }
 
@@ -3551,6 +4074,1171 @@ fn matches_submitted_shape(item: &PracticeTestItem, submitted: &SubmittedAnswer)
     )
 }
 
+// ---------------------------------------------------------------------------
+// Cyber Defense Stage 2 progression
+// ---------------------------------------------------------------------------
+
+/// Minimum plausible Cyber Defense attempt duration, in milliseconds.
+const CYBER_MIN_DURATION_MS: i64 = 5_000;
+/// Maximum plausible Cyber Defense attempt duration, in milliseconds.
+const CYBER_MAX_DURATION_MS: i64 = 2 * 60 * 60 * 1000;
+/// Maximum plausible remaining system health accepted from a client.
+const CYBER_MAX_HEALTH: i32 = 100_000;
+/// One-time career XP granted to a returning defender with imported progress.
+const LEGACY_RETURNING_DEFENDER_XP: i64 = 50;
+
+/// Derives the career transport view from raw XP.
+fn career_dto(xp: i64) -> CyberCareerDto {
+    let level = career_level_from_xp(xp);
+    let current = xp_for_career_level(level).unwrap_or(0);
+    let next = xp_for_career_level(level + 1);
+    CyberCareerDto {
+        xp,
+        level,
+        rank: career_rank(level).to_owned(),
+        next_level_xp: next,
+        xp_into_level: (xp - current).max(0),
+        xp_for_next_level: next.map(|threshold| (threshold - current).max(0)),
+    }
+}
+
+/// Derives the hero transport view from raw XP.
+fn hero_dto(hero_id: &str, xp: i64, selected_talents: serde_json::Value) -> CyberHeroProgressDto {
+    let level = hero_level_from_xp(xp);
+    let current = xp_for_hero_level(level).unwrap_or(0);
+    let next = xp_for_hero_level(level + 1);
+    CyberHeroProgressDto {
+        hero_id: hero_id.to_owned(),
+        xp,
+        level,
+        max_level: adaptive_learn_domain::HERO_MAX_LEVEL,
+        next_level_xp: next,
+        xp_into_level: (xp - current).max(0),
+        xp_for_next_level: next.map(|threshold| (threshold - current).max(0)),
+        selected_talents,
+    }
+}
+
+/// Builds the complete, server-authoritative Cyber Defense profile snapshot.
+///
+/// Levels and ranks are always derived here from stored XP; the client never
+/// reconstructs them. The two Stage 1 heroes are reported even before any XP
+/// row exists, so the frontend never has to invent defaults.
+pub async fn cyber_defense_profile(
+    state: &AppState,
+    user: &AuthenticatedUser,
+) -> Result<CyberDefenseProfileResponse, ApiError> {
+    let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+
+    let profile = db::cyber_defense::get_or_create_profile(&mut conn, user.id).await?;
+    let bits_balance = db::wallets::balance(&state.pool, user.id).await?;
+    let tower_rows = db::cyber_defense::list_tower_upgrades(&mut conn, user.id).await?;
+    let hero_rows = db::cyber_defense::list_hero_progress(&mut conn, user.id).await?;
+    let adversary_rows = db::cyber_defense::list_adversary_progress(&mut conn, user.id).await?;
+    let story_rows = db::cyber_defense::list_story_progress(&mut conn, user.id).await?;
+    let campaign_rows = db::cyber_defense::list_campaign_results(&mut conn, user.id).await?;
+    let active = db::cyber_defense::find_active_operation_run(&mut conn, user.id).await?;
+
+    let tower_by_id: HashMap<&str, i32> = tower_rows
+        .iter()
+        .map(|row| (row.upgrade_id.as_str(), row.level))
+        .collect();
+    let levels: Vec<i32> = TOWER_UPGRADES
+        .iter()
+        .map(|definition| tower_by_id.get(definition.id).copied().unwrap_or(0))
+        .collect();
+    let tower_upgrades: Vec<CyberTowerUpgradeDto> = TOWER_UPGRADES
+        .iter()
+        .zip(levels.iter())
+        .map(|(definition, level)| CyberTowerUpgradeDto {
+            upgrade_id: definition.id.to_owned(),
+            level: *level,
+            max_level: definition.max_level,
+            next_cost: tower_upgrade_cost(definition.id, *level),
+        })
+        .collect();
+
+    let hero_by_id: HashMap<&str, &db::cyber_defense::HeroProgress> = hero_rows
+        .iter()
+        .map(|row| (row.hero_id.as_str(), row))
+        .collect();
+    let heroes: Vec<CyberHeroProgressDto> = adaptive_learn_domain::DEFAULT_HERO_IDS
+        .iter()
+        .map(|hero_id| match hero_by_id.get(hero_id) {
+            Some(row) => hero_dto(hero_id, row.xp, row.selected_talents.clone()),
+            None => hero_dto(hero_id, 0, serde_json::json!({})),
+        })
+        .collect();
+
+    let adversaries: Vec<CyberAdversaryProgressDto> = adversary_rows
+        .iter()
+        .map(|row| CyberAdversaryProgressDto {
+            adversary_id: row.adversary_id.clone(),
+            progress: row.progress,
+            rank: adaptive_learn_domain::adversary_rank_from_progress(row.progress),
+            encounters: row.encounters,
+            victories: row.victories,
+            highest_threat_level_cleared: row.highest_threat_level_cleared,
+            dossier_flags: row.dossier_flags.clone(),
+        })
+        .collect();
+
+    let campaign: Vec<CyberCampaignResultDto> = campaign_rows
+        .iter()
+        .map(|row| CyberCampaignResultDto {
+            mission_id: row.mission_id.clone(),
+            completed: row.completed,
+            best_stars: row.best_stars,
+            best_health: row.best_health,
+            attempts: row.attempts,
+            first_clear_reward_settled: row.first_clear_reward_settled,
+        })
+        .collect();
+
+    let story = CyberStoryProgressDto {
+        active_chapter: profile.active_story_chapter.clone(),
+        completed_nodes: story_rows
+            .iter()
+            .map(|row| row.story_node_id.clone())
+            .collect(),
+    };
+
+    Ok(CyberDefenseProfileResponse {
+        career: career_dto(profile.career_xp),
+        bits_balance,
+        tower_level: tower_level(&levels),
+        tower_upgrades,
+        heroes,
+        adversaries,
+        story,
+        campaign,
+        highest_threat_level_cleared: profile.highest_threat_level_cleared,
+        recommended_threat_level: profile.recommended_threat_level,
+        unlocked_threat_level: unlocked_threat_level(
+            profile.recommended_threat_level,
+            profile.highest_threat_level_cleared,
+        ),
+        total_operations_completed: profile.total_operations_completed,
+        active_operation_run_id: active.map(|run| run.id),
+        legacy_progress_imported: profile.legacy_progress_imported,
+    })
+}
+
+/// Settles one Stage 1 campaign mission result and its reward.
+///
+/// The server derives completion, first-clear status, and every reward value
+/// from canonical policy. `result_id` is the client idempotency key, so a
+/// retried completion settles nothing a second time. Bits and progression
+/// changes commit in one transaction.
+pub async fn cyber_defense_campaign_complete(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    mission_id: &str,
+    request: CyberCampaignCompleteRequest,
+) -> Result<CyberCampaignCompleteResponse, ApiError> {
+    if !is_campaign_mission(mission_id) {
+        return Err(ApiError::BadRequest("unknown campaign mission".to_owned()));
+    }
+    if !(0..=3).contains(&request.stars) {
+        return Err(ApiError::BadRequest(
+            "stars must be between 0 and 3".to_owned(),
+        ));
+    }
+    if !(0..=CYBER_MAX_HEALTH).contains(&request.health) {
+        return Err(ApiError::BadRequest("invalid health".to_owned()));
+    }
+    if !(CYBER_MIN_DURATION_MS..=CYBER_MAX_DURATION_MS).contains(&request.duration_ms) {
+        return Err(ApiError::BadRequest("implausible duration".to_owned()));
+    }
+
+    let hero_id = match request.hero_id.as_deref() {
+        Some(hero) if !hero.is_empty() => {
+            if !is_known_hero(hero) {
+                return Err(ApiError::BadRequest("unknown hero".to_owned()));
+            }
+            Some(hero.to_owned())
+        }
+        _ => None,
+    };
+
+    let completed = request.stars > 0;
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+
+    let profile = db::cyber_defense::get_or_create_profile(&mut tx, user.id).await?;
+    // Serialize settlement for one wallet so two racing results cannot both
+    // read the same pre-settlement state.
+    db::wallets::lock_wallet(&mut tx, user.id).await?;
+
+    let existing = db::cyber_defense::get_campaign_result(&mut tx, user.id, mission_id).await?;
+    let already_settled = existing
+        .as_ref()
+        .is_some_and(|result| result.first_clear_reward_settled);
+
+    let claimed = db::cyber_defense::claim_reward_event(
+        &mut tx,
+        request.result_id,
+        user.id,
+        "cyber_campaign",
+    )
+    .await?;
+
+    if !claimed {
+        // A duplicate of an already-settled result: settle nothing and report
+        // the stored state.
+        tx.rollback().await.map_err(db::DbError::from)?;
+        let campaign = existing.ok_or(ApiError::NotFound)?;
+        return Ok(CyberCampaignCompleteResponse {
+            campaign: CyberCampaignResultDto {
+                mission_id: campaign.mission_id,
+                completed: campaign.completed,
+                best_stars: campaign.best_stars,
+                best_health: campaign.best_health,
+                attempts: campaign.attempts,
+                first_clear_reward_settled: campaign.first_clear_reward_settled,
+            },
+            reward: CyberRewardDto {
+                bits: 0,
+                career_xp: 0,
+                hero_xp: 0,
+            },
+            bits_balance: db::wallets::balance(&state.pool, user.id).await?,
+            career: CyberCareerSummaryDto {
+                xp: profile.career_xp,
+                level: career_level_from_xp(profile.career_xp),
+                rank: career_rank(career_level_from_xp(profile.career_xp)).to_owned(),
+                level_up: false,
+            },
+            newly_settled: false,
+            story_nodes_completed: Vec::new(),
+        });
+    }
+
+    let first_clear = completed && !already_settled;
+    let mut reward = fixed_mission_reward(mission_id, request.stars, first_clear);
+    // Hero XP only lands when a known hero is named, so the selected hero is
+    // the one that levels.
+    let hero_xp = if hero_id.is_some() {
+        reward.hero_xp
+    } else {
+        reward.hero_xp = 0;
+        0
+    };
+
+    if reward.bits > 0 {
+        let transaction = db::wallets::BitTransaction {
+            user_id: user.id,
+            device_id: None,
+            event_id: request.result_id,
+            mission_instance_id: request.result_id,
+            question_id: mission_id.to_owned(),
+            amount: reward.bits,
+            reason: "cyber_campaign_reward".to_owned(),
+        };
+        db::wallets::settle(&mut tx, &transaction).await?;
+    }
+
+    let career_xp =
+        db::cyber_defense::increment_career_xp(&mut tx, user.id, reward.career_xp).await?;
+    if let Some(hero) = hero_id.as_deref() {
+        db::cyber_defense::increment_hero_xp(&mut tx, user.id, hero, hero_xp).await?;
+    }
+
+    let campaign = db::cyber_defense::upsert_campaign_result(
+        &mut tx,
+        user.id,
+        mission_id,
+        completed,
+        request.stars,
+        request.health,
+        first_clear,
+    )
+    .await?;
+
+    let story_nodes_completed = evaluate_and_record_story(&mut tx, user.id).await?;
+
+    tx.commit().await.map_err(db::DbError::from)?;
+
+    let bits_balance = db::wallets::balance(&state.pool, user.id).await?;
+    let level = career_level_from_xp(career_xp);
+    Ok(CyberCampaignCompleteResponse {
+        campaign: CyberCampaignResultDto {
+            mission_id: campaign.mission_id,
+            completed: campaign.completed,
+            best_stars: campaign.best_stars,
+            best_health: campaign.best_health,
+            attempts: campaign.attempts,
+            first_clear_reward_settled: campaign.first_clear_reward_settled,
+        },
+        reward: CyberRewardDto {
+            bits: reward.bits,
+            career_xp: reward.career_xp,
+            hero_xp,
+        },
+        bits_balance,
+        career: CyberCareerSummaryDto {
+            xp: career_xp,
+            level,
+            rank: career_rank(level).to_owned(),
+            level_up: level > career_level_from_xp(profile.career_xp),
+        },
+        newly_settled: true,
+        story_nodes_completed,
+    })
+}
+
+/// Purchases the next level of one Tower/HQ room.
+///
+/// The client sends only an idempotency `event_id`; the server derives the room
+/// level from the settled ledger, checks prerequisites, computes the canonical
+/// cost, and debits the wallet. Bits spend and the level increment commit in one
+/// transaction.
+pub async fn cyber_defense_tower_purchase(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    upgrade_id: &str,
+    request: CyberTowerUpgradePurchaseRequest,
+) -> Result<CyberTowerUpgradePurchaseResponse, ApiError> {
+    let definition = tower_upgrade(upgrade_id)
+        .ok_or_else(|| ApiError::BadRequest("unknown tower upgrade".to_owned()))?;
+    // Tower purchases are not tied to an Operation run; the ledger groups them
+    // under the nil run id.
+    let run_id = Uuid::nil();
+
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+    db::cyber_defense::get_or_create_profile(&mut tx, user.id).await?;
+    db::wallets::lock_wallet(&mut tx, user.id).await?;
+
+    // Derive the room level from the settled ledger, excluding this request's
+    // own key so a retry resolves to the level it originally upgraded from.
+    let purchased =
+        db::wallets::count_upgrades(&mut tx, user.id, run_id, upgrade_id, request.event_id).await?;
+    let from_level = i32::try_from(purchased)
+        .map_err(|_| ApiError::Conflict("tower upgrade level overflow".to_owned()))?;
+
+    if from_level >= definition.max_level {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return Err(ApiError::Conflict(
+            "tower upgrade is already at its maximum level".to_owned(),
+        ));
+    }
+
+    if let Some((required_id, required_level)) = definition.prerequisite {
+        let current =
+            db::wallets::count_upgrades(&mut tx, user.id, run_id, required_id, request.event_id)
+                .await?;
+        if current < i64::from(required_level) {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            return Err(ApiError::Conflict(format!(
+                "requires {required_id} level {required_level}"
+            )));
+        }
+    }
+
+    let cost = tower_upgrade_cost(upgrade_id, from_level).ok_or_else(|| {
+        ApiError::Conflict("tower upgrade is already at its maximum level".to_owned())
+    })?;
+
+    let spend = db::wallets::BitSpend {
+        user_id: user.id,
+        device_id: None,
+        event_id: request.event_id,
+        run_id,
+        item_id: upgrade_id.to_owned(),
+        amount: cost,
+        reason: "cyber_tower_upgrade".to_owned(),
+    };
+
+    match db::wallets::spend(&mut tx, &spend).await? {
+        db::wallets::SpendOutcome::Settled { balance } => {
+            db::cyber_defense::increment_tower_upgrade(&mut tx, user.id, upgrade_id).await?;
+            let levels = db::cyber_defense::list_tower_upgrades(&mut tx, user.id).await?;
+            let aggregate = tower_level(&levels.iter().map(|row| row.level).collect::<Vec<_>>());
+            tx.commit().await.map_err(db::DbError::from)?;
+            Ok(CyberTowerUpgradePurchaseResponse {
+                upgrade_id: upgrade_id.to_owned(),
+                level: from_level + 1,
+                tower_level: aggregate,
+                bits_balance: balance,
+                spent: cost,
+                newly_settled: true,
+            })
+        }
+        db::wallets::SpendOutcome::AlreadySettled => {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+            let levels = db::cyber_defense::list_tower_upgrades(&mut conn, user.id).await?;
+            let aggregate = tower_level(&levels.iter().map(|row| row.level).collect::<Vec<_>>());
+            let level = levels
+                .iter()
+                .find(|row| row.upgrade_id == upgrade_id)
+                .map(|row| row.level)
+                .unwrap_or(from_level + 1);
+            Ok(CyberTowerUpgradePurchaseResponse {
+                upgrade_id: upgrade_id.to_owned(),
+                level,
+                tower_level: aggregate,
+                bits_balance: db::wallets::balance(&state.pool, user.id).await?,
+                spent: cost,
+                newly_settled: false,
+            })
+        }
+        db::wallets::SpendOutcome::KeyReused => {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            Err(ApiError::Conflict(
+                "idempotency key was reused for a different purchase".to_owned(),
+            ))
+        }
+        db::wallets::SpendOutcome::InsufficientFunds => {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            Err(ApiError::InsufficientBits)
+        }
+    }
+}
+
+/// Replaces a hero's selected talents.
+///
+/// The selection is validated against canonical milestones: the hero must exist,
+/// each milestone must be unlocked by the hero's level, and each choice must be
+/// legal. Because the selection is keyed by milestone, mutually exclusive
+/// choices can never both be active. Respec is free in Stage 2.
+pub async fn cyber_defense_set_hero_talents(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    hero_id: &str,
+    request: CyberHeroTalentRequest,
+) -> Result<CyberHeroProgressDto, ApiError> {
+    if !is_known_hero(hero_id) {
+        return Err(ApiError::BadRequest("unknown hero".to_owned()));
+    }
+
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+    db::cyber_defense::get_or_create_profile(&mut tx, user.id).await?;
+    let heroes = db::cyber_defense::list_hero_progress(&mut tx, user.id).await?;
+    let xp = heroes
+        .iter()
+        .find(|row| row.hero_id == hero_id)
+        .map(|row| row.xp)
+        .unwrap_or(0);
+    let level = hero_level_from_xp(xp);
+
+    let mut normalized = serde_json::Map::new();
+    for (milestone, choice) in &request.talents {
+        let milestone_level: i32 = milestone
+            .parse()
+            .map_err(|_| ApiError::BadRequest("invalid talent milestone".to_owned()))?;
+        if milestone_level > level {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            return Err(ApiError::Conflict(format!(
+                "milestone {milestone_level} is not unlocked"
+            )));
+        }
+        if !is_legal_talent(hero_id, milestone_level, choice) {
+            tx.rollback().await.map_err(db::DbError::from)?;
+            return Err(ApiError::BadRequest("invalid talent choice".to_owned()));
+        }
+        normalized.insert(milestone.clone(), serde_json::Value::String(choice.clone()));
+    }
+
+    let stored = db::cyber_defense::set_hero_talents(
+        &mut tx,
+        user.id,
+        hero_id,
+        &serde_json::Value::Object(normalized),
+    )
+    .await?;
+    tx.commit().await.map_err(db::DbError::from)?;
+
+    Ok(hero_dto(hero_id, stored.xp, stored.selected_talents))
+}
+
+/// Builds the compact career summary returned after a reward.
+fn career_summary(xp: i64, level_up: bool) -> CyberCareerSummaryDto {
+    let level = career_level_from_xp(xp);
+    CyberCareerSummaryDto {
+        xp,
+        level,
+        rank: career_rank(level).to_owned(),
+        level_up,
+    }
+}
+
+/// Builds the adversary transport view from a stored row.
+fn adversary_dto_from_row(row: &db::cyber_defense::AdversaryProgress) -> CyberAdversaryProgressDto {
+    CyberAdversaryProgressDto {
+        adversary_id: row.adversary_id.clone(),
+        progress: row.progress,
+        rank: adversary_rank_from_progress(row.progress),
+        encounters: row.encounters,
+        victories: row.victories,
+        highest_threat_level_cleared: row.highest_threat_level_cleared,
+        dossier_flags: row.dossier_flags.clone(),
+    }
+}
+
+/// Default adversary view for one never encountered.
+fn empty_adversary_dto(adversary_id: &str) -> CyberAdversaryProgressDto {
+    CyberAdversaryProgressDto {
+        adversary_id: adversary_id.to_owned(),
+        progress: 0,
+        rank: 1,
+        encounters: 0,
+        victories: 0,
+        highest_threat_level_cleared: 0,
+        dossier_flags: Vec::new(),
+    }
+}
+
+/// Builds the transport view of one stored Operation run.
+fn operation_run_dto(
+    run: &db::cyber_defense::OperationRun,
+) -> Result<CyberOperationRunDto, ApiError> {
+    let operation: GeneratedOperation = serde_json::from_value(run.generated_config.clone())
+        .map_err(|error| {
+            ApiError::Internal(anyhow::anyhow!(
+                "stored operation config is invalid: {error}"
+            ))
+        })?;
+    let result = run.result_stars.map(|stars| CyberOperationResultDto {
+        completed: run.status == "completed",
+        stars,
+        health: run.result_health.unwrap_or(0),
+        duration_ms: run.duration_ms.unwrap_or(0),
+    });
+    Ok(CyberOperationRunDto {
+        run_id: run.id,
+        status: run.status.clone(),
+        seed: run.seed,
+        template_id: run.template_id.clone(),
+        adversary_id: run.adversary_id.clone(),
+        adversary_name: operation.adversary_name.clone(),
+        hero_id: run.hero_id.clone(),
+        threat_level: run.threat_level,
+        operation,
+        started_at: run.started_at,
+        result,
+        bits_awarded: run.bits_awarded,
+        career_xp_awarded: run.career_xp_awarded,
+        hero_xp_awarded: run.hero_xp_awarded,
+    })
+}
+
+/// Evaluates story triggers from stored progress and records any new nodes.
+async fn evaluate_and_record_story(
+    tx: &mut db::PgConnection,
+    user_id: Uuid,
+) -> Result<Vec<String>, ApiError> {
+    let profile = db::cyber_defense::get_or_create_profile(tx, user_id).await?;
+    let campaign = db::cyber_defense::list_campaign_results(tx, user_id).await?;
+    let adversaries = db::cyber_defense::list_adversary_progress(tx, user_id).await?;
+    let story = db::cyber_defense::list_story_progress(tx, user_id).await?;
+
+    let input = StoryProgressInput {
+        completed_campaign_missions: campaign
+            .iter()
+            .filter(|result| result.completed)
+            .map(|result| result.mission_id.clone())
+            .collect(),
+        total_operations_completed: profile.total_operations_completed,
+        highest_threat_level_cleared: profile.highest_threat_level_cleared,
+        adversary_ranks: adversaries
+            .iter()
+            .map(|row| {
+                (
+                    row.adversary_id.clone(),
+                    adversary_rank_from_progress(row.progress),
+                )
+            })
+            .collect(),
+        completed_nodes: story.iter().map(|row| row.story_node_id.clone()).collect(),
+    };
+
+    let newly = evaluate_story_nodes(&input);
+    for node_id in &newly {
+        db::cyber_defense::record_story_progress(tx, user_id, node_id).await?;
+    }
+    if !newly.is_empty() {
+        let mut all = input.completed_nodes.clone();
+        all.extend(newly.iter().cloned());
+        db::cyber_defense::set_active_story_chapter(tx, user_id, active_chapter(&all)).await?;
+    }
+    Ok(newly)
+}
+
+/// Starts one repeatable Operation for the authenticated learner.
+///
+/// The server selects the template/adversary, generates a secure seed, produces
+/// a deterministic Operation, and persists the whole snapshot so a refresh
+/// restores the exact same run. A learner can have only one active run.
+pub async fn cyber_defense_start_operation(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    request: CyberOperationStartRequest,
+) -> Result<CyberOperationRunDto, ApiError> {
+    let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+    let profile = db::cyber_defense::get_or_create_profile(&mut conn, user.id).await?;
+
+    let unlocked = unlocked_threat_level(
+        profile.recommended_threat_level,
+        profile.highest_threat_level_cleared,
+    );
+    if !(THREAT_LEVEL_MIN..=THREAT_LEVEL_MAX).contains(&request.requested_threat_level)
+        || request.requested_threat_level > unlocked
+    {
+        return Err(ApiError::BadRequest(
+            "threat level is not unlocked".to_owned(),
+        ));
+    }
+
+    let hero_id = match request.hero_id.as_deref() {
+        Some(hero) if !hero.is_empty() => {
+            if !is_known_hero(hero) {
+                return Err(ApiError::BadRequest("unknown hero".to_owned()));
+            }
+            Some(hero.to_owned())
+        }
+        _ => Some(adaptive_learn_domain::DEFAULT_HERO_IDS[0].to_owned()),
+    };
+
+    if let Some(active) = db::cyber_defense::find_active_operation_run(&mut conn, user.id).await? {
+        return Err(ApiError::ActiveOperationExists(active.id));
+    }
+
+    // Template/adversary selection is server-side. The template may be pinned by
+    // the client for explicit browsing; the adversary is always chosen here.
+    let pick = Uuid::new_v4().as_u128();
+    let template = match request.template_id.as_deref() {
+        Some(id) => operation_template(id)
+            .ok_or_else(|| ApiError::BadRequest("unknown operation template".to_owned()))?,
+        None => &OPERATION_TEMPLATES[(pick % OPERATION_TEMPLATES.len() as u128) as usize],
+    };
+    let adversary =
+        &template.adversary_ids[((pick >> 16) % template.adversary_ids.len() as u128) as usize];
+
+    let adversary_rows = db::cyber_defense::list_adversary_progress(&mut conn, user.id).await?;
+    let adversary_rank = adversary_rows
+        .iter()
+        .find(|row| row.adversary_id == *adversary)
+        .map(|row| adversary_rank_from_progress(row.progress))
+        .unwrap_or(1);
+
+    let seed = Uuid::new_v4().as_u128() as i64;
+    let operation = generate_operation(&OperationGenerationInput {
+        seed,
+        template_id: template.id.to_owned(),
+        adversary_id: (*adversary).to_owned(),
+        threat_level: request.requested_threat_level,
+        adversary_rank,
+        hero_id: hero_id.clone(),
+    })
+    .map_err(|error| ApiError::BadRequest(error.to_string()))?;
+
+    let config =
+        serde_json::to_value(&operation).map_err(|error| ApiError::Internal(error.into()))?;
+    let new_run = db::cyber_defense::NewOperationRun {
+        id: Uuid::new_v4(),
+        user_id: user.id,
+        seed,
+        template_id: operation.template_id.as_str(),
+        adversary_id: operation.adversary_id.as_str(),
+        hero_id: hero_id.as_deref(),
+        threat_level: operation.threat_level,
+        generated_config: &config,
+    };
+
+    let run = match db::cyber_defense::create_operation_run(&mut conn, &new_run).await {
+        Ok(run) => run,
+        Err(error) if error.is_unique_violation() => {
+            return match db::cyber_defense::find_active_operation_run(&mut conn, user.id).await? {
+                Some(active) => Err(ApiError::ActiveOperationExists(active.id)),
+                None => Err(ApiError::Conflict("could not start operation".to_owned())),
+            };
+        }
+        Err(error) => return Err(error.into()),
+    };
+
+    operation_run_dto(&run)
+}
+
+/// Reads one Operation run owned by the authenticated learner.
+pub async fn cyber_defense_get_operation(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    run_id: Uuid,
+) -> Result<CyberOperationRunDto, ApiError> {
+    let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+    let run = db::cyber_defense::get_operation_run_for_user(&mut conn, user.id, run_id)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+    operation_run_dto(&run)
+}
+
+/// Abandons an active Operation run. Abandoning grants no reward.
+pub async fn cyber_defense_abandon_operation(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    run_id: Uuid,
+) -> Result<CyberOperationRunDto, ApiError> {
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+    let abandoned = db::cyber_defense::abandon_operation_run(&mut tx, user.id, run_id).await?;
+    if !abandoned {
+        let existing =
+            db::cyber_defense::get_operation_run_for_user(&mut tx, user.id, run_id).await?;
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return match existing {
+            None => Err(ApiError::NotFound),
+            Some(_) => Err(ApiError::Conflict("operation is not active".to_owned())),
+        };
+    }
+    let run = db::cyber_defense::get_operation_run_for_user(&mut tx, user.id, run_id)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+    tx.commit().await.map_err(db::DbError::from)?;
+    operation_run_dto(&run)
+}
+
+/// Builds the response for an Operation that was already settled.
+async fn duplicate_operation_response(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    run: &db::cyber_defense::OperationRun,
+    profile: &db::cyber_defense::CyberDefenseProfile,
+) -> Result<CyberOperationCompleteResponse, ApiError> {
+    let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+    let adversary = db::cyber_defense::list_adversary_progress(&mut conn, user.id)
+        .await?
+        .iter()
+        .find(|row| row.adversary_id == run.adversary_id)
+        .map(adversary_dto_from_row)
+        .unwrap_or_else(|| empty_adversary_dto(&run.adversary_id));
+    let hero = match run.hero_id.as_deref() {
+        Some(hero_id) => db::cyber_defense::list_hero_progress(&mut conn, user.id)
+            .await?
+            .iter()
+            .find(|row| row.hero_id == hero_id)
+            .map(|row| hero_dto(hero_id, row.xp, row.selected_talents.clone())),
+        None => None,
+    };
+
+    Ok(CyberOperationCompleteResponse {
+        run: operation_run_dto(run)?,
+        reward: CyberRewardDto {
+            bits: 0,
+            career_xp: 0,
+            hero_xp: 0,
+        },
+        bits_balance: db::wallets::balance(&state.pool, user.id).await?,
+        career: career_summary(profile.career_xp, false),
+        hero,
+        adversary,
+        newly_settled: false,
+        recommended_threat_level: profile.recommended_threat_level,
+        unlocked_threat_level: unlocked_threat_level(
+            profile.recommended_threat_level,
+            profile.highest_threat_level_cleared,
+        ),
+        dossier_unlocks: Vec::new(),
+        story_nodes_completed: Vec::new(),
+    })
+}
+
+/// Settles one Operation run's result and permanent rewards exactly once.
+pub async fn cyber_defense_complete_operation(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    run_id: Uuid,
+    request: CyberOperationCompleteRequest,
+) -> Result<CyberOperationCompleteResponse, ApiError> {
+    if !(0..=3).contains(&request.stars) {
+        return Err(ApiError::BadRequest(
+            "stars must be between 0 and 3".to_owned(),
+        ));
+    }
+    if !(0..=CYBER_MAX_HEALTH).contains(&request.health) {
+        return Err(ApiError::BadRequest("invalid health".to_owned()));
+    }
+    if !(CYBER_MIN_DURATION_MS..=CYBER_MAX_DURATION_MS).contains(&request.duration_ms) {
+        return Err(ApiError::BadRequest("implausible duration".to_owned()));
+    }
+    if request.completed && request.stars == 0 {
+        return Err(ApiError::BadRequest(
+            "a completed operation needs at least one star".to_owned(),
+        ));
+    }
+    if !request.completed && request.stars != 0 {
+        return Err(ApiError::BadRequest(
+            "a failed operation cannot earn stars".to_owned(),
+        ));
+    }
+
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+    let profile = db::cyber_defense::get_or_create_profile(&mut tx, user.id).await?;
+    let run = db::cyber_defense::lock_operation_run(&mut tx, user.id, run_id)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+
+    if run.status != "active" {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return duplicate_operation_response(state, user, &run, &profile).await;
+    }
+
+    let operation: GeneratedOperation = serde_json::from_value(run.generated_config.clone())
+        .map_err(|error| {
+            ApiError::Internal(anyhow::anyhow!(
+                "stored operation config is invalid: {error}"
+            ))
+        })?;
+
+    let completed = request.completed;
+    let stars = request.stars;
+
+    let adversary_rows = db::cyber_defense::list_adversary_progress(&mut tx, user.id).await?;
+    let existing = adversary_rows
+        .iter()
+        .find(|row| row.adversary_id == run.adversary_id);
+    let prior_victories = existing.map(|row| row.victories).unwrap_or(0);
+    let prior_flags = existing
+        .map(|row| row.dossier_flags.clone())
+        .unwrap_or_default();
+    let first_adversary_clear = completed && prior_victories == 0;
+    let first_boss_clear = completed && operation.boss && prior_victories == 0;
+
+    let reward = operation_reward(run.threat_level, stars, completed, first_adversary_clear);
+    let hero_xp = if run.hero_id.is_some() {
+        reward.hero_xp
+    } else {
+        0
+    };
+
+    db::wallets::lock_wallet(&mut tx, user.id).await?;
+    let reward_event_id = Uuid::new_v4();
+    if reward.bits > 0 {
+        let transaction = db::wallets::BitTransaction {
+            user_id: user.id,
+            device_id: None,
+            event_id: reward_event_id,
+            mission_instance_id: run.id,
+            question_id: run.template_id.clone(),
+            amount: reward.bits,
+            reason: "cyber_operation_reward".to_owned(),
+        };
+        db::wallets::settle(&mut tx, &transaction).await?;
+    }
+
+    let career_xp =
+        db::cyber_defense::increment_career_xp(&mut tx, user.id, reward.career_xp).await?;
+    if let Some(hero) = run.hero_id.as_deref() {
+        db::cyber_defense::increment_hero_xp(&mut tx, user.id, hero, hero_xp).await?;
+    }
+
+    let progress_delta = adversary_progress_award(
+        run.threat_level,
+        completed,
+        operation.boss,
+        first_boss_clear,
+    );
+    let highest_cleared = if completed { run.threat_level } else { 0 };
+    let adversary_row = db::cyber_defense::apply_adversary_encounter(
+        &mut tx,
+        user.id,
+        &run.adversary_id,
+        progress_delta,
+        true,
+        completed,
+        highest_cleared,
+    )
+    .await?;
+    let rank = adversary_rank_from_progress(adversary_row.progress);
+
+    let mut flags: Vec<String> = Vec::new();
+    match operation.dominant_attack_type.as_str() {
+        "credential_stuffing" => flags.push("identity_specialist".to_owned()),
+        "sql_injection" | "xss" => flags.push("web_specialist".to_owned()),
+        "ransomware" => flags.push("impact_specialist".to_owned()),
+        _ => {}
+    }
+    if operation.modifiers.iter().any(|m| m.id == "hidden_traffic") {
+        flags.push("uses_hidden_traffic".to_owned());
+    }
+    if operation
+        .modifiers
+        .iter()
+        .any(|m| m.id == "credential_surge")
+    {
+        flags.push("credential_surge_observed".to_owned());
+    }
+    if operation.boss && completed {
+        flags.push("boss_pattern_seen".to_owned());
+    }
+    if completed && run.threat_level >= 5 {
+        flags.push("highest_threat_5".to_owned());
+    }
+    if rank >= 3 {
+        flags.push("rank_3_story_clue".to_owned());
+    }
+    let dossier_unlocks: Vec<String> = flags
+        .iter()
+        .filter(|flag| !prior_flags.contains(flag))
+        .cloned()
+        .collect();
+    db::cyber_defense::add_dossier_flags(&mut tx, user.id, &run.adversary_id, &flags).await?;
+
+    let update = db::cyber_defense::OperationResultUpdate {
+        completed,
+        stars,
+        health: request.health,
+        duration_ms: request.duration_ms,
+        bits: reward.bits,
+        career_xp: reward.career_xp,
+        hero_xp,
+        reward_event_id,
+    };
+    let run = db::cyber_defense::complete_operation_run(&mut tx, user.id, run_id, &update)
+        .await?
+        .ok_or_else(|| ApiError::Conflict("operation is no longer active".to_owned()))?;
+
+    // Recommended Threat Level uses the last five settled results, including
+    // this one, and never changes difficulty during a run.
+    let new_highest = profile.highest_threat_level_cleared.max(highest_cleared);
+    let recent = db::cyber_defense::list_recent_operation_outcomes(&mut tx, user.id, 5).await?;
+    let recent_outcomes: Vec<OperationOutcome> = recent
+        .iter()
+        .map(|row| OperationOutcome {
+            completed: row.completed,
+            stars: row.stars,
+            remaining_health_ratio: if row.starting_health > 0 {
+                f64::from(row.health) / f64::from(row.starting_health)
+            } else {
+                0.0
+            },
+        })
+        .collect();
+    let recommended = recommend_threat_level(&ThreatRecommendationInput {
+        current: profile.recommended_threat_level,
+        recent: recent_outcomes,
+        health_ratio_threshold: DEFAULT_HEALTH_RATIO_THRESHOLD,
+    });
+    db::cyber_defense::update_threat_progress(
+        &mut tx,
+        user.id,
+        new_highest,
+        recommended,
+        if completed { 1 } else { 0 },
+    )
+    .await?;
+
+    let story_nodes_completed = evaluate_and_record_story(&mut tx, user.id).await?;
+
+    tx.commit().await.map_err(db::DbError::from)?;
+
+    let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+    let bits_balance = db::wallets::balance(&state.pool, user.id).await?;
+    let hero = match run.hero_id.as_deref() {
+        Some(hero_id) => db::cyber_defense::list_hero_progress(&mut conn, user.id)
+            .await?
+            .iter()
+            .find(|row| row.hero_id == hero_id)
+            .map(|row| hero_dto(hero_id, row.xp, row.selected_talents.clone())),
+        None => None,
+    };
+    let adversary = db::cyber_defense::list_adversary_progress(&mut conn, user.id)
+        .await?
+        .iter()
+        .find(|row| row.adversary_id == run.adversary_id)
+        .map(adversary_dto_from_row)
+        .unwrap_or_else(|| empty_adversary_dto(&run.adversary_id));
+    let unlocked = unlocked_threat_level(recommended, new_highest);
+
+    Ok(CyberOperationCompleteResponse {
+        run: operation_run_dto(&run)?,
+        reward: CyberRewardDto {
+            bits: reward.bits,
+            career_xp: reward.career_xp,
+            hero_xp,
+        },
+        bits_balance,
+        career: career_summary(
+            career_xp,
+            career_level_from_xp(career_xp) > career_level_from_xp(profile.career_xp),
+        ),
+        hero,
+        adversary,
+        newly_settled: true,
+        recommended_threat_level: recommended,
+        unlocked_threat_level: unlocked,
+        dossier_unlocks,
+        story_nodes_completed,
+    })
+}
+
+/// Imports legacy Stage 1 local campaign progress exactly once.
+///
+/// Local progress is untrusted: only completion state, best stars, best health,
+/// and attempts are imported. No retroactive Bits or arbitrary XP are granted
+/// from client-local values. A single fixed returning-defender career XP amount
+/// is granted when at least one valid mission was previously completed.
+pub async fn cyber_defense_import_legacy(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    request: CyberLegacyImportRequest,
+) -> Result<CyberLegacyImportResponse, ApiError> {
+    let mut tx = state.pool.begin().await.map_err(db::DbError::from)?;
+    let profile = db::cyber_defense::get_or_create_profile(&mut tx, user.id).await?;
+
+    if profile.legacy_progress_imported {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return Ok(CyberLegacyImportResponse {
+            imported: false,
+            missions_imported: 0,
+            career_xp_granted: 0,
+            bits_balance: db::wallets::balance(&state.pool, user.id).await?,
+            career: career_summary(profile.career_xp, false),
+        });
+    }
+
+    let mut missions_imported = 0i32;
+    let mut any_completed = false;
+    for (mission_id, mission) in &request.missions {
+        if !is_campaign_mission(mission_id) {
+            continue;
+        }
+        let stars = mission.stars.clamp(0, 3);
+        let health = mission.best_health.clamp(0, CYBER_MAX_HEALTH);
+        let attempts = mission.attempts.clamp(0, 10_000);
+        let completed = mission.completed && stars > 0;
+        any_completed |= completed;
+        db::cyber_defense::import_campaign_result(
+            &mut tx, user.id, mission_id, completed, stars, health, attempts,
+        )
+        .await?;
+        missions_imported += 1;
+    }
+
+    let imported = db::cyber_defense::mark_legacy_progress_imported(&mut tx, user.id).await?;
+    let mut career_xp_granted = 0;
+    if imported && any_completed {
+        career_xp_granted = LEGACY_RETURNING_DEFENDER_XP;
+        db::cyber_defense::increment_career_xp(&mut tx, user.id, career_xp_granted).await?;
+    }
+
+    evaluate_and_record_story(&mut tx, user.id).await?;
+    tx.commit().await.map_err(db::DbError::from)?;
+
+    let career_xp = profile.career_xp + career_xp_granted;
+    Ok(CyberLegacyImportResponse {
+        imported,
+        missions_imported,
+        career_xp_granted,
+        bits_balance: db::wallets::balance(&state.pool, user.id).await?,
+        career: career_summary(
+            career_xp,
+            career_level_from_xp(career_xp) > career_level_from_xp(profile.career_xp),
+        ),
+    })
+}
+
+/// Known balance-telemetry event names.
+const CYBER_TELEMETRY_EVENTS: &[&str] = &[
+    "cyber_dashboard_view",
+    "cyber_operation_offered",
+    "cyber_operation_started",
+    "cyber_operation_resumed",
+    "cyber_operation_completed",
+    "cyber_operation_failed",
+    "cyber_operation_abandoned",
+    "cyber_threat_level_selected",
+    "cyber_defense_placed",
+    "cyber_defense_upgraded",
+    "cyber_defense_removed",
+    "cyber_hero_selected",
+    "cyber_hero_deployed",
+    "cyber_tower_upgrade_purchased",
+    "cyber_hero_level_up",
+    "cyber_hero_talent_selected",
+    "cyber_adversary_rank_up",
+    "cyber_dossier_unlock",
+    "cyber_story_seen",
+];
+
+/// Maximum events accepted in one telemetry batch.
+const CYBER_TELEMETRY_MAX_BATCH: usize = 50;
+/// Maximum length of a telemetry text dimension.
+const CYBER_TELEMETRY_MAX_TEXT: usize = 64;
+
+/// Appends a batch of balance-telemetry events.
+///
+/// Only game identifiers and results are accepted, and unknown event names are
+/// rejected so the stream stays analyzable. No raw personal data is stored.
+pub async fn cyber_defense_telemetry(
+    state: &AppState,
+    user: &AuthenticatedUser,
+    request: CyberTelemetryRequest,
+) -> Result<CyberTelemetryResponse, ApiError> {
+    if request.events.len() > CYBER_TELEMETRY_MAX_BATCH {
+        return Err(ApiError::BadRequest(
+            "telemetry batch is too large".to_owned(),
+        ));
+    }
+
+    for event in &request.events {
+        if !CYBER_TELEMETRY_EVENTS.contains(&event.name.as_str()) {
+            return Err(ApiError::BadRequest("unknown telemetry event".to_owned()));
+        }
+        if event.stars.is_some_and(|stars| !(0..=3).contains(&stars)) {
+            return Err(ApiError::BadRequest("invalid telemetry stars".to_owned()));
+        }
+        if event
+            .threat_level
+            .is_some_and(|threat| !(THREAT_LEVEL_MIN..=THREAT_LEVEL_MAX).contains(&threat))
+        {
+            return Err(ApiError::BadRequest(
+                "invalid telemetry threat level".to_owned(),
+            ));
+        }
+        if event.wave.is_some_and(|wave| !(0..=100).contains(&wave)) {
+            return Err(ApiError::BadRequest("invalid telemetry wave".to_owned()));
+        }
+        let text_values = [
+            event.template_id.as_deref(),
+            event.adversary_id.as_deref(),
+            event.hero_id.as_deref(),
+            event.defense_id.as_deref(),
+            event.result.as_deref(),
+            event.duration_bucket.as_deref(),
+        ];
+        for value in text_values.into_iter().flatten() {
+            if value.len() > CYBER_TELEMETRY_MAX_TEXT {
+                return Err(ApiError::BadRequest(
+                    "telemetry value is too long".to_owned(),
+                ));
+            }
+        }
+    }
+
+    let mut conn = state.pool.acquire().await.map_err(db::DbError::from)?;
+    let events: Vec<db::cyber_defense::NewTelemetryEvent<'_>> = request
+        .events
+        .iter()
+        .map(|event| db::cyber_defense::NewTelemetryEvent {
+            event_name: event.name.as_str(),
+            run_id: event.run_id,
+            template_id: event.template_id.as_deref(),
+            adversary_id: event.adversary_id.as_deref(),
+            threat_level: event.threat_level,
+            hero_id: event.hero_id.as_deref(),
+            defense_id: event.defense_id.as_deref(),
+            wave: event.wave,
+            result: event.result.as_deref(),
+            stars: event.stars,
+            duration_bucket: event.duration_bucket.as_deref(),
+        })
+        .collect();
+    db::cyber_defense::insert_telemetry_events(&mut conn, user.id, &events).await?;
+
+    Ok(CyberTelemetryResponse {
+        accepted: i32::try_from(events.len()).unwrap_or(0),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3820,6 +5508,7 @@ mod tests {
             assessment_mode: mode,
             difficulty_prior: 0.5,
             concepts: concept_ids.iter().map(|id| concept_weight(id)).collect(),
+            pedagogy: None,
         }
     }
 
@@ -3846,6 +5535,8 @@ mod tests {
                 unlocked_node_ids: HashSet::new(),
                 completed_module_ids: HashSet::new(),
                 recent_question_ids: recent,
+                recent_pedagogy: RecentPedagogy::default(),
+                remediation: None,
             },
             history: Vec::new(),
         }
@@ -4281,5 +5972,333 @@ mod tests {
         assert!(validate_attempt_metadata(1, 0).is_ok());
         assert!(validate_attempt_metadata(0, 0).is_err());
         assert!(validate_attempt_metadata(1, -1).is_err());
+    }
+
+    #[tokio::test]
+    async fn challenge_view_maps_stages_and_domains() {
+        use crate::auth::{Authenticator, DevVerifier};
+        use std::sync::Arc;
+
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .acquire_timeout(std::time::Duration::from_millis(50))
+            .connect_lazy("postgres://app:app@127.0.0.1:1/app")
+            .expect("lazy pool");
+        let content = Arc::new(
+            adaptive_learn_content::ContentRegistry::embedded().expect("embedded content"),
+        );
+        let state = AppState::new(
+            pool,
+            content,
+            Authenticator {
+                verifier: Arc::new(DevVerifier),
+                profile: None,
+            },
+        );
+
+        let challenge = state
+            .content
+            .challenge("ai-python-fluency", "python-fluency-zip-journey")
+            .expect("the embedded sample challenge resolves");
+        let view = challenge_view(&state, challenge);
+
+        assert_eq!(view.id, "python-fluency-zip-journey");
+        assert_eq!(view.stages.len(), 4);
+        assert_eq!(view.stages[0].kind, ChallengeStageKind::Question);
+        assert_eq!(
+            view.stages[0].question_id.as_deref(),
+            Some("py1-zip-behavior-002")
+        );
+        assert_eq!(view.stages[0].domain_id.as_deref(), Some("domain-1"));
+        assert_eq!(view.stages[2].kind, ChallengeStageKind::LearningNode);
+        assert_eq!(
+            view.stages[2].node_id.as_deref(),
+            Some("domain-1-zip_parallel")
+        );
+        assert_eq!(view.stages[2].domain_id.as_deref(), Some("domain-1"));
+        assert!(
+            view.stages
+                .windows(2)
+                .all(|pair| pair[0].order < pair[1].order),
+            "stages must be in authored order"
+        );
+    }
+
+    /// A question carrying full Phase 1 pedagogy metadata.
+    fn question_with_pedagogy() -> adaptive_learn_content::Question {
+        use adaptive_learn_content::{CanonicalAnswer, Choice, Interaction, Question, SourceRef};
+        use adaptive_learn_domain::{
+            AssessmentMode, InteractionType, PedagogyMetadata, PedagogyStage,
+        };
+
+        Question {
+            id: "leak-q-001".to_owned(),
+            content_version: "leak-v1-content".to_owned(),
+            certification_version: "leak-v1".to_owned(),
+            domain_id: "domain-1".to_owned(),
+            task_id: "1.1".to_owned(),
+            assessment_mode: AssessmentMode::Application,
+            interaction_type: InteractionType::MultipleChoice,
+            difficulty_prior: 0.4,
+            pedagogy: Some(PedagogyMetadata {
+                family_id: Some("dsa.sliding_window.variable".to_owned()),
+                stage: Some(PedagogyStage::Transfer),
+                scaffold_level: Some(0),
+                transfer_group_id: Some("moving_contiguous_range".to_owned()),
+                surface_context: Some("api_rate_limiting".to_owned()),
+                challenge_group_id: None,
+            }),
+            prompt: "Which approach fits this cold scenario?".to_owned(),
+            instruction: None,
+            interaction: Interaction::MultipleChoice {
+                choices: vec![
+                    Choice {
+                        id: "a".to_owned(),
+                        label: "A".to_owned(),
+                    },
+                    Choice {
+                        id: "b".to_owned(),
+                        label: "B".to_owned(),
+                    },
+                ],
+            },
+            canonical_answer: CanonicalAnswer::MultipleChoice {
+                choice_id: "a".to_owned(),
+            },
+            concepts: vec![adaptive_learn_content::QuestionConcept {
+                concept_id: "c1".to_owned(),
+                weight: 1.0,
+            }],
+            explanation: "A fits.".to_owned(),
+            choice_feedback: BTreeMap::new(),
+            blueprint_skill_ids: Vec::new(),
+            difficulty_label: None,
+            hints: Vec::new(),
+            error_codes: Vec::new(),
+            source_refs: vec![SourceRef {
+                title: "Source".to_owned(),
+                url: "https://example.com".to_owned(),
+            }],
+        }
+    }
+
+    /// Answer-leak regression: pre-answer payloads never expose family metadata.
+    ///
+    /// Phase 5 adds authored family guides and comparisons, but they are only
+    /// ever served post-exposure through a separate, authenticated endpoint. The
+    /// ordinary question payloads must stay free of `pedagogy`, family ids,
+    /// signals, and summaries so a cold-transfer item cannot be pre-labelled.
+    #[test]
+    fn learner_question_views_never_leak_family_metadata() {
+        let question = question_with_pedagogy();
+        let safe = serde_json::to_value(question_view(&question)).expect("serializes");
+        let study = serde_json::to_value(study_question_view(&question)).expect("serializes");
+
+        for payload in [&safe, &study] {
+            // Structural check: the whole pedagogy object is absent, not just
+            // its individual keys.
+            assert!(
+                payload.get("pedagogy").is_none(),
+                "a pre-answer payload must not carry a pedagogy object"
+            );
+            for forbidden in [
+                "pedagogy",
+                "family_id",
+                "transfer_group_id",
+                "surface_context",
+                "recognition_signals",
+                "structural_steps",
+                "core_rules",
+                "common_confusions",
+                "example_contexts",
+                "sliding_window",
+            ] {
+                assert!(
+                    !payload.to_string().contains(forbidden),
+                    "a pre-answer question payload must not expose {forbidden}"
+                );
+            }
+        }
+
+        // The learner-safe view never carries the answer key; the study view
+        // intentionally does, because ordinary missions score locally first and
+        // the server always re-scores authoritatively.
+        assert!(safe.get("canonical_answer").is_none());
+        assert!(study.get("canonical_answer").is_some());
+    }
+
+    /// A track without authored family guides returns an empty insight list.
+    #[tokio::test]
+    async fn family_insights_are_empty_without_guides() {
+        use crate::auth::{Authenticator, DevVerifier};
+        use std::sync::Arc;
+
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .acquire_timeout(std::time::Duration::from_millis(50))
+            .connect_lazy("postgres://app:app@127.0.0.1:1/app")
+            .expect("lazy pool");
+        let content = Arc::new(
+            adaptive_learn_content::ContentRegistry::embedded().expect("embedded content"),
+        );
+        let state = AppState::new(
+            pool,
+            content,
+            Authenticator {
+                verifier: Arc::new(DevVerifier),
+                profile: None,
+            },
+        );
+        let user = AuthenticatedUser {
+            id: Uuid::new_v4(),
+            auth_subject: "test-user".to_owned(),
+            email: None,
+        };
+
+        // No content currently authors family guides, so this returns early and
+        // never touches the unreachable database.
+        let response = family_insights(&state, &user, "aws-soa-c03", None)
+            .await
+            .expect("track resolves");
+        assert!(response.insights.is_empty());
+        assert!(!response.has_guides);
+    }
+
+    /// A minimal content registry with one pedagogy question and one guide.
+    fn registry_with_family() -> adaptive_learn_content::ContentRegistry {
+        let bundle = serde_json::json!({
+            "certification": {
+                "id": "phase5-track",
+                "vendor": "Test",
+                "name": "Phase 5",
+                "exam_code": "PHASE5",
+                "official_source_url": "https://example.com/blueprint",
+                "last_reviewed": "2026-09-25"
+            },
+            "version": {
+                "id": "phase5-v1",
+                "exam_code": "PHASE5",
+                "effective_date": "2026-09-25",
+                "content_version": "phase5-v1-content",
+                "domains": [{
+                    "id": "domain-1",
+                    "name": "Domain",
+                    "weight": 1.0,
+                    "tasks": [{ "id": "1.1", "name": "Task", "question_ids": ["p5-q-1"] }]
+                }]
+            },
+            "concepts": [
+                { "id": "test.concept", "name": "Concept", "description": "A concept." }
+            ],
+            "questions": [{
+                "id": "p5-q-1",
+                "content_version": "phase5-v1-content",
+                "certification_version": "phase5-v1",
+                "domain_id": "domain-1",
+                "task_id": "1.1",
+                "assessment_mode": "application",
+                "interaction_type": "multiple_choice",
+                "difficulty_prior": 0.4,
+                "pedagogy": {
+                    "family_id": "dsa.sliding_window.variable",
+                    "surface_context": "api_rate_limiting",
+                    "transfer_group_id": "g1"
+                },
+                "prompt": "A rate-limiting window problem.",
+                "instruction": null,
+                "interaction": {
+                    "type": "multiple_choice",
+                    "choices": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }]
+                },
+                "canonical_answer": { "type": "multiple_choice", "choice_id": "a" },
+                "concepts": [{ "concept_id": "test.concept", "weight": 1.0 }],
+                "explanation": "A fits.",
+                "hints": [],
+                "error_codes": [{ "code": "wrong", "description": "Wrong." }],
+                "source_refs": [{ "title": "Source", "url": "https://example.com" }]
+            }]
+        })
+        .to_string();
+
+        let guide = serde_json::json!({
+            "schema_version": "family-guide-v1",
+            "certification_id": "phase5-track",
+            "certification_version": "phase5-v1",
+            "family_id": "dsa.sliding_window.variable",
+            "title": "Moving Valid Window",
+            "summary": "Maintain one active contiguous range.",
+            "recognition_signals": ["contiguous ranges"],
+            "core_rules": ["After repair, the range is valid."],
+            "structural_steps": ["add the incoming item"],
+            "common_confusions": [],
+            "example_contexts": [
+                { "context_id": "api_rate_limiting", "label": "API rate limiting" }
+            ],
+            "source_refs": [{ "title": "Source", "url": "https://example.com" }]
+        })
+        .to_string();
+
+        adaptive_learn_content::ContentRegistry::from_all_sources_with_families(
+            &[&bundle],
+            &[],
+            &[],
+            &[],
+            &[&guide],
+        )
+        .expect("custom content is valid")
+    }
+
+    fn state_with(config: adaptive_learn_content::ContentRegistry) -> AppState {
+        use crate::auth::{Authenticator, DevVerifier};
+        use std::sync::Arc;
+
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .acquire_timeout(std::time::Duration::from_millis(50))
+            .connect_lazy("postgres://app:app@127.0.0.1:1/app")
+            .expect("lazy pool");
+        AppState::new(
+            pool,
+            Arc::new(config),
+            Authenticator {
+                verifier: Arc::new(DevVerifier),
+                profile: None,
+            },
+        )
+    }
+
+    /// The history join resolves pedagogy and a learner-safe title, skips
+    /// unknown questions, and applies an optional mission family scope.
+    #[tokio::test]
+    async fn seen_records_join_pedagogy_and_scope_to_mission() {
+        let state = state_with(registry_with_family());
+        let rows = vec![
+            db::learning_events::SeenQuestion {
+                question_id: "p5-q-1".to_owned(),
+                last_occurred_at: Utc::now(),
+            },
+            db::learning_events::SeenQuestion {
+                question_id: "removed-question".to_owned(),
+                last_occurred_at: Utc::now(),
+            },
+        ];
+
+        let seen = seen_records(&state, "phase5-v1", &rows, None);
+        assert_eq!(seen.len(), 1, "an unknown question is skipped safely");
+        assert_eq!(seen[0].family_id, "dsa.sliding_window.variable");
+        assert_eq!(
+            seen[0].surface_context.as_deref(),
+            Some("api_rate_limiting")
+        );
+        assert_eq!(seen[0].title, "A rate-limiting window problem.");
+
+        let allowed: HashSet<String> = ["dsa.sliding_window.variable".to_owned()].into();
+        assert_eq!(
+            seen_records(&state, "phase5-v1", &rows, Some(&allowed)).len(),
+            1
+        );
+
+        let other: HashSet<String> = ["dsa.prefix_state".to_owned()].into();
+        assert!(
+            seen_records(&state, "phase5-v1", &rows, Some(&other)).is_empty(),
+            "a mission scope excludes other families"
+        );
     }
 }

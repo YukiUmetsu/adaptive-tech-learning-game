@@ -22,6 +22,7 @@ import CoreArt from "./art/CoreArt";
 import EnemyArt from "./art/EnemyArt";
 import TowerArt, { TOWER_MUZZLE_DISTANCE } from "./art/TowerArt";
 import HackerArt from "./art/HackerArt";
+import AdversaryArt from "./art/AdversaryArt";
 import HeroArt from "./art/HeroArt";
 
 /**
@@ -203,6 +204,8 @@ export interface GameBoardProps {
   armedHeroId: string | null;
   detectionActive: boolean;
   primaryTargetNodeId: string | null;
+  /** Recurring adversary for Operations; shows its intel emblem at the spawn. */
+  adversaryId?: string;
   integrity: number;
   reducedMotion: boolean;
   elapsedMs: number;
@@ -256,6 +259,7 @@ export default function GameBoard({
   armedHeroId,
   detectionActive,
   primaryTargetNodeId,
+  adversaryId,
   integrity,
   reducedMotion,
   elapsedMs,
@@ -578,7 +582,8 @@ export default function GameBoard({
         </g>
       ) : null}
 
-      {/* Attacker spawn: portal + bad hacker */}
+      {/* Attacker spawn: portal + the adversary's intel emblem (or a generic
+          hacker for campaign missions with no named adversary). */}
       {start ? (
         <g
           className="cyber-portal"
@@ -592,7 +597,13 @@ export default function GameBoard({
               -startTangent.y * 44
             })`}
           >
-            <HackerArt />
+            {adversaryId ? (
+              <g transform="translate(-27 -27)">
+                <AdversaryArt adversaryId={adversaryId} size={54} />
+              </g>
+            ) : (
+              <HackerArt />
+            )}
           </g>
         </g>
       ) : null}

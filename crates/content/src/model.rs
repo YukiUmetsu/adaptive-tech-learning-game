@@ -621,6 +621,14 @@ pub struct ErrorCodeDef {
     pub code: String,
     /// Learner-safe description.
     pub description: String,
+    /// Optional, track-agnostic remediation metadata.
+    ///
+    /// Phase 3 uses it as a bounded teaching-policy signal when this error is a
+    /// recent, unresolved part of accepted history. It never changes scoring,
+    /// mastery, or rewards, and absent metadata keeps old content working.
+    /// Server-side only: it is never attached to a learner-facing question DTO.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub remediation: Option<adaptive_learn_domain::ErrorRemediation>,
 }
 
 /// A reference to the official source of a content unit.
@@ -651,6 +659,14 @@ pub struct Question {
     pub interaction_type: adaptive_learn_domain::InteractionType,
     /// Prior difficulty in `[0, 1]`.
     pub difficulty_prior: f64,
+    /// Optional, track-agnostic pedagogical metadata.
+    ///
+    /// Descriptive in Phase 1: it is authored content and is available to
+    /// server-side planning, but it never changes scoring, mastery, rewards, or
+    /// selection. Absent `pedagogy` is valid and existing content keeps loading
+    /// unchanged. See [`adaptive_learn_domain::PedagogyMetadata`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pedagogy: Option<adaptive_learn_domain::PedagogyMetadata>,
     /// Learner-facing prompt.
     pub prompt: String,
     /// Optional authored instruction shown with the prompt, for example

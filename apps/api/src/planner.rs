@@ -18,11 +18,15 @@
 use std::collections::{HashMap, HashSet};
 
 use adaptive_learn_domain::{
-    AssessmentMode, ConceptWeight, InteractionType, PRIOR_ESTIMATE, retrievability,
+    AssessmentMode, ConceptWeight, InteractionType, PRIOR_ESTIMATE, PedagogyMetadata,
+    retrievability, uncertainty,
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+
+use crate::pedagogy::{self, RecentPedagogy};
+use crate::remediation::{self, RemediationTarget};
 
 pub mod session;
 
@@ -46,6 +50,11 @@ const WEIGHT_DIFFICULTY_FIT: f64 = 0.1;
 const UNSEEN_BONUS: f64 = 0.1;
 /// Small bonus for practice questions so ties prefer active retrieval.
 const PRACTICE_TIE_BONUS: f64 = 0.001;
+/// Score used for a directly chosen remediation node.
+///
+/// The node is returned directly (it is the single highest-priority target), so
+/// this value only documents intent rather than competing with other scores.
+const REMEDIATION_NODE_SCORE: f64 = 1.0;
 
 /// A next action the learner can take.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
@@ -91,6 +100,11 @@ pub enum RecommendationReason {
     DomainReview,
     /// Strong and fresh; advance to harder or applied practice.
     StrongAndFresh,
+    /// A recent structured error has an authored remediation target.
+    ///
+    /// One generic, track-neutral reason: it is never one reason per error code,
+    /// and the learner-facing title never exposes an internal error identifier.
+    TargetedRemediation,
 }
 
 impl RecommendationReason {
@@ -104,6 +118,7 @@ impl RecommendationReason {
             Self::StaleKnowledge => "stale_knowledge",
             Self::DomainReview => "domain_review",
             Self::StrongAndFresh => "strong_and_fresh",
+            Self::TargetedRemediation => "targeted_remediation",
         }
     }
 }
@@ -172,6 +187,12 @@ pub struct PlannerQuestion {
     pub difficulty_prior: f64,
     /// Authored concept mappings with their evidence weights.
     pub concepts: Vec<ConceptWeight>,
+    /// Optional authored pedagogical metadata.
+    ///
+    /// Phase 2 uses it as a bounded teaching-policy preference (scaffold fit,
+    /// transfer context, stage fit). It never changes mastery, scoring, or
+    /// reward.
+    pub pedagogy: Option<PedagogyMetadata>,
 }
 
 /// Everything the planner needs, independent of storage and transport.
@@ -199,6 +220,18 @@ pub struct PlannerInput {
     pub completed_module_ids: HashSet<String>,
     /// Recently answered question ids, to avoid immediate repeats.
     pub recent_question_ids: HashSet<String>,
+    /// Bounded teaching-policy summary built from the same accepted history.
+    ///
+    /// Derived from canonical pedagogy metadata joined by question id, so no
+    /// metadata is duplicated onto learning events. Empty for a cold learner,
+    /// which leaves ranking unchanged.
+    pub recent_pedagogy: RecentPedagogy,
+    /// Highest-priority active remediation target from recent structured errors.
+    ///
+    /// Resolved separately from ranking (see `crate::remediation`); `None` when
+    /// there is no recent error or a later success has superseded it, in which
+    /// case planning behaves exactly as in Phase 2.
+    pub remediation: Option<RemediationTarget>,
 }
 
 /// A structured, explainable recommendation.
@@ -256,6 +289,21 @@ impl ConceptSummary {
     fn retrieval(self, now: DateTime<Utc>) -> f64 {
         retrievability(self.evidence_mass, self.last_practiced_at, now)
     }
+}
+
+/// Aggregated per-question concept signal for planner ranking.
+#[derive(Debug, Clone, Copy)]
+struct QuestionSignal {
+    /// Authored-weight average of `1 - estimate` across the question's concepts.
+    weakness: f64,
+    /// Authored-weight average estimate.
+    estimate: f64,
+    /// Authored-weight average evidence uncertainty.
+    uncertainty: f64,
+    /// Weakest single concept estimate.
+    min_estimate: f64,
+    /// Whether any mapped concept has been explored.
+    any_explored: bool,
 }
 
 /// One scored planner candidate before it is chosen.
@@ -533,10 +581,11 @@ impl<'a> Model<'a> {
             })
     }
 
-    /// Weighted per-mode weakness and exploration for a practice question.
-    fn question_signal(&self, question: &PlannerQuestion) -> (f64, f64, bool) {
+    /// Weighted per-mode signal and exploration for a practice question.
+    fn question_signal(&self, question: &PlannerQuestion) -> QuestionSignal {
         let mut weight_sum = 0.0;
         let mut weakness = 0.0;
+        let mut uncertainty_total = 0.0;
         let mut min_estimate: f64 = 1.0;
         let mut any_explored = false;
 
@@ -548,6 +597,7 @@ impl<'a> Model<'a> {
             let summary = self.mode_summary(&concept.concept_id, question.assessment_mode);
             weight_sum += weight;
             weakness += weight * (1.0 - summary.estimate);
+            uncertainty_total += weight * uncertainty(summary.evidence_mass);
             min_estimate = min_estimate.min(summary.estimate);
             any_explored = any_explored || summary.explored;
         }
@@ -555,9 +605,45 @@ impl<'a> Model<'a> {
         if weight_sum <= 0.0 {
             // A question with no usable concept mapping is only actionable if
             // the learner has no other signal; treat it as neutral.
-            return (0.5, PRIOR_ESTIMATE, false);
+            return QuestionSignal {
+                weakness: 0.5,
+                estimate: PRIOR_ESTIMATE,
+                uncertainty: 1.0,
+                min_estimate: PRIOR_ESTIMATE,
+                any_explored: false,
+            };
         }
-        (weakness / weight_sum, min_estimate, any_explored)
+        let weakness = weakness / weight_sum;
+        QuestionSignal {
+            weakness,
+            estimate: 1.0 - weakness,
+            uncertainty: uncertainty_total / weight_sum,
+            min_estimate,
+            any_explored,
+        }
+    }
+
+    /// Bounded teaching-policy contribution for a practice question.
+    ///
+    /// Combines Phase 2 pedagogy fit (with a temporary remediation scaffold
+    /// floor) and a Phase 3 remediation match bonus. Both are bounded and stay
+    /// below the concept weakness and forgetting weights.
+    fn question_policy_score(&self, question: &PlannerQuestion, signal: &QuestionSignal) -> f64 {
+        let remediation =
+            self.input.remediation.as_ref().map(|target| {
+                remediation::fit(target, question.pedagogy.as_ref(), &question.concepts)
+            });
+        let scaffold_floor = remediation.and_then(|fit| fit.scaffold_floor);
+        let pedagogy = pedagogy::pedagogy_fit_with_floor(
+            question.pedagogy.as_ref(),
+            signal.estimate,
+            signal.uncertainty,
+            &self.input.recent_pedagogy,
+            scaffold_floor,
+        );
+        let remediation_bonus =
+            remediation.map_or(0.0, |fit| remediation::WEIGHT_REMEDIATION * fit.bonus);
+        pedagogy.total() + remediation_bonus
     }
 
     fn choose(&self, candidates: Vec<Candidate>) -> Option<Recommendation> {
@@ -611,11 +697,16 @@ impl<'a> Model<'a> {
 /// are evaluated in a fixed order so the output is deterministic:
 ///
 /// 1. cold start
-/// 2. weak prerequisite before a weak dependent concept
-/// 3. weak, unexplored learning node
-/// 4. weak, already-explored concept -> retrieval practice
-/// 5. strong but stale concept -> review node
-/// 6. strong and fresh -> harder/applied practice or a domain review
+/// 2. a recent structured error with an accessible authored remediation node
+/// 3. weak prerequisite before a weak dependent concept
+/// 4. weak, unexplored learning node
+/// 5. weak, already-explored concept -> retrieval practice
+/// 6. strong but stale concept -> review node
+/// 7. strong and fresh -> harder/applied practice or a domain review
+///
+/// Remediation is a soft preference, not an unbreakable redirect: a locked
+/// remediation node falls through to the ordinary prerequisite/practice rules,
+/// and a targeted practice candidate is ranked alongside every other signal.
 pub fn recommend(input: &PlannerInput) -> Option<Recommendation> {
     if input.domains.is_empty() && input.nodes.is_empty() && input.questions.is_empty() {
         return None;
@@ -624,11 +715,46 @@ pub fn recommend(input: &PlannerInput) -> Option<Recommendation> {
     let model = Model::build(input);
 
     cold_start(&model)
+        .or_else(|| targeted_remediation(&model))
         .or_else(|| prerequisite_first(&model))
         .or_else(|| learn_node(&model))
         .or_else(|| practice_question(&model))
         .or_else(|| review_node(&model))
         .or_else(|| advance(&model))
+}
+
+/// A recent structured error with an accessible authored remediation node.
+///
+/// Only the direct node case is handled here. Concept/family/stage targeting
+/// already flows through [`practice_question`] and [`advance`] via the bounded
+/// remediation bonus. A locked node is deliberately skipped so the ordinary
+/// prerequisite rules can surface the accessible path instead of bypassing the
+/// Knowledge Map.
+fn targeted_remediation(model: &Model<'_>) -> Option<Recommendation> {
+    let target = model.input.remediation.as_ref()?;
+    let node_id = target.node_id.as_deref()?;
+    let index = model.node_index.get(node_id)?;
+    let node = &model.input.nodes[*index];
+    if !model.node_accessible(node) {
+        return None;
+    }
+
+    let already_open = model.node_explored(node) || model.node_unlocked(node);
+    let action = if already_open {
+        PlannerAction::ReviewNode
+    } else {
+        PlannerAction::LearnNode
+    };
+    Some(model.to_recommendation(Candidate {
+        score: REMEDIATION_NODE_SCORE,
+        action,
+        reason: RecommendationReason::TargetedRemediation,
+        domain_id: node.domain_id.clone(),
+        node_id: Some(node.id.clone()),
+        question_id: None,
+        assessment_mode: None,
+        concept_ids: node.concept_ids.clone(),
+    }))
 }
 
 /// Cold start: nothing accepted yet. Discovery progress still wins if present,
@@ -644,16 +770,21 @@ fn cold_start(model: &Model<'_>) -> Option<Recommendation> {
             .questions
             .iter()
             .filter_map(|question| {
-                let (weakness, min_estimate, any_explored) = model.question_signal(question);
-                (any_explored && min_estimate < WEAK_ESTIMATE).then(|| Candidate {
-                    score: weakness + model.domain_weight(&question.domain_id) * WEIGHT_DOMAIN,
-                    action: PlannerAction::PracticeQuestion,
-                    reason: RecommendationReason::NeedsPractice,
-                    domain_id: question.domain_id.clone(),
-                    node_id: None,
-                    question_id: Some(question.id.clone()),
-                    assessment_mode: Some(question.assessment_mode),
-                    concept_ids: concepts_of(question),
+                let signal = model.question_signal(question);
+                (signal.any_explored && signal.min_estimate < WEAK_ESTIMATE).then(|| {
+                    let pedagogy = model.question_policy_score(question, &signal);
+                    Candidate {
+                        score: signal.weakness
+                            + model.domain_weight(&question.domain_id) * WEIGHT_DOMAIN
+                            + pedagogy,
+                        action: PlannerAction::PracticeQuestion,
+                        reason: RecommendationReason::NeedsPractice,
+                        domain_id: question.domain_id.clone(),
+                        node_id: None,
+                        question_id: Some(question.id.clone()),
+                        assessment_mode: Some(question.assessment_mode),
+                        concept_ids: concepts_of(question),
+                    }
                 })
             })
             .collect();
@@ -835,22 +966,23 @@ fn practice_question(model: &Model<'_>) -> Option<Recommendation> {
         .questions
         .iter()
         .filter_map(|question| {
-            let (weakness, min_estimate, any_explored) = model.question_signal(question);
-            if !any_explored || min_estimate >= WEAK_ESTIMATE {
+            let signal = model.question_signal(question);
+            if !signal.any_explored || signal.min_estimate >= WEAK_ESTIMATE {
                 return None;
             }
-            let estimate = 1.0 - weakness;
-            let fit = 1.0 - (question.difficulty_prior.clamp(0.0, 1.0) - estimate).abs();
+            let fit = 1.0 - (question.difficulty_prior.clamp(0.0, 1.0) - signal.estimate).abs();
             let repeat = if model.input.recent_question_ids.contains(&question.id) {
                 REPEAT_PENALTY
             } else {
                 0.0
             };
+            let pedagogy = model.question_policy_score(question, &signal);
             Some(Candidate {
-                score: weakness
+                score: signal.weakness
                     + fit * WEIGHT_DIFFICULTY_FIT
                     + model.domain_weight(&question.domain_id) * WEIGHT_DOMAIN
                     + PRACTICE_TIE_BONUS
+                    + pedagogy
                     - repeat,
                 action: PlannerAction::PracticeQuestion,
                 reason: RecommendationReason::NeedsPractice,
@@ -932,10 +1064,13 @@ fn advance(model: &Model<'_>) -> Option<Recommendation> {
         } else {
             0.0
         };
+        let signal = model.question_signal(question);
+        let pedagogy = model.question_policy_score(question, &signal);
         candidates.push(Candidate {
             score: question.difficulty_prior.clamp(0.0, 1.0)
                 + applied
                 + model.domain_weight(&question.domain_id) * WEIGHT_DOMAIN
+                + pedagogy
                 - repeat,
             action: PlannerAction::PracticeQuestion,
             reason: RecommendationReason::StrongAndFresh,
@@ -1003,6 +1138,7 @@ fn max_time(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use adaptive_learn_domain::PedagogyStage;
     use chrono::TimeZone;
 
     fn now() -> DateTime<Utc> {
@@ -1051,6 +1187,40 @@ mod tests {
             assessment_mode: mode,
             difficulty_prior: difficulty,
             concepts,
+            pedagogy: None,
+        }
+    }
+
+    fn pedagogy_meta(
+        stage: Option<PedagogyStage>,
+        family: Option<&str>,
+        scaffold: Option<u8>,
+    ) -> PedagogyMetadata {
+        PedagogyMetadata {
+            family_id: family.map(str::to_owned),
+            stage,
+            scaffold_level: scaffold,
+            transfer_group_id: None,
+            surface_context: None,
+            challenge_group_id: None,
+        }
+    }
+
+    fn remediation_target(
+        node: Option<&str>,
+        concepts: &[&str],
+        stage: Option<PedagogyStage>,
+        family: Option<&str>,
+        floor: Option<u8>,
+    ) -> RemediationTarget {
+        RemediationTarget {
+            error_code: "generic_error".to_owned(),
+            question_id: "errored-question".to_owned(),
+            concept_ids: concepts.iter().map(|c| (*c).to_owned()).collect(),
+            node_id: node.map(str::to_owned),
+            family_id: family.map(str::to_owned),
+            preferred_stage: stage,
+            min_scaffold_level: floor,
         }
     }
 
@@ -1089,6 +1259,8 @@ mod tests {
             unlocked_node_ids: HashSet::new(),
             completed_module_ids: HashSet::new(),
             recent_question_ids: HashSet::new(),
+            recent_pedagogy: RecentPedagogy::default(),
+            remediation: None,
         }
     }
 
@@ -1378,6 +1550,296 @@ mod tests {
         assert_eq!(recommendation.action, PlannerAction::PracticeQuestion);
         assert_eq!(recommendation.reason, RecommendationReason::StrongAndFresh);
         assert_eq!(recommendation.question_id.as_deref(), Some("q-app"));
+    }
+
+    #[test]
+    fn next_action_prefers_less_scaffolding_for_a_strong_learner() {
+        let mut scaffolded = question(
+            "q-high",
+            "domain-1",
+            AssessmentMode::Application,
+            0.8,
+            vec![concept("python.loops", 1.0)],
+        );
+        scaffolded.pedagogy = Some(PedagogyMetadata {
+            family_id: Some("generic.family".to_owned()),
+            stage: None,
+            scaffold_level: Some(5),
+            transfer_group_id: None,
+            surface_context: None,
+            challenge_group_id: None,
+        });
+        let mut cold = question(
+            "q-low",
+            "domain-1",
+            AssessmentMode::Application,
+            0.8,
+            vec![concept("python.loops", 1.0)],
+        );
+        cold.pedagogy = Some(PedagogyMetadata {
+            family_id: Some("generic.family".to_owned()),
+            stage: None,
+            scaffold_level: Some(1),
+            transfer_group_id: None,
+            surface_context: None,
+            challenge_group_id: None,
+        });
+
+        let content = input(
+            vec![domain("domain-1", 1.0)],
+            Vec::new(),
+            vec![scaffolded, cold],
+            vec![state(
+                "python.loops",
+                AssessmentMode::Application,
+                0.95,
+                9.0,
+                now(),
+            )],
+        );
+
+        let recommendation = recommend(&content).expect("recommendation");
+        assert_eq!(recommendation.action, PlannerAction::PracticeQuestion);
+        assert_eq!(recommendation.question_id.as_deref(), Some("q-low"));
+    }
+
+    // --- Phase 3: structured-error remediation ---
+
+    #[test]
+    fn targeted_remediation_prefers_an_accessible_node() {
+        // Evidence on an unrelated concept keeps this out of cold start while
+        // leaving the remediation node unexplored.
+        let mut content = input(
+            vec![domain("domain-1", 1.0)],
+            vec![
+                node("n-rem", "domain-1", "m1", &["python.weak"]),
+                node("n-other", "domain-1", "m1", &["python.other"]),
+            ],
+            Vec::new(),
+            vec![state(
+                "python.other",
+                AssessmentMode::Recall,
+                0.2,
+                1.0,
+                now(),
+            )],
+        );
+        content.remediation = Some(remediation_target(
+            Some("n-rem"),
+            &["python.weak"],
+            None,
+            None,
+            None,
+        ));
+
+        let recommendation = recommend(&content).expect("recommendation");
+        assert_eq!(recommendation.action, PlannerAction::LearnNode);
+        assert_eq!(
+            recommendation.reason,
+            RecommendationReason::TargetedRemediation
+        );
+        assert_eq!(recommendation.node_id.as_deref(), Some("n-rem"));
+    }
+
+    #[test]
+    fn locked_remediation_node_does_not_bypass_prerequisites() {
+        let locked =
+            with_module_prereqs(node("n-rem", "domain-1", "m2", &["python.weak"]), &["m1"]);
+        let mut content = input(
+            vec![domain("domain-1", 1.0)],
+            vec![node("n-m1", "domain-1", "m1", &["python.weak"]), locked],
+            Vec::new(),
+            vec![state(
+                "python.weak",
+                AssessmentMode::Recall,
+                0.2,
+                1.0,
+                now(),
+            )],
+        );
+        content.remediation = Some(remediation_target(
+            Some("n-rem"),
+            &["python.weak"],
+            None,
+            None,
+            None,
+        ));
+
+        let recommendation = recommend(&content).expect("recommendation");
+        assert_ne!(
+            recommendation.node_id.as_deref(),
+            Some("n-rem"),
+            "a locked remediation node must not be opened"
+        );
+        assert_eq!(recommendation.node_id.as_deref(), Some("n-m1"));
+    }
+
+    #[test]
+    fn concept_only_remediation_selects_relevant_practice() {
+        let mut content = input(
+            vec![domain("domain-1", 1.0)],
+            Vec::new(),
+            vec![
+                question(
+                    "q-a-other",
+                    "domain-1",
+                    AssessmentMode::Recall,
+                    0.4,
+                    vec![concept("python.other", 1.0)],
+                ),
+                question(
+                    "q-z-match",
+                    "domain-1",
+                    AssessmentMode::Recall,
+                    0.4,
+                    vec![concept("python.weak", 1.0)],
+                ),
+            ],
+            vec![
+                state("python.weak", AssessmentMode::Recall, 0.3, 3.0, now()),
+                state("python.other", AssessmentMode::Recall, 0.3, 3.0, now()),
+            ],
+        );
+        content.remediation = Some(remediation_target(None, &["python.weak"], None, None, None));
+
+        let recommendation = recommend(&content).expect("recommendation");
+        assert_eq!(recommendation.action, PlannerAction::PracticeQuestion);
+        assert_eq!(recommendation.question_id.as_deref(), Some("q-z-match"));
+    }
+
+    #[test]
+    fn preferred_stage_breaks_a_concept_tie() {
+        let mut trace = question(
+            "q-trace",
+            "domain-1",
+            AssessmentMode::Recall,
+            0.4,
+            vec![concept("python.weak", 1.0)],
+        );
+        trace.pedagogy = Some(pedagogy_meta(Some(PedagogyStage::Trace), None, None));
+        let mut recognize = question(
+            "q-recognize",
+            "domain-1",
+            AssessmentMode::Recall,
+            0.4,
+            vec![concept("python.weak", 1.0)],
+        );
+        recognize.pedagogy = Some(pedagogy_meta(Some(PedagogyStage::Recognize), None, None));
+
+        let mut content = input(
+            vec![domain("domain-1", 1.0)],
+            Vec::new(),
+            vec![recognize, trace],
+            vec![state(
+                "python.weak",
+                AssessmentMode::Recall,
+                0.3,
+                3.0,
+                now(),
+            )],
+        );
+        content.remediation = Some(remediation_target(
+            None,
+            &["python.weak"],
+            Some(PedagogyStage::Trace),
+            None,
+            None,
+        ));
+
+        let recommendation = recommend(&content).expect("recommendation");
+        assert_eq!(recommendation.question_id.as_deref(), Some("q-trace"));
+    }
+
+    #[test]
+    fn preferred_family_does_not_override_a_weaker_concept() {
+        let mut weak_other = question(
+            "q-weak",
+            "domain-1",
+            AssessmentMode::Recall,
+            0.3,
+            vec![concept("python.other", 1.0)],
+        );
+        weak_other.pedagogy = Some(pedagogy_meta(None, Some("family-target"), None));
+        let mut target_concept = question(
+            "q-target",
+            "domain-1",
+            AssessmentMode::Recall,
+            0.3,
+            vec![concept("python.weak", 1.0)],
+        );
+        target_concept.pedagogy = Some(pedagogy_meta(None, Some("family-other"), None));
+
+        let mut content = input(
+            vec![domain("domain-1", 1.0)],
+            Vec::new(),
+            vec![target_concept, weak_other],
+            vec![
+                state("python.weak", AssessmentMode::Recall, 0.5, 3.0, now()),
+                state("python.other", AssessmentMode::Recall, 0.05, 3.0, now()),
+            ],
+        );
+        content.remediation = Some(remediation_target(
+            None,
+            &["python.weak"],
+            None,
+            Some("family-target"),
+            None,
+        ));
+
+        let recommendation = recommend(&content).expect("recommendation");
+        assert_eq!(
+            recommendation.question_id.as_deref(),
+            Some("q-weak"),
+            "a family match must not override a much weaker concept"
+        );
+    }
+
+    #[test]
+    fn remediation_scaffold_floor_is_respected() {
+        let mut low = question(
+            "q-low",
+            "domain-1",
+            AssessmentMode::Application,
+            0.8,
+            vec![concept("python.loops", 1.0)],
+        );
+        low.pedagogy = Some(pedagogy_meta(None, Some("generic.family"), Some(0)));
+        let mut high = question(
+            "q-high",
+            "domain-1",
+            AssessmentMode::Application,
+            0.8,
+            vec![concept("python.loops", 1.0)],
+        );
+        high.pedagogy = Some(pedagogy_meta(None, Some("generic.family"), Some(3)));
+
+        let mut content = input(
+            vec![domain("domain-1", 1.0)],
+            Vec::new(),
+            vec![low, high],
+            vec![state(
+                "python.loops",
+                AssessmentMode::Application,
+                0.95,
+                9.0,
+                now(),
+            )],
+        );
+        content.remediation = Some(remediation_target(
+            None,
+            &["python.loops"],
+            None,
+            None,
+            Some(3),
+        ));
+
+        let recommendation = recommend(&content).expect("recommendation");
+        assert_eq!(recommendation.action, PlannerAction::PracticeQuestion);
+        assert_eq!(
+            recommendation.question_id.as_deref(),
+            Some("q-high"),
+            "the temporary scaffold floor should keep embedded support"
+        );
     }
 
     #[test]

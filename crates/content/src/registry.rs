@@ -2,12 +2,15 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::hash_map::Entry;
 
+use crate::challenge::{ChallengeDefinition, validate_challenge};
+use crate::family_guide::{FamilyGuide, validate_family_guide};
 use crate::learning::{KnowledgeNode, LearningDomain, LearningModule, validate_learning_domain};
 use crate::model::{Certification, ContentBundle, Domain, Question, Task};
 use crate::practice_test::{PracticeTest, validate_practice_test};
 use crate::validate::{ContentError, validate};
 use crate::{
-    EMBEDDED_LEARNING_SOURCES, EMBEDDED_PRACTICE_TEST_SOURCES, EMBEDDED_SOURCES, EmbeddedSource,
+    EMBEDDED_CHALLENGE_SOURCES, EMBEDDED_FAMILY_GUIDE_SOURCES, EMBEDDED_LEARNING_SOURCES,
+    EMBEDDED_PRACTICE_TEST_SOURCES, EMBEDDED_SOURCES, EmbeddedSource,
 };
 
 /// A raw content source plus the file it came from, when known.
@@ -28,6 +31,8 @@ pub struct ContentRegistry {
     bundles: Vec<ContentBundle>,
     learning_domains: Vec<LearningDomain>,
     practice_tests: Vec<PracticeTest>,
+    challenges: Vec<ChallengeDefinition>,
+    family_guides: Vec<FamilyGuide>,
 }
 
 impl ContentRegistry {
@@ -52,7 +57,9 @@ impl ContentRegistry {
         let quiz = embedded_refs(EMBEDDED_SOURCES);
         let learning = embedded_refs(EMBEDDED_LEARNING_SOURCES);
         let practice = embedded_refs(EMBEDDED_PRACTICE_TEST_SOURCES);
-        Self::from_source_refs(&quiz, &learning, &practice)
+        let challenges = embedded_refs(EMBEDDED_CHALLENGE_SOURCES);
+        let families = embedded_refs(EMBEDDED_FAMILY_GUIDE_SOURCES);
+        Self::from_source_refs(&quiz, &learning, &practice, &challenges, &families)
     }
 
     /// Loads embedded content without failing on individual malformed files.
@@ -65,15 +72,18 @@ impl ContentRegistry {
         let quiz = embedded_refs(EMBEDDED_SOURCES);
         let learning = embedded_refs(EMBEDDED_LEARNING_SOURCES);
         let practice = embedded_refs(EMBEDDED_PRACTICE_TEST_SOURCES);
-        let (bundles, learning_domains, practice_tests, errors) =
-            assemble(&quiz, &learning, &practice);
+        let challenges = embedded_refs(EMBEDDED_CHALLENGE_SOURCES);
+        let families = embedded_refs(EMBEDDED_FAMILY_GUIDE_SOURCES);
+        let assembled = assemble(&quiz, &learning, &practice, &challenges, &families);
         (
             Self {
-                bundles,
-                learning_domains,
-                practice_tests,
+                bundles: assembled.bundles,
+                learning_domains: assembled.learning_domains,
+                practice_tests: assembled.practice_tests,
+                challenges: assembled.challenges,
+                family_guides: assembled.family_guides,
             },
-            errors,
+            assembled.errors,
         )
     }
 
@@ -103,28 +113,73 @@ impl ContentRegistry {
         learning_sources: &[&str],
         practice_test_sources: &[&str],
     ) -> Result<Self, Vec<ContentError>> {
+        Self::from_all_sources_with_challenges(
+            sources,
+            learning_sources,
+            practice_test_sources,
+            &[],
+        )
+    }
+
+    /// Parses, validates, and merges quiz, learning, practice-test, and
+    /// challenge sources.
+    pub fn from_all_sources_with_challenges(
+        sources: &[&str],
+        learning_sources: &[&str],
+        practice_test_sources: &[&str],
+        challenge_sources: &[&str],
+    ) -> Result<Self, Vec<ContentError>> {
+        Self::from_all_sources_with_families(
+            sources,
+            learning_sources,
+            practice_test_sources,
+            challenge_sources,
+            &[],
+        )
+    }
+
+    /// Parses, validates, and merges quiz, learning, practice-test, challenge,
+    /// and family-guide sources.
+    pub fn from_all_sources_with_families(
+        sources: &[&str],
+        learning_sources: &[&str],
+        practice_test_sources: &[&str],
+        challenge_sources: &[&str],
+        family_guide_sources: &[&str],
+    ) -> Result<Self, Vec<ContentError>> {
         let quiz = inline_refs(sources);
         let learning = inline_refs(learning_sources);
         let practice = inline_refs(practice_test_sources);
-        Self::from_source_refs(&quiz, &learning, &practice)
+        let challenges = inline_refs(challenge_sources);
+        let families = inline_refs(family_guide_sources);
+        Self::from_source_refs(&quiz, &learning, &practice, &challenges, &families)
     }
 
     fn from_source_refs(
         sources: &[SourceRef<'_>],
         learning_sources: &[SourceRef<'_>],
         practice_test_sources: &[SourceRef<'_>],
+        challenge_sources: &[SourceRef<'_>],
+        family_guide_sources: &[SourceRef<'_>],
     ) -> Result<Self, Vec<ContentError>> {
-        let (bundles, learning_domains, practice_tests, errors) =
-            assemble(sources, learning_sources, practice_test_sources);
+        let assembled = assemble(
+            sources,
+            learning_sources,
+            practice_test_sources,
+            challenge_sources,
+            family_guide_sources,
+        );
 
-        if errors.is_empty() {
+        if assembled.errors.is_empty() {
             Ok(Self {
-                bundles,
-                learning_domains,
-                practice_tests,
+                bundles: assembled.bundles,
+                learning_domains: assembled.learning_domains,
+                practice_tests: assembled.practice_tests,
+                challenges: assembled.challenges,
+                family_guides: assembled.family_guides,
             })
         } else {
-            Err(errors)
+            Err(assembled.errors)
         }
     }
 
@@ -178,6 +233,119 @@ impl ContentRegistry {
             .iter()
             .filter(|test| versions.contains(test.certification_version.as_str()))
             .collect()
+    }
+
+    /// All validated challenges.
+    pub fn challenges(&self) -> &[ChallengeDefinition] {
+        &self.challenges
+    }
+
+    /// Challenges for a certification, in embedded order.
+    pub fn challenges_for_certification(
+        &self,
+        certification_id: &str,
+    ) -> Vec<&ChallengeDefinition> {
+        self.challenges
+            .iter()
+            .filter(|challenge| challenge.certification_id == certification_id)
+            .collect()
+    }
+
+    /// Finds a challenge by certification id and challenge id.
+    ///
+    /// Challenge ids are unique within a track version; a certification exposes
+    /// one active version, so the certification id is sufficient to address it.
+    pub fn challenge(
+        &self,
+        certification_id: &str,
+        challenge_id: &str,
+    ) -> Option<&ChallengeDefinition> {
+        self.challenges.iter().find(|challenge| {
+            challenge.certification_id == certification_id && challenge.id == challenge_id
+        })
+    }
+
+    /// All validated family guides.
+    pub fn family_guides(&self) -> &[FamilyGuide] {
+        &self.family_guides
+    }
+
+    /// Family guides authored for a certification id, in embedded order.
+    pub fn family_guides_for_certification(&self, certification_id: &str) -> Vec<&FamilyGuide> {
+        self.family_guides
+            .iter()
+            .filter(|guide| guide.certification_id == certification_id)
+            .collect()
+    }
+
+    /// Family guides authored for a certification version, in embedded order.
+    pub fn family_guides_for_version(&self, certification_version: &str) -> Vec<&FamilyGuide> {
+        self.family_guides
+            .iter()
+            .filter(|guide| guide.certification_version == certification_version)
+            .collect()
+    }
+
+    /// Finds one family guide within a certification version.
+    ///
+    /// `family_id` is opaque; the lookup never inspects its contents.
+    ///
+    /// This is keyed by version only, matching [`ContentRegistry::bundle_for_version`]'s
+    /// assumption that a certification version id is unique across the catalog.
+    /// Callers that already know the certification id should prefer
+    /// [`ContentRegistry::family_guides_for_certification`] to avoid relying on
+    /// that assumption.
+    pub fn family_guide(
+        &self,
+        certification_version: &str,
+        family_id: &str,
+    ) -> Option<&FamilyGuide> {
+        self.family_guides.iter().find(|guide| {
+            guide.certification_version == certification_version && guide.family_id == family_id
+        })
+    }
+
+    /// Families referenced by authored questions but missing a guide.
+    ///
+    /// This is an audit helper, not a validation rule: a track may author
+    /// `pedagogy.family_id` before its guide, and old tracks need no guides at
+    /// all. Only families that appear on questions in `certification_version`
+    /// are reported, sorted and deduplicated.
+    pub fn families_missing_guides(&self, certification_version: &str) -> Vec<String> {
+        let authored: HashSet<&str> = self
+            .family_guides
+            .iter()
+            .filter(|guide| guide.certification_version == certification_version)
+            .map(|guide| guide.family_id.as_str())
+            .collect();
+
+        let mut missing: Vec<String> = self
+            .questions_for_version(certification_version)
+            .into_iter()
+            .filter_map(|question| {
+                question
+                    .pedagogy
+                    .as_ref()
+                    .and_then(|pedagogy| pedagogy.family_id.as_deref())
+            })
+            .filter(|family_id| !family_id.trim().is_empty() && !authored.contains(family_id))
+            .map(str::to_owned)
+            .collect();
+        missing.sort();
+        missing.dedup();
+        missing
+    }
+
+    /// Finds the domain that owns a knowledge node, if any.
+    ///
+    /// Used to resolve a learning-node challenge stage to the domain the
+    /// Knowledge Map needs to render it.
+    pub fn node_domain_id(&self, certification_version: &str, node_id: &str) -> Option<&str> {
+        self.learning_domains
+            .iter()
+            .filter(|domain| domain.certification_version == certification_version)
+            .find(|domain| domain.node(node_id).is_some())
+            .map(|domain| domain.domain.id.as_str())
     }
 
     /// Finds a bundle by certification id.
@@ -416,6 +584,16 @@ fn inline_refs<'a>(sources: &'a [&'a str]) -> Vec<SourceRef<'a>> {
         .collect()
 }
 
+/// The valid subset parsed from every source, plus every error found.
+struct AssembledContent {
+    bundles: Vec<ContentBundle>,
+    learning_domains: Vec<LearningDomain>,
+    practice_tests: Vec<PracticeTest>,
+    challenges: Vec<ChallengeDefinition>,
+    family_guides: Vec<FamilyGuide>,
+    errors: Vec<ContentError>,
+}
+
 /// Parses, validates, and cross-checks sources, collecting every error.
 ///
 /// Invalid sources are skipped rather than aborting, so the returned bundles
@@ -424,28 +602,39 @@ fn assemble(
     sources: &[SourceRef<'_>],
     learning_sources: &[SourceRef<'_>],
     practice_test_sources: &[SourceRef<'_>],
-) -> (
-    Vec<ContentBundle>,
-    Vec<LearningDomain>,
-    Vec<PracticeTest>,
-    Vec<ContentError>,
-) {
+    challenge_sources: &[SourceRef<'_>],
+    family_guide_sources: &[SourceRef<'_>],
+) -> AssembledContent {
     let mut errors = Vec::new();
     let bundles = parse_bundles(sources, &mut errors);
     let learning_domains = parse_learning_domains(learning_sources, &mut errors);
     let practice_tests = parse_practice_tests(practice_test_sources, &mut errors);
+    let challenges = parse_challenges(challenge_sources, &mut errors);
+    let family_guides = parse_family_guides(family_guide_sources, &mut errors);
 
     for domain in &learning_domains {
         validate_learning_against_bundles(domain, &bundles, &mut errors);
     }
     validate_unique_learning_domains(&learning_domains, &mut errors);
     validate_unique_practice_tests(&practice_tests, &mut errors);
+    validate_remediation_nodes_against_learning(&bundles, &learning_domains, &mut errors);
+    validate_unique_challenges(&challenges, &mut errors);
+    validate_challenges_against_content(&challenges, &bundles, &learning_domains, &mut errors);
+    validate_unique_family_guides(&family_guides, &mut errors);
+    validate_family_confusions(&family_guides, &mut errors);
 
     for test in &practice_tests {
         validate_practice_test_against_bundles(test, &bundles, &mut errors);
     }
 
-    (bundles, learning_domains, practice_tests, errors)
+    AssembledContent {
+        bundles,
+        learning_domains,
+        practice_tests,
+        challenges,
+        family_guides,
+        errors,
+    }
 }
 
 /// Fills in the source file for errors that do not already name one.
@@ -736,6 +925,272 @@ fn parse_practice_tests(
     tests
 }
 
+/// Parses and validates challenge sources, recording every error found.
+fn parse_challenges(
+    sources: &[SourceRef<'_>],
+    errors: &mut Vec<ContentError>,
+) -> Vec<ChallengeDefinition> {
+    let mut challenges = Vec::new();
+
+    for source in sources {
+        match serde_json::from_str::<ChallengeDefinition>(source.json) {
+            Ok(challenge) => match validate_challenge(&challenge) {
+                Ok(()) => challenges.push(challenge),
+                Err(mut found) => {
+                    attribute(&mut found, source.path);
+                    errors.append(&mut found);
+                }
+            },
+            Err(error) => {
+                let error = ContentError::new("invalid_challenge_json", error.to_string());
+                errors.push(match source.path {
+                    Some(path) => error.with_source(path),
+                    None => error,
+                });
+            }
+        }
+    }
+
+    challenges
+}
+
+/// Parses and validates family-guide sources, recording every error found.
+fn parse_family_guides(
+    sources: &[SourceRef<'_>],
+    errors: &mut Vec<ContentError>,
+) -> Vec<FamilyGuide> {
+    let mut guides = Vec::new();
+
+    for source in sources {
+        match serde_json::from_str::<FamilyGuide>(source.json) {
+            Ok(guide) => match validate_family_guide(&guide) {
+                Ok(()) => guides.push(guide),
+                Err(mut found) => {
+                    attribute(&mut found, source.path);
+                    errors.append(&mut found);
+                }
+            },
+            Err(error) => {
+                let error = ContentError::new("invalid_family_guide_json", error.to_string());
+                errors.push(match source.path {
+                    Some(path) => error.with_source(path),
+                    None => error,
+                });
+            }
+        }
+    }
+
+    guides
+}
+
+/// Rejects two family guides claiming the same id within a track version.
+fn validate_unique_family_guides(guides: &[FamilyGuide], errors: &mut Vec<ContentError>) {
+    let mut seen = HashSet::new();
+    for guide in guides {
+        let key = (
+            guide.certification_id.as_str(),
+            guide.certification_version.as_str(),
+            guide.family_id.as_str(),
+        );
+        if !seen.insert(key) {
+            errors.push(ContentError::new(
+                "duplicate_family_guide",
+                format!(
+                    "duplicate family guide {} for certification version {}",
+                    guide.family_id, guide.certification_version
+                ),
+            ));
+        }
+    }
+}
+
+/// Cross-checks family-guide confusion targets within the same track version.
+///
+/// A confusion target must resolve to an authored family guide in the same
+/// `(certification_id, certification_version)`. Cross-track or unknown targets
+/// are rejected so the learner-facing comparison never renders a raw id. Tracks
+/// with no guides are unaffected.
+fn validate_family_confusions(guides: &[FamilyGuide], errors: &mut Vec<ContentError>) {
+    let authored: HashSet<(&str, &str, &str)> = guides
+        .iter()
+        .map(|guide| {
+            (
+                guide.certification_id.as_str(),
+                guide.certification_version.as_str(),
+                guide.family_id.as_str(),
+            )
+        })
+        .collect();
+
+    for guide in guides {
+        for confusion in &guide.common_confusions {
+            if confusion.other_family_id.trim().is_empty() {
+                continue;
+            }
+            let key = (
+                guide.certification_id.as_str(),
+                guide.certification_version.as_str(),
+                confusion.other_family_id.as_str(),
+            );
+            if !authored.contains(&key) {
+                errors.push(ContentError::new(
+                    "family_guide_unknown_confusion_family",
+                    format!(
+                        "family guide {} confusion target {} is not authored for certification version {}",
+                        guide.family_id, confusion.other_family_id, guide.certification_version
+                    ),
+                ));
+            }
+        }
+    }
+}
+
+/// Rejects two challenges claiming the same id within a track version.
+fn validate_unique_challenges(challenges: &[ChallengeDefinition], errors: &mut Vec<ContentError>) {
+    let mut seen = HashSet::new();
+    for challenge in challenges {
+        let key = (
+            challenge.certification_id.as_str(),
+            challenge.certification_version.as_str(),
+            challenge.id.as_str(),
+        );
+        if !seen.insert(key) {
+            errors.push(ContentError::new(
+                "duplicate_challenge_id",
+                format!(
+                    "duplicate challenge id {} for certification version {}",
+                    challenge.id, challenge.certification_version
+                ),
+            ));
+        }
+    }
+}
+
+/// Cross-checks a challenge's references against quiz and learning content.
+///
+/// A challenge references existing content by stable id. Every question must
+/// resolve in the bundle for the same track/version, every node (and every
+/// prerequisite node) must resolve in the learning map, and any referenced
+/// question's authored `challenge_group_id` must match the challenge id so the
+/// authored grouping stays consistent.
+fn validate_challenges_against_content(
+    challenges: &[ChallengeDefinition],
+    bundles: &[ContentBundle],
+    learning_domains: &[LearningDomain],
+    errors: &mut Vec<ContentError>,
+) {
+    for challenge in challenges {
+        let Some(bundle) = bundles.iter().find(|bundle| {
+            bundle.certification.id == challenge.certification_id
+                && bundle.version.id == challenge.certification_version
+        }) else {
+            errors.push(ContentError::new(
+                "challenge_unknown_track",
+                format!(
+                    "challenge {} references unknown certification version {} for {}",
+                    challenge.id, challenge.certification_version, challenge.certification_id
+                ),
+            ));
+            continue;
+        };
+
+        if let Some(domain_id) = challenge.domain_id.as_deref() {
+            if !bundle
+                .version
+                .domains
+                .iter()
+                .any(|domain| domain.id == domain_id)
+            {
+                errors.push(ContentError::new(
+                    "challenge_unknown_domain",
+                    format!(
+                        "challenge {} references unknown domain {}",
+                        challenge.id, domain_id
+                    ),
+                ));
+            }
+        }
+
+        let version_domains: Vec<&LearningDomain> = learning_domains
+            .iter()
+            .filter(|domain| {
+                domain.certification_id == challenge.certification_id
+                    && domain.certification_version == challenge.certification_version
+            })
+            .collect();
+        let node_exists = |node_id: &str| {
+            version_domains
+                .iter()
+                .any(|domain| domain.node(node_id).is_some())
+        };
+
+        for node_id in &challenge.prerequisite_node_ids {
+            if !node_exists(node_id) {
+                errors.push(ContentError::new(
+                    "challenge_unknown_prerequisite_node",
+                    format!(
+                        "challenge {} references unknown prerequisite node {}",
+                        challenge.id, node_id
+                    ),
+                ));
+            }
+        }
+
+        for stage in &challenge.stages {
+            if let Some(question_id) = stage.question_id() {
+                let Some(question) = bundle
+                    .questions
+                    .iter()
+                    .find(|question| question.id == question_id)
+                else {
+                    errors.push(ContentError::new(
+                        "challenge_unknown_question",
+                        format!(
+                            "challenge {} stage {} references unknown question {}",
+                            challenge.id,
+                            stage.id(),
+                            question_id
+                        ),
+                    ));
+                    continue;
+                };
+                if let Some(group) = question
+                    .pedagogy
+                    .as_ref()
+                    .and_then(|pedagogy| pedagogy.challenge_group_id.as_deref())
+                {
+                    if group != challenge.id {
+                        errors.push(ContentError::new(
+                            "challenge_group_mismatch",
+                            format!(
+                                "challenge {} stage {} references question {} authored for challenge group {}",
+                                challenge.id,
+                                stage.id(),
+                                question_id,
+                                group
+                            ),
+                        ));
+                    }
+                }
+            }
+
+            if let Some(node_id) = stage.node_id() {
+                if !node_exists(node_id) {
+                    errors.push(ContentError::new(
+                        "challenge_unknown_node",
+                        format!(
+                            "challenge {} stage {} references unknown node {}",
+                            challenge.id,
+                            stage.id(),
+                            node_id
+                        ),
+                    ));
+                }
+            }
+        }
+    }
+}
+
 /// Rejects two practice tests claiming the same id.
 fn validate_unique_practice_tests(tests: &[PracticeTest], errors: &mut Vec<ContentError>) {
     let mut seen = HashSet::new();
@@ -795,6 +1250,65 @@ fn validate_practice_test_against_bundles(
                     test.id, item.question.id, item.question.domain_id
                 ),
             ));
+        }
+    }
+}
+
+/// Cross-checks remediation `node_id` targets against the learning map.
+///
+/// A question's remediation node must resolve somewhere in the same
+/// certification version. The check is skipped when no learning content exists
+/// for that version, so a quiz bundle can be authored ahead of its knowledge
+/// map without becoming invalid. Node ids are only unique within a track
+/// version, so the search is scoped by `(certification_id, certification_version)`.
+fn validate_remediation_nodes_against_learning(
+    bundles: &[ContentBundle],
+    learning_domains: &[LearningDomain],
+    errors: &mut Vec<ContentError>,
+) {
+    // Index every node id by (certification, version) once, so each question's
+    // remediation reference is an O(1) lookup instead of scanning all nodes.
+    let mut nodes_by_version: HashMap<(&str, &str), HashSet<&str>> = HashMap::new();
+    for domain in learning_domains {
+        let nodes = nodes_by_version
+            .entry((
+                domain.certification_id.as_str(),
+                domain.certification_version.as_str(),
+            ))
+            .or_default();
+        for node in domain.nodes() {
+            nodes.insert(node.id.as_str());
+        }
+    }
+
+    for bundle in bundles {
+        let Some(nodes) =
+            nodes_by_version.get(&(bundle.certification.id.as_str(), bundle.version.id.as_str()))
+        else {
+            // No learning content for this version: skip the check so a quiz
+            // bundle can be authored ahead of its knowledge map.
+            continue;
+        };
+
+        for question in &bundle.questions {
+            for error_code in &question.error_codes {
+                let Some(node_id) = error_code
+                    .remediation
+                    .as_ref()
+                    .and_then(|remediation| remediation.node_id.as_deref())
+                else {
+                    continue;
+                };
+                if !nodes.contains(node_id) {
+                    errors.push(ContentError::new(
+                        "error_remediation_unknown_node",
+                        format!(
+                            "question {} error code {} remediation references unknown learning node {} for version {}",
+                            question.id, error_code.code, node_id, bundle.version.id
+                        ),
+                    ));
+                }
+            }
         }
     }
 }
@@ -934,11 +1448,17 @@ mod tests {
             },
         ];
 
-        let (bundles, _learning, _practice, errors) = assemble(&sources, &[], &[]);
+        let assembled = assemble(&sources, &[], &[], &[], &[]);
 
-        assert!(!bundles.is_empty(), "the valid source must survive");
-        assert_eq!(errors.len(), 1);
-        assert_eq!(errors[0].source.as_deref(), Some("content/bad/quiz.json"));
+        assert!(
+            !assembled.bundles.is_empty(),
+            "the valid source must survive"
+        );
+        assert_eq!(assembled.errors.len(), 1);
+        assert_eq!(
+            assembled.errors[0].source.as_deref(),
+            Some("content/bad/quiz.json")
+        );
     }
 
     #[test]

@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { CatalogResponse } from "../api/types";
-import { missionDomainName } from "./mission";
+import type { CatalogResponse, MissionResponse } from "../api/types";
+import { loadMission } from "./persistence";
+import { missionDomainName, startChallenge } from "./mission";
 
 /**
  * Domain ids are only unique within a track, so the same id can appear in several
@@ -111,5 +112,55 @@ describe("missionDomainName", () => {
         catalog,
       ),
     ).toBeUndefined();
+  });
+});
+
+describe("startChallenge", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("posts to the challenge endpoint and persists stage progress", async () => {
+    const issued = {
+      id: "44444444-4444-4444-8444-444444444444",
+      mode: "challenge",
+      challenge: { id: "ch-1", title: "Journey", stages: [] },
+      questions: [],
+    } as unknown as MissionResponse;
+    const fetchMock = vi.fn<
+      (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+    >(
+      async () =>
+        new Response(JSON.stringify(issued), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await startChallenge({
+      certificationId: "ai-python-fluency",
+      challengeId: "ch-1",
+    });
+
+    expect(result.id).toBe(issued.id);
+    const input = fetchMock.mock.calls[0]?.[0];
+    const request = input instanceof Request ? input : null;
+    const url = String(request ? request.url : input);
+    expect(url).toContain(
+      "/v1/tracks/ai-python-fluency/challenges/ch-1/start",
+    );
+    const body = JSON.parse((await request?.clone().text()) ?? "{}");
+    expect(body).not.toHaveProperty("question_ids");
+    expect(body.discovery).toEqual([]);
+
+    const progress = loadMission();
+    expect(progress?.mission.id).toBe(issued.id);
+    expect(progress?.stageIndex).toBe(0);
+    expect(progress?.finished).toBe(false);
   });
 });

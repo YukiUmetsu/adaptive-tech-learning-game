@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -121,19 +121,22 @@ describe("SettingsPage", () => {
     expect(stored.focus.breakAfterMinutes).toBe(15);
   });
 
-  it("keeps the existing audio behaviour behind the Sound effects setting", async () => {
+  it("adjusts audio volumes and mutes at zero", () => {
     renderSettings();
 
+    const audio = section("Audio & Feedback");
     expect(isSoundMuted()).toBe(false);
-    await userEvent.click(
-      section("Audio & Feedback").getByRole("checkbox", { name: /Sound effects/ }),
-    );
+
+    // The master volume starts at the middle default.
+    expect(audio.getByRole("slider", { name: /Master volume/ })).toHaveValue("50");
+
+    fireEvent.change(audio.getByRole("slider", { name: /Master volume/ }), {
+      target: { value: "0" },
+    });
 
     expect(isSoundMuted()).toBe(true);
     expect(
-      section("Audio & Feedback").getByRole("checkbox", {
-        name: /Answer feedback sounds/,
-      }),
+      audio.getByRole("slider", { name: /Answer feedback/ }),
     ).toBeDisabled();
   });
 

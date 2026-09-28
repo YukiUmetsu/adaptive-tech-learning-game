@@ -24,6 +24,58 @@ async fn openapi_document_lists_the_learning_endpoints() {
     assert!(body["paths"]["/v1/certifications"]["get"].is_object());
     assert!(body["paths"]["/v1/missions/issue"]["post"].is_object());
     assert!(body["paths"]["/v1/sync"]["post"].is_object());
+
+    // The pedagogical metadata contract is part of the published type layer so
+    // future planner/frontend code can reference it. It is never attached to a
+    // learner-facing question DTO in Phase 1.
+    assert!(
+        body["components"]["schemas"]["PedagogyMetadata"].is_object(),
+        "PedagogyMetadata must be a published schema"
+    );
+    assert!(
+        body["components"]["schemas"]["PedagogyStage"].is_object(),
+        "PedagogyStage must be a published schema"
+    );
+
+    // `Value`'s string index returns `Null` for a missing key, so assert the
+    // view schemas exist first; otherwise these leakage checks could pass
+    // vacuously if the DTOs are renamed or restructured.
+    for view in ["QuestionView", "StudyQuestionView"] {
+        let schema = &body["components"]["schemas"][view];
+        assert!(
+            schema["properties"].is_object(),
+            "{view} must be an object schema"
+        );
+        assert!(
+            schema["properties"].get("pedagogy").is_none(),
+            "{view} must not expose pedagogy"
+        );
+        assert!(
+            schema["properties"].get("remediation").is_none(),
+            "{view} must not expose remediation metadata"
+        );
+    }
+
+    // Phase 3: the learner-facing error-code view carries only code and
+    // description. The canonical `ErrorCodeDef` (with optional remediation)
+    // stays published but is never attached to a learner payload.
+    let error_code_view = &body["components"]["schemas"]["QuestionErrorCode"];
+    assert!(
+        error_code_view["properties"].is_object(),
+        "QuestionErrorCode must be an object schema"
+    );
+    assert!(
+        error_code_view["properties"].get("remediation").is_none(),
+        "QuestionErrorCode must not expose remediation metadata"
+    );
+    let study_view_error_codes = &body["components"]["schemas"]["StudyQuestionView"]["properties"]
+        ["error_codes"]["items"]["$ref"];
+    assert!(
+        study_view_error_codes
+            .as_str()
+            .is_some_and(|reference| reference.ends_with("/QuestionErrorCode")),
+        "StudyQuestionView.error_codes must reference the learner-safe view, got {study_view_error_codes}"
+    );
 }
 
 #[tokio::test]

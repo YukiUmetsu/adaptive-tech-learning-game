@@ -36,6 +36,7 @@ fn build_question(value: &Value) -> Question {
         // drives dispatch. Any valid enum value is fine here.
         interaction_type: InteractionType::Classification,
         difficulty_prior: 0.5,
+        pedagogy: None,
         prompt: "fixture".to_owned(),
         instruction: None,
         interaction,

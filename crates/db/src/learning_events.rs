@@ -75,6 +75,22 @@ pub struct UserHistoryEntry {
     pub occurred_at: DateTime<Utc>,
     /// Concept mappings with their authored weights.
     pub concepts: Vec<ConceptWeight>,
+    /// Server-derived 1-based attempt number for the question.
+    ///
+    /// Exposed so the pedagogy policy can tell a clean first-attempt success
+    /// from a recovery; it is read straight from the accepted event, never
+    /// stored again.
+    pub attempt_number: i32,
+    /// Hints used before submitting.
+    ///
+    /// A heavily hinted success is weaker evidence and must not fade
+    /// scaffolding aggressively.
+    pub hint_count: i32,
+    /// Authoritative server-scored structured error codes for the attempt.
+    ///
+    /// Read straight from the accepted event; remediation never trusts a
+    /// client-supplied error code.
+    pub structured_error_codes: Vec<String>,
 }
 
 #[derive(sqlx::FromRow)]
@@ -84,6 +100,9 @@ struct HistoryRow {
     assessment_mode: String,
     occurred_at: DateTime<Utc>,
     concepts: Json<Vec<ConceptWeight>>,
+    attempt_number: i32,
+    hint_count: i32,
+    structured_error_codes: Vec<String>,
 }
 
 /// Accepts a learning event, assigns the next server-derived attempt number,
@@ -205,7 +224,8 @@ pub async fn recent_for_user(
     limit: i64,
 ) -> Result<Vec<UserHistoryEntry>, DbError> {
     let rows = sqlx::query_as::<_, HistoryRow>(
-        "SELECT question_id, score, assessment_mode, occurred_at, concepts
+        "SELECT question_id, score, assessment_mode, occurred_at, concepts,
+                attempt_number, hint_count, structured_error_codes
          FROM learning_events
          WHERE user_id = $1 AND certification_id = $2
          ORDER BY received_at DESC
@@ -225,9 +245,59 @@ pub async fn recent_for_user(
                 assessment_mode: AssessmentMode::try_from(row.assessment_mode.as_str())?,
                 occurred_at: row.occurred_at,
                 concepts: row.concepts.0,
+                attempt_number: row.attempt_number,
+                hint_count: row.hint_count,
+                structured_error_codes: row.structured_error_codes,
             })
         })
         .collect()
+}
+
+/// One distinct question a learner has answered for a certification.
+#[derive(Debug, Clone, PartialEq)]
+pub struct SeenQuestion {
+    /// Question the learner has answered at least once.
+    pub question_id: String,
+    /// Most recent time the learner answered it.
+    pub last_occurred_at: DateTime<Utc>,
+}
+
+#[derive(sqlx::FromRow)]
+struct SeenQuestionRow {
+    question_id: String,
+    last_occurred_at: DateTime<Utc>,
+}
+
+/// Returns every distinct question a learner has answered for a certification.
+///
+/// Unlike [`recent_for_user`], this is not bounded by a recent window, so a
+/// family the learner met long ago stays "seen" for Phase 5 insights even after
+/// a lot of newer practice. The row count is bounded by the authored question
+/// count, not by event volume, and only ids and timestamps are returned.
+pub async fn distinct_seen_questions(
+    pool: &PgPool,
+    user_id: Uuid,
+    certification_id: &str,
+) -> Result<Vec<SeenQuestion>, DbError> {
+    let rows = sqlx::query_as::<_, SeenQuestionRow>(
+        "SELECT question_id, MAX(occurred_at) AS last_occurred_at
+         FROM learning_events
+         WHERE user_id = $1 AND certification_id = $2
+         GROUP BY question_id
+         ORDER BY question_id",
+    )
+    .bind(user_id)
+    .bind(certification_id)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows
+        .into_iter()
+        .map(|row| SeenQuestion {
+            question_id: row.question_id,
+            last_occurred_at: row.last_occurred_at,
+        })
+        .collect())
 }
 
 /// Counts the distinct questions of a mission that have accepted evidence.

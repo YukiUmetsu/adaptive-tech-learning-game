@@ -71,6 +71,530 @@ KMeans         0.20
 data leakage   0.10
 ```
 
+## Pedagogical metadata (Phase 1)
+
+A question may carry an optional, track-agnostic `pedagogy` object. It is
+**descriptive** in Phase 1: it is authored in canonical content and available to
+server-side planning, but it does not change mastery, scoring, rewards, or
+selection yet.
+
+```text
+Question
+├── concepts
+├── assessment_mode
+├── interaction_type
+├── difficulty_prior
+└── pedagogy                 # optional; every field optional
+    ├── family_id            # deeper reusable pattern/structure (opaque string)
+    ├── stage                # PedagogyStage
+    ├── scaffold_level       # 0..=6 embedded help
+    ├── transfer_group_id    # same deep transferable structure (opaque string)
+    ├── surface_context      # domain/story context (opaque string)
+    └── challenge_group_id   # may form one multi-stage journey (opaque string)
+```
+
+`stage` is one of the domain-neutral values `discover`, `recognize`,
+`differentiate`, `reason`, `trace`, `diagnose`, `construct`, `transfer`. The
+`*_id` and `surface_context` values are opaque author-defined strings: core code
+never branches on them, and they are deliberately not enums, so any current or
+future track (DSA, Python, AWS, Terraform, cybersecurity, ML) can use the same
+contract.
+
+`scaffold_level` measures how much help is embedded (`0` no help, `6` strongly
+guided/reconstruction-level). It is **not** difficulty.
+
+These distinctions are intentional and must stay separate:
+
+```text
+difficulty        != scaffold level
+assessment mode   != pedagogy stage
+concept           != family
+interaction type  != pedagogy stage
+```
+
+- `assessment_mode` is what kind of **evidence** an attempt provides.
+- `pedagogy.stage` is the **instructional role** of the activity.
+- `concept` is a mastery component; `family_id` is a reusable structural pattern.
+- `interaction_type` is the rendering/scoring primitive; a `spot_the_fault`
+  activity can be `diagnose`, and a `python_code` activity can be `construct`.
+
+Phase 1 establishes the content contract and plumbing. Phase 2 (below) turns the
+metadata into a bounded teaching-policy preference. Still deferred: multi-stage
+challenge orchestration, family/transfer/scaffold mastery persistence,
+error-driven remediation, and track-specific pedagogy rules.
+
+## Scaffold fading and transfer-aware practice (Phase 2)
+
+Phase 2 is a **teaching-policy** change, not a new knowledge model. It keeps
+`heuristic-v1`, concept estimates, assessment-mode separation, forgetting,
+evidence mass, difficulty fit, novelty, and repeat avoidance exactly as they
+were. The student model still answers "what does the learner probably know
+now?"; the teaching policy now also answers "what form of activity is most
+useful next?" using the optional authored pedagogy metadata.
+
+One pure, shared policy (`apps/api/src/pedagogy.rs`) computes a small
+[`PedagogySignal`](../../apps/api/src/pedagogy.rs) for every candidate in every
+selection path: Quick Quiz, Domain Quiz, Full Practice, Section Quiz,
+Recommended Practice, study sessions, Daily Missions, and the next-action
+planner. There is no per-mode pedagogy logic and no track-specific branch.
+Scaffold level stays separate from `difficulty_prior`; these terms never change
+difficulty, scoring, rewards, mastery, or concept state.
+
+### Adaptive scaffold fading
+
+Scaffold level measures help embedded in an activity. A learner with a weak or
+low-evidence concept is matched to more embedded support; a strong, confident
+learner is matched to less. The base preference comes from the existing concept
+estimate, damped by evidence confidence, so a high estimate on thin evidence
+stays *developing* rather than *strong*:
+
+```text
+weak / low evidence   -> prefer more embedded support
+developing            -> prefer middle support
+strong + confident    -> prefer less support
+```
+
+Within the same authored `family_id`, recent accepted attempts refine the
+target so support changes gradually instead of leaping:
+
+```text
+clean first-attempt, unaided success at level L -> target at most L - 1
+hinted / recovery success at level L            -> target at most L  (fade less)
+recent failure at level L                       -> target at least L + 2
+```
+
+The result is the intended trajectory — `high support -> success -> modestly
+lower support -> success -> lower support -> cold application` — rather than an
+immediate jump from level 5 to level 0. Failure lets support increase; it is
+never punitive, never resets mastery, and never forces the exact same question
+back.
+
+### Transfer-aware selection
+
+Once a learner has shown some success in a transfer group, a *different*
+authored `surface_context` is preferred over repeating the same one:
+
+```text
+same deep family / transfer group
++ a different surface context
+-> preferred, once the learner has some success
+```
+
+The rule is a light preference, not random rotation. It still respects concept
+weakness, assessment mode, difficulty fit, forgetting risk, novelty, domain
+coverage, interaction variety, and recent-repeat avoidance. A recent success at
+a low scaffold level, a low preferred scaffold, and a novel surface context make
+`stage = transfer` work more appropriate over time, but transfer questions are
+never gated at the schema level — only ranked.
+
+### Bounded, explainable, deterministic
+
+Each term is a named constant with a documented purpose and a bounded
+contribution:
+
+```text
+WEIGHT_SCAFFOLD_FIT       0.08
+WEIGHT_TRANSFER_CONTEXT   0.05
+WEIGHT_STAGE_FIT          0.04
+PENALTY_SURFACE_REPEAT    0.06
+```
+
+The whole pedagogy contribution stays within a small interval around zero, well
+below the existing weakness and forgetting weights, so the current adaptive
+signals remain dominant. Ranking is pure and deterministic; ties still break by
+question id, and familiarity and difficulty are never traded away for variety.
+
+### Missing metadata and backward compatibility
+
+Every pedagogy field is optional. Questions without it — or without the
+specific field being scored — contribute a constant neutral value, so a track
+with 0% pedagogy coverage ranks exactly as it did before Phase 2. Partial
+metadata uses only the signals present. The policy never infers meaning from the
+contents of `family_id`, `transfer_group_id`, or `surface_context`.
+
+### No new persistence or network
+
+The policy is derived from accepted learning events, current `heuristic-v1`
+concept state, and canonical authored content at normal mission-generation
+boundaries. Authored metadata is reconstructed from canonical content by
+`question_id`; no pedagogy fields are stored on learning events, no new tables
+are added, and no extra request is made. Full Practice keeps its domain
+allocation, and authored fixed practice tests are untouched.
+
+### Transport boundary
+
+`pedagogy` lives on the authored/internal `Question` and on the server-side
+planner/selector types (`PlannerQuestion`, selection `Candidate`, the Phase 2
+policy). It is **not** attached to learner-facing question DTOs (`QuestionView`,
+`StudyQuestionView`): some `family_id` values could reveal the intended approach
+before scoring, and there is no learner UI for it. The
+`PedagogyStage`/`PedagogyMetadata` schemas are published in the OpenAPI/type
+layer so frontend and planner code can reference the contract, but no question
+payload carries the values. Phase 2 uses them internally for selection only, so
+the pre-answer boundary is unchanged.
+
+## Structured-error remediation (Phase 3)
+
+Phase 3 is a **teaching-policy** layer on top of the same student model. It
+distinguishes "the learner got this question wrong" from "the learner appears to
+have made *this* particular mistake" and, when the content authors a repair for
+that mistake, prefers a targeted next activity.
+
+The flow is entirely server-authoritative and deterministic:
+
+```text
+client submits answer primitive
+-> server scores against canonical content
+-> authoritative structured error codes
+-> accepted learning event stores those codes
+-> recent error resolver reads them with authored remediation metadata
+-> bounded teaching-policy preference in planner / selector
+-> review or practice activity
+-> a later relevant success marks the error recovered
+-> normal adaptive policy resumes
+```
+
+### Structured error is not a misconception label
+
+A wrong answer is not proof of a stable misconception. The system treats a
+structured error as **recent, local evidence about how one attempt failed**:
+
+- nothing is persisted as a misconception; there is no `user_misconceptions`
+  table and no permanent learner label;
+- only authoritative, server-scored error codes are used — never client input,
+  free text, or an LLM classification;
+- only errors inside a small recent window influence selection;
+- a later success on the same target concept or family suppresses the signal;
+- the effect is a bounded ranking preference, not an unbreakable redirect.
+
+### Authored remediation contract
+
+An optional, track-agnostic `remediation` object may be attached to any
+`ErrorCodeDef`. Every field is optional, so existing `{"code", "description"}`
+errors keep loading unchanged:
+
+```text
+error_codes[]
+└── remediation                 # optional; at least one target when present
+    ├── concept_ids             # narrower concepts implicated by the error
+    ├── node_id                 # a learning node that repairs the mistake
+    ├── preferred_stage         # PedagogyStage of the follow-up activity
+    ├── preferred_family_id     # reusable family to stay within/redirect to
+    └── min_scaffold_level      # temporary scaffold floor for repair
+```
+
+Validation enforces non-empty targets, non-blank ids, unique concept ids, and
+the Phase 1 scaffold bounds. In a scored bundle, `concept_ids` must resolve to
+authored concepts. A `node_id` is cross-checked in the registry against the
+learning map of the same `(certification_id, certification_version)`; the check
+is skipped when no learning content exists for that version, so a quiz bundle
+can be authored ahead of its knowledge map. Node ids are never assumed globally
+unique.
+
+### Resolving an active target
+
+`apps/api/src/remediation.rs` is a pure, testable component separate from
+ranking. It returns at most **one** target, chosen deterministically:
+
+1. an error with an authored `node_id` (most specific);
+2. then an error with explicit target concepts;
+3. then a family/stage preference;
+4. ties break newest-first, then by stable code.
+
+Errors without remediation metadata are ignored, so a track with zero
+remediation coverage behaves exactly like Phase 2. The target's `concept_ids`
+fall back to the errored question's own concepts when authors supplied none, so
+a floor-only or stage-only repair is still actionable.
+
+### Recovery
+
+A success that is **strictly later in occurrence time** suppresses an earlier
+error only when it also:
+
+- is in the **same assessment mode** (a recognition success must not hide a weak
+  application attempt), and
+- overlaps the remediation's target concept(s) or family.
+
+Ordering uses the attempt's `occurred_at`, not sync order, so a late-synced
+offline success cannot suppress a newer error and an earlier success cannot
+either. Unrelated successes, different-mode successes, and earlier successes do
+not suppress. Scaffold comparison is still not enforced in Phase 3.
+
+### How remediation influences selection
+
+- **Next-action planner.** An accessible authored `node_id` becomes a
+  `targeted_remediation` recommendation (`learn_node`/`review_node`). A locked
+  node is never opened: the rule falls through to the ordinary prerequisite and
+  practice rules. Concept/family/stage-only targets flow through practice
+  ranking.
+- **Session planner and Daily Missions.** Node and practice scoring receive the
+  same bounded bonus, so a session naturally includes at most a top repair node
+  and a top repair practice activity. Daily Missions remain immutable once
+  generated; a new error only affects tomorrow's mission or a later explicit
+  recommendation.
+- **Quick Quiz / Domain Quiz / Section Quiz / Recommended Practice.** The
+  ordinary adaptive ranking receives a bounded remediation bonus; every existing
+  signal (weakness, forgetting, difficulty, novelty, interaction variety,
+  recent repeats) still applies.
+- **Full Practice.** Structured errors are recorded, but remediation is
+  deliberately not applied: the weighted exam composition is preserved and
+  repair happens after the session. Authored fixed practice tests are untouched.
+
+### Bounded and integrated with Phase 2
+
+The remediation match is a named, bounded constant (`WEIGHT_REMEDIATION`)
+computed from concept overlap, preferred family, and preferred stage. It stays
+below the concept-weakness and forgetting weights. The authored
+`min_scaffold_level` raises the Phase 2 scaffold target **only** for matching
+candidates while the error is active; recovery removes it, so normal scaffold
+fading and transfer-aware practice resume. A locked remediation node is handled
+by the ordinary prerequisite rules rather than bypassed.
+
+### No new persistence, network, or answer leakage
+
+Remediation is derived from accepted events, canonical content, and current
+concept state at normal planning boundaries. No new tables are added and no
+extra request is made. The learner-facing error-code view (`QuestionErrorCode`)
+carries only `code` and `description`; authored remediation targets, nodes,
+families, stages, and scaffold floors are server-side only and never sent
+pre-answer. Post-answer feedback stays short — the targeted next activity does
+the deeper repair.
+
+## Multi-stage challenges (Phase 4)
+
+A **challenge** is not a new interaction type. It is an authored, coherent
+ordered sequence of *existing* activities — quiz questions and knowledge nodes —
+that share one challenge identity and represent a larger reasoning journey:
+
+```text
+challenge definition
+        -> ordered stages (question | learning_node)
+        -> existing question / knowledge-node primitives
+        -> one ordinary mission, one runtime
+        -> local resume, normal scoring/sync, normal concept-state updates
+```
+
+Terminology stays strictly separate:
+
+```text
+challenge            != interaction type
+challenge stage      != assessment mode
+challenge stage      != pedagogy stage   (pedagogy lives on the activity)
+challenge completion != mastery
+```
+
+### Authored definition
+
+Challenges are a distinct, opt-in content type (`challenge-v1`) discovered under
+`content/**/challenges/**/*.json`, like learning domains and practice tests.
+Every field is track-agnostic; a stage references existing content by stable id
+and never introduces a subject-specific stage type. The Phase 1
+`challenge_group_id` on a referenced question is the authoring bridge: when
+present it must match the challenge id.
+
+```text
+ChallengeDefinition
+├── id, title, description
+├── certification_id, certification_version, domain_id?
+├── estimated_minutes?            # derived from stage types when absent
+├── prerequisite_node_ids?        # reuse existing node ids
+└── stages[]                      # >= 2, unique ids, contiguous order
+    ├── question      { question_id }
+    └── learning_node { node_id }
+```
+
+Validation is strict and server-side: unique challenge ids per track version,
+unique/non-contiguous stage order rejected, duplicate referenced activities
+rejected, referenced questions/nodes must resolve in the same track version, and
+declared domains/prerequisite nodes must exist. An old track with no challenges
+loads and behaves exactly as before.
+
+### Execution reuses the mission runtime
+
+`POST /v1/tracks/{track_id}/challenges/{challenge_id}/start` resolves the
+definition, enforces authored prerequisites against the learner's discovery,
+freezes the referenced content version, and issues **one** ordinary mission
+whose `question_ids` are the challenge's question stages in order. The client
+never supplies question ids and cannot construct a challenge. The mission
+response carries the learner-safe stage list (`ChallengeView`) so the session
+can run and resume locally.
+
+There is no separate execution engine:
+
+- question stages use the existing local scorer, pending-event outbox, and
+  single `/v1/sync` reconciliation;
+- learning-node stages use the existing Knowledge Map card and local discovery
+  progress, and create no scored evidence;
+- retries, attempt numbering, event ids, stale-content handling, and review are
+  unchanged.
+
+A track-neutral `challenge` quiz mode gives challenge missions a longer TTL. No
+new interaction type is added.
+
+### Local resume
+
+Progress is one ordered stage index persisted with the existing local mission
+state, so `start -> stage 1 -> navigate away -> return -> resume at stage 2`
+works with **no per-stage request**. Question stages keep their own question
+index derived from the stage list, so interleaved node stages never consume a
+question. Multi-device challenge progress remains device-local, which matches
+the current mission model; accepted learning events stay the authoritative
+evidence.
+
+### Bounded adaptation
+
+A challenge is authored as a deterministic sequence; the general adaptive
+selector never fills or reorders it. Phase 2 and Phase 3 still apply *around*
+it: a challenge question is scored normally, produces normal structured errors,
+and its error can drive targeted remediation on the next recommendation or
+session. In-challenge adaptive candidate selection and in-challenge remediation
+insertion are deferred; the authored stage order is preserved.
+
+### Rewards and safety
+
+Per-question rewards are unchanged and there is no challenge completion bonus in
+this phase, so retries cannot farm a new reward. Challenge completion is a
+local/visual milestone, not mastery: concept state still comes only from
+accepted scored evidence. Full Practice and authored fixed practice tests are
+untouched, and Daily Missions remain immutable once generated. The learner-safe
+question boundary is preserved — canonical answers ship only through the
+ordinary study-mission payload, and the challenge view contains only stage
+references.
+
+## Structural abstraction: reusable families (Phase 5)
+
+Phase 5 teaches that a **surface story** is not the same as the **deep
+structure** behind it. It does not add a mastery model, an assessment mode, a
+new interaction type, or a subject-specific engine. It builds directly on the
+Phase 1 `family_id` / `transfer_group_id` / `surface_context` metadata and on the
+ordinary accepted history.
+
+Terminology is strict:
+
+```text
+family guide         = authored explanation of a reusable deep structure
+transfer group       = authored set of examples intended to test/generalize that structure
+surface context      = the visible story/domain the learner sees
+same-skeleton view   = post-exposure teaching view that connects seen examples
+family insight       != mastery
+viewing an insight   != scored evidence
+family guide         != question
+family guide         != concept
+```
+
+A family is a reusable structural pattern or reasoning schema. A concept is a
+unit of learner knowledge/evidence. One family may involve several concepts, and
+one concept may participate in several families; the concept-state model is not
+collapsed into family state. A transfer group is distinct from a family: several
+transfer groups may use the same family, and a transfer group may compare
+related family variants.
+
+### Authored content
+
+A family guide is a distinct, opt-in content type (`family-guide-v1`) discovered
+under `content/**/families/**/*.json`, like learning domains, practice tests, and
+challenges. It is track-agnostic and keyed by `(certification_id,
+certification_version, family_id)`; `family_id` is opaque and core code never
+inspects its prefix or contents. A guide carries a learner-facing title, a
+plain-language deep-structure summary, recognition signals, optional core rules,
+optional structural steps, optional common-confusion distinctions, optional
+representative contexts, and source references.
+
+Validation is strict and server-side: non-empty identity/title/summary, at least
+one recognition signal, no blank or normalized-duplicate signals/rules/steps, no
+self-confusion or duplicate confusion target, resolvable confusion targets within
+the same track version, non-empty example contexts, and at least one valid source
+reference. A question `family_id` does **not** have to have a guide immediately:
+guides are optional, old tracks are unaffected, and audit tooling reports
+missing guides as a warning rather than a build failure.
+
+A **common confusion** is authored as `other_family_id` plus a distinction. It is
+the single source for the Family A vs Family B view, so no second comparison
+content system is introduced. The A-vs-B view is shown only once the learner has
+encountered **both** families, so it can never pre-label an unencountered
+neighbor before its first exposure.
+
+### Eligibility and the "same skeleton" view
+
+A family insight exists in content but is not shown immediately. The unlock and
+comparison rules are generic:
+
+```text
+family guide unlocked        after the learner has seen >= 1 relevant activity
+same-skeleton comparison     only after >= 2 distinct surface contexts
+A vs B confusion view        only after both families have been seen
+```
+
+Examples are derived from accepted learning history joined to canonical content;
+no "family history" table is persisted, and the existing event/history records
+stay authoritative. The seen-question set is derived from the learner's distinct
+answered questions, not a fixed recent window, so a family met earlier stays
+unlocked as newer practice accumulates. A failed attempt still counts as *seen*
+— it shows the learner met that example — but never implies understanding.
+Replayed/duplicate events cannot produce duplicate examples.
+
+The comparison is a pure, deterministic resolver
+(`apps/api/src/structure.rs`): grouping comes only from authored `family_id`,
+`transfer_group_id`, and `surface_context`. There is no embedding, vector search,
+LLM classification, or question-text similarity. When one transfer group has
+enough context variety it is preferred; otherwise the family as a whole is used.
+One newest example per context is kept, ordered newest first and bounded to a
+small number, so only examples the learner has already seen appear.
+
+### Progressive, non-blocking presentation
+
+The Track Hub exposes a compact, generalized pattern browser when the track
+authors family guides (neutral label "Reusable Patterns"; a track presentation
+layer may supply a different label such as "Pattern Toolbelt"). A completed
+mission can surface an optional,
+collapsed "See the structure these questions shared" teaser; that request is
+scoped to the finished mission's families, so the teaser relates to the work the
+learner actually did. The comparison itself is revealed in steps — seen examples
+→ shared signals → core rule → reusable steps — so the abstraction is not dumped
+at once. It never scores, awards Bits, changes concept state, or blocks
+completion, and it shows no mastery percentage; coverage is coarse ("Seen in 3
+contexts").
+
+Viewing a family insight is never scored evidence and never changes concept
+state. Phase 5 adds no economy, no DB table, no per-example request, no polling,
+and no runtime LLM call. One optional aggregate request per track returns every
+unlocked insight. The response carries `has_guides`: a track with no authored
+guides reports `false` and an empty list, and the Track Hub hides the Patterns
+surface entirely rather than showing a permanently empty tab. `has_guides: true`
+with an empty list is the distinct "guides exist, nothing met yet" state, which
+keeps the browser visible with its `Patterns you meet while practicing` hint.
+
+### Answer-leak boundary
+
+Cold-transfer items must not reveal the intended family before scoring. The
+ordinary learner-facing question payloads stay free of `pedagogy`, family ids,
+signals, and summaries. Family insight is served only through its own
+authenticated, post-exposure endpoint, and only for families the learner has
+already encountered. A track may intentionally teach a family label earlier in
+learning material; a cold practice item never labels it.
+
+### Relationship to Phases 2-4
+
+- **Phase 2.** The structural comparison explains *why* the transfer-aware
+  selector considered two cases related; it reuses the same authored metadata and
+  introduces no parallel grouping id.
+- **Phase 3.** A `preferred_stage = differentiate` remediation may point a
+  learner at an already-unlocked family comparison, but authored remediation
+  remains authoritative and no error is inferred from comparison behavior.
+- **Phase 4.** Challenge completion is an ideal moment to offer a
+  post-completion insight. Challenge progress and family-guide discovery stay
+  separate: opening an insight changes no completion, score, or reward.
+
+### Measuring Phase 5
+
+No learning claim is made until real product data supports it. Future evaluation
+can compare seeing a comparison against later cold-transfer success, scaffold
+needed later, time to identify a family, confusion errors between neighboring
+families, and voluntary insight use. The optional local telemetry events
+(`family_insight_shown`, `family_insight_opened`,
+`structure_comparison_completed`, `confusion_comparison_opened`) are
+non-authoritative and never affect concept state.
+
 ## Interaction features
 
 Record:
@@ -252,7 +776,10 @@ persisted server discovery ∪ fresh discovery in the current request
 so a just-revealed node does not need to wait for discovery sync before the next
 explicit planning request understands it. Daily Missions remain immutable once
 generated: newly synced discovery never regenerates today's mission, though it can
-inform tomorrow's.
+inform tomorrow's. The one exception is a content revision that removes a
+knowledge node or question a stored plan still needs: the next read rebuilds the
+plan from current content, preserving the mission id and day (see
+`08-certification-content.md`).
 
 ### Executing a recommendation
 
@@ -525,7 +1052,10 @@ name in accessible labels and detail panels. Nodes align on their signal circle
 regardless of label length, grow subtly on hover, and the recommended node
 carries a small "Next" marker (explained in the map legend). The node detail
 panel hides evidence/review rows entirely when there is not enough data, and
-leads with a reward hook so exploring feels worthwhile.
+leads with a reward hook so exploring feels worthwhile. A **locked** node's
+panel keeps the topic summary, explains its prerequisite, and offers no explore
+action, so the learner is never sent to a card whose material cannot be revealed
+yet.
 
 The Daily Mission is embedded in the hub as a view, using the same runner as the
 standalone `/tracks/:id/daily` route (kept for deep links), so it no longer feels

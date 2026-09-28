@@ -13,3 +13,15 @@ pub enum DbError {
     #[error("migration error: {0}")]
     Migrate(#[from] sqlx::migrate::MigrateError),
 }
+
+impl DbError {
+    /// Whether this error is a PostgreSQL unique-constraint violation.
+    pub fn is_unique_violation(&self) -> bool {
+        match self {
+            Self::Sqlx(sqlx::Error::Database(database)) => {
+                database.code().as_deref() == Some("23505")
+            }
+            _ => false,
+        }
+    }
+}

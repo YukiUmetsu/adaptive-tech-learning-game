@@ -25,7 +25,15 @@ export interface AttemptRecord {
 /** Locally persisted mission progress. */
 export interface MissionProgress {
   mission: MissionResponse;
+  /** Question index for ordinary missions. */
   currentIndex: number;
+  /**
+   * Stage index for a challenge mission.
+   *
+   * Present only when `mission.challenge` is set. Node and question stages share
+   * one ordered index so a challenge resumes exactly where the learner left it.
+   */
+  stageIndex?: number;
   attempts: AttemptRecord[];
   startedAt: string;
   finished: boolean;

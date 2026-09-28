@@ -247,6 +247,26 @@ describe("buildCatalog", () => {
     );
   });
 
+  it("offers the DSA track under Computer Science when content exists", () => {
+    const entries = CATALOG.flatMap((section) => section.certifications);
+    const entry = entries.find((candidate) => candidate.id === "cs-dsa");
+    expect(entry?.examCode).toBe("DSA");
+    expect(entry?.wip).toBe(false);
+    expect(entry?.shortName).toBe("DSA");
+
+    const sections = buildCatalog(CATALOG, [
+      certification("cs-dsa", "Data Structures & Algorithms"),
+    ]);
+    const computerScience = sections.find(
+      (section) => section.id === "computer-science",
+    );
+    // DSA is a learning track, not a vendor certification.
+    expect(computerScience?.kind).toBe("track");
+    expect(
+      computerScience?.cards.find((card) => card.id === "cs-dsa")?.available,
+    ).toBe(true);
+  });
+
   it("offers the HashiCorp Terraform Associate certification", () => {
     const entries = CATALOG.flatMap((section) => section.certifications);
     const entry = entries.find(

@@ -1523,6 +1523,7 @@ fn multiline_partial_credit_still_works_for_multiple_blanks() {
         assessment_mode: adaptive_learn_domain::AssessmentMode::Application,
         interaction_type: adaptive_learn_domain::InteractionType::TypedFillBlank,
         difficulty_prior: 0.5,
+        pedagogy: None,
         prompt: "Write the clear and update lines.".to_owned(),
         instruction: None,
         choice_feedback: std::collections::BTreeMap::new(),

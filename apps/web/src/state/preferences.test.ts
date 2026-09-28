@@ -28,13 +28,38 @@ describe("preferences parsing", () => {
     const parsed = parsePreferences({
       version: 1,
       study: { dailyMissionMinutes: 25, mystery: true },
-      audio: { enabled: false },
+      audio: { masterVolume: 0 },
     });
 
     expect(parsed.study.dailyMissionMinutes).toBe(25);
     expect(parsed.study.studyBalance).toBe("balanced");
-    expect(parsed.audio.enabled).toBe(false);
-    expect(parsed.audio.answerFeedbackSounds).toBe(true);
+    expect(parsed.audio.masterVolume).toBe(0);
+    expect(parsed.audio.answerFeedbackVolume).toBe(50);
+  });
+
+  it("migrates legacy boolean audio settings to volumes", () => {
+    const parsed = parsePreferences({
+      audio: {
+        enabled: false,
+        answerFeedbackSounds: false,
+        missionCompletionSounds: true,
+        battleMusic: false,
+      },
+    });
+
+    expect(parsed.audio.masterVolume).toBe(0);
+    expect(parsed.audio.answerFeedbackVolume).toBe(0);
+    expect(parsed.audio.missionCompletionVolume).toBe(50);
+    expect(parsed.audio.battleMusicVolume).toBe(0);
+  });
+
+  it("clamps out-of-range volumes", () => {
+    const parsed = parsePreferences({
+      audio: { masterVolume: 250, battleMusicVolume: -40 },
+    });
+
+    expect(parsed.audio.masterVolume).toBe(100);
+    expect(parsed.audio.battleMusicVolume).toBe(0);
   });
 
   it("falls back on wrong types and out-of-range choices", () => {
@@ -72,7 +97,7 @@ describe("preferences parsing", () => {
     expect(restored.focus.enabled).toBe(true);
     expect(restored.focus.breakDurationMinutes).toBe(10);
     // Unspecified fields fall back to defaults.
-    expect(restored.audio.enabled).toBe(true);
+    expect(restored.audio.masterVolume).toBe(50);
   });
 
   it("migrates a legacy v1 payload to auto-detect study on", () => {
@@ -96,7 +121,7 @@ describe("preferences parsing", () => {
   it("migrates the legacy mute key on first run", () => {
     window.localStorage.setItem("adaptive-learn.sound-muted", "true");
 
-    expect(readStoredPreferences().audio.enabled).toBe(false);
+    expect(readStoredPreferences().audio.masterVolume).toBe(0);
   });
 });
 
@@ -130,7 +155,7 @@ describe("preferences store", () => {
   it("reset restores defaults and leaves unrelated state untouched", () => {
     window.localStorage.setItem("adaptive-learn.learning-progress", "keep-me");
     window.localStorage.setItem("adaptive-learn.bits-cache", "42");
-    updatePreferences({ audio: { enabled: false }, study: { studyBalance: "more_learning" } });
+    updatePreferences({ audio: { masterVolume: 0 }, study: { studyBalance: "more_learning" } });
 
     resetPreferences();
 
@@ -144,12 +169,12 @@ describe("preferences store", () => {
 
   it("notifies hook subscribers", () => {
     const { result } = renderHook(() => useUserPreferences());
-    expect(result.current.audio.enabled).toBe(true);
+    expect(result.current.audio.masterVolume).toBe(50);
 
     act(() => {
-      updatePreferences({ audio: { enabled: false } });
+      updatePreferences({ audio: { masterVolume: 0 } });
     });
 
-    expect(result.current.audio.enabled).toBe(false);
+    expect(result.current.audio.masterVolume).toBe(0);
   });
 });

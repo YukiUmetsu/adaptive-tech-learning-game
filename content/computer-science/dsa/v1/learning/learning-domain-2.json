@@ -1,0 +1,1292 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "dsa-learning-2026-09-26-v11",
+  "certification_id": "cs-dsa",
+  "certification_version": "dsa-v1",
+  "exam_guide_revision": "Reviewed v11, 2026-09-26. Continuity audit: every node opening now establishes the problem and needed context before introducing the concept; setup remains visible and only the answer/decision is hidden.",
+  "domain": {
+    "id": "domain-2",
+    "name": "Arrays, Strings, Hashing & Prefix State",
+    "weight": 0.18
+  },
+  "learning_design": {
+    "progress_label": "Pattern Vision",
+    "unlock_rule": "Start with a concrete problem. Keep the setup visible and hide only a specific answer or decision. Use traces, code, and small examples before general rules.",
+    "mastery_note": "Goal: understand what the code is doing, why it works, and when to use the same idea again."
+  },
+  "source_refs": [
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+    },
+    {
+      "title": "Princeton Competitive Programming — Prefix Sums",
+      "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+    },
+    {
+      "title": "Python documentation — Mapping Types: dict",
+      "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+    },
+    {
+      "title": "Python documentation — Set Types: set, frozenset",
+      "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "membership",
+      "definition": "Whether a key is present."
+    },
+    {
+      "term": "canonical key",
+      "definition": "A normalized key used when the contract says multiple forms mean the same identity."
+    },
+    {
+      "term": "complement",
+      "definition": "The value needed to satisfy an equation, such as target - x."
+    },
+    {
+      "term": "prefix boundary",
+      "definition": "A position between elements storing cumulative state for everything before it."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "2.1",
+      "2.2",
+      "2.3"
+    ],
+    "skill_ids": [
+      "2.1.01",
+      "2.1.02",
+      "2.1.03",
+      "2.2.01",
+      "2.2.02",
+      "2.2.03",
+      "2.3.01",
+      "2.3.02",
+      "2.3.03"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 36
+  },
+  "authoring_notes": "Continuity rule: never start with an unexplained function, variable, algorithm, or technique. Open with why this problem is being introduced, concrete input, and a clear question. If a prior example is reused, reintroduce it in one short clause. Problem/setup text stays visible; progressive reveal hides only the answer or decision. Avoid meta-language such as 'you are learning to'.",
+  "modules": [
+    {
+      "id": "domain-2-module-1-sequences",
+      "title": "Arrays and strings",
+      "order": 1,
+      "task_ids": [
+        "2.1"
+      ],
+      "skill_ids": [
+        "2.1.01",
+        "2.1.02",
+        "2.1.03"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-2-sequence-meaning",
+          "title": "Order and indexes",
+          "concept_ids": [
+            "dsa.sequence.order_position"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "We need to remove duplicate event IDs without changing the order of their first appearance. Input = [\"A\", \"B\", \"A\", \"C\", \"B\"]. What should the output be? `[\"A\", \"B\", \"C\"]`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`[\"A\", \"B\", \"C\"]`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "structures",
+              "kind": "mental_model",
+              "label": "LIST + SET",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "List",
+                    "items": [
+                      "Keeps order",
+                      "Keeps duplicates",
+                      "Supports positions and indexes"
+                    ]
+                  },
+                  {
+                    "title": "Set",
+                    "items": [
+                      "Keeps unique values",
+                      "Fast membership checks",
+                      "Does not keep duplicate positions"
+                    ]
+                  },
+                  {
+                    "title": "Use both",
+                    "items": [
+                      "Scan the original list in order",
+                      "Use a set to skip values already used",
+                      "Append new values to the output list"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "solution",
+              "kind": "action",
+              "label": "CODE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "dedupe_keep_order.py",
+                "language": "python",
+                "code": "def dedupe_keep_order(ids):\n    seen = set()\n    out = []\n    for event_id in ids:\n        if event_id not in seen:\n            seen.add(event_id)\n            out.append(event_id)\n    return out\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "unique",
+                    "anchor": {
+                      "line": 5,
+                      "text": "event_id not in seen",
+                      "occurrence": 1
+                    },
+                    "title": "Check uniqueness",
+                    "explanation": "The set tells us whether this ID was already added.",
+                    "required": true
+                  },
+                  {
+                    "id": "order",
+                    "anchor": {
+                      "line": 7,
+                      "text": "out.append(event_id)",
+                      "occurrence": 1
+                    },
+                    "title": "Keep first-seen order",
+                    "explanation": "Appending during the original left-to-right scan preserves the order.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Keep a List when order or positions matter. Add a Set when you also need fast duplicate checks."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            },
+            {
+              "title": "Python documentation — Set Types: set, frozenset",
+              "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+            }
+          ]
+        },
+        {
+          "id": "domain-2-running-state",
+          "title": "Running state",
+          "concept_ids": [
+            "dsa.sequence.single_pass_state"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-sequence-meaning"
+          ],
+          "map_position": {
+            "x": 0.44,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Some array problems only need a small amount of information from the previous item. For timestamps ts = [100, 105, 103, 120], find the first timestamp that is lower than the one immediately before it. Which index is the first decrease? `2`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`2`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "trace",
+              "kind": "mental_model",
+              "label": "STEP BY STEP",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "index",
+                    "label": "Index"
+                  },
+                  {
+                    "id": "previous",
+                    "label": "Previous"
+                  },
+                  {
+                    "id": "current",
+                    "label": "Current"
+                  },
+                  {
+                    "id": "result",
+                    "label": "Comparison"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "i1",
+                    "cells": {
+                      "index": "1",
+                      "previous": "100",
+                      "current": "105",
+                      "result": "105 < 100? No"
+                    }
+                  },
+                  {
+                    "id": "i2",
+                    "cells": {
+                      "index": "2",
+                      "previous": "105",
+                      "current": "103",
+                      "result": "103 < 105? Yes → return 2"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "solution",
+              "kind": "action",
+              "label": "CODE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "first_decrease.py",
+                "language": "python",
+                "code": "def first_decrease(ts):\n    for i in range(1, len(ts)):\n        if ts[i] < ts[i - 1]:\n            return i\n    return -1\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "adjacent",
+                    "anchor": {
+                      "line": 3,
+                      "text": "ts[i] < ts[i - 1]",
+                      "occurrence": 1
+                    },
+                    "title": "Compare neighbors",
+                    "explanation": "Each decision only needs the current timestamp and the one immediately before it.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If each item only depends on the previous item, you do not need to keep the whole earlier history."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            }
+          ]
+        },
+        {
+          "id": "domain-2-canonical-key",
+          "title": "Data normalization",
+          "concept_ids": [
+            "dsa.sequence.canonical_key"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-running-state"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Before strings become Set or Dictionary keys, decide which differences matter. Feature tags are case-insensitive and ignore outer whitespace. What should \" Prod \", \"prod\", and \"PROD\" all become? `\"prod\"`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`\"prod\"`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "contract",
+              "kind": "mental_model",
+              "label": "WHEN TO NORMALIZE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Feature tag",
+                    "items": [
+                      "\" Prod \" and \"prod\" mean the same tag",
+                      "strip whitespace + lowercase is safe"
+                    ]
+                  },
+                  {
+                    "title": "Username",
+                    "items": [
+                      "\"Alice\" and \"alice\" may be different users",
+                      "lowercasing could merge two different identities"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "solution",
+              "kind": "action",
+              "label": "CODE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "normalize_tag.py",
+                "language": "python",
+                "code": "def normalize_tag(tag):\n    return tag.strip().lower()\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "strip",
+                    "anchor": {
+                      "line": 2,
+                      "text": "strip()",
+                      "occurrence": 1
+                    },
+                    "title": "Ignore outer spaces",
+                    "explanation": "The problem says outer whitespace does not change the tag.",
+                    "required": true
+                  },
+                  {
+                    "id": "lower",
+                    "anchor": {
+                      "line": 2,
+                      "text": "lower()",
+                      "occurrence": 1
+                    },
+                    "title": "Ignore case",
+                    "explanation": "The problem says uppercase and lowercase forms are equivalent.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Normalize only differences that the problem says do not matter."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Python documentation — Mapping Types: dict",
+              "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+            },
+            {
+              "title": "Python documentation — Set Types: set, frozenset",
+              "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-2-module-2-hashing",
+      "title": "Sets and dictionaries",
+      "order": 2,
+      "task_ids": [
+        "2.2"
+      ],
+      "skill_ids": [
+        "2.2.01",
+        "2.2.02",
+        "2.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-2-module-1-sequences"
+      ],
+      "nodes": [
+        {
+          "id": "domain-2-seen-set",
+          "title": "Sets",
+          "concept_ids": [
+            "dsa.hashing.membership"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-canonical-key"
+          ],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A Set is useful when the only question is whether a value has appeared before. For ids = [\"r1\", \"r3\", \"r1\"], where is the first duplicate? `2`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`2`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "solution",
+              "kind": "mental_model",
+              "label": "CODE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "first_duplicate.py",
+                "language": "python",
+                "code": "def first_duplicate(ids):\n    seen = set()\n    for i, request_id in enumerate(ids):\n        if request_id in seen:\n            return i\n        seen.add(request_id)\n    return -1\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "membership",
+                    "anchor": {
+                      "line": 4,
+                      "text": "request_id in seen",
+                      "occurrence": 1
+                    },
+                    "title": "Seen before?",
+                    "explanation": "The set answers a yes/no membership question.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "choice",
+              "kind": "action",
+              "label": "SET VS DICTIONARY",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "comparison",
+                "columns": [
+                  {
+                    "title": "Set",
+                    "items": [
+                      "Need only yes/no membership",
+                      "Example: have I seen this ID?"
+                    ]
+                  },
+                  {
+                    "title": "Dictionary",
+                    "items": [
+                      "Need a value for each key",
+                      "Example: count, index, timestamp"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use a Set when you only need to know whether a value is present."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+            },
+            {
+              "title": "Python documentation — Set Types: set, frozenset",
+              "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+            }
+          ]
+        },
+        {
+          "id": "domain-2-map-state",
+          "title": "Dictionaries",
+          "concept_ids": [
+            "dsa.hashing.frequency"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-seen-set"
+          ],
+          "map_position": {
+            "x": 0.44,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A Set can tell us whether a key exists, but sometimes we need information attached to each key. For statuses = [200, 500, 200, 404, 500, 200], how many times does 200 appear? `3`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`3`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "trace",
+              "kind": "mental_model",
+              "label": "STEP BY STEP",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "status",
+                    "label": "Read status"
+                  },
+                  {
+                    "id": "counts",
+                    "label": "counts after update"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "a",
+                    "cells": {
+                      "status": "200",
+                      "counts": "{200: 1}"
+                    }
+                  },
+                  {
+                    "id": "b",
+                    "cells": {
+                      "status": "500",
+                      "counts": "{200: 1, 500: 1}"
+                    }
+                  },
+                  {
+                    "id": "c",
+                    "cells": {
+                      "status": "200",
+                      "counts": "{200: 2, 500: 1}"
+                    }
+                  },
+                  {
+                    "id": "d",
+                    "cells": {
+                      "status": "404",
+                      "counts": "{200: 2, 500: 1, 404: 1}"
+                    }
+                  },
+                  {
+                    "id": "e",
+                    "cells": {
+                      "status": "500",
+                      "counts": "{200: 2, 500: 2, 404: 1}"
+                    }
+                  },
+                  {
+                    "id": "f",
+                    "cells": {
+                      "status": "200",
+                      "counts": "{200: 3, 500: 2, 404: 1}"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "solution",
+              "kind": "action",
+              "label": "CODE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "count_statuses.py",
+                "language": "python",
+                "code": "def count_statuses(statuses):\n    counts = {}\n    for status in statuses:\n        counts[status] = counts.get(status, 0) + 1\n    return counts\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "attached",
+                    "anchor": {
+                      "line": 4,
+                      "text": "counts[status]",
+                      "occurrence": 1
+                    },
+                    "title": "Value attached to a key",
+                    "explanation": "Each status code is a key, and its count is the stored value.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use a Dictionary when each key needs a value, such as a count, index, or timestamp."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+            },
+            {
+              "title": "Python documentation — Mapping Types: dict",
+              "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+            },
+            {
+              "title": "Python documentation — Set Types: set, frozenset",
+              "url": "https://docs.python.org/3/library/stdtypes.html#set-types-set-frozenset"
+            }
+          ]
+        },
+        {
+          "id": "domain-2-complement",
+          "title": "Pair lookup",
+          "concept_ids": [
+            "dsa.hashing.complement"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-map-state"
+          ],
+          "map_position": {
+            "x": 0.78,
+            "y": 0.5
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A Set or Dictionary can also replace repeated pair searching. For nums = [19, 45, 12, 52] and target = 64, if the current number is 19, what partner do we need? `45`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`45`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "equation",
+              "kind": "mental_model",
+              "label": "STEP BY STEP",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "num",
+                    "label": "num"
+                  },
+                  {
+                    "id": "needed",
+                    "label": "needed = 64 - num"
+                  },
+                  {
+                    "id": "seen",
+                    "label": "Earlier values"
+                  },
+                  {
+                    "id": "result",
+                    "label": "Result"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "n19",
+                    "cells": {
+                      "num": "19",
+                      "needed": "45",
+                      "seen": "{}",
+                      "result": "45 not found → store 19"
+                    }
+                  },
+                  {
+                    "id": "n45",
+                    "cells": {
+                      "num": "45",
+                      "needed": "19",
+                      "seen": "{19: 0}",
+                      "result": "19 found → pair [19, 45]"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "solution",
+              "kind": "action",
+              "label": "CODE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "two_sum.py",
+                "language": "python",
+                "code": "def two_sum(nums, target):\n    index = {}\n    for i, num in enumerate(nums):\n        needed = target - num\n        if needed in index:\n            return [index[needed], i]\n        if num not in index:\n            index[num] = i\n    return None\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "need",
+                    "anchor": {
+                      "line": 4,
+                      "text": "needed = target - num",
+                      "occurrence": 1
+                    },
+                    "title": "Find the missing value",
+                    "explanation": "For num=45 and target=64, needed=19.",
+                    "required": true
+                  },
+                  {
+                    "id": "lookup",
+                    "anchor": {
+                      "line": 5,
+                      "text": "needed in index",
+                      "occurrence": 1
+                    },
+                    "title": "Look up the partner",
+                    "explanation": "The dictionary tells us whether the needed value appeared earlier and where.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For a + b = target, compute the missing value and look it up."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+            },
+            {
+              "title": "Python documentation — Mapping Types: dict",
+              "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-2-module-3-prefix",
+      "title": "Prefix sums",
+      "order": 3,
+      "task_ids": [
+        "2.3"
+      ],
+      "skill_ids": [
+        "2.3.01",
+        "2.3.02",
+        "2.3.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-2-module-2-hashing"
+      ],
+      "nodes": [
+        {
+          "id": "domain-2-prefix-boundaries",
+          "title": "Prefix sums",
+          "concept_ids": [
+            "dsa.prefix.range_sum"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-complement"
+          ],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Now consider a different kind of repeated work: adding the same array values again for many range-sum queries. For values = [4, 7, 2, 5], build cumulative totals starting with 0. What prefix array do we get? `[0, 4, 11, 13, 18]`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`[0, 4, 11, 13, 18]`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "steps",
+              "kind": "mental_model",
+              "label": "STEP BY STEP",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "Start with 0: [0]",
+                  "Add 4: 0 + 4 = 4 → [0, 4]",
+                  "Add 7: 4 + 7 = 11 → [0, 4, 11]",
+                  "Add 2: 11 + 2 = 13 → [0, 4, 11, 13]",
+                  "Add 5: 13 + 5 = 18 → [0, 4, 11, 13, 18]"
+                ]
+              }
+            },
+            {
+              "id": "build",
+              "kind": "action",
+              "label": "CODE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "build_prefix.py",
+                "language": "python",
+                "code": "def build_prefix(values):\n    prefix = [0]\n    for value in values:\n        prefix.append(prefix[-1] + value)\n    return prefix\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "zero",
+                    "anchor": {
+                      "line": 2,
+                      "text": "prefix = [0]",
+                      "occurrence": 1
+                    },
+                    "title": "Start at zero",
+                    "explanation": "0 represents the sum before any values have been included.",
+                    "required": true
+                  },
+                  {
+                    "id": "extend",
+                    "anchor": {
+                      "line": 4,
+                      "text": "prefix[-1] + value",
+                      "occurrence": 1
+                    },
+                    "title": "Reuse the previous total",
+                    "explanation": "Each new prefix total adds one value to the total already computed.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use prefix sums when you need many sums over ranges in the same array."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Competitive Programming — Prefix Sums",
+              "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            }
+          ]
+        },
+        {
+          "id": "domain-2-prefix-query",
+          "title": "Range sums",
+          "concept_ids": [
+            "dsa.prefix.range_sum"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-prefix-boundaries"
+          ],
+          "map_position": {
+            "x": 0.46,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "We already built prefix = [0, 4, 11, 13, 18] for values = [4, 7, 2, 5]. Now find the sum from index 1 up to, but not including, index 3. What is 7 + 2? `9`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`9`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "formula",
+              "kind": "mental_model",
+              "label": "WHY SUBTRACT?",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "sequence",
+                "items": [
+                  "prefix[3] = 13 means 4 + 7 + 2.",
+                  "prefix[1] = 4 means the part before index 1.",
+                  "Subtract the part before the range: 13 - 4 = 9.",
+                  "What remains is 7 + 2."
+                ]
+              }
+            },
+            {
+              "id": "solution",
+              "kind": "action",
+              "label": "CODE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "range_sum.py",
+                "language": "python",
+                "code": "def range_sum(prefix, left, right):\n    return prefix[right] - prefix[left]\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "subtract",
+                    "anchor": {
+                      "line": 2,
+                      "text": "prefix[right] - prefix[left]",
+                      "occurrence": 1
+                    },
+                    "title": "Remove the earlier part",
+                    "explanation": "prefix[right] contains everything before right; subtracting prefix[left] removes everything before left.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For indexes [left, right), range sum = prefix[right] - prefix[left]."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Competitive Programming — Prefix Sums",
+              "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+            }
+          ]
+        },
+        {
+          "id": "domain-2-prefix-hash",
+          "title": "Prefix lookup",
+          "concept_ids": [
+            "dsa.prefix.hash_state"
+          ],
+          "prerequisite_node_ids": [
+            "domain-2-prefix-query"
+          ],
+          "map_position": {
+            "x": 0.8,
+            "y": 0.84
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Prefix totals can also help find a contiguous range with a target sum. A prefix total is the sum from the start of the array up to the current point. For deltas = [3, -1, -2, 5], the prefix total is 0 before the array and becomes 0 again after -2. What is the sum between those two equal prefix totals? `0`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`0`",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "trace",
+              "kind": "mental_model",
+              "label": "PREFIX TOTALS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "point",
+                    "label": "Point"
+                  },
+                  {
+                    "id": "prefix",
+                    "label": "Prefix total"
+                  },
+                  {
+                    "id": "meaning",
+                    "label": "Meaning"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "b0",
+                    "cells": {
+                      "point": "Before index 0",
+                      "prefix": "0",
+                      "meaning": "Nothing added yet"
+                    }
+                  },
+                  {
+                    "id": "b1",
+                    "cells": {
+                      "point": "After 3",
+                      "prefix": "3",
+                      "meaning": "3"
+                    }
+                  },
+                  {
+                    "id": "b2",
+                    "cells": {
+                      "point": "After -1",
+                      "prefix": "2",
+                      "meaning": "3 + (-1)"
+                    }
+                  },
+                  {
+                    "id": "b3",
+                    "cells": {
+                      "point": "After -2",
+                      "prefix": "0",
+                      "meaning": "3 + (-1) + (-2) = 0"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "solution",
+              "kind": "action",
+              "label": "CODE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "target_subarray.py",
+                "language": "python",
+                "code": "def has_target_subarray(deltas, target):\n    seen_prefix = {0}\n    prefix = 0\n    for delta in deltas:\n        prefix += delta\n        needed = prefix - target\n        if needed in seen_prefix:\n            return True\n        seen_prefix.add(prefix)\n    return False\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "needed",
+                    "anchor": {
+                      "line": 6,
+                      "text": "needed = prefix - target",
+                      "occurrence": 1
+                    },
+                    "title": "Find the earlier total",
+                    "explanation": "If current prefix minus an earlier prefix equals target, the values between them sum to target.",
+                    "required": true
+                  },
+                  {
+                    "id": "lookup",
+                    "anchor": {
+                      "line": 7,
+                      "text": "needed in seen_prefix",
+                      "occurrence": 1
+                    },
+                    "title": "Check earlier prefix totals",
+                    "explanation": "For target=0, seeing the same prefix total again proves a zero-sum contiguous range.",
+                    "required": true
+                  },
+                  {
+                    "id": "zero",
+                    "anchor": {
+                      "line": 2,
+                      "text": "{0}",
+                      "occurrence": 1
+                    },
+                    "title": "Allow a range to start at index 0",
+                    "explanation": "The initial 0 represents the prefix total before the array starts.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Store earlier prefix totals in a Set. If prefix - target was seen before, a contiguous range sums to target."
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Princeton Competitive Programming — Prefix Sums",
+              "url": "https://competitive-programming.cs.princeton.edu/ps_s24"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 4: Hashing",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-4-hashing/"
+            },
+            {
+              "title": "Python documentation — Mapping Types: dict",
+              "url": "https://docs.python.org/3/library/stdtypes.html#mapping-types-dict"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

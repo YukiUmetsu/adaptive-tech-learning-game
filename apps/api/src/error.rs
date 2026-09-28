@@ -3,6 +3,7 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use serde::Serialize;
 use utoipa::ToSchema;
+use uuid::Uuid;
 
 /// Errors that can be returned to an HTTP client.
 ///
@@ -28,6 +29,9 @@ pub enum ApiError {
     /// The request conflicts with current state.
     #[error("{0}")]
     Conflict(String),
+    /// The learner already has an active repeatable Operation.
+    #[error("an active operation already exists")]
+    ActiveOperationExists(Uuid),
     /// The mission references content that no longer exists because the
     /// certification content changed after the mission was issued.
     ///
@@ -53,6 +57,7 @@ impl ApiError {
             Self::Forbidden => StatusCode::FORBIDDEN,
             Self::InsufficientBits => StatusCode::CONFLICT,
             Self::Conflict(_) => StatusCode::CONFLICT,
+            Self::ActiveOperationExists(_) => StatusCode::CONFLICT,
             Self::MissionStale => StatusCode::CONFLICT,
             Self::Unavailable => StatusCode::SERVICE_UNAVAILABLE,
             Self::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
@@ -68,6 +73,7 @@ impl ApiError {
             Self::Forbidden => "forbidden",
             Self::InsufficientBits => "insufficient_bits",
             Self::Conflict(_) => "conflict",
+            Self::ActiveOperationExists(_) => "active_operation_exists",
             Self::MissionStale => "mission_content_stale",
             Self::Unavailable => "unavailable",
             Self::Internal(_) => "internal_error",
@@ -108,6 +114,9 @@ pub struct ErrorBody {
     pub code: String,
     /// Safe, human-readable message.
     pub message: String,
+    /// Active Operation run id, when the error is `active_operation_exists`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub active_run_id: Option<Uuid>,
 }
 
 impl IntoResponse for ApiError {
@@ -115,13 +124,21 @@ impl IntoResponse for ApiError {
         let status = self.status();
         let code = self.code().to_owned();
         let message = self.public_message().to_owned();
+        let active_run_id = match &self {
+            Self::ActiveOperationExists(run_id) => Some(*run_id),
+            _ => None,
+        };
 
         if let Self::Internal(error) = &self {
             tracing::error!(error = %error, "request failed");
         }
 
         let body = ErrorResponse {
-            error: ErrorBody { code, message },
+            error: ErrorBody {
+                code,
+                message,
+                active_run_id,
+            },
         };
 
         (status, Json(body)).into_response()

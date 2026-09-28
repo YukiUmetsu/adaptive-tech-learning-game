@@ -25,6 +25,7 @@ const REASON_LABELS: Record<RecommendationReason, string> = {
   stale_knowledge: "Due for review",
   domain_review: "A broad domain review",
   strong_and_fresh: "Ready for a harder challenge",
+  targeted_remediation: "A targeted review of a recent mistake",
 };
 
 /**

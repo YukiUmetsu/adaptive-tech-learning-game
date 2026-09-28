@@ -1,10 +1,12 @@
 //! Discovers content JSON under `content/` at build time and embeds it.
 //!
 //! Content is organized as `<category>/<certification>/<version>/<file>.json`.
-//! Three content types are discovered, by path:
+//! Five content types are discovered, by path:
 //!
 //! - `**/learning/**/*.json`       -> learning knowledge maps (`LearningDomain`)
 //! - `**/practice-tests/**/*.json` -> practice-test exams (`practice-test-v2`)
+//! - `**/challenges/**/*.json`     -> multi-stage challenges (`challenge-v1`)
+//! - `**/families/**/*.json`       -> reusable family guides (`family-guide-v1`)
 //! - every other JSON file         -> quiz content bundles (`ContentBundle`)
 //!
 //! The distinction is made from the directory, never by trial deserialization,
@@ -43,6 +45,22 @@ fn is_practice_test(path: &Path) -> bool {
     has_component(path, "practice-tests")
 }
 
+/// Returns whether a path sits under a `challenges/` directory.
+///
+/// Challenges use the `challenge-v1` schema, which orchestrates existing
+/// questions and learning nodes; they are never parsed as a quiz bundle.
+fn is_challenge(path: &Path) -> bool {
+    has_component(path, "challenges")
+}
+
+/// Returns whether a path sits under a `families/` directory.
+///
+/// Family guides use the `family-guide-v1` schema, which describes a reusable
+/// deep structure; they are never parsed as a scored quiz bundle.
+fn is_family_guide(path: &Path) -> bool {
+    has_component(path, "families")
+}
+
 /// Returns whether a path is a certification-level catalog bundle.
 ///
 /// Catalog bundles are named `bundle.json` in this repository. They are loaded
@@ -58,6 +76,8 @@ fn collect_json_files(
     quiz: &mut Vec<PathBuf>,
     learning: &mut Vec<PathBuf>,
     practice: &mut Vec<PathBuf>,
+    challenges: &mut Vec<PathBuf>,
+    families: &mut Vec<PathBuf>,
 ) {
     let entries = match fs::read_dir(dir) {
         Ok(entries) => entries,
@@ -72,7 +92,7 @@ fn collect_json_files(
 
     for path in paths {
         if path.is_dir() {
-            collect_json_files(&path, quiz, learning, practice);
+            collect_json_files(&path, quiz, learning, practice, challenges, families);
         } else if path
             .extension()
             .is_some_and(|extension| extension == "json")
@@ -81,6 +101,10 @@ fn collect_json_files(
                 learning.push(path);
             } else if is_practice_test(&path) {
                 practice.push(path);
+            } else if is_challenge(&path) {
+                challenges.push(path);
+            } else if is_family_guide(&path) {
+                families.push(path);
             } else {
                 quiz.push(path);
             }
@@ -98,7 +122,16 @@ fn main() {
     let mut quiz = Vec::new();
     let mut learning = Vec::new();
     let mut practice = Vec::new();
-    collect_json_files(&content_dir, &mut quiz, &mut learning, &mut practice);
+    let mut challenges = Vec::new();
+    let mut families = Vec::new();
+    collect_json_files(
+        &content_dir,
+        &mut quiz,
+        &mut learning,
+        &mut practice,
+        &mut challenges,
+        &mut families,
+    );
 
     // A catalog bundle declares the certification, version, domains, and
     // concepts, and may carry a small sample of questions. Per-domain files
@@ -140,6 +173,32 @@ fn main() {
         ],
         "EMBEDDED_PRACTICE_TEST_SOURCES",
         &practice,
+        &repo_root,
+    );
+    push_source_static(
+        &mut generated,
+        &[
+            "Challenge JSON sources discovered at build time.",
+            "",
+            "These use the `challenge-v1` schema and are parsed as a distinct",
+            "content type by `ContentRegistry`; they are never parsed as a",
+            "scored quiz bundle.",
+        ],
+        "EMBEDDED_CHALLENGE_SOURCES",
+        &challenges,
+        &repo_root,
+    );
+    push_source_static(
+        &mut generated,
+        &[
+            "Family-guide JSON sources discovered at build time.",
+            "",
+            "These use the `family-guide-v1` schema and are parsed as a distinct",
+            "content type by `ContentRegistry`; they are never parsed as a",
+            "scored quiz bundle.",
+        ],
+        "EMBEDDED_FAMILY_GUIDE_SOURCES",
+        &families,
         &repo_root,
     );
 

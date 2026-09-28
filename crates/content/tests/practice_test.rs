@@ -120,6 +120,24 @@ fn embedded_quiz_content_still_validates() {
 }
 
 #[test]
+fn practice_test_questions_validate_pedagogy_metadata() {
+    let mut value = source_value();
+    value["items"][0]["question"]["pedagogy"] = serde_json::json!({ "scaffold_level": 9 });
+    let test: PracticeTest = serde_json::from_value(value).expect("pedagogy deserializes");
+    expect_error(&test, "pedagogy_scaffold_level_invalid");
+
+    let mut value = source_value();
+    value["items"][0]["question"]["pedagogy"] = serde_json::json!({
+        "family_id": "aws.storage.cost_latency_tradeoff",
+        "stage": "differentiate",
+        "scaffold_level": 2,
+        "surface_context": "order_processing"
+    });
+    let test: PracticeTest = serde_json::from_value(value).expect("pedagogy deserializes");
+    validate_practice_test(&test).expect("valid pedagogy on a practice-test question");
+}
+
+#[test]
 fn azure_practice_tests_are_embedded_and_discoverable() {
     let registry = ContentRegistry::embedded().expect("embedded content is valid");
 

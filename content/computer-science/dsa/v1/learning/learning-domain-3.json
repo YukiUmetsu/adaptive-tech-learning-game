@@ -1,0 +1,1515 @@
+{
+  "schema_version": "1.0.0",
+  "content_version": "dsa-learning-2026-09-26-v12",
+  "certification_id": "cs-dsa",
+  "certification_version": "dsa-v1",
+  "exam_guide_revision": "Editorial and factual review 2026-09-26 using docs/16-content-audit.md. Problems and setup are visible immediately; every node is self-contained at entry.",
+  "domain": {
+    "id": "domain-3",
+    "name": "Pointer, Window & Interval Patterns",
+    "weight": 0.14
+  },
+  "learning_design": {
+    "progress_label": "Pattern Vision",
+    "unlock_rule": "Problem context and example data stay visible. Progressive reveal is used only for answers or decisions. Each node defines the idea before asking the learner to use it.",
+    "mastery_note": "Recognize the structure, understand why the method works, and know when a similar-looking method does not fit."
+  },
+  "source_refs": [
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+    },
+    {
+      "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+    },
+    {
+      "title": "Princeton Algorithms — Sorting",
+      "url": "https://algs4.cs.princeton.edu/20sorting/"
+    },
+    {
+      "title": "Princeton Algorithms — Mergesort",
+      "url": "https://algs4.cs.princeton.edu/22mergesort/"
+    },
+    {
+      "title": "Wikipedia — Cycle detection",
+      "url": "https://en.wikipedia.org/wiki/Cycle_detection"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "two pointers",
+      "definition": "Two positions that move through data while their relationship guides the next step."
+    },
+    {
+      "term": "window",
+      "definition": "One contiguous active section of a sequence."
+    },
+    {
+      "term": "interval",
+      "definition": "A range described by start and end boundaries."
+    },
+    {
+      "term": "frontier",
+      "definition": "The current boundary between processed data and the next candidate."
+    }
+  ],
+  "coverage": {
+    "task_ids": [
+      "3.1",
+      "3.2",
+      "3.3"
+    ],
+    "skill_ids": [
+      "3.1.01",
+      "3.1.02",
+      "3.1.03",
+      "3.2.01",
+      "3.2.02",
+      "3.2.03",
+      "3.3.01",
+      "3.3.02",
+      "3.3.03"
+    ],
+    "module_count": 3,
+    "knowledge_node_count": 9,
+    "prompt_count": 69
+  },
+  "authoring_notes": "Audited against docs/16-content-audit.md: concrete context first; title/topic defined before use; one new idea per sentence where practical; short worked examples immediately follow abstract rules; technical terms are defined before reuse; similar concepts are explicitly differentiated; multi-step behavior is split into separate prompts; no opening depends on remembering an earlier card; no 'you are learning to' meta-prose; first problem/setup is never hidden.",
+  "modules": [
+    {
+      "id": "domain-3-module-1-pointers",
+      "title": "Two pointers",
+      "order": 1,
+      "task_ids": [
+        "3.1"
+      ],
+      "skill_ids": [
+        "3.1.01",
+        "3.1.02",
+        "3.1.03"
+      ],
+      "prerequisite_module_ids": [],
+      "nodes": [
+        {
+          "id": "domain-3-opposing-pointers",
+          "title": "Opposing pointers",
+          "concept_ids": [
+            "dsa.two_pointers.opposing"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A sorted list contains job sizes `[1, 3, 4, 7, 10]`. Find two different values that add to `14` using constant extra space. Because the list is sorted, values farther right are larger."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Opposing pointers keep one position at the left end and one at the right end. Their sum tells us which side can be moved without losing a possible answer."
+              }
+            },
+            {
+              "id": "step-1",
+              "kind": "mental_model",
+              "label": "STEP 1",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "`[1]`, 3, 4, 7, `[10]`",
+                  "`1 + 10 = 11`",
+                  "`11 < 14`, so move the left pointer right. Keeping `1` cannot help because every other right value is `<= 10`."
+                ]
+              }
+            },
+            {
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "1, `[3]`, 4, 7, `[10]`",
+                  "`3 + 10 = 13`",
+                  "`13 < 14`, so move the left pointer right again."
+                ]
+              }
+            },
+            {
+              "id": "step-3",
+              "kind": "mental_model",
+              "label": "STEP 3",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "1, 3, `[4]`, 7, `[10]`",
+                  "`4 + 10 = 14`",
+                  "Match found."
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use opposing pointers when the data is sorted and moving one boundary has a predictable effect on the comparison. Do not use this rule on unsorted values unless you sort first and the problem allows reordering."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Too small → move the left pointer right. Too large → move the right pointer left."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For sorted `[1, 4, 6, 9]` and target `10`, the first check is `1 + 9`. What happens? Answer: `1 + 9 = 10`, so the pair is found.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`1 + 9 = 10`, so the pair is found.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "candidate",
+              "definition": "A value or pair that could still be the answer."
+            }
+          ]
+        },
+        {
+          "id": "domain-3-read-write",
+          "title": "Read and write",
+          "concept_ids": [
+            "dsa.two_pointers.read_write"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-opposing-pointers"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A mutable array is `[A, X, B, X, C]`, where `X` means deleted. Compact active records to the front in place, keep their original order, and return the new logical length."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A read pointer inspects every item. A write pointer marks the next position where a kept item belongs. The prefix before `write` is always the cleaned output built so far."
+              }
+            },
+            {
+              "id": "walkthrough",
+              "kind": "mental_model",
+              "label": "WORK THROUGH IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "read",
+                    "label": "Read"
+                  },
+                  {
+                    "id": "item",
+                    "label": "Item"
+                  },
+                  {
+                    "id": "action",
+                    "label": "Action"
+                  },
+                  {
+                    "id": "clean",
+                    "label": "Clean prefix"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "r0",
+                    "cells": {
+                      "read": "0",
+                      "item": "A",
+                      "action": "write A at index 0; write → 1",
+                      "clean": "[A]"
+                    }
+                  },
+                  {
+                    "id": "r1",
+                    "cells": {
+                      "read": "1",
+                      "item": "X",
+                      "action": "skip",
+                      "clean": "[A]"
+                    }
+                  },
+                  {
+                    "id": "r2",
+                    "cells": {
+                      "read": "2",
+                      "item": "B",
+                      "action": "write B at index 1; write → 2",
+                      "clean": "[A, B]"
+                    }
+                  },
+                  {
+                    "id": "r3",
+                    "cells": {
+                      "read": "3",
+                      "item": "X",
+                      "action": "skip",
+                      "clean": "[A, B]"
+                    }
+                  },
+                  {
+                    "id": "r4",
+                    "cells": {
+                      "read": "4",
+                      "item": "C",
+                      "action": "write C at index 2; write → 3",
+                      "clean": "[A, B, C]"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "code",
+              "kind": "action",
+              "label": "CODE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "compact.py",
+                "language": "python",
+                "code": "def compact(records):\n    write = 0\n    for read in range(len(records)):\n        if records[read] != \"X\":\n            records[write] = records[read]\n            write += 1\n    return write\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "inspect",
+                    "anchor": {
+                      "line": 3,
+                      "text": "for read in range(len(records)):",
+                      "occurrence": 1
+                    },
+                    "title": "Read every position",
+                    "explanation": "The read pointer visits the original array in order.",
+                    "required": true
+                  },
+                  {
+                    "id": "write",
+                    "anchor": {
+                      "line": 5,
+                      "text": "records[write] = records[read]",
+                      "occurrence": 1
+                    },
+                    "title": "Write only kept items",
+                    "explanation": "Kept records are copied into the next clean position.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use read/write pointers for stable in-place filtering, deduplication, or compaction. Unlike opposing pointers, both positions usually move left-to-right."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "`read` finds the next candidate. `write` owns the next output position."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "After compacting `[A, X, B]`, what logical prefix remains? Answer: `[A, B]` with logical length `2`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`[A, B]` with logical length `2`.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-3-fast-slow",
+          "title": "Fast and slow",
+          "concept_ids": [
+            "dsa.two_pointers.fast_slow"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-read-write"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.14
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A linked chain is `A → B → C → D → B ...`. Each node has one `next` reference. Detect whether the chain contains a cycle using constant extra memory."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Fast/slow cycle detection uses two pointers on the same chain. `slow` moves one link at a time; `fast` moves two. If the chain loops, the faster pointer eventually catches the slower one."
+              }
+            },
+            {
+              "id": "step-1",
+              "kind": "mental_model",
+              "label": "STEP 1",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Start: `slow = A`, `fast = A`",
+                  "Move: `slow = B`, `fast = C`"
+                ]
+              }
+            },
+            {
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Move again: `slow = C`, `fast = B`",
+                  "`fast` wrapped through the cycle."
+                ]
+              }
+            },
+            {
+              "id": "step-3",
+              "kind": "mental_model",
+              "label": "STEP 3",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Move again: `slow = D`, `fast = D`",
+                  "The pointers meet, so a cycle exists."
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use this when each state points to at most one next state and you only need cycle detection with O(1) extra memory. A visited set is simpler to reason about when extra memory is acceptable."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "No cycle: `fast` reaches the end. Cycle: `fast` eventually meets `slow`."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If `fast` reaches `None`, what does that prove? Answer: The chain does not contain a cycle.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "The chain does not contain a cycle.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "Wikipedia — Cycle detection",
+              "url": "https://en.wikipedia.org/wiki/Cycle_detection"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-3-module-2-windows",
+      "title": "Sliding windows",
+      "order": 2,
+      "task_ids": [
+        "3.2"
+      ],
+      "skill_ids": [
+        "3.2.01",
+        "3.2.02",
+        "3.2.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-3-module-1-pointers"
+      ],
+      "nodes": [
+        {
+          "id": "domain-3-fixed-window",
+          "title": "Fixed window",
+          "concept_ids": [
+            "dsa.window.fixed"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.48
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Telemetry readings are `[4, 2, 7, 1]`. Find the largest total among every contiguous block of exactly `3` readings."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A fixed window is a contiguous region with a constant size. Neighboring windows overlap, so reuse the previous total instead of summing the whole block again."
+              }
+            },
+            {
+              "id": "step-1",
+              "kind": "mental_model",
+              "label": "STEP 1",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "`[4, 2, 7]`, 1",
+                  "window sum = `13`"
+                ]
+              }
+            },
+            {
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "4, `[2, 7, 1]`",
+                  "Remove `4`, add `1`: `13 - 4 + 1 = 10`"
+                ]
+              }
+            },
+            {
+              "id": "code",
+              "kind": "action",
+              "label": "CODE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "code_file",
+                "filename": "max_window.py",
+                "language": "python",
+                "code": "def max_window_sum(nums, k):\n    total = sum(nums[:k])\n    best = total\n    for right in range(k, len(nums)):\n        total += nums[right]\n        total -= nums[right - k]\n        best = max(best, total)\n    return best\n",
+                "line_numbers": true,
+                "annotations": [
+                  {
+                    "id": "add",
+                    "anchor": {
+                      "line": 5,
+                      "text": "total += nums[right]",
+                      "occurrence": 1
+                    },
+                    "title": "Add the new right value",
+                    "explanation": "The window grows by one item on the right.",
+                    "required": true
+                  },
+                  {
+                    "id": "remove",
+                    "anchor": {
+                      "line": 6,
+                      "text": "total -= nums[right - k]",
+                      "occurrence": 1
+                    },
+                    "title": "Remove the old left value",
+                    "explanation": "Removing one item keeps the window size equal to k.",
+                    "required": true
+                  }
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use a fixed window when every candidate range has the same required length, such as every 5-minute block or every `k` items."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Slide by removing the value that leaves and adding the value that enters."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For `[4, 2, 7, 1]` with `k = 3`, what is the largest window sum? Answer: `13`.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "`13`.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-3-variable-window",
+          "title": "Variable window",
+          "concept_ids": [
+            "dsa.window.variable"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-fixed-window"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.48
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "All item sizes are non-negative. For `nums = [2, 1, 5, 1, 3, 2]`, keep a contiguous window whose sum is at most `7`. The window may grow or shrink as values are processed."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A variable window changes size. Move the right edge forward to include new values. When the rule becomes invalid, move the left edge forward until the window is valid again."
+              }
+            },
+            {
+              "id": "step-1",
+              "kind": "mental_model",
+              "label": "STEP 1",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "`[2, 1]`, 5, 1, 3, 2",
+                  "sum = `3` → valid"
+                ]
+              }
+            },
+            {
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "`[2, 1, 5]`, 1, 3, 2",
+                  "sum = `8` → too large"
+                ]
+              }
+            },
+            {
+              "id": "step-3",
+              "kind": "mental_model",
+              "label": "STEP 3",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "2, `[1, 5]`, 1, 3, 2",
+                  "Remove `2` from the left.",
+                  "sum = `6` → valid again"
+                ]
+              }
+            },
+            {
+              "id": "why",
+              "kind": "connects_to",
+              "label": "WHY NON-NEGATIVE MATTERS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "With non-negative values, moving `right` forward cannot reduce the sum, and moving `left` forward cannot increase it. That makes the repair direction predictable. With positive and negative values mixed together, this sum rule is not generally safe."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use a variable window when the answer is contiguous and validity can be repaired by moving one boundary forward. Do not assume a sliding-window sum rule works when negative values can reverse the effect of moving a boundary."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Expand right. If the window becomes invalid, shrink left until it is valid again."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If a sum window contains negative values, is `sum > target → always move left` generally safe? Answer: No.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        },
+        {
+          "id": "domain-3-window-discrimination",
+          "title": "Choose a range method",
+          "concept_ids": [
+            "dsa.window.discrimination",
+            "dsa.window.fixed",
+            "dsa.window.variable"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-variable-window"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.48
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Several problems all mention arrays and contiguous ranges, but they do not need the same method. Choose the method from how the range is defined and what must be queried."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A fixed window keeps an exact size. A variable window changes size to maintain a rule. Prefix sums precompute cumulative totals for repeated arbitrary range-sum queries."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "clue",
+                    "label": "Problem clue"
+                  },
+                  {
+                    "id": "method",
+                    "label": "Method"
+                  },
+                  {
+                    "id": "reason",
+                    "label": "Why"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "fixed",
+                    "cells": {
+                      "clue": "Every block has exactly k items",
+                      "method": "Fixed window",
+                      "reason": "Neighboring blocks differ by one leaving and one entering item"
+                    }
+                  },
+                  {
+                    "id": "variable",
+                    "cells": {
+                      "clue": "Longest/shortest contiguous range satisfying a repairable rule",
+                      "method": "Variable window",
+                      "reason": "Move boundaries without restarting the scan"
+                    }
+                  },
+                  {
+                    "id": "prefix",
+                    "cells": {
+                      "clue": "Many arbitrary range sums on unchanged data",
+                      "method": "Prefix sums",
+                      "reason": "Each range becomes a subtraction of two cumulative totals"
+                    }
+                  },
+                  {
+                    "id": "pair",
+                    "cells": {
+                      "clue": "Sorted values; find a pair matching a target",
+                      "method": "Opposing pointers",
+                      "reason": "Sorted order tells which side to move"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "signed",
+              "kind": "not_this",
+              "label": "SIGNED VALUES",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For exact target sums with mixed positive and negative values, a sum can rise or fall when either boundary moves. A prefix-sum lookup is often a better fit than the usual shrink-when-too-large window rule."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "First identify whether the problem fixes the range size, lets the range adapt, or asks many independent range queries."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Choose from the range contract, not from the word `array`."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Thousands of arbitrary range-sum queries on one unchanged array: fixed window, variable window, or prefix sums? Answer: Prefix sums.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Prefix sums.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 2: Data Structures and Dynamic Arrays",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-2-data-structures-and-dynamic-arrays/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "domain-3-module-3-intervals",
+      "title": "Intervals",
+      "order": 3,
+      "task_ids": [
+        "3.3"
+      ],
+      "skill_ids": [
+        "3.3.01",
+        "3.3.02",
+        "3.3.03"
+      ],
+      "prerequisite_module_ids": [
+        "domain-3-module-2-windows"
+      ],
+      "nodes": [
+        {
+          "id": "domain-3-interval-sort-merge",
+          "title": "Merge intervals",
+          "concept_ids": [
+            "dsa.intervals.sort_merge"
+          ],
+          "prerequisite_node_ids": [],
+          "map_position": {
+            "x": 0.12,
+            "y": 0.82
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Maintenance windows are closed intervals: `[[7, 9], [1, 3], [2, 5]]`. Closed means both endpoints are included. Return the minimum set of intervals covering the same time."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "An interval has a start and an end. Sorting intervals by start time makes the next possible overlap adjacent to the current merged interval."
+              }
+            },
+            {
+              "id": "step-1",
+              "kind": "mental_model",
+              "label": "STEP 1",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Sort by start:",
+                  "`[1, 3], [2, 5], [7, 9]`"
+                ]
+              }
+            },
+            {
+              "id": "step-2",
+              "kind": "mental_model",
+              "label": "STEP 2",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "`[1, 3]` and `[2, 5]` overlap.",
+                  "Merge them into `[1, 5]`."
+                ]
+              }
+            },
+            {
+              "id": "step-3",
+              "kind": "mental_model",
+              "label": "STEP 3",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "`[7, 9]` starts after `5`.",
+                  "It does not overlap `[1, 5]`.",
+                  "Result: `[[1, 5], [7, 9]]`"
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Use sort-then-merge when intervals may arrive out of order and the output is their union. If the output needs original conflicting IDs, keep that identity instead of collapsing everything into anonymous ranges."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Sort by start, then compare each next interval with the current merged interval."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "For closed `[1, 3]` and `[3, 5]`, do the intervals overlap? Answer: Yes.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "Yes.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+            },
+            {
+              "title": "Princeton Algorithms — Sorting",
+              "url": "https://algs4.cs.princeton.edu/20sorting/"
+            },
+            {
+              "title": "Princeton Algorithms — Mergesort",
+              "url": "https://algs4.cs.princeton.edu/22mergesort/"
+            }
+          ]
+        },
+        {
+          "id": "domain-3-interval-endpoints",
+          "title": "Interval endpoints",
+          "concept_ids": [
+            "dsa.intervals.endpoint_semantics"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-interval-sort-merge"
+          ],
+          "map_position": {
+            "x": 0.42,
+            "y": 0.82
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "A booking system uses half-open times. Booking A is `[10:00, 11:00)` and booking B is `[11:00, 12:00)`. The first booking stops just before 11:00; the second begins at 11:00."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Endpoint rules decide whether touching intervals overlap. `[start, end]` is closed. `[start, end)` is half-open."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "mental_model",
+              "label": "COMPARE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "rule",
+                    "label": "Rule"
+                  },
+                  {
+                    "id": "a",
+                    "label": "A"
+                  },
+                  {
+                    "id": "b",
+                    "label": "B"
+                  },
+                  {
+                    "id": "overlap",
+                    "label": "Touching at 11:00?"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "closed",
+                    "cells": {
+                      "rule": "Closed",
+                      "a": "[10:00, 11:00]",
+                      "b": "[11:00, 12:00]",
+                      "overlap": "Yes"
+                    }
+                  },
+                  {
+                    "id": "half",
+                    "cells": {
+                      "rule": "Half-open",
+                      "a": "[10:00, 11:00)",
+                      "b": "[11:00, 12:00)",
+                      "overlap": "No"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "comparison",
+              "kind": "action",
+              "label": "OVERLAP TEST",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "bullets",
+                "items": [
+                  "Closed intervals overlap when `next_start <= current_end`.",
+                  "Half-open intervals overlap when `next_start < current_end`."
+                ]
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Define endpoint semantics before writing merge, conflict, or scheduling comparisons."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Touching boundaries mean different things under closed and half-open contracts."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Under half-open semantics, do `[1, 3)` and `[3, 5)` overlap? Answer: No.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ],
+          "glossary": [
+            {
+              "term": "half-open interval",
+              "definition": "`[start, end)` includes the start and excludes the end."
+            },
+            {
+              "term": "closed interval",
+              "definition": "`[start, end]` includes both endpoints."
+            }
+          ]
+        },
+        {
+          "id": "domain-3-interval-contract",
+          "title": "Choose the interval goal",
+          "concept_ids": [
+            "dsa.intervals.sort_merge",
+            "dsa.intervals.endpoint_semantics"
+          ],
+          "prerequisite_node_ids": [
+            "domain-3-interval-endpoints"
+          ],
+          "map_position": {
+            "x": 0.72,
+            "y": 0.82
+          },
+          "prompts": [
+            {
+              "id": "problem",
+              "kind": "what",
+              "label": "PROBLEM",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The same booking intervals may be used for different outputs: merge occupied time, detect whether any conflict exists, report which booking IDs conflict, or find maximum simultaneous bookings."
+              }
+            },
+            {
+              "id": "definition",
+              "kind": "what",
+              "label": "WHAT IT IS",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "The interval data can be identical while the required output changes what information the algorithm must preserve."
+              }
+            },
+            {
+              "id": "compare",
+              "kind": "mental_model",
+              "label": "OUTPUT CHANGES THE STATE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "table",
+                "columns": [
+                  {
+                    "id": "goal",
+                    "label": "Goal"
+                  },
+                  {
+                    "id": "keep",
+                    "label": "What must be kept"
+                  }
+                ],
+                "rows": [
+                  {
+                    "id": "union",
+                    "cells": {
+                      "goal": "Merge occupied time",
+                      "keep": "Current merged interval"
+                    }
+                  },
+                  {
+                    "id": "any",
+                    "cells": {
+                      "goal": "Detect any overlap",
+                      "keep": "Enough ordered boundary state to stop at the first conflict"
+                    }
+                  },
+                  {
+                    "id": "ids",
+                    "cells": {
+                      "goal": "Report conflicting booking IDs",
+                      "keep": "Original interval identity alongside boundaries"
+                    }
+                  },
+                  {
+                    "id": "count",
+                    "cells": {
+                      "goal": "Maximum simultaneous bookings",
+                      "keep": "Start/end events or another overlap-counting representation"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "id": "warning",
+              "kind": "not_this",
+              "label": "COMMON MISTAKE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If you immediately merge overlapping intervals into anonymous unions, you may destroy the original booking IDs needed by a conflict report."
+              }
+            },
+            {
+              "id": "when",
+              "kind": "when",
+              "label": "WHEN TO USE IT",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Write the required output before choosing what interval state to discard or preserve."
+              }
+            },
+            {
+              "id": "rule",
+              "kind": "look_for",
+              "label": "RULE",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "Same intervals, different output → potentially different algorithm state."
+              }
+            },
+            {
+              "id": "check",
+              "kind": "action",
+              "label": "CHECK",
+              "placeholder": "",
+              "required": true,
+              "reveal": {
+                "type": "text",
+                "text": "If the output must name the original conflicting bookings, is an anonymous merged union sufficient? Answer: No.",
+                "progressive_reveal": {
+                  "spans": [
+                    {
+                      "id": "answer",
+                      "text": "No.",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "source_refs": [
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 3: Sets and Sorting",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-3-sets-and-sorting/"
+            },
+            {
+              "title": "MIT OpenCourseWare 6.006 — Lecture 1: Algorithms and Computation",
+              "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-1-algorithms-and-computation/"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
