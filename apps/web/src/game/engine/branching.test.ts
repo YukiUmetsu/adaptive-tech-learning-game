@@ -4,12 +4,15 @@ import { GAME_CATALOG, type GameCatalog } from "../data";
 import type { AttackDefinition } from "../models/attack";
 import type { MissionMap } from "../models/map";
 import type { MissionDefinition, WaveDefinition } from "../models/mission";
+import { coverageContains } from "./combat";
 import {
   createInitialState,
+  defensePositionOnPath,
   deployHero,
   placeDefense,
   startFirstWave,
   stepSimulation,
+  type EnemyState,
   type GameState,
 } from "./simulation";
 
@@ -110,6 +113,39 @@ function runToEnd(mission: MissionDefinition, state: GameState): GameState {
   }
   return current;
 }
+
+/** A synthetic enemy on a concrete path, for pure position/range assertions. */
+function enemyOn(
+  path: string[],
+  pathIndex: number,
+  progress: number,
+  attackId = "xss_app",
+): EnemyState {
+  return {
+    id: "enemy",
+    attackId,
+    attackType: "xss",
+    health: 10,
+    maxHealth: 10,
+    systemDamage: 1,
+    speed: 0.5,
+    path,
+    pathIndex,
+    progress,
+    revealed: true,
+    blocked: false,
+    leaked: false,
+    boss: false,
+    ageMs: 0,
+    stuckMs: 0,
+    admittedGates: [],
+    summonsRemaining: 0,
+    nextSummonInMs: 0,
+  };
+}
+
+const APP_PATH = ["internet", "edge", "app", "db"];
+const API_PATH = ["internet", "edge", "api", "db"];
 
 describe("branching tower coverage", () => {
   it("an Application tower cannot damage an API-only attack", () => {
@@ -274,5 +310,185 @@ describe("anchored hero coverage", () => {
     expect(state.stats.blockedByAttack.xss_app ?? 0).toBe(1);
     expect(state.stats.blockedByAttack.xss_via_api ?? 0).toBe(0);
     expect(state.stats.leakedByAttack.xss_via_api ?? 0).toBe(1);
+  });
+});
+
+describe("anchored range is centered on the pad fraction", () => {
+  it("uses the anchor fraction, not the nearest node index", () => {
+    // A tower at 0.75 on Edge -> Application sits at route position 1.75, even
+    // though its nearest node ("app") is index 2.
+    const tower = {
+      id: "t",
+      defenseId: "traffic_blocker",
+      nodeId: "app",
+      level: 1,
+      anchor: { from: "edge", to: "app", fraction: 0.75 },
+    };
+    const position = defensePositionOnPath(tower, enemyOn(APP_PATH, 1, 0.1));
+    expect(position).toBeCloseTo(1.75, 5);
+
+    // With a small range, an enemy at 0.1 (route 1.1) is out of range...
+    expect(coverageContains(1.1, position!, 0.1)).toBe(false);
+    // ...but an enemy at 0.7 (route 1.7) is in range.
+    expect(coverageContains(1.7, position!, 0.1)).toBe(true);
+    // The node index (2) would have covered neither of those points.
+    expect(coverageContains(1.1, 2, 0.1)).toBe(false);
+    expect(coverageContains(1.7, 2, 0.1)).toBe(false);
+  });
+
+  it("gives different engagement windows at 0.25 vs 0.75 on the same edge", () => {
+    const early = {
+      id: "t1",
+      defenseId: "traffic_blocker",
+      nodeId: "edge",
+      level: 1,
+      anchor: { from: "edge", to: "app", fraction: 0.25 },
+    };
+    const late = {
+      id: "t2",
+      defenseId: "traffic_blocker",
+      nodeId: "app",
+      level: 1,
+      anchor: { from: "edge", to: "app", fraction: 0.75 },
+    };
+    const enemy = enemyOn(APP_PATH, 1, 0.2); // route position 1.2
+    const earlyPosition = defensePositionOnPath(early, enemy)!;
+    const latePosition = defensePositionOnPath(late, enemy)!;
+    expect(earlyPosition).toBeCloseTo(1.25, 5);
+    expect(latePosition).toBeCloseTo(1.75, 5);
+    expect(coverageContains(1.2, earlyPosition, 0.1)).toBe(true);
+    expect(coverageContains(1.2, latePosition, 0.1)).toBe(false);
+  });
+
+  it("returns null across branches but a position on a shared edge", () => {
+    const tower = {
+      id: "t",
+      defenseId: "traffic_blocker",
+      nodeId: "edge",
+      level: 1,
+      anchor: { from: "edge", to: "app", fraction: 0.25 },
+    };
+    expect(defensePositionOnPath(tower, enemyOn(API_PATH, 1, 0.5))).toBeNull();
+    expect(
+      defensePositionOnPath(tower, enemyOn(APP_PATH, 1, 0.5)),
+    ).toBeCloseTo(1.25, 5);
+
+    const shared = {
+      id: "t",
+      defenseId: "traffic_blocker",
+      nodeId: "internet",
+      level: 1,
+      anchor: { from: "internet", to: "edge", fraction: 0.5 },
+    };
+    expect(defensePositionOnPath(shared, enemyOn(APP_PATH, 0, 0.5))).toBeCloseTo(
+      0.5,
+      5,
+    );
+    expect(defensePositionOnPath(shared, enemyOn(API_PATH, 0, 0.5))).toBeCloseTo(
+      0.5,
+      5,
+    );
+  });
+
+  it("falls back to the node index for unanchored legacy placements", () => {
+    const legacy = {
+      id: "t",
+      defenseId: "xss_protection",
+      nodeId: "app",
+      level: 1,
+    };
+    expect(defensePositionOnPath(legacy, enemyOn(APP_PATH, 1, 0.5))).toBe(2);
+    // An unanchored placement on a path without that node has no position.
+    expect(defensePositionOnPath(legacy, enemyOn(API_PATH, 1, 0.5))).toBeNull();
+  });
+});
+
+describe("Traffic Analyzer support ordering", () => {
+  function blockerDamage(
+    analyzer: { from: string; to: string; fraction: number } | null,
+    blocker: { from: string; to: string; fraction: number },
+  ): number {
+    const mission = missionWith([
+      { attackId: "ddos_app", count: 1, spawnIntervalMs: 1000 },
+    ]);
+    let state = createInitialState(mission, catalog);
+    if (analyzer) {
+      state = placeDefense(
+        state,
+        {
+          defenseId: "traffic_analyzer",
+          nodeId: analyzer.from,
+          nodeType: "edge",
+          padId: "analyzer",
+          anchor: analyzer,
+        },
+        catalog,
+      ).state;
+    }
+    state = placeDefense(
+      state,
+      {
+        defenseId: "traffic_blocker",
+        nodeId: blocker.to,
+        nodeType: "edge",
+        padId: "blocker",
+        anchor: blocker,
+      },
+      catalog,
+    ).state;
+    state = runToEnd(mission, startFirstWave(state, mission));
+    return state.stats.damageByDefense.traffic_blocker ?? 0;
+  }
+
+  it("boosts a Blocker that comes later on the same route", () => {
+    const baseline = blockerDamage(null, {
+      from: "internet",
+      to: "edge",
+      fraction: 0.75,
+    });
+    const supported = blockerDamage(
+      { from: "internet", to: "edge", fraction: 0.25 },
+      { from: "internet", to: "edge", fraction: 0.75 },
+    );
+    expect(supported).toBeGreaterThan(baseline);
+  });
+
+  it("does not boost a Blocker placed earlier than the Analyzer", () => {
+    const baseline = blockerDamage(null, {
+      from: "internet",
+      to: "edge",
+      fraction: 0.25,
+    });
+    const reversed = blockerDamage(
+      { from: "internet", to: "edge", fraction: 0.75 },
+      { from: "internet", to: "edge", fraction: 0.25 },
+    );
+    expect(reversed).toBeCloseTo(baseline, 5);
+  });
+
+  it("does not boost across branches", () => {
+    const baseline = blockerDamage(null, {
+      from: "internet",
+      to: "edge",
+      fraction: 0.75,
+    });
+    const crossBranch = blockerDamage(
+      { from: "edge", to: "api", fraction: 0.25 },
+      { from: "internet", to: "edge", fraction: 0.75 },
+    );
+    expect(crossBranch).toBeCloseTo(baseline, 5);
+  });
+
+  it("boosts a downstream Blocker on a later edge the traffic actually takes", () => {
+    const baseline = blockerDamage(null, {
+      from: "edge",
+      to: "app",
+      fraction: 0.25,
+    });
+    const shared = blockerDamage(
+      { from: "internet", to: "edge", fraction: 0.75 },
+      { from: "edge", to: "app", fraction: 0.25 },
+    );
+    expect(shared).toBeGreaterThan(baseline);
   });
 });

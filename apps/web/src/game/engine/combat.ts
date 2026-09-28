@@ -167,6 +167,18 @@ export function hasDetection(
   );
 }
 
+/**
+ * Whether an attack is swarm traffic.
+ *
+ * Rate Limiter gates throttle only swarm attacks (a flood of near-identical
+ * requests). The simulation's gate queue and the board's queue rendering both
+ * use this single rule, so a non-swarm attack is never moved by the simulation
+ * but shifted visually (or vice versa).
+ */
+export function isSwarmAttack(attackId: string, catalog: GameCatalog): boolean {
+  return catalog.attacksById[attackId]?.tags?.includes("swarm") === true;
+}
+
 /** Extra damage multiplier against one attack type from synergies. */
 export function synergyDamageBonus(
   attackType: AttackType,
@@ -187,15 +199,18 @@ export function synergyDamageBonus(
 /**
  * Whether an attack at path position `position` is inside a control's coverage.
  *
- * Coverage is measured in path segments: a control on a node at path index `d`
- * reaches attacks whose path position is within `range` of `d`.
+ * Coverage is measured in path segments: an attack is covered when its path
+ * position is within `range` of the control's own logical path position. That
+ * control position may be a whole node index (legacy/unanchored placements) or
+ * an edge index plus fraction (anchored placements), so range follows where the
+ * control actually sits on the branch.
  */
 export function coverageContains(
   position: number,
-  nodeIndex: number,
+  controlPosition: number,
   range: number,
 ): boolean {
-  return range > 0 && Math.abs(position - nodeIndex) <= range;
+  return range > 0 && Math.abs(position - controlPosition) <= range;
 }
 
 export interface MitigationOptions {

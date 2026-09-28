@@ -24,7 +24,7 @@ import {
   type Point,
   type RoadPad,
 } from "../engine/roadGeometry";
-import { canPlaceDefense } from "../engine/combat";
+import { canPlaceDefense, isSwarmAttack } from "../engine/combat";
 import { attackLabel, attackTone } from "../lib/format";
 import { hasSprite, towerSpriteKey, enemySpriteKey } from "../assets/sprites";
 import Sprite from "../assets/Sprite";
@@ -350,6 +350,11 @@ export default function GameBoard({
     if (gateQueue.length === 0) {
       return base;
     }
+    // Rate Limiter gates only ever throttle swarm traffic in the simulation, so
+    // a non-swarm attack must never be shifted by the queue visual.
+    if (!isSwarmAttack(enemy.attackId, catalog)) {
+      return base;
+    }
     const position = enemy.pathIndex + enemy.progress;
     for (const gate of gateQueue) {
       if (enemy.admittedGates?.includes(gate.id)) {
@@ -436,6 +441,15 @@ export default function GameBoard({
     }
   };
 
+  /**
+   * Approximate range affordance.
+   *
+   * Combat range is measured along the attack's logical path on the control's
+   * branch, not as an on-screen circle. This ellipse is only a placement hint:
+   * it is centered on the control's real rendered pad position (so it follows
+   * the correct branch) and sized from `range` in layer units. It must not be
+   * read as guaranteed coverage across unrelated branches.
+   */
   const rangePreview = useMemo(() => {
     const preview = (range: number, color: string, center: Point) => ({
       x: center.x,

@@ -17,12 +17,13 @@ import {
   coverageContains,
   damagePerSecond,
   hasDetection,
+  isSwarmAttack,
   systemDamageReduction,
   leakedSystemDamage,
   synergyDamageBonus,
   type PlacementCheck,
 } from "./combat";
-import { computePath, edgePositionOnPath, pathEdgeIndex } from "./pathing";
+import { computePath, edgePositionOnPath } from "./pathing";
 import { newId } from "../../lib/id";
 
 /**
@@ -661,7 +662,7 @@ function killEnemy(enemy: EnemyState, state: GameState): void {
 }
 
 function isSwarm(enemy: EnemyState, catalog: GameCatalog): boolean {
-  return catalog.attacksById[enemy.attackId]?.tags?.includes("swarm") === true;
+  return isSwarmAttack(enemy.attackId, catalog);
 }
 
 /**
@@ -687,30 +688,34 @@ function gatePathPosition(enemy: EnemyState, gate: PlacedDefense): number | null
 }
 
 /**
- * The route index a tower control occupies, or `-1` when the enemy never
- * traverses its anchored edge.
+ * The logical route position (edge index + fraction) a placed control occupies
+ * on one enemy's own path, or `null` when the enemy never traverses the
+ * control's anchored edge.
  *
- * Node-based coverage is preserved for linear maps, but an anchored tower is
- * gated on actually traversing its logical edge first, so a tower on the
- * Application branch can never reach API-only traffic just because both routes
- * share the upstream Edge node.
+ * Anchored controls are centered on their actual pad fraction — not on the
+ * nearest node — so combat range and support ordering match where the player
+ * built the control. The same function also acts as the branch filter: a
+ * control anchored to a non-traversed edge returns `null`, so a branch-local
+ * path control cannot affect traffic on an unrelated branch that merely shares
+ * an upstream node.
+ *
+ * Legacy/unanchored placements (old cached runs) fall back to their node index,
+ * preserving the original node-centered behavior.
  */
-function towerNodeIndex(placed: PlacedDefense, enemy: EnemyState): number {
+export function defensePositionOnPath(
+  placed: PlacedDefense,
+  enemy: EnemyState,
+): number | null {
   if (placed.anchor) {
-    const index = pathEdgeIndex(enemy.path, placed.anchor.from, placed.anchor.to);
-    if (index < 0) {
-      return -1;
-    }
+    return edgePositionOnPath(
+      enemy.path,
+      placed.anchor.from,
+      placed.anchor.to,
+      placed.anchor.fraction,
+    );
   }
-  return enemy.path.indexOf(placed.nodeId);
-}
-
-/** Logical route index of a support source, gated on its own anchored edge. */
-function supportSourceIndex(source: PlacedDefense, enemy: EnemyState): number {
-  if (source.anchor) {
-    return pathEdgeIndex(enemy.path, source.anchor.from, source.anchor.to);
-  }
-  return enemy.path.indexOf(source.nodeId);
+  const nodeIndex = enemy.path.indexOf(placed.nodeId);
+  return nodeIndex < 0 ? null : nodeIndex;
 }
 
 /** Moves an attack to an exact path position (edge index + fraction). */
@@ -833,8 +838,8 @@ function applyTowerDamage(
   const position = enemyPosition(enemy);
   const synergyBonus = synergyDamageBonus(enemy.attackType, ctx.synergies);
   for (const placed of state.placed) {
-    const nodeIndex = towerNodeIndex(placed, enemy);
-    if (nodeIndex < 0) {
+    const controlPosition = defensePositionOnPath(placed, enemy);
+    if (controlPosition === null) {
       continue;
     }
     const defense = catalog.defensesById[placed.defenseId];
@@ -842,7 +847,7 @@ function applyTowerDamage(
       continue;
     }
     const stats = defenseStatsAtLevel(defense, placed.level);
-    if (!coverageContains(position, nodeIndex, stats.range)) {
+    if (!coverageContains(position, controlPosition, stats.range)) {
       continue;
     }
     let supportMultiplier = 1;
@@ -851,8 +856,10 @@ function applyTowerDamage(
       if (!sourceDefense?.supportTargetId || sourceDefense.supportTargetId !== defense.id) {
         continue;
       }
-      const sourceIndex = supportSourceIndex(source, enemy);
-      if (sourceIndex >= 0 && sourceIndex < nodeIndex) {
+      // Support only applies when the source lies earlier on the enemy's own
+      // route, using each control's actual logical position.
+      const sourcePosition = defensePositionOnPath(source, enemy);
+      if (sourcePosition !== null && sourcePosition < controlPosition) {
         supportMultiplier = Math.max(
           supportMultiplier,
           sourceDefense.supportMultiplier ?? 1,
@@ -903,12 +910,12 @@ function computeEngagements(
     let target: EnemyState | null = null;
     let targetPosition = -Infinity;
     for (const enemy of enemies) {
-      const nodeIndex = towerNodeIndex(placed, enemy);
-      if (nodeIndex < 0) {
+      const controlPosition = defensePositionOnPath(placed, enemy);
+      if (controlPosition === null) {
         continue;
       }
       const position = enemyPosition(enemy);
-      if (!coverageContains(position, nodeIndex, stats.range)) {
+      if (!coverageContains(position, controlPosition, stats.range)) {
         continue;
       }
       const dps = damagePerSecond(defense, placed.level, enemy.attackType, {

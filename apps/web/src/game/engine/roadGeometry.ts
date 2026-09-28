@@ -9,9 +9,12 @@ import type { MapLayout, NodePosition } from "./layout";
  * draw *every* edge of a branching map and place each enemy on its own route.
  *
  * It is intentionally pure: no React, no simulation state, no DOM. The same
- * helpers position enemies, towers, pads, heroes, effects and beams, so the
- * renderer and the simulation can never disagree about which route an enemy is
- * on.
+ * edge/path helpers position enemies, towers, pads, heroes, effects and beams,
+ * and the simulation uses the equivalent logic (`pathEdgeIndex` /
+ * `edgePositionOnPath` / `defensePositionOnPath`), so the two share one branch
+ * model for the current branching maps. This is a shared-helper invariant, not
+ * a blanket guarantee that every future effect is branch-scoped: some controls
+ * (detection, system-wide damage reduction, recovery) are intentionally global.
  */
 
 export interface Point {

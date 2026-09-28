@@ -183,6 +183,52 @@ describe("OperationBriefing branching schematic", () => {
     expect(caption).toContain("Target: Database");
     expect(caption).not.toContain("Targets:");
   });
+
+  it("keeps targets visible at SOC Lv0 while wave intel stays hidden", () => {
+    const run = operationRun({
+      map_id: "dual-service",
+      dominant_attack_type: "sql_injection",
+      waves: [
+        {
+          boss: false,
+          groups: [
+            {
+              attack_id: "sql_injection",
+              count: 2,
+              spawn_interval_ms: 1000,
+              delay_ms: null,
+              health_multiplier: 1,
+              speed_multiplier: 1,
+            },
+            {
+              attack_id: "xss",
+              count: 2,
+              spawn_interval_ms: 1000,
+              delay_ms: null,
+              health_multiplier: 1,
+              speed_multiplier: 1,
+            },
+          ],
+        },
+      ],
+    });
+    const { container } = renderBriefing(run, {});
+
+    // Target locations are baseline incident information, independent of SOC.
+    expect(container.querySelector(".cyber-op-map-caption")?.textContent).toContain(
+      "Targets: Database, Application",
+    );
+    const targets = [...container.querySelectorAll(".cyber-op-map-node.is-target")].map(
+      (node) => node.querySelector("text")?.textContent,
+    );
+    expect(targets).toContain("Database");
+    expect(targets).toContain("Application");
+
+    // Wave composition/counts remain hidden until the SOC is upgraded.
+    expect(screen.queryByText(/Wave 1/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/SQL Injection/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Threat categories unknown/)).toBeInTheDocument();
+  });
 });
 
 describe("OperationBriefing Tower intel gating", () => {

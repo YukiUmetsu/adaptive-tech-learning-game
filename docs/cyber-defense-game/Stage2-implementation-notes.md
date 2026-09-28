@@ -767,20 +767,26 @@ tower built on `Edge -> Application` whose nearest pad node was the shared `Edge
 node could damage API-only traffic on `Edge -> API`.
 
 **Now:** every graph-pad placement records a logical `DefenseAnchor { from, to,
-fraction }` (`PadSelection` now carries the fraction as well). Ordinary
-path-based blocking/mitigation towers are gated on the enemy's path actually
-traversing the anchored edge (`pathContainsEdge`). Within that gate the existing
-node-based range math is unchanged, so linear maps behave exactly as before and
-range can still legitimately span adjacent segments of the tower's own branch.
+fraction }` (`PadSelection` now carries the fraction as well). Branch-local,
+path-based blocking and mitigation controls only affect traffic that traverses
+their anchored route; a control whose anchored edge the enemy's path does not
+traverse returns no position and is skipped. Intentionally global controls
+(detection, system-wide damage reduction, recovery) keep their global behavior,
+so this rule is scoped to path-local controls rather than "all towers".
 
-- A tower on `Edge -> Application` cannot damage/heal/reveal an API-only enemy,
-  even though both paths contain `Edge`.
-- A tower anchored to a genuinely shared edge (for example `Internet -> Edge`)
+- A branch-local path control on `Edge -> Application` (for example a WAF or
+  Traffic Blocker) does not damage or mitigate an API-only enemy, even though
+  both paths contain `Edge`.
+- A control anchored to a genuinely shared edge (for example `Internet -> Edge`)
   still covers both branches, because both paths traverse it. That shared
   coverage is intended.
-- Support controls use the source control's logical route index, not a bare
-  shared-node index, so a support on one branch no longer boosts a target on an
-  unrelated branch.
+- Support controls are ordered by each control's actual logical route position,
+  not a bare shared-node index, so a support on one branch does not boost a
+  target on an unrelated branch.
+- Global controls are unaffected by anchors: Monitoring/IDS reveals hidden
+  traffic and projects its aura everywhere, Least Privilege reduces system
+  damage everywhere, and Backup / Resilience recovery restore system health
+  everywhere (see the table below).
 
 ### Control semantics: placement-specific vs global
 
@@ -862,9 +868,10 @@ The Stage 2.3 notes implied renderer/simulation parity was already complete. It
 was not: towers, gate congestion, and the briefing still used node/global-depth
 approximations. After this pass, the route an enemy is on, the branch a tower,
 hero, or gate exists on, and the queue visual all resolve through the same
-`pathing.ts` edge helpers. That is a real guarantee for enemies, towers, heroes,
-and gates on the current maps — not an absolute one for arbitrary future maps,
-so it is stated as a shared invariant rather than "can never disagree".
+`pathing.ts` edge helpers. This is a *shared-helper* invariant for branch-local,
+path-based effects on the current maps — it deliberately does not claim that
+every effect is branch-scoped, because detection, system-wide damage reduction,
+and recovery are global by design.
 
 ## Files changed (Stage 2.3.1)
 
@@ -936,3 +943,124 @@ New error code: `cyber_operation_not_deployed` (409).
 - **In-browser viewport-resize E2E assertion** — the desktop/mobile tower
   stability is covered by deterministic engine/component tests rather than a
   resize-driven E2E, which would be timing-flaky for little extra signal.
+
+---
+
+# Stage 2.3.2 — Range and Visual Parity
+
+Small correctness/polish pass. No new heroes, attacks, defenses, maps,
+currencies, progression, or game modes; no backend change.
+
+## 1. Rate-limiter visuals match the simulation
+
+**Before:** the simulation queued only swarm traffic behind Rate Limiter gates
+(`isSwarm` was private to `simulation.ts`), but `GameBoard.queuedPoint` applied
+its queue offset based only on gate edge, enemy path, and gate position. A
+non-swarm attack (XSS, SQL Injection) moving normally through the simulation
+could still be drawn shifted backward at a gate.
+
+**Now:** the swarm rule lives in one pure helper,
+`combat.ts#isSwarmAttack(attackId, catalog)`, used by both the simulation's gate
+queue and the renderer. `queuedPoint` returns the unshifted point for any
+non-swarm attack. Visually queued traffic therefore always satisfies both
+conditions the simulation requires: swarm **and** traversing the gate edge.
+
+## 2. Anchored tower range uses the actual pad position
+
+**Before:** anchoring already prevented cross-branch targeting, but range was
+still centered on `enemy.path.indexOf(placed.nodeId)` — the nearest node — so a
+tower at `Edge -> Application @ 0.75` fought from the position of the `app`
+node, not from its visible pad.
+
+**Now:** a pure `simulation.ts#defensePositionOnPath(placed, enemy)` returns the
+control's logical route position:
+
+```text
+anchored:   edgePositionOnPath(path, anchor.from, anchor.to, anchor.fraction)
+unanchored: path.indexOf(nodeId)   (legacy fallback)
+not on route: null
+```
+
+`applyTowerDamage` and `computeEngagements` center `coverageContains` on that
+position. A control whose anchored edge the enemy never traverses returns `null`
+and is skipped, so branch-local path controls stay on their branch.
+
+## 3. Support controls are ordered by real route position
+
+Traffic Analyzer (`supportTargetId: traffic_blocker`, ×5) now boosts a Traffic
+Blocker only when the Analyzer's `defensePositionOnPath` is strictly earlier than
+the Blocker's on the enemy's own route. Same edge (0.25 → 0.75) boosts; reverse
+(0.75 → 0.25) does not; a different branch does not; a genuinely shared upstream
+edge still supports a downstream Blocker.
+
+## 4. Global controls stay global
+
+Only branch-local, path-based blocking/mitigation range and support ordering use
+positions. These remain intentionally global and were not edge-restricted:
+Monitoring/IDS `revealHidden` and `auraBonus`, `damageReduction` (Least
+Privilege / SRE ability), Backup and Resilience Center recovery. The control
+semantics table in the Stage 2.3.1 section still applies.
+
+## 5. Target-intelligence policy (explicit)
+
+Which systems are under attack is **baseline incident information**, known before
+any Tower upgrade, and remains visible at SOC Lv0. The SOC gates wave
+composition, families, exact counts, intensity, and boss presence; Threat
+Intelligence gates the adversary specialty and modifiers. Target knowledge and
+wave knowledge are separate concepts, and this is now stated in the briefing
+code and covered by a test. No behavior was changed.
+
+## 6. Linear-map behavior
+
+Anchored towers on linear maps now also center on their exact pad fraction, so a
+tower's firing window shifts by ±0.25 to ±0.75 path segments depending on which
+slot it occupies. This is the intended consequence of the fix. No range constant
+was changed; the full frontend suite (including Stage 1 simulation tests) stays
+green, so no compensating rebalance was needed.
+
+## Files changed (Stage 2.3.2)
+
+- Web engine: `engine/combat.ts` (`isSwarmAttack`), `engine/simulation.ts`
+  (`defensePositionOnPath`, position-centered range/support, shared swarm helper),
+  `engine/pathing.ts` and `engine/roadGeometry.ts` (scoped doc wording),
+  `components/GameBoard.tsx` (swarm guard in `queuedPoint`, approximate-range
+  note), `components/OperationBriefing.tsx` (target-intel policy comment).
+- Docs: this section; corrected overbroad wording in Stage 2.3.1 section 3/8.
+
+No API, DB, or migration changes.
+
+## Tests added (Stage 2.3.2)
+
+- Engine: `defensePositionOnPath` centers on the anchor fraction (0.75 → route
+  1.75), different windows at 0.25 vs 0.75, `null` across branches, shared-edge
+  coverage, legacy node-index fallback; Traffic Analyzer support ordering
+  (same-route boost, reverse no-boost, cross-branch no-boost, shared upstream
+  boost).
+- Component: `GameBoard` queues swarm traffic on the gate edge but leaves
+  non-swarm traffic on the same edge unchanged, and leaves swarm on another
+  branch unchanged.
+- Briefing: a multi-target Operation shows `Targets: Database, Application` at
+  SOC Lv0 while wave details stay hidden.
+- `pnpm test` — 141 files, 1139 tests pass.
+
+## Verification (Stage 2.3.2)
+
+- `cargo fmt --check` — clean.
+- `cargo clippy --all-targets --all-features -- -D warnings` — clean.
+- `cargo test -p adaptive-learn-api --test cyber_defense` — 38 pass;
+  `-p adaptive-learn-db --test cyber_defense` — 11 pass;
+  `-p adaptive-learn-domain` — 95 pass. No Rust changed this pass; the same two
+  pre-existing, unrelated failures documented above are unaffected.
+- `cd apps/web && pnpm typecheck` — pass.
+- `cd apps/web && pnpm lint` — 0 errors (2 pre-existing `QuestionPrompt` warnings).
+- `cd apps/web && pnpm test` — 141 files, 1139 tests pass.
+- `cd apps/web && pnpm build` — pass.
+- `cd apps/web && E2E_DATABASE_URL=… E2E_API_PORT=8092 E2E_WEB_PORT=5185 pnpm
+  e2e` — 12 tests pass (Chromium): Cyber Defense (3), learning (6),
+  questions (1), Settings (2).
+
+## Intentionally deferred (Stage 2.3.2)
+
+- **Graph-distance range visualization.** The board's range ellipse stays an
+  approximate placement hint centered on the control's real pad position; a true
+  path-distance coverage overlay is out of scope.

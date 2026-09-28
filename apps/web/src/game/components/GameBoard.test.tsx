@@ -266,6 +266,62 @@ describe("GameBoard", () => {
     ).not.toBe(appBase);
   });
 
+  it("queues swarm traffic but never other attacks on the same gate edge", () => {
+    const map = OPERATION_MAPS["dual-service"];
+    const gate = {
+      id: "gate-1",
+      defenseId: "rate_limiter",
+      nodeId: "edge",
+      padId: "edge--edge--app--0-left",
+      gatePartnerPadId: "edge--edge--app--0-right",
+      gate: true,
+      anchor: { from: "edge", to: "app", fraction: 0.3 },
+      level: 1,
+    };
+    const swarmApp: EnemyState = {
+      ...enemy(0),
+      id: "swarm-app",
+      attackId: "ddos_swarm",
+      attackType: "ddos",
+      path: ["internet", "edge", "app", "db"],
+      pathIndex: 1,
+      progress: 0.1,
+    };
+    const nonSwarmApp: EnemyState = {
+      ...enemy(1),
+      id: "xss-app",
+      attackId: "xss",
+      attackType: "xss",
+      path: ["internet", "edge", "app", "db"],
+      pathIndex: 1,
+      progress: 0.1,
+    };
+    const swarmApi: EnemyState = {
+      ...swarmApp,
+      id: "swarm-api",
+      path: ["internet", "edge", "api", "db"],
+    };
+    const base = boardProps({ map, primaryTargetNodeId: "db" });
+
+    const transformFor = (state: EnemyState, gated: boolean) => {
+      const view = render(
+        <GameBoard {...base} placed={gated ? [gate] : []} enemies={[state]} />,
+      );
+      const transform = view.container
+        .querySelector(".cyber-enemy")!
+        .getAttribute("transform");
+      view.unmount();
+      return transform;
+    };
+
+    // Swarm on the gate's edge is shifted...
+    expect(transformFor(swarmApp, true)).not.toBe(transformFor(swarmApp, false));
+    // ...but non-swarm traffic on the same edge is not.
+    expect(transformFor(nonSwarmApp, true)).toBe(transformFor(nonSwarmApp, false));
+    // ...and swarm on a different branch is not.
+    expect(transformFor(swarmApi, true)).toBe(transformFor(swarmApi, false));
+  });
+
   it("keeps an Edge -> Application tower on its branch after an orientation change", () => {
     const map = OPERATION_MAPS["dual-service"];
     const placed = [

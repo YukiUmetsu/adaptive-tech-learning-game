@@ -42,8 +42,8 @@ function buildAdjacency(map: MissionMap): Map<string, string[]> {
  *
  * A branching graph shares nodes between routes, so the consecutive node pair
  * is the only branch-accurate match. The simulation (tower coverage, gate
- * filtering) and the renderer (gate queue offsets) both use this helper, so they
- * cannot drift apart about which branch an attack is on.
+ * filtering) and the renderer (gate queue offsets) both use this helper, so a
+ * given effect only ever considers the branch it is actually placed on.
  */
 export function pathEdgeIndex(path: string[], from: string, to: string): number {
   for (let i = 0; i < path.length - 1; i += 1) {

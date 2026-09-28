@@ -253,7 +253,11 @@ export default function OperationBriefing({
     5,
     Math.round((operation.waves.length * 90) / 60),
   );
-  // Show every attacked target by its human label; never a raw node id.
+  // Target-intelligence policy: which systems are under attack is baseline
+  // incident information known before the SOC unlocks anything, so target labels
+  // are always shown. SOC gates wave composition/counts/intensity/boss presence
+  // and Threat Intelligence gates adversary detail — those are separate
+  // concepts, not additional target knowledge. Show human labels, never ids.
   const targetLabels = targetIds.map(
     (id) => findNode(map, id)?.label ?? operationMapLabel(operation.map_id),
   );
