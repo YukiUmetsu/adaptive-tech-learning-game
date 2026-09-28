@@ -3,6 +3,7 @@ import {
   defenseStatsAtLevel,
   placeCost,
   upgradeCost,
+  type DefenseAnchor,
   type PlacedDefense,
 } from "../models/defense";
 import type { HeroRuntime, HeroUnit } from "../models/hero";
@@ -21,7 +22,7 @@ import {
   synergyDamageBonus,
   type PlacementCheck,
 } from "./combat";
-import { computePath } from "./pathing";
+import { computePath, edgePositionOnPath, pathEdgeIndex } from "./pathing";
 import { newId } from "../../lib/id";
 
 /**
@@ -415,13 +416,11 @@ export function placeDefense(
     nodeId: string;
     nodeType: string;
     padId?: string;
+    /** Logical edge the pad occupies, for branch-accurate coverage. */
+    anchor?: DefenseAnchor;
     /** Gate controls span the road and need the paired pad. */
     gate?: {
       partnerPadId: string;
-      position: number;
-      /** Edge endpoints the gate spans, for branch-accurate congestion. */
-      fromNodeId?: string;
-      toNodeId?: string;
     };
   },
   catalog: GameCatalog,
@@ -467,10 +466,8 @@ export function placeDefense(
     padId: input.padId,
     level: 1,
     gate: input.gate ? true : undefined,
-    gatePosition: input.gate?.position,
+    anchor: input.anchor,
     gatePartnerPadId: input.gate?.partnerPadId,
-    gateFromNodeId: input.gate?.fromNodeId,
-    gateToNodeId: input.gate?.toNodeId,
   };
   return {
     state: {
@@ -668,29 +665,52 @@ function isSwarm(enemy: EnemyState, catalog: GameCatalog): boolean {
 }
 
 /**
- * Whether an enemy's logical path traverses a gate's edge.
+ * Where a gate sits on one enemy's own route, in path-segment units, or `null`
+ * when the enemy never traverses the gate edge.
  *
- * A branching map shares nodes between routes, so matching only a node would let
- * a gate on one branch stop traffic on another. When the gate stores its edge we
- * require the consecutive pair; legacy gates without an edge fall back to node
- * membership.
+ * The gate's edge is the single branch-match rule (the renderer uses the same
+ * `pathEdgeIndex`/`edgePositionOnPath` helpers), so a gate on one branch never
+ * congests traffic on another that merely shares an upstream node. Using the
+ * route's own edge index instead of a global node-depth estimate keeps
+ * congestion correct on branching maps.
  */
-function enemyTraversesGate(
-  enemy: EnemyState,
-  gate: PlacedDefense,
-): boolean {
-  if (gate.gateFromNodeId && gate.gateToNodeId) {
-    for (let i = 0; i < enemy.path.length - 1; i += 1) {
-      if (
-        enemy.path[i] === gate.gateFromNodeId &&
-        enemy.path[i + 1] === gate.gateToNodeId
-      ) {
-        return true;
-      }
-    }
-    return false;
+function gatePathPosition(enemy: EnemyState, gate: PlacedDefense): number | null {
+  if (gate.anchor) {
+    return edgePositionOnPath(
+      enemy.path,
+      gate.anchor.from,
+      gate.anchor.to,
+      gate.anchor.fraction,
+    );
   }
-  return enemy.path.includes(gate.nodeId);
+  return gate.gatePosition ?? null;
+}
+
+/**
+ * The route index a tower control occupies, or `-1` when the enemy never
+ * traverses its anchored edge.
+ *
+ * Node-based coverage is preserved for linear maps, but an anchored tower is
+ * gated on actually traversing its logical edge first, so a tower on the
+ * Application branch can never reach API-only traffic just because both routes
+ * share the upstream Edge node.
+ */
+function towerNodeIndex(placed: PlacedDefense, enemy: EnemyState): number {
+  if (placed.anchor) {
+    const index = pathEdgeIndex(enemy.path, placed.anchor.from, placed.anchor.to);
+    if (index < 0) {
+      return -1;
+    }
+  }
+  return enemy.path.indexOf(placed.nodeId);
+}
+
+/** Logical route index of a support source, gated on its own anchored edge. */
+function supportSourceIndex(source: PlacedDefense, enemy: EnemyState): number {
+  if (source.anchor) {
+    return pathEdgeIndex(enemy.path, source.anchor.from, source.anchor.to);
+  }
+  return enemy.path.indexOf(source.nodeId);
 }
 
 /** Moves an attack to an exact path position (edge index + fraction). */
@@ -715,7 +735,7 @@ function applyGateQueues(
   dtMs: number,
 ): void {
   const gates = state.placed.filter(
-    (entry) => entry.gate && entry.gatePosition !== undefined,
+    (entry) => entry.gate && (entry.anchor !== undefined || entry.gatePosition !== undefined),
   );
   if (gates.length === 0) {
     return;
@@ -723,7 +743,6 @@ function applyGateQueues(
 
   // Admit one swarm attack per gate when the interval has elapsed.
   for (const gate of gates) {
-    const gatePosition = gate.gatePosition as number;
     const nextAt = state.gatePass[gate.id] ?? 0;
     if (state.elapsedMs < nextAt) {
       continue;
@@ -737,7 +756,8 @@ function applyGateQueues(
       if (enemy.admittedGates.includes(gate.id)) {
         continue;
       }
-      if (!enemyTraversesGate(enemy, gate)) {
+      const gatePosition = gatePathPosition(enemy, gate);
+      if (gatePosition === null) {
         continue;
       }
       const position = enemyPosition(enemy);
@@ -764,27 +784,27 @@ function applyGateQueues(
       continue;
     }
     const position = enemyPosition(enemy);
-    let blocking: (typeof gates)[number] | null = null;
+    let blockingPosition: number | null = null;
     for (const gate of gates) {
       if (enemy.admittedGates.includes(gate.id)) {
         continue;
       }
-      if (!enemyTraversesGate(enemy, gate)) {
+      const gatePosition = gatePathPosition(enemy, gate);
+      if (gatePosition === null) {
         continue;
       }
-      const gatePosition = gate.gatePosition as number;
       if (gatePosition <= position) {
         continue;
       }
       if (gatePosition - position > GATE_QUEUE_RANGE) {
         continue;
       }
-      if (!blocking || gatePosition < (blocking.gatePosition as number)) {
-        blocking = gate;
+      if (blockingPosition === null || gatePosition < blockingPosition) {
+        blockingPosition = gatePosition;
       }
     }
-    if (blocking) {
-      const maxPosition = (blocking.gatePosition as number) - GATE_QUEUE_OFFSET;
+    if (blockingPosition !== null) {
+      const maxPosition = blockingPosition - GATE_QUEUE_OFFSET;
       if (position > maxPosition) {
         setPathPosition(enemy, maxPosition);
       }
@@ -813,7 +833,7 @@ function applyTowerDamage(
   const position = enemyPosition(enemy);
   const synergyBonus = synergyDamageBonus(enemy.attackType, ctx.synergies);
   for (const placed of state.placed) {
-    const nodeIndex = enemy.path.indexOf(placed.nodeId);
+    const nodeIndex = towerNodeIndex(placed, enemy);
     if (nodeIndex < 0) {
       continue;
     }
@@ -831,7 +851,7 @@ function applyTowerDamage(
       if (!sourceDefense?.supportTargetId || sourceDefense.supportTargetId !== defense.id) {
         continue;
       }
-      const sourceIndex = enemy.path.indexOf(source.nodeId);
+      const sourceIndex = supportSourceIndex(source, enemy);
       if (sourceIndex >= 0 && sourceIndex < nodeIndex) {
         supportMultiplier = Math.max(
           supportMultiplier,
@@ -883,7 +903,7 @@ function computeEngagements(
     let target: EnemyState | null = null;
     let targetPosition = -Infinity;
     for (const enemy of enemies) {
-      const nodeIndex = enemy.path.indexOf(placed.nodeId);
+      const nodeIndex = towerNodeIndex(placed, enemy);
       if (nodeIndex < 0) {
         continue;
       }

@@ -55,6 +55,8 @@ credits only, and its frontend flush queue was dead code. See "Stage 2.2" below.
   unlocks, and `equipped_theme`.
 - `20261003000006_cyber_operation_deploy` — `deployed_at`, the authoritative
   pre-deploy → deployed boundary.
+- `20261003000007_cyber_operation_deploy_cleanup` — invalidates active runs that
+  existed before `deployed_at` (see Stage 2.3.1).
 
 ## Key decisions and assumptions
 
@@ -697,8 +699,240 @@ revert.
 
 ## Intentionally deferred (Stage 2.3)
 
-- **Branch-accurate gate congestion on shared source nodes.** Gates filter by
+- ~~**Branch-accurate gate congestion on shared source nodes.** Gates filter by
   their exact edge, but the numeric congestion position assumes path index ==
-  node depth; harmless for the current maps.
+  node depth; harmless for the current maps.~~ **Fixed in Stage 2.3.1** (see
+  below): gates now carry their edge and fraction, and congestion is measured on
+  the enemy's own route.
 - **Server-side recovery of substantial local combat progress.** As above, only
   the initial deployed battle is reconstructed.
+
+---
+
+# Stage 2.3.1 — Branching and Deployment Correctness
+
+A narrow consistency pass over Stage 2.3. No new heroes, attacks, defenses,
+adversaries, currencies, progression, or game modes. No change to the linear
+Stage 1 maps.
+
+## 1. Settlement requires deployment
+
+**Before:** `/complete` settled any `active` Operation, even one that had never
+been deployed (`deployed_at IS NULL`). The plausibility clock used `started_at`,
+so time spent reading the briefing and configuring the Engineering Lab counted as
+combat runtime.
+
+**Now:** `cyber_defense_complete_operation` locks the run and requires
+`status == "active" && deployed_at IS NOT NULL`. An undeployed run returns
+`409 cyber_operation_not_deployed`; the server never auto-deploys during
+settlement. Plausibility is measured from `deployed_at`:
+
+```text
+combat_elapsed_ms = now - deployed_at
+claimed_duration_ms <= combat_elapsed_ms + OPERATION_DURATION_TOLERANCE_MS
+combat_elapsed_ms >= OPERATION_MIN_ELAPSED_MS
+```
+
+The 120 s tolerance absorbs clock skew, browser throttling, tab backgrounding,
+and network latency; the 20 s floor remains deliberately conservative. A
+duplicate completion is still idempotent (run-status guard).
+
+## 2. Stable logical pad identity
+
+**Before:** `buildRoadPads()` derived the pad count from rendered edge length
+(`round(edge.length / PAD_STEP)`, capped at 3) and numbered pads with a global
+`pad-N` sequence. Desktop and mobile draw the same edge at different pixel
+lengths, so a resize/device change could change the pad count and move every
+later id, re-pointing a saved tower at another branch.
+
+**Now:** pad identity is a map-structure decision, independent of x/y:
+
+- `LogicalRoadPad { id, edgeFrom, edgeTo, slot, side, fraction, nodeId, partnerId }`.
+- A fixed number of pad groups per edge (`2`, with an optional per-edge override)
+  determines slots — never pixel length.
+- Stable ids are `edge--{from}--{to}--{slot}-{side}`, for example
+  `edge--edge--app--0-left`. Globally sequential `pad-N` ids are gone.
+- `buildLogicalRoadPads(map)` produces the identity; `renderRoadPads(geometry,
+  logical)` projects it onto the current geometry. Only the rendered x/y (and
+  facing angle) may differ between orientations.
+
+Saved placements live only in the local battle cache (never server-persisted),
+and the cache version was bumped from 5 to 6 so an old snapshot with `pad-*` ids
+is discarded rather than restored onto the wrong branch.
+
+## 3. Edge-aware ("anchored") towers
+
+**Before:** normal towers matched only `enemy.path.indexOf(placed.nodeId)`. A
+tower built on `Edge -> Application` whose nearest pad node was the shared `Edge`
+node could damage API-only traffic on `Edge -> API`.
+
+**Now:** every graph-pad placement records a logical `DefenseAnchor { from, to,
+fraction }` (`PadSelection` now carries the fraction as well). Ordinary
+path-based blocking/mitigation towers are gated on the enemy's path actually
+traversing the anchored edge (`pathContainsEdge`). Within that gate the existing
+node-based range math is unchanged, so linear maps behave exactly as before and
+range can still legitimately span adjacent segments of the tower's own branch.
+
+- A tower on `Edge -> Application` cannot damage/heal/reveal an API-only enemy,
+  even though both paths contain `Edge`.
+- A tower anchored to a genuinely shared edge (for example `Internet -> Edge`)
+  still covers both branches, because both paths traverse it. That shared
+  coverage is intended.
+- Support controls use the source control's logical route index, not a bare
+  shared-node index, so a support on one branch no longer boosts a target on an
+  unrelated branch.
+
+### Control semantics: placement-specific vs global
+
+| Control | Scope | Why |
+|---|---|---|
+| Blocking/mitigation towers (WAF, Blocker, Input Validation, …) | Edge-anchored | They filter the traffic that physically passes their placement. |
+| Rate-limiter gate | Edge-anchored | It spans one road edge and only congests traffic that traverses it. |
+| Monitoring / IDS `revealHidden` | Global | It is an architecture-wide detection capability, not a chokepoint. |
+| Monitoring / IDS `auraBonus` | Global | Small system-wide effectiveness bonus by design. |
+| `damageReduction` (Least Privilege, SRE ability) | Global | It protects the system, not one route. |
+| Recovery/Backup, Resilience Center emergency recovery | Global | System health, not route-specific. |
+
+These global effects were intentionally **not** edge-restricted.
+
+## 4. Branch-accurate gate queue rendering
+
+**Before:** the simulation filtered gates by their edge, but `GameBoard` queued
+enemies using only the gate's numeric `position` (a `nodeDepth + fraction`
+approximation), so an enemy on a branch the gate ignores could still be drawn
+queued behind it.
+
+**Now:** `gateQueue` carries `{ id, from, to, fraction }`. Both the simulation and
+the renderer resolve the gate's position on the enemy's own route with the shared
+`pathEdgeIndex` / `edgePositionOnPath` helpers in `engine/pathing.ts`:
+
+```text
+route index i  = pathEdgeIndex(enemy.path, gate.from, gate.to)   // -1 if absent
+gate position  = i + gate.fraction   (simulation and renderer agree)
+```
+
+An enemy whose path does not traverse the gate edge is never queued or offset.
+Legacy gates without an anchor fall back to the previous numeric position, but
+the cache bump means no such gate is restored.
+
+## 5. Multi-target Operation briefing
+
+**Before:** the briefing reduced every attacked node to one `primaryTarget` and
+highlighted one target (plus every Database by node type).
+
+**Now:** `operationTargetNodeIds(catalog, run)` collects every unique target from
+the attacks actually present in `operation.waves` (never inferred from node
+types). `TargetMap` highlights all of them, and the caption reads `Target:
+Database` for one target or `Targets: Application, Database` for several. A
+single protected-core visual is still placed at the deepest attacked node;
+`primaryTargetNodeId` is retained only for that core art, the spawn portal, and
+the legacy hero reference path — it no longer determines an enemy route, tower
+coverage, or briefing targets.
+
+## 6. Branching maps: real choices, not decoration
+
+Reviewed the three branching templates against their attacks:
+
+- **`web-assault` → `dual-service`** has a genuine two-branch reason: SQL
+  Injection (Database, via API) and XSS (Application) attack different targets,
+  so a single chokepoint no longer covers everything.
+- **`identity-breach` → `identity-fork`** is intentionally mostly a single
+  identity route; the fork exists for topology variety and the `auth -> db`
+  shortcut is a rarely-used alternate. No attack was invented to force it.
+- **`availability-siege` → `service-mesh`** keeps its natural edge/API DDoS
+  targets; `edge -> db` is left as an alternate path rather than given a
+  nonsensical DDoS target just to exercise a lane.
+
+No template, map, wave composition, attack, or defense was changed in this pass.
+Unused alternate edges are documented here as intentional, not filled.
+
+## 7. Legacy run migration decision
+
+The product has not launched and there is no reliable signal that an old
+`active`, `deployed_at IS NULL` run had actually progressed, so the simple,
+honest choice was taken over a fragile heuristic: migration
+`20261003000007_cyber_operation_deploy_cleanup` marks pre-existing active
+pre-deploy runs `abandoned`. New runs are unaffected (configurable until the
+player explicitly DEPLOYs). The down migration is intentionally a no-op because
+the abandoned state cannot be safely reversed.
+
+## 8. Documentation correction
+
+The Stage 2.3 notes implied renderer/simulation parity was already complete. It
+was not: towers, gate congestion, and the briefing still used node/global-depth
+approximations. After this pass, the route an enemy is on, the branch a tower,
+hero, or gate exists on, and the queue visual all resolve through the same
+`pathing.ts` edge helpers. That is a real guarantee for enemies, towers, heroes,
+and gates on the current maps — not an absolute one for arbitrary future maps,
+so it is stated as a shared invariant rather than "can never disagree".
+
+## Files changed (Stage 2.3.1)
+
+- Rust: `crates/domain/src/cyber_defense.rs` (plausibility docs/semantics),
+  `apps/api/src/{error,services}.rs`, migration
+  `20261003000007_cyber_operation_deploy_cleanup`.
+- Web engine: `engine/pathing.ts` (shared `pathEdgeIndex` /
+  `pathContainsEdge` / `edgePositionOnPath`), `engine/roadGeometry.ts`
+  (logical vs rendered pads), `engine/simulation.ts` (anchored towers, support
+  ordering, edge-based gate congestion), `models/defense.ts`
+  (`DefenseAnchor`), `hooks/useGameEngine.ts`, `components/GameBoard.tsx`,
+  `components/CyberDefenseGame.tsx`, `components/OperationBriefing.tsx`,
+  `persistence/gameCache.ts` (version 6).
+- Docs: this section.
+
+## API changes (Stage 2.3.1)
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/v1/cyber-defense/operations/{run_id}/complete` | Rejects `deployed_at IS NULL` with `409 cyber_operation_not_deployed`; plausibility measured from `deployed_at`. |
+
+New error code: `cyber_operation_not_deployed` (409).
+
+## Tests added (Stage 2.3.1)
+
+- API: undeployed completion rejected even after aging; created 10 min ago but
+  deployed 5 s ago rejected; deployed past the floor accepted; duplicate
+  completion idempotent. Existing flow/deploy/climax tests deploy before settling.
+- Engine: anchored `Edge -> Application` tower cannot damage an API-only enemy
+  through the shared `Edge` node but damages an `Application` enemy; a tower on
+  the genuinely shared `Internet -> Edge` edge covers both branches; pad ids,
+  edges, fractions, and node associations are identical across horizontal and
+  vertical layouts for every Operation map; the dual-service `Edge -> Application`
+  pad stays on that edge on mobile; repeated generation is stable.
+- Component: `GameBoard` reports stable logical pad identity, keeps a placed
+  tower present across desktop → mobile, and queues only the enemy that traverses
+  a branch gate.
+- Briefing: a multi-target Operation lists and highlights both Database and
+  Application but not the traversed (unattacked) API node; single-target copy
+  stays singular.
+- E2E: a direct completion before DEPLOY is rejected through the real API, then
+  DEPLOY and settlement proceed.
+
+## Verification (Stage 2.3.1)
+
+- `cargo fmt --check` — clean.
+- `cargo clippy --all-targets --all-features -- -D warnings` — clean.
+- `cargo test -p adaptive-learn-domain -p adaptive-learn-db -p
+  adaptive-learn-api --no-fail-fast` (local Postgres) — domain 95, DB Cyber
+  Defense 11, API Cyber Defense 38, and the wider API suites pass. The only
+  failure is the pre-existing `daily_missions::
+  completing_every_item_awards_the_bonus_exactly_once` documented above.
+  (A full `cargo test` was also attempted; it confirmed the same pre-existing
+  `content::family_guide::tracks_without_guides_still_load` failure, then stalled
+  on the unrelated `glossary` content test binary, which hangs in this
+  environment and is not touched by this pass. That run was stopped.)
+- `cd apps/web && pnpm typecheck` — pass.
+- `cd apps/web && pnpm lint` — 0 errors (2 pre-existing `QuestionPrompt` warnings).
+- `cd apps/web && pnpm test` — 141 files, 1129 tests pass.
+- `cd apps/web && pnpm build` — pass.
+- `cd apps/web && E2E_DATABASE_URL=… E2E_API_PORT=8091 E2E_WEB_PORT=5184 pnpm
+  e2e cyber_defense.spec.ts` — 3 tests pass, including the new "cannot complete
+  before DEPLOY" assertion and the deployed resume flow.
+
+## Intentionally deferred (Stage 2.3.1)
+
+- **Server-side recovery of substantial local combat progress** — unchanged from
+  Stage 2.3.
+- **In-browser viewport-resize E2E assertion** — the desktop/mobile tower
+  stability is covered by deterministic engine/component tests rather than a
+  resize-driven E2E, which would be timing-flaky for little extra signal.

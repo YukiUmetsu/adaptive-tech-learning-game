@@ -51,13 +51,36 @@ const dbAttack: AttackDefinition = {
   targetNodeId: "db",
 };
 
+/**
+ * Swarm traffic on both branches, for testing an edge-placeable control
+ * (`traffic_blocker`) whose pad's nearest node can be a shared upstream node.
+ */
+const ddosAppAttack: AttackDefinition = {
+  ...GAME_CATALOG.attacksById.ddos_swarm,
+  id: "ddos_app",
+  targetNodeId: "app",
+};
+const ddosViaApiAttack: AttackDefinition = {
+  ...GAME_CATALOG.attacksById.ddos_swarm,
+  id: "ddos_via_api",
+  targetNodeId: "db",
+};
+
 const catalog: GameCatalog = {
   ...GAME_CATALOG,
-  attacks: [...GAME_CATALOG.attacks, appAttack, dbAttack],
+  attacks: [
+    ...GAME_CATALOG.attacks,
+    appAttack,
+    dbAttack,
+    ddosAppAttack,
+    ddosViaApiAttack,
+  ],
   attacksById: {
     ...GAME_CATALOG.attacksById,
     xss_app: appAttack,
     xss_via_api: dbAttack,
+    ddos_app: ddosAppAttack,
+    ddos_via_api: ddosViaApiAttack,
   },
 };
 
@@ -118,6 +141,93 @@ describe("branching tower coverage", () => {
     expect(state.stats.leakedByAttack.xss_via_api ?? 0).toBe(1);
     expect(dbAttackPath).toContain("api");
     expect(dbAttackPath).not.toContain("app");
+  });
+
+  it("an anchored Edge -> Application tower cannot damage API-only traffic through the shared Edge node", () => {
+    const mission = missionWith([
+      { attackId: "ddos_via_api", count: 1, spawnIntervalMs: 1000 },
+    ]);
+    let state = createInitialState(mission, catalog);
+    // The tower visually sits on Edge -> Application, but its nearest node is the
+    // shared "edge" node and its range (1.4) would previously reach an API attack
+    // sitting just past that shared node.
+    const placed = placeDefense(
+      state,
+      {
+        defenseId: "traffic_blocker",
+        nodeId: "edge",
+        nodeType: "edge",
+        padId: "edge--edge--app--0-left",
+        anchor: { from: "edge", to: "app", fraction: 0.25 },
+      },
+      catalog,
+    );
+    expect(placed.ok).toBe(true);
+    state = startFirstWave(placed.state, mission);
+    state = runToEnd(mission, state);
+
+    expect(state.stats.damageByDefense.traffic_blocker ?? 0).toBe(0);
+    expect(state.stats.leakedByAttack.ddos_via_api ?? 0).toBe(1);
+  });
+
+  it("an anchored Edge -> Application tower damages an Application attack", () => {
+    const mission = missionWith([
+      { attackId: "ddos_app", count: 1, spawnIntervalMs: 1000 },
+    ]);
+    let state = createInitialState(mission, catalog);
+    state = placeDefense(
+      state,
+      {
+        defenseId: "traffic_blocker",
+        nodeId: "edge",
+        nodeType: "edge",
+        padId: "edge--edge--app--0-left",
+        anchor: { from: "edge", to: "app", fraction: 0.25 },
+      },
+      catalog,
+    ).state;
+    state = startFirstWave(state, mission);
+    state = runToEnd(mission, state);
+
+    expect(state.stats.damageByDefense.traffic_blocker ?? 0).toBeGreaterThan(0);
+  });
+
+  it("a tower anchored to the genuinely shared Internet -> Edge edge covers both branches", () => {
+    const appMission = missionWith([
+      { attackId: "ddos_app", count: 1, spawnIntervalMs: 1000 },
+    ]);
+    let appState = createInitialState(appMission, catalog);
+    appState = placeDefense(
+      appState,
+      {
+        defenseId: "traffic_blocker",
+        nodeId: "internet",
+        nodeType: "edge",
+        padId: "edge--internet--edge--0-left",
+        anchor: { from: "internet", to: "edge", fraction: 0.25 },
+      },
+      catalog,
+    ).state;
+    appState = runToEnd(appMission, startFirstWave(appState, appMission));
+    expect(appState.stats.damageByDefense.traffic_blocker ?? 0).toBeGreaterThan(0);
+
+    const apiMission = missionWith([
+      { attackId: "ddos_via_api", count: 1, spawnIntervalMs: 1000 },
+    ]);
+    let apiState = createInitialState(apiMission, catalog);
+    apiState = placeDefense(
+      apiState,
+      {
+        defenseId: "traffic_blocker",
+        nodeId: "internet",
+        nodeType: "edge",
+        padId: "edge--internet--edge--0-left",
+        anchor: { from: "internet", to: "edge", fraction: 0.25 },
+      },
+      catalog,
+    ).state;
+    apiState = runToEnd(apiMission, startFirstWave(apiState, apiMission));
+    expect(apiState.stats.damageByDefense.traffic_blocker ?? 0).toBeGreaterThan(0);
   });
 
   it("an Application tower damages an Application attack", () => {

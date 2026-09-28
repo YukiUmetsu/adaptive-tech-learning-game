@@ -220,6 +220,26 @@ test("a settled Operation persists its reward on the dashboard", async ({
   await expect(page).toHaveURL(/\/game\/operations\//);
   const runId = runIdFromUrl(page);
 
+  // A run that was never deployed has no battle to settle.
+  const undeployed = await request.post(
+    `${API_BASE}/v1/cyber-defense/operations/${runId}/complete`,
+    {
+      headers: authHeaders(subject),
+      data: { completed: true, stars: 2, health: 60, duration_ms: 120_000 },
+    },
+  );
+  expect(undeployed.status()).toBe(409);
+  expect((await undeployed.json()).error.code).toBe(
+    "cyber_operation_not_deployed",
+  );
+
+  // DEPLOY freezes the run and starts the combat clock.
+  const deployed = await request.post(
+    `${API_BASE}/v1/cyber-defense/operations/${runId}/deploy`,
+    { headers: authHeaders(subject) },
+  );
+  expect(deployed.ok(), await deployed.text()).toBeTruthy();
+
   // The integrity guard rejects a run that settles before it could plausibly
   // have been played. Age it past the minimum plausible window.
   await page.waitForTimeout(21_000);

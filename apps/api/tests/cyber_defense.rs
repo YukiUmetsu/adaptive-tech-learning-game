@@ -88,6 +88,38 @@ async fn backdate_run(pool: &PgPool, run_id: Uuid, seconds: i64) {
     .expect("backdate run");
 }
 
+/// Backdates a run's DEPLOY marker.
+///
+/// Combat age is measured from `deployed_at`, so a test that wants a plausible
+/// settlement must age the deploy, not only the creation time.
+async fn backdate_deploy(pool: &PgPool, run_id: Uuid, seconds: i64) {
+    let mut conn = pool.acquire().await.expect("acquire");
+    sqlx::query(
+        "UPDATE cyber_operation_runs
+         SET deployed_at = now() - make_interval(secs => $2)
+         WHERE id = $1",
+    )
+    .bind(run_id)
+    .bind(seconds as f64)
+    .execute(&mut *conn)
+    .await
+    .expect("backdate deploy");
+}
+
+/// Deploys an Operation through the public endpoint and asserts it succeeded.
+async fn deploy_operation(app: Router, subject: &str, run_id: &str) {
+    let (status, body) = send_as(
+        app,
+        subject,
+        "POST",
+        &format!("/v1/cyber-defense/operations/{run_id}/deploy"),
+        None,
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert!(body["deployed_at"].is_string(), "{body}");
+}
+
 /// Starts an Operation and returns its run id.
 async fn start_operation(app: Router, subject: &str, threat: i32) -> String {
     let (status, body) = send_as(
@@ -681,7 +713,8 @@ async fn operation_start_read_complete_flow() {
     assert_eq!(status, 200, "{read}");
     assert_eq!(read["seed"], seed);
 
-    // A run cannot settle the instant it is created.
+    // An undeployed run cannot be settled, even when it has aged.
+    backdate_run(&pool, run_uuid(&run_id), 600).await;
     let (status, body) = send_as(
         app.clone(),
         &user,
@@ -690,10 +723,12 @@ async fn operation_start_read_complete_flow() {
         Some(json!({ "completed": true, "stars": 3, "health": 90, "duration_ms": 120_000 })),
     )
     .await;
-    assert_eq!(status, 400, "{body}");
+    assert_eq!(status, 409, "{body}");
+    assert_eq!(body["error"]["code"], "cyber_operation_not_deployed");
 
-    // Age the run, then complete; rewards settle.
-    backdate_run(&pool, run_uuid(&run_id), 600).await;
+    // Deploy, then age the DEPLOY, then complete; rewards settle.
+    deploy_operation(app.clone(), &user, &run_id).await;
+    backdate_deploy(&pool, run_uuid(&run_id), 600).await;
     let (status, body) = send_as(
         app.clone(),
         &user,
@@ -877,8 +912,12 @@ async fn operation_rejects_locked_threat_and_malformed_result() {
     .await;
     assert_eq!(status, 400);
 
-    // A claimed duration that outruns the server wall clock is rejected.
+    // Deploy, then age the deploy so the combat floor is met.
+    deploy_operation(app.clone(), &user, &run_id).await;
     backdate_run(&pool, run_uuid(&run_id), 60).await;
+    backdate_deploy(&pool, run_uuid(&run_id), 60).await;
+
+    // A claimed duration that outruns the combat wall clock is rejected.
     let (status, body) = send_as(
         app.clone(),
         &user,
@@ -1526,6 +1565,7 @@ async fn operation_deploy_freezes_configuration() {
 
     // A settled run can no longer be deployed.
     backdate_run(&pool, run_uuid, 600).await;
+    backdate_deploy(&pool, run_uuid, 600).await;
     let (status, body) = send_as(
         app.clone(),
         &user,
@@ -1544,6 +1584,85 @@ async fn operation_deploy_freezes_configuration() {
     )
     .await;
     assert_eq!(status, 409);
+}
+
+#[tokio::test]
+async fn an_undeployed_operation_cannot_settle_even_after_aging() {
+    let Some(pool) = database_pool().await else {
+        return;
+    };
+    let app = app_with_pool(pool.clone());
+    let user = subject("undeployed-settlement");
+    ensure_operations_unlocked(app.clone(), &pool, &user).await;
+
+    let run_id = start_operation(app.clone(), &user, 2).await;
+    // Reading the briefing and configuring for ten minutes must not create a
+    // settleable battle.
+    backdate_run(&pool, run_uuid(&run_id), 600).await;
+
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        &format!("/v1/cyber-defense/operations/{run_id}/complete"),
+        Some(json!({ "completed": true, "stars": 3, "health": 90, "duration_ms": 120_000 })),
+    )
+    .await;
+    assert_eq!(status, 409, "{body}");
+    assert_eq!(body["error"]["code"], "cyber_operation_not_deployed");
+}
+
+#[tokio::test]
+async fn settlement_age_is_measured_from_deploy_not_creation() {
+    let Some(pool) = database_pool().await else {
+        return;
+    };
+    let app = app_with_pool(pool.clone());
+    let user = subject("deploy-age");
+    ensure_operations_unlocked(app.clone(), &pool, &user).await;
+
+    // Created ten minutes ago, but deployed only five seconds ago: briefing and
+    // configuration time must not count as combat runtime.
+    let run_id = start_operation(app.clone(), &user, 2).await;
+    backdate_run(&pool, run_uuid(&run_id), 600).await;
+    deploy_operation(app.clone(), &user, &run_id).await;
+    backdate_deploy(&pool, run_uuid(&run_id), 5).await;
+
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        &format!("/v1/cyber-defense/operations/{run_id}/complete"),
+        Some(json!({ "completed": true, "stars": 3, "health": 90, "duration_ms": 120_000 })),
+    )
+    .await;
+    assert_eq!(status, 400, "{body}");
+
+    // Age the deploy past the floor: the same result now settles.
+    backdate_deploy(&pool, run_uuid(&run_id), 600).await;
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        &format!("/v1/cyber-defense/operations/{run_id}/complete"),
+        Some(json!({ "completed": true, "stars": 3, "health": 90, "duration_ms": 120_000 })),
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(body["newly_settled"], true);
+
+    // A duplicate remains idempotent.
+    let (status, body) = send_as(
+        app.clone(),
+        &user,
+        "POST",
+        &format!("/v1/cyber-defense/operations/{run_id}/complete"),
+        Some(json!({ "completed": true, "stars": 3, "health": 90, "duration_ms": 120_000 })),
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(body["newly_settled"], false);
+    assert_eq!(body["reward"]["bits"], 0);
 }
 
 #[tokio::test]
@@ -1603,7 +1722,9 @@ async fn confrontation_battle_completes_the_climax_story() {
     assert_eq!(status, 200, "{body}");
     assert_eq!(body["template_id"], "ghost7-confrontation");
     let run_id = body["run_id"].as_str().unwrap().to_owned();
+    deploy_operation(app.clone(), &user, &run_id).await;
     backdate_run(&pool, run_uuid(&run_id), 600).await;
+    backdate_deploy(&pool, run_uuid(&run_id), 600).await;
 
     let (status, body) = send_as(
         app.clone(),
@@ -2037,7 +2158,9 @@ async fn run_snapshot_freezes_soc_and_training_center() {
     );
 
     // And the settlement uses the frozen Training Center level (base hero XP).
+    deploy_operation(app.clone(), &user, &run_id).await;
     backdate_run(&pool, run_uuid(&run_id), 600).await;
+    backdate_deploy(&pool, run_uuid(&run_id), 600).await;
     let (status, body) = send_as(
         app.clone(),
         &user,
@@ -2183,7 +2306,9 @@ async fn settlement_rate_guard_blocks_impossible_frequency() {
     }
 
     let run_id = start_operation(app.clone(), &user, 1).await;
+    deploy_operation(app.clone(), &user, &run_id).await;
     backdate_run(&pool, run_uuid(&run_id), 600).await;
+    backdate_deploy(&pool, run_uuid(&run_id), 600).await;
     let (status, body) = send_as(
         app.clone(),
         &user,
@@ -2193,6 +2318,7 @@ async fn settlement_rate_guard_blocks_impossible_frequency() {
     )
     .await;
     assert_eq!(status, 409, "{body}");
+    assert_ne!(body["error"]["code"], "cyber_operation_not_deployed");
 }
 
 #[tokio::test]

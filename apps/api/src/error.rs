@@ -41,6 +41,10 @@ pub enum ApiError {
     /// The Operation's configuration is frozen because the battle has started.
     #[error("this Operation is already deployed")]
     CyberOperationAlreadyDeployed,
+    /// The Operation is still configurable and has never been deployed, so it
+    /// has no battle to settle.
+    #[error("this Operation has not been deployed")]
+    CyberOperationNotDeployed,
     /// The campaign mission's prerequisite has not been completed.
     #[error("complete the previous campaign mission first")]
     CyberCampaignMissionLocked,
@@ -73,6 +77,7 @@ impl ApiError {
             Self::CyberOperationsLocked => StatusCode::FORBIDDEN,
             Self::CyberOperationLocked => StatusCode::FORBIDDEN,
             Self::CyberOperationAlreadyDeployed => StatusCode::CONFLICT,
+            Self::CyberOperationNotDeployed => StatusCode::CONFLICT,
             Self::CyberCampaignMissionLocked => StatusCode::FORBIDDEN,
             Self::MissionStale => StatusCode::CONFLICT,
             Self::Unavailable => StatusCode::SERVICE_UNAVAILABLE,
@@ -93,6 +98,7 @@ impl ApiError {
             Self::CyberOperationsLocked => "cyber_operations_locked",
             Self::CyberOperationLocked => "cyber_operation_locked",
             Self::CyberOperationAlreadyDeployed => "cyber_operation_already_deployed",
+            Self::CyberOperationNotDeployed => "cyber_operation_not_deployed",
             Self::CyberCampaignMissionLocked => "cyber_campaign_mission_locked",
             Self::MissionStale => "mission_content_stale",
             Self::Unavailable => "unavailable",
@@ -108,6 +114,7 @@ impl ApiError {
             Self::CyberOperationAlreadyDeployed => {
                 "This Operation is already deployed; its loadout is locked."
             }
+            Self::CyberOperationNotDeployed => "Deploy this Operation before it can be settled.",
             Self::CyberCampaignMissionLocked => "Complete the previous campaign mission first.",
             Self::MissionStale => {
                 "this study mission was created from an older content version; start a new mission"

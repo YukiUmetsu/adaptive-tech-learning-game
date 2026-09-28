@@ -344,19 +344,17 @@ export default function CyberDefenseGame({
     );
   };
 
+  const anchorFor = (pad: PadSelection) =>
+    pad.edgeFrom && pad.edgeTo && pad.fraction !== undefined
+      ? { from: pad.edgeFrom, to: pad.edgeTo, fraction: pad.fraction }
+      : undefined;
+
   const gateFor = (defenseId: string, pad: PadSelection) => {
     const defense = catalog.defensesById[defenseId];
-    if (!defense?.requiresGate) {
+    if (!defense?.requiresGate || !pad.partnerId) {
       return undefined;
     }
-    return pad.partnerId
-      ? {
-          partnerPadId: pad.partnerId,
-          position: pad.roadPosition ?? 0,
-          fromNodeId: pad.edgeFrom,
-          toNodeId: pad.edgeTo,
-        }
-      : undefined;
+    return { partnerPadId: pad.partnerId };
   };
 
   const handleSelectPad = (pad: PadSelection) => {
@@ -377,6 +375,7 @@ export default function CyberDefenseGame({
       pad.nodeId,
       pad.nodeType,
       pad.id,
+      anchorFor(pad),
       gateFor(armedDefenseId, pad),
     );
     if (result.ok) {
@@ -444,6 +443,7 @@ export default function CyberDefenseGame({
       selectedPad.nodeId,
       selectedPad.nodeType,
       selectedPad.id,
+      anchorFor(selectedPad),
       gateFor(defenseId, selectedPad),
     );
     if (result.ok) {

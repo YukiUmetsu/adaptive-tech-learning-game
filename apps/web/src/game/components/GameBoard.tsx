@@ -6,7 +6,7 @@ import type { HeroUnit } from "../models/hero";
 import type { MissionMap } from "../models/map";
 import type { GameCatalog } from "../data";
 import { layoutMap, type MapOrientation } from "../engine/layout";
-import { computePath } from "../engine/pathing";
+import { computePath, edgePositionOnPath } from "../engine/pathing";
 import {
   GATE_QUEUE_RANGE,
   type EnemyState,
@@ -193,9 +193,11 @@ export interface PadSelection {
   nodeType: string;
   partnerId?: string;
   roadPosition?: number;
-  /** Edge the pad belongs to, so a gate only spans one branch. */
+  /** Edge the pad belongs to, so a control only affects one branch. */
   edgeFrom?: string;
   edgeTo?: string;
+  /** Fixed 0..1 position along the edge, part of the logical pad identity. */
+  fraction?: number;
 }
 
 export interface GameBoardProps {
@@ -328,10 +330,17 @@ export default function GameBoard({
   const gateQueue = useMemo(
     () =>
       placed
-        .filter((entry) => entry.gate && entry.gatePosition !== undefined)
+        .filter(
+          (entry) =>
+            entry.gate && (entry.anchor !== undefined || entry.gatePosition !== undefined),
+        )
         .map((entry) => ({
           id: entry.id,
-          position: entry.gatePosition as number,
+          from: entry.anchor?.from,
+          to: entry.anchor?.to,
+          fraction: entry.anchor?.fraction,
+          /** Legacy global position, only for anchors-less cached gates. */
+          position: entry.gatePosition,
         })),
     [placed],
   );
@@ -346,10 +355,19 @@ export default function GameBoard({
       if (enemy.admittedGates?.includes(gate.id)) {
         continue;
       }
-      if (position >= gate.position) {
+      // Resolve the gate's position on this enemy's own route. An enemy whose
+      // path never traverses the gate's edge must not visibly queue behind it.
+      const gatePosition =
+        gate.from && gate.to && gate.fraction !== undefined
+          ? edgePositionOnPath(enemy.path, gate.from, gate.to, gate.fraction)
+          : (gate.position ?? null);
+      if (gatePosition === null) {
         continue;
       }
-      if (gate.position - position > GATE_QUEUE_RANGE) {
+      if (position >= gatePosition) {
+        continue;
+      }
+      if (gatePosition - position > GATE_QUEUE_RANGE) {
         continue;
       }
       const seed = hashId(enemy.id);
@@ -639,6 +657,7 @@ export default function GameBoard({
                 nodeType,
                 partnerId: pad.partnerId,
                 roadPosition: pad.roadPosition,
+                fraction: pad.fraction,
                 edgeFrom: pad.edgeFrom,
                 edgeTo: pad.edgeTo,
               });
@@ -654,6 +673,7 @@ export default function GameBoard({
                   nodeType,
                   partnerId: pad.partnerId,
                   roadPosition: pad.roadPosition,
+                  fraction: pad.fraction,
                   edgeFrom: pad.edgeFrom,
                   edgeTo: pad.edgeTo,
                 });

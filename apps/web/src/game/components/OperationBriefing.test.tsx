@@ -136,6 +136,53 @@ describe("OperationBriefing branching schematic", () => {
     expect(screen.getByText("API")).toBeInTheDocument();
     expect(screen.getByText("Application")).toBeInTheDocument();
   });
+
+  it("lists and highlights every actual target of a multi-target Operation", () => {
+    const run = operationRun({
+      map_id: "dual-service",
+      dominant_attack_type: "sql_injection",
+      waves: [
+        {
+          boss: false,
+          groups: [
+            {
+              attack_id: "sql_injection",
+              count: 2,
+              spawn_interval_ms: 1000,
+              delay_ms: null,
+              health_multiplier: 1,
+              speed_multiplier: 1,
+            },
+            {
+              attack_id: "xss",
+              count: 2,
+              spawn_interval_ms: 1000,
+              delay_ms: null,
+              health_multiplier: 1,
+              speed_multiplier: 1,
+            },
+          ],
+        },
+      ],
+    });
+    const { container } = renderBriefing(run);
+    expect(container.querySelector(".cyber-op-map-caption")?.textContent).toContain(
+      "Targets: Database, Application",
+    );
+    const targets = [...container.querySelectorAll(".cyber-op-map-node.is-target")];
+    const labels = targets.map((node) => node.querySelector("text")?.textContent);
+    expect(labels).toContain("Database");
+    expect(labels).toContain("Application");
+    // API is traversed but never attacked, so it must not be a target.
+    expect(labels).not.toContain("API");
+  });
+
+  it("keeps a single-target Operation singular", () => {
+    const { container } = renderBriefing(operationRun({ map_id: "web-stack" }));
+    const caption = container.querySelector(".cyber-op-map-caption")?.textContent;
+    expect(caption).toContain("Target: Database");
+    expect(caption).not.toContain("Targets:");
+  });
 });
 
 describe("OperationBriefing Tower intel gating", () => {

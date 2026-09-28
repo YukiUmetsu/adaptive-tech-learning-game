@@ -352,7 +352,8 @@ describe("rate-limiter gate", () => {
         nodeId: "internet",
         nodeType: "edge",
         padId: "pad-1L",
-        gate: { partnerPadId: "pad-1R", position: 0.8 },
+        anchor: { from: "internet", to: "edge", fraction: 0.6 },
+        gate: { partnerPadId: "pad-1R" },
       },
       catalog,
     );
@@ -392,7 +393,8 @@ describe("rate-limiter gate", () => {
         nodeId: "internet",
         nodeType: "edge",
         padId: "pad-1L",
-        gate: { partnerPadId: "pad-1R", position: 0.6 },
+        anchor: { from: "internet", to: "edge", fraction: 0.6 },
+        gate: { partnerPadId: "pad-1R" },
       },
       catalog,
     ).state;

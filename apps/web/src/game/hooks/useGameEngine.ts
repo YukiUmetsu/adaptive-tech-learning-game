@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { GameCatalog } from "../data";
+import type { DefenseAnchor } from "../models/defense";
 import type { MissionDefinition, SynergyDefinition } from "../models/mission";
 import {
   activeSynergies,
@@ -54,12 +55,8 @@ export interface GameEngineApi {
     nodeId: string,
     nodeType: string,
     padId?: string,
-    gate?: {
-      partnerPadId: string;
-      position: number;
-      fromNodeId?: string;
-      toNodeId?: string;
-    },
+    anchor?: DefenseAnchor,
+    gate?: { partnerPadId: string },
   ) => SimResult;
   upgrade: (placementId: string) => SimResult;
   remove: (placementId: string) => SimResult;
@@ -158,17 +155,13 @@ export function useGameEngine(
       nodeId: string,
       nodeType: string,
       padId?: string,
-      gate?: {
-        partnerPadId: string;
-        position: number;
-        fromNodeId?: string;
-        toNodeId?: string;
-      },
+      anchor?: DefenseAnchor,
+      gate?: { partnerPadId: string },
     ) =>
       apply(
         placeDefenseAction(
           stateRef.current,
-          { defenseId, nodeId, nodeType, padId, gate },
+          { defenseId, nodeId, nodeType, padId, anchor, gate },
           catalog,
         ),
       ),

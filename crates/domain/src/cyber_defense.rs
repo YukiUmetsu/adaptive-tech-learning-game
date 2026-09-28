@@ -345,29 +345,33 @@ pub fn campaign_complete(completed_mission_ids: &[String]) -> bool {
         .all(|mission_id| completed_mission_ids.iter().any(|id| id == mission_id))
 }
 
-/// Minimum wall-clock time between Operation creation and settlement.
+/// Minimum wall-clock time between Operation DEPLOY and settlement.
 ///
 /// The browser simulation is never replayed server-side, so this is the
 /// cheapest useful anti-fabrication guard: a run cannot be settled the instant
-/// it is created. It is deliberately conservative (well under a real run) so
-/// legitimate long pauses and accelerated test fixtures are unaffected.
+/// the battle starts. It is measured from `deployed_at`, never from creation, so
+/// time spent reading the briefing or configuring the loadout is not combat
+/// time. It is deliberately conservative (well under a real run) so legitimate
+/// long pauses and accelerated test fixtures are unaffected.
 pub const OPERATION_MIN_ELAPSED_MS: i64 = 20_000;
 
 /// Tolerance added to server elapsed time when checking a claimed duration.
 ///
 /// A legitimate run can pause for a long time, so the claimed active duration
-/// may be far *below* server elapsed. It may only slightly exceed server
-/// elapsed; this tolerance absorbs clock skew between browser and server.
+/// may be far *below* server elapsed. It may only slightly exceed combat elapsed;
+/// this tolerance absorbs clock skew between browser and server, plus browser
+/// throttling, tab backgrounding, and network latency.
 pub const OPERATION_DURATION_TOLERANCE_MS: i64 = 120_000;
 
-/// Whether a claimed Operation result is plausible for the server elapsed time.
+/// Whether a claimed Operation result is plausible for the combat elapsed time.
 ///
-/// Requires the run to have existed for at least [`OPERATION_MIN_ELAPSED_MS`]
-/// and the claimed active duration to not exceed server elapsed plus the
-/// tolerance. A long pause/resume is always allowed.
-pub fn operation_result_is_plausible(server_elapsed_ms: i64, claimed_duration_ms: i64) -> bool {
-    server_elapsed_ms >= OPERATION_MIN_ELAPSED_MS
-        && claimed_duration_ms <= server_elapsed_ms + OPERATION_DURATION_TOLERANCE_MS
+/// `combat_elapsed_ms` is the wall-clock time since the run was deployed, not
+/// since it was created. Requires at least [`OPERATION_MIN_ELAPSED_MS`] of
+/// deployed combat and the claimed active duration to not exceed combat elapsed
+/// plus the tolerance. A long pause/resume is always allowed.
+pub fn operation_result_is_plausible(combat_elapsed_ms: i64, claimed_duration_ms: i64) -> bool {
+    combat_elapsed_ms >= OPERATION_MIN_ELAPSED_MS
+        && claimed_duration_ms <= combat_elapsed_ms + OPERATION_DURATION_TOLERANCE_MS
 }
 
 /// Length of the reward-settlement rate-guard window.

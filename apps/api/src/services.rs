@@ -5493,11 +5493,20 @@ pub async fn cyber_defense_complete_operation(
         return duplicate_operation_response(state, user, &run, &profile).await;
     }
 
+    // An Operation can only settle after it was actually deployed. A run that is
+    // still configurable has no battle to settle, and the server must never
+    // auto-deploy during settlement.
+    let Some(deployed_at) = run.deployed_at else {
+        tx.rollback().await.map_err(db::DbError::from)?;
+        return Err(ApiError::CyberOperationNotDeployed);
+    };
+
     // Integrity guard: the browser simulation is never replayed server-side, so
-    // reject results that are impossible for the run's server age, and cap
+    // reject results that are impossible for the run's *combat* age (measured
+    // from DEPLOY, so briefing/configuration time never counts), and cap
     // reward-bearing settlement frequency. Neither check blocks normal play.
-    let server_elapsed_ms = (Utc::now() - run.started_at).num_milliseconds().max(0);
-    if !operation_result_is_plausible(server_elapsed_ms, request.duration_ms) {
+    let combat_elapsed_ms = (Utc::now() - deployed_at).num_milliseconds().max(0);
+    if !operation_result_is_plausible(combat_elapsed_ms, request.duration_ms) {
         tx.rollback().await.map_err(db::DbError::from)?;
         return Err(ApiError::BadRequest(
             "result is not plausible for this run".to_owned(),

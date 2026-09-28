@@ -49,7 +49,32 @@ export interface EdgeAnchor {
   fraction: number;
 }
 
-/** A deterministic build pad attached to one edge of the graph. */
+/**
+ * A build pad identified purely by map structure, independent of x/y layout.
+ *
+ * Pad identity must never depend on rendered edge length: the desktop
+ * (horizontal) and mobile (vertical) layouts draw the same edge at different
+ * pixel lengths, so a pixel-derived pad count would change the number of pads
+ * and shift every globally-sequential id. A logical pad is therefore keyed by
+ * its edge, slot, and side, and carries a fixed `fraction` along that edge; only
+ * the rendered position is orientation-dependent.
+ */
+export interface LogicalRoadPad {
+  /** Stable id, for example `edge--edge--app--0-left`. */
+  id: string;
+  edgeFrom: string;
+  edgeTo: string;
+  slot: number;
+  side: "left" | "right";
+  /** Fixed 0..1 position along the edge. */
+  fraction: number;
+  /** Node the pad is nearest along the edge. */
+  nodeId: string;
+  /** Pad on the opposite side of the edge. */
+  partnerId: string;
+}
+
+/** A logical pad mapped onto the current rendered edge geometry. */
 export interface RoadPad {
   id: string;
   /** Node the pad is associated with (nearest endpoint). */
@@ -59,7 +84,7 @@ export interface RoadPad {
   angle: number;
   /** Pad on the opposite side of the edge. */
   partnerId: string;
-  /** Path position used by the simulation for gate congestion. */
+  /** Global node-depth position, retained for legacy gates only. */
   roadPosition: number;
   /** Edge this pad belongs to. */
   edgeKey: string;
@@ -69,11 +94,103 @@ export interface RoadPad {
   fraction: number;
 }
 
-const PAD_STEP = 110;
 const PAD_OFFSET = 62;
 /** Keep pads clear of the node rings at each end of an edge. */
 const PAD_INSET = 0.16;
-const MAX_PADS_PER_EDGE = 3;
+
+/**
+ * Fixed number of pad groups per edge.
+ *
+ * Pad count is a map-structure decision, not a rendering decision, so every
+ * orientation of the same map produces identical pad ids. Two groups (four pads)
+ * per edge gives every branch a buildable position without crowding short edges.
+ */
+const PAD_GROUPS_PER_EDGE = 2;
+
+/** Optional per-edge group overrides, keyed by `from->to`. */
+const PAD_GROUP_OVERRIDES: Record<string, number> = {};
+
+function padGroupsForEdge(from: string, to: string): number {
+  return PAD_GROUP_OVERRIDES[edgeKey(from, to)] ?? PAD_GROUPS_PER_EDGE;
+}
+
+/** Builds the stable logical pads for one edge, in slot/side order. */
+function logicalPadsForEdge(from: string, to: string): LogicalRoadPad[] {
+  const groups = Math.max(1, padGroupsForEdge(from, to));
+  const pads: LogicalRoadPad[] = [];
+  for (let slot = 0; slot < groups; slot += 1) {
+    const rawFraction = (slot + 0.5) / groups;
+    const fraction = Math.max(PAD_INSET, Math.min(1 - PAD_INSET, rawFraction));
+    const nodeId = fraction < 0.5 ? from : to;
+    const leftId = `edge--${from}--${to}--${slot}-left`;
+    const rightId = `edge--${from}--${to}--${slot}-right`;
+    pads.push(
+      { id: leftId, edgeFrom: from, edgeTo: to, slot, side: "left", fraction, nodeId, partnerId: rightId },
+      { id: rightId, edgeFrom: from, edgeTo: to, slot, side: "right", fraction, nodeId, partnerId: leftId },
+    );
+  }
+  return pads;
+}
+
+/**
+ * Builds the stable logical pads for a whole map.
+ *
+ * Identity is derived from the map's edge declaration order only, so it is the
+ * same for desktop, mobile, and any window width or orientation.
+ */
+export function buildLogicalRoadPads(map: MissionMap): LogicalRoadPad[] {
+  return map.edges.flatMap((edge) => logicalPadsForEdge(edge.from, edge.to));
+}
+
+/** Maps logical pads onto the current rendered geometry, preserving identity. */
+export function renderRoadPads(
+  geometry: MapRoadGeometry,
+  logical: LogicalRoadPad[],
+): RoadPad[] {
+  const pads: RoadPad[] = [];
+  for (const pad of logical) {
+    const edge = geometry.edges[edgeKey(pad.edgeFrom, pad.edgeTo)];
+    const depthFrom = geometry.positions[pad.edgeFrom]?.depth ?? 0;
+    const roadPosition = depthFrom + pad.fraction;
+    if (!edge) {
+      const a = geometry.positions[pad.edgeFrom];
+      const b = geometry.positions[pad.edgeTo];
+      if (!a || !b) {
+        continue;
+      }
+      const center = {
+        x: a.x + (b.x - a.x) * pad.fraction,
+        y: a.y + (b.y - a.y) * pad.fraction,
+      };
+      pads.push({
+        ...pad,
+        edgeKey: edgeKey(pad.edgeFrom, pad.edgeTo),
+        position: center,
+        angle: Math.atan2(b.y - a.y, b.x - a.x),
+        roadPosition,
+      });
+      continue;
+    }
+    const center = pointOnEdgeGeometry(edge, pad.fraction);
+    const ahead = pointOnEdgeGeometry(edge, Math.min(1, pad.fraction + 0.02));
+    const behind = pointOnEdgeGeometry(edge, Math.max(0, pad.fraction - 0.02));
+    const tangent = normalize({ x: ahead.x - behind.x, y: ahead.y - behind.y });
+    const perpendicular = { x: -tangent.y, y: tangent.x };
+    const sign = pad.side === "left" ? 1 : -1;
+    const position = {
+      x: center.x + perpendicular.x * PAD_OFFSET * sign,
+      y: center.y + perpendicular.y * PAD_OFFSET * sign,
+    };
+    pads.push({
+      ...pad,
+      edgeKey: edgeKey(pad.edgeFrom, pad.edgeTo),
+      position,
+      angle: Math.atan2(center.y - position.y, center.x - position.x),
+      roadPosition,
+    });
+  }
+  return pads;
+}
 
 export function edgeKey(from: string, to: string): string {
   return `${from}->${to}`;
@@ -320,81 +437,16 @@ function edgeSegmentOffset(
 }
 
 /**
- * Builds deterministic tower pads along every edge.
+ * Renders deterministic tower pads for the current geometry.
  *
- * Pads are stable for a map (edge order + index), sit on both sides of each
- * edge, and are attached to the nearest endpoint so tower coverage matches the
- * simulation's `enemy.path.indexOf(nodeId)` rule.
+ * Identity comes from {@link buildLogicalRoadPads} (map structure only), then is
+ * projected onto the current edge positions. Two orientations of the same map
+ * therefore produce the same pad ids, edges, and fractions; only x/y differ.
  */
 export function buildRoadPads(geometry: MapRoadGeometry): RoadPad[] {
-  const pads: RoadPad[] = [];
-  let group = 0;
-
-  for (const key of geometry.edgeOrder) {
+  const logical = geometry.edgeOrder.flatMap((key) => {
     const edge = geometry.edges[key];
-    if (edge.length <= 0) {
-      continue;
-    }
-    const depthFrom = geometry.positions[edge.from]?.depth ?? 0;
-    const count = Math.max(
-      1,
-      Math.min(MAX_PADS_PER_EDGE, Math.round(edge.length / PAD_STEP)),
-    );
-    for (let i = 0; i < count; i += 1) {
-      const rawFraction = (i + 0.5) / count;
-      const fraction = Math.max(
-        PAD_INSET,
-        Math.min(1 - PAD_INSET, rawFraction),
-      );
-      const center = pointOnEdgeGeometry(edge, fraction);
-      const ahead = pointOnEdgeGeometry(edge, Math.min(1, fraction + 0.02));
-      const behind = pointOnEdgeGeometry(edge, Math.max(0, fraction - 0.02));
-      const tangent = normalize({ x: ahead.x - behind.x, y: ahead.y - behind.y });
-      const perpendicular = { x: -tangent.y, y: tangent.x };
-      const nodeId = fraction < 0.5 ? edge.from : edge.to;
-      const roadPosition = depthFrom + fraction;
-      group += 1;
-      const leftId = `pad-${group}L`;
-      const rightId = `pad-${group}R`;
-      const leftPosition = {
-        x: center.x + perpendicular.x * PAD_OFFSET,
-        y: center.y + perpendicular.y * PAD_OFFSET,
-      };
-      const rightPosition = {
-        x: center.x - perpendicular.x * PAD_OFFSET,
-        y: center.y - perpendicular.y * PAD_OFFSET,
-      };
-      pads.push(
-        {
-          id: leftId,
-          nodeId,
-          position: leftPosition,
-          angle: Math.atan2(center.y - leftPosition.y, center.x - leftPosition.x),
-          partnerId: rightId,
-          roadPosition,
-          edgeKey: key,
-          edgeFrom: edge.from,
-          edgeTo: edge.to,
-          fraction,
-        },
-        {
-          id: rightId,
-          nodeId,
-          position: rightPosition,
-          angle: Math.atan2(
-            center.y - rightPosition.y,
-            center.x - rightPosition.x,
-          ),
-          partnerId: leftId,
-          roadPosition,
-          edgeKey: key,
-          edgeFrom: edge.from,
-          edgeTo: edge.to,
-          fraction,
-        },
-      );
-    }
-  }
-
-  return pads;
+    return logicalPadsForEdge(edge.from, edge.to);
+  });
+  return renderRoadPads(geometry, logical);
 }

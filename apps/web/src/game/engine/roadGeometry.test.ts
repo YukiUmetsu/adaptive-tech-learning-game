@@ -3,11 +3,13 @@ import { describe, expect, it } from "vitest";
 import { OPERATION_MAPS } from "../data/operationMaps";
 import { layoutMap } from "./layout";
 import {
+  buildLogicalRoadPads,
   buildMapRoadGeometry,
   buildRoadPads,
   edgeKey,
   nearestEdgeAnchor,
   pathPointAt,
+  renderRoadPads,
 } from "./roadGeometry";
 
 function geometryFor(mapId: keyof typeof OPERATION_MAPS) {
@@ -124,6 +126,61 @@ describe("map geometry regression", () => {
       expect(position.x).toBeLessThanOrEqual(geometry.width);
       expect(position.y).toBeLessThanOrEqual(geometry.height);
     }
+  });
+
+  it("keeps logical pad identity stable across desktop and mobile layouts", () => {
+    for (const [mapId, map] of Object.entries(OPERATION_MAPS)) {
+      const logical = buildLogicalRoadPads(map);
+      const horizontalLayout = layoutMap(map, { orientation: "horizontal" });
+      const verticalLayout = layoutMap(map, { orientation: "vertical" });
+      const horizontal = renderRoadPads(
+        buildMapRoadGeometry(map, horizontalLayout),
+        logical,
+      );
+      const vertical = renderRoadPads(
+        buildMapRoadGeometry(map, verticalLayout),
+        logical,
+      );
+      // Same pads, same edge, same fraction, same node association.
+      expect(vertical.map((pad) => pad.id)).toEqual(
+        horizontal.map((pad) => pad.id),
+      );
+      expect(vertical.map((pad) => pad.edgeKey)).toEqual(
+        horizontal.map((pad) => pad.edgeKey),
+      );
+      expect(vertical.map((pad) => pad.fraction)).toEqual(
+        horizontal.map((pad) => pad.fraction),
+      );
+      expect(vertical.map((pad) => pad.nodeId)).toEqual(
+        horizontal.map((pad) => pad.nodeId),
+      );
+      // Repeated calls are stable.
+      expect(buildLogicalRoadPads(map).map((pad) => pad.id)).toEqual(
+        logical.map((pad) => pad.id),
+      );
+      expect(mapId).toBeTruthy();
+    }
+  });
+
+  it("keeps the dual-service Edge -> Application pad on that branch when mobile", () => {
+    const map = OPERATION_MAPS["dual-service"];
+    const appPadId = "edge--edge--app--0-left";
+    const horizontal = renderRoadPads(
+      buildMapRoadGeometry(map, layoutMap(map, { orientation: "horizontal" })),
+      buildLogicalRoadPads(map),
+    ).find((pad) => pad.id === appPadId);
+    const vertical = renderRoadPads(
+      buildMapRoadGeometry(map, layoutMap(map, { orientation: "vertical" })),
+      buildLogicalRoadPads(map),
+    ).find((pad) => pad.id === appPadId);
+
+    expect(horizontal).toBeDefined();
+    expect(vertical).toBeDefined();
+    expect(vertical!.edgeFrom).toBe("edge");
+    expect(vertical!.edgeTo).toBe("app");
+    expect(vertical!.fraction).toEqual(horizontal!.fraction);
+    // Only the rendered position may differ.
+    expect(vertical!.position).not.toEqual(horizontal!.position);
   });
 
   it("plays a linear map with exactly one pad-free-route concept unchanged", () => {

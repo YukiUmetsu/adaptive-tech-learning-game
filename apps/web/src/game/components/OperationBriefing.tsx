@@ -16,7 +16,10 @@ import { findNode, type MissionMap } from "../models/map";
 import { computePath } from "../engine/pathing";
 import { layoutMap } from "../engine/layout";
 import { buildMapRoadGeometry } from "../engine/roadGeometry";
-import { operationMapFor } from "../engine/operationAdapter";
+import {
+  operationMapFor,
+  operationTargetNodeIds,
+} from "../engine/operationAdapter";
 import { operationMapLabel } from "../data/operationMaps";
 import AdversaryArt from "./art/AdversaryArt";
 import CoreArt from "./art/CoreArt";
@@ -126,23 +129,13 @@ function intensityLabel(totalCount: number): string {
   return "Heavy";
 }
 
-/** The map node an Operation is really trying to reach (its longest path). */
-function primaryTarget(
-  map: MissionMap,
-  catalog: GameCatalog,
-  run: CyberOperationRun,
-): string | null {
-  const targets = new Set<string>();
-  for (const wave of run.operation.waves) {
-    for (const group of wave.groups) {
-      const attack = catalog.attacksById[group.attack_id];
-      if (attack) {
-        targets.add(attack.targetNodeId);
-      }
-    }
-  }
+/**
+ * The deepest of the attacked nodes, used only to place the single protected
+ * core visual. It never determines an enemy route or briefing target list.
+ */
+function primaryTargetId(map: MissionMap, targetIds: string[]): string | null {
   let best: { id: string; length: number } | null = null;
-  for (const id of targets) {
+  for (const id of targetIds) {
     const { path, reachable } = computePath(map, id);
     if (reachable && (!best || path.length > best.length)) {
       best = { id, length: path.length };
@@ -160,11 +153,13 @@ function primaryTarget(
  */
 function TargetMap({
   map,
-  targetId,
+  targetIds,
+  primaryTargetId: coreTargetId,
   dominantType,
 }: {
   map: MissionMap;
-  targetId: string | null;
+  targetIds: string[];
+  primaryTargetId: string | null;
   dominantType: AttackType;
 }) {
   const layout = layoutMap(map, {
@@ -174,14 +169,11 @@ function TargetMap({
     margin: 56,
   });
   const geometry = buildMapRoadGeometry(map, layout);
-  const targetSet = new Set<string>(
-    map.nodes
-      .filter((node) => node.id === targetId || node.type === "database")
-      .map((node) => node.id),
-  );
+  // Highlight exactly the nodes that are attacked, never an inferred type.
+  const targetSet = new Set<string>(targetIds);
 
   const entry = layout.positions[map.entryNodeId];
-  const core = targetId ? layout.positions[targetId] : undefined;
+  const core = coreTargetId ? layout.positions[coreTargetId] : undefined;
 
   return (
     <svg
@@ -253,16 +245,18 @@ export default function OperationBriefing({
   const operation = run.operation;
   const adversary = ADVERSARIES_BY_ID[operation.adversary_id] ?? undefined;
   const map = operationMapFor(operation);
-  const targetId = primaryTarget(map, catalog, run);
+  const targetIds = operationTargetNodeIds(operation, catalog);
+  const coreTargetId = primaryTargetId(map, targetIds);
   const visibility = deriveOperationIntelVisibility(towerProgress);
   const hero = run.hero_id ? HEROES_BY_ID[run.hero_id] : undefined;
   const estimatedMinutes = Math.max(
     5,
     Math.round((operation.waves.length * 90) / 60),
   );
-  const targetLabel = targetId
-    ? (findNode(map, targetId)?.label ?? operationMapLabel(operation.map_id))
-    : operationMapLabel(operation.map_id);
+  // Show every attacked target by its human label; never a raw node id.
+  const targetLabels = targetIds.map(
+    (id) => findNode(map, id)?.label ?? operationMapLabel(operation.map_id),
+  );
 
   const visibleWaves: WaveIntel[] = operation.waves
     .slice(0, visibility.visibleWaveCount)
@@ -366,12 +360,17 @@ export default function OperationBriefing({
         <div className="cyber-op-map">
           <TargetMap
             map={map}
-            targetId={targetId}
+            targetIds={targetIds}
+            primaryTargetId={coreTargetId}
             dominantType={operation.dominant_attack_type as AttackType}
           />
           <p className="cyber-op-map-caption">
-            <TargetIcon size={14} /> Target: {targetLabel} ·{" "}
-            {operationMapLabel(operation.map_id)}
+            <TargetIcon size={14} />{" "}
+            {targetLabels.length > 1 ? "Targets" : "Target"}:{" "}
+            {targetLabels.length > 0
+              ? targetLabels.join(", ")
+              : operationMapLabel(operation.map_id)}{" "}
+            · {operationMapLabel(operation.map_id)}
           </p>
         </div>
       </header>

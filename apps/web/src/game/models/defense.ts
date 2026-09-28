@@ -93,6 +93,21 @@ export interface DefenseDefinition {
   color: string;
 }
 
+/**
+ * The logical graph edge a placed control occupies.
+ *
+ * A tower visually built on `Edge -> Application` must only affect traffic that
+ * actually traverses that edge. `nodeId` alone is branch-ambiguous because
+ * branching maps share nodes, so every graph-pad placement records the concrete
+ * edge and the fraction along it.
+ */
+export interface DefenseAnchor {
+  from: string;
+  to: string;
+  /** 0..1 along the directed edge. */
+  fraction: number;
+}
+
 /** A defense the player has placed on a node. */
 export interface PlacedDefense {
   id: string;
@@ -103,13 +118,16 @@ export interface PlacedDefense {
   level: number;
   /** True when this control spans the road as a gate. */
   gate?: boolean;
-  /** Road position of the gate, for congestion. */
+  /**
+   * Logical edge anchor for graph-pad placements. Controls the branch the
+   * defense can affect; absent only for legacy cached placements, which keep the
+   * node-based rule.
+   */
+  anchor?: DefenseAnchor;
+  /** Legacy global road position, retained only for anchors-less cached gates. */
   gatePosition?: number;
   /** The paired pad on the other side of the road. */
   gatePartnerPadId?: string;
-  /** Edge the gate spans, so it only affects enemies on that branch. */
-  gateFromNodeId?: string;
-  gateToNodeId?: string;
 }
 
 export const DEFENSE_CATEGORY_LABELS: Record<DefenseCategory, string> = {
